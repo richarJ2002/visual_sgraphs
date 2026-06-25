@@ -262,6 +262,7 @@ void publishTopics(rclcpp::Time                                         msgTime,
     publishDoors(pSLAM->GetAllDoors());
     publishKeyFrameImages(keyframes, msgTime);
     publishKeyFrameMarkers(keyframes, msgTime);
+    publishPassages(pSLAM->GetAllPassages(), msgTime);
     publishFiducialMarkers(pSLAM->GetAllMarkers(), msgTime);
     publishTrackingImage(pSLAM->GetCurrentFrame(), msgTime);
     publishStructuralElements(pSLAM->GetAllRooms(),
@@ -833,18 +834,18 @@ void publishFiducialMarkers(std::vector<ORB_SLAM3::Marker *> markers,
     pubFiducialMarker->publish(markerArray);
 }
 
-void publishDoors(std::vector<ORB_SLAM3::Door *> doors)
+void publishPassages(std::vector<ORB_SLAM3::Passage *> passages, rclcpp::Time msgTime)
 {
-    // If there are no doors, return
-    int numDoors = doors.size();
-    if (numDoors == 0)
+    // If there are no passages, return
+    int numPassages = passages.size();
+    if (numPassages == 0)
         return;
 
     // Variables
-    visualization_msgs::msg::MarkerArray doorArray;
-    doorArray.markers.resize(numDoors);
+    visualization_msgs::msg::MarkerArray passageArray;
+    passageArray.markers.resize(numPassages);
 
-    for (int idx = 0; idx < numDoors; idx++)
+    for (int idx = 0; idx < numPassages; idx++)
     {
         Sophus::SE3f                    doorPose = doors[idx]->getGlobalPose();
         visualization_msgs::msg::Marker door, doorLines, doorLabel;
@@ -926,7 +927,7 @@ void publishDoors(std::vector<ORB_SLAM3::Door *> doors)
         doorArray.markers.push_back(doorLines);
     }
 
-    pubDoor->publish(doorArray);
+    pubPassage->publish(passageArray);
 }
 
 void publishPlanes(std::vector<ORB_SLAM3::Plane *> planes, rclcpp::Time msgTime)
@@ -982,12 +983,20 @@ void publishPlanes(std::vector<ORB_SLAM3::Plane *> planes, rclcpp::Time msgTime)
             newPoint.g = point.g;
             newPoint.b = point.b;
 
-            // Override color according to type of plane
-            if (colorPointcloud)
+            // [TEMP] Override color according to type of plane
+            // if (colorPointcloud)
+            // {
+            //     newPoint.r = color[0];
+            //     newPoint.g = color[1];
+            //     newPoint.b = color[2];
+            // }
+
+            // If the plane is a door, visualize it in a distinct color (purple)
+            if (plane->getPlaneType() == ORB_SLAM3::Plane::planeVariant::DOOR)
             {
-                newPoint.r = color[0];
-                newPoint.g = color[1];
-                newPoint.b = color[2];
+                newPoint.r = 204;
+                newPoint.g = 0;
+                newPoint.b = 102;
             }
 
             // Add the point to the aggregated cloud
