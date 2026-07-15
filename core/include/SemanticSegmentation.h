@@ -67,16 +67,24 @@ class SemanticSegmentation
 
     /**
      * @brief       Segments the point cloud into class specific point clouds
-     *              and enriches them with the current keyframe point cloud
+     *              and enriches them with the current keyframe point cloud.
      *
-     * @param       pclPc2SegPrb
-     *              the point cloud to be segmented
+     * @param[in]   pclPc2SegPrb
+     *              Contains semantic class probablilities for every pixel
+     *              or point in the segmented point cloud.
      *
-     * @param       segImgUncertainity
-     *              the segmentation image uncertainty
+     * @param[in]   segImgUncertainity
+     *              An image containing the uncertainty of each pixel.
      *
-     * @param       clsCloudPtrs
-     *              the class specific point clouds
+     * @param[out]  clsCloudPtrs
+     *              Output vector where each index contains a point cloud for
+     *              each class.
+     *
+     *                  x, y, z -> 3D Coordinates
+     *                  r, g, b -> Original RGB value of point
+     *                  a       -> Confidence value
+     *
+     *              (Index indicates the semantic type of the cloud)
      *
      * @param       thisKFPointCloud
      *              the current keyframe point cloud
@@ -89,15 +97,17 @@ class SemanticSegmentation
 
     /**
      * @brief       Gets all planes for each class specific point cloud using
-     *              RANSAC
+     *              RANSAC. Will perform filtering of point clouds, then
+     *              extract the planes using RANSAC. Important to note that the
+     *              plane semantics are not set in this method.
      *
-     * @param       clsCloudPtrs
+     * @param[in]   clsCloudPtrs
      *              the class specific point clouds
      *
-     * @param       minCloudSize
+     * @param[in]   minCloudSize
      *              the minimum size of the point cloud to be segmented
      *
-     * @return      a vector of vector of point clouds
+     * @return      A vector of extracted planes
      */
     std::vector<std::vector<
         std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>

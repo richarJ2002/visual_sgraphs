@@ -21,7 +21,7 @@ class Curve {
     using ReturnType = decltype(curve(t));
     static_assert(std::is_floating_point<Scalar>::value,
                   "Scalar must be a floating point type.");
-    static_assert(IsFloatingPoint<ReturnType>::value,
+    static_assert(Isfloat<ReturnType>::value,
                   "ReturnType must be either a floating point scalar, "
                   "vector or matrix.");
 

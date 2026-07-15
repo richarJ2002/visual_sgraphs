@@ -242,7 +242,7 @@ def generate_launch_description():
             ),
 
             # ---------------------------------------------------------------- #
-            # RViz
+            # RVIZ
             # ---------------------------------------------------------------- #
 
             Node(
@@ -302,36 +302,36 @@ def generate_launch_description():
             ),
 
             # Semantic Scene Segmenter Node (based on semantic_scene_segmenter argument)
-            # Node(
-            #     condition=IfCondition(
-            #         EqualsSubstitution(
-            #             LaunchConfiguration("semantic_scene_segmenter"),
-            #             "yoso"
-            #         )
-            #     ),
-            #     name="segmenter_ros",
-            #     package="segmenter_ros",
-            #     executable="segmenter_yoso.py",
-            #     output="screen",
-            #     parameters=[
-            #         {
-            #             "use_sim_time": LaunchConfiguration("offline")
-            #         },
-            #         {
-            #             "visualize": LaunchConfiguration(
-            #                 "visualize_segmented_scene")
-            #         }
-            #     ],
+            Node(
+                condition=IfCondition(
+                    EqualsSubstitution(
+                        LaunchConfiguration("semantic_scene_segmenter"),
+                        "yoso"
+                    )
+                ),
+                name="segmenter_ros",
+                package="segmenter_ros",
+                executable="segmenter_yoso.py",
+                output="screen",
+                parameters=[
+                    {
+                        "use_sim_time": LaunchConfiguration("offline")
+                    },
+                    {
+                        "visualize": LaunchConfiguration(
+                            "visualize_segmented_scene")
+                    }
+                ],
 
-            #     arguments=[
-            #         "--ros-args",
-            #         "--params-file",
-            #         [
-            #             get_package_share_directory("segmenter_ros"),
-            #             "/config/cfg_yoso.yaml",
-            #         ],
-            #     ],
-            # ),
+                arguments=[
+                    "--ros-args",
+                    "--params-file",
+                    [
+                        get_package_share_directory("segmenter_ros"),
+                        "/config/cfg_yoso.yaml",
+                    ],
+                ],
+            ),
 
             Node(
                 condition=IfCondition(
@@ -391,27 +391,6 @@ def generate_launch_description():
                         "/config/cfg_yolo26.yaml",
                     ],
                 ],
-            ),
-
-            # Structural Element Detectors
-            # Node(
-            #     name="situational_graphs_reasoning",
-            #     package="situational_graphs_reasoning",
-            #     executable="situational_graphs_reasoning",
-            #     output="screen",
-            #     # parameters=[
-            #     #     os.path.join(
-            #     #         get_package_share_directory("situational_graphs_reasoning"),
-            #     #         "config",
-            #     #         "params.yaml",
-            #     #     )
-            #     # ],
-            #     # remappings=[
-            #     #     (
-            #     #         "situational_graphs_reasoning/graphs",
-            #     #         "/s_graphs/graph_structure",
-            #     #     ),
-            #     # ],
-            # ),
+            )
         ]
     )

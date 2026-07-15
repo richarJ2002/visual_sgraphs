@@ -24,6 +24,8 @@
  */
 
 #include "common.h"
+#include <algorithm>
+#include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 // Variables for ORB-SLAM3
@@ -212,9 +214,6 @@ void setupPublishers(
         node->create_publisher<vs_graphs::msg::VSGraphsAllWallsData>(
             node_name + "/all_mapped_walls",
             1);
-    // pubAllWalls_legacy =
-    // node->create_publisher<situational_graphs_msgs::msg::PlanesData>(node_name
-    // + "/all_mapped_walls", 1);
 
     // Structural Elements
     pubStructuralElements =
@@ -259,14 +258,13 @@ void publishTopics(rclcpp::Time                                         msgTime,
 
     // Setup publishers
 
-    publishDoors(pSLAM->GetAllDoors());
     publishKeyFrameImages(keyframes, msgTime);
     publishKeyFrameMarkers(keyframes, msgTime);
-    publishPassages(pSLAM->GetAllPassages(), msgTime);
     publishFiducialMarkers(pSLAM->GetAllMarkers(), msgTime);
     publishTrackingImage(pSLAM->GetCurrentFrame(), msgTime);
     publishStructuralElements(pSLAM->GetAllRooms(),
                               pSLAM->GetAllFloors(),
+                              pSLAM->GetAllPassages(),
                               msgTime);
 
     // Publish all mapped walls for GNN-based room detection
@@ -282,7 +280,9 @@ void publishTopics(rclcpp::Time                                         msgTime,
         publishFreeSpaceClusters(pSLAM->getSkeletonCluster(), msgTime);
     }
     else
+    {
         clearKFClsClouds(keyframes);
+    }
 
     // IMU-specific topics
     if (sensorType == ORB_SLAM3::System::IMU_MONOCULAR ||
@@ -834,145 +834,64 @@ void publishFiducialMarkers(std::vector<ORB_SLAM3::Marker *> markers,
     pubFiducialMarker->publish(markerArray);
 }
 
-void publishPassages(std::vector<ORB_SLAM3::Passage *> passages, rclcpp::Time msgTime)
+void publishPlanes(const std::vector<ORB_SLAM3::Plane *> planes,
+                   const rclcpp::Time                    msgTime)
 {
-    // If there are no passages, return
-    int numPassages = passages.size();
-    if (numPassages == 0)
-        return;
+    const int numPlanes = static_cast<int>(planes.size());
 
-    // Variables
-    visualization_msgs::msg::MarkerArray passageArray;
-    passageArray.markers.resize(numPassages);
-
-    for (int idx = 0; idx < numPassages; idx++)
+    if (numPlanes == 0)
     {
-        Sophus::SE3f                    doorPose = doors[idx]->getGlobalPose();
-        visualization_msgs::msg::Marker door, doorLines, doorLabel;
-
-        // Door values
-        door.color.a      = 0;
-        door.ns           = "doors";
-        door.scale.x      = 0.5;
-        door.scale.y      = 0.5;
-        door.scale.z      = 0.5;
-        door.action       = door.ADD;
-        door.lifetime     = rclcpp::Duration::from_seconds(0);
-        door.id           = doorArray.markers.size();
-        door.header.stamp = rclcpp::Clock().now(); // rclcpp::Time().now();
-        door.mesh_use_embedded_materials = true;
-        door.header.frame_id             = frameBC;
-        door.type          = visualization_msgs::msg::Marker::MESH_RESOURCE;
-        door.mesh_resource = "package://vs_graphs/config/Assets/door.dae";
-
-        // Rotation and displacement for better visualization
-        Sophus::SE3f rotatedDoorPose = doorPose * Sophus::SE3f::rotX(-M_PI_2);
-        rotatedDoorPose.translation().y() -= 1.0;
-        door.pose.position.x    = rotatedDoorPose.translation().x();
-        door.pose.position.y    = rotatedDoorPose.translation().y();
-        door.pose.position.z    = rotatedDoorPose.translation().z();
-        door.pose.orientation.x = rotatedDoorPose.unit_quaternion().x();
-        door.pose.orientation.y = rotatedDoorPose.unit_quaternion().y();
-        door.pose.orientation.z = rotatedDoorPose.unit_quaternion().z();
-        door.pose.orientation.w = rotatedDoorPose.unit_quaternion().w();
-        doorArray.markers.push_back(door);
-
-        // Door label (name)
-        doorLabel.color.a      = 1;
-        doorLabel.color.r      = 0;
-        doorLabel.color.g      = 0;
-        doorLabel.color.b      = 0;
-        doorLabel.scale.z      = 0.2;
-        doorLabel.ns           = "doorLabel";
-        doorLabel.action       = doorLabel.ADD;
-        doorLabel.lifetime     = rclcpp::Duration::from_seconds(0);
-        doorLabel.text         = doors[idx]->getName();
-        doorLabel.id           = doorArray.markers.size();
-        doorLabel.header.stamp = rclcpp::Clock().now(); // rclcpp::Time().now();
-        doorLabel.header.frame_id = frameBC;
-        doorLabel.pose.position.x = door.pose.position.x;
-        doorLabel.pose.position.z = door.pose.position.z;
-        doorLabel.pose.position.y = door.pose.position.y - 1.2;
-        doorLabel.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
-        doorArray.markers.push_back(doorLabel);
-
-        // Door to points connection line
-        doorLines.color.a      = 0.5;
-        doorLines.color.r      = 0.0;
-        doorLines.color.g      = 0.0;
-        doorLines.color.b      = 0.0;
-        doorLines.scale.x      = 0.005;
-        doorLines.scale.y      = 0.005;
-        doorLines.scale.z      = 0.005;
-        doorLines.ns           = "doorLines";
-        doorLines.action       = doorLines.ADD;
-        doorLines.lifetime     = rclcpp::Duration::from_seconds(0);
-        doorLines.id           = doorArray.markers.size();
-        doorLines.header.stamp = rclcpp::Clock().now(); // rclcpp::Time().now();
-        doorLines.header.frame_id = frameBC;
-        doorLines.type            = visualization_msgs::msg::Marker::LINE_LIST;
-
-        geometry_msgs::msg::Point point1;
-        point1.x = doors[idx]->getMarker()->getGlobalPose().translation().x();
-        point1.y = doors[idx]->getMarker()->getGlobalPose().translation().y();
-        point1.z = doors[idx]->getMarker()->getGlobalPose().translation().z();
-        doorLines.points.push_back(point1);
-
-        geometry_msgs::msg::Point point2;
-        point2.x = rotatedDoorPose.translation().x();
-        point2.y = rotatedDoorPose.translation().y();
-        point2.z = rotatedDoorPose.translation().z();
-        doorLines.points.push_back(point2);
-
-        doorArray.markers.push_back(doorLines);
+        return;
     }
 
-    pubPassage->publish(passageArray);
-}
-
-void publishPlanes(std::vector<ORB_SLAM3::Plane *> planes, rclcpp::Time msgTime)
-{
-    // Publish the planes, if any
-    int numPlanes = planes.size();
-    if (numPlanes == 0)
-        return;
-
-    // Check if sufficient time has passed since the last plane publication
+    /* Check if sufficient time has passed since the last plane publication */
     if ((msgTime - lastPlanePublishTime).seconds() < 3.0)
+    {
         return;
+    }
 
     lastPlanePublishTime = msgTime;
 
-    // Variables
     visualization_msgs::msg::MarkerArray planeLabelArray;
-    planeLabelArray.markers.resize(numPlanes);
-    visualization_msgs::msg::Marker planeLabel, planeNormal;
-    geometry_msgs::msg::Point       normalStartPoint, normalEndPoint;
 
-    // Aggregate pointcloud XYZRGB for all planes
+    planeLabelArray.markers.reserve(numPlanes * 2);
+
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr aggregatedCloud(
         new pcl::PointCloud<pcl::PointXYZRGB>);
 
-    // Loop through all the planes
+    int markerId = 0;
+
     for (const auto &plane : planes)
     {
-        // Variables
-        std::vector<uint8_t> color    = plane->getColor();
-        Eigen::Vector3f      centroid = plane->getCentroid();
-        Eigen::Vector3d      normal   = plane->getGlobalEquation().normal();
-        const std::string    planeLabelText =
-            "Plane#" + std::to_string(plane->getId());
-
-        // If the plane is undefined, skip it
-        if (plane->getPlaneType() == ORB_SLAM3::Plane::planeVariant::UNDEFINED)
+        if (plane == nullptr)
+        {
             continue;
+        }
 
-        // Get the point clouds for the plane
+        if (plane->getPlaneType() == ORB_SLAM3::Plane::planeVariant::UNDEFINED)
+        {
+            continue;
+        }
+
         const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeClouds =
             plane->getMapClouds();
-        if (planeClouds == nullptr || planeClouds->empty())
-            continue;
 
+        if (planeClouds == nullptr || planeClouds->empty())
+        {
+            continue;
+        }
+
+        std::vector<uint8_t> color = plane->getColor();
+
+        if (color.size() < 3)
+        {
+            color = {255, 255, 255};
+        }
+
+        const Eigen::Vector3f centroid = plane->getCentroid();
+        const Eigen::Vector3d normal   = plane->getGlobalEquation().normal();
+
+        /* Aggregate plane point cloud */
         for (const auto &point : planeClouds->points)
         {
             pcl::PointXYZRGB newPoint;
@@ -983,15 +902,6 @@ void publishPlanes(std::vector<ORB_SLAM3::Plane *> planes, rclcpp::Time msgTime)
             newPoint.g = point.g;
             newPoint.b = point.b;
 
-            // [TEMP] Override color according to type of plane
-            // if (colorPointcloud)
-            // {
-            //     newPoint.r = color[0];
-            //     newPoint.g = color[1];
-            //     newPoint.b = color[2];
-            // }
-
-            // If the plane is a door, visualize it in a distinct color (purple)
             if (plane->getPlaneType() == ORB_SLAM3::Plane::planeVariant::DOOR)
             {
                 newPoint.r = 204;
@@ -999,163 +909,199 @@ void publishPlanes(std::vector<ORB_SLAM3::Plane *> planes, rclcpp::Time msgTime)
                 newPoint.b = 102;
             }
 
-            // Add the point to the aggregated cloud
             aggregatedCloud->push_back(newPoint);
         }
 
-        // Print the plane ID on the center of the plane
-        planeLabel.color.a         = 1.0;
-        planeLabel.scale.z         = 0.2;
-        planeLabel.ns              = "planeLabel";
-        planeLabel.id              = plane->getId();
-        planeLabel.text            = planeLabelText;
-        planeLabel.header.stamp    = msgTime;
-        planeLabel.action          = planeLabel.ADD;
+        /* Plane label marker */
+        visualization_msgs::msg::Marker planeLabel;
+
         planeLabel.header.frame_id = frameBC;
-        planeLabel.color.r         = color[0] / 255.0;
-        planeLabel.color.g         = color[1] / 255.0;
-        planeLabel.color.b         = color[2] / 255.0;
+        planeLabel.header.stamp    = msgTime;
+
+        planeLabel.ns     = "plane_label";
+        planeLabel.id     = markerId++;
+        planeLabel.type   = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+        planeLabel.action = visualization_msgs::msg::Marker::ADD;
+
+        planeLabel.text = "Plane#" + std::to_string(plane->getId());
+
         planeLabel.pose.position.x = centroid.x();
-        planeLabel.pose.position.z = centroid.z();
         planeLabel.pose.position.y = centroid.y() - 1.5;
-        planeLabel.lifetime        = rclcpp::Duration::from_seconds(0);
-        planeLabel.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+        planeLabel.pose.position.z = centroid.z();
 
-        // Create a marker for the plane normal (as an arrow)
-        planeNormal.color.a         = 1.0;
-        planeNormal.scale.x         = 0.01; // Shaft diameter
-        planeNormal.scale.y         = 0.05; // Arrowhead diameter
-        planeNormal.scale.z         = 0.05; // Arrowhead length
-        planeNormal.ns              = "planeNormal";
-        planeNormal.header.stamp    = msgTime;
+        planeLabel.pose.orientation.x = 0.0;
+        planeLabel.pose.orientation.y = 0.0;
+        planeLabel.pose.orientation.z = 0.0;
+        planeLabel.pose.orientation.w = 1.0;
+
+        planeLabel.scale.z = 0.2;
+
+        planeLabel.color.a = 1.0;
+        planeLabel.color.r = static_cast<float>(color[0]) / 255.0f;
+        planeLabel.color.g = static_cast<float>(color[1]) / 255.0f;
+        planeLabel.color.b = static_cast<float>(color[2]) / 255.0f;
+
+        planeLabel.lifetime = rclcpp::Duration::from_seconds(0);
+
+        planeLabelArray.markers.push_back(planeLabel);
+
+        /* Plane normal marker */
+        visualization_msgs::msg::Marker planeNormal;
+
         planeNormal.header.frame_id = frameBC;
-        planeNormal.color.r         = color[0] / 255.0;
-        planeNormal.color.g         = color[1] / 255.0;
-        planeNormal.color.b         = color[2] / 255.0;
-        planeNormal.id              = plane->getId() + numPlanes;
-        planeNormal.lifetime        = rclcpp::Duration::from_seconds(0);
-        planeNormal.type            = visualization_msgs::msg::Marker::ARROW;
+        planeNormal.header.stamp    = msgTime;
 
-        // Clear previous points from planeNormal
-        planeNormal.points.clear();
+        planeNormal.ns     = "plane_normal";
+        planeNormal.id     = markerId++;
+        planeNormal.type   = visualization_msgs::msg::Marker::ARROW;
+        planeNormal.action = visualization_msgs::msg::Marker::ADD;
 
-        // Set the arrow's start and end points
+        planeNormal.scale.x = 0.01; // Shaft diameter
+        planeNormal.scale.y = 0.05; // Arrowhead diameter
+        planeNormal.scale.z = 0.05; // Arrowhead length
+
+        planeNormal.color.a = 1.0;
+        planeNormal.color.r = static_cast<float>(color[0]) / 255.0f;
+        planeNormal.color.g = static_cast<float>(color[1]) / 255.0f;
+        planeNormal.color.b = static_cast<float>(color[2]) / 255.0f;
+
+        geometry_msgs::msg::Point normalStartPoint;
         normalStartPoint.x = centroid.x();
         normalStartPoint.y = centroid.y();
         normalStartPoint.z = centroid.z();
-        normalEndPoint.x   = normalStartPoint.x + normal.x() * 0.2;
-        normalEndPoint.y   = normalStartPoint.y + normal.y() * 0.2;
-        normalEndPoint.z   = normalStartPoint.z + normal.z() * 0.2;
+
+        geometry_msgs::msg::Point normalEndPoint;
+        normalEndPoint.x = normalStartPoint.x + normal.x() * 0.2;
+        normalEndPoint.y = normalStartPoint.y + normal.y() * 0.2;
+        normalEndPoint.z = normalStartPoint.z + normal.z() * 0.2;
 
         planeNormal.points.push_back(normalStartPoint);
         planeNormal.points.push_back(normalEndPoint);
 
-        // Add the normal marker to the marker array
-        planeLabelArray.markers.push_back(planeLabel);
+        planeNormal.lifetime = rclcpp::Duration::from_seconds(0);
+
         planeLabelArray.markers.push_back(planeNormal);
     }
 
     if (aggregatedCloud->empty())
-        return;
-
-    // Convert the aggregated pointcloud to a pointcloud2 message
-    sensor_msgs::msg::PointCloud2 cloudMsg;
-    pcl::toROSMsg(*aggregatedCloud, cloudMsg);
-
-    // Set message header
-    cloudMsg.header.stamp    = msgTime;
-    cloudMsg.header.frame_id = frameBC;
-
-    // Publish the point cloud
-    pubBuildingComponents->publish(cloudMsg);
-    pubPlaneLabel->publish(planeLabelArray);
-}
-
-void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
-                               std::vector<ORB_SLAM3::Floor *> floors,
-                               rclcpp::Time                    msgTime)
-{
-
-    // Publish rooms, if any
-    int numRooms  = rooms.size();
-    int numFloors = floors.size();
-
-    // If there are no rooms or floors, return
-    if (numRooms <= 0 && numFloors <= 0)
     {
         return;
     }
 
-    // Variables
-    double textOffset        = -0.5;
-    double floorToRoomOffset = -2.0;
+    sensor_msgs::msg::PointCloud2 cloudMsg;
+    pcl::toROSMsg(*aggregatedCloud, cloudMsg);
 
-    // Visualization markers
-    visualization_msgs::msg::MarkerArray roomArray, floorArray;
-    roomArray.markers.resize(numRooms);
-    floorArray.markers.resize(numFloors);
+    cloudMsg.header.stamp    = msgTime;
+    cloudMsg.header.frame_id = frameBC;
 
-    // Publish rooms, if any
+    pubBuildingComponents->publish(cloudMsg);
+    pubPlaneLabel->publish(planeLabelArray);
+}
+
+void publishStructuralElements(
+    const std::vector<ORB_SLAM3::Room *>    rooms_in,
+    const std::vector<ORB_SLAM3::Floor *>   floors_in,
+    const std::vector<ORB_SLAM3::Passage *> passages_in,
+    const rclcpp::Time                      msgTime_in)
+{
+    /* Extract the number of rooms and number of floors */
+    const int numRooms    = static_cast<int>(rooms_in.size());
+    const int numFloors   = static_cast<int>(floors_in.size());
+    const int numPassages = static_cast<int>(passages_in.size());
+
+    /* If there are no rooms, floors, or passages then publish nothing */
+    if (numRooms <= 0 && numFloors <= 0 && numPassages <= 0)
+    {
+        return;
+    }
+
+    /* Variables */
+    const double textOffset        = -0.5;
+    const double floorToRoomOffset = -2.0;
+
+    /* Visulization markers */
+    visualization_msgs::msg::MarkerArray roomArray;
+    visualization_msgs::msg::MarkerArray floorArray;
+    visualization_msgs::msg::MarkerArray passageArray;
+    roomArray.markers.reserve(numRooms);
+    floorArray.markers.reserve(numFloors);
+    passageArray.markers.reserve(static_cast<std::size_t>(numPassages) * 3);
+
+    /* ---------------------------------------------------------------------- *
+     * PUBLISH ROOMS
+     * ---------------------------------------------------------------------- */
     for (int idx = 0; idx < numRooms; idx++)
     {
-        // If the room is bad, delete room and move to next room in list
-        if (rooms[idx]->isBad())
+        if (rooms_in[idx]->isBad())
         {
-            // Variables
-            visualization_msgs::msg::Marker delRoom, delRoomLabel,
-                delRoomWallLine;
-            // Delete previous marker for this room
+            /* Variables */
+            visualization_msgs::msg::Marker delRoom;
+            visualization_msgs::msg::Marker delRoomLabel;
+            visualization_msgs::msg::Marker delRoomWallLine;
+
+            /* Delete previous marker for this room */
             delRoom.id              = idx;
             delRoom.ns              = "room";
-            delRoom.header.stamp    = msgTime;
+            delRoom.header.stamp    = msgTime_in;
             delRoom.header.frame_id = frameSE;
             delRoom.action          = visualization_msgs::msg::Marker::DELETE;
-            // Delete previous marker for this room label
+
+            /* Delete previous marker for this room label */
             delRoomLabel.id              = idx;
             delRoomLabel.ns              = "roomLabel";
-            delRoomLabel.header.stamp    = msgTime;
+            delRoomLabel.header.stamp    = msgTime_in;
             delRoomLabel.header.frame_id = frameSE;
             delRoomLabel.action = visualization_msgs::msg::Marker::DELETE;
-            // Delete previous room-wall lines
+
+            /* Delete previous room-wall lines */
             delRoomWallLine.id              = idx;
             delRoomWallLine.ns              = "roomWallLine";
-            delRoomWallLine.header.stamp    = msgTime;
+            delRoomWallLine.header.stamp    = msgTime_in;
             delRoomWallLine.header.frame_id = frameWorld;
             delRoomWallLine.action = visualization_msgs::msg::Marker::DELETE;
-            // Push the delete markers and skip them
+
+            /* Push the delete markers and skip them */
             roomArray.markers.push_back(delRoom);
             roomArray.markers.push_back(delRoomLabel);
             roomArray.markers.push_back(delRoomWallLine);
+
+            /* Move onto next room */
             continue;
         }
 
-        // Get name of room
-        std::string roomName = rooms[idx]->getName();
+        /* Variables for specific room */
+        const std::string                roomName = rooms_in[idx]->getName();
+        geometry_msgs::msg::PointStamped roomPoint;
+        geometry_msgs::msg::PointStamped roomPointTr;
 
-        // Declare variables to fill with current room iteration
-        geometry_msgs::msg::PointStamped roomPoint, roomPointTr;
+        /* Set defulat colour */
+        std::vector<double> colour = {0.5, 0.5, 0.5};
 
-        // Create colour based on room type:
-        //          undefined: gray
-        //          corridor: dark pink,
-        //          room: purple)
-        //
-        // Initialize colour to undefined.
-        std::vector<double> color = {0.5, 0.5, 0.5};
-        if (rooms[idx]->getRoomVariant() ==
+        /*!
+         * Create color based on room type
+         *      undefined:  gray
+         *      corridor:   dark pink
+         *      room:       purple
+         */
+        if (rooms_in[idx]->getRoomVariant() ==
             ORB_SLAM3::Room::roomVariant::CORRIDOR)
-            color = {0.6, 0.0, 0.3};
-        if (rooms[idx]->getRoomVariant() == ORB_SLAM3::Room::roomVariant::ROOM)
-            color = {0.5, 0.1, 1.0};
+        {
+            colour = {0.6, 0.0, 0.3};
+        }
+        else if (rooms_in[idx]->getRoomVariant() ==
+                 ORB_SLAM3::Room::roomVariant::ROOM)
+        {
+            colour = {0.5, 0.1, 1.0};
+        }
 
-        // Find centroid of room
-        Eigen::Vector3d centroid = rooms[idx]->getCentroid();
+        Eigen::Vector3d                 centroid = rooms_in[idx]->getCentroid();
+        visualization_msgs::msg::Marker room;
+        visualization_msgs::msg::Marker roomLabel;
+        visualization_msgs::msg::Marker roomWallLine;
+        visualization_msgs::msg::Marker roomDoorwayLine;
+        visualization_msgs::msg::Marker roomMarkerLine;
 
-        // Declare variables for markers of room
-        visualization_msgs::msg::Marker room, roomWallLine, roomDoorLine,
-            roomMarkerLine, roomLabel;
-
-        // Room values
+        /* Room values */
         room.id                          = idx;
         room.ns                          = "room";
         room.scale.x                     = 0.3;
@@ -1163,10 +1109,10 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
         room.scale.z                     = 0.3;
         room.color.a                     = 1.0;
         room.action                      = room.ADD;
-        room.color.r                     = color[0];
-        room.color.g                     = color[1];
-        room.color.b                     = color[2];
-        room.header.stamp                = msgTime;
+        room.color.r                     = colour[0];
+        room.color.g                     = colour[1];
+        room.color.b                     = colour[2];
+        room.header.stamp                = msgTime_in;
         room.pose.orientation.x          = 0.0;
         room.pose.orientation.y          = 0.0;
         room.pose.orientation.z          = 0.0;
@@ -1180,7 +1126,7 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
         room.type = visualization_msgs::msg::Marker::CUBE;
         roomArray.markers.push_back(room);
 
-        // Room label (name)
+        /* Room label (name) */
         roomLabel.id              = idx;
         roomLabel.color.a         = 1;
         roomLabel.color.r         = 0;
@@ -1190,7 +1136,7 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
         roomLabel.text            = roomName;
         roomLabel.ns              = "roomLabel";
         roomLabel.action          = roomLabel.ADD;
-        roomLabel.header.stamp    = msgTime;
+        roomLabel.header.stamp    = msgTime_in;
         roomLabel.header.frame_id = frameSE;
         roomLabel.pose.position.x = centroid.x();
         roomLabel.pose.position.z = centroid.z();
@@ -1199,7 +1145,7 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
         roomLabel.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
         roomArray.markers.push_back(roomLabel);
 
-        // Room to Wall connection line
+        /* Room to Wall connection line */
         roomWallLine.id              = idx;
         roomWallLine.color.a         = 0.9;
         roomWallLine.color.r         = 0.0;
@@ -1209,14 +1155,14 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
         roomWallLine.scale.y         = 0.05;
         roomWallLine.scale.z         = 0.05;
         roomWallLine.ns              = "roomWallLine";
-        roomWallLine.header.stamp    = msgTime;
+        roomWallLine.header.stamp    = msgTime_in;
         roomWallLine.action          = roomWallLine.ADD;
         roomWallLine.header.frame_id = frameWorld;
         roomWallLine.lifetime        = rclcpp::Duration::from_seconds(0);
         roomWallLine.type = visualization_msgs::msg::Marker::LINE_LIST;
 
-        // Fill in the room center point
-        roomPoint.header.stamp    = msgTime;
+        /* Fill in the room center point */
+        roomPoint.header.stamp    = msgTime_in;
         roomPoint.point.x         = centroid.x();
         roomPoint.point.y         = centroid.y();
         roomPoint.point.z         = centroid.z();
@@ -1224,11 +1170,11 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
 
         try
         {
-            // Transform the room center point to the world frame
+            /* Transform the room center point to the world frame */
             auto tfStamped =
                 tfBuffer_->lookupTransform(frameWorld,
                                            frameSE,
-                                           msgTime,
+                                           msgTime_in,
                                            rclcpp::Duration::from_seconds(0.1));
             tf2::doTransform(roomPoint, roomPointTr, tfStamped);
         }
@@ -1240,14 +1186,48 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
             roomPointTr = roomPoint;
         }
 
-        // Room to Wall connection line
-        for (const auto wall : rooms[idx]->getWalls())
+        /* Room to passage connection line */
+        for (ORB_SLAM3::Passage *passage : rooms[idx]->getPassages())
         {
-            // Skip if the wall is bad
-            if (wall->isBad())
+            /* Skip if passage is bad */
+            if (passage == nullptr)
+            {
                 continue;
+            }
 
-            // Variables
+            /* Extract centroid of passage */
+            const Eigen::Vector3f passageCentroid = passage->getCentroid();
+
+            /* Confirm that the centroid is valid and if not skip */
+            if (!passageCentroid.allFinite())
+            {
+                continue;
+            }
+
+            geometry_msgs::msg::Point roomEnd;
+            roomEnd.x = roomPointTr.point.x;
+            roomEnd.y = roomPointTr.point.y;
+            roomEnd.z = roomPointTr.point.z;
+
+            geometry_msgs::msg::Point passageEnd;
+            passageEnd.x = passageCentroid.x();
+            passageEnd.y = passageCentroid.y();
+            passageEnd.z = passageCentroid.z();
+
+            roomDoorwayLine.points.push_back(roomEnd);
+            roomDoorwayLine.points.push_back(passageEnd);
+        }
+
+        /* Room to Wall connection line */
+        for (const auto wall : rooms_in[idx]->getWalls())
+        {
+            /* Skip if the wall is bad */
+            if (wall->isBad())
+            {
+                continue;
+            }
+
+            /* Variables */
             geometry_msgs::msg::Point        pointRoom, pointWall;
             geometry_msgs::msg::PointStamped wallPoint, wallPointTr;
 
@@ -1256,7 +1236,7 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
             pointRoom.z = roomPointTr.point.z;
             roomWallLine.points.push_back(pointRoom);
 
-            wallPoint.header.stamp    = msgTime;
+            wallPoint.header.stamp    = msgTime_in;
             wallPoint.header.frame_id = frameBC;
             wallPoint.point.x         = wall->getCentroid().x();
             wallPoint.point.y         = wall->getCentroid().y();
@@ -1264,12 +1244,14 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
 
             try
             {
-                // Transform the room center point to the world frame
+                /* Extract the transform from room centre to world frame */
                 auto tfStamped = tfBuffer_->lookupTransform(
                     frameWorld,
                     frameBC,
-                    msgTime,
+                    msgTime_in,
                     rclcpp::Duration::from_seconds(0.1));
+
+                /* Transform the room center point to the world frame */
                 tf2::doTransform(wallPoint, wallPointTr, tfStamped);
             }
             catch (tf2::TransformException &ex)
@@ -1286,40 +1268,54 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
             roomWallLine.points.push_back(pointWall);
         }
 
-        // Add items to the roomArray
+        /* Add items to the roomArray */
         roomArray.markers.push_back(roomWallLine);
+
+        /* Add doorway items to the roomArray */
+        if (!roomDoorwayLine.points.empty())
+        {
+            roomArray.markers.push_back(roomDoorwayLine);
+        }
     }
 
     pubStructuralElements->publish(roomArray);
 
-    // Publish floors, if any
-    // Variables
-    std::vector<double> color = {0.3, 0.6, 0.7};
+    /* ---------------------------------------------------------------------- *
+     * PUBLISH FLOORS
+     * ---------------------------------------------------------------------- */
 
-    // Loop through all the floors
+    /* Set deault colour */
+    std::vector<double> colour = {0.3, 0.6, 0.7};
+
+    /* Loop through all the floors */
     for (int floorId = 0; floorId < numFloors; floorId++)
     {
-        // If the floor has no rooms, skip it
-        if (floors[floorId]->getRooms().size() == 0)
+        /* If the floor has no rooms, skip it */
+        if (floors_in[floorId]->getRooms().size() == 0)
+        {
             continue;
+        }
 
-        // Variables
-        std::string                      floorName = floors[floorId]->getName();
-        geometry_msgs::msg::PointStamped floorPoint, floorPointTr;
-        Eigen::Vector3d floorCentroid = floors[floorId]->getCentroid();
-        visualization_msgs::msg::Marker floorMarker, floorLabel, floorRoomLine;
+        /* Variables */
+        std::string floorName = floors_in[floorId]->getName();
+        geometry_msgs::msg::PointStamped floorPoint;
+        geometry_msgs::msg::PointStamped floorPointTr;
+        Eigen::Vector3d floorCentroid = floors_in[floorId]->getCentroid();
+        visualization_msgs::msg::Marker floorMarker;
+        visualization_msgs::msg::Marker floorLabel;
+        visualization_msgs::msg::Marker floorRoomLine;
 
-        // Floor marker (cube)
+        /* Floor marker (cube) */
         floorMarker.id                 = floorId;
         floorMarker.ns                 = "floors";
         floorMarker.scale.x            = 0.4;
         floorMarker.scale.y            = 0.4;
         floorMarker.scale.z            = 0.4;
         floorMarker.color.a            = 1.0;
-        floorMarker.color.r            = color[0];
-        floorMarker.color.g            = color[1];
-        floorMarker.color.b            = color[2];
-        floorMarker.header.stamp       = msgTime;
+        floorMarker.color.r            = colour[0];
+        floorMarker.color.g            = colour[1];
+        floorMarker.color.b            = colour[2];
+        floorMarker.header.stamp       = msgTime_in;
         floorMarker.action             = floorMarker.ADD;
         floorMarker.pose.orientation.x = 0.0;
         floorMarker.pose.orientation.y = 0.0;
@@ -1332,7 +1328,7 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
         floorMarker.lifetime           = rclcpp::Duration::from_seconds(0);
         floorMarker.type               = visualization_msgs::msg::Marker::CUBE;
 
-        // Floor label (name)
+        /* Floor label (name) */
         floorLabel.color.a         = 1;
         floorLabel.color.r         = 0;
         floorLabel.color.g         = 0;
@@ -1341,7 +1337,7 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
         floorLabel.id              = floorId;
         floorLabel.text            = floorName;
         floorLabel.ns              = "floorLabels";
-        floorLabel.header.stamp    = msgTime;
+        floorLabel.header.stamp    = msgTime_in;
         floorLabel.action          = floorLabel.ADD;
         floorLabel.header.frame_id = frameSE;
         floorLabel.pose.position.x = floorCentroid.x();
@@ -1350,7 +1346,7 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
         floorLabel.lifetime        = rclcpp::Duration::from_seconds(0);
         floorLabel.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
 
-        // Apply offset to the floor centroid for better visualization
+        /* Apply offset to the floor centroid for better visualization */
         if (sensorType == ORB_SLAM3::System::IMU_RGBD)
         {
             floorMarker.pose.position.z += floorToRoomOffset;
@@ -1362,7 +1358,7 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
             floorLabel.pose.position.y += (floorToRoomOffset + textOffset);
         }
 
-        // Floor to Room connection line
+        /* Floor to Room connection line */
         floorRoomLine.id              = floorId;
         floorRoomLine.color.a         = 0.9;
         floorRoomLine.color.r         = 0.0;
@@ -1372,14 +1368,14 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
         floorRoomLine.scale.y         = 0.05;
         floorRoomLine.scale.z         = 0.05;
         floorRoomLine.ns              = "floorRoomEdges";
-        floorRoomLine.header.stamp    = msgTime;
+        floorRoomLine.header.stamp    = msgTime_in;
         floorRoomLine.action          = floorRoomLine.ADD;
         floorRoomLine.header.frame_id = frameWorld;
         floorRoomLine.lifetime        = rclcpp::Duration::from_seconds(0);
         floorRoomLine.type = visualization_msgs::msg::Marker::LINE_LIST;
 
-        // Create point for the floor centroid in the world frame
-        floorPoint.header.stamp    = msgTime;
+        /* Create point for the floor centroid in the world frame */
+        floorPoint.header.stamp    = msgTime_in;
         floorPoint.header.frame_id = frameSE;
         floorPoint.point.x         = floorMarker.pose.position.x;
         floorPoint.point.y         = floorMarker.pose.position.y;
@@ -1387,12 +1383,14 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
 
         try
         {
-            // Transform the room center point to the world frame
+            /* Extract the transform from room centre to world frame */
             auto tfStamped =
                 tfBuffer_->lookupTransform(frameWorld,
                                            frameSE,
-                                           msgTime,
+                                           msgTime_in,
                                            rclcpp::Duration::from_seconds(0.1));
+
+            /* Transform the room center point to the world frame */
             tf2::doTransform(floorPoint, floorPointTr, tfStamped);
         }
         catch (tf2::TransformException &ex)
@@ -1403,8 +1401,8 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
             floorPointTr = floorPoint;
         }
 
-        // Connect the floor to its rooms
-        for (const auto room : floors[floorId]->getRooms())
+        /* Connect the floor to its rooms */
+        for (const auto room : floors_in[floorId]->getRooms())
         {
             geometry_msgs::msg::Point        pFloor, pRoom;
             geometry_msgs::msg::PointStamped roomPoint, roomPointTr;
@@ -1414,7 +1412,7 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
             pFloor.z = floorPointTr.point.z;
             floorRoomLine.points.push_back(pFloor);
 
-            roomPoint.header.stamp    = msgTime;
+            roomPoint.header.stamp    = msgTime_in;
             roomPoint.header.frame_id = frameSE;
             roomPoint.point.x         = room->getCentroid().x();
             roomPoint.point.y         = room->getCentroid().y();
@@ -1422,12 +1420,14 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
 
             try
             {
-                // Transform the room center point to the world frame
+                /* Extract the transform from room centre to world frame */
                 auto tfStamped = tfBuffer_->lookupTransform(
                     frameWorld,
                     frameSE,
-                    msgTime,
+                    msgTime_in,
                     rclcpp::Duration::from_seconds(0.1));
+
+                /* Transform the room center point to the world frame */
                 tf2::doTransform(roomPoint, roomPointTr, tfStamped);
             }
             catch (tf2::TransformException &ex)
@@ -1445,13 +1445,173 @@ void publishStructuralElements(std::vector<ORB_SLAM3::Room *>  rooms,
             floorRoomLine.points.push_back(pRoom);
         }
 
-        // Add the floor marker
+        /* Add the floor marker */
         floorArray.markers.push_back(floorLabel);
         floorArray.markers.push_back(floorMarker);
         floorArray.markers.push_back(floorRoomLine);
     }
 
     pubStructuralElements->publish(floorArray);
+
+    /* ---------------------------------------------------------------------- *
+     * PUBLISH PASSAGES
+     * ---------------------------------------------------------------------- */
+
+    /* Loop through all the passages */
+    for (ORB_SLAM3::Passage *passage : passages_in)
+    {
+        /* If the passage is invalid, skip */
+        if (passage == nullptr)
+        {
+            continue;
+        }
+
+        /* Extract the passage id */
+        const int passageId = passage->getId();
+
+        /* Extract the centroid of the passage */
+        const Eigen::Vector3f centroid = passage->getCentroid();
+
+        /* Confirm the centroid is valid */
+        if (!centroid.allFinite())
+        {
+            continue;
+        }
+
+        /* Check if the pasasge is passable */
+        const bool isOpen = passage->isPassable();
+
+        /* Create a marker msg variable for the passage */
+        visualization_msgs::msg::Marker passageMarker;
+
+        /* Fill the msg */
+        passageMarker.header.frame_id = frameWorld;
+        passageMarker.header.stamp    = msgTime_in;
+
+        passageMarker.ns     = "passage";
+        passageMarker.id     = passageId;
+        passageMarker.type   = visualization_msgs::msg::Marker::CUBE;
+        passageMarker.action = visualization_msgs::msg::Marker::ADD;
+
+        passageMarker.pose.position.x = centroid.x();
+        passageMarker.pose.position.y = centroid.y();
+        passageMarker.pose.position.z = centroid.z();
+
+        passageMarker.pose.orientation.x = 0.0;
+        passageMarker.pose.orientation.y = 0.0;
+        passageMarker.pose.orientation.z = 0.0;
+        passageMarker.pose.orientation.w = 1.0;
+
+        passageMarker.scale.x = 0.05;
+        passageMarker.scale.y = 0.05;
+        passageMarker.scale.z = 0.05;
+
+        /* Set the colour of the marker based on if the passage is open */
+        if (isOpen)
+        {
+            /* Set open passage to colour orange */
+            passageMarker.color.r = 1.0;
+            passageMarker.color.g = 0.5;
+            passageMarker.color.b = 0.0;
+        }
+        else
+        {
+            /* Set open passage to colour red */
+            passageMarker.color.r = 1.0;
+            passageMarker.color.g = 0.0;
+            passageMarker.color.b = 0.0;
+        }
+
+        /* Set transparecy to full */
+        passageMarker.color.a = 1.0;
+
+        /* Set the lifetime of the market */
+        passageMarker.lifetime = rclcpp::Duration::from_seconds(0);
+
+        /* Add marker to array */
+        passageArray.markers.push_back(passageMarker);
+
+        /* Init label to indicate the passage is passable */
+        visualization_msgs::msg::Marker passageLabel;
+
+        /* Fill label */
+        passageLabel.header.frame_id = frameWorld;
+        passageLabel.header.stamp    = msgTime_in;
+
+        passageLabel.ns     = "passageLabel";
+        passageLabel.id     = passageId;
+        passageLabel.type   = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+        passageLabel.action = visualization_msgs::msg::Marker::ADD;
+
+        passageLabel.text = "Passage#" + std::to_string(passageId) +
+                            (isOpen ? " [open]" : " [blocked]");
+
+        passageLabel.pose.position.x = centroid.x();
+        passageLabel.pose.position.y = centroid.y() - 0.30;
+        passageLabel.pose.position.z = centroid.z();
+
+        passageLabel.pose.orientation.x = 0.0;
+        passageLabel.pose.orientation.y = 0.0;
+        passageLabel.pose.orientation.z = 0.0;
+        passageLabel.pose.orientation.w = 1.0;
+
+        passageLabel.scale.z = 0.20;
+
+        passageLabel.color.a = 1.0;
+        passageLabel.color.r = 0.0;
+        passageLabel.color.g = 0.0;
+        passageLabel.color.b = 0.0;
+
+        passageLabel.lifetime = rclcpp::Duration::from_seconds(0);
+
+        passageArray.markers.push_back(passageLabel);
+
+        /* Passage normal */
+        Eigen::Vector3d normal = passage->getGlobalEquation().normal();
+
+        if (normal.allFinite() && normal.norm() > 1e-8)
+        {
+            normal.normalize();
+
+            visualization_msgs::msg::Marker normalMarker;
+
+            normalMarker.header.frame_id = frameWorld;
+            normalMarker.header.stamp    = msgTime_in;
+
+            normalMarker.ns     = "passageNormal";
+            normalMarker.id     = passageId;
+            normalMarker.type   = visualization_msgs::msg::Marker::ARROW;
+            normalMarker.action = visualization_msgs::msg::Marker::ADD;
+
+            normalMarker.scale.x = 0.025;
+            normalMarker.scale.y = 0.06;
+            normalMarker.scale.z = 0.08;
+
+            normalMarker.color.a = 1.0;
+            normalMarker.color.r = 1.0;
+            normalMarker.color.g = 0.5;
+            normalMarker.color.b = 0.0;
+
+            geometry_msgs::msg::Point start;
+            start.x = centroid.x();
+            start.y = centroid.y();
+            start.z = centroid.z();
+
+            geometry_msgs::msg::Point end;
+            end.x = centroid.x() + 0.5 * normal.x();
+            end.y = centroid.y() + 0.5 * normal.y();
+            end.z = centroid.z() + 0.5 * normal.z();
+
+            normalMarker.points.push_back(start);
+            normalMarker.points.push_back(end);
+
+            normalMarker.lifetime = rclcpp::Duration::from_seconds(0);
+
+            passageArray.markers.push_back(normalMarker);
+        }
+    }
+
+    pubStructuralElements->publish(passageArray);
 }
 
 sensor_msgs::msg::PointCloud2
@@ -1538,47 +1698,6 @@ tf2::Transform SE3fToTFTransform(Sophus::SE3f data)
     return tf2::Transform(rotationTF, translationTF);
 }
 
-// void addMarkersToBuffer(const aruco_msgs::MarkerArray &markerArray)
-// {
-//     // The list of markers observed in the current frame
-//     std::vector<ORB_SLAM3::Marker *> currentMarkers;
-
-//     // Process the received marker array
-//     for (const auto &marker : markerArray.markers)
-//     {
-//         // Access information of each passed ArUco marker
-//         int markerId = marker.id;
-//         double visitTime = marker.header.stamprclcpp::Time::seconds();
-//         geometry_msgs::Pose markerPose = marker.pose.pose;
-//         geometry_msgs::msg::Point markerPosition = markerPose.position; //
-//         (x,y,z) geometry_msgs::Quaternion markerOrientation =
-//         markerPose.orientation; // (x,y,z,w)
-
-//         Eigen::Vector3f markerTranslation(markerPosition.x, markerPosition.y,
-//         markerPosition.z); Eigen::Quaternionf
-//         markerQuaternion(markerOrientation.w, markerOrientation.x,
-//                                             markerOrientation.y,
-//                                             markerOrientation.z);
-//         Sophus::SE3f normalizedPose(markerQuaternion, markerTranslation);
-
-//         // Create a marker object of the currently visited marker
-//         ORB_SLAM3::Marker *currentMarker = new ORB_SLAM3::Marker();
-//         currentMarker->setOpId(-1);
-//         currentMarker->setId(markerId);
-//         currentMarker->setTime(visitTime);
-//         currentMarker->setMarkerInGMap(false);
-//         currentMarker->setLocalPose(normalizedPose);
-//         currentMarker->setMarkerType(ORB_SLAM3::Marker::markerVariant::UNKNOWN);
-
-//         // Add it to the list of observed markers
-//         currentMarkers.push_back(currentMarker);
-//     }
-
-//     // Add the new markers to the list of markers in buffer
-//     if (currentMarkers.size() > 0)
-//         markersBuffer.push_back(currentMarkers);
-// }
-
 std::pair<double, std::vector<ORB_SLAM3::Marker *>>
     findNearestMarker(double frameTimestamp)
 {
@@ -1602,26 +1721,28 @@ std::pair<double, std::vector<ORB_SLAM3::Marker *>>
 void setVoxbloxSkeletonCluster(
     const visualization_msgs::msg::MarkerArray &skeletonArray)
 {
-    // Reset the buffer
+    /* Reset the buffer */
     skeletonClusterPoints.clear();
 
     for (const auto &skeleton : skeletonArray.markers)
     {
-        // Take the points of the current cluster
+        /* Take the points of the current cluster */
         std::vector<Eigen::Vector3d> clusterPoints;
 
-        // Pick only the messages starting with name "connected_vertices_[x]"
+        /* Pick only the messages starting with name "connected_vertices_[x]" */
         if (skeleton.ns.compare(0,
                                 strlen("connected_vertices"),
                                 "connected_vertices") == 0)
         {
-            // Skip small clusters
+            /* Skip small clusters */
             if (skeleton.points.size() > ORB_SLAM3::SystemParams::GetParams()
                                              ->room_seg.min_cluster_vertices)
-                // Add the points of the cluster to the buffer
+            {
+
+                /* Add the points of the cluster to the buffer */
                 for (const auto &point : skeleton.points)
                 {
-                    // transform from map frame to world frame
+                    /* transform from map frame to world frame */
                     geometry_msgs::msg::PointStamped pointIn, pointOut;
                     pointIn.header.frame_id = frameMap;
                     pointIn.header.stamp    = rclcpp::Time(0);
@@ -1637,22 +1758,26 @@ void setVoxbloxSkeletonCluster(
                     }
                     catch (tf2::TransformException &ex)
                     {
-                        RCLCPP_WARN(
-                            rclcpp::get_logger("visual_sgraphs"),
-                            "Could not transform skeleton cluster point: %s",
-                            ex.what());
+                        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                                    "Could not transform skeleton cluster "
+                                    "point: %s",
+                                    ex.what());
                         pointOut = pointIn; // Fallback: use original point
                     }
-                    // Add the point to the cluster
+
+                    /* Add the point to the cluster */
                     Eigen::Vector3d newPoint(pointOut.point.x,
                                              pointOut.point.y,
                                              pointOut.point.z);
                     clusterPoints.push_back(newPoint);
                 }
+            }
 
-            // Add the current cluster to the skeleton cluster points buffer
+            /* Add the current cluster to the skeleton cluster points buffer */
             if (clusterPoints.size() > 0)
+            {
                 skeletonClusterPoints.push_back(clusterPoints);
+            }
         }
     }
 

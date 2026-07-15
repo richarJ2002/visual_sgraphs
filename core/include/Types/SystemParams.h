@@ -2,195 +2,198 @@
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
- * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger Voos
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
  *
- * vS-Graphs is free software: you can redistribute it and/or modify it under the terms
- * of the GNU General Public License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
  *
- * This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details: https://www.gnu.org/licenses/
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
  */
 
-#include <yaml-cpp/yaml.h>
 #include <iostream>
+#include <yaml-cpp/yaml.h>
 
 #ifndef SYSTEMPARAMS_H
 #define SYSTEMPARAMS_H
 
 namespace ORB_SLAM3
 {
-    class SystemParams
+class SystemParams
+{
+  public:
+    static SystemParams *GetParams();
+    void                 SetParams(const std::string &strConfigFile);
+
+    // Common struct definitions
+    struct Constraint
     {
-    public:
-        static SystemParams *GetParams();
-        void SetParams(const std::string &strConfigFile);
+        bool  enabled          = false;
+        float information_gain = 0.1f;
+    };
+    struct Downsample
+    {
+        float        leaf_size            = 0.03f;
+        unsigned int min_points_per_voxel = 5;
+    };
+    struct OutlierRemoval
+    {
+        float        std_threshold  = 1.0;
+        unsigned int mean_threshold = 50;
+    };
 
-        // Common struct definitions
-        struct Constraint
+    // Structs for different modules
+    struct general
+    {
+        // enum for mode of operation
+        enum ModeOfOperation
         {
-            bool enabled = false;
-            float information_gain = 0.1f;
+            SEM_GEO = 0,
+            SEM     = 1,
+            GEO     = 2
         };
-        struct Downsample
-        {
-            float leaf_size = 0.03f;
-            unsigned int min_points_per_voxel = 5;
-        };
-        struct OutlierRemoval
-        {
-            float std_threshold = 1.0;
-            unsigned int mean_threshold = 50;
-        };
+        ModeOfOperation mode_of_operation = SEM_GEO;
+        std::string     env_database      = "";
+    } general;
 
-        // Structs for different modules
-        struct general
+    struct markers
+    {
+        float impact = 0.1f;
+    } markers;
+
+    struct pointcloud
+    {
+        std::pair<float, float> distance_thresh = std::make_pair(0.2f, 10.0f);
+    } pointcloud;
+
+    struct optimization
+    {
+        bool       marginalize_planes = false;
+        Constraint plane_map_point;
+        Constraint plane_kf;
+        Constraint plane_point;
+    } optimization;
+
+    struct refine_map_points
+    {
+        bool  enabled                 = false;
+        float max_distance_for_delete = 0.5f;
+        struct octree
         {
-            // enum for mode of operation
-            enum ModeOfOperation
+            float        resolution    = 0.1f;
+            float        search_radius = 0.5f;
+            unsigned int min_neighbors = 2;
+        } octree;
+    } refine_map_points;
+
+    struct plane_based_covisibility
+    {
+        bool         enabled         = true;
+        unsigned int max_keyframes   = 75;
+        unsigned int score_per_plane = 60;
+    } plane_based_covisibility;
+
+    struct seg
+    {
+        unsigned int pointclouds_thresh      = 200;
+        float        plane_point_dist_thresh = 0.2f;
+
+        struct plane_association
+        {
+            float ominus_thresh   = 0.1f;
+            float distance_thresh = 0.2f;
+            float centroid_thresh = 3.2f;
+
+            struct cluster_separation
             {
-                SEM_GEO = 0,
-                SEM = 1,
-                GEO = 2
-            };
-            ModeOfOperation mode_of_operation = SEM_GEO;
-            std::string env_database = "";
-        } general;
+                bool       enabled   = false;
+                float      tolerance = 2.5f;
+                Downsample downsample;
+            } cluster_separation;
 
-        struct markers
+        } plane_association;
+
+        struct ransac
         {
-            float impact = 0.1f;
-        } markers;
+            unsigned int max_planes      = 2;
+            float        distance_thresh = 0.04f;
+            unsigned int max_iterations  = 600;
+        } ransac;
+    } seg;
+
+    struct geo_seg
+    {
+        struct pointcloud
+        {
+            Downsample     downsample;
+            OutlierRemoval outlier_removal;
+        } pointcloud;
+    } geo_seg;
+
+    struct sem_seg
+    {
+        float min_votes          = 3.5;
+        float prob_thresh        = 0.5f;
+        float conf_thresh        = 0.5f;
+        float max_tilt_wall      = 0.3f;
+        float max_tilt_ground    = 0.2f;
+        float max_step_elevation = 0.2f;
+
+        int   passage_kf_window                = 7;
+        float max_door_width                   = 1.5f;
+        float max_door_height                  = 2.0f;
+        float max_wall_door_distance           = 0.5f;
+        float max_kf_passage_distance          = 1.0f;
+        bool  enable_passage_detection         = true;
+        float passage_centroid_distance_thresh = 1.0f;
 
         struct pointcloud
         {
-            std::pair<float, float> distance_thresh = std::make_pair(0.2f, 2.5f);
+            Downsample     downsample;
+            OutlierRemoval outlier_removal;
         } pointcloud;
 
-        struct optimization
+        struct reassociate
         {
-            bool marginalize_planes = false;
-            Constraint plane_map_point;
-            Constraint plane_kf;
-            Constraint plane_point;
-        } optimization;
+            bool  enabled            = false;
+            float association_thresh = 0.2f;
+        } reassociate;
+    } sem_seg;
 
-        struct refine_map_points
+    struct room_seg
+    {
+        enum Method
         {
-            bool enabled = false;
-            float max_distance_for_delete = 0.5f;
-            struct octree
-            {
-                float resolution = 0.1f;
-                float search_radius = 0.5f;
-                unsigned int min_neighbors = 2;
-            } octree;
-        } refine_map_points;
+            GEOMETRIC  = 0,
+            FREE_SPACE = 1,
+            GNN        = 2
+        };
+        Method method = FREE_SPACE;
 
-        struct plane_based_covisibility
-        {
-            bool enabled = true;
-            unsigned int max_keyframes = 75;
-            unsigned int score_per_plane = 60;
-        } plane_based_covisibility;
+        float center_distance_thresh        = 1.5f;
+        float plane_facing_dot_thresh       = -0.8f;
+        float min_wall_distance_thresh      = 1.0f;
+        float walls_parallelism_thresh      = 10.0f;
+        float walls_perpendicularity_thresh = 10.0f;
 
-        struct seg
-        {
-            unsigned int pointclouds_thresh = 200;
-            float plane_point_dist_thresh = 0.2f;
+        unsigned int min_cluster_vertices                           = 5;
+        float        marker_wall_distance_thresh                    = 3.0f;
+        float        cluster_point_wall_distance_thresh             = 0.5f;
+        float        cluster_centroid_wall_centroid_distance_thresh = 5.0f;
 
-            struct plane_association
-            {
-                float ominus_thresh = 0.1f;
-                float distance_thresh = 0.2f;
-                float centroid_thresh = 3.2f;
+        int gnn_version = 1;
+    } room_seg;
 
-                struct cluster_separation
-                {
-                    bool enabled = false;
-                    float tolerance = 2.5f;
-                    Downsample downsample;
-                } cluster_separation;
-
-            } plane_association;
-
-            struct ransac
-            {
-                unsigned int max_planes = 2;
-                float distance_thresh = 0.04f;
-                unsigned int max_iterations = 600;
-            } ransac;
-        } seg;
-
-        struct geo_seg
-        {
-            struct pointcloud
-            {
-                Downsample downsample;
-                OutlierRemoval outlier_removal;
-            } pointcloud;
-        } geo_seg;
-
-        struct sem_seg
-        {
-            float min_votes = 3.5;
-            float prob_thresh = 0.5f;
-            float conf_thresh = 0.5f;
-            float max_tilt_wall = 0.3f;
-            float max_tilt_ground = 0.2f;
-            float max_step_elevation = 0.2f;
-
-            int passage_kf_window = 7;
-            float max_door_width = 1.5f;
-            float max_door_height = 2.0f;
-            float max_wall_door_distance = 0.5f;
-            float max_kf_passage_distance = 1.0f;
-            bool enable_passage_detection = true;
-            float passage_centroid_distance_thresh = 1.0f;
-
-            struct pointcloud
-            {
-                Downsample downsample;
-                OutlierRemoval outlier_removal;
-            } pointcloud;
-
-            struct reassociate
-            {
-                bool enabled = false;
-                float association_thresh = 0.2f;
-            } reassociate;
-        } sem_seg;
-
-        struct room_seg
-        {
-            enum Method
-            {
-                GEOMETRIC = 0,
-                FREE_SPACE = 1,
-                GNN = 2
-            };
-            Method method = FREE_SPACE;
-
-            float center_distance_thresh = 1.5f;
-            float plane_facing_dot_thresh = -0.8f;
-            float min_wall_distance_thresh = 1.0f;
-            float walls_parallelism_thresh = 10.0f;
-            float walls_perpendicularity_thresh = 10.0f;
-
-            unsigned int min_cluster_vertices = 5;
-            float marker_wall_distance_thresh = 3.0f;
-            float cluster_point_wall_distance_thresh = 0.5f;
-            float cluster_centroid_wall_centroid_distance_thresh = 5.0f;
-
-            int gnn_version = 1;
-        } room_seg;
-
-    private:
-        SystemParams();
-        static SystemParams *mSystemParams;
-        YAML::Node mConfig;
-    };
-}
+  private:
+    SystemParams();
+    static SystemParams *mSystemParams;
+    YAML::Node           mConfig;
+};
+} // namespace ORB_SLAM3
 
 #endif

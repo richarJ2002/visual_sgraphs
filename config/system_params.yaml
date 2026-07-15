@@ -56,9 +56,9 @@ seg:
 
   # Plane association
   plane_association:
-    ominus_thresh: 0.20
-    distance_thresh: 0.15 # meters
-    centroid_thresh: 2.0 # meters
+    ominus_thresh: 0.2 # Max allowed combined orientation-and-distance difference
+    distance_thresh: 0.15 # meters (Checks if planes are too far apart along normal direction)
+    centroid_thresh: 2.0 # meters (Checks if planes centroids are too far apart - will enable check for clustring)
     cluster_separation:
       enabled: true
       tolerance: 2.0 # euclidean distance for cutting planes
@@ -103,10 +103,14 @@ sem_seg:
       mean_threshold: 50
       std_threshold: 1.0
 
-  # The threshold for semantic segmentation probability validation (rejects probability below this)
+  # The threshold for semantic segmentation probability validation. This tracks
+  # the probability that pixel belongs to a semantic class and
+  # rejects probability below this.
   prob_thresh: 0.5
 
-  # The threshold for semantic segmentation confidence validation (rejects confidence below this)
+  # The threshold for semantic segmentation confidence validation. This tracks
+  # the confidence that the segmentation was correct and rejects confidence
+  # below this.
   conf_thresh: 0.1
 
   # The maximum height above the main ground to be a valid stepped ground plane (in meters)
@@ -117,7 +121,7 @@ sem_seg:
   max_tilt_ground: 0.2
 
   # ------------------ Door/Passage Parameters ------------------
-  enable_passage_detection: false
+  enable_passage_detection: true
   # Maximum wall to door distance for a door to be associated with a wall (in meters)
   max_wall_door_distance: 0.5
   # Maximum door width for a door to be valid (in meters)
@@ -125,14 +129,14 @@ sem_seg:
   # Maximum door height for a door to be valid (in meters)
   max_door_height: 2.0
   # Maximum Keyframe to passage distance for checking passing through a passage (in meters)
-  max_kf_passage_distance: 0.5
+  max_kf_passage_distance: 1.0
   # The size of the KeyFrame window to check for passing through a passage (in number of KeyFrames)
   passage_kf_window: 10
   # Passage centroid distance threshold for associating passages (in meters)
   passage_centroid_distance_thresh: 1.0
 
   # The amount of votes (votes are weighted votes) for a plane to be finally classified with a semantic label
-  min_votes: 1.8
+  min_votes: 0.2
 
   # Whether to reassociate planes with the semantic labels - after optimization, some planes may get close
   reassociate:
@@ -173,9 +177,9 @@ room_seg:
     # The minimum number of points needed to form a cluster
     min_cluster_vertices: 5
     # The maximum distance from a point of a cluster to a wall to be considered part of the room
-    cluster_point_wall_distance_thresh: 1.5
+    cluster_point_wall_distance_thresh: 1.2
     # The maximum distance from the cluster centroid to a wall centroid to be considered part of the room
-    cluster_centroid_wall_centroid_distance_thresh: 5.0
+    cluster_centroid_wall_centroid_distance_thresh: 4.0
 
   # Parameters for GNN-based room segmentation
   gnn_based:

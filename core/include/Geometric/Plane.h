@@ -60,7 +60,12 @@ class Plane
         /**
          * @brief       TODO
          */
-        WINDOW = 2
+        DOOR = 2,
+
+        /**
+         * @brief       TODO
+         */
+        WINDOW = 3
     };
 
     /**

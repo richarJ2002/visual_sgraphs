@@ -161,8 +161,8 @@ class Transpose<Matrix<Scalar, M, N>> {
 /// being matrices or a scalars.
 ///
 template <class T>
-auto maxMetric(T const& p0, T const& p1)
-    -> decltype(details::MaxMetric<T>::impl(p0, p1)) {
+auto maxMetric(T const& p0,
+               T const& p1) -> decltype(details::MaxMetric<T>::impl(p0, p1)) {
   return details::MaxMetric<T>::impl(p0, p1);
 }
 
@@ -197,12 +197,12 @@ auto transpose(T const& p) -> decltype(details::Transpose<T>::impl(T())) {
 }
 
 template <class Scalar>
-struct IsFloatingPoint {
+struct Isfloat {
   static bool const value = std::is_floating_point<Scalar>::value;
 };
 
 template <class Scalar, int M, int N>
-struct IsFloatingPoint<Matrix<Scalar, M, N>> {
+struct Isfloat<Matrix<Scalar, M, N>> {
   static bool const value = std::is_floating_point<Scalar>::value;
 };
 

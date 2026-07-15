@@ -79,20 +79,36 @@ void SemanticSegmentation::Run()
             continue;
         }
 
-        // separate point clouds while applying threshold
-        pcl::PCLPointCloud2::Ptr pclPc2SegPrb       = std::get<2>(segImgTuple);
-        cv::Mat                  segImgUncertainity = std::get<1>(segImgTuple);
+        /* Extract the segmentation probabilities from the image */
+        pcl::PCLPointCloud2::Ptr pclPc2SegPrb = std::get<2>(segImgTuple);
+
+        /* Extract the segmentation uncertainties from the image */
+        cv::Mat segImgUncertainity = std::get<1>(segImgTuple);
         std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> clsCloudPtrs;
+
+        /*!
+         * Seperate points into classes and filtering based on thresholds.
+         *
+         * clsCloudPtrs contains the points from the segmented point cloud
+         * seperated into a list of point clouds with the index of the list
+         * representing the semantic type of each point.
+         */
         threshSeparatePointCloud(pclPc2SegPrb,
                                  segImgUncertainity,
                                  clsCloudPtrs,
                                  thisKFPointCloud);
 
-        // clear pointclouds as they are no longer needed and consumes
-        // significant memory also clear pointclouds from the keyframes that
-        // might have been skipped always keep last few keyframes as there can
-        // be minor misordering in keyframe processing
+        /*!
+         * clear pointclouds as they are no longer needed and consume
+         * significant memory. also
+         */
         thisKF->clearPointCloud();
+
+        /*!
+         * Clear pointclouds from the keyframes that might have been skipped
+         * always keep last few keyframes as there can be minor misordering in
+         * keyframe processing.
+         */
         int buffer = 5;
         if (thisKF->mnId - mLastProcessedKeyFrameId > buffer)
         {
@@ -111,16 +127,19 @@ void SemanticSegmentation::Run()
             mLastProcessedKeyFrameId = thisKF->mnId - buffer;
         }
 
-        // get all planes for each class specific point cloud using RANSAC
+        /*!
+         * Extract planes from segmented point cloud. (Does not define the type
+         * the plane is)
+         */
         std::vector<
             std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
                                   Eigen::Vector4d>>>
             clsPlanes = getPlanesFromClassClouds(clsCloudPtrs);
 
-        // set the class specific point clouds to the keyframe
+        /* Set the class specific point clouds to the keyframe */
         thisKF->setCurrentClsCloudPtrs(clsCloudPtrs);
 
-        // Add the planes to Atlas
+        /* Add the planes to Atlas */
         updatePlaneData(thisKF, clsPlanes);
     }
 }
@@ -144,18 +163,28 @@ void SemanticSegmentation::threshSeparatePointCloud(
     std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &clsCloudPtrs,
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr         &thisKFPointCloud)
 {
-    // parse the PointCloud2 message
-    const int   width      = pclPc2SegPrb->width;
-    const int   numPoints  = width * pclPc2SegPrb->height;
-    const int   pointStep  = pclPc2SegPrb->point_step;
-    const int   numClasses = pointStep / bytesPerClassProb;
-    const float distanceThreshNear =
+    /* Extract parameters on thresholds */
+    const uint8_t confidenceThresh = sysParams->sem_seg.conf_thresh * 255;
+    const float   probThresh       = sysParams->sem_seg.prob_thresh;
+    const float   distanceThreshNear =
         sysParams->pointcloud.distance_thresh.first;
     const float distanceThreshFar =
         sysParams->pointcloud.distance_thresh.second;
-    const uint8_t confidenceThresh = sysParams->sem_seg.conf_thresh * 255;
-    const float   probThresh       = sysParams->sem_seg.prob_thresh;
 
+    /* Parse the PointCloud2 message */
+    const int width      = pclPc2SegPrb->width;
+    const int numPoints  = width * pclPc2SegPrb->height;
+    const int pointStep  = pclPc2SegPrb->point_step;
+    const int numClasses = pointStep / bytesPerClassProb;
+
+    /* Clear the seperated point cloud vector `clsCloudPtrs` */
+    clsCloudPtrs.clear();
+    clsCloudPtrs.reserve(numClasses);
+
+    /*!
+     * For each semantic class, add an instance to the output clsCloudPtrs list.
+     * This way the pointclouds can be put into there respective class.
+     */
     for (int i = 0; i < numClasses; i++)
     {
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr pointCloud(
@@ -165,45 +194,78 @@ void SemanticSegmentation::threshSeparatePointCloud(
         clsCloudPtrs.push_back(pointCloud);
     }
 
-    // apply thresholding and track confidence (complement of uncertainty)
+    /* Extract the data from the inputted segmented point cloud */
     const uint8_t *data = pclPc2SegPrb->data.data();
+
+    /*!
+     * Iterate through the number of classes.
+     *  j -> class index
+     *  i -> flattened pixel index
+     */
     for (int j = 0; j < numClasses; j++)
     {
+        /* Iterate through the number of points */
         for (int i = 0; i < numPoints; i++)
         {
-            float value;
-            memcpy(&value,
-                   data + pointStep * i + bytesPerClassProb * j +
-                       pclPc2SegPrb->fields[0].offset,
-                   bytesPerClassProb);
+            /*!
+             * Initilize variable containing probability point i belongs to
+             * class j
+             */
+            float probability;
 
-            if (value >= probThresh)
+            /* Extract probabliilty that point i belongs to class j */
+            std::memcpy(&probability,
+                        data + pointStep * i + bytesPerClassProb * j +
+                            pclPc2SegPrb->fields[0].offset,
+                        bytesPerClassProb);
+
+            /*!
+             * Apply thresholding and track confidence (complement of
+             * uncertainty). This is to check that the probability of the
+             * semantic.
+             */
+            if (probability >= probThresh)
             {
-                // inject coordinates as a point to respective point cloud
+                // /* Inject coordinates as a point to respective point cloud */
+                /* Initialize point to be filtered into class point cloud */
                 pcl::PointXYZRGBA point;
+
+                /* Find the pixel index of the point in the image */
                 point.y = static_cast<int>(i / width);
                 point.x = i % width;
 
-                // get the original point from the keyframe point cloud
+                /* Extract the original point from the keyframe point cloud */
                 const pcl::PointXYZRGB origPoint =
                     thisKFPointCloud->at(point.x, point.y);
-                if (!pcl::isFinite(origPoint))
-                    continue;
 
-                // convert uncertainity to single value and assign confidence to
-                // alpha channel
+                /* If the original point has invalid data, skip data point */
+                if (!pcl::isFinite(origPoint))
+                {
+                    continue;
+                }
+
+                /* Extract the rgb uncertainty from the image */
                 cv::Vec3b vec =
                     segImgUncertainity.at<cv::Vec3b>(point.y, point.x);
+
+                /*!
+                 * Convert the rgb uncertainty of the pixel to a single value
+                 * and store in the alpha channel.
+                 */
                 point.a =
                     255 - static_cast<int>(0.299 * vec[2] + 0.587 * vec[1] +
                                            0.114 * vec[0]);
 
-                // exclude points with low confidence
+                /*!
+                 * Exclude the points with low confidence that segmentation was
+                 * correct.
+                 */
                 if (point.a < confidenceThresh)
+                {
                     continue;
+                }
 
-                // assign the XYZ and RGB values to the surviving point before
-                // pushing to specific point cloud
+                /* Assign the XYZ and RGB values to the surviving point */
                 point.x = origPoint.x;
                 point.y = origPoint.y;
                 point.z = origPoint.z;
@@ -211,30 +273,35 @@ void SemanticSegmentation::threshSeparatePointCloud(
                 point.g = origPoint.g;
                 point.b = origPoint.b;
 
-                // confidence as the squared inverse depth - interpolated
-                // between near and far thresholds confidence = 255 for near, 45
-                // for far, and interpolated according to squared distance
-                const float thresholdNear =
-                    sysParams->pointcloud.distance_thresh.first;
-                const float thresholdFar =
-                    sysParams->pointcloud.distance_thresh.second;
-                if (point.z < thresholdNear)
+                /*!
+                 * Confidence as the squared inverse depth - interpolated
+                 * between near and far thresholds confidence = 255 for near, 45
+                 * for far, and interpolated according to squared distance
+                 */
+                if (point.z < distanceThreshNear)
+                {
                     point.a = 255;
-                else if (point.z > thresholdFar)
+                }
+                else if (point.z > distanceThreshFar)
+                {
                     point.a = 45;
+                }
                 else
+                {
                     point.a =
                         255 - static_cast<int>(
-                                  210 * sqrt((point.z - thresholdNear) /
-                                             (thresholdFar - thresholdNear)));
+                                  210 * sqrt((point.z - distanceThreshNear) /
+                                             (distanceThreshFar -
+                                              distanceThreshNear)));
+                }
 
-                // add the point to the respective class specific point cloud
+                /* Add the point to the respective class specific point cloud */
                 clsCloudPtrs[j]->push_back(point);
             }
         }
     }
 
-    // specify size/width and header for each class specific point cloud
+    /* Specify size/width and header for each class specific point cloud */
     for (int i = 0; i < numClasses; i++)
     {
         clsCloudPtrs[i]->width  = clsCloudPtrs[i]->size();
@@ -257,24 +324,45 @@ std::vector<std::vector<
         // [TODO?] - Perhaps consider points in order of confidence instead of
         // downsampling Downsample the given pointcloud after filtering based on
         // distance
+
+        /* Init variable for the filtered point cloud */
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr filteredCloud;
+
+        /*!
+         * Filter points based on depth from sensor.
+         *
+         * @note:       Parameter for min and max distance are defined as
+         *              default values in:
+         *              `visual_sgraphs/core/include/Types/SystemParams.h`
+         */
         filteredCloud =
             Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(clsCloudPtrs[i]);
+
+        /* Downsample points into grid based on points within voxel grid */
         filteredCloud = Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
             filteredCloud,
             sysParams->sem_seg.pointcloud.downsample.leaf_size,
             sysParams->sem_seg.pointcloud.downsample.min_points_per_voxel);
+
+        /* Remove points that are statically isolated from neighbors */
         filteredCloud = Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(
             filteredCloud,
             sysParams->sem_seg.pointcloud.outlier_removal.std_threshold,
             sysParams->sem_seg.pointcloud.outlier_removal.mean_threshold);
 
-        // copy the filtered cloud for later storage into the keyframe
+        /* copy the filtered cloud for later storage into the keyframe */
         pcl::copyPointCloud(*filteredCloud, *clsCloudPtrs[i]);
 
+        /* Initialize object to contain extracted point clouds */
         std::vector<
             std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>
             extractedPlanes;
+
+        /*!
+         * Extract planes from filtered point cloud if the number of points is
+         * greater than a threshold. This parameter is set in
+         * `system_params.yaml`
+         */
         if (filteredCloud->points.size() > sysParams->seg.pointclouds_thresh)
         {
             extractedPlanes =
@@ -292,49 +380,79 @@ void SemanticSegmentation::updatePlaneData(
     std::vector<std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
                                       Eigen::Vector4d>>> &clsPlanes)
 {
+    /* Iterate through each semantic class of planes */
     for (size_t clsId = 0; clsId < clsPlanes.size(); clsId++)
     {
+        /* Iterate through each plane in the semantic group */
         for (const auto &planePoint : clsPlanes[clsId])
         {
-            // Get the plane equation
+            /* Get the plane equation of the plane */
             Eigen::Vector4d estimatedPlane = planePoint.second;
-            g2o::Plane3D    detectedPlane(estimatedPlane);
 
-            // Convert the given plane to global coordinates
+            /* Initiate a 3D plane object from the detected plane */
+            g2o::Plane3D detectedPlane(estimatedPlane);
+
+            /* Convert the given plane to global coordinates */
             g2o::Plane3D globalEquation = Utils::applyPoseToPlane(
                 pKF->GetPoseInverse().matrix().cast<double>(),
                 detectedPlane);
 
-            // Compute the average confidence across all pixels in the plane
-            // observation
+            /* Extract the point cloud assoicated with the plane */
             pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud =
                 planePoint.first;
+
+            /* Initialize the confidence vector */
             std::vector<double> confidences;
+
+            /* Extract the confidences from each point in the point cloud */
             for (size_t i = 0; i < planeCloud->size(); i++)
+            {
                 confidences.push_back(
                     static_cast<int>(planeCloud->points[i].a) / 255.0);
-            // [Note] - use softmin when dealing with semantic confidences
-            // double conf = Utils::calcSoftMin(confidences);
-            // [Note] - use average when dealing with geometric (in this case
-            // depth) confidences
-            double conf =
-                std::accumulate(confidences.begin(), confidences.end(), 0.0) /
-                confidences.size();
+            }
 
-            // temp global plane cloud
+            /* Initialize the confidence variable */
+            double conf = 0.0;
+
+            /*!
+             * Find the average confidence across all the points.
+             *
+             * @note:       There are two different ways to find the confidences
+             *              with a summary below:
+             *
+             *                  use softmin when dealing with semantic
+             *                  confidences double conf =
+             *                  Utils::calcSoftMin(confidences);
+             *
+             *                  use average when dealing with geometric (in this
+             *                  case depth) confidences
+             */
+            if (!confidences.empty())
+            {
+                conf = std::accumulate(confidences.begin(),
+                                       confidences.end(),
+                                       0.0) /
+                       confidences.size();
+            }
+
+            /* Initialize a temporary global point cloud which is empty */
             pcl::PointCloud<pcl::PointXYZRGBA>::Ptr globalPlaneCloud(
                 new pcl::PointCloud<pcl::PointXYZRGBA>);
+
+            /* Copy the plane cloud to the global point cloud */
             pcl::copyPointCloud(*planeCloud, *globalPlaneCloud);
+
+            /* Transform globalPlaneCloud with the transform of the keyframe */
             pcl::transformPointCloud(
                 *globalPlaneCloud,
                 *globalPlaneCloud,
                 pKF->GetPoseInverse().matrix().cast<float>());
 
-            // Get the semantic type of the observation
+            /* Get the semantic type of the observation */
             ORB_SLAM3::Plane::planeVariant semanticType =
                 Utils::getPlaneTypeFromClassId(clsId);
 
-            // Check if we need to add the wall to the map or not
+            /* Check if we need to add the plane to the map or not */
             int matchedPlaneId = Utils::associatePlanes(
                 mpAtlas->GetAllPlanes(),
                 detectedPlane,
@@ -343,10 +461,19 @@ void SemanticSegmentation::updatePlaneData(
                 semanticType,
                 sysParams->seg.plane_association.ominus_thresh);
 
+            /* If no mapped plane is associated with current plane*/
             if (matchedPlaneId == -1)
             {
+                /*!
+                 * If semantic segmentation is running independently, create
+                 * a new plane to add to the map.
+                 *
+                 * This parameter is controlled by general.mode_of_operation in
+                 * system_params.yaml.
+                 */
                 if (!mGeoRuns)
                 {
+                    /* Create new plant to add to map */
                     ORB_SLAM3::Plane *newMapPlane =
                         GeoSemHelpers::createMapPlane(mpAtlas,
                                                       pKF,
@@ -354,7 +481,8 @@ void SemanticSegmentation::updatePlaneData(
                                                       planeCloud,
                                                       semanticType,
                                                       conf);
-                    // Cast a vote for the plane semantics
+
+                    /* Update the semantic of the plane */
                     updatePlaneSemantics(newMapPlane->getId(), clsId, conf);
                 }
             }
