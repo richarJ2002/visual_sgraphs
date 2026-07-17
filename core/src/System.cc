@@ -339,8 +339,16 @@ std::vector<std::vector<Eigen::Vector3d>> System::getSkeletonCluster()
 void System::setSkeletonCluster(
     const std::vector<std::vector<Eigen::Vector3d>> &skeletonClusterPoints)
 {
-    // Adding the skeleton cluster to the SemanticsManager
+    /* Adding the skeleton cluster to the SemanticsManager */
     mpAtlas->SetSkeletonClusterPoints(skeletonClusterPoints);
+}
+
+void System::setSkeletonEdges(
+    const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+        &skeletonEdges)
+{
+    /* Store the connected skeleton edges in the Atlas */
+    mpAtlas->SetSkeletonEdges(skeletonEdges);
 }
 
 void System::setGNNRoomCandidates(

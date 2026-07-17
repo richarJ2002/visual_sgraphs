@@ -170,7 +170,19 @@ void Room::setDoorways(ORB_SLAM3::Passage *value)
         return;
     }
 
-    doorways.push_back(value);
+    const bool alreadyPresent =
+        std::any_of(doorways.begin(),
+                    doorways.end(),
+                    [value](ORB_SLAM3::Passage *existingPassage)
+                    {
+                        return existingPassage != nullptr &&
+                               existingPassage->getId() == value->getId();
+                    });
+
+    if (!alreadyPresent)
+    {
+        doorways.push_back(value);
+    }
 }
 
 Eigen::Vector3d Room::getCentroid() const

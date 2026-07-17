@@ -380,34 +380,51 @@ class System
 
     float GetImageScale();
 
-    /**
-     * @brief Parse the JSON file containing the environment data
-     * @param jsonFilePath the path to the JSON file
+    /*!
+     * @brief       Parse the JSON file containing the environment data
+     *
+     * @param       jsonFilePath
+     *              The path to the JSON file
      */
     void parseJsonDatabase(string jsonFilePath);
 
-    /**
-     * @brief Add the segmented image to the buffer in the SemanticSegmentation
-     * @param tuple the address of the tuple of segmented image and pointcloud
+    /*!
+     * @brief       Add the segmented image to the buffer in the
+     *              SemanticSegmentation
+     *
+     * @param       tuple
+     *              The address of the tuple of segmented image and pointcloud
      */
     void addSegmentedImage(
         std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *tuple);
 
-    /**
-     * @brief Get the skeleton cluster coming from the current map
+    /*!
+     * @brief       Get the skeleton cluster coming from the current map
      */
     std::vector<std::vector<Eigen::Vector3d>> getSkeletonCluster();
 
-    /**
-     * @brief Update the skeleton cluster coming from `voxblox_skeleton` in the
-     * map
-     * @param skeletonClusterPoints the skeleton cluster points
+    /*!
+     * @brief       Update the skeleton cluster coming from `voxblox_skeleton`
+     *              in the map.
+     *
+     * @param[in]   skeletonClusterPoints
+     *              the skeleton cluster points
      */
     void setSkeletonCluster(
         const std::vector<std::vector<Eigen::Vector3d>> &skeletonClusterPoints);
 
-    /**
-     * @brief Update the GNN room candidates list
+    /*!
+     * @brief       Stores the latest connected Voxblox skeleton edges.
+     *
+     * @param[in]   skeletonEdges
+     *              Start and end points of each connected skeleton edge.
+     */
+    void setSkeletonEdges(
+        const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+            &skeletonEdges);
+
+    /*!
+     * @brief       Update the GNN room candidates list
      */
     void setGNNRoomCandidates(
         const std::vector<ORB_SLAM3::Room *> &gnnRoomCandidates);

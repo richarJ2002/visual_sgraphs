@@ -18,6 +18,13 @@
 
 #include "Utils.h"
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
+#include <pcl/common/point_tests.h>
+#include <pcl/kdtree/kdtree_flann.h>
+
 namespace ORB_SLAM3
 {
 double Utils::calculateEuclideanDistance(const Eigen::Vector3f &p1,
@@ -496,198 +503,327 @@ int Utils::associatePlanes(const vector<Plane *>                  &mappedPlanes,
                            const Plane::planeVariant               obsPlaneType,
                            const float                             threshold)
 {
-    int planeId = -1;
-
-    /* Initialize difference value */
-    double minDiff = 100.0;
-
-    /* Initalize a list of planes to check for clustering */
-    std::vector<std::pair<Plane *, double>> checksForCluster;
-
-    /* Check if mappedPlanes is empty */
+    /* Return no association when no mapped planes are available */
     if (mappedPlanes.empty())
     {
-        return planeId;
+        return -1;
     }
 
-    /* Check that point cloud is not empty */
-    if (!givenCloud || givenCloud->empty())
+    /* Confirm the observed plane point cloud is valid */
+    if (givenCloud == nullptr || givenCloud->empty())
     {
-        return planeId;
+        return -1;
     }
 
-    /* Initilize variable to store the centroid of the plane */
-    Eigen::Vector3d givenCentroid;
-
-    /* Clear the centroid value */
-    givenCentroid.setZero();
-
-    /* Get the centroid of the given plane */
-    for (const auto &point : *givenCloud)
-    {
-        Eigen::Vector3d pointVec(point.x, point.y, point.z);
-        givenCentroid += pointVec;
-    }
-    givenCentroid /= givenCloud->size();
-
-    /* Extract system params */
+    /* Extract the system parameters */
     SystemParams *sysParams = SystemParams::GetParams();
 
-    /* Loop over all planes */
-    for (const auto &mPlane : mappedPlanes)
+    /* Extract and normalize the observed plane equation */
+    Eigen::Vector4d givenEquation   = givenPlane.coeffs();
+    const double    givenNormalNorm = givenEquation.head<3>().norm();
+
+    /* COnfirm norm is valid */
+    if (!std::isfinite(givenNormalNorm) || givenNormalNorm < 1e-8)
     {
-        /* Skip the plane if it's excluded from association */
-        if (mPlane->isBad() || mPlane->getMapClouds()->empty())
-        {
-            continue;
-        }
-
-        /* If plane from map does not match semantic skip */
-        if ((obsPlaneType != Plane::planeVariant::UNDEFINED) &&
-            (mPlane->getExpectedPlaneType() != obsPlaneType))
-        {
-            continue;
-        }
-
-        /* Convert mapped plane to local frame of the inputed given plane */
-        g2o::Plane3D mappedPlane =
-            Utils::applyPoseToPlane(kfPose, mPlane->getGlobalEquation());
-
-        /*!
-         * Calculate difference vector based on plane equations given plane is
-         * assumed to be in the frame represented by kfPose. This gives a 3x1
-         * vector which is defined as such:
-         *
-         *      diffVector = [
-         *              angular/orientation difference component
-         *              angular/orientation difference component
-         *              distance difference
-         *      ]
-         */
-        Eigen::Vector3d diffVector = givenPlane.ominus(mappedPlane);
-
-        /* Is the plan within the distance threshold. If not, then skip */
-        if (std::abs(diffVector(2)) >
-            sysParams->seg.plane_association.distance_thresh)
-        {
-            continue;
-        }
-
-        /* Create a single number determining the difference vector */
-        double planeDiff = diffVector.norm();
-
-        /* Check ominus threshold */
-        if (planeDiff > threshold)
-        {
-            continue;
-        }
-
-        /* Extract the centroid of the mapped plane */
-        Eigen::Vector3d mappedCentroid = mPlane->getCentroid().cast<double>();
-
-        /* Calculate the difference between mapped and given plane centroid */
-        double centroidDiff = (givenCentroid - mappedCentroid).norm();
-
-        /* Check if centroid is far enough to check for clustering later */
-        if (sysParams->seg.plane_association.cluster_separation.enabled &&
-            centroidDiff > sysParams->seg.plane_association.centroid_thresh)
-        {
-            checksForCluster.push_back(std::make_pair(mPlane, planeDiff));
-            continue;
-        }
-
-        /* Comparing the with minimum value to find the best candidate plane */
-        if (planeDiff < minDiff)
-        {
-            minDiff = planeDiff;
-            planeId = mPlane->getId();
-        }
+        return -1;
     }
+
+    /* Find the unit vector */
+    givenEquation /= givenNormalNorm;
+
+    /* Calculate the centroid of the observed global point cloud */
+    Eigen::Vector3d givenCentroid = Eigen::Vector3d::Zero();
+
+    std::size_t validGivenPointCount = 0;
+
+    for (const pcl::PointXYZRGBA &point : givenCloud->points)
+    {
+        if (!pcl::isFinite(point))
+        {
+            continue;
+        }
+
+        givenCentroid += Eigen::Vector3d(static_cast<double>(point.x),
+                                         static_cast<double>(point.y),
+                                         static_cast<double>(point.z));
+
+        validGivenPointCount++;
+    }
+
+    /* Return when the point cloud has no valid points */
+    if (validGivenPointCount == 0)
+    {
+        return -1;
+    }
+
+    givenCentroid /= static_cast<double>(validGivenPointCount);
 
     /*!
-     * Check for clustering only if no plane is found
+     * Association thresholds.
      *
-     * @note:      Reduces unnecessary expensive clustering.
+     * @note        The ominus threshold is used here as the maximum angular
+     *              difference in radians.
      */
-    if (sysParams->seg.plane_association.cluster_separation.enabled &&
-        planeId == -1 && !checksForCluster.empty())
+    const double maximumAngularDifference =
+        std::max(0.01, static_cast<double>(threshold));
+
+    const double maximumPlaneDistance = std::max(
+        0.01,
+        static_cast<double>(sysParams->seg.plane_association.distance_thresh));
+
+    const double maximumCentroidDistance = std::max(
+        0.10,
+        static_cast<double>(sysParams->seg.plane_association.centroid_thresh));
+
+    const double maximumFiniteCloudDistance = std::max(
+        0.05,
+        static_cast<double>(
+            sysParams->seg.plane_association.cluster_separation.tolerance));
+
+    /*!
+     * Minimum fraction of sampled observation points which must be close to
+     * the mapped finite plane cloud when the centroids are far apart.
+     */
+    constexpr double minimumFiniteOverlapRatio = 0.10;
+
+    /*!
+     * Limit the number of nearest-neighbour searches for each candidate.
+     */
+    constexpr std::size_t maximumSampleCount = 300;
+
+    /* Track the best mapped-plane candidate */
+    int bestPlaneId = -1;
+
+    double bestAssociationScore = std::numeric_limits<double>::max();
+
+    /* Iterate through every mapped plane */
+    for (Plane *mappedPlane : mappedPlanes)
     {
-        for (const auto &check : checksForCluster)
+        /* Skip invalid mapped planes */
+        if (mappedPlane == nullptr || mappedPlane->isBad())
         {
-            Plane *mPlane    = check.first;
-            double planeDiff = check.second;
+            continue;
+        }
 
-            /* Initialize a point cloud to aggregate */
-            pcl::PointCloud<pcl::PointXYZRGBA>::Ptr aggregatedCloud(
-                new pcl::PointCloud<pcl::PointXYZRGBA>);
+        /* Extract the mapped plane point cloud */
+        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr mappedCloud =
+            mappedPlane->getMapClouds();
 
-            /* Copy the point cloud to aggregated point cloud */
-            pcl::copyPointCloud(*mPlane->getMapClouds(), *aggregatedCloud);
+        /* Skip mapped planes without finite geometry */
+        if (mappedCloud == nullptr || mappedCloud->empty())
+        {
+            continue;
+        }
 
-            /*!
-             * If the given point cloud is small, the mapped cloud is down
-             * sampled to manage and balance the density of the old and new data
-             */
-            if (givenCloud->size() < 1000)
-            {
-                aggregatedCloud = pointcloudDownsample<pcl::PointXYZRGBA>(
-                    aggregatedCloud,
-                    sysParams->seg.plane_association.cluster_separation
-                        .downsample.leaf_size,
-                    sysParams->seg.plane_association.cluster_separation
-                        .downsample.min_points_per_voxel);
-            }
+        /*
+         * Check semantic compatibility.
+         *
+         * A mapped UNDEFINED plane is allowed to match a semantically labelled
+         * observation so that it can accumulate enough votes for confirmation.
+         */
+        const Plane::planeVariant mappedPlaneType =
+            mappedPlane->getExpectedPlaneType();
 
-            /* Append the points from the new plane to the mapped plane */
-            for (const auto &point : *givenCloud)
-            {
-                pcl::PointXYZRGBA newPoint;
-                pcl::copyPoint(point, newPoint);
-                aggregatedCloud->push_back(newPoint);
-            }
+        const bool semanticTypesCompatible =
+            obsPlaneType == Plane::planeVariant::UNDEFINED ||
+            mappedPlaneType == Plane::planeVariant::UNDEFINED ||
+            mappedPlaneType == obsPlaneType;
 
-            /*!
-             * If the given point cloud is large, downsample the aggregard point
-             * cloud.
-             */
-            if (givenCloud->size() >= 1000)
-            {
-                aggregatedCloud = pointcloudDownsample<pcl::PointXYZRGBA>(
-                    aggregatedCloud,
-                    sysParams->seg.plane_association.cluster_separation
-                        .downsample.leaf_size,
-                    sysParams->seg.plane_association.cluster_separation
-                        .downsample.min_points_per_voxel);
-            }
+        if (!semanticTypesCompatible)
+        {
+            continue;
+        }
 
-            /* If the resulting aggregated point cloud is empty, skip */
-            if (aggregatedCloud->empty())
+        /*!
+         * Transform the mapped equation into the frame used by the supplied
+         * observation.
+         *
+         * @note        SemanticSegmentation now supplies both planes in the
+         *              global frame, therefore kfPose is normally identity.
+         */
+        const g2o::Plane3D mappedPlaneInGivenFrame =
+            Utils::applyPoseToPlane(kfPose, mappedPlane->getGlobalEquation());
+
+        Eigen::Vector4d mappedEquation = mappedPlaneInGivenFrame.coeffs();
+
+        const double mappedNormalNorm = mappedEquation.head<3>().norm();
+
+        if (!std::isfinite(mappedNormalNorm) || mappedNormalNorm < 1e-8)
+        {
+            continue;
+        }
+
+        mappedEquation /= mappedNormalNorm;
+
+        /*!
+         * Ensure both equations use the same normal direction before comparing
+         * their distance coefficients.
+         */
+        if (givenEquation.head<3>().dot(mappedEquation.head<3>()) < 0.0)
+        {
+            mappedEquation *= -1.0;
+        }
+
+        /* Calculate the angular difference between the plane normals */
+        const double normalAlignment =
+            std::clamp(givenEquation.head<3>().dot(mappedEquation.head<3>()),
+                       -1.0,
+                       1.0);
+
+        const double angularDifference = std::acos(normalAlignment);
+
+        /* Reject planes whose normals are not sufficiently aligned */
+        if (angularDifference > maximumAngularDifference)
+        {
+            continue;
+        }
+
+        /* Calculate perpendicular separation between the planes */
+        const double planeDistance =
+            std::abs(givenEquation(3) - mappedEquation(3));
+
+        /* Reject parallel planes which are physically separated */
+        if (planeDistance > maximumPlaneDistance)
+        {
+            continue;
+        }
+
+        /* Extract the global mapped-plane centroid */
+        const Eigen::Vector3d mappedCentroid =
+            mappedPlane->getCentroid().cast<double>();
+
+        /* Calculate the global centroid distance */
+        const double centroidDistance = (givenCentroid - mappedCentroid).norm();
+
+        /*!
+         * Measure finite-cloud compatibility using nearest-neighbour distance.
+         *
+         * This prevents distant coplanar surfaces from being merged while
+         * allowing neighbouring fragments of the same physical wall to join.
+         */
+        pcl::KdTreeFLANN<pcl::PointXYZRGBA> mappedCloudSearch;
+
+        mappedCloudSearch.setInputCloud(mappedCloud);
+
+        const std::size_t samplingStride =
+            std::max<std::size_t>(1, givenCloud->size() / maximumSampleCount);
+
+        std::size_t sampledPointCount     = 0;
+        std::size_t overlappingPointCount = 0;
+
+        double minimumCloudDistance = std::numeric_limits<double>::max();
+
+        std::vector<int> nearestPointIndex(1);
+
+        std::vector<float> nearestSquaredDistance(1);
+
+        for (std::size_t pointIndex = 0; pointIndex < givenCloud->size();
+             pointIndex += samplingStride)
+        {
+            const pcl::PointXYZRGBA &queryPoint =
+                givenCloud->points[pointIndex];
+
+            if (!pcl::isFinite(queryPoint))
             {
                 continue;
             }
 
-            /* Init variable to track the cluster indices */
-            std::vector<pcl::PointIndices> clusterIndices;
+            sampledPointCount++;
 
-            /* Take the joined aggregated point cloud and find point clusters */
-            clusterPlaneClouds(aggregatedCloud, clusterIndices);
+            const int neighbourCount =
+                mappedCloudSearch.nearestKSearch(queryPoint,
+                                                 1,
+                                                 nearestPointIndex,
+                                                 nearestSquaredDistance);
 
-            /* If there is more than 1 cluster than the PC are not the same */
-            if (clusterIndices.size() > 1)
+            if (neighbourCount <= 0)
             {
                 continue;
             }
 
-            /* check the difference */
-            if (planeDiff < minDiff)
+            const double cloudDistance =
+                std::sqrt(static_cast<double>(nearestSquaredDistance.front()));
+
+            minimumCloudDistance =
+                std::min(minimumCloudDistance, cloudDistance);
+
+            if (cloudDistance <= maximumFiniteCloudDistance)
             {
-                minDiff = planeDiff;
-                planeId = mPlane->getId();
+                overlappingPointCount++;
             }
+        }
+
+        const double finiteOverlapRatio =
+            sampledPointCount > 0 ? static_cast<double>(overlappingPointCount) /
+                                        static_cast<double>(sampledPointCount)
+                                  : 0.0;
+
+        /*!
+         * Planes with very close centroids and compatible normals are likely
+         * duplicate estimates of the same physical surface.
+         */
+        constexpr double directCentroidAssociationThreshold = 0.45;
+
+        const bool centroidsAreClose =
+            centroidDistance <= directCentroidAssociationThreshold;
+
+        /*!
+         * Plane fragments with separated centroids may still belong to the same
+         * physical wall when their finite point clouds overlap or are adjacent.
+         */
+        const bool finiteCloudsCompatible =
+            minimumCloudDistance <= maximumFiniteCloudDistance ||
+            finiteOverlapRatio >= minimumFiniteOverlapRatio;
+
+        /*!
+         * Require either a direct centroid match or finite point-cloud
+         * compatibility.
+         *
+         * @note        The angular and perpendicular plane-distance checks have
+         *              already been applied above. Therefore, planes with the
+         * same centroid but significantly different normals are not merged.
+         */
+        if (!centroidsAreClose && !finiteCloudsCompatible)
+        {
+            continue;
+        }
+
+        /* Normalize each component used by the association score */
+        const double normalizedAngularDifference =
+            angularDifference / maximumAngularDifference;
+
+        const double normalizedPlaneDistance =
+            planeDistance / maximumPlaneDistance;
+
+        const double normalizedCentroidDistance =
+            std::min(centroidDistance / maximumCentroidDistance, 2.0);
+
+        const double normalizedCloudDistance =
+            std::isfinite(minimumCloudDistance)
+                ? std::min(minimumCloudDistance / maximumFiniteCloudDistance,
+                           2.0)
+                : 2.0;
+
+        /*!
+         * Calculate a combined score for the mapped-plane candidate.
+         *
+         * Lower scores represent stronger associations.
+         */
+        const double associationScore =
+            3.0 * normalizedAngularDifference + 4.0 * normalizedPlaneDistance +
+            0.25 * normalizedCentroidDistance + 0.50 * normalizedCloudDistance -
+            2.0 * finiteOverlapRatio;
+
+        /* Keep the strongest valid mapped-plane candidate */
+        if (associationScore < bestAssociationScore)
+        {
+            bestAssociationScore = associationScore;
+
+            bestPlaneId = mappedPlane->getId();
         }
     }
 
-    return planeId;
+    return bestPlaneId;
 }
 
 void Utils::clusterPlaneClouds(

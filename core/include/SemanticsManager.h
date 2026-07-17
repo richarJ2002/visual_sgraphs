@@ -36,36 +36,64 @@ class Atlas;
 class SemanticsManager
 {
   private:
-    bool            mGeoRuns;
-    Atlas          *mpAtlas;
-    std::mutex      mMutexNewRooms;
-    Eigen::Matrix4f mPlanePoseMat; // The transformation matrix from ground
-                                   // plane to horizontal
-    const uint8_t   runInterval =
-        3; // The main Run() function runs every runInterval seconds
+    /* ---------------------------------------------------------------------- *
+     * PRIVATE MEMBERS
+     * ---------------------------------------------------------------------- */
 
-    // System parameters
+    /*!
+     * @brief       This member contains the address of semantic map.
+     */
+    Atlas *mpAtlas;
+
+    /*!
+     * @brief       TODO
+     */
+    std::mutex mMutexNewRooms;
+
+    /*!
+     * @brief       The transformation matrix from ground plane to horizontal.
+     */
+    Eigen::Matrix4f mPlanePoseMat;
+
+    /*!
+     * @brief       The main Run() function runs every runInterval seconds.
+     */
+    const uint8_t runInterval = 3;
+
+    /*!
+     * @brief       Member which contains the system parameters.
+     */
     SystemParams *sysParams;
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    SemanticsManager(Atlas *pAtlas);
+    /* ---------------------------------------------------------------------- *
+     * PUBLIC METHODS
+     * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief       Gets the latest skeleton cluster acquired from voxblox
+     * @brief       Constructor which stores the pointer to the map in the
+     *              member mpAtlas and gets the systems parameter.
+     *
+     * @param[in]   pAtlas
+     *              Pointer to map.
      */
-    std::vector<std::vector<Eigen::Vector3d>> getLatestSkeletonCluster();
+    explicit SemanticsManager(Atlas *pAtlas);
 
     /*!
-     * @brief       Gets the latest detected room candidates from GNN-based room
-     *              detection
+     * @brief       Gets the latest skeleton cluster acquired from voxblox.
      */
-    std::vector<ORB_SLAM3::Room *> getLatestGNNRoomCandidates();
+    std::vector<std::vector<Eigen::Vector3d>> getLatestSkeletonCluster(void);
 
     /*!
-     * @brief       Filters the wall planes to remove heavily tilted walls
+     * @brief       Detects open passages where a connected Voxblox skeleton
+     *              edge crosses a finite mapped wall.
+     *
+     * @param[in]   wallPlanes
+     *              Confirmed wall planes available in the current map.
      */
-    void filterWallPlanes();
+    void detectOpenPassagesFromSkeletonEdges(
+        const std::vector<ORB_SLAM3::Plane *> &wallPlanes);
 
     /*!
      * @brief       Detects doors and doorways based on the detected planes and
@@ -77,6 +105,34 @@ class SemanticsManager
     void detectDoorsAndDoorways(ORB_SLAM3::Atlas *pAtlas);
 
     /*!
+     * @brief       Gets the latest detected room candidates from GNN-based room
+     *              detection.
+     */
+    std::vector<ORB_SLAM3::Room *> getLatestGNNRoomCandidates(void);
+
+    /*!
+     * @brief       Filters the wall planes to remove heavily tilted walls. Does
+     *              this by comparing the transpose to the ground plane. If the
+     *              plane normal is horizontal to the ground then it is left
+     *              alone. If the wall plane has a tile greater than the
+     *              sem_seg.max_tilt_wall parameter set in System Params, its
+     *              semantics are reset.
+     */
+    void filterWallPlanes(void);
+
+    /*!
+     * @brief       Filters the planes which are assoicated with ground semantic
+     *              and resets the planes semantics if it is not horizontal
+     *              enough or if its height is outside tolerances with the main
+     *              ground plane. Removes points that are too far from the
+     *              plane.
+     *
+     * @param       groundPlane
+     *              The main ground plane that is the reference
+     */
+    void filterGroundPlanes(Plane *groundPlane);
+
+    /*!
      * @brief       Updates the passages in the map based on the detected doors
      *              and doorways.
      *
@@ -86,17 +142,8 @@ class SemanticsManager
     void updatePassages(ORB_SLAM3::Atlas *pAtlas);
 
     /*!
-     * @brief       Filters the ground plane to remove points that are too far
-     *              from the plane
-     *
-     * @param       groundPlane
-     *              The main ground plane that is the reference
-     */
-    void filterGroundPlanes(Plane *groundPlane);
-
-    /*!
      * @brief       Transforms the plane equation to the ground reference
-     *              defined by mPlanePoseMat
+     *              defined by mPlanePoseMat.
      *
      * @param       planeEq
      *              The plane equation
@@ -108,7 +155,7 @@ class SemanticsManager
 
     /*!
      * @brief       Gets the median height of a ground plane after
-     *              transformation to referece by mPlanePoseMat
+     *              transformation to referece by mPlanePoseMat.
      *
      * @param       groundPlane
      *              The ground plane
@@ -119,7 +166,7 @@ class SemanticsManager
 
     /*!
      * @brief       Computes the transformation matrix from the ground plane to
-     *              the horizontal (y-inverted)
+     *              the horizontal (y-inverted).
      *
      * @param       plane
      *              The plane
@@ -144,36 +191,52 @@ class SemanticsManager
                        const std::vector<ORB_SLAM3::Plane *> &wallList);
 
     /*!
-     * @brief       Associate passages to rooms.
+     * @brief       Ensures every valid WALL plane belongs to at least one  room
+     *              or provisional structural element.
      */
-    void assocaitePassagesToRooms();
+    void associateAllWallsToRooms(void);
+
+    /*!
+     * @brief       Consolidates redundant single-wall provisional structural
+     *              elements into a room supported by a free-space cluster.
+     *
+     * @param       selectedRoom
+     *              The cluster-backed room which has absorbed the walls
+     */
+    void consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom);
+
+    /*!
+     * @brief       Associates each passage with the closest room on either
+     *              side of its supporting wall.
+     */
+    void associatePassagesToRooms(void);
 
     /*!
      * @brief       Re-associates rooms based on fixed time intervals to
      *              avoid duplicates.
      */
-    void reAssociateRooms();
+    void reAssociateRooms(void);
 
     /*!
      * @brief       Processes the latest skeleton cluster to detect rooms based
-     *              on free space clustering
+     *              on free space clustering.
      */
-    void detectRoom_FreeSpaceCluster();
+    void detectRoom_FreeSpaceCluster(void);
 
     /*!
-     * @brief       Gets the rooms detected by the GNN module
+     * @brief       Gets the rooms detected by the GNN module.
      */
-    void detectRoom_GNN();
+    void detectRoom_GNN(void);
 
     /*!
-     * @brief       Gets the updated floors containing rooms and corridors
+     * @brief       Gets the updated floors containing rooms and corridors.
      */
-    void getUpdatedFloors();
+    void getUpdatedFloors(void);
 
     /*!
      * @brief       Method which runs the thread of the segmantic manager.
      */
-    void Run();
+    void Run(void);
 };
 } // namespace ORB_SLAM3
 

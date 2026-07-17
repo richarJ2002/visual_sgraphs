@@ -17,10 +17,19 @@
  */
 
 #include "Semantic/Floor.h"
+#include <algorithm>
 
 namespace ORB_SLAM3
 {
-Floor::Floor() {}
+
+Floor::Floor() :
+    id(-1),
+    opId(-1),
+    opIdG(-1),
+    name(""),
+    centroid(Eigen::Vector3d::Zero()),
+    mpMap(nullptr)
+{}
 Floor::~Floor() {}
 
 int Floor::getId() const
@@ -80,7 +89,21 @@ std::vector<ORB_SLAM3::Room *> Floor::getRooms() const
 
 void Floor::addRoom(ORB_SLAM3::Room *value)
 {
-    rooms.push_back(value);
+    if (value == nullptr)
+    {
+        return;
+    }
+
+    const bool alreadyPresent = std::any_of(
+        rooms.begin(),
+        rooms.end(),
+        [value](ORB_SLAM3::Room *existing)
+        { return existing != nullptr && existing->getId() == value->getId(); });
+
+    if (!alreadyPresent)
+    {
+        rooms.push_back(value);
+    }
 }
 
 void Floor::setRooms(const std::vector<ORB_SLAM3::Room *> &value)

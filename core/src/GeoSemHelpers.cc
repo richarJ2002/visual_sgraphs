@@ -17,13 +17,136 @@
  */
 
 #include "GeoSemHelpers.h"
+
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <sstream>
 
+#include <Eigen/Eigenvalues>
+
 namespace ORB_SLAM3
 {
+
+void GeoSemHelpers::refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane)
+{
+    /* Confirm the mapped plane is valid */
+    if (plane == nullptr || plane->isBad())
+    {
+        return;
+    }
+
+    /* Extract the accumulated global plane point cloud */
+    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud = plane->getMapClouds();
+
+    /* Require sufficient points for a stable covariance estimate */
+    if (cloud == nullptr || cloud->size() < 20)
+    {
+        return;
+    }
+
+    /* Calculate the centroid from all valid cloud points */
+    Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
+
+    /* Init a counter to count the number of valid point clouds */
+    std::size_t validPointCount = 0;
+
+    for (const pcl::PointXYZRGBA &point : cloud->points)
+    {
+        if (!pcl::isFinite(point))
+        {
+            continue;
+        }
+
+        centroid += Eigen::Vector3d(static_cast<double>(point.x),
+                                    static_cast<double>(point.y),
+                                    static_cast<double>(point.z));
+
+        validPointCount++;
+    }
+
+    /* Return when too few valid points remain */
+    if (validPointCount < 20)
+    {
+        return;
+    }
+
+    centroid /= static_cast<double>(validPointCount);
+
+    /* Calculate the covariance matrix of the mapped plane cloud */
+    Eigen::Matrix3d covariance = Eigen::Matrix3d::Zero();
+
+    for (const pcl::PointXYZRGBA &point : cloud->points)
+    {
+        if (!pcl::isFinite(point))
+        {
+            continue;
+        }
+
+        const Eigen::Vector3d pointVector(static_cast<double>(point.x),
+                                          static_cast<double>(point.y),
+                                          static_cast<double>(point.z));
+
+        const Eigen::Vector3d difference = pointVector - centroid;
+
+        covariance += difference * difference.transpose();
+    }
+
+    covariance /= static_cast<double>(validPointCount);
+
+    /*!
+     * The eigenvector belonging to the smallest eigenvalue is the normal of
+     * the best-fitting plane.
+     */
+    const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigenSolver(
+        covariance);
+
+    if (eigenSolver.info() != Eigen::Success)
+    {
+        return;
+    }
+
+    Eigen::Vector3d fittedNormal = eigenSolver.eigenvectors().col(0);
+
+    if (!fittedNormal.allFinite() || fittedNormal.norm() < 1e-8)
+    {
+        return;
+    }
+
+    fittedNormal.normalize();
+
+    /*!
+     * Preserve the previous normal direction to prevent the plane equation
+     * from changing sign between updates.
+     */
+    Eigen::Vector4d previousEquation = plane->getGlobalEquation().coeffs();
+
+    const double previousNormalNorm = previousEquation.head<3>().norm();
+
+    if (std::isfinite(previousNormalNorm) && previousNormalNorm > 1e-8)
+    {
+        const Eigen::Vector3d previousNormal =
+            previousEquation.head<3>() / previousNormalNorm;
+
+        if (fittedNormal.dot(previousNormal) < 0.0)
+        {
+            fittedNormal *= -1.0;
+        }
+    }
+
+    /* Construct the fitted global plane equation */
+    Eigen::Vector4d fittedEquation;
+
+    fittedEquation.head<3>() = fittedNormal;
+
+    fittedEquation(3) = -fittedNormal.dot(centroid);
+
+    /* Update the mapped-plane geometry */
+    plane->setCentroid(centroid.cast<float>());
+
+    plane->setGlobalEquation(g2o::Plane3D(fittedEquation));
+}
+
 ORB_SLAM3::Plane *GeoSemHelpers::createMapPlane(
     Atlas                                        *mpAtlas,
     ORB_SLAM3::KeyFrame                          *pKF,
@@ -108,7 +231,7 @@ void GeoSemHelpers::updateMapPlane(
     double                                  confidence)
 {
     // Find the matched plane among all planes of the map
-    Plane *currentPlane = mpAtlas->GetPlaneById(planeId);
+    ORB_SLAM3::Plane *currentPlane = mpAtlas->GetPlaneById(planeId);
 
     // The observation of the plane
     ORB_SLAM3::Plane::Observation obs;
@@ -146,9 +269,20 @@ void GeoSemHelpers::updateMapPlane(
                              *planeCloud,
                              pKF->GetPoseInverse().matrix().cast<float>());
 
-    // Update the pointcloud of the plane
-    if (!planeCloud->points.empty())
+    /* Update the point cloud of the mapped plane */
+    if (!planeCloud->empty())
+    {
         currentPlane->setMapClouds(planeCloud);
+
+        /*!
+         * Refit the mapped global equation from the complete accumulated point
+         * cloud.
+         *
+         * @note        Without refitting, the point cloud and centroid change
+         *              but the original plane equation becomes stale.
+         */
+        refitMappedPlaneFromCloud(currentPlane);
+    }
 
     if (SystemParams::GetParams()->optimization.plane_map_point.enabled)
     {
@@ -582,48 +716,46 @@ ORB_SLAM3::Room *
         return nullptr;
     }
 
-    /* Extract the room id */
-    const int roomId = static_cast<int>(mpAtlas->GetAllRooms().size());
+    /* Init variable to find the room id */
+    int roomId = 0;
 
-    /* Create new room object */
+    /* Extract the existing rooms from the map */
+    const std::vector<ORB_SLAM3::Room *> existingRooms = mpAtlas->GetAllRooms();
+
+    /* Iterate through all rooms and find the maximum id */
+    for (ORB_SLAM3::Room *existingRoom : existingRooms)
+    {
+        /* Skip invalid rooms */
+        if (existingRoom != nullptr)
+        {
+            roomId = std::max(roomId, existingRoom->getId());
+        }
+    }
+
+    /* Incriment 1 to create new id for room */
+    roomId++;
+
+    /* Create new room */
     ORB_SLAM3::Room *newRoom = new ORB_SLAM3::Room();
 
     /*!
-     * Constructor diagnostic.
-     *
-     * At this stage only inspect the bad-state. The ID and room
-     * variant have not yet been explicitly assigned.
+     * Fill the parameters of room. The caller is responsible for inserting it
+     * with:
+     *      mpAtlas->AddCandidateMapRoom(newRoom);
      */
-    std::cout << "[RoomDebug] Immediately after Room construction:" << " bad="
-              << static_cast<int>(newRoom->isBad()) << std::endl;
 
-    /*!
-     * Initialize the room entity.
-     */
     newRoom->setId(roomId);
     newRoom->setCentroid(centroid);
     newRoom->setMap(mpAtlas->GetCurrentMap());
+
     newRoom->setName("SE#" + std::to_string(roomId));
+
     newRoom->setRoomVariant(ORB_SLAM3::Room::roomVariant::UNDEFINED);
 
-    /*
-     * Diagnostic after explicit initialization.
-     */
-    std::cout << "[RoomDebug] Initialized room:" << " id=" << newRoom->getId()
-              << " bad=" << static_cast<int>(newRoom->isBad())
-              << " variant=" << static_cast<int>(newRoom->getRoomVariant())
-              << " centroid=" << newRoom->getCentroid().transpose()
+    std::cout << "[GeoSemHelper] Created provisional SE#" << newRoom->getId()
+              << " at " << newRoom->getCentroid().transpose() << "."
               << std::endl;
 
-    /*!
-     * Do not add the room to the Atlas here.
-     *
-     * SemanticsManager already calls:
-     *
-     *     mpAtlas->AddCandidateMapRoom(room);
-     *
-     * Adding it here as well would risk duplicate insertion.
-     */
     return newRoom;
 }
 

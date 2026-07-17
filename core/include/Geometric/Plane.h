@@ -24,12 +24,13 @@
 #include "Semantic/Marker.h"
 #include "Thirdparty/g2o/g2o/types/plane3d.h"
 #include "Types/SystemParams.h"
-#include <set>
 
 #include <boost/shared_ptr.hpp>
+#include <cstddef>
 #include <pcl/common/centroid.h>
 #include <pcl/common/io.h>
 #include <pcl/octree/octree_search.h>
+#include <set>
 
 namespace ORB_SLAM3
 {
@@ -138,6 +139,11 @@ class Plane
      */
     bool mbBad;
 
+    /*!
+     * @brief       Number of unique keyframes which have observed the plane.
+     */
+    std::size_t observationCount{0};
+
     /**
      * @brief       The plane's semantic type (e.g., wall, ground, etc.)s
      */
@@ -190,13 +196,13 @@ class Plane
         octree;
 
   public:
-    Plane();
-    ~Plane();
+    Plane(void);
+    ~Plane(void);
 
     /**
      * @brief       TODO
      */
-    int getId() const;
+    int getId(void) const;
 
     /**
      * @brief       TODO
@@ -206,7 +212,7 @@ class Plane
     /**
      * @brief       TODO
      */
-    int getOpId() const;
+    int getOpId(void) const;
 
     /**
      * @brief       TODO
@@ -216,7 +222,7 @@ class Plane
     /**
      * @brief       TODO
      */
-    int getOpIdG() const;
+    int getOpIdG(void) const;
 
     /**
      * @brief       TODO
@@ -226,32 +232,32 @@ class Plane
     /**
      * @brief       TODO
      */
-    bool isBad();
+    bool isBad(void);
 
     /**
      * @brief       TODO
      */
-    void setBad();
+    void setBad(void);
 
     /**
      * @brief       TODO
      */
-    void setColor();
+    void setColor(void);
 
     /**
      * @brief       TODO
      */
-    std::vector<uint8_t> getColor() const;
+    std::vector<uint8_t> getColor(void) const;
 
     /**
      * @brief       TODO
      */
-    planeVariant getPlaneType();
+    planeVariant getPlaneType(void);
 
     /**
      * @brief       TODO
      */
-    planeVariant getExpectedPlaneType();
+    planeVariant getExpectedPlaneType(void);
 
     /**
      * @brief       TODO
@@ -266,12 +272,12 @@ class Plane
     /**
      * @brief       TODO
      */
-    std::set<MapPoint *> getMapPoints();
+    std::set<MapPoint *> getMapPoints(void);
 
     /**
      * @brief       TODO
      */
-    Eigen::Vector3f getCentroid() const;
+    Eigen::Vector3f getCentroid(void) const;
 
     /**
      * @brief       TODO
@@ -281,7 +287,7 @@ class Plane
     /**
      * @brief       TODO
      */
-    g2o::Plane3D getLocalEquation() const;
+    g2o::Plane3D getLocalEquation(void) const;
 
     /**
      * @brief       TODO
@@ -291,7 +297,7 @@ class Plane
     /**
      * @brief       TODO
      */
-    g2o::Plane3D getGlobalEquation() const;
+    g2o::Plane3D getGlobalEquation(void) const;
 
     /**
      * @brief       TODO
@@ -309,14 +315,24 @@ class Plane
     void eraseObservation(KeyFrame *pKF);
 
     /**
-     * @brief       TODO
+     * @brief       Gets the unique keyframes which observed the plane.
+     *
+     * @return      List of keyframes that observed the frame.
      */
-    const std::map<KeyFrame *, Observation> &getObservations() const;
+    const std::map<KeyFrame *, Observation> &getObservations(void) const;
+
+    /*!
+     * @brief       Gets the number of unique keyframes which observed the
+     *              plane.
+     *
+     * @return      Number of unique observations.
+     */
+    std::size_t getObservationCount(void) const;
 
     /**
      * @brief       TODO
      */
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr getMapClouds();
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr getMapClouds(void);
 
     /**
      * @brief       TODO
@@ -341,12 +357,12 @@ class Plane
     /**
      * @brief       TODO
      */
-    void resetPlaneSemantics();
+    void resetPlaneSemantics(void);
 
     /**
      * @brief       TODO
      */
-    Map *GetMap();
+    Map *GetMap(void);
 
     /**
      * @brief       TODO

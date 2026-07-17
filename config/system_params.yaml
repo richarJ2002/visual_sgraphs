@@ -52,26 +52,26 @@ plane_based_covisibility:
 seg:
   # Number of points (after filtering) needed to detect geometric objects (e.g., planes)
   # Also, the number of points needed to detect a plane in the pointcloud
-  pointclouds_thresh: 250
+  pointclouds_thresh: 350
 
   # Plane association
   plane_association:
-    ominus_thresh: 0.2 # Max allowed combined orientation-and-distance difference
-    distance_thresh: 0.15 # meters (Checks if planes are too far apart along normal direction)
-    centroid_thresh: 2.0 # meters (Checks if planes centroids are too far apart - will enable check for clustring)
+    ominus_thresh: 0.18 # Max allowed combined orientation-and-distance difference
+    distance_thresh: 0.12 # meters (Checks if planes are too far apart along normal direction)
+    centroid_thresh: 2.5 # meters (Checks if planes centroids are too far apart - will enable check for clustring)
     cluster_separation:
       enabled: true
-      tolerance: 2.0 # euclidean distance for cutting planes
+      tolerance: 0.35 # euclidean distance for cutting planes
       downsample:
-        leaf_size: 0.12
-        min_points_per_voxel: 20
+        leaf_size: 0.08
+        min_points_per_voxel: 2
 
   # The maximum distance for point to be considered part of a plane
   plane_point_dist_thresh: 0.02
 
   ransac:
     # The maximum number of planes to be detected in one pointcloud
-    max_planes: 2
+    max_planes: 3
 
     # The maximum distance for a point to be considered an inlier of the plane model
     distance_thresh: 0.02
@@ -136,11 +136,11 @@ sem_seg:
   passage_centroid_distance_thresh: 1.0
 
   # The amount of votes (votes are weighted votes) for a plane to be finally classified with a semantic label
-  min_votes: 0.2
+  min_votes: 1.0
 
   # Whether to reassociate planes with the semantic labels - after optimization, some planes may get close
   reassociate:
-    enabled: true
+    enabled: false
     association_thresh: 0.1
 
   ############################## Room Segmentation Parameters ####################################

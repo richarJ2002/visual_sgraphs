@@ -333,7 +333,7 @@ int Map::GetLastBigChangeIdx()
     return mnBigChangeIdx;
 }
 
-std::vector<std::vector<Eigen::Vector3d>> Map::GetSkeletoClusterPoints()
+std::vector<std::vector<Eigen::Vector3d>> Map::GetSkeletonClusterPoints()
 {
     unique_lock<mutex> lock(mMutexMap);
     return skeletonClusterPoints;
@@ -344,6 +344,27 @@ void Map::SetSkeletonClusterPoints(
 {
     unique_lock<mutex> lock(mMutexMap);
     skeletonClusterPoints = newClusterPoints;
+}
+
+std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+    Map::GetSkeletonEdges(void)
+{
+    /* Lock access to the map data */
+    unique_lock<mutex> lock(mMutexMap);
+
+    /* Return a copy of the latest connected skeleton edges */
+    return mSkeletonEdges;
+}
+
+void Map::SetSkeletonEdges(
+    const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+        &newSkeletonEdges)
+{
+    /* Lock access to the map data */
+    unique_lock<mutex> lock(mMutexMap);
+
+    /* Replace the previous connected skeleton edge collection */
+    mSkeletonEdges = newSkeletonEdges;
 }
 
 vector<KeyFrame *> Map::GetAllKeyFrames()
@@ -514,6 +535,10 @@ void Map::clear()
     mspPassages.clear();
     mspMapPoints.clear();
     mspKeyFrames.clear();
+
+    skeletonClusterPoints.clear();
+    mSkeletonEdges.clear();
+
     mnMaxKFid        = mnInitKFid;
     mbImuInitialized = false;
     mspDetectedRooms.clear();

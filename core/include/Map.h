@@ -37,6 +37,7 @@
 #include <pangolin/pangolin.h>
 #include <set>
 #include <unordered_map>
+#include <utility>
 
 namespace ORB_SLAM3
 {
@@ -126,14 +127,29 @@ class Map
     /**
      * @brief Get the cluster points of the map set by `voxblox_skeleton`
      */
-    std::vector<std::vector<Eigen::Vector3d>> GetSkeletoClusterPoints();
+    std::vector<std::vector<Eigen::Vector3d>> GetSkeletonClusterPoints(void);
 
     /**
-     * @brief Set the cluster points of the map set by `voxblox_skeleton`
-     * @param newClusterPoints The new cluster points to set
+     * @brief       Set the cluster points of the map set by `voxblox_skeleton`
+     *
+     * @param[in]   newClusterPoints
+     *              The new cluster points to set
      */
     void SetSkeletonClusterPoints(
         const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints);
+
+    /*!
+     * @brief       Gets the latest connected Voxblox skeleton edges.
+     */
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+        GetSkeletonEdges(void);
+
+    /*!
+     * @brief       Stores the latest connected Voxblox skeleton edges.
+     */
+    void SetSkeletonEdges(
+        const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+            &newSkeletonEdges);
 
     long unsigned     KeyFramesInMap();
     long unsigned int MarkersInMap();
@@ -228,6 +244,11 @@ class Map
 
     // Skeleton cluster points of the map set by `voxblox_skeleton`
     std::vector<std::vector<Eigen::Vector3d>> skeletonClusterPoints;
+
+    /*!
+     * @brief       Latest connected Voxblox skeleton graph edges.
+     */
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> mSkeletonEdges;
 
     // Hashmaps and indices for fetching elements
     std::unordered_map<int, Floor *>                  mFloorIndex;

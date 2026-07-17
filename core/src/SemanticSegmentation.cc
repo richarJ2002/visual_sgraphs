@@ -18,8 +18,16 @@
 
 #include "SemanticSegmentation.h"
 
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <limits>
+#include <thread>
+#include <unordered_set>
+
 namespace ORB_SLAM3
 {
+
 SemanticSegmentation::SemanticSegmentation(Atlas *pAtlas)
 {
     mpAtlas = pAtlas;
@@ -452,28 +460,113 @@ void SemanticSegmentation::updatePlaneData(
             ORB_SLAM3::Plane::planeVariant semanticType =
                 Utils::getPlaneTypeFromClassId(clsId);
 
-            /* Check if we need to add the plane to the map or not */
+            /*!
+             * Associate the observation using the global plane equation and
+             * global point cloud.
+             *
+             * @note        Performing the complete comparison in the global
+             * frame avoids inconsistencies between plane equations, centroids
+             * and point clouds.
+             */
             int matchedPlaneId = Utils::associatePlanes(
                 mpAtlas->GetAllPlanes(),
-                detectedPlane,
+                globalEquation,
                 globalPlaneCloud,
-                pKF->GetPose().matrix().cast<double>(),
+                Eigen::Matrix4d::Identity(),
                 semanticType,
                 sysParams->seg.plane_association.ominus_thresh);
 
-            /* If no mapped plane is associated with current plane*/
+            /*!
+             * If no mapped plane is associated with current plane
+             *
+             * @TODO:       The cognitive complexity breaches the 3 indentation
+             *              rule. Hence, a method/function should be introduced
+             *              to help break this section of code down and make it
+             *              more readable.
+             */
             if (matchedPlaneId == -1)
             {
                 /*!
-                 * If semantic segmentation is running independently, create
-                 * a new plane to add to the map.
-                 *
-                 * This parameter is controlled by general.mode_of_operation in
-                 * system_params.yaml.
+                 * If semantic segmentation is running independetly, determine
+                 * whether the observation is sufficiently large to become a
+                 * new mapped plane.
                  */
                 if (!mGeoRuns)
                 {
-                    /* Create new plant to add to map */
+                    /*!
+                     * Apply an additional geometry check before creating a new
+                     * wall.
+                     *
+                     * @note        Small wall observations may be produced by
+                     *              doorframes, furniture edges and segmentation
+                     *              noise. Small patches are still permited
+                     *              to udpate an existing wall because this
+                     *              check is only applied when a matchPlaneId is
+                     *              -1.
+                     */
+                    if (semanticType == ORB_SLAM3::Plane::planeVariant::WALL)
+                    {
+                        /* Compute physical dimensions of wall observation */
+                        const std::pair<double, double> wallDimensions =
+                            Utils::computePlaneWidthHeight(globalPlaneCloud);
+
+                        /* Extract the larger planar dimension */
+                        const double majorExtent =
+                            std::max(wallDimensions.first,
+                                     wallDimensions.second);
+
+                        /* Extract the smaller planar dimension */
+                        const double minorExtent =
+                            std::min(wallDimensions.first,
+                                     wallDimensions.second);
+
+                        /* Compute the approximate observed planar area */
+                        const double observedArea = majorExtent - minorExtent;
+
+                        /*!
+                         * Initial thresholds for rejecting doorframe-sized wall
+                         * planes.
+                         *
+                         * @note        These thresholds apply only to the
+                         *              creation of new wall planes. Subsequent
+                         *              smaller observations may still update a
+                         *              mapped wall.
+                         */
+                        constexpr std::size_t minimumNewWallPointCount  = 350;
+                        constexpr double      minimumNewWallMajorExtent = 0.80;
+                        constexpr double      minimumNewWallMinorExtent = 0.30;
+                        constexpr double      minimumNewWallArea        = 0.40;
+
+                        /* Perform checks to see if wall is valid */
+                        const bool validNewWallGeometry =
+                            globalPlaneCloud != nullptr &&
+                            globalPlaneCloud->size() >=
+                                minimumNewWallPointCount &&
+                            std::isfinite(majorExtent) &&
+                            std::isfinite(minorExtent) &&
+                            std::isfinite(observedArea) &&
+                            majorExtent >= minimumNewWallMajorExtent &&
+                            minorExtent >= minimumNewWallMinorExtent &&
+                            observedArea >= minimumNewWallArea;
+
+                        /* Reject narrow or small wall fragments */
+                        if (!validNewWallGeometry)
+                        {
+                            std::cout << "[SemSeg] Rejecting new wall "
+                                         "candidate: points="
+                                      << (globalPlaneCloud != nullptr
+                                              ? globalPlaneCloud->size()
+                                              : 0)
+                                      << ", dimensions=" << majorExtent << "x"
+                                      << minorExtent
+                                      << " m, area=" << observedArea << " m^2."
+                                      << std::endl;
+
+                            continue;
+                        }
+                    }
+
+                    /* Create a new mapped plane */
                     ORB_SLAM3::Plane *newMapPlane =
                         GeoSemHelpers::createMapPlane(mpAtlas,
                                                       pKF,
@@ -482,13 +575,21 @@ void SemanticSegmentation::updatePlaneData(
                                                       semanticType,
                                                       conf);
 
-                    /* Update the semantic of the plane */
+                    /* Confirm that plane creation succeeded */
+                    if (newMapPlane == nullptr)
+                    {
+                        continue;
+                    }
+
+                    /* Update the semantic votes of the new plane */
                     updatePlaneSemantics(newMapPlane->getId(), clsId, conf);
                 }
             }
             else
             {
+                /* Update matched mapped plane with the current observation */
                 if (!mGeoRuns)
+                {
                     GeoSemHelpers::updateMapPlane(mpAtlas,
                                                   pKF,
                                                   detectedPlane,
@@ -496,20 +597,35 @@ void SemanticSegmentation::updatePlaneData(
                                                   matchedPlaneId,
                                                   semanticType,
                                                   conf);
+                }
                 else
                 {
+                    /*!
+                     * Geometric segmentation already created the plane.
+                     * Transform the current observation into the global frame
+                     * and append it to the matched mapped plane.
+                     */
                     pcl::transformPointCloud(
                         *planeCloud,
                         *planeCloud,
                         pKF->GetPoseInverse().matrix().cast<float>());
+
                     ORB_SLAM3::Plane *matchedPlane =
                         mpAtlas->GetPlaneById(matchedPlaneId);
-                    // Add the plane cloud to the matched plane
-                    if (!planeCloud->empty())
+
+                    if (matchedPlane != nullptr && !matchedPlane->isBad() &&
+                        !planeCloud->empty())
+                    {
                         matchedPlane->setMapClouds(planeCloud);
+
+                        GeoSemHelpers::refitMappedPlaneFromCloud(matchedPlane);
+                    }
                 }
 
-                // Cast a vote for the plane semantics
+                /*!
+                 * Cast the current semantic observation vote for the matched
+                 * plane.
+                 */
                 updatePlaneSemantics(matchedPlaneId, clsId, conf);
             }
         }

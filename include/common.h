@@ -23,6 +23,9 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef VS_GRAPHS_COMMON_H
+#define VS_GRAPHS_COMMON_H
+
 #include <Eigen/Dense>
 #include <algorithm>
 #include <chrono>
@@ -133,8 +136,18 @@ extern std::shared_ptr<tf2_ros::StaticTransformBroadcaster> staticTfBroadcaster;
 // List of visited Fiducial Markers in different timestamps
 extern std::vector<std::vector<ORB_SLAM3::Marker *>> markersBuffer;
 
-// List of white space cluster points obtained from `voxblox_skeleton`
+/*!
+ * @brief       Connected Voxblox verticies grouped by connected component
+ */
 extern std::vector<std::vector<Eigen::Vector3d>> skeletonClusterPoints;
+
+/*!
+ * @brief       Connected voxblox graph edges transformed into the world frame
+ *
+ * @note        Each pair contains the start and end point of one skeleton
+ *              graph edge
+ */
+extern std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> skeletonEdges;
 
 // List of GNN-based room candidates
 extern std::vector<ORB_SLAM3::Room *> gnnRoomCandidates;
@@ -302,6 +315,35 @@ void publishBodyOdometry(Sophus::SE3f,
                          rclcpp::Time);
 
 /*!
+ * @brief       Calculates the displayed structural-graph position of a
+ *              passage.
+ *
+ * @param[in]   passage_in
+ *              Passage whose displayed position is required.
+ *
+ * @param[in]   msgTime_in
+ *              Timestamp used for the frame transformations.
+ *
+ * @param[in]   verticalOffset_in
+ *              Distance below the normal room-node level.
+ *
+ * @param[out]  passagePointSE_out
+ *              Displayed passage position in the structural-element frame.
+ *
+ * @param[out]  passagePointWorld_out
+ *              Displayed passage position transformed back into the world
+ *              frame for connection lines.
+ *
+ * @return      True when both transformations succeed.
+ */
+static bool getPassageDisplayPoints(
+    ORB_SLAM3::Passage               *passage_in,
+    const rclcpp::Time               &msgTime_in,
+    const double                      verticalOffset_in,
+    geometry_msgs::msg::PointStamped &passagePointSE_out,
+    geometry_msgs::msg::PointStamped &passagePointWorld_out);
+
+/*!
  * @brief       Method which publishes the structural elements of the S-Graph.
  *
  * @param[in]   rooms_in
@@ -425,6 +467,24 @@ void publishFreeSpaceClusters(std::vector<std::vector<Eigen::Vector3d>>,
 std::pair<double, std::vector<ORB_SLAM3::Marker *>>
     findNearestMarker(double frameTimestamp);
 
+/*!
+ * @brief       Transforms a Voxblox skeleton point into the world frame.
+ *
+ * @param[in]   marker_in
+ *              Marker containing the point and its source frame.
+ *
+ * @param[in]   point_in
+ *              Skeleton point to transform.
+ *
+ * @param[out]  transformedPoint_out
+ *              Skeleton point represented in the world frame.
+ *
+ * @return      True if the point was successfully transformed.
+ */
+bool transformSkeletonPoint(const visualization_msgs::msg::Marker &marker_in,
+                            const geometry_msgs::msg::Point       &point_in,
+                            Eigen::Vector3d &transformedPoint_out);
+
 /**
  * @brief       Gets skeleton voxels from `voxblox_skeleton` to be processed
  *
@@ -455,3 +515,5 @@ void setGNNBasedRoomCandidates(
  */
 void setGNNBasedRoomCandidates(
     const vs_graphs::msg::VSGraphsAllDetectdetRooms &msgGNNRooms);
+
+#endif // VS_GRAPHS_COMMON_H

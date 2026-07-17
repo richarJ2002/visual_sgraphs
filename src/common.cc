@@ -24,6 +24,7 @@
  */
 
 #include "common.h"
+
 #include <algorithm>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -41,9 +42,12 @@ std::vector<ORB_SLAM3::Room *>              gnnRoomCandidates;
 std::shared_ptr<image_transport::Publisher> pubTrackingImage;
 std::shared_ptr<tf2_ros::TransformListener> tfListener_{nullptr};
 
-std::vector<std::vector<ORB_SLAM3::Marker *>>        markersBuffer;
-std::shared_ptr<tf2_ros::TransformBroadcaster>       tfBroadcaster;
-std::vector<std::vector<Eigen::Vector3d>>            skeletonClusterPoints;
+std::vector<std::vector<ORB_SLAM3::Marker *>>  markersBuffer;
+std::shared_ptr<tf2_ros::TransformBroadcaster> tfBroadcaster;
+
+std::vector<std::vector<Eigen::Vector3d>>                skeletonClusterPoints;
+std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> skeletonEdges;
+
 std::shared_ptr<tf2_ros::StaticTransformBroadcaster> staticTfBroadcaster;
 std::string frameWorld, frameCamera, frameImu, frameMap, frameBC, frameSE;
 
@@ -997,6 +1001,92 @@ void publishPlanes(const std::vector<ORB_SLAM3::Plane *> planes,
     pubBuildingComponents->publish(cloudMsg);
     pubPlaneLabel->publish(planeLabelArray);
 }
+static bool getPassageDisplayPoints(
+    ORB_SLAM3::Passage               *passage_in,
+    const rclcpp::Time               &msgTime_in,
+    const double                      verticalOffset_in,
+    geometry_msgs::msg::PointStamped &passagePointSE_out,
+    geometry_msgs::msg::PointStamped &passagePointWorld_out)
+{
+    /* Confirm that the passage and TF buffer are valid */
+    if (passage_in == nullptr || tfBuffer_ == nullptr)
+    {
+        return false;
+    }
+
+    /* Extract the physical passage centroid */
+    const Eigen::Vector3f passageCentroid = passage_in->getCentroid();
+
+    if (!passageCentroid.allFinite())
+    {
+        return false;
+    }
+
+    /* Create the physical passage point in the world frame */
+    geometry_msgs::msg::PointStamped passagePointWorldPhysical;
+
+    passagePointWorldPhysical.header.stamp = msgTime_in;
+
+    passagePointWorldPhysical.header.frame_id = frameWorld;
+
+    passagePointWorldPhysical.point.x = passageCentroid.x();
+
+    passagePointWorldPhysical.point.y = passageCentroid.y();
+
+    passagePointWorldPhysical.point.z = passageCentroid.z();
+
+    try
+    {
+        /* Transform the physical doorway position into frameSE */
+        const geometry_msgs::msg::TransformStamped worldToSE =
+            tfBuffer_->lookupTransform(frameSE,
+                                       frameWorld,
+                                       msgTime_in,
+                                       rclcpp::Duration::from_seconds(0.1));
+
+        tf2::doTransform(passagePointWorldPhysical,
+                         passagePointSE_out,
+                         worldToSE);
+
+        /*
+         * Move the structural passage node slightly below the room level.
+         *
+         * The project uses Z as the graph offset axis for IMU RGB-D and Y for
+         * the other sensor configurations.
+         */
+        if (sensorType == ORB_SLAM3::System::IMU_RGBD)
+        {
+            passagePointSE_out.point.z += verticalOffset_in;
+        }
+        else
+        {
+            passagePointSE_out.point.y += verticalOffset_in;
+        }
+
+        passagePointSE_out.header.stamp = msgTime_in;
+
+        passagePointSE_out.header.frame_id = frameSE;
+
+        /* Transform the displayed position back to world for graph edges */
+        const geometry_msgs::msg::TransformStamped seToWorld =
+            tfBuffer_->lookupTransform(frameWorld,
+                                       frameSE,
+                                       msgTime_in,
+                                       rclcpp::Duration::from_seconds(0.1));
+
+        tf2::doTransform(passagePointSE_out, passagePointWorld_out, seToWorld);
+    }
+    catch (const tf2::TransformException &exception)
+    {
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                    "Passage display transform failed: %s",
+                    exception.what());
+
+        return false;
+    }
+
+    return true;
+}
 
 void publishStructuralElements(
     const std::vector<ORB_SLAM3::Room *>    rooms_in,
@@ -1019,6 +1109,12 @@ void publishStructuralElements(
     const double textOffset        = -0.5;
     const double floorToRoomOffset = -2.0;
 
+    /*!
+     * Positive because the floor uses a negative offset to move away from the
+     * room in the opposite direction.
+     */
+    const double passageBelowRoomOffset = 0.75;
+
     /* Visulization markers */
     visualization_msgs::msg::MarkerArray roomArray;
     visualization_msgs::msg::MarkerArray floorArray;
@@ -1032,12 +1128,32 @@ void publishStructuralElements(
      * ---------------------------------------------------------------------- */
     for (int idx = 0; idx < numRooms; idx++)
     {
-        if (rooms_in[idx]->isBad())
+        /* Extract the current room */
+        ORB_SLAM3::Room *roomCandidate = rooms_in[idx];
+
+        /* Determine whether the structural element is a confirmed room */
+        const bool isConfirmedRoom =
+            roomCandidate != nullptr &&
+            (roomCandidate->getRoomVariant() ==
+                 ORB_SLAM3::Room::roomVariant::ROOM ||
+             roomCandidate->getRoomVariant() ==
+                 ORB_SLAM3::Room::roomVariant::CORRIDOR);
+
+        /*!
+         * Delete invalid and provisional structural elements from the published
+         * structural map.
+         *
+         * @note        Provisional SEs remain inside the semantic map but are
+         *              not exposed as final structural elements.
+         */
+        if (roomCandidate == nullptr || roomCandidate->isBad() ||
+            !isConfirmedRoom)
         {
             /* Variables */
             visualization_msgs::msg::Marker delRoom;
             visualization_msgs::msg::Marker delRoomLabel;
             visualization_msgs::msg::Marker delRoomWallLine;
+            visualization_msgs::msg::Marker delRoomPassageLine;
 
             /* Delete previous marker for this room */
             delRoom.id              = idx;
@@ -1060,17 +1176,25 @@ void publishStructuralElements(
             delRoomWallLine.header.frame_id = frameWorld;
             delRoomWallLine.action = visualization_msgs::msg::Marker::DELETE;
 
+            /* Delete previous room-passage lines */
+            delRoomPassageLine.id              = idx;
+            delRoomPassageLine.ns              = "roomPassageLine";
+            delRoomPassageLine.header.stamp    = msgTime_in;
+            delRoomPassageLine.header.frame_id = frameWorld;
+            delRoomPassageLine.action = visualization_msgs::msg::Marker::DELETE;
+
             /* Push the delete markers and skip them */
             roomArray.markers.push_back(delRoom);
             roomArray.markers.push_back(delRoomLabel);
             roomArray.markers.push_back(delRoomWallLine);
+            roomArray.markers.push_back(delRoomPassageLine);
 
             /* Move onto next room */
             continue;
         }
 
         /* Variables for specific room */
-        const std::string                roomName = rooms_in[idx]->getName();
+        const std::string                roomName = roomCandidate->getName();
         geometry_msgs::msg::PointStamped roomPoint;
         geometry_msgs::msg::PointStamped roomPointTr;
 
@@ -1083,18 +1207,18 @@ void publishStructuralElements(
          *      corridor:   dark pink
          *      room:       purple
          */
-        if (rooms_in[idx]->getRoomVariant() ==
+        if (roomCandidate->getRoomVariant() ==
             ORB_SLAM3::Room::roomVariant::CORRIDOR)
         {
             colour = {0.6, 0.0, 0.3};
         }
-        else if (rooms_in[idx]->getRoomVariant() ==
+        else if (roomCandidate->getRoomVariant() ==
                  ORB_SLAM3::Room::roomVariant::ROOM)
         {
             colour = {0.5, 0.1, 1.0};
         }
 
-        Eigen::Vector3d                 centroid = rooms_in[idx]->getCentroid();
+        Eigen::Vector3d                 centroid = roomCandidate->getCentroid();
         visualization_msgs::msg::Marker room;
         visualization_msgs::msg::Marker roomLabel;
         visualization_msgs::msg::Marker roomWallLine;
@@ -1161,6 +1285,30 @@ void publishStructuralElements(
         roomWallLine.lifetime        = rclcpp::Duration::from_seconds(0);
         roomWallLine.type = visualization_msgs::msg::Marker::LINE_LIST;
 
+        /* Room to Passage connection line */
+        roomDoorwayLine.id              = idx;
+        roomDoorwayLine.ns              = "roomPassageLine";
+        roomDoorwayLine.header.stamp    = msgTime_in;
+        roomDoorwayLine.header.frame_id = frameWorld;
+        roomDoorwayLine.action          = visualization_msgs::msg::Marker::ADD;
+        roomDoorwayLine.type = visualization_msgs::msg::Marker::LINE_LIST;
+
+        roomDoorwayLine.scale.x = 0.05;
+        roomDoorwayLine.scale.y = 0.05;
+        roomDoorwayLine.scale.z = 0.05;
+
+        roomDoorwayLine.color.a = 0.9;
+        roomDoorwayLine.color.r = 0.0;
+        roomDoorwayLine.color.g = 0.0;
+        roomDoorwayLine.color.b = 0.0;
+
+        roomDoorwayLine.pose.orientation.x = 0.0;
+        roomDoorwayLine.pose.orientation.y = 0.0;
+        roomDoorwayLine.pose.orientation.z = 0.0;
+        roomDoorwayLine.pose.orientation.w = 1.0;
+
+        roomDoorwayLine.lifetime = rclcpp::Duration::from_seconds(0);
+
         /* Fill in the room center point */
         roomPoint.header.stamp    = msgTime_in;
         roomPoint.point.x         = centroid.x();
@@ -1187,7 +1335,7 @@ void publishStructuralElements(
         }
 
         /* Room to passage connection line */
-        for (ORB_SLAM3::Passage *passage : rooms[idx]->getPassages())
+        for (ORB_SLAM3::Passage *passage : roomCandidate->getPassages())
         {
             /* Skip if passage is bad */
             if (passage == nullptr)
@@ -1195,11 +1343,15 @@ void publishStructuralElements(
                 continue;
             }
 
-            /* Extract centroid of passage */
-            const Eigen::Vector3f passageCentroid = passage->getCentroid();
+            /* Calculate the displayed passage-node position */
+            geometry_msgs::msg::PointStamped passagePointSE;
+            geometry_msgs::msg::PointStamped passagePointWorld;
 
-            /* Confirm that the centroid is valid and if not skip */
-            if (!passageCentroid.allFinite())
+            if (!getPassageDisplayPoints(passage,
+                                         msgTime_in,
+                                         passageBelowRoomOffset,
+                                         passagePointSE,
+                                         passagePointWorld))
             {
                 continue;
             }
@@ -1210,19 +1362,19 @@ void publishStructuralElements(
             roomEnd.z = roomPointTr.point.z;
 
             geometry_msgs::msg::Point passageEnd;
-            passageEnd.x = passageCentroid.x();
-            passageEnd.y = passageCentroid.y();
-            passageEnd.z = passageCentroid.z();
+            passageEnd.x = passagePointWorld.point.x;
+            passageEnd.y = passagePointWorld.point.y;
+            passageEnd.z = passagePointWorld.point.z;
 
             roomDoorwayLine.points.push_back(roomEnd);
             roomDoorwayLine.points.push_back(passageEnd);
         }
 
         /* Room to Wall connection line */
-        for (const auto wall : rooms_in[idx]->getWalls())
+        for (const auto wall : roomCandidate->getWalls())
         {
             /* Skip if the wall is bad */
-            if (wall->isBad())
+            if (wall == nullptr || wall->isBad())
             {
                 continue;
             }
@@ -1404,6 +1556,15 @@ void publishStructuralElements(
         /* Connect the floor to its rooms */
         for (const auto room : floors_in[floorId]->getRooms())
         {
+            /* Skip invalid and provisional structural elements */
+            if (room == nullptr || room->isBad() ||
+                (room->getRoomVariant() != ORB_SLAM3::Room::roomVariant::ROOM &&
+                 room->getRoomVariant() !=
+                     ORB_SLAM3::Room::roomVariant::CORRIDOR))
+            {
+                continue;
+            }
+
             geometry_msgs::msg::Point        pFloor, pRoom;
             geometry_msgs::msg::PointStamped roomPoint, roomPointTr;
 
@@ -1469,11 +1630,15 @@ void publishStructuralElements(
         /* Extract the passage id */
         const int passageId = passage->getId();
 
-        /* Extract the centroid of the passage */
-        const Eigen::Vector3f centroid = passage->getCentroid();
+        /* Calculate the displayed structural-graph position */
+        geometry_msgs::msg::PointStamped passagePointSE;
+        geometry_msgs::msg::PointStamped passagePointWorld;
 
-        /* Confirm the centroid is valid */
-        if (!centroid.allFinite())
+        if (!getPassageDisplayPoints(passage,
+                                     msgTime_in,
+                                     passageBelowRoomOffset,
+                                     passagePointSE,
+                                     passagePointWorld))
         {
             continue;
         }
@@ -1485,7 +1650,7 @@ void publishStructuralElements(
         visualization_msgs::msg::Marker passageMarker;
 
         /* Fill the msg */
-        passageMarker.header.frame_id = frameWorld;
+        passageMarker.header.frame_id = frameSE;
         passageMarker.header.stamp    = msgTime_in;
 
         passageMarker.ns     = "passage";
@@ -1493,25 +1658,25 @@ void publishStructuralElements(
         passageMarker.type   = visualization_msgs::msg::Marker::CUBE;
         passageMarker.action = visualization_msgs::msg::Marker::ADD;
 
-        passageMarker.pose.position.x = centroid.x();
-        passageMarker.pose.position.y = centroid.y();
-        passageMarker.pose.position.z = centroid.z();
+        passageMarker.pose.position.x = passagePointSE.point.x;
+        passageMarker.pose.position.y = passagePointSE.point.y;
+        passageMarker.pose.position.z = passagePointSE.point.z;
 
         passageMarker.pose.orientation.x = 0.0;
         passageMarker.pose.orientation.y = 0.0;
         passageMarker.pose.orientation.z = 0.0;
         passageMarker.pose.orientation.w = 1.0;
 
-        passageMarker.scale.x = 0.05;
-        passageMarker.scale.y = 0.05;
-        passageMarker.scale.z = 0.05;
+        passageMarker.scale.x = 0.30;
+        passageMarker.scale.y = 0.30;
+        passageMarker.scale.z = 0.30;
 
         /* Set the colour of the marker based on if the passage is open */
         if (isOpen)
         {
             /* Set open passage to colour orange */
-            passageMarker.color.r = 1.0;
-            passageMarker.color.g = 0.5;
+            passageMarker.color.r = 0.0;
+            passageMarker.color.g = 1.0;
             passageMarker.color.b = 0.0;
         }
         else
@@ -1535,7 +1700,7 @@ void publishStructuralElements(
         visualization_msgs::msg::Marker passageLabel;
 
         /* Fill label */
-        passageLabel.header.frame_id = frameWorld;
+        passageLabel.header.frame_id = frameSE;
         passageLabel.header.stamp    = msgTime_in;
 
         passageLabel.ns     = "passageLabel";
@@ -1546,9 +1711,9 @@ void publishStructuralElements(
         passageLabel.text = "Passage#" + std::to_string(passageId) +
                             (isOpen ? " [open]" : " [blocked]");
 
-        passageLabel.pose.position.x = centroid.x();
-        passageLabel.pose.position.y = centroid.y() - 0.30;
-        passageLabel.pose.position.z = centroid.z();
+        passageLabel.pose.position.x = passagePointSE.point.x;
+        passageLabel.pose.position.y = passagePointSE.point.y + textOffset;
+        passageLabel.pose.position.z = passagePointSE.point.z;
 
         passageLabel.pose.orientation.x = 0.0;
         passageLabel.pose.orientation.y = 0.0;
@@ -1565,50 +1730,6 @@ void publishStructuralElements(
         passageLabel.lifetime = rclcpp::Duration::from_seconds(0);
 
         passageArray.markers.push_back(passageLabel);
-
-        /* Passage normal */
-        Eigen::Vector3d normal = passage->getGlobalEquation().normal();
-
-        if (normal.allFinite() && normal.norm() > 1e-8)
-        {
-            normal.normalize();
-
-            visualization_msgs::msg::Marker normalMarker;
-
-            normalMarker.header.frame_id = frameWorld;
-            normalMarker.header.stamp    = msgTime_in;
-
-            normalMarker.ns     = "passageNormal";
-            normalMarker.id     = passageId;
-            normalMarker.type   = visualization_msgs::msg::Marker::ARROW;
-            normalMarker.action = visualization_msgs::msg::Marker::ADD;
-
-            normalMarker.scale.x = 0.025;
-            normalMarker.scale.y = 0.06;
-            normalMarker.scale.z = 0.08;
-
-            normalMarker.color.a = 1.0;
-            normalMarker.color.r = 1.0;
-            normalMarker.color.g = 0.5;
-            normalMarker.color.b = 0.0;
-
-            geometry_msgs::msg::Point start;
-            start.x = centroid.x();
-            start.y = centroid.y();
-            start.z = centroid.z();
-
-            geometry_msgs::msg::Point end;
-            end.x = centroid.x() + 0.5 * normal.x();
-            end.y = centroid.y() + 0.5 * normal.y();
-            end.z = centroid.z() + 0.5 * normal.z();
-
-            normalMarker.points.push_back(start);
-            normalMarker.points.push_back(end);
-
-            normalMarker.lifetime = rclcpp::Duration::from_seconds(0);
-
-            passageArray.markers.push_back(normalMarker);
-        }
     }
 
     pubStructuralElements->publish(passageArray);
@@ -1718,71 +1839,221 @@ std::pair<double, std::vector<ORB_SLAM3::Marker *>>
     return std::make_pair(minTimeDifference, matchedMarkers);
 }
 
+bool transformSkeletonPoint(const visualization_msgs::msg::Marker &marker_in,
+                            const geometry_msgs::msg::Point       &point_in,
+                            Eigen::Vector3d &transformedPoint_out)
+{
+    /*!
+     * Use the frame supplied by the Voxblox marker.
+     *
+     * @note        Voxblox currently publishes the sparse graph in
+     *              "map_elevated". The configured frameMap must only be used
+     *              when the marker contains no frame identifier.
+     */
+    const std::string sourceFrame = marker_in.header.frame_id.empty()
+                                        ? frameMap
+                                        : marker_in.header.frame_id;
+
+    /* Reject the point if no valid source frame is available */
+    if (sourceFrame.empty())
+    {
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                    "Voxblox marker does not contain a valid source frame.");
+
+        return false;
+    }
+
+    /* Confirm that the TF buffer is available */
+    if (tfBuffer_ == nullptr)
+    {
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                    "TF buffer is not available for skeleton transformation.");
+
+        return false;
+    }
+
+    /* No transform is required if the point is already in the world frame */
+    if (sourceFrame == frameWorld)
+    {
+        transformedPoint_out = Eigen::Vector3d(static_cast<double>(point_in.x),
+                                               static_cast<double>(point_in.y),
+                                               static_cast<double>(point_in.z));
+
+        return transformedPoint_out.allFinite();
+    }
+
+    /* Create the source and destination ROS point messages */
+    geometry_msgs::msg::PointStamped pointIn;
+    geometry_msgs::msg::PointStamped pointOut;
+
+    pointIn.header.frame_id = sourceFrame;
+    pointIn.header.stamp    = rclcpp::Time(0);
+    pointIn.point           = point_in;
+
+    try
+    {
+        /* Find the latest transform from the marker frame to the world frame */
+        const geometry_msgs::msg::TransformStamped transformStamped =
+            tfBuffer_->lookupTransform(frameWorld,
+                                       sourceFrame,
+                                       tf2::TimePointZero,
+                                       tf2::durationFromSec(0.1));
+
+        /* Transform the skeleton point into the world frame */
+        tf2::doTransform(pointIn, pointOut, transformStamped);
+    }
+    catch (const tf2::TransformException &exception)
+    {
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                    "Could not transform Voxblox point from '%s' to '%s': %s",
+                    sourceFrame.c_str(),
+                    frameWorld.c_str(),
+                    exception.what());
+
+        /*!
+         * Do not treat an untransformed point as a world-frame point.
+         *
+         * @note        Doing so would create incorrect room centroids and
+         *              passage-wall intersections.
+         */
+        return false;
+    }
+
+    /* Convert the transformed ROS point into an Eigen vector */
+    transformedPoint_out =
+        Eigen::Vector3d(static_cast<double>(pointOut.point.x),
+                        static_cast<double>(pointOut.point.y),
+                        static_cast<double>(pointOut.point.z));
+
+    return transformedPoint_out.allFinite();
+}
+
 void setVoxbloxSkeletonCluster(
     const visualization_msgs::msg::MarkerArray &skeletonArray)
 {
-    /* Reset the buffer */
+    /* Reset the connected vertex and edge buffers */
     skeletonClusterPoints.clear();
+    skeletonEdges.clear();
 
-    for (const auto &skeleton : skeletonArray.markers)
+    /* Extract the minimum valid connected-component size */
+    const std::size_t minimumClusterVertices = static_cast<std::size_t>(
+        ORB_SLAM3::SystemParams::GetParams()->room_seg.min_cluster_vertices);
+
+    /* Process every marker contained in the sparse graph message */
+    for (const visualization_msgs::msg::Marker &skeleton :
+         skeletonArray.markers)
     {
-        /* Take the points of the current cluster */
-        std::vector<Eigen::Vector3d> clusterPoints;
+        /*!
+         * Determine whether the marker contains vertices belonging to one
+         * connected Voxblox component.
+         *
+         * @note        The generic "vertices" and "closed_spaces" markers are
+         *              deliberately ignored because they duplicate the
+         *              connected-component data.
+         */
+        const bool isConnectedVertexMarker =
+            skeleton.type == visualization_msgs::msg::Marker::CUBE_LIST &&
+            skeleton.ns.rfind("connected_vertices_", 0) == 0;
 
-        /* Pick only the messages starting with name "connected_vertices_[x]" */
-        if (skeleton.ns.compare(0,
-                                strlen("connected_vertices"),
-                                "connected_vertices") == 0)
+        if (isConnectedVertexMarker)
         {
-            /* Skip small clusters */
-            if (skeleton.points.size() > ORB_SLAM3::SystemParams::GetParams()
-                                             ->room_seg.min_cluster_vertices)
+            /* Ignore empty and undersized connected components */
+            if (skeleton.points.size() < minimumClusterVertices)
             {
+                continue;
+            }
 
-                /* Add the points of the cluster to the buffer */
-                for (const auto &point : skeleton.points)
+            /* Initialise the current connected-component point collection */
+            std::vector<Eigen::Vector3d> clusterPoints;
+
+            clusterPoints.reserve(skeleton.points.size());
+
+            /* Transform every connected vertex into the world frame */
+            for (const geometry_msgs::msg::Point &point : skeleton.points)
+            {
+                Eigen::Vector3d transformedPoint;
+
+                /* Skip points which cannot be transformed */
+                if (!transformSkeletonPoint(skeleton, point, transformedPoint))
                 {
-                    /* transform from map frame to world frame */
-                    geometry_msgs::msg::PointStamped pointIn, pointOut;
-                    pointIn.header.frame_id = frameMap;
-                    pointIn.header.stamp    = rclcpp::Time(0);
-                    pointIn.point           = point;
-                    try
-                    {
-                        auto tf_stamped = tfBuffer_->lookupTransform(
-                            frameWorld,
-                            pointIn.header.frame_id,
-                            tf2::TimePointZero,
-                            tf2::durationFromSec(0.1));
-                        tf2::doTransform(pointIn, pointOut, tf_stamped);
-                    }
-                    catch (tf2::TransformException &ex)
-                    {
-                        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                                    "Could not transform skeleton cluster "
-                                    "point: %s",
-                                    ex.what());
-                        pointOut = pointIn; // Fallback: use original point
-                    }
-
-                    /* Add the point to the cluster */
-                    Eigen::Vector3d newPoint(pointOut.point.x,
-                                             pointOut.point.y,
-                                             pointOut.point.z);
-                    clusterPoints.push_back(newPoint);
+                    continue;
                 }
+
+                clusterPoints.push_back(transformedPoint);
             }
 
-            /* Add the current cluster to the skeleton cluster points buffer */
-            if (clusterPoints.size() > 0)
+            /* Store the component when enough valid points remain */
+            if (clusterPoints.size() >= minimumClusterVertices)
             {
-                skeletonClusterPoints.push_back(clusterPoints);
+                skeletonClusterPoints.push_back(std::move(clusterPoints));
             }
+
+            continue;
+        }
+
+        /*!
+         * Extract the complete raw sparse graph.
+         *
+         * @note        The connected_edges_* markers are clearance-filtered for
+         *              room segmentation. The raw "edges" marker preserves
+         *              narrow graph sections through passages.
+         */
+        const bool isRawEdgeMarker =
+            skeleton.type == visualization_msgs::msg::Marker::LINE_LIST &&
+            skeleton.ns == "edges";
+
+        if (!isRawEdgeMarker)
+        {
+            continue;
+        }
+
+        /* Process every consecutive pair as one connected skeleton edge */
+        for (std::size_t pointIndex = 0;
+             pointIndex + 1 < skeleton.points.size();
+             pointIndex += 2)
+        {
+            Eigen::Vector3d edgeStart;
+            Eigen::Vector3d edgeEnd;
+
+            /* Transform the beginning of the edge */
+            const bool validStart =
+                transformSkeletonPoint(skeleton,
+                                       skeleton.points[pointIndex],
+                                       edgeStart);
+
+            /* Transform the end of the edge */
+            const bool validEnd =
+                transformSkeletonPoint(skeleton,
+                                       skeleton.points[pointIndex + 1],
+                                       edgeEnd);
+
+            /* Skip the edge if either endpoint could not be transformed */
+            if (!validStart || !validEnd)
+            {
+                continue;
+            }
+
+            /* Skip invalid and zero-length edges */
+            if (!edgeStart.allFinite() || !edgeEnd.allFinite() ||
+                (edgeEnd - edgeStart).norm() < 1e-6)
+            {
+                continue;
+            }
+
+            /* Store the connected skeleton edge */
+            skeletonEdges.emplace_back(edgeStart, edgeEnd);
         }
     }
 
-    // Set the cluster points to the active map
+    /* Store the connected skeleton vertices in the active map */
     pSLAM->setSkeletonCluster(skeletonClusterPoints);
+
+    /* Store the connected skeleton edges in the active map */
+    pSLAM->setSkeletonEdges(skeletonEdges);
+
+    std::cout << "[Voxblox] Stored " << skeletonClusterPoints.size()
+              << " connected components and " << skeletonEdges.size()
+              << " connected edges." << std::endl;
 }
 
 void setGNNBasedRoomCandidates(

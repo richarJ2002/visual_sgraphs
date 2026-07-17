@@ -23,13 +23,23 @@
 
 namespace ORB_SLAM3
 {
-Plane::Plane()
+Plane::Plane(void)
 {
-    mbBad = false;
+    id    = -1;
+    opId  = -1;
+    opIdG = -1;
+
+    mbBad     = false;
+    planeType = Plane::planeVariant::UNDEFINED;
+
     centroid.setZero();
+
+    mpMap = nullptr;
+
     planeCloud = std::make_shared<pcl::PointCloud<pcl::PointXYZRGBA>>();
-    octree     = boost::make_shared<
-            pcl::octree::OctreePointCloudSearch<pcl::PointXYZRGBA>>(
+
+    octree = boost::make_shared<
+        pcl::octree::OctreePointCloudSearch<pcl::PointXYZRGBA>>(
         SystemParams::GetParams()->refine_map_points.octree.resolution);
 }
 Plane::~Plane() {}
@@ -68,13 +78,13 @@ void Plane::setOpIdG(int value)
     opIdG = value;
 }
 
-void Plane::setBad()
+void Plane::setBad(void)
 {
     unique_lock<mutex> lock(mMutexType);
     mbBad = true;
 }
 
-bool Plane::isBad()
+bool Plane::isBad(void)
 {
     unique_lock<mutex> lock(mMutexType);
     return mbBad;
@@ -85,7 +95,7 @@ std::vector<uint8_t> Plane::getColor() const
     return color;
 }
 
-void Plane::setColor()
+void Plane::setColor(void)
 {
     if (color.size() == 0)
     {
@@ -95,7 +105,7 @@ void Plane::setColor()
     }
 }
 
-std::set<MapPoint *> Plane::getMapPoints()
+std::set<MapPoint *> Plane::getMapPoints(void)
 {
     unique_lock<mutex> lock(mMutexFeatures);
     return mapPoints;
@@ -107,7 +117,7 @@ void Plane::setMapPoints(MapPoint *value)
     mapPoints.insert(value);
 }
 
-pcl::PointCloud<pcl::PointXYZRGBA>::Ptr Plane::getMapClouds()
+pcl::PointCloud<pcl::PointXYZRGBA>::Ptr Plane::getMapClouds(void)
 {
     unique_lock<mutex> lock(mMutexFeatures);
     return planeCloud;
@@ -180,13 +190,13 @@ bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &point)
     return false;
 }
 
-Plane::planeVariant Plane::getPlaneType()
+Plane::planeVariant Plane::getPlaneType(void)
 {
     unique_lock<mutex> lock(mMutexType);
     return planeType;
 }
 
-Plane::planeVariant Plane::getExpectedPlaneType()
+Plane::planeVariant Plane::getExpectedPlaneType(void)
 {
     unique_lock<mutex> lock(mMutexType);
 
@@ -244,18 +254,22 @@ void Plane::setPlaneType(planeVariant newType)
     planeType = newType;
 }
 
-void Plane::resetPlaneSemantics()
+void Plane::resetPlaneSemantics(void)
 {
     unique_lock<mutex> lock(mMutexType);
     unique_lock<mutex> lock2(mMutexFeatures);
+
     semanticVotes.clear();
     planeType = planeVariant::UNDEFINED;
+
     planeCloud->clear();
     octree->deleteTree();
     observations.clear();
+
+    observationCount = 0;
 }
 
-g2o::Plane3D Plane::getLocalEquation() const
+g2o::Plane3D Plane::getLocalEquation(void) const
 {
     unique_lock<mutex> lock(mMutexPos);
     return localEquation;
@@ -267,7 +281,7 @@ void Plane::setLocalEquation(const g2o::Plane3D &value)
     localEquation = value;
 }
 
-g2o::Plane3D Plane::getGlobalEquation() const
+g2o::Plane3D Plane::getGlobalEquation(void) const
 {
     unique_lock<mutex> lock(mMutexPos);
     return globalEquation;
@@ -279,7 +293,7 @@ void Plane::setGlobalEquation(const g2o::Plane3D &value)
     globalEquation = value;
 }
 
-Eigen::Vector3f Plane::getCentroid() const
+Eigen::Vector3f Plane::getCentroid(void) const
 {
     unique_lock<mutex> lock(mMutexPos);
     return centroid;
@@ -291,33 +305,91 @@ void Plane::setCentroid(const Eigen::Vector3f &value)
     centroid = value;
 }
 
-const std::map<KeyFrame *, Plane::Observation> &Plane::getObservations() const
+const std::map<KeyFrame *, Plane::Observation> &
+    Plane::getObservations(void) const
 {
     unique_lock<mutex> lock(mMutexFeatures);
     return observations;
 }
 
+std::size_t Plane::getObservationCount(void) const
+{
+    unique_lock<mutex> lock(mMutexFeatures);
+    return observationCount;
+}
+
 void Plane::addObservation(KeyFrame *pKF, Plane::Observation obs)
 {
+    /* Confirm the keyframe is valid */
     if (pKF == nullptr || pKF->isBad())
+    {
         return;
+    }
+
+    /* Lock the plane observation data */
     unique_lock<mutex> lock(mMutexFeatures);
-    observations.insert({pKF, obs});
+
+    /*!
+     * Insert the observation only when the keyframe has not previously
+     * observed this plane.
+     */
+    const auto insertionResult = observations.insert({pKF, obs});
+
+    /* Increment the observation count after a successful insertion */
+    if (insertionResult.second)
+    {
+        observationCount++;
+    }
 }
 
 void Plane::eraseObservation(KeyFrame *pKF)
 {
-    unique_lock<mutex> lock(mMutexFeatures);
-    Observation        obs = observations[pKF];
+    /* Confirm the keyframe is valid */
+    if (pKF == nullptr)
+    {
+        return;
+    }
 
-    // remove the vote casted
-    castWeightedVote(obs.semanticType, -obs.confidence);
+    /* Store the removed observation outside the locked section */
+    Observation removedObservation;
+    bool        observationFound = false;
 
-    // remove the observation
-    observations.erase(pKF);
+    {
+        /* Lock the plane observation data */
+        unique_lock<mutex> lock(mMutexFeatures);
+
+        const auto observationIterator = observations.find(pKF);
+
+        /* Return when the keyframe has no observation */
+        if (observationIterator == observations.end())
+        {
+            return;
+        }
+
+        /* Store the observation before removing it */
+        removedObservation = observationIterator->second;
+
+        /* Remove the observation */
+        observations.erase(observationIterator);
+
+        /* Decrement the observation count safely */
+        if (observationCount > 0)
+        {
+            observationCount--;
+        }
+
+        observationFound = true;
+    }
+
+    /* Remove the semantic vote belonging to the observation */
+    if (observationFound)
+    {
+        castWeightedVote(removedObservation.semanticType,
+                         -removedObservation.confidence);
+    }
 }
 
-Map *Plane::GetMap()
+Map *Plane::GetMap(void)
 {
     unique_lock<mutex> lock(mMutexMap);
     return mpMap;

@@ -105,14 +105,38 @@ class SystemParams
 
         struct plane_association
         {
-            float ominus_thresh   = 0.1f;
-            float distance_thresh = 0.2f;
-            float centroid_thresh = 3.2f;
+            /*!
+             *@brief        Maximum angular difference between associated planes
+             *              in radians.
+             */
+            float ominus_thresh = 0.18f;
+
+            /*!
+             * @brief       Maximum perpendicular separation between associated
+             *              planes.
+             */
+            float distance_thresh = 0.12f;
+
+            /*!
+             * @brief       Maximum centroid distance before finite cloud
+             *              compatibility is required.
+             */
+            float centroid_thresh = 2.5f;
 
             struct cluster_separation
             {
-                bool       enabled   = false;
-                float      tolerance = 2.5f;
+                /*!
+                 * @brief       Enables finite point-cloud compatibility
+                 *              checking.
+                 */
+                bool enabled = true;
+
+                /*!
+                 * @brief       Maximum point-cloud gap for neighbouring
+                 *              fragments of one plane.
+                 */
+                float tolerance = 0.35f;
+
                 Downsample downsample;
             } cluster_separation;
 
@@ -137,7 +161,7 @@ class SystemParams
 
     struct sem_seg
     {
-        float min_votes          = 3.5;
+        float min_votes          = 1.0f;
         float prob_thresh        = 0.5f;
         float conf_thresh        = 0.5f;
         float max_tilt_wall      = 0.3f;
