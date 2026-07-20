@@ -264,7 +264,7 @@ void publishTopics(rclcpp::Time                                         msgTime,
 
     publishKeyFrameImages(keyframes, msgTime);
     publishKeyFrameMarkers(keyframes, msgTime);
-    publishFiducialMarkers(pSLAM->GetAllMarkers(), msgTime);
+    publishFiducialMarkers(pSLAM->GetAllMarkers());
     publishTrackingImage(pSLAM->GetCurrentFrame(), msgTime);
     publishStructuralElements(pSLAM->GetAllRooms(),
                               pSLAM->GetAllFloors(),
@@ -793,10 +793,9 @@ void publishKeyFrameMarkers(std::vector<ORB_SLAM3::KeyFrame *> keyframe_vec,
     pubKeyFrameList->publish(kf_list);
 }
 
-void publishFiducialMarkers(std::vector<ORB_SLAM3::Marker *> markers,
-                            rclcpp::Time                     msgTime)
+void publishFiducialMarkers(std::vector<ORB_SLAM3::Marker *> markers_in)
 {
-    int numMarkers = markers.size();
+    int numMarkers = markers_in.size();
     if (numMarkers == 0)
         return;
 
@@ -806,7 +805,7 @@ void publishFiducialMarkers(std::vector<ORB_SLAM3::Marker *> markers,
     for (int idx = 0; idx < numMarkers; idx++)
     {
         visualization_msgs::msg::Marker fiducial_marker;
-        Sophus::SE3f markerPose = markers[idx]->getGlobalPose();
+        Sophus::SE3f markerPose = markers_in[idx]->getGlobalPose();
 
         fiducial_marker.color.a  = 0;
         fiducial_marker.scale.x  = 0.2;
@@ -1001,7 +1000,62 @@ void publishPlanes(const std::vector<ORB_SLAM3::Plane *> planes,
     pubBuildingComponents->publish(cloudMsg);
     pubPlaneLabel->publish(planeLabelArray);
 }
-static bool getPassageDisplayPoints(
+
+bool getRoomDisplayPoints(ORB_SLAM3::Room                  *room_in,
+                          const rclcpp::Time               &msgTime_in,
+                          geometry_msgs::msg::PointStamped &roomPointSE_out,
+                          geometry_msgs::msg::PointStamped &roomPointWorld_out)
+{
+    /* Confirm the required objects are valid */
+    if (room_in == nullptr || tfBuffer_ == nullptr)
+    {
+        return false;
+    }
+
+    /* The room centroid is stored in the world frame */
+    const Eigen::Vector3d roomCentroid = room_in->getCentroid();
+
+    if (!roomCentroid.allFinite())
+    {
+        return false;
+    }
+
+    /* Create the physical room point in the world frame */
+    roomPointWorld_out.header.stamp    = msgTime_in;
+    roomPointWorld_out.header.frame_id = frameWorld;
+    roomPointWorld_out.point.x         = roomCentroid.x();
+    roomPointWorld_out.point.y         = roomCentroid.y();
+    roomPointWorld_out.point.z         = roomCentroid.z();
+
+    try
+    {
+        /* Transform the world-frame centroid into frameSE */
+        const geometry_msgs::msg::TransformStamped worldToSE =
+            tfBuffer_->lookupTransform(frameSE,
+                                       frameWorld,
+                                       msgTime_in,
+                                       rclcpp::Duration::from_seconds(0.1));
+
+        tf2::doTransform(roomPointWorld_out, roomPointSE_out, worldToSE);
+    }
+    catch (const tf2::TransformException &exception)
+    {
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                    "Room display transform from '%s' to '%s' failed: %s",
+                    frameWorld.c_str(),
+                    frameSE.c_str(),
+                    exception.what());
+
+        return false;
+    }
+
+    roomPointSE_out.header.stamp    = msgTime_in;
+    roomPointSE_out.header.frame_id = frameSE;
+
+    return true;
+}
+
+bool getPassageDisplayPoints(
     ORB_SLAM3::Passage               *passage_in,
     const rclcpp::Time               &msgTime_in,
     const double                      verticalOffset_in,
@@ -1106,14 +1160,7 @@ void publishStructuralElements(
     }
 
     /* Variables */
-    const double textOffset        = -0.5;
-    const double floorToRoomOffset = -2.0;
-
-    /*!
-     * Positive because the floor uses a negative offset to move away from the
-     * room in the opposite direction.
-     */
-    const double passageBelowRoomOffset = 0.75;
+    const double textOffset = -0.5;
 
     /* Visulization markers */
     visualization_msgs::msg::MarkerArray roomArray;
@@ -1126,6 +1173,7 @@ void publishStructuralElements(
     /* ---------------------------------------------------------------------- *
      * PUBLISH ROOMS
      * ---------------------------------------------------------------------- */
+
     for (int idx = 0; idx < numRooms; idx++)
     {
         /* Extract the current room */
@@ -1194,12 +1242,10 @@ void publishStructuralElements(
         }
 
         /* Variables for specific room */
-        const std::string                roomName = roomCandidate->getName();
-        geometry_msgs::msg::PointStamped roomPoint;
-        geometry_msgs::msg::PointStamped roomPointTr;
+        const std::string roomName = roomCandidate->getName();
 
         /* Set defulat colour */
-        std::vector<double> colour = {0.5, 0.5, 0.5};
+        std::vector<double> roomColour = {0.5, 0.5, 0.5};
 
         /*!
          * Create color based on room type
@@ -1210,15 +1256,27 @@ void publishStructuralElements(
         if (roomCandidate->getRoomVariant() ==
             ORB_SLAM3::Room::roomVariant::CORRIDOR)
         {
-            colour = {0.6, 0.0, 0.3};
+            roomColour = {0.6, 0.0, 0.3};
         }
         else if (roomCandidate->getRoomVariant() ==
                  ORB_SLAM3::Room::roomVariant::ROOM)
         {
-            colour = {0.5, 0.1, 1.0};
+            roomColour = {0.5, 0.1, 1.0};
         }
 
-        Eigen::Vector3d                 centroid = roomCandidate->getCentroid();
+        /* Init variables used for finding the room in display frame */
+        geometry_msgs::msg::PointStamped roomPointSE;
+        geometry_msgs::msg::PointStamped roomPointWorld;
+
+        /* Calculate the displayed room position */
+        if (!getRoomDisplayPoints(roomCandidate,
+                                  msgTime_in,
+                                  roomPointSE,
+                                  roomPointWorld))
+        {
+            continue;
+        }
+
         visualization_msgs::msg::Marker room;
         visualization_msgs::msg::Marker roomLabel;
         visualization_msgs::msg::Marker roomWallLine;
@@ -1226,81 +1284,96 @@ void publishStructuralElements(
         visualization_msgs::msg::Marker roomMarkerLine;
 
         /* Room values */
-        room.id                          = idx;
-        room.ns                          = "room";
-        room.scale.x                     = 0.3;
-        room.scale.y                     = 0.3;
-        room.scale.z                     = 0.3;
-        room.color.a                     = 1.0;
-        room.action                      = room.ADD;
-        room.color.r                     = colour[0];
-        room.color.g                     = colour[1];
-        room.color.b                     = colour[2];
-        room.header.stamp                = msgTime_in;
-        room.pose.orientation.x          = 0.0;
-        room.pose.orientation.y          = 0.0;
-        room.pose.orientation.z          = 0.0;
-        room.pose.orientation.w          = 1.0;
-        room.header.frame_id             = frameSE;
-        room.pose.position.x             = centroid.x();
-        room.pose.position.y             = centroid.y();
-        room.pose.position.z             = centroid.z();
+        room.id = idx;
+        room.ns = "room";
+
+        room.action = room.ADD;
+        room.type   = visualization_msgs::msg::Marker::CUBE;
+
+        room.header.stamp    = msgTime_in;
+        room.header.frame_id = frameSE;
+
+        room.scale.x = 0.3;
+        room.scale.y = 0.3;
+        room.scale.z = 0.3;
+
+        room.color.a = 1.0;
+        room.color.r = roomColour[0];
+        room.color.g = roomColour[1];
+        room.color.b = roomColour[2];
+
+        room.pose.position.x = roomPointSE.point.x;
+        room.pose.position.y = roomPointSE.point.y;
+        room.pose.position.z = roomPointSE.point.z;
+
+        room.pose.orientation.x = 0.0;
+        room.pose.orientation.y = 0.0;
+        room.pose.orientation.z = 0.0;
+        room.pose.orientation.w = 1.0;
+
         room.mesh_use_embedded_materials = true;
         room.lifetime                    = rclcpp::Duration::from_seconds(0);
-        room.type = visualization_msgs::msg::Marker::CUBE;
         roomArray.markers.push_back(room);
 
         /* Room label (name) */
-        roomLabel.id              = idx;
-        roomLabel.color.a         = 1;
-        roomLabel.color.r         = 0;
-        roomLabel.color.g         = 0;
-        roomLabel.color.b         = 0;
-        roomLabel.scale.z         = 0.2;
-        roomLabel.text            = roomName;
-        roomLabel.ns              = "roomLabel";
-        roomLabel.action          = roomLabel.ADD;
+        roomLabel.id   = idx;
+        roomLabel.text = roomName;
+        roomLabel.ns   = "roomLabel";
+
+        roomLabel.action = roomLabel.ADD;
+        roomLabel.type   = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+
         roomLabel.header.stamp    = msgTime_in;
         roomLabel.header.frame_id = frameSE;
-        roomLabel.pose.position.x = centroid.x();
-        roomLabel.pose.position.z = centroid.z();
-        roomLabel.pose.position.y = centroid.y() + textOffset;
-        roomLabel.lifetime        = rclcpp::Duration::from_seconds(0);
-        roomLabel.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+
+        roomLabel.scale.z = 0.2;
+
+        roomLabel.pose.position.x = roomPointSE.point.x;
+        roomLabel.pose.position.z = roomPointSE.point.y;
+        roomLabel.pose.position.y = roomPointSE.point.z + textOffset;
+
+        roomLabel.color.a = 1;
+        roomLabel.color.r = 0;
+        roomLabel.color.g = 0;
+        roomLabel.color.b = 0;
+
+        roomLabel.lifetime = rclcpp::Duration::from_seconds(0);
         roomArray.markers.push_back(roomLabel);
 
         /* Room to Wall connection line */
-        roomWallLine.id              = idx;
-        roomWallLine.color.a         = 0.9;
-        roomWallLine.color.r         = 0.0;
-        roomWallLine.color.g         = 0.0;
-        roomWallLine.color.b         = 0.0;
-        roomWallLine.scale.x         = 0.05;
-        roomWallLine.scale.y         = 0.05;
-        roomWallLine.scale.z         = 0.05;
-        roomWallLine.ns              = "roomWallLine";
+        roomWallLine.id = idx;
+        roomWallLine.ns = "roomWallLine";
+
+        roomWallLine.action = roomWallLine.ADD;
+
         roomWallLine.header.stamp    = msgTime_in;
-        roomWallLine.action          = roomWallLine.ADD;
         roomWallLine.header.frame_id = frameWorld;
-        roomWallLine.lifetime        = rclcpp::Duration::from_seconds(0);
-        roomWallLine.type = visualization_msgs::msg::Marker::LINE_LIST;
+
+        roomWallLine.scale.x = 0.05;
+        roomWallLine.scale.y = 0.05;
+        roomWallLine.scale.z = 0.05;
+
+        roomWallLine.color.a = 0.9;
+        roomWallLine.color.r = roomColour[0];
+        roomWallLine.color.g = roomColour[1];
+        roomWallLine.color.b = roomColour[2];
+
+        roomWallLine.lifetime = rclcpp::Duration::from_seconds(0);
+        roomWallLine.type     = visualization_msgs::msg::Marker::LINE_LIST;
 
         /* Room to Passage connection line */
-        roomDoorwayLine.id              = idx;
-        roomDoorwayLine.ns              = "roomPassageLine";
+        roomDoorwayLine.id = idx;
+        roomDoorwayLine.ns = "roomPassageLine";
+
         roomDoorwayLine.header.stamp    = msgTime_in;
         roomDoorwayLine.header.frame_id = frameWorld;
-        roomDoorwayLine.action          = visualization_msgs::msg::Marker::ADD;
-        roomDoorwayLine.type = visualization_msgs::msg::Marker::LINE_LIST;
+
+        roomDoorwayLine.action = visualization_msgs::msg::Marker::ADD;
+        roomDoorwayLine.type   = visualization_msgs::msg::Marker::LINE_LIST;
 
         roomDoorwayLine.scale.x = 0.05;
         roomDoorwayLine.scale.y = 0.05;
         roomDoorwayLine.scale.z = 0.05;
-
-        roomDoorwayLine.color.a = 0.9;
-        roomDoorwayLine.color.r = 0.0;
-        roomDoorwayLine.color.g = 0.0;
-        roomDoorwayLine.color.b = 0.0;
 
         roomDoorwayLine.pose.orientation.x = 0.0;
         roomDoorwayLine.pose.orientation.y = 0.0;
@@ -1308,31 +1381,6 @@ void publishStructuralElements(
         roomDoorwayLine.pose.orientation.w = 1.0;
 
         roomDoorwayLine.lifetime = rclcpp::Duration::from_seconds(0);
-
-        /* Fill in the room center point */
-        roomPoint.header.stamp    = msgTime_in;
-        roomPoint.point.x         = centroid.x();
-        roomPoint.point.y         = centroid.y();
-        roomPoint.point.z         = centroid.z();
-        roomPoint.header.frame_id = frameSE;
-
-        try
-        {
-            /* Transform the room center point to the world frame */
-            auto tfStamped =
-                tfBuffer_->lookupTransform(frameWorld,
-                                           frameSE,
-                                           msgTime_in,
-                                           rclcpp::Duration::from_seconds(0.1));
-            tf2::doTransform(roomPoint, roomPointTr, tfStamped);
-        }
-        catch (tf2::TransformException &ex)
-        {
-            RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                        "Room center transform failed: %s",
-                        ex.what());
-            roomPointTr = roomPoint;
-        }
 
         /* Room to passage connection line */
         for (ORB_SLAM3::Passage *passage : roomCandidate->getPassages())
@@ -1349,17 +1397,43 @@ void publishStructuralElements(
 
             if (!getPassageDisplayPoints(passage,
                                          msgTime_in,
-                                         passageBelowRoomOffset,
+                                         0.0,
                                          passagePointSE,
                                          passagePointWorld))
             {
                 continue;
             }
 
+            /* Check if the pasasge is passable */
+            const bool isOpen = passage->isPassable();
+
+            /* Init variable for tracking is a passage is open or closed */
+            std::vector<double> passageColour;
+
+            /* Set the colour of the marker based on if the passage is open */
+            if (isOpen)
+            {
+                /* Set deault colour to green */
+                passageColour = {0.0, 1.0, 0.7};
+            }
+            else
+            {
+                /* Set deault colour to red */
+                passageColour = {0.1, 0.0, 0.0};
+            }
+
+            roomDoorwayLine.color.a = 0.9;
+            roomDoorwayLine.color.r = passageColour[0];
+            roomDoorwayLine.color.g = passageColour[1];
+            roomDoorwayLine.color.b = passageColour[2];
+
+            /* Init variable for room end */
             geometry_msgs::msg::Point roomEnd;
-            roomEnd.x = roomPointTr.point.x;
-            roomEnd.y = roomPointTr.point.y;
-            roomEnd.z = roomPointTr.point.z;
+
+            /* Use the world-frame position corresponding to displayed room */
+            roomEnd.x = roomPointWorld.point.x;
+            roomEnd.y = roomPointWorld.point.y;
+            roomEnd.z = roomPointWorld.point.z;
 
             geometry_msgs::msg::Point passageEnd;
             passageEnd.x = passagePointWorld.point.x;
@@ -1380,12 +1454,14 @@ void publishStructuralElements(
             }
 
             /* Variables */
-            geometry_msgs::msg::Point        pointRoom, pointWall;
-            geometry_msgs::msg::PointStamped wallPoint, wallPointTr;
+            geometry_msgs::msg::Point        pointRoom;
+            geometry_msgs::msg::Point        pointWall;
+            geometry_msgs::msg::PointStamped wallPoint;
+            geometry_msgs::msg::PointStamped wallPointTr;
 
-            pointRoom.x = roomPointTr.point.x;
-            pointRoom.y = roomPointTr.point.y;
-            pointRoom.z = roomPointTr.point.z;
+            pointRoom.x = roomPointWorld.point.x;
+            pointRoom.y = roomPointWorld.point.y;
+            pointRoom.z = roomPointWorld.point.z;
             roomWallLine.points.push_back(pointRoom);
 
             wallPoint.header.stamp    = msgTime_in;
@@ -1437,179 +1513,224 @@ void publishStructuralElements(
      * ---------------------------------------------------------------------- */
 
     /* Set deault colour */
-    std::vector<double> colour = {0.3, 0.6, 0.7};
+    const std::vector<double> floorColour = {0.3, 0.6, 0.7};
 
-    /* Loop through all the floors */
+    /*!
+     * Small world-frame display offset so the floor and room cubes do not
+     * completely overlap.
+     *
+     * @note        Set this to 0.0 to display the floor at its exact stored
+     *              centroid.
+     */
+    constexpr double floorDisplayOffset = -1.0;
+
+    /* Loop through all floors */
     for (int floorId = 0; floorId < numFloors; floorId++)
     {
-        /* If the floor has no rooms, skip it */
-        if (floors_in[floorId]->getRooms().size() == 0)
+        /* Extract the current floor */
+        ORB_SLAM3::Floor *floor = floors_in[floorId];
+
+        /* Skip invalid or empty floors */
+        if (floor == nullptr || floor->getRooms().empty())
         {
             continue;
         }
 
-        /* Variables */
-        std::string floorName = floors_in[floorId]->getName();
-        geometry_msgs::msg::PointStamped floorPoint;
-        geometry_msgs::msg::PointStamped floorPointTr;
-        Eigen::Vector3d floorCentroid = floors_in[floorId]->getCentroid();
-        visualization_msgs::msg::Marker floorMarker;
-        visualization_msgs::msg::Marker floorLabel;
-        visualization_msgs::msg::Marker floorRoomLine;
+        const std::string floorName = floor->getName();
 
-        /* Floor marker (cube) */
-        floorMarker.id                 = floorId;
-        floorMarker.ns                 = "floors";
-        floorMarker.scale.x            = 0.4;
-        floorMarker.scale.y            = 0.4;
-        floorMarker.scale.z            = 0.4;
-        floorMarker.color.a            = 1.0;
-        floorMarker.color.r            = colour[0];
-        floorMarker.color.g            = colour[1];
-        floorMarker.color.b            = colour[2];
-        floorMarker.header.stamp       = msgTime_in;
-        floorMarker.action             = floorMarker.ADD;
+        const Eigen::Vector3d floorCentroid = floor->getCentroid();
+
+        if (!floorCentroid.allFinite())
+        {
+            continue;
+        }
+
+        /*!
+         * The floor centroid is already stored in the world frame.
+         *
+         * Apply only a small display offset so the floor marker remains visible
+         * when a single floor and room have the same centroid.
+         */
+        Eigen::Vector3d floorDisplayPosition = floorCentroid;
+
+        if (sensorType == ORB_SLAM3::System::IMU_RGBD)
+        {
+            floorDisplayPosition.z() += floorDisplayOffset;
+        }
+        else
+        {
+            floorDisplayPosition.y() += floorDisplayOffset;
+        }
+
+        /* ------------------------------------------------------------------ *
+         * FLOOR MARKER
+         * ------------------------------------------------------------------ */
+
+        visualization_msgs::msg::Marker floorMarker;
+        floorMarker.id = floorId;
+        floorMarker.ns = "floors";
+
+        floorMarker.header.stamp    = msgTime_in;
+        floorMarker.header.frame_id = frameWorld;
+
+        floorMarker.action = visualization_msgs::msg::Marker::ADD;
+        floorMarker.type   = visualization_msgs::msg::Marker::CUBE;
+
+        floorMarker.pose.position.x = floorDisplayPosition.x();
+        floorMarker.pose.position.y = floorDisplayPosition.y();
+        floorMarker.pose.position.z = floorDisplayPosition.z();
+
         floorMarker.pose.orientation.x = 0.0;
         floorMarker.pose.orientation.y = 0.0;
         floorMarker.pose.orientation.z = 0.0;
         floorMarker.pose.orientation.w = 1.0;
-        floorMarker.header.frame_id    = frameSE;
-        floorMarker.pose.position.x    = floorCentroid.x();
-        floorMarker.pose.position.y    = floorCentroid.y();
-        floorMarker.pose.position.z    = floorCentroid.z();
-        floorMarker.lifetime           = rclcpp::Duration::from_seconds(0);
-        floorMarker.type               = visualization_msgs::msg::Marker::CUBE;
 
-        /* Floor label (name) */
-        floorLabel.color.a         = 1;
-        floorLabel.color.r         = 0;
-        floorLabel.color.g         = 0;
-        floorLabel.color.b         = 0;
-        floorLabel.scale.z         = 0.2;
-        floorLabel.id              = floorId;
-        floorLabel.text            = floorName;
-        floorLabel.ns              = "floorLabels";
+        floorMarker.scale.x = 0.4;
+        floorMarker.scale.y = 0.4;
+        floorMarker.scale.z = 0.4;
+
+        floorMarker.color.a = 1.0;
+        floorMarker.color.r = floorColour[0];
+        floorMarker.color.g = floorColour[1];
+        floorMarker.color.b = floorColour[2];
+
+        floorMarker.lifetime = rclcpp::Duration::from_seconds(0);
+
+        /* ------------------------------------------------------------------ *
+         * FLOOR LABEL
+         * ------------------------------------------------------------------ */
+
+        visualization_msgs::msg::Marker floorLabel;
+
+        floorLabel.id = floorId;
+        floorLabel.ns = "floorLabels";
+
         floorLabel.header.stamp    = msgTime_in;
-        floorLabel.action          = floorLabel.ADD;
-        floorLabel.header.frame_id = frameSE;
-        floorLabel.pose.position.x = floorCentroid.x();
-        floorLabel.pose.position.y = floorCentroid.y();
-        floorLabel.pose.position.z = floorCentroid.z();
-        floorLabel.lifetime        = rclcpp::Duration::from_seconds(0);
-        floorLabel.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+        floorLabel.header.frame_id = frameWorld;
 
-        /* Apply offset to the floor centroid for better visualization */
+        floorLabel.action = visualization_msgs::msg::Marker::ADD;
+        floorLabel.type   = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+        floorLabel.text   = floorName;
+
+        floorLabel.pose.position.x = floorDisplayPosition.x();
+        floorLabel.pose.position.y = floorDisplayPosition.y();
+        floorLabel.pose.position.z = floorDisplayPosition.z();
+
+        /*!
+         * Move the text away from the floor cube using the same display-axis
+         * convention as the other structural elements.
+         */
         if (sensorType == ORB_SLAM3::System::IMU_RGBD)
         {
-            floorMarker.pose.position.z += floorToRoomOffset;
-            floorLabel.pose.position.z += (floorToRoomOffset + textOffset);
+            floorLabel.pose.position.z += textOffset;
         }
         else
         {
-            floorMarker.pose.position.y += floorToRoomOffset;
-            floorLabel.pose.position.y += (floorToRoomOffset + textOffset);
+            floorLabel.pose.position.y += textOffset;
         }
 
-        /* Floor to Room connection line */
-        floorRoomLine.id              = floorId;
-        floorRoomLine.color.a         = 0.9;
-        floorRoomLine.color.r         = 0.0;
-        floorRoomLine.color.g         = 0.0;
-        floorRoomLine.color.b         = 0.0;
-        floorRoomLine.scale.x         = 0.05;
-        floorRoomLine.scale.y         = 0.05;
-        floorRoomLine.scale.z         = 0.05;
-        floorRoomLine.ns              = "floorRoomEdges";
+        floorLabel.pose.orientation.x = 0.0;
+        floorLabel.pose.orientation.y = 0.0;
+        floorLabel.pose.orientation.z = 0.0;
+        floorLabel.pose.orientation.w = 1.0;
+
+        floorLabel.scale.z = 0.2;
+
+        floorLabel.color.a = 1.0;
+        floorLabel.color.r = 0.0;
+        floorLabel.color.g = 0.0;
+        floorLabel.color.b = 0.0;
+
+        floorLabel.lifetime = rclcpp::Duration::from_seconds(0);
+
+        /* ------------------------------------------------------------------ *
+         * FLOOR-TO-ROOM CONNECTION LINES
+         * ------------------------------------------------------------------ */
+
+        visualization_msgs::msg::Marker floorRoomLine;
+
+        floorRoomLine.id = floorId;
+        floorRoomLine.ns = "floorRoomEdges";
+
         floorRoomLine.header.stamp    = msgTime_in;
-        floorRoomLine.action          = floorRoomLine.ADD;
         floorRoomLine.header.frame_id = frameWorld;
-        floorRoomLine.lifetime        = rclcpp::Duration::from_seconds(0);
-        floorRoomLine.type = visualization_msgs::msg::Marker::LINE_LIST;
 
-        /* Create point for the floor centroid in the world frame */
-        floorPoint.header.stamp    = msgTime_in;
-        floorPoint.header.frame_id = frameSE;
-        floorPoint.point.x         = floorMarker.pose.position.x;
-        floorPoint.point.y         = floorMarker.pose.position.y;
-        floorPoint.point.z         = floorMarker.pose.position.z;
+        floorRoomLine.action = visualization_msgs::msg::Marker::ADD;
+        floorRoomLine.type   = visualization_msgs::msg::Marker::LINE_LIST;
 
-        try
-        {
-            /* Extract the transform from room centre to world frame */
-            auto tfStamped =
-                tfBuffer_->lookupTransform(frameWorld,
-                                           frameSE,
-                                           msgTime_in,
-                                           rclcpp::Duration::from_seconds(0.1));
+        floorRoomLine.pose.orientation.x = 0.0;
+        floorRoomLine.pose.orientation.y = 0.0;
+        floorRoomLine.pose.orientation.z = 0.0;
+        floorRoomLine.pose.orientation.w = 1.0;
 
-            /* Transform the room center point to the world frame */
-            tf2::doTransform(floorPoint, floorPointTr, tfStamped);
-        }
-        catch (tf2::TransformException &ex)
-        {
-            RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                        "Floor center transform failed: %s",
-                        ex.what());
-            floorPointTr = floorPoint;
-        }
+        floorRoomLine.scale.x = 0.05;
+        floorRoomLine.scale.y = 0.05;
+        floorRoomLine.scale.z = 0.05;
 
-        /* Connect the floor to its rooms */
-        for (const auto room : floors_in[floorId]->getRooms())
+        floorRoomLine.color.a = 0.9;
+        floorRoomLine.color.r = floorColour[0];
+        floorRoomLine.color.g = floorColour[1];
+        floorRoomLine.color.b = floorColour[2];
+
+        floorRoomLine.lifetime = rclcpp::Duration::from_seconds(0);
+
+        /* Connect the floor to every confirmed room */
+        for (ORB_SLAM3::Room *room : floor->getRooms())
         {
             /* Skip invalid and provisional structural elements */
-            if (room == nullptr || room->isBad() ||
-                (room->getRoomVariant() != ORB_SLAM3::Room::roomVariant::ROOM &&
-                 room->getRoomVariant() !=
-                     ORB_SLAM3::Room::roomVariant::CORRIDOR))
+            if (room == nullptr || room->isBad())
             {
                 continue;
             }
 
-            geometry_msgs::msg::Point        pFloor, pRoom;
-            geometry_msgs::msg::PointStamped roomPoint, roomPointTr;
+            const bool isConfirmedRoom =
+                room->getRoomVariant() == ORB_SLAM3::Room::roomVariant::ROOM ||
+                room->getRoomVariant() ==
+                    ORB_SLAM3::Room::roomVariant::CORRIDOR;
 
-            pFloor.x = floorPointTr.point.x;
-            pFloor.y = floorPointTr.point.y;
-            pFloor.z = floorPointTr.point.z;
-            floorRoomLine.points.push_back(pFloor);
-
-            roomPoint.header.stamp    = msgTime_in;
-            roomPoint.header.frame_id = frameSE;
-            roomPoint.point.x         = room->getCentroid().x();
-            roomPoint.point.y         = room->getCentroid().y();
-            roomPoint.point.z         = room->getCentroid().z();
-
-            try
+            if (!isConfirmedRoom)
             {
-                /* Extract the transform from room centre to world frame */
-                auto tfStamped = tfBuffer_->lookupTransform(
-                    frameWorld,
-                    frameSE,
-                    msgTime_in,
-                    rclcpp::Duration::from_seconds(0.1));
-
-                /* Transform the room center point to the world frame */
-                tf2::doTransform(roomPoint, roomPointTr, tfStamped);
-            }
-            catch (tf2::TransformException &ex)
-            {
-                RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                            "Room centroid transform failed: %s",
-                            ex.what());
-                roomPointTr = roomPoint;
+                continue;
             }
 
-            pRoom.x = roomPointTr.point.x;
-            pRoom.y = roomPointTr.point.y;
-            pRoom.z = roomPointTr.point.z;
+            /*!
+             * Get the world-frame position corresponding to the displayed room
+             * marker.
+             */
+            geometry_msgs::msg::PointStamped roomPointSE;
+            geometry_msgs::msg::PointStamped roomPointWorld;
 
-            floorRoomLine.points.push_back(pRoom);
+            if (!getRoomDisplayPoints(room,
+                                      msgTime_in,
+                                      roomPointSE,
+                                      roomPointWorld))
+            {
+                continue;
+            }
+
+            geometry_msgs::msg::Point floorEnd;
+            floorEnd.x = floorDisplayPosition.x();
+            floorEnd.y = floorDisplayPosition.y();
+            floorEnd.z = floorDisplayPosition.z();
+
+            geometry_msgs::msg::Point roomEnd;
+            roomEnd.x = roomPointWorld.point.x;
+            roomEnd.y = roomPointWorld.point.y;
+            roomEnd.z = roomPointWorld.point.z;
+
+            floorRoomLine.points.push_back(floorEnd);
+            floorRoomLine.points.push_back(roomEnd);
         }
 
-        /* Add the floor marker */
-        floorArray.markers.push_back(floorLabel);
+        /* Add the floor marker and label */
         floorArray.markers.push_back(floorMarker);
-        floorArray.markers.push_back(floorRoomLine);
+        floorArray.markers.push_back(floorLabel);
+
+        /* Add connection lines only when at least one pair exists */
+        if (!floorRoomLine.points.empty())
+        {
+            floorArray.markers.push_back(floorRoomLine);
+        }
     }
 
     pubStructuralElements->publish(floorArray);
@@ -1636,7 +1757,7 @@ void publishStructuralElements(
 
         if (!getPassageDisplayPoints(passage,
                                      msgTime_in,
-                                     passageBelowRoomOffset,
+                                     0.0,
                                      passagePointSE,
                                      passagePointWorld))
         {
@@ -1645,6 +1766,21 @@ void publishStructuralElements(
 
         /* Check if the pasasge is passable */
         const bool isOpen = passage->isPassable();
+
+        /* Init variable for tracking is a passage is open or closed */
+        std::vector<double> passageColour;
+
+        /* Set the colour of the marker based on if the passage is open */
+        if (isOpen)
+        {
+            /* Set deault colour to green */
+            passageColour = {0.0, 1.0, 0.7};
+        }
+        else
+        {
+            /* Set deault colour to red */
+            passageColour = {0.1, 0.0, 0.0};
+        }
 
         /* Create a marker msg variable for the passage */
         visualization_msgs::msg::Marker passageMarker;
@@ -1671,21 +1807,10 @@ void publishStructuralElements(
         passageMarker.scale.y = 0.30;
         passageMarker.scale.z = 0.30;
 
-        /* Set the colour of the marker based on if the passage is open */
-        if (isOpen)
-        {
-            /* Set open passage to colour orange */
-            passageMarker.color.r = 0.0;
-            passageMarker.color.g = 1.0;
-            passageMarker.color.b = 0.0;
-        }
-        else
-        {
-            /* Set open passage to colour red */
-            passageMarker.color.r = 1.0;
-            passageMarker.color.g = 0.0;
-            passageMarker.color.b = 0.0;
-        }
+        passageMarker.color.a = 1.0;
+        passageMarker.color.r = passageColour[0];
+        passageMarker.color.g = passageColour[1];
+        passageMarker.color.b = passageColour[2];
 
         /* Set transparecy to full */
         passageMarker.color.a = 1.0;
@@ -1722,10 +1847,10 @@ void publishStructuralElements(
 
         passageLabel.scale.z = 0.20;
 
-        passageLabel.color.a = 1.0;
-        passageLabel.color.r = 0.0;
-        passageLabel.color.g = 0.0;
-        passageLabel.color.b = 0.0;
+        passageLabel.color.a = 0.9;
+        passageLabel.color.r = passageColour[0];
+        passageLabel.color.g = passageColour[1];
+        passageLabel.color.b = passageColour[2];
 
         passageLabel.lifetime = rclcpp::Duration::from_seconds(0);
 

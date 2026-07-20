@@ -111,7 +111,6 @@
 
 using json = nlohmann::json;
 
-class ORB_SLAM3::SystemParams;
 extern ORB_SLAM3::System         *pSLAM;
 extern ORB_SLAM3::System::eSensor sensorType;
 
@@ -185,23 +184,23 @@ class MapPointStruct
     int             clusterId;
     Eigen::Vector3f coordinates;
     MapPointStruct(Eigen::Vector3f coords) :
-        coordinates(coords),
-        clusterId(-1)
+        clusterId(-1),
+        coordinates(coords)
     {}
 };
 
 /*!
- * @brief
- * @param
- * @param
+ * @brief       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void setupServices(std::shared_ptr<rclcpp::Node>, const std::string &);
 
 /*!
- * @brief
- * @param
- * @param
- * @param
+ * @brief       TODO
+ * @param       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void publishFramePointCloud(
     Sophus::SE3f,
@@ -209,10 +208,10 @@ void publishFramePointCloud(
     rclcpp::Time);
 
 /*!
- * @brief
- * @param
- * @param
- * @param
+ * @brief       TODO
+ * @param       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void publishTopics(
     rclcpp::Time,
@@ -231,88 +230,112 @@ void setupPublishers(
     const std::string                               &node_name);
 
 /*!
- * @brief
- * @param
- * @param
+ * @brief       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void publishTrackingImage(cv::Mat, rclcpp::Time);
 
 /*!
- * @brief
- * @param
- * @param
+ * @brief       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void publishCameraPose(Sophus::SE3f, rclcpp::Time);
 
 /*!
- * @brief
- * @param
+ * @brief       TODO
+ * @param       TODO
  */
 void publishSegmentedCloud(std::vector<ORB_SLAM3::KeyFrame *>);
 
 /*!
- * @brief
- * @param
- * @param
+ * @brief       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void publishPlanes(std::vector<ORB_SLAM3::Plane *>, rclcpp::Time);
 
 /*!
- * @brief
- * @param
- * @param
- * @param
- * @param
+ * @brief       TODO
+ * @param       TODO
+ * @param       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void publishTFTransform(Sophus::SE3f, string, string, rclcpp::Time);
 
 /*!
- * @brief
- * @param
- * @param
+ * @brief       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void publishAllPoints(std::vector<ORB_SLAM3::MapPoint *>, rclcpp::Time);
 
 /*!
- * @brief
- * @param
- * @param
+ * @brief       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void publishTrackedPoints(std::vector<ORB_SLAM3::MapPoint *>, rclcpp::Time);
 
 /*!
- * @brief
- * @param
- * @param
+ * @brief       TODO
+ *
+ * @param[in]   markers_in
+ *              TODO
  */
-void publishFiducialMarkers(std::vector<ORB_SLAM3::Marker *>, rclcpp::Time);
+void publishFiducialMarkers(std::vector<ORB_SLAM3::Marker *> markers_in);
 
 /*!
- * @brief
- * @param
- * @param
+ * @brief       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void publishKeyFrameImages(std::vector<ORB_SLAM3::KeyFrame *>, rclcpp::Time);
 
 /*!
- * @brief
- * @param
- * @param
+ * @brief       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void publishKeyFrameMarkers(std::vector<ORB_SLAM3::KeyFrame *>, rclcpp::Time);
 
 /*!
  * @brief       TODO
  *
- * @param
- * @param
- * @param
- * @param
+ * @param       TODO
+ * @param       TODO
+ * @param       TODO
+ * @param       TODO
  */
 void publishBodyOdometry(Sophus::SE3f,
                          Eigen::Vector3f,
                          Eigen::Vector3f,
                          rclcpp::Time);
+
+/*!
+ * @brief       Calculates the displayed structural-graph position of a room.
+ *
+ * @param[in]   room_in
+ *              Room whose displayed position is required.
+ *
+ * @param[in]   msgTime_in
+ *              Timestamp used for the TF lookup.
+ *
+ * @param[out]  roomPointSE_out
+ *              Room position represented in frameSE.
+ *
+ * @param[out]  roomPointWorld_out
+ *              Room position represented in frameWorld for connection lines.
+ *
+ * @return      True when the room centroid is valid and the transformation
+ *              succeeds.
+ */
+bool getRoomDisplayPoints(ORB_SLAM3::Room                  *room_in,
+                          const rclcpp::Time               &msgTime_in,
+                          geometry_msgs::msg::PointStamped &roomPointSE_out,
+                          geometry_msgs::msg::PointStamped &roomPointWorld_out);
 
 /*!
  * @brief       Calculates the displayed structural-graph position of a
@@ -336,7 +359,7 @@ void publishBodyOdometry(Sophus::SE3f,
  *
  * @return      True when both transformations succeed.
  */
-static bool getPassageDisplayPoints(
+bool getPassageDisplayPoints(
     ORB_SLAM3::Passage               *passage_in,
     const rclcpp::Time               &msgTime_in,
     const double                      verticalOffset_in,
@@ -358,7 +381,7 @@ static bool getPassageDisplayPoints(
  * @param[in]   msgTime_in
  *              Time of the message to be published
  */
-void publishStructuralElements(
+extern void publishStructuralElements(
     const std::vector<ORB_SLAM3::Room *>    rooms_in,
     const std::vector<ORB_SLAM3::Floor *>   floors_in,
     const std::vector<ORB_SLAM3::Passage *> passages_in,
