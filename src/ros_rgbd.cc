@@ -23,7 +23,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "common.h"
+#include "Common.hpp"
 
 using namespace std;
 
@@ -41,12 +41,8 @@ class ImageGrabber : public rclcpp::Node
     // void GrabArUcoMarker(const aruco_msgs::MarkerArray &msg);
     void GrabSegmentation(
         const segmenter_ros::msg::SegmenterDataMsg &msgSegImage);
-    void GrabGNNRoomCandidates(
-        const vs_graphs::msg::VSGraphsAllDetectdetRooms &msgGNNRooms);
     void GrabVoxbloxSkeletonGraph(
         const visualization_msgs::msg::MarkerArray &msgSkeletonGraph);
-    void GrabGNNRoomCandidates(
-        const situational_graphs_msgs::msg::RoomsData::SharedPtr &msgGNNRooms);
     void GrabRGBD(const sensor_msgs::msg::Image::ConstSharedPtr       &msgRGB,
                   const sensor_msgs::msg::Image::ConstSharedPtr       &msgD,
                   const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC);
@@ -172,23 +168,6 @@ int main(int argc, char **argv)
             [igb](const visualization_msgs::msg::MarkerArray::SharedPtr msg)
             { igb->GrabVoxbloxSkeletonGraph(*msg); });
 
-    // Subscriber to get room candidates from the GNN module (legacy)
-    auto subGNNRooms_legacy =
-        node->create_subscription<situational_graphs_msgs::msg::RoomsData>(
-            "/room_segmentation/room_data",
-            10,
-            [igb](const situational_graphs_msgs::msg::RoomsData::SharedPtr msg)
-            { igb->GrabGNNRoomCandidates(msg); });
-
-    // Subscriber to get room candidates from the GNN module (new version)
-    auto subGNNRooms_new =
-        node->create_subscription<vs_graphs::msg::VSGraphsAllDetectdetRooms>(
-            "/gnn_room_detector",
-            1,
-            [igb](
-                const vs_graphs::msg::VSGraphsAllDetectdetRooms::SharedPtr msg)
-            { igb->GrabGNNRoomCandidates(*msg); });
-
     static std::shared_ptr<image_transport::ImageTransport> image_transport =
         std::make_shared<image_transport::ImageTransport>(node);
     setupPublishers(node, image_transport, nodeName);
@@ -270,24 +249,12 @@ void ImageGrabber::GrabRGBD(
     publishTopics(msgTime, Eigen::Vector3f::Zero(), msgPC);
 }
 
-/**
- * @brief Callback function to get the markers detected by the `aruco_ros`
- * library
+/*!
+ * @brief       Callback function to get scene segmentation results from the
+ *              SemanticSegmenter module
  *
- * @param msgMarkerArray The markers detected by the `aruco_ros` library
- */
-// void ImageGrabber::GrabArUcoMarker(const aruco_msgs::MarkerArray
-// &msgMarkerArray)
-// {
-//     // Pass the visited markers to a buffer to be processed later
-//     addMarkersToBuffer(msgMarkerArray);
-// }
-
-/**
- * @brief Callback function to get scene segmentation results from the
- * SemanticSegmenter module
- *
- * @param msgSegImage The segmentation results from the SemanticSegmenter
+ * @param       msgSegImage
+ *              The segmentation results from the SemanticSegmenter
  */
 void ImageGrabber::GrabSegmentation(
     const segmenter_ros::msg::SegmenterDataMsg &msgSegImage)
@@ -339,30 +306,4 @@ void ImageGrabber::GrabVoxbloxSkeletonGraph(
     // Pass the skeleton graph to a buffer to be processed by the
     // SemanticSegmentation thread
     setVoxbloxSkeletonCluster(msgSkeletonGraphs);
-}
-
-/**
- * @brief Callback function to get the room candidates detected by the GNN room
- * detector module (legacy version)
- *
- * @param msgGNNRooms The room candidates detected by the GNN module
- */
-void ImageGrabber::GrabGNNRoomCandidates(
-    const situational_graphs_msgs::msg::RoomsData::SharedPtr &msgGNNRooms)
-{
-    // Set the GNN room candidates in the SLAM system
-    // setGNNBasedRoomCandidates(msgGNNRooms);
-}
-
-/**
- * @brief Callback function to get the room candidates detected by the GNN room
- * detector module (new version)
- *
- * @param msgGNNRooms The room candidates detected by the GNN module
- */
-void ImageGrabber::GrabGNNRoomCandidates(
-    const vs_graphs::msg::VSGraphsAllDetectdetRooms &msgGNNRooms)
-{
-    // Set the GNN room candidates in the SLAM system
-    setGNNBasedRoomCandidates(msgGNNRooms);
 }

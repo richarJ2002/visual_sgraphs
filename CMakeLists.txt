@@ -52,8 +52,8 @@ find_package(rviz_visual_tools REQUIRED)
 find_package(rosidl_default_runtime REQUIRED)
 find_package(situational_graphs_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-# find_package(aruco_ros REQUIRED)
-# find_package(aruco_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -211,27 +211,76 @@ ament_target_dependencies(${PROJECT_NAME}_lib
   segmenter_ros
 )
 
+# ---------------------------------------------------------------------------
 # Common source files
+# ---------------------------------------------------------------------------
+
 set(COMMON_SOURCES
-  src/common.cc
+  ${PROJECT_SOURCE_DIR}/src/Common/appendFloorMarkers.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/appendPassageMarkers.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/appendRoomMarkers.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/clearKFClsClouds.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/commonState.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/convertSE3fToCvMat.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/findNearestMarker.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/getPassageDisplayPoints.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/getRoomDisplayPoints.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/getSkeletonMarkerWorldTransform.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/mapPointToPointcloud.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishAllMappedWalls.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishAllPoints.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishBodyOdometry.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishCameraPose.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishFiducialMarkers.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishFramePointCloud.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishFreeSpaceClusters.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishKeyFrameImages.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishKeyFrameMarkers.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishPlanes.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishSegmentedCloud.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishStaticTFTransform.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishStructuralElements.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishTFTransform.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishTopics.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishTrackedPoints.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/publishTrackingImage.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/saveMapPointsAsPCDService.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/saveMapService.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/saveTrajectoryService.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/SE3fToTFTransform.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/setupPublishers.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/setupServices.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/setVoxbloxSkeletonCluster.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/transformSkeletonPointCached.cpp
+  ${PROJECT_SOURCE_DIR}/src/Common/transformSkeletonPointFromMarker.cpp
 )
 
-# Common dependencies
+# ---------------------------------------------------------------------------
+# Dependencies required by the common source files
+# ---------------------------------------------------------------------------
+
 set(COMMON_DEPENDENCIES
-  tf2
   rclcpp
-  tf2_ros
-  nav_msgs
   std_msgs
-  cv_bridge
+  nav_msgs
   sensor_msgs
   geometry_msgs
-  segmenter_ros
+  visualization_msgs
+  cv_bridge
+  image_transport
   message_filters
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  pcl_ros
+  segmenter_ros
   situational_graphs_msgs
 )
 
-# ROS2 nodes
+# ---------------------------------------------------------------------------
+# ROS2 node creation helper
+# ---------------------------------------------------------------------------
+
 function(add_ros2_node target_name cpp_file)
   add_executable(${target_name}
     ${COMMON_SOURCES}
@@ -240,26 +289,43 @@ function(add_ros2_node target_name cpp_file)
 
   target_link_libraries(${target_name}
     ${PROJECT_NAME}_lib
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
   )
 
   ament_target_dependencies(${target_name}
     ${COMMON_DEPENDENCIES}
   )
 
-  rosidl_target_interfaces(${target_name} ${PROJECT_NAME} "rosidl_typesupport_cpp")
+  rosidl_target_interfaces(
+    ${target_name}
+    ${PROJECT_NAME}
+    "rosidl_typesupport_cpp"
+  )
 
   set_target_properties(${target_name} PROPERTIES
     INSTALL_RPATH "\$ORIGIN/.."
   )
 
-  install(TARGETS ${target_name}
+  install(
+    TARGETS ${target_name}
     DESTINATION lib/${PROJECT_NAME}
   )
 endfunction()
 
+# ---------------------------------------------------------------------------
 # ROS2 nodes
-add_ros2_node(ros_rgbd          src/ros_rgbd.cc)
-add_ros2_node(ros_rgbd_inertial src/ros_rgbd_inertial.cc)
+# ---------------------------------------------------------------------------
+
+add_ros2_node(
+  ros_rgbd
+  ${PROJECT_SOURCE_DIR}/src/ros_rgbd.cc
+)
+
+add_ros2_node(
+  ros_rgbd_inertial
+  ${PROJECT_SOURCE_DIR}/src/ros_rgbd_inertial.cc
+)
 
 # libvs_graphs_lib.so must also be able to find libDBoW2.so and libg2o.so
 # in the same install/vs_graphs/lib/ folder.

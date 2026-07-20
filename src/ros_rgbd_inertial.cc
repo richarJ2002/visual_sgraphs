@@ -23,7 +23,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "common.h"
+#include "Common.hpp"
 
 using namespace std;
 
@@ -267,7 +267,7 @@ void ImageGrabber::SyncWithImu()
                 pSLAM->TrackRGBD(im, depth, cloud, tIm, vImuMeas);
             }
 
-            publishTopics(msg_time, Wbb);
+            publishTopics(msg_time, Wbb, msgPC);
         }
 
         std::chrono::milliseconds tSleep(1);
