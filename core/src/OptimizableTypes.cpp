@@ -108,6 +108,36 @@ namespace ORB_SLAM3
         _jacobianOplusXi = -pCamera->projectJac(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
     }
 
+    bool EdgeSE3ProjectXYZDepth::read(std::istream &is)
+    {
+        is >> _measurement;
+        is >> information()(0, 0);
+        return true;
+    }
+
+    bool EdgeSE3ProjectXYZDepth::write(std::ostream &os) const
+    {
+        os << measurement() << " ";
+        os << " " << information()(0, 0);
+        return os.good();
+    }
+
+    void EdgeSE3ProjectXYZDepth::linearizeOplus()
+    {
+        g2o::VertexSE3Expmap *vi = static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
+        Eigen::Vector3d xyz_trans = vi->estimate().map(Xw);
+
+        double x = xyz_trans[0];
+        double y = xyz_trans[1];
+        double z = xyz_trans[2];
+
+        // Derivative of depth (z-coordinate in camera frame) w.r.t SE3 pose
+        Eigen::Matrix<double, 1, 6> SE3deriv_z;
+        SE3deriv_z << y, -x, 0, 0, 0, 1; // d(z)/d(xi) where xi = [rot, trans]
+
+        _jacobianOplusXi = -SE3deriv_z;
+    }
+
     EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ() : BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, g2o::VertexSE3Expmap>()
     {
     }

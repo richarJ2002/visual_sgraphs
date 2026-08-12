@@ -4,22 +4,24 @@
  * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
  * José M.M. Montiel, and Juan D. Tardós.
  *
- * ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms
- * of the GNU General Public License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
+ * ORB-SLAM3 is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
  *
- * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details: https://www.gnu.org/licenses/
-*/
+ * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details:
+ * https://www.gnu.org/licenses/
+ */
 
-#include <iostream>
 #include <algorithm>
-#include <fstream>
 #include <chrono>
+#include <fstream>
+#include <iostream>
 
-#include <rclcpp/rclcpp.hpp>
 #include <cv_bridge/cv_bridge.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -31,15 +33,17 @@
 using namespace std;
 
 ORB_SLAM3::ViewerAR viewerAR;
-bool bRGB = true;
+bool                bRGB = true;
 
 cv::Mat K;
 cv::Mat DistCoef;
 
 class ImageGrabber
 {
-public:
-    ImageGrabber(ORB_SLAM3::System *pSLAM) : mpSLAM(pSLAM) {}
+  public:
+    ImageGrabber(ORB_SLAM3::System *p_slamSystem) :
+        mpSLAM(p_slamSystem)
+    {}
 
     void GrabImage(const sensor_msgs::ImageConstPtr &msg);
 
@@ -54,21 +58,27 @@ int main(int argc, char **argv)
     if (argc != 3)
     {
         cerr << endl
-             << "Usage: rosrun ORB_SLAM3 Mono path_to_vocabulary path_to_settings" << endl;
+             << "Usage: rosrun ORB_SLAM3 Mono path_to_vocabulary "
+                "path_to_settings"
+             << endl;
         ros::shutdown();
         return 1;
     }
 
-    // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::MONOCULAR, false);
+    // Create SLAM system. It initializes all system threads and gets ready to
+    // process frames.
+    ORB_SLAM3::System SLAM(argv[1],
+                           argv[2],
+                           ORB_SLAM3::System::MONOCULAR,
+                           false);
 
-    cout << endl
-         << endl;
+    cout << endl << endl;
     cout << "-----------------------" << endl;
     cout << "Augmented Reality Demo" << endl;
     cout << "1) Translate the camera to initialize SLAM." << endl;
     cout << "2) Look at a planar region and translate the camera." << endl;
-    cout << "3) Press Insert Cube to place a virtual cube in the plane. " << endl;
+    cout << "3) Press Insert Cube to place a virtual cube in the plane. "
+         << endl;
     cout << endl;
     cout << "You can place several cubes in different planes." << endl;
     cout << "-----------------------" << endl;
@@ -79,10 +89,13 @@ int main(int argc, char **argv)
     ImageGrabber igb(&SLAM);
 
     ros::NodeHandle nodeHandler;
-    ros::Subscriber sub = nodeHandler.subscribe("/camera/image_raw", 1, &ImageGrabber::GrabImage, &igb);
+    ros::Subscriber sub = nodeHandler.subscribe("/camera/image_raw",
+                                                1,
+                                                &ImageGrabber::GrabImage,
+                                                &igb);
 
     cv::FileStorage fSettings(argv[2], cv::FileStorage::READ);
-    bRGB = static_cast<bool>((int)fSettings["Camera.RGB"]);
+    bRGB      = static_cast<bool>((int)fSettings["Camera.RGB"]);
     float fps = fSettings["Camera.fps"];
     viewerAR.SetFPS(fps);
 
@@ -93,18 +106,18 @@ int main(int argc, char **argv)
 
     viewerAR.SetCameraCalibration(fx, fy, cx, cy);
 
-    K = cv::Mat::eye(3, 3, CV_32F);
+    K                 = cv::Mat::eye(3, 3, CV_32F);
     K.at<float>(0, 0) = fx;
     K.at<float>(1, 1) = fy;
     K.at<float>(0, 2) = cx;
     K.at<float>(1, 2) = cy;
 
-    DistCoef = cv::Mat::zeros(4, 1, CV_32F);
+    DistCoef              = cv::Mat::zeros(4, 1, CV_32F);
     DistCoef.at<float>(0) = fSettings["Camera.k1"];
     DistCoef.at<float>(1) = fSettings["Camera.k2"];
     DistCoef.at<float>(2) = fSettings["Camera.p1"];
     DistCoef.at<float>(3) = fSettings["Camera.p2"];
-    const float k3 = fSettings["Camera.k3"];
+    const float k3        = fSettings["Camera.k3"];
     if (k3 != 0)
     {
         DistCoef.resize(5);
@@ -141,10 +154,11 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr &msg)
     }
     cv::Mat im = cv_ptr->image.clone();
     cv::Mat imu;
-    cv::Mat Tcw = mpSLAM->TrackMonocular(cv_ptr->image, cv_ptr->header.stamp.toSec());
-    int state = mpSLAM->GetTrackingState();
-    vector<ORB_SLAM3::MapPoint *> vMPs = mpSLAM->GetTrackedMapPoints();
-    vector<cv::KeyPoint> vKeys = mpSLAM->GetTrackedKeyPointsUn();
+    cv::Mat Tcw =
+        mpSLAM->TrackMonocular(cv_ptr->image, cv_ptr->header.stamp.toSec());
+    int                           state = mpSLAM->GetTrackingState();
+    vector<ORB_SLAM3::MapPoint *> vMPs  = mpSLAM->GetTrackedMapPoints();
+    vector<cv::KeyPoint>          vKeys = mpSLAM->GetTrackedKeyPointsUn();
 
     cv::undistort(im, imu, K, DistCoef);
 

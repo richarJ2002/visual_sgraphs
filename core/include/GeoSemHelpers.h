@@ -36,8 +36,8 @@ class GeoSemHelpers
     /*!
      * @brief       Creates a new plane object to be added to the map
      *
-     * @param       mpAtlas
-     *              The current map in Atlas
+     * @param[in,out] p_atlas_inout
+     *                Atlas which owns the active semantic map.
      *
      * @param       pKF
      *              The address of the current keyframe
@@ -151,26 +151,25 @@ class GeoSemHelpers
      * @param       mpAtlas
      *              The current map in Atlas
      *
-     * @param       doorPlane
-     *              The plane representing the door
+     * @param[in]   p_doorPlane_in
+     *              Optional semantic plane representing a closed door.
      *
-     * @param       wallPlane
-     *              The plane representing the wall connected to the door
+     * @param[in]   p_wallPlane_in
+     *              Plane representing the wall containing the opening.
      *
-     * @param       isOpenPassage
-     *              Thether the passage is open or closed (default: false,
-     *              meaning closed passage)
+     * @param[in]   isOpenPassage_in
+     *              True when connected free-space evidence confirms that the
+     *              opening is traversable.
      *
-     * @param       passageCentroid
-     *              The centroid of the passage if it is an open passage
-     *              (default: zero vector)
+     * @param[in]   passageCentroid_World_m_in
+     *              Open-passage centroid in the active map frame, in metres.
      */
     static void createMapPassage(
-        ORB_SLAM3::Atlas *mpAtlas,
-        ORB_SLAM3::Plane *doorPlane,
-        ORB_SLAM3::Plane *wallPlane,
-        bool              isOpenPassage   = false,
-        Eigen::Vector3f   passageCentroid = Eigen::Vector3f::Zero());
+        ORB_SLAM3::Atlas *p_atlas_inout,
+        ORB_SLAM3::Plane *p_doorPlane_in,
+        ORB_SLAM3::Plane *p_wallPlane_in,
+        bool              isOpenPassage_in           = false,
+        Eigen::Vector3d   passageCentroid_World_m_in = Eigen::Vector3d::Zero());
 
     /*!
      * @brief       Creates a blank room object (undefined variant) to be added
@@ -228,7 +227,7 @@ class GeoSemHelpers
      * @param[in]   plane
      *              Mapped plane which will be refitted.
      */
-    static void refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane);
+    static bool refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane);
 };
 } // namespace ORB_SLAM3
 

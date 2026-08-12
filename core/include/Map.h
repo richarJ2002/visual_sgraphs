@@ -32,6 +32,7 @@
 #include "Semantic/Marker.h"
 #include "Semantic/Room.h"
 
+#include <atomic>
 #include <boost/serialization/base_object.hpp>
 #include <mutex>
 #include <pangolin/pangolin.h>
@@ -94,10 +95,26 @@ class Map
     void AddMapMarker(Marker *pMarker);
     void AddDetectedMapRoom(Room *room);
     void AddCandidateMapRoom(Room *room);
+    /** Atomically moves a room from candidate to detected storage. */
+    void PromoteCandidateMapRoom(Room *room);
     void AddMapFloor(ORB_SLAM3::Floor *pFloor);
     void AddMapDoor(ORB_SLAM3::Door *pDoor);
     void AddRoomWallPlane(ORB_SLAM3::Plane *pPlane);
     void AddMapPassage(ORB_SLAM3::Passage *pPassage);
+
+    /**
+     * @brief Reserves a plane identifier that will not be reused by this map.
+     *
+     * @return Unique plane identifier for a subsequently added plane.
+     */
+    int reservePlaneId(void);
+
+    /**
+     * @brief Reserves a floor identifier that will not be reused by this map.
+     *
+     * @return Unique floor identifier for a subsequently added floor.
+     */
+    int reserveFloorId(void);
 
     void EraseMapPoint(MapPoint *pMP);
     void EraseKeyFrame(KeyFrame *pKF);
@@ -107,6 +124,10 @@ class Map
     void EraseMarkerBasedMapRoom(Room *pRoom);
     void EraseRoomWallPlane(ORB_SLAM3::Plane *pPlane);
     void EraseMapPassage(ORB_SLAM3::Passage *pPassage);
+    void EraseMapFloor(ORB_SLAM3::Floor *p_floor_in);
+
+    /** Clears lookup-only state after every indexed entity was transferred. */
+    void ClearTransferredEntityIndexes();
 
     void InformNewBigChange();
     int  GetLastBigChangeIdx();
@@ -121,6 +142,7 @@ class Map
     std::vector<ORB_SLAM3::Door *>    GetAllDoors();
     std::vector<ORB_SLAM3::Floor *>   GetAllFloors();
     std::vector<Room *>               GetAllMarkerBasedMapRooms();
+    std::vector<Room *>               GetAllCandidateMapRooms();
     std::vector<MapPoint *>           GetReferenceMapPoints();
     std::vector<ORB_SLAM3::Passage *> GetAllPassages();
 
@@ -183,6 +205,8 @@ class Map
 
     int  GetLastMapChange();
     int  GetMapChangeIndex();
+    /** Returns the epoch of the coordinate frame containing this map. */
+    std::uint64_t GetWorldFrameEpoch();
     void IncreaseChangeIndex();
     void SetLastMapChange(int currentChangeId);
 
@@ -259,6 +283,10 @@ class Map
     std::unordered_map<int, ORB_SLAM3::Passage *>     mPassageIndex;
     std::unordered_map<int, ORB_SLAM3::Plane *>       mRoomWallPlaneIndex;
 
+    /* Monotonic semantic IDs remain unique after fusion creates index gaps. */
+    int nextAvailablePlaneId{0};
+    int nextAvailableFloorId{0};
+
     // Save/load, the set structure is broken in libboost 1.58 for ubuntu 16.04,
     // a vector is serializated
     std::vector<MapPoint *> mvpBackupMapPoints;
@@ -277,6 +305,12 @@ class Map
     int mnMapChange;
     int mnMapChangeNotified;
 
+    /**
+     * Monotonic coordinate-frame epoch. Unlike mnMapChange, ordinary local BA
+     * and content updates do not increment it; whole-map rebases do.
+     */
+    std::uint64_t mnWorldFrameEpoch;
+
     long unsigned int mnInitKFid;
     long unsigned int mnMaxKFid;
 
@@ -286,9 +320,9 @@ class Map
     // View of the map in aerial sight (for the AtlasViewer)
     GLubyte *mThumbnail;
 
-    bool mIsInUse;
-    bool mHasTumbnail;
-    bool mbBad = false;
+    bool             mIsInUse;
+    bool             mHasTumbnail;
+    std::atomic_bool mbBad{false};
 
     bool mbIsInertial;
     bool mbIMU_BA1;

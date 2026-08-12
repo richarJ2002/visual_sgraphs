@@ -26,89 +26,178 @@
 #ifndef VS_GRAPHS_COMMON_H
 #define VS_GRAPHS_COMMON_H
 
-#include <Eigen/Dense>
+/* -------------------------------------------------------------------------- *
+ * STANDARD LIBRARY
+ * -------------------------------------------------------------------------- */
+
 #include <algorithm>
+#include <array>
 #include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <fstream>
+#include <functional>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <queue>
+#include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
-#include <cv_bridge/cv_bridge.hpp>
-#include <geometry_msgs/msg/point.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
-#include <image_transport/image_transport.hpp>
-#include <opencv2/core/core.hpp>
+/* -------------------------------------------------------------------------- *
+ * EIGEN
+ * -------------------------------------------------------------------------- */
+
+#include <Eigen/Dense>
+
+/* -------------------------------------------------------------------------- *
+ * JSON
+ * -------------------------------------------------------------------------- */
+
+#include <nlohmann/json.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * OPENCV
+ * -------------------------------------------------------------------------- */
+
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/opencv.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * ROS 2 CORE
+ * -------------------------------------------------------------------------- */
+
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/time.hpp>
-#include <tf2/time.h>
-#include <tf2/transform_datatypes.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/transform_listener.h>
 
-#include <functional>
-#include <geometry_msgs/msg/point.hpp>
-#include <geometry_msgs/msg/transform_stamped.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <tf2_ros/buffer.h>
-
-#include <nav_msgs/msg/odometry.hpp>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/pcl_node.hpp>
-#include <pcl_ros/transforms.hpp>
-#include <sensor_msgs/msg/imu.hpp>
-#include <std_msgs/msg/header.hpp>
-#include <std_msgs/msg/u_int64.hpp>
-
-#include "sensor_msgs/msg/image.hpp"
-#include <sensor_msgs/msg/point_cloud2.hpp>
-#include <visualization_msgs/msg/marker.hpp>
-
-#include <nav_msgs/msg/path.hpp>
-#include <pcl_conversions/pcl_conversions.h>
-#include <rviz_visual_tools/rviz_visual_tools.hpp>
-#include <segmenter_ros/msg/segmenter_data_msg.hpp>
-#include <segmenter_ros/msg/vs_graph_data_msg.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
+/* -------------------------------------------------------------------------- *
+ * ROS 2 MESSAGE FILTERS
+ * -------------------------------------------------------------------------- */
 
 #include <message_filters/subscriber.hpp>
 #include <message_filters/sync_policies/approximate_time.hpp>
 #include <message_filters/time_synchronizer.hpp>
 
-// This file is created automatically, see here
-// http://wiki.ros.org/ROS/Tutorials/CreatingMsgAndSrv#Creating_a_srv
+/* -------------------------------------------------------------------------- *
+ * ROS 2 GEOMETRY MESSAGES
+ * -------------------------------------------------------------------------- */
+
+#include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/point_stamped.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * ROS 2 NAVIGATION MESSAGES
+ * -------------------------------------------------------------------------- */
+
+#include <nav_msgs/msg/odometry.hpp>
+#include <nav_msgs/msg/path.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * ROS 2 SENSOR MESSAGES
+ * -------------------------------------------------------------------------- */
+
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * ROS 2 STANDARD MESSAGES
+ * -------------------------------------------------------------------------- */
+
+#include <std_msgs/msg/header.hpp>
+#include <std_msgs/msg/u_int64.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * ROS 2 VISUALISATION MESSAGES
+ * -------------------------------------------------------------------------- */
+
+#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * IMAGE TRANSPORT AND CV BRIDGE
+ * -------------------------------------------------------------------------- */
+
+#include <cv_bridge/cv_bridge.hpp>
+#include <image_transport/image_transport.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * TF2
+ * -------------------------------------------------------------------------- */
+
+#include <tf2/LinearMath/Transform.h>
+#include <tf2/exceptions.h>
+#include <tf2/time.h>
+#include <tf2/transform_datatypes.h>
+
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
+
+/* -------------------------------------------------------------------------- *
+ * POINT CLOUD LIBRARY
+ * -------------------------------------------------------------------------- */
+
+#include <pcl/common/transforms.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/pcl_node.hpp>
+#include <pcl_ros/transforms.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * RVIZ
+ * -------------------------------------------------------------------------- */
+
+#include <rviz_visual_tools/rviz_visual_tools.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * SEGMENTATION MESSAGES
+ * -------------------------------------------------------------------------- */
+
+#include <segmenter_ros/msg/segmenter_data_msg.hpp>
+#include <segmenter_ros/msg/vs_graph_data_msg.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * SITUATIONAL GRAPHS MESSAGES
+ * -------------------------------------------------------------------------- */
+
+#include <situational_graphs_msgs/msg/planes_data.hpp>
+#include <situational_graphs_msgs/msg/rooms_data.hpp>
+
+/* -------------------------------------------------------------------------- *
+ * VISUAL S-GRAPHS MESSAGES AND SERVICES
+ * -------------------------------------------------------------------------- */
+
+#include <vs_graphs/msg/vs_graphs_all_detectdet_rooms.hpp>
+#include <vs_graphs/msg/vs_graphs_all_walls_data.hpp>
+#include <vs_graphs/srv/get_mission_health.hpp>
 #include <vs_graphs/srv/save_map.hpp>
 
-// Transformation process
-#include <pcl_ros/transforms.hpp>
-#include <tf2/transform_datatypes.h>
-#include <tf2_ros/static_transform_broadcaster.h>
+/* -------------------------------------------------------------------------- *
+ * ORB-SLAM3
+ * -------------------------------------------------------------------------- */
 
-// ORB-SLAM3-specific libraries
 #include "ImuTypes.h"
 #include "System.h"
 #include "Types/SystemParams.h"
 
-// ArUco-ROS library
-// #include <aruco_msgs/MarkerArray.h>
+/* -------------------------------------------------------------------------- *
+ * SEMANTIC ELEMENTS
+ * -------------------------------------------------------------------------- */
 
-// Semantics
 #include "Semantic/Marker.h"
 #include "Semantic/Passage.h"
 #include "Semantic/Room.h"
-
-// Situational Graphs Messages
-#include <situational_graphs_msgs/msg/planes_data.hpp>
-#include <situational_graphs_msgs/msg/rooms_data.hpp>
-
-// vS-Graphs Custom Messages
-#include <vs_graphs/msg/vs_graphs_all_detectdet_rooms.hpp>
-#include <vs_graphs/msg/vs_graphs_all_walls_data.hpp>
-
 using json = nlohmann::json;
 
 /* -------------------------------------------------------------------------- *
@@ -124,7 +213,7 @@ using json = nlohmann::json;
  *
  * @note        Global variable declared in `commonStat.cpp`
  */
-extern ORB_SLAM3::System *pSLAM;
+extern ORB_SLAM3::System *p_slamSystem;
 
 /*!
  * @brief       Sensor configuration used by the active ORB-SLAM3 system.
@@ -385,13 +474,28 @@ extern rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
     pubTrackedMappoints;
 
 /*!
- * @brief       Publisher for the current camera-frame point cloud transformed
- *              into frameWorld.
+ * @brief       Publisher for the current camera-frame point cloud consumed by
+ *              Voxblox.
+ *
+ *              The points remain in frameCamera. Voxblox obtains the
+ *              camera-to-world transform at the message timestamp and uses the
+ *              camera origin for free-space ray integration.
  *
  * @note        Global variable declared in `commonStat.cpp`
  */
 extern rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-    pubWorldFramePointCloud;
+    p_voxbloxInputPointCloudPublisher;
+
+/*!
+ * @brief       Publisher for the active SLAM-map revision.
+ *
+ *              A revision changes whenever the active map changes identity or
+ *              receives a loop-closure/global-BA correction. Derived mapping
+ *              consumers use it to invalidate geometry integrated in the old
+ *              coordinate system.
+ */
+extern rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr
+    p_mapRevisionPublisher;
 
 /*!
  * @brief       Publisher for keyframe position visualisation markers.
@@ -550,6 +654,9 @@ extern rclcpp::Service<vs_graphs::srv::SaveMap>::SharedPtr srvSaveMapPoints;
  */
 extern rclcpp::Service<vs_graphs::srv::SaveMap>::SharedPtr srvSaveTrajectory;
 
+extern rclcpp::Service<vs_graphs::srv::GetMissionHealth>::SharedPtr
+    srvGetMissionHealth;
+
 class MapPointStruct
 {
     int             clusterId;
@@ -565,17 +672,17 @@ class MapPointStruct
  * -------------------------------------------------------------------------- */
 
 /*!
- * @brief
+ * @brief       Service handle for serializing the complete semantic map.
  */
 extern rclcpp::Service<vs_graphs::srv::SaveMap>::SharedPtr srvSaveMap;
 
 /*!
- * @brief
+ * @brief       Service handle for exporting mapped points as a PCD file.
  */
 extern rclcpp::Service<vs_graphs::srv::SaveMap>::SharedPtr srvSaveMapPoints;
 
 /*!
- * @brief
+ * @brief       Service handle for exporting the estimated camera trajectory.
  */
 extern rclcpp::Service<vs_graphs::srv::SaveMap>::SharedPtr srvSaveTrajectory;
 
@@ -603,7 +710,11 @@ extern void appendFloorMarkers(
 
 /*!
  * @brief       Appends passage and passage-label markers to a structural
- *              marker array.
+ *              marker array with situational awareness coloring.
+ *
+ * @param[in]   mappedRooms_in
+ *              Collection of mapped room elements (to count room-passage
+ * links).
  *
  * @param[in]   mappedPassages_in
  *              Collection of mapped passage elements to process.
@@ -634,9 +745,28 @@ extern void appendPassageMarkers(
  *              Marker array to which the generated room markers are appended.
  */
 extern void appendRoomMarkers(
-    const std::vector<ORB_SLAM3::Room *> &mappedRooms_in,
-    const rclcpp::Time                   &msgTime_s_in,
-    visualization_msgs::msg::MarkerArray &structuralElementMarkerArray_out);
+    const std::vector<ORB_SLAM3::Room *>  &mappedRooms_in,
+    const std::vector<ORB_SLAM3::Floor *> &mappedFloors_in,
+    const rclcpp::Time                    &msgTime_s_in,
+    visualization_msgs::msg::MarkerArray  &structuralElementMarkerArray_out);
+
+/*!
+ * @brief Computes the ordered horizontal corner polygon of a room boundary.
+ *
+ * Each wall is treated as a vertical line projected onto the plane orthogonal
+ * to the room ground normal. The walls are ordered by their centroid angle
+ * around the room centroid and consecutive supporting lines are intersected to
+ * recover the shared corners. Used to draw the green closed-loop marker when a
+ * room boundary is validated as COMPLETE.
+ *
+ * @param[in] room_in Room whose boundary corners are required.
+ *
+ * @return Ordered world-frame corner points forming the closed boundary loop.
+ *         The loop is empty for a degenerate room or when any consecutive wall
+ *         pair is parallel.
+ */
+extern std::vector<Eigen::Vector3d>
+    computeRoomCorners(const ORB_SLAM3::Room *room_in);
 
 /*!
  * @brief       Function which clears the cluster points from the keyframe
@@ -1105,6 +1235,17 @@ extern void publishTopics(const rclcpp::Time    &msgTime_s_in,
                           const Eigen::Vector3f &angularVelocity_body_radps_in,
                           const sensor_msgs::msg::PointCloud2::ConstSharedPtr
                               &pointCloud_cameraMessage_in);
+
+/**
+ * Converts a direct cloud into the configured optical camera frame.
+ * The Gazebo FLU conversion is applied only when explicitly enabled.
+ */
+extern bool preparePointCloudForTracking(
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr &pointCloudMessage_in,
+    bool                                           directGazeboFluCloud_in,
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr        &pointCloud_camera_out,
+    sensor_msgs::msg::PointCloud2::ConstSharedPtr &pointCloudCameraMessage_out,
+    std::string                                   &failureReason_out);
 
 /*!
  * @brief       Converts the currently tracked ORB-SLAM3 map points into a ROS

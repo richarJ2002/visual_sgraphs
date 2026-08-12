@@ -31,11 +31,137 @@
 #include "Optimizer.h"
 #include "Sim3Solver.h"
 
+#include <chrono>
+#include <limits>
 #include <mutex>
 #include <thread>
 
 namespace ORB_SLAM3
 {
+namespace
+{
+
+bool verifyLoopMergeFloors(
+    Map             *p_survivingMap_in,
+    Map             *p_absorbedMap_in,
+    const g2o::Sim3 &transform_absorbedWorldToSurvivingWorld_in,
+    std::string     &result_out)
+{
+    Floor *p_survivingFloor =
+        Floor::selectBestObservedFloor(p_survivingMap_in->GetAllFloors());
+    Floor *p_absorbedFloor =
+        Floor::selectBestObservedFloor(p_absorbedMap_in->GetAllFloors());
+
+    const std::optional<Floor::PlaneIdentity> survivingIdentity =
+        p_survivingFloor != nullptr ? p_survivingFloor->getPlaneIdentity()
+                                    : std::nullopt;
+    const std::optional<Floor::PlaneIdentity> absorbedIdentity =
+        p_absorbedFloor != nullptr ? p_absorbedFloor->getPlaneIdentity()
+                                   : std::nullopt;
+
+    if (!survivingIdentity.has_value() || !absorbedIdentity.has_value())
+    {
+        result_out = "DEFERRED";
+        std::cout << "[FloorVerify] Map#" << p_survivingMap_in->GetId()
+                  << " and Map#" << p_absorbedMap_in->GetId()
+                  << " floor verification deferred (current="
+                  << (survivingIdentity.has_value() ? "valid" : "missing")
+                  << ", merge="
+                  << (absorbedIdentity.has_value() ? "valid" : "missing")
+                  << "); result=DEFERRED committed=0" << std::endl;
+        return false;
+    }
+
+    const std::optional<Floor::PlaneIdentity> transformedAbsorbedIdentity =
+        Floor::transformPlaneIdentity(
+            *absorbedIdentity,
+            transform_absorbedWorldToSurvivingWorld_in);
+    double floorNormalAngle_deg = std::numeric_limits<double>::infinity();
+    double floorOffset_m        = std::numeric_limits<double>::infinity();
+
+    const bool floorsMatch =
+        transformedAbsorbedIdentity.has_value() &&
+        Floor::planeIdentitiesMatch(*survivingIdentity,
+                                    *transformedAbsorbedIdentity,
+                                    Floor::kMergeMaxPlaneNormalAngle_deg,
+                                    Floor::kMergeMaxPlaneOffset_m,
+                                    floorNormalAngle_deg,
+                                    floorOffset_m);
+
+    if (!floorsMatch)
+    {
+        result_out = "REJECTED";
+        std::cerr << "[FloorVerify] Rejecting loop merge: Map#"
+                  << p_survivingMap_in->GetId() << " and Map#"
+                  << p_absorbedMap_in->GetId()
+                  << " floor planes mismatch (angle=" << floorNormalAngle_deg
+                  << " deg, offset=" << floorOffset_m
+                  << " m; limits=" << Floor::kMergeMaxPlaneNormalAngle_deg
+                  << " deg/" << Floor::kMergeMaxPlaneOffset_m
+                  << " m). result=REJECTED committed=0" << std::endl;
+        return false;
+    }
+
+    std::cout << "[FloorVerify] Map#" << p_survivingMap_in->GetId()
+              << " and Map#" << p_absorbedMap_in->GetId()
+              << " floor planes match (angle=" << floorNormalAngle_deg
+              << " deg, offset=" << floorOffset_m
+              << " m). result=ACCEPTED committed=0" << std::endl;
+    result_out = "ACCEPTED";
+    return true;
+}
+
+void collapseMergedFloors(Map *p_survivingMap_in)
+{
+    if (p_survivingMap_in == nullptr)
+    {
+        return;
+    }
+
+    const std::vector<Floor *> allFloors = p_survivingMap_in->GetAllFloors();
+    if (allFloors.size() <= 1U)
+    {
+        return;
+    }
+
+    Floor *p_keeperFloor = Floor::selectBestObservedFloor(allFloors);
+    if (p_keeperFloor == nullptr)
+    {
+        return;
+    }
+
+    for (Floor *p_duplicateFloor : allFloors)
+    {
+        if (p_duplicateFloor == nullptr || p_duplicateFloor == p_keeperFloor)
+        {
+            continue;
+        }
+
+        for (Room *p_room : p_duplicateFloor->getRooms())
+        {
+            if (p_room != nullptr && !p_room->isBad())
+            {
+                p_keeperFloor->addRoom(p_room);
+            }
+        }
+
+        p_survivingMap_in->EraseMapFloor(p_duplicateFloor);
+        std::cout << "[LoopClosing] Fused duplicate Floor#"
+                  << p_duplicateFloor->getId() << " into Floor#"
+                  << p_keeperFloor->getId()
+                  << " and retained the better-observed plane identity."
+                  << std::endl;
+    }
+
+    for (Room *p_room : p_survivingMap_in->GetAllDetectedMapRooms())
+    {
+        if (p_room != nullptr && !p_room->isBad())
+        {
+            p_keeperFloor->addRoom(p_room);
+        }
+    }
+}
+} // namespace
 
 LoopClosing::LoopClosing(Atlas            *pAtlas,
                          KeyFrameDatabase *pDB,
@@ -50,19 +176,19 @@ LoopClosing::LoopClosing(Atlas            *pAtlas,
     mpKeyFrameDB(pDB),
     mpORBVocabulary(pVoc),
     mpMatchedKF(NULL),
+    mbLoopDetected(false),
+    mnLoopNumCoincidences(0),
+    mnLoopNumNotFound(0),
+    mbMergeDetected(false),
+    mbMergeInProgress(false),
+    mnMergeNumCoincidences(0),
+    mnMergeNumNotFound(0),
     mLastLoopKFid(0),
     mbRunningGBA(false),
     mbFinishedGBA(true),
-    mbStopGBA(false),
     mpThreadGBA(NULL),
     mbFixScale(bFixScale),
     mnFullBAIdx(0),
-    mnLoopNumCoincidences(0),
-    mnMergeNumCoincidences(0),
-    mbLoopDetected(false),
-    mbMergeDetected(false),
-    mnLoopNumNotFound(0),
-    mnMergeNumNotFound(0),
     mbActiveLC(bActiveLC)
 {
     mnCovisibilityConsistencyTh = 3;
@@ -113,28 +239,182 @@ void LoopClosing::SetLocalMapper(LocalMapping *pLocalMapper)
     mpLocalMapper = pLocalMapper;
 }
 
-void LoopClosing::Run()
+void LoopClosing::SetMergeStatus(bool mergeStatus_in)
 {
+    mbMergeInProgress.store(mergeStatus_in);
+}
+
+LoopClosing::LoopCorrectionStatus LoopClosing::GetLoopCorrectionStatus() const
+{
+    std::lock_guard<std::mutex> lock(mMutexLoopCorrectionStatus);
+    return mLoopCorrectionStatus;
+}
+
+void LoopClosing::recordLoopCorrectionEvent(bool               accepted_in,
+                                            const std::string &reason_in)
+{
+    {
+        std::lock_guard<std::mutex> lock(mMutexLoopCorrectionStatus);
+        ++mLoopCorrectionStatus.sequence;
+        mLoopCorrectionStatus.hasEvent     = true;
+        mLoopCorrectionStatus.lastAccepted = accepted_in;
+        mLoopCorrectionStatus.lastReason   = reason_in;
+
+        if (accepted_in)
+        {
+            ++mLoopCorrectionStatus.acceptedCount;
+        }
+        else
+        {
+            ++mLoopCorrectionStatus.rejectedCount;
+        }
+
+        if (mpCurrentKF != nullptr)
+        {
+            mLoopCorrectionStatus.lastCurrentKeyFrameId = mpCurrentKF->mnId;
+            mLoopCorrectionStatus.lastCurrentTimestamp =
+                mpCurrentKF->mTimeStamp;
+            if (mpCurrentKF->GetMap() != nullptr)
+            {
+                mLoopCorrectionStatus.lastMapId =
+                    mpCurrentKF->GetMap()->GetId();
+            }
+        }
+        if (mpLoopMatchedKF != nullptr)
+        {
+            mLoopCorrectionStatus.lastMatchedKeyFrameId = mpLoopMatchedKF->mnId;
+            mLoopCorrectionStatus.lastMatchedTimestamp =
+                mpLoopMatchedKF->mTimeStamp;
+        }
+    }
+}
+
+bool LoopClosing::stopGlobalBundleAdjustment()
+{
+    std::thread *p_globalBundleAdjustmentThread = nullptr;
+    bool         optimizationWasRunning         = false;
+
+    {
+        std::unique_lock<std::mutex> globalBundleAdjustmentLock(mMutexGBA);
+
+        optimizationWasRunning = mbRunningGBA;
+
+        if (optimizationWasRunning)
+        {
+            /* Invalidate the result before waiting for the worker to finish. */
+            ++mnFullBAIdx;
+            globalBundleAdjustmentStopRequested.store(
+                true,
+                std::memory_order_release);
+        }
+
+        /*
+         * Move ownership out while holding the state mutex. The mutex must be
+         * released before join() because the worker takes it while finishing.
+         */
+        p_globalBundleAdjustmentThread = mpThreadGBA;
+        mpThreadGBA                    = nullptr;
+    }
+
+    if (p_globalBundleAdjustmentThread != nullptr)
+    {
+        if (p_globalBundleAdjustmentThread->joinable())
+        {
+            p_globalBundleAdjustmentThread->join();
+        }
+
+        delete p_globalBundleAdjustmentThread;
+    }
+
+    {
+        std::unique_lock<std::mutex> globalBundleAdjustmentLock(mMutexGBA);
+        mbRunningGBA  = false;
+        mbFinishedGBA = true;
+    }
+
+    return optimizationWasRunning;
+}
+
+void LoopClosing::relaunchGlobalBundleAdjustment(Map *p_activeMap_in)
+{
+    if (p_activeMap_in == nullptr || mpCurrentKF == nullptr)
+    {
+        return;
+    }
+
+    std::unique_lock<std::mutex> globalBundleAdjustmentLock(mMutexGBA);
+    mbRunningGBA  = true;
+    mbFinishedGBA = false;
+    globalBundleAdjustmentStopRequested.store(false, std::memory_order_release);
+    mpThreadGBA = new std::thread(&LoopClosing::RunGlobalBundleAdjustment,
+                                  this,
+                                  p_activeMap_in,
+                                  mpCurrentKF->mnId,
+                                  mnFullBAIdx);
+}
+
+void LoopClosing::Run(void)
+{
+    /*!
+     * Mark the LoopClosing worker as active. SetFinish() changes this back to
+     * true when Run() exits.
+     *
+     * This flag is observed by other threads through isFinished().
+     */
     mbFinished = false;
 
-    while (1)
+    /*!
+     * Keep the LoopClosing worker alive until another thread requests shutdown.
+     * One iteration is one LoopClosing polling cycle.
+     */
+    while (true)
     {
+        /* Find the current time of the loop */
+        const std::chrono::_V2::system_clock::time_point start =
+            std::chrono::high_resolution_clock::now();
 
-        // NEW LOOP AND MERGE DETECTION ALGORITHM
-        //----------------------------
-
+        /*!
+         * Do expensive place recognition only when the loop-keyframe queue
+         * contains work.
+         *
+         * true  -> at least one queued keyframe exists; process one.
+         * false -> skip directly to reset/finish handling and the timed sleep.
+         */
         if (CheckNewKeyFrames())
         {
+            /*!
+             * Check that the last keyframe to be added is valid.
+             *
+             * If so, then clear the buffer of candidate keyframes and buffer
+             * of merged keyframes. he previous processed KF may still hold
+             * debug/candidate lists from its last place-recognition query.
+             */
             if (mpLastCurrentKF)
             {
+                /*!
+                 * Remove stale same-map loop candidates associated with the
+                 * previous current KF.
+                 */
                 mpLastCurrentKF->mvpLoopCandKFs.clear();
+
+                /*!
+                 * Remove stale cross-map merge candidates associated with the
+                 * previous current KF.
+                 */
                 mpLastCurrentKF->mvpMergeCandKFs.clear();
             }
+
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_StartPR =
                 std::chrono::steady_clock::now();
 #endif
 
+            /*!
+             * Pop/process the next queued keyframe and look for a same-map loop
+             * or cross-map merge candidate. This function consumes the next KF,
+             * queries the database, validates Sim3 geometry, and updates
+             * mbLoopDetected / mbMergeDetected plus their matched-KF state.
+             */
             bool bFindedRegion = NewDetectCommonRegions();
 
 #ifdef REGISTER_TIMES
@@ -147,10 +427,14 @@ void LoopClosing::Run()
                                      .count();
             vdPRTotal_ms.push_back(timePRTotal);
 #endif
+
+            /* If a detected region is found, perform loop closure */
             if (bFindedRegion)
             {
+                /* Merge if NewDetectCommonRegions() indicates so */
                 if (mbMergeDetected)
                 {
+                    /* If required, confirm IMU is working */
                     if ((mpTracker->mSensor == System::IMU_MONOCULAR ||
                          mpTracker->mSensor == System::IMU_STEREO ||
                          mpTracker->mSensor == System::IMU_RGBD) &&
@@ -161,26 +445,60 @@ void LoopClosing::Run()
                     }
                     else
                     {
+                        /*!
+                         * Get pose of the matched keyframe in the matched
+                         * keyframes world frame.
+                         */
                         Sophus::SE3d mTmw =
                             mpMergeMatchedKF->GetPose().cast<double>();
-                        g2o::Sim3    gSmw2(mTmw.unit_quaternion(),
+
+                        /* Convert above keyframe pose into Sim3 datatype */
+                        g2o::Sim3 gSmw2(mTmw.unit_quaternion(),
                                         mTmw.translation(),
                                         1.0);
+
+                        /*!
+                         * Get pose of the current keyframe in the current
+                         * keyframes world frame.
+                         */
                         Sophus::SE3d mTcw =
                             mpCurrentKF->GetPose().cast<double>();
+
+                        /* Convert above keyframe pose into Sim3 datatype */
                         g2o::Sim3 gScw1(mTcw.unit_quaternion(),
                                         mTcw.translation(),
                                         1.0);
-                        g2o::Sim3 gSw2c = mg2oMergeSlw.inverse();
-                        g2o::Sim3 gSw1m = mg2oMergeSlw;
 
+                        /*!
+                         * `mg2oMergeSlw` is the pose of the CURRENT camera from
+                         * the current keyframe in the world frame of the
+                         * MATCHED keyframe. This is effectively the pose which
+                         * causes the loop closure.
+                         *
+                         * First, find the pose from the matched keyframes world
+                         * frame to the current camera.
+                         *
+                         * Also store the current pose.
+                         */
+                        const g2o::Sim3 gSw2c = mg2oMergeSlw.inverse();
+
+                        /*!
+                         * Find the transform from the current keyframes world
+                         * map to the matched keyframes world frame
+                         */
                         mSold_new = (gSw2c * gScw1);
 
+                        /*!
+                         * If in both frames an IMU is used, use IMU readings
+                         * for inertial odometry map constraints.
+                         */
                         if (mpCurrentKF->GetMap()->IsInertial() &&
                             mpMergeMatchedKF->GetMap()->IsInertial())
                         {
                             cout << "Merge check transformation with IMU"
                                  << endl;
+
+                            /* Reject maps with bad scale */
                             if (mSold_new.scale() < 0.90 ||
                                 mSold_new.scale() > 1.1)
                             {
@@ -212,27 +530,59 @@ void LoopClosing::Run()
                             }
                         }
 
-                        mg2oMergeSmw = gSmw2 * gSw2c * gScw1;
-
-                        mg2oMergeScw = mg2oMergeSlw;
-
-                        std::cout
-                            << "[LoopClosing] Map merge has been triggered ..."
-                            << std::endl;
+                        /*!
+                         * This creates a transform from the current keyframes
+                         * world frame to the matched cameras keyframe. This
+                         * is the critical transform to cause the loop closure.
+                         *
+                         * gScw1:   current keyframe world -> current camera
+                         * gSw2c:   current camera -> matched keyframe world
+                         * gWmw2:   matched keyframes world -> matched camera
+                         *
+                         *  - mg2oMergeScw:     (Primary) World frame to Camera
+                         *                      frame transform
+                         *
+                         *  - mg2oMergew1m:     Matched Camera frame to Primary
+                         *                      World frame
+                         *
+                         * @note        Note that w1 reffers to the primary
+                         *              frame which is the current frame that
+                         *              the camera is in. This means that the
+                         *              map is appended onto the current map
+                         *              and hence avoids teleporting the camera
+                         *              position and allows for smooth
+                         *              operation (which would be the case if
+                         *              the primary map was the matched map)
+                         */
+                        mg2oMergeSmw   = gSmw2 * gSw2c * gScw1;
+                        mg2oMergeScw   = mg2oMergeSlw;
+                        mg2oMergeSw1w2 = (gSw2c * gScw1).inverse();
 
 #ifdef REGISTER_TIMES
                         std::chrono::steady_clock::time_point time_StartMerge =
                             std::chrono::steady_clock::now();
                         nMerges += 1;
 #endif
-                        // Check which merge method to use based on the inertial
-                        // sensor
+
+                        /* Set flag to indicate that mergins is happening */
+                        SetMergeStatus(true);
+
+                        /* Choose merging method based on if IMU is used */
                         if (mpTracker->mSensor == System::IMU_MONOCULAR ||
                             mpTracker->mSensor == System::IMU_STEREO ||
                             mpTracker->mSensor == System::IMU_RGBD)
+                        {
+                            /* Merge maps using IMU */
                             MergeLocalInertial();
+                        }
                         else
+                        {
+                            /* Merge maps */
                             MergeLocal();
+                        }
+
+                        /* Set flag to indicate that mergins has finished */
+                        SetMergeStatus(false);
 
 #ifdef REGISTER_TIMES
                         std::chrono::steady_clock::time_point time_EndMerge =
@@ -251,11 +601,17 @@ void LoopClosing::Run()
                             << std::endl;
                     }
 
+                    /*!
+                     * Log the recognition event. This way we can correspond the
+                     * times that both keyframes where matched. This effectively
+                     * acts as 2 independent lists where there index indicates
+                     * the matching KF pair.
+                     */
                     vdPR_CurrentTime.push_back(mpCurrentKF->mTimeStamp);
                     vdPR_MatchedTime.push_back(mpMergeMatchedKF->mTimeStamp);
                     vnPR_TypeRecogn.push_back(1);
 
-                    // Reset all variables
+                    /* Reset all variables */
                     mpMergeLastCurrentKF->SetErase();
                     mpMergeMatchedKF->SetErase();
                     mnMergeNumCoincidences = 0;
@@ -264,9 +620,27 @@ void LoopClosing::Run()
                     mnMergeNumNotFound = 0;
                     mbMergeDetected    = false;
 
-                    // Reset all loop variables if a loop is detected
+                    /*!
+                     * Reset any pending loop closure candidate after a
+                     * successful map merge.
+                     *
+                     * A place recognition query can simultaneously produce:
+                     *
+                     *      - a merge candidate (`mbMergeDetected`) when the
+                     *        matched keyframe belongs to another map.
+                     *
+                     *      - a loop closure candidate (`mbLoopDetected`) when
+                     *        the matched keyframe belongs to the current map.
+                     *
+                     * After merging maps, any loop closure candidate becomes
+                     * invalid because the map topology, keyframe ownership, and
+                     * map point associations may have changed. Therefore the
+                     * loop closure state is discarded.
+                     */
                     if (mbLoopDetected)
                     {
+                        recordLoopCorrectionEvent(false,
+                                                  "superseded_by_map_merge");
                         mpLoopLastCurrentKF->SetErase();
                         mpLoopMatchedKF->SetErase();
                         mnLoopNumCoincidences = 0;
@@ -277,55 +651,142 @@ void LoopClosing::Run()
                     }
                 }
 
+                /*!
+                 * A loop closure candidate has been successfully detected and
+                 * geometrically validated. The matched keyframe belongs to the
+                 * same map as the current keyframe, meaning the estimated Sim3
+                 * transformation can be used to correct accumulated drift in
+                 * the map.
+                 */
                 if (mbLoopDetected)
                 {
                     std::cout
                         << "[LoopClosing] Loop detected! Correcting the map ..."
                         << std::endl;
 
+                    /* Init a variable to track of a good loop closure occurs */
                     bool bGoodLoop = true;
+
+                    /*!
+                     * Record the place recognition event for evaluation and
+                     * debugging. The two timestamp vectors store corresponding
+                     * keyframe pairs:
+                     *
+                     *      - Current keyframe: the keyframe that triggered
+                     *        place recognition.
+                     *
+                     *      - Matched keyframe: the previously observed keyframe
+                     *        that was recognised.
+                     *
+                     * vnPR_TypeRecogn identifies the recognition type:
+                     *   0 -> loop closure
+                     *   1 -> map merge
+                     */
                     vdPR_CurrentTime.push_back(mpCurrentKF->mTimeStamp);
                     vdPR_MatchedTime.push_back(mpLoopMatchedKF->mTimeStamp);
                     vnPR_TypeRecogn.push_back(0);
 
+                    /*!
+                     * The Sim3 transformation estimated during loop detection
+                     * describes the relationship between the current keyframe
+                     * and the matched keyframe. Store it as the loop correction
+                     * transformation.
+                     */
                     mg2oLoopScw = mg2oLoopSlw;
+
+                    /*!
+                     * In inertial systems additional validation is performed
+                     * before applying the loop correction.
+                     *
+                     * IMU constraints provide an estimate of gravity alignment,
+                     * therefore large rotational discrepancies or scale changes
+                     * indicate that the detected loop is likely a false
+                     * positive.
+                     */
                     if (mpCurrentKF->GetMap()->IsInertial())
                     {
                         Sophus::SE3d Twc =
                             mpCurrentKF->GetPoseInverse().cast<double>();
+
+                        /*!
+                         * Convert the current camera pose from SE3 into a Sim3
+                         * representation so that it can be combined with the
+                         * loop correction estimate.
+                         */
                         g2o::Sim3 g2oTwc(Twc.unit_quaternion(),
                                          Twc.translation(),
                                          1.0);
+
+                        /*!
+                         * Compute the resulting world-to-world transformation
+                         * after applying the proposed loop correction.
+                         *
+                         * This represents the global adjustment required to
+                         * align the current map trajectory with the previously
+                         * observed location.
+                         */
                         g2o::Sim3 g2oSww_new = g2oTwc * mg2oLoopScw;
 
+                        /*!
+                         * Extract the rotational difference from the proposed
+                         * correction. For inertial maps, excessive rotation
+                         * indicates insufficient overlap between the two
+                         * observations and the correction is rejected.
+                         */
                         Eigen::Vector3d phi =
                             LogSO3(g2oSww_new.rotation().toRotationMatrix());
+
                         if (fabs(phi(0)) < 0.008f && fabs(phi(1)) < 0.008f &&
                             fabs(phi(2)) < 0.349f)
                         {
+                            /*!
+                             * After inertial initialization, roll and pitch are
+                             * constrained by gravity. Therefore only the yaw
+                             * component of the loop correction is allowed to
+                             * modify the map orientation.
+                             */
                             if ((mpTracker->mSensor == System::IMU_MONOCULAR ||
                                  mpTracker->mSensor == System::IMU_STEREO ||
                                  mpTracker->mSensor == System::IMU_RGBD) &&
                                 mpCurrentKF->GetMap()->GetIniertialBA2())
                             {
-                                phi(0)      = 0;
-                                phi(1)      = 0;
-                                g2oSww_new  = g2o::Sim3(ExpSO3(phi),
+                                phi(0)     = 0;
+                                phi(1)     = 0;
+                                g2oSww_new = g2o::Sim3(ExpSO3(phi),
                                                        g2oSww_new.translation(),
                                                        1.0);
+
+                                /*!
+                                 * Convert the constrained correction back into
+                                 * the frame used by the loop closing module.
+                                 */
                                 mg2oLoopScw = g2oTwc.inverse() * g2oSww_new;
                             }
                         }
                         else
                         {
+                            /*!
+                             * Reject the loop closure if the required
+                             * correction is too large. A large rotation
+                             * normally indicates an incorrect place recognition
+                             * match.
+                             */
                             std::cout
                                 << "[LoopClosing] The loop lacks sufficient "
                                    "overlap! Skipping correction ..."
                                 << std::endl;
                             bGoodLoop = false;
+                            recordLoopCorrectionEvent(false,
+                                                      "inertial_overlap");
                         }
                     }
 
+                    /*!
+                     * Apply the loop correction only after all validation
+                     * checks have passed. CorrectLoop() performs the map
+                     * optimisation and updates keyframe/map point poses to
+                     * remove accumulated drift.
+                     */
                     if (bGoodLoop)
                     {
                         mvpLoopMapPoints = mvpLoopMPs;
@@ -337,6 +798,23 @@ void LoopClosing::Run()
                         nLoop += 1;
 
 #endif
+                        /*!
+                         * Apply the loop closure correction.
+                         *
+                         * CorrectLoop() performs the global map adjustment
+                         * required after a loop has been detected. It uses the
+                         * estimated Sim3 transformation and matched map points
+                         * to:
+                         *
+                         *  - correct accumulated pose drift,
+                         *  - update affected keyframe poses,
+                         *  - update map point positions,
+                         *  - optimise the essential graph,
+                         *  - run bundle adjustment to refine the corrected map.
+                         *
+                         * After this operation, the trajectory should become
+                         * globally consistent.
+                         */
                         CorrectLoop();
 #ifdef REGISTER_TIMES
                         std::chrono::steady_clock::time_point time_EndLoop =
@@ -350,10 +828,26 @@ void LoopClosing::Run()
                         vdLoopTotal_ms.push_back(timeLoopTotal);
 #endif
 
+                        /*!
+                         * Track the number of successful loop closure
+                         * corrections applied.
+                         *
+                         * This counter is incremented only after CorrectLoop()
+                         * has completed, indicating that the detected loop was
+                         * accepted and used to modify the map.
+                         */
                         mnNumCorrection += 1;
+                        recordLoopCorrectionEvent(true, "corrected");
                     }
 
-                    // Reset all variables
+                    /*!
+                     * Release all temporary loop closure state.
+                     *
+                     * The candidate keyframes are no longer required because
+                     * the correction has either been applied or rejected.
+                     * Resetting these variables allows future loop closure
+                     * attempts to start from a clean state.
+                     */
                     mpLoopLastCurrentKF->SetErase();
                     mpLoopMatchedKF->SetErase();
                     mnLoopNumCoincidences = 0;
@@ -373,9 +867,25 @@ void LoopClosing::Run()
             break;
         }
 
-        usleep(5000);
+        /* Find the time after it took to run the loop */
+        const auto end = std::chrono::high_resolution_clock::now();
+
+        /* Calculate the elapsed time */
+        const std::chrono::duration<double> elapsed = end - start;
+
+        /* Find how much longer in the loop is left */
+        const double remainingSeconds = runInterval_s - elapsed.count();
+
+        /* If there is remaining time, sleep until next loop cycle */
+        if (remainingSeconds > 0.0)
+        {
+            std::this_thread::sleep_for(
+                std::chrono::duration<double>(remainingSeconds));
+        }
     }
 
+    /* No optimizer may outlive LoopClosing or race Atlas serialization. */
+    stopGlobalBundleAdjustment();
     SetFinish();
 }
 
@@ -397,7 +907,9 @@ bool LoopClosing::NewDetectCommonRegions()
     // To deactivate placerecognition. No loopclosing nor merging will be
     // performed
     if (!mbActiveLC)
+    {
         return false;
+    }
 
     {
         unique_lock<mutex> lock(mMutexLoopQueue);
@@ -421,8 +933,6 @@ bool LoopClosing::NewDetectCommonRegions()
     if (mpTracker->mSensor == System::STEREO &&
         mpLastMap->GetAllKeyFrames().size() < 5) // 12
     {
-        // cout << "LoopClousure: Stereo KF inserted without check: " <<
-        // mpCurrentKF->mnId << endl;
         mpKeyFrameDB->add(mpCurrentKF);
         mpCurrentKF->SetErase();
         return false;
@@ -430,14 +940,10 @@ bool LoopClosing::NewDetectCommonRegions()
 
     if (mpLastMap->GetAllKeyFrames().size() < 12)
     {
-        // cout << "LoopClousure: Stereo KF inserted without check, map is
-        // small: " << mpCurrentKF->mnId << endl;
         mpKeyFrameDB->add(mpCurrentKF);
         mpCurrentKF->SetErase();
         return false;
     }
-
-    // cout << "LoopClousure: Checking KF: " << mpCurrentKF->mnId << endl;
 
     // Check the last candidates with geometric validation
     //  Loop candidates
@@ -486,6 +992,7 @@ bool LoopClosing::NewDetectCommonRegions()
             mnLoopNumNotFound++;
             if (mnLoopNumNotFound >= 2)
             {
+                recordLoopCorrectionEvent(false, "geometric_validation");
                 mpLoopLastCurrentKF->SetErase();
                 mpLoopMatchedKF->SetErase();
                 mnLoopNumCoincidences = 0;
@@ -1087,11 +1594,6 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
                     }
                 }
             }
-            /*else
-            {
-                Verbose::PrintMess("BoW candidate: it don't match with the
-            current one", Verbose::VERBOSITY_DEBUG);
-            }*/
         }
         index++;
     }
@@ -1225,20 +1727,8 @@ void LoopClosing::CorrectLoop()
     mpLocalMapper->RequestStop();
     mpLocalMapper->EmptyQueue();
 
-    // Abort a runnig Global Bundle Adjustment thread
-    if (isRunningGBA())
-    {
-        unique_lock<mutex> lock(mMutexGBA);
-        mbStopGBA = true;
-
-        mnFullBAIdx++;
-
-        if (mpThreadGBA)
-        {
-            mpThreadGBA->detach();
-            delete mpThreadGBA;
-        }
-    }
+    /* Stop and reclaim any global bundle-adjustment worker before mutation. */
+    stopGlobalBundleAdjustment();
 
     // Wait until Local Mapping has effectively stopped
     while (!mpLocalMapper->isStopped())
@@ -1270,15 +1760,6 @@ void LoopClosing::CorrectLoop()
     Map *pLoopMap = mpCurrentKF->GetMap();
 
 #ifdef REGISTER_TIMES
-    /*KeyFrame* pKF = mpCurrentKF;
-    int numKFinLoop = 0;
-    while(pKF && pKF->mnId > mpLoopMatchedKF->mnId)
-    {
-        pKF = pKF->GetParent();
-        numKFinLoop += 1;
-    }
-    vnLoopKFs.push_back(numKFinLoop);*/
-
     std::chrono::steady_clock::time_point time_StartFusion =
         std::chrono::steady_clock::now();
 #endif
@@ -1497,15 +1978,18 @@ void LoopClosing::CorrectLoop()
     if (!pLoopMap->isImuInitialized() ||
         (pLoopMap->KeyFramesInMap() < 200 && mpAtlas->CountMaps() == 1))
     {
+        std::unique_lock<std::mutex> globalBundleAdjustmentLock(mMutexGBA);
         mbRunningGBA    = true;
         mbFinishedGBA   = false;
-        mbStopGBA       = false;
         mnCorrectionGBA = mnNumCorrection;
+        globalBundleAdjustmentStopRequested.store(false,
+                                                  std::memory_order_release);
 
         mpThreadGBA = new thread(&LoopClosing::RunGlobalBundleAdjustment,
                                  this,
                                  pLoopMap,
-                                 mpCurrentKF->mnId);
+                                 mpCurrentKF->mnId,
+                                 mnFullBAIdx);
     }
 
     // Loop closed. Release Local Mapping.
@@ -1518,672 +2002,1471 @@ void LoopClosing::CorrectLoop()
 
 void LoopClosing::MergeLocal()
 {
-    // Variables
-    int numTemporalKFs = 25;
-    sysParams          = SystemParams::GetParams();
+    /* ---------------------------------------------------------------------- *
+     * SECTION 1 - INITIALISATION
+     *
+     * Merge Policy
+     * ------------------------------------------------------------------------
+     * The current map is treated as the authoritative map and therefore
+     * survives the merge. The matched map is transformed into the coordinate
+     * frame of the current map before all of its contents are appended into
+     * the current map. Once all objects have been transferred, the merge map
+     * is marked as bad and removed from the atlas.
+     * ---------------------------------------------------------------------- */
 
-    // Variables to rebuild the essential graph
-    KeyFrame *pNewChild;
-    KeyFrame *pNewParent;
+    /* Constant used to determine the number of temporal keyframes */
+    constexpr int kNumTemporalKFs = 25;
 
-    vector<KeyFrame *> vpMergeConnectedKFs;
-    vector<KeyFrame *> vpLocalCurrentWindowKFs;
+    /* Extract the system parameters */
+    sysParams = SystemParams::GetParams();
 
-    // A flag to relaunch the BA after the merge
-    bool bRelaunchBA = false;
-
-    // Abort a runnig Global Bundle Adjustment thread, if any
-    if (isRunningGBA())
+    /* Reject stale place-recognition candidates before stopping other workers.
+     */
+    if (mpCurrentKF == nullptr || mpMergeMatchedKF == nullptr ||
+        mpCurrentKF->isBad() || mpMergeMatchedKF->isBad())
     {
-        unique_lock<mutex> lock(mMutexGBA);
-        mbStopGBA = true;
-
-        mnFullBAIdx++;
-
-        if (mpThreadGBA)
-        {
-            mpThreadGBA->detach();
-            delete mpThreadGBA;
-        }
-
-        bRelaunchBA = true;
+        return;
     }
 
-    // Stop the local mapping thread
+    Map *pCurrentMap = mpCurrentKF->GetMap();
+    Map *pMergeMap   = mpMergeMatchedKF->GetMap();
+
+    if (pCurrentMap == nullptr || pMergeMap == nullptr ||
+        pCurrentMap == pMergeMap || pCurrentMap->IsBad() ||
+        pMergeMap->IsBad() || !mpAtlas->isActiveMap(pCurrentMap) ||
+        !mpAtlas->isActiveMap(pMergeMap))
+    {
+        return;
+    }
+
+    /* ---------------------------------------------------------------------- *
+     * SECTION 2 - STOP GLOBAL BUNDLE ADJUSTMENT
+     *
+     * The merge modifies map ownership, poses and graph connectivity.
+     * Therefore no optimisation thread is allowed to access these objects
+     * while the merge is taking place.
+     * ---------------------------------------------------------------------- */
+
+    /* Flag to indicate if bundle adjustment should be relaunched */
+    bool bRelaunchBA = false;
+
+    bRelaunchBA = stopGlobalBundleAdjustment();
+
+    /* ---------------------------------------------------------------------- *
+     * SECTION 3 - STOP LOCAL MAPPING
+     * ---------------------------------------------------------------------- */
+
+    /* Request stop */
     mpLocalMapper->RequestStop();
+
+    /* Wait until local mapper stops */
     while (!mpLocalMapper->isStopped())
     {
         usleep(1000);
     }
 
-    // Stop the local mapping queue
+    /* ---------------------------------------------------------------------- *
+     * SECTION 4 - IDENTIFY SOURCE AND DESTINATION MAPS
+     *
+     * pCurrentMap
+     *      Survives the merge.
+     *
+     * pMergeMap
+     *      Is transformed into the current-map frame before being appended
+     *      into pCurrentMap.
+     * ---------------------------------------------------------------------- */
+
+    /*
+     * Prevent semantic worker threads from modifying either graph while map
+     * frames, ownership, and cross-entity references are being changed.
+     */
+    std::unique_lock<std::mutex> semanticUpdateLock =
+        mpAtlas->acquireSemanticUpdateLock();
+
+    /* Revalidate after quiescing workers; retained retired maps keep stale
+     * raw pointers alive, so pointer non-nullness alone is insufficient. */
+    if (mpCurrentKF->isBad() || mpMergeMatchedKF->isBad() ||
+        mpCurrentKF->GetMap() != pCurrentMap ||
+        mpMergeMatchedKF->GetMap() != pMergeMap ||
+        !mpAtlas->isActiveMap(pCurrentMap) || !mpAtlas->isActiveMap(pMergeMap))
+    {
+        semanticUpdateLock.unlock();
+        mpLocalMapper->Release();
+        return;
+    }
+
+    const Sophus::SE3d Twc = mpCurrentKF->GetPoseInverse().cast<double>();
+    const g2o::Sim3    g2oNonCorrectedSwc(Twc.unit_quaternion(),
+                                       Twc.translation(),
+                                       1.0);
+    const g2o::Sim3    g2oSwCurrentWMerge = g2oNonCorrectedSwc * mg2oMergeScw;
+    const g2o::Sim3    g2oSwMergeWCurrent = g2oSwCurrentWMerge.inverse();
+
+    std::string floorVerificationResult;
+    if (!verifyLoopMergeFloors(pCurrentMap,
+                               pMergeMap,
+                               g2oSwCurrentWMerge,
+                               floorVerificationResult))
+    {
+        semanticUpdateLock.unlock();
+        mpLocalMapper->Release();
+        if (bRelaunchBA)
+        {
+            relaunchGlobalBundleAdjustment(pCurrentMap);
+        }
+        return;
+    }
+
+    /* Discard queued keyframes only after every merge rejection gate passed. */
     mpLocalMapper->EmptyQueue();
 
-    Map *pCurrentMap = mpCurrentKF->GetMap();
-    Map *pMergeMap   = mpMergeMatchedKF->GetMap();
-
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartMerge =
-        std::chrono::steady_clock::now();
-#endif
-
-    // Ensure the current KeyFrame is updated
+    /* Update the connections of the current keyframe */
     mpCurrentKF->UpdateConnections();
 
-    // Get the current KeyFrame and its neighbors (covisibles for visual and
-    // temporal and covisibles for inertial)
-    set<KeyFrame *> spLocalWindowKFs;
+    /* ---------------------------------------------------------------------- *
+     * SECTION 5 - BUILD THE CURRENT-MAP LOCAL WINDOW
+     *
+     * This window forms the fixed reference side of the weld.
+     * ---------------------------------------------------------------------- */
 
-    // Get map points in the welding area from the current map
-    set<MapPoint *> spLocalWindowMPs;
+    std::set<KeyFrame *> spLocalWindowKFs;
+    std::set<MapPoint *> spLocalWindowMPs;
+
+    /*!
+     * If using IMU, construct temporal inertial chain. Otherwise, start with
+     * current keyframe for local window.
+     */
     if (pCurrentMap->IsInertial() && pMergeMap->IsInertial())
     {
+        /* ------------------------------------------------------------------ *
+         * Walk backwards through the temporal chain
+         * ------------------------------------------------------------------ */
+
         KeyFrame *pKFi      = mpCurrentKF;
         int       nInserted = 0;
-        while (pKFi && nInserted < numTemporalKFs)
+
+        while (pKFi && nInserted < kNumTemporalKFs)
         {
             spLocalWindowKFs.insert(pKFi);
-            pKFi = mpCurrentKF->mPrevKF;
-            nInserted++;
 
-            set<MapPoint *> spMPi = pKFi->GetMapPoints();
-            spLocalWindowMPs.insert(spMPi.begin(), spMPi.end());
+            const std::set<MapPoint *> spMPs = pKFi->GetMapPoints();
+            spLocalWindowMPs.insert(spMPs.begin(), spMPs.end());
+
+            pKFi = pKFi->mPrevKF;
+            nInserted++;
         }
 
-        pKFi = mpCurrentKF->mNextKF;
-        while (pKFi)
+        /* ------------------------------------------------------------------ *
+         * Walk forwards through the temporal chain
+         * ------------------------------------------------------------------ */
+
+        pKFi      = mpCurrentKF->mNextKF;
+        nInserted = 0;
+
+        while (pKFi && nInserted < kNumTemporalKFs)
         {
             spLocalWindowKFs.insert(pKFi);
 
-            set<MapPoint *> spMPi = pKFi->GetMapPoints();
-            spLocalWindowMPs.insert(spMPi.begin(), spMPi.end());
+            const std::set<MapPoint *> spMPs = pKFi->GetMapPoints();
+            spLocalWindowMPs.insert(spMPs.begin(), spMPs.end());
 
-            pKFi = mpCurrentKF->mNextKF;
+            pKFi = pKFi->mNextKF;
+            nInserted++;
         }
     }
     else
-        spLocalWindowKFs.insert(mpCurrentKF);
-
-    vector<KeyFrame *> vpCovisibleKFs =
-        mpCurrentKF->GetBestCovisibilityKeyFrames(numTemporalKFs);
-    spLocalWindowKFs.insert(vpCovisibleKFs.begin(), vpCovisibleKFs.end());
-    spLocalWindowKFs.insert(mpCurrentKF);
-    const int nMaxTries = 5;
-    int       nNumTries = 0;
-
-    while (spLocalWindowKFs.size() < numTemporalKFs && nNumTries < nMaxTries)
     {
-        vector<KeyFrame *> vpNewCovKFs;
-        vpNewCovKFs.empty();
+        spLocalWindowKFs.insert(mpCurrentKF);
+    }
+
+    /* ---------------------------------------------------------------------- *
+     * Expand the local window using covisibility.
+     * ---------------------------------------------------------------------- */
+
+    /* Create list of strongest covisibility connectsion to current keyframe */
+    std::vector<KeyFrame *> vpCovisibleKFs =
+        mpCurrentKF->GetBestCovisibilityKeyFrames(kNumTemporalKFs);
+
+    /* Insert keyframes with best connections into local window */
+    spLocalWindowKFs.insert(vpCovisibleKFs.begin(), vpCovisibleKFs.end());
+
+    /*!
+     * Insert the current keyframe as an unconditional safety measure.
+     * `splocalWindowKF` is a set, hence duplicates will not be inserted.
+     */
+    spLocalWindowKFs.insert(mpCurrentKF);
+
+    constexpr int kMaxExpansionIterations = 5;
+
+    int nExpansion = 0;
+
+    /*!
+     * If there is not enough keyframes in the local window, then we look at the
+     * keyframes currently in spLocalWindowKF and find there best covisibility
+     * keyframes. We do this to gaurantee there is enough keyframes in the
+     * `spLocalWindowKFs`. We attmemp to reach that amount
+     * `kMaxExpansionIterations`. In other words, we are willing to expand the
+     * window with `kMaxExpansionIterations` iterations to reach
+     * `kNumTemporalKFs` in `spLocalWindowKFs`, if the current keyframe doesn't
+     * have enough covisible keyframes attached to it.
+     */
+    while (spLocalWindowKFs.size() < kNumTemporalKFs &&
+           nExpansion < kMaxExpansionIterations)
+    {
+        std::vector<KeyFrame *> vpNewCovisible;
+
         for (KeyFrame *pKFi : spLocalWindowKFs)
         {
-            vector<KeyFrame *> vpKFiCov =
-                pKFi->GetBestCovisibilityKeyFrames(numTemporalKFs / 2);
-            for (KeyFrame *pKFcov : vpKFiCov)
-                if (pKFcov && !pKFcov->isBad() &&
-                    spLocalWindowKFs.find(pKFcov) == spLocalWindowKFs.end())
-                    vpNewCovKFs.push_back(pKFcov);
+            const auto vpCovisible =
+                pKFi->GetBestCovisibilityKeyFrames(kNumTemporalKFs / 2);
+
+            for (KeyFrame *pKFcov : vpCovisible)
+            {
+                if (!pKFcov)
+                    continue;
+
+                if (pKFcov->isBad())
+                    continue;
+
+                if (spLocalWindowKFs.count(pKFcov))
+                    continue;
+
+                vpNewCovisible.push_back(pKFcov);
+            }
         }
 
-        spLocalWindowKFs.insert(vpNewCovKFs.begin(), vpNewCovKFs.end());
-        nNumTries++;
+        spLocalWindowKFs.insert(vpNewCovisible.begin(), vpNewCovisible.end());
+
+        ++nExpansion;
     }
+
+    /* ---------------------------------------------------------------------- *
+     * Collect all landmarks observed by the current-map welding window.
+     * ---------------------------------------------------------------------- */
 
     for (KeyFrame *pKFi : spLocalWindowKFs)
     {
+        /* Skip invalid keyframes. (Shouldn't need this but good for safety) */
         if (!pKFi || pKFi->isBad())
+        {
             continue;
+        }
 
-        set<MapPoint *> spMPs = pKFi->GetMapPoints();
+        /* Extract the map points from the keyframe */
+        const std::set<MapPoint *> spMPs = pKFi->GetMapPoints();
+
+        /* Insert all the map points into the map point local window */
         spLocalWindowMPs.insert(spMPs.begin(), spMPs.end());
     }
 
-    set<KeyFrame *> spMergeConnectedKFs;
+    /* ---------------------------------------------------------------------- *
+     * SECTION 6 - BUILD THE MERGE-MAP LOCAL WINDOW
+     *
+     * These keyframes will be transformed into the current-map frame before
+     * being transferred into the surviving map. Essentially, repeat above
+     * steps but with the merge map.
+     * ---------------------------------------------------------------------- */
+
+    std::set<KeyFrame *> spMergeConnectedKFs;
+    std::set<MapPoint *> spMapPointMerge;
+
+    /*!
+     * If using IMU, construct temporal inertial chain. Otherwise, start with
+     * current keyframe for local window.
+     */
     if (pCurrentMap->IsInertial() && pMergeMap->IsInertial())
     {
         KeyFrame *pKFi      = mpMergeMatchedKF;
         int       nInserted = 0;
-        while (pKFi && nInserted < numTemporalKFs / 2)
+
+        /* ------------------------------------------------------------------ *
+         * Walk backwards
+         * ------------------------------------------------------------------ */
+
+        while (pKFi && nInserted < (kNumTemporalKFs / 2))
         {
             spMergeConnectedKFs.insert(pKFi);
-            pKFi = mpCurrentKF->mPrevKF;
+
+            pKFi = pKFi->mPrevKF;
+
             nInserted++;
         }
 
+        /* ------------------------------------------------------------------ *
+         * Walk forwards
+         * ------------------------------------------------------------------ */
+
         pKFi = mpMergeMatchedKF->mNextKF;
-        while (pKFi && nInserted < numTemporalKFs)
+
+        while (pKFi && nInserted < kNumTemporalKFs)
         {
             spMergeConnectedKFs.insert(pKFi);
-            pKFi = mpCurrentKF->mNextKF;
+
+            pKFi = pKFi->mNextKF;
+
+            nInserted++;
         }
     }
     else
-        spMergeConnectedKFs.insert(mpMergeMatchedKF);
-
-    vpCovisibleKFs =
-        mpMergeMatchedKF->GetBestCovisibilityKeyFrames(numTemporalKFs);
-    spMergeConnectedKFs.insert(vpCovisibleKFs.begin(), vpCovisibleKFs.end());
-    spMergeConnectedKFs.insert(mpMergeMatchedKF);
-    nNumTries = 0;
-
-    while (spMergeConnectedKFs.size() < numTemporalKFs && nNumTries < nMaxTries)
     {
-        vector<KeyFrame *> vpNewCovKFs;
+        spMergeConnectedKFs.insert(mpMergeMatchedKF);
+    }
+
+    /* ---------------------------------------------------------------------- *
+     * Expand the local window using covisibility.
+     * ---------------------------------------------------------------------- */
+
+    /* Create list of strongest covisibility connectsion to current keyframe */
+    vpCovisibleKFs =
+        mpMergeMatchedKF->GetBestCovisibilityKeyFrames(kNumTemporalKFs);
+
+    /* Insert keyframes with best connections into local window */
+    spMergeConnectedKFs.insert(vpCovisibleKFs.begin(), vpCovisibleKFs.end());
+
+    /*!
+     * Insert the current keyframe as an unconditional safety measure.
+     * `splocalWindowKF` is a set, hence duplicates will not be inserted.
+     */
+    spMergeConnectedKFs.insert(mpMergeMatchedKF);
+
+    /* Reset counter */
+    nExpansion = 0;
+
+    /*!
+     * If there is not enough keyframes in the merge connected window, then we
+     * look at the keyframes currently in spMergeConnectedKFs and find there
+     * best covisibility keyframes. We do this to gaurantee there is enough
+     * keyframes in the `spMergeConnectedKFs`. We attmemp to reach that amount
+     * `kMaxExpansionIterations`. In other words, we are willing to expand the
+     * window with `kMaxExpansionIterations` iterations to reach
+     * `kNumTemporalKFs` in `spMergeConnectedKFs`, if the current keyframe
+     * doesn't have enough covisible keyframes attached to it.
+     */
+    while (spMergeConnectedKFs.size() < kNumTemporalKFs &&
+           nExpansion < kMaxExpansionIterations)
+    {
+        std::vector<KeyFrame *> vpNewCovisible;
+
         for (KeyFrame *pKFi : spMergeConnectedKFs)
         {
-            vector<KeyFrame *> vpKFiCov =
-                pKFi->GetBestCovisibilityKeyFrames(numTemporalKFs / 2);
-            for (KeyFrame *pKFcov : vpKFiCov)
-                if (pKFcov && !pKFcov->isBad() &&
-                    spMergeConnectedKFs.find(pKFcov) ==
-                        spMergeConnectedKFs.end())
-                    vpNewCovKFs.push_back(pKFcov);
+            const auto vpCovisible =
+                pKFi->GetBestCovisibilityKeyFrames(kNumTemporalKFs / 2);
+
+            for (KeyFrame *pKFcov : vpCovisible)
+            {
+                if (!pKFcov)
+                    continue;
+
+                if (pKFcov->isBad())
+                    continue;
+
+                if (spMergeConnectedKFs.count(pKFcov))
+                    continue;
+
+                vpNewCovisible.push_back(pKFcov);
+            }
         }
 
-        spMergeConnectedKFs.insert(vpNewCovKFs.begin(), vpNewCovKFs.end());
-        nNumTries++;
+        spMergeConnectedKFs.insert(vpNewCovisible.begin(),
+                                   vpNewCovisible.end());
+
+        ++nExpansion;
     }
 
-    set<MapPoint *> spMapPointMerge;
+    /* ---------------------------------------------------------------------- *
+     * Collect all landmarks observed by the imported welding window.
+     * ---------------------------------------------------------------------- */
+
     for (KeyFrame *pKFi : spMergeConnectedKFs)
     {
-        set<MapPoint *> vpMPs = pKFi->GetMapPoints();
-        spMapPointMerge.insert(vpMPs.begin(), vpMPs.end());
-    }
-
-    vector<MapPoint *> vpCheckFuseMapPoint;
-    vpCheckFuseMapPoint.reserve(spMapPointMerge.size());
-    std::copy(spMapPointMerge.begin(),
-              spMapPointMerge.end(),
-              std::back_inserter(vpCheckFuseMapPoint));
-
-    Sophus::SE3d Twc = mpCurrentKF->GetPoseInverse().cast<double>();
-    g2o::Sim3 g2oNonCorrectedSwc(Twc.unit_quaternion(), Twc.translation(), 1.0);
-    g2o::Sim3 g2oNonCorrectedScw = g2oNonCorrectedSwc.inverse();
-    g2o::Sim3 g2oCorrectedScw    = mg2oMergeScw;
-
-    KeyFrameAndPose vCorrectedSim3, vNonCorrectedSim3;
-    vCorrectedSim3[mpCurrentKF]    = g2oCorrectedScw;
-    vNonCorrectedSim3[mpCurrentKF] = g2oNonCorrectedScw;
-
-#ifdef REGISTER_TIMES
-    vnMergeKFs.push_back(spLocalWindowKFs.size() + spMergeConnectedKFs.size());
-    vnMergeMPs.push_back(spLocalWindowMPs.size() + spMapPointMerge.size());
-#endif
-    for (KeyFrame *pKFi : spLocalWindowKFs)
-    {
+        /* Skip invalid keyframes. (Shouldn't need this but good for safety) */
         if (!pKFi || pKFi->isBad())
         {
-            Verbose::PrintMess("Bad KF in correction",
-                               Verbose::VERBOSITY_DEBUG);
             continue;
         }
 
-        if (pKFi->GetMap() != pCurrentMap)
-            Verbose::PrintMess("Other map KF, this should't happen",
-                               Verbose::VERBOSITY_DEBUG);
+        /* Extract the map points from the keyframe */
+        const auto spMPs = pKFi->GetMapPoints();
 
-        g2o::Sim3 g2oCorrectedSiw;
+        /* Insert all the map points into the map point local window */
+        spMapPointMerge.insert(spMPs.begin(), spMPs.end());
+    }
 
-        if (pKFi != mpCurrentKF)
+    /*!
+     * Search and fuse only accepts std::vector<MapPoint *>, not
+     * std::set<MapPoint *>. Hence, need to move the `spLocalWindowMPs` to a
+     * new object to enable search and fuse. With `spLocalWindowMPs` being a
+     * set this does mean that `vpCheckFuseMapPoint` will have no duplicates.
+     */
+
+    /* Init list of fused map points */
+    std::vector<MapPoint *> vpCheckFuseMapPoint;
+
+    /* Reserve the memory for the fused map points */
+    vpCheckFuseMapPoint.reserve(spLocalWindowMPs.size());
+
+    /* Copy the map points from the local window */
+    vpCheckFuseMapPoint.assign(spLocalWindowMPs.begin(),
+                               spLocalWindowMPs.end());
+
+    /* ---------------------------------------------------------------------- *
+     * SECTION 7 - COMPUTE THE MAP-TO-MAP SIMILARITY TRANSFORM
+     *
+     *
+     * Purpose
+     * ----------------------------------------------------------------------
+     *
+     * Compute the similarity transform required to express all geometry from
+     * the merge-map world frame inside the surviving current-map world frame.
+     *
+     *
+     * Coordinate Frames
+     * ----------------------------------------------------------------------
+     *
+     *      Merge World -----> Current Camera -----> Current World
+     *          |                 mg2oMergeScw            Twc
+     *
+     *
+     * Result
+     * ----------------------------------------------------------------------
+     *
+     * g2oSwCurrentWMerge :
+     *      Maps merge-world coordinates into current-world coordinates.
+     *
+     * g2oSwMergeWCurrent :
+     *      Inverse transform used when correcting imported keyframe poses.
+     *
+     *
+     * ---------------------------------------------------------------------- */
+
+    /* The map-to-map transforms were computed before the floor preflight so a
+     * rejected merge could leave poses and ownership untouched. */
+
+    /* ---------------------------------------------------------------------- *
+     * SECTION 8 - CORRECT IMPORTED KEYFRAME POSES
+     *
+     * Every keyframe belonging to the merge-map welding window is transformed
+     * into the current-map reference frame.
+     *
+     * During this stage no ownership changes occur. The corrected poses are
+     * simply cached for later insertion into the surviving map. These
+     * transforms are stored in: `vNonCorrectedSim3` and `vCorrectedSim3`.
+     * ---------------------------------------------------------------------- */
+
+    /* Stores merge side keyframe's original pose before applying correction */
+    KeyFrameAndPose vNonCorrectedSim3;
+
+    /* Stores the corrected merge keyframe pose */
+    KeyFrameAndPose vCorrectedSim3;
+
+    /* Iterate through every merge keyframe in the merge connected KF list */
+    for (KeyFrame *pKFi : spMergeConnectedKFs)
+    {
+        /* Skip invalid keyframes */
+        if (!pKFi || pKFi->isBad() || pKFi->GetMap() != pMergeMap)
         {
-            Sophus::SE3d Tiw = (pKFi->GetPose()).cast<double>();
-            g2o::Sim3    g2oSiw(Tiw.unit_quaternion(), Tiw.translation(), 1.0);
-            // Pose without correction
-            vNonCorrectedSim3[pKFi] = g2oSiw;
-
-            Sophus::SE3d Tic = Tiw * Twc;
-            g2o::Sim3    g2oSic(Tic.unit_quaternion(), Tic.translation(), 1.0);
-            g2oCorrectedSiw      = g2oSic * mg2oMergeScw;
-            vCorrectedSim3[pKFi] = g2oCorrectedSiw;
+            continue;
         }
-        else
-        {
-            g2oCorrectedSiw = g2oCorrectedScw;
-        }
-        pKFi->mTcwMerge = pKFi->GetPose();
 
-        // Update keyframe pose with corrected Sim3. First transform Sim3 to SE3
-        // (scale translation)
-        double s      = g2oCorrectedSiw.scale();
-        pKFi->mfScale = s;
-        Sophus::SE3d correctedTiw(g2oCorrectedSiw.rotation(),
-                                  g2oCorrectedSiw.translation() / s);
+        /* Extract the current pose of the merge keyframe iteration */
+        const Sophus::SE3d TiwMerge = pKFi->GetPose().cast<double>();
 
-        pKFi->mTcwMerge = correctedTiw.cast<float>();
+        /* Convert to a g2o::Sim3 object type */
+        const g2o::Sim3 g2oSiwMerge(TiwMerge.unit_quaternion(),
+                                    TiwMerge.translation(),
+                                    1.0);
 
+        /* Find the transform from current world to keyframe iteration (i) */
+        const g2o::Sim3 g2oSiwCurrent = g2oSiwMerge * g2oSwMergeWCurrent;
+
+        /* Store transforms */
+        vNonCorrectedSim3[pKFi] = g2oSiwMerge;
+        vCorrectedSim3[pKFi]    = g2oSiwCurrent;
+
+        /* Find the scale of transform */
+        const double s = g2oSiwCurrent.scale();
+
+        /* Find the transform from merge to current map */
+        pKFi->mfScale   = s;
+        pKFi->mTcwMerge = Sophus::SE3d(g2oSiwCurrent.rotation(),
+                                       g2oSiwCurrent.translation() / s)
+                              .cast<float>();
+
+        /* If there is IMU, extract velocity */
         if (pCurrentMap->isImuInitialized())
         {
-            Eigen::Quaternionf Rcor = (g2oCorrectedSiw.rotation().inverse() *
-                                       vNonCorrectedSim3[pKFi].rotation())
-                                          .cast<float>();
+            const Eigen::Quaternionf Rcor =
+                (g2oSiwCurrent.rotation().inverse() * g2oSiwMerge.rotation())
+                    .cast<float>();
             pKFi->mVwbMerge = Rcor * pKFi->GetVelocity();
         }
     }
 
-    int numPointsWithCorrection = 0;
+    /* ---------------------------------------------------------------------- *
+     * SECTION 9 - CORRECT IMPORTED MAP POINTS
+     *
+     * Transform every imported landmark into the current-map coordinate frame.
+     *
+     * Position:
+     *      Full Sim3 transformation.
+     *
+     * Normal:
+     *      Rotation only.
+     *
+     * Invalid landmarks are removed from the temporary welding set.
+     * ---------------------------------------------------------------------- */
 
-    set<MapPoint *>::iterator itMP = spLocalWindowMPs.begin();
-    while (itMP != spLocalWindowMPs.end())
+    /* Iterate through all the mapped points in the merge map */
+    for (auto itMP = spMapPointMerge.begin(); itMP != spMapPointMerge.end();)
     {
+        /* Copy the map points */
         MapPoint *pMPi = *itMP;
-        if (!pMPi || pMPi->isBad())
+
+        /* If the mapped points are invalud, erase and skip */
+        if (!pMPi || pMPi->isBad() || pMPi->GetMap() != pMergeMap)
         {
-            itMP = spLocalWindowMPs.erase(itMP);
+            itMP = spMapPointMerge.erase(itMP);
             continue;
         }
 
-        KeyFrame *pKFref = pMPi->GetReferenceKeyFrame();
-        if (vCorrectedSim3.find(pKFref) == vCorrectedSim3.end())
-        {
-            itMP = spLocalWindowMPs.erase(itMP);
-            numPointsWithCorrection++;
-            continue;
-        }
-        g2o::Sim3 g2oCorrectedSwi    = vCorrectedSim3[pKFref].inverse();
-        g2o::Sim3 g2oNonCorrectedSiw = vNonCorrectedSim3[pKFref];
+        /* Extract position of point */
+        const Eigen::Vector3d P3DwMerge = pMPi->GetWorldPos().cast<double>();
 
-        // Project with non-corrected pose and project back with corrected pose
-        Eigen::Vector3d P3Dw = pMPi->GetWorldPos().cast<double>();
-        Eigen::Vector3d eigCorrectedP3Dw =
-            g2oCorrectedSwi.map(g2oNonCorrectedSiw.map(P3Dw));
-        Eigen::Quaterniond Rcor =
-            g2oCorrectedSwi.rotation() * g2oNonCorrectedSiw.rotation();
+        /* Transform the point into the current map world frame */
+        pMPi->mPosMerge = g2oSwCurrentWMerge.map(P3DwMerge).cast<float>();
 
-        pMPi->mPosMerge          = eigCorrectedP3Dw.cast<float>();
-        pMPi->mNormalVectorMerge = Rcor.cast<float>() * pMPi->GetNormal();
+        /* Transform the points surface normal into current map world frame */
+        pMPi->mNormalVectorMerge =
+            g2oSwCurrentWMerge.rotation().cast<float>() * pMPi->GetNormal();
 
+        /* Step to next mapped point */
         itMP++;
     }
 
+    /* Existing current-map landmarks are used as fusion candidates. */
+    vpCheckFuseMapPoint.assign(spLocalWindowMPs.begin(),
+                               spLocalWindowMPs.end());
+
+    /* ---------------------------------------------------------------------- *
+     * SECTION 10 - TRANSFER THE WELDING WINDOW
+     *
+     * Both maps are locked simultaneously using std::scoped_lock to guarantee a
+     * deadlock-free ownership transfer.
+     *
+     * The current map remains the authoritative map throughout this section.
+     * ---------------------------------------------------------------------- */
     {
-        unique_lock<mutex> currentLock(
-            pCurrentMap->mMutexMapUpdate); // We update the current map with the
-                                           // Merge information
-        unique_lock<mutex> mergeLock(
-            pMergeMap->mMutexMapUpdate); // We remove the Kfs and MPs in the
-                                         // merged area from the old map
+        /*!
+         * Lock both maps with deadlock-safe acquisition while ownership moves
+         */
+        std::scoped_lock mapLocks(pCurrentMap->mMutexMapUpdate,
+                                  pMergeMap->mMutexMapUpdate);
 
-        for (KeyFrame *pKFi : spLocalWindowKFs)
+        /* ------------------------------------------------------------------ *
+         * SECTION 11 - TRANSFER CORRECTED KEYFRAMES
+         *
+         * Every corrected merge-map keyframe is:
+         *
+         *      1. Pose corrected.
+         *      2. Assigned to the current map.
+         *      3. Added to the current-map container.
+         *      4. Removed from the merge-map container.
+         * ------------------------------------------------------------------ */
+
+        /* For every keyframe in merge map, iterate through and transfer */
+        for (KeyFrame *pKFi : spMergeConnectedKFs)
         {
-            if (!pKFi || pKFi->isBad())
+            /* Skip invalud keyframes */
+            if (!pKFi || pKFi->isBad() || pKFi->GetMap() != pMergeMap)
+            {
                 continue;
+            }
 
+            /* Store the old pose of the keyframe */
             pKFi->mTcwBefMerge = pKFi->GetPose();
             pKFi->mTwcBefMerge = pKFi->GetPoseInverse();
+
+            /* Apply corrected world-to-camera pose in the current-map frame */
             pKFi->SetPose(pKFi->mTcwMerge);
 
-            // Make sure connections are updated
-            pKFi->UpdateMap(pMergeMap);
+            /* Change keyframe's internal owning-map pointer to current map */
+            pKFi->UpdateMap(pCurrentMap);
+
+            /* Record which current keyframe triggered this merge correction */
             pKFi->mnMergeCorrectedForKF = mpCurrentKF->mnId;
-            pMergeMap->AddKeyFrame(pKFi);
-            pCurrentMap->EraseKeyFrame(pKFi);
 
+            /* Insert the same keyframe pointer into surviving map container */
+            pCurrentMap->AddKeyFrame(pKFi);
+
+            /* Remove the keyframe pointer from the old merge-map container */
+            pMergeMap->EraseKeyFrame(pKFi);
+
+            /* If there is IMU, add velocity */
             if (pCurrentMap->isImuInitialized())
+            {
                 pKFi->SetVelocity(pKFi->mVwbMerge);
+            }
         }
 
-        for (MapPoint *pMPi : spLocalWindowMPs)
+        /* ------------------------------------------------------------------ *
+         * SECTION 12 - TRANSFER CORRECTED MAP POINTS
+         *
+         * The imported landmarks have already been transformed into the
+         * current-map frame and therefore only require ownership transfer.
+         * ------------------------------------------------------------------ */
+
+        /* Iterate over every merge-map point selected for transfer */
+        for (MapPoint *pMPi : spMapPointMerge)
         {
-            if (!pMPi || pMPi->isBad())
+            /* Skip null, invalid, or no-longer merge-owned map points */
+            if (!pMPi || pMPi->isBad() || pMPi->GetMap() != pMergeMap)
+            {
                 continue;
+            }
 
+            /* Apply position expressed in the surviving current-map frame */
             pMPi->SetWorldPos(pMPi->mPosMerge);
+
+            /* Apply the normal rotated into the surviving current-map frame */
             pMPi->SetNormalVector(pMPi->mNormalVectorMerge);
-            pMPi->UpdateMap(pMergeMap);
-            pMergeMap->AddMapPoint(pMPi);
-            pCurrentMap->EraseMapPoint(pMPi);
+
+            /* Change the map point's internal owner to the current map */
+            pMPi->UpdateMap(pCurrentMap);
+
+            /* Register the same map-point pointer in the surviving map */
+            pCurrentMap->AddMapPoint(pMPi);
+
+            /* Remove the map-point pointer from the obsolete merge map */
+            pMergeMap->EraseMapPoint(pMPi);
         }
 
-        mpAtlas->ChangeMap(pMergeMap);
-        mpAtlas->SetMapBad(pCurrentMap);
-        pMergeMap->IncreaseChangeIndex();
-        pMergeMap->ChangeId(pCurrentMap->GetId());
+        /* Set the map to be the current map */
+        mpAtlas->ChangeMap(pCurrentMap);
+
+        /* Incrase index tracking the amount of times the maps been changed */
+        pCurrentMap->IncreaseChangeIndex();
     }
 
-    // Rebuild the essential graph in the local window
-    pCurrentMap->GetOriginKF()->SetFirstConnection(false);
-    pNewChild =
-        mpCurrentKF
-            ->GetParent();    // Old parent, it will be the new child of this KF
-    pNewParent = mpCurrentKF; // Old child, now it will be the parent of its own
-                              // parent(we need eliminate this KF from children
-                              // list in its old parent)
-    mpCurrentKF->ChangeParent(mpMergeMatchedKF);
+    /* ---------------------------------------------------------------------- *
+     * SECTION 13 - REBUILD THE IMPORTED SPANNING TREE
+     *
+     * The imported spanning tree is attached beneath the surviving current
+     * keyframe before the previous parent chain is reversed.
+     *
+     * This preserves graph connectivity while preventing cyclic parent
+     * relationships.
+     *
+     * The links are updated so the imported merge-map keyframes belong to one
+     * connected keyframe graph rooted in the surviving current map. You first
+     * transfer and reconnect the merge-map keyframes into the current map’s
+     * keyframe graph, then (IN SECTION 14) recompute the covisibility graph
+     * from their shared map-point observations
+     * ---------------------------------------------------------------------- */
+
+    /* If the oriign keyframe of the merp map is valid */
+    if (pMergeMap->GetOriginKF())
+    {
+        /* Allow the former merge-map root to become a normal tree child */
+        pMergeMap->GetOriginKF()->SetFirstConnection(false);
+    }
+
+    /* Init variables to track the new child and parent keyframes */
+    KeyFrame *pNewChild  = nullptr;
+    KeyFrame *pNewParent = nullptr;
+
+    /* Start with the original parent of the matched merge keyframe */
+    pNewChild = mpMergeMatchedKF->GetParent();
+
+    /* The matched merge keyframe becomes the first reversed parent */
+    pNewParent = mpMergeMatchedKF;
+
+    /* Attach the matched merge keyframe beneath the current keyframe */
+    mpMergeMatchedKF->ChangeParent(mpCurrentKF);
+
+    /* Reverse each edge along the original merge-map parent chain */
     while (pNewChild)
     {
-        pNewChild->EraseChild(
-            pNewParent); // We remove the relation between the old parent and
-                         // the new for avoid loop
+        /* Remove the old child edge before reversing its direction */
+        pNewChild->EraseChild(pNewParent);
+
+        /* Save the next original parent before changing this relation */
         KeyFrame *pOldParent = pNewChild->GetParent();
 
+        /* Make the former parent a child of the previous keyframe */
         pNewChild->ChangeParent(pNewParent);
 
+        /* Advance the new-parent pointer one level up the old chain */
         pNewParent = pNewChild;
-        pNewChild  = pOldParent;
+
+        /* Continue with the next parent from the original tree chain */
+        pNewChild = pOldParent;
     }
 
-    // Update the connections between the local window
+    /* ---------------------------------------------------------------------- *
+     * SECTION 14 - REFRESH COVISIBILITY GRAPH
+     *
+     * Refresh the imported covisibility graph before searching for duplicate
+     * landmarks between the two welding windows.
+     * ---------------------------------------------------------------------- */
+
+    /* Refresh links for the matched merge-side keyframe */
     mpMergeMatchedKF->UpdateConnections();
 
+    /* Init list of connected keyframes in merge map */
+    std::vector<KeyFrame *> vpMergeConnectedKFs;
+
+    /* Retrieve keyframes covisible with the matched merge keyframe */
     vpMergeConnectedKFs = mpMergeMatchedKF->GetVectorCovisibleKeyFrames();
+
+    /* Include the matched merge keyframe in the fusion set */
     vpMergeConnectedKFs.push_back(mpMergeMatchedKF);
 
+    /* Fuse duplicate current-map points into corrected merge keyframes */
     SearchAndFuse(vCorrectedSim3, vpCheckFuseMapPoint);
 
-    // Update connectivity
+    /* Refresh covisibility links for current-map local keyframes */
     for (KeyFrame *pKFi : spLocalWindowKFs)
     {
+        /* Skip null keyframes and keyframes marked as invalid */
         if (!pKFi || pKFi->isBad())
+        {
             continue;
+        }
+
+        /* Recompute graph connections from shared map-point observations */
         pKFi->UpdateConnections();
     }
 
+    /* Refresh covisibility links for imported merge-side keyframes */
     for (KeyFrame *pKFi : spMergeConnectedKFs)
     {
+        /* Skip null keyframes and keyframes marked as invalid */
         if (!pKFi || pKFi->isBad())
+        {
             continue;
+        }
+
+        /* Recompute graph connections from shared map-point observations */
         pKFi->UpdateConnections();
     }
 
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartWeldingBA =
-        std::chrono::steady_clock::now();
-    double timeMergeMaps =
-        std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            time_StartWeldingBA - time_StartMerge)
-            .count();
-    vdMergeMaps_ms.push_back(timeMergeMaps);
-#endif
+    /* ---------------------------------------------------------------------- *
+     * SECTION 15 - LOCAL MERGE OPTIMISATION
+     *
+     * Perform a local optimisation immediately after the welding window has
+     * been merged.
+     *
+     * Depending on the sensor configuration either:
+     *
+     *      • MergeInertialBA()
+     *      • LoopClosureLocalBundleAdjustment()
+     *
+     * is executed.
+     * ---------------------------------------------------------------------- */
 
+    /* Shared stop flag passed to the selected optimisation routine */
     bool bStop = false;
+
+    /* Init list of local keyframes in current window */
+    std::vector<KeyFrame *> vpLocalCurrentWindowKFs;
+
+    /* Remove keyframes stored by any previous merge operation */
     vpLocalCurrentWindowKFs.clear();
+
+    /* Remove merge-connected keyframes stored by earlier processing */
     vpMergeConnectedKFs.clear();
+
+    /* Copy current-side local keyframes into the optimiser vector */
     std::copy(spLocalWindowKFs.begin(),
               spLocalWindowKFs.end(),
               std::back_inserter(vpLocalCurrentWindowKFs));
+
+    /* Copy merge-side connected keyframes into the optimiser vector */
     std::copy(spMergeConnectedKFs.begin(),
               spMergeConnectedKFs.end(),
               std::back_inserter(vpMergeConnectedKFs));
 
+    /* Check whether the active sensor configuration includes an IMU */
     if (mpTracker->mSensor == System::IMU_MONOCULAR ||
         mpTracker->mSensor == System::IMU_STEREO ||
         mpTracker->mSensor == System::IMU_RGBD)
+    {
+        /* Refine the merged region using visual and inertial constraints */
         Optimizer::MergeInertialBA(mpCurrentKF,
                                    mpMergeMatchedKF,
                                    &bStop,
                                    pCurrentMap,
                                    vCorrectedSim3);
+    }
     else
-        Optimizer::LoopClosureLocalBundleAdjustment(mpCurrentKF,
-                                                    vpLocalCurrentWindowKFs,
+    {
+        /* Refine the merged region using visual observations only */
+        Optimizer::LoopClosureLocalBundleAdjustment(mpMergeMatchedKF,
                                                     vpMergeConnectedKFs,
+                                                    vpLocalCurrentWindowKFs,
                                                     &bStop);
+    }
 
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndWeldingBA =
-        std::chrono::steady_clock::now();
-
-    double timeWeldingBA =
-        std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            time_EndWeldingBA - time_StartWeldingBA)
-            .count();
-    vdWeldingBA_ms.push_back(timeWeldingBA);
-#endif
-    // Release Local Mapping after the loop closure
+    /* Resume local mapping after merge optimisation is complete */
     mpLocalMapper->Release();
 
-    // Get the non-critical area from the current map to the new (merged) map
-    std::vector<Plane *>    vpCurrentMapPlanes = pCurrentMap->GetAllPlanes();
-    std::vector<KeyFrame *> vpCurrentMapKFs    = pCurrentMap->GetAllKeyFrames();
-    std::vector<MapPoint *> vpCurrentMapMPs    = pCurrentMap->GetAllMapPoints();
-    std::vector<Marker *>   vpCurrentMapMarkers = pCurrentMap->GetAllMarkers();
-    std::vector<ORB_SLAM3::Passage *> vpCurrentMapPassages =
-        pCurrentMap->GetAllPassages();
-    std::vector<Room *> vpCurrentDetectedMapRooms =
-        pCurrentMap->GetAllDetectedMapRooms();
-    std::vector<Room *> vpCurrentMarkerBasedMapRooms =
-        pCurrentMap->GetAllMarkerBasedMapRooms();
-    std::vector<std::vector<Eigen::Vector3d>> vpClusterPoints =
-        pCurrentMap->GetSkeletonClusterPoints();
+    /* ---------------------------------------------------------------------- *
+     * SECTION 16 - RETRIEVE THE REMAINING MERGE MAP
+     *
+     * The local welding window has already been transferred.
+     *
+     * This section retrieves every remaining object that still belongs to the
+     * obsolete merge map.
+     * ---------------------------------------------------------------------- */
 
-    if (vpCurrentMapKFs.size() != 0)
+    /* Copy all planes currently owned by the merge map */
+    std::vector<Plane *> vpCurrentMapPlanes = pMergeMap->GetAllPlanes();
+
+    /* Copy all keyframes currently owned by the merge map */
+    std::vector<KeyFrame *> vpCurrentMapKFs = pMergeMap->GetAllKeyFrames();
+
+    const bool hasValidRemainingMergeKeyFrame =
+        std::any_of(vpCurrentMapKFs.begin(),
+                    vpCurrentMapKFs.end(),
+                    [pMergeMap](KeyFrame *p_keyFrame_in)
+                    {
+                        return p_keyFrame_in != nullptr &&
+                               !p_keyFrame_in->isBad() &&
+                               p_keyFrame_in->GetMap() == pMergeMap;
+                    });
+
+    /* Copy all map points currently owned by the merge map */
+    std::vector<MapPoint *> vpCurrentMapMPs = pMergeMap->GetAllMapPoints();
+
+    /* Copy all markers currently owned by the merge map */
+    std::vector<Marker *> vpCurrentMapMarkers = pMergeMap->GetAllMarkers();
+
+    /* Copy all passages currently owned by the merge map */
+    std::vector<ORB_SLAM3::Passage *> vpCurrentMapPassages =
+        pMergeMap->GetAllPassages();
+
+    /* Copy all detected rooms currently owned by the merge map */
+    std::vector<Room *> vpCurrentDetectedMapRooms =
+        pMergeMap->GetAllDetectedMapRooms();
+
+    /* Copy all marker-based rooms currently owned by the merge map */
+    std::vector<Room *> vpCurrentMarkerBasedMapRooms =
+        pMergeMap->GetAllMarkerBasedMapRooms();
+
+    /* Copy all floors currently owned by the merge map */
+    std::vector<Floor *> vpCurrentMapFloors = pMergeMap->GetAllFloors();
+
+    /* Stop local mapping before any remaining ownership is transferred. */
+    mpLocalMapper->RequestStop();
+
+    while (!mpLocalMapper->isStopped())
     {
+        usleep(1000);
+    }
+
+    /* ---------------------------------------------------------------------- *
+     * SECTION 17 - CORRECT REMAINING MERGE-MAP GEOMETRY
+     *
+     * Every remaining keyframe and landmark that was not part of the welding
+     * window is transformed into the surviving current-map frame prior to graph
+     * optimisation.
+     * ---------------------------------------------------------------------- */
+
+    /* Process remaining keyframes only when the merge map is not empty */
+    if (hasValidRemainingMergeKeyFrame)
+    {
+        /* Apply monocular scale correction to the remaining merge map */
         if (mpTracker->mSensor == System::MONOCULAR)
         {
-            unique_lock<mutex> currentLock(
-                pCurrentMap->mMutexMapUpdate); // We update the current map with
-                                               // the Merge information
+            /* Lock the merge map while updating its poses and landmarks */
+            std::unique_lock<std::mutex> mergeLock(pMergeMap->mMutexMapUpdate);
 
+            /* Correct each remaining merge keyframe into current world */
             for (KeyFrame *pKFi : vpCurrentMapKFs)
             {
-                if (!pKFi || pKFi->isBad() || pKFi->GetMap() != pCurrentMap)
+                /* Skip invalid keyframes or keyframes no longer in this map */
+                if (!pKFi || pKFi->isBad() || pKFi->GetMap() != pMergeMap)
+                {
                     continue;
+                }
 
-                g2o::Sim3 g2oCorrectedSiw;
+                /* Read the keyframe pose in the merge map world frame */
+                const Sophus::SE3d TiwMerge = pKFi->GetPose().cast<double>();
 
-                Sophus::SE3d Tiw = (pKFi->GetPose()).cast<double>();
-                g2o::Sim3 g2oSiw(Tiw.unit_quaternion(), Tiw.translation(), 1.0);
-                // Pose without correction
-                vNonCorrectedSim3[pKFi] = g2oSiw;
+                /* Convert the rigid keyframe pose into a unit scale Sim3 */
+                const g2o::Sim3 g2oSiwMerge(TiwMerge.unit_quaternion(),
+                                            TiwMerge.translation(),
+                                            1.0);
 
-                Sophus::SE3d Tic = Tiw * Twc;
-                g2o::Sim3 g2oSim(Tic.unit_quaternion(), Tic.translation(), 1.0);
-                g2oCorrectedSiw      = g2oSim * mg2oMergeScw;
-                vCorrectedSim3[pKFi] = g2oCorrectedSiw;
+                /* Express the keyframe pose in the current world frame */
+                const g2o::Sim3 g2oSiwCurrent =
+                    g2oSiwMerge * g2oSwMergeWCurrent;
 
-                // Update keyframe pose with corrected Sim3. First transform
-                // Sim3 to SE3 (scale translation)
-                double s = g2oCorrectedSiw.scale();
+                /* Store the original keyframe pose before correction */
+                vNonCorrectedSim3[pKFi] = g2oSiwMerge;
 
+                /* Store the corrected keyframe pose for later processing */
+                vCorrectedSim3[pKFi] = g2oSiwCurrent;
+
+                /* Extract the scale introduced by the map correction */
+                const double s = g2oSiwCurrent.scale();
+
+                /* Store the applied scale in the keyframe */
                 pKFi->mfScale = s;
 
-                Sophus::SE3d correctedTiw(g2oCorrectedSiw.rotation(),
-                                          g2oCorrectedSiw.translation() / s);
-
+                /* Preserve the original world to camera pose */
                 pKFi->mTcwBefMerge = pKFi->GetPose();
+
+                /* Preserve the original camera to world pose */
                 pKFi->mTwcBefMerge = pKFi->GetPoseInverse();
 
-                pKFi->SetPose(correctedTiw.cast<float>());
+                /* Apply the corrected rigid pose in the current world frame */
+                pKFi->SetPose(Sophus::SE3d(g2oSiwCurrent.rotation(),
+                                           g2oSiwCurrent.translation() / s)
+                                  .cast<float>());
 
+                /* Rotate velocity when the surviving map uses inertial data */
                 if (pCurrentMap->isImuInitialized())
                 {
-                    Eigen::Quaternionf Rcor =
-                        (g2oCorrectedSiw.rotation().inverse() *
-                         vNonCorrectedSim3[pKFi].rotation())
+                    /* Compute the rotation from old to corrected world frame */
+                    const Eigen::Quaternionf Rcor =
+                        (g2oSiwCurrent.rotation().inverse() *
+                         g2oSiwMerge.rotation())
                             .cast<float>();
+
+                    /* Express the keyframe velocity in the corrected frame */
                     pKFi->SetVelocity(Rcor * pKFi->GetVelocity());
                 }
             }
 
+            /* Correct each remaining merge landmark into current world */
             for (MapPoint *pMPi : vpCurrentMapMPs)
             {
-                if (!pMPi || pMPi->isBad() || pMPi->GetMap() != pCurrentMap)
+                /* Skip invalid points or points no longer in this map */
+                if (!pMPi || pMPi->isBad() || pMPi->GetMap() != pMergeMap)
+                {
                     continue;
+                }
 
-                KeyFrame *pKFref             = pMPi->GetReferenceKeyFrame();
-                g2o::Sim3 g2oCorrectedSwi    = vCorrectedSim3[pKFref].inverse();
-                g2o::Sim3 g2oNonCorrectedSiw = vNonCorrectedSim3[pKFref];
+                /* Read the landmark position in the merge world frame */
+                const Eigen::Vector3d P3DwMerge =
+                    pMPi->GetWorldPos().cast<double>();
 
-                // Project with non-corrected pose and project back with
-                // corrected pose
-                Eigen::Vector3d P3Dw = pMPi->GetWorldPos().cast<double>();
-                Eigen::Vector3d eigCorrectedP3Dw =
-                    g2oCorrectedSwi.map(g2oNonCorrectedSiw.map(P3Dw));
-                pMPi->SetWorldPos(eigCorrectedP3Dw.cast<float>());
+                const Eigen::Vector3f normal_mergeWorld = pMPi->GetNormal();
 
+                /* Transform the landmark into the current world frame */
+                pMPi->SetWorldPos(
+                    g2oSwCurrentWMerge.map(P3DwMerge).cast<float>());
+
+                pMPi->SetNormalVector(
+                    g2oSwCurrentWMerge.rotation().cast<float>() *
+                    normal_mergeWorld);
+
+                /* Refresh the point normal and valid viewing depth range */
                 pMPi->UpdateNormalAndDepth();
             }
         }
 
-        mpLocalMapper->RequestStop();
-        while (!mpLocalMapper->isStopped())
-            usleep(1000);
+        /* ------------------------------------------------------------------ *
+         * SECTION 18 - OPTIMISE THE COMPLETE MERGED GRAPH
+         *
+         * Once every remaining object has been corrected into the current-map
+         * frame, optimise the complete merged graph before changing ownership.
+         * ------------------------------------------------------------------ */
 
-        // Optimize the essential graph and update the loop position for each
-        // element in the new map
         if (mpTracker->mSensor != System::MONOCULAR)
-            Optimizer::OptimizeEssentialGraph(mpCurrentKF,
-                                              vpMergeConnectedKFs,
+        {
+            Optimizer::OptimizeEssentialGraph(mpMergeMatchedKF,
+                                              pMergeMap,
                                               vpLocalCurrentWindowKFs,
+                                              vpMergeConnectedKFs,
                                               vpCurrentMapKFs,
                                               vpCurrentMapMPs,
-                                              vpCurrentMapPassages,
-                                              vpCurrentMapPlanes,
-                                              vpCurrentMapMarkers,
-                                              vpCurrentDetectedMapRooms,
-                                              vpCurrentMarkerBasedMapRooms,
-                                              vpClusterPoints);
+                                              g2oSwCurrentWMerge);
 
-        // When all the elements are updated, move them to the new map
-        {
-            // Get Merge Map Mutex
-            unique_lock<mutex> currentLock(
-                pCurrentMap->mMutexMapUpdate); // We update the current map with
-                                               // the Merge information
-            unique_lock<mutex> mergeLock(
-                pMergeMap->mMutexMapUpdate); // We remove the Kfs and MPs in the
-                                             // merged area from the old map
-
-            // Loop over the KeyFrames of the current map and move them to the
-            // new map
-            for (KeyFrame *pKFi : vpCurrentMapKFs)
-            {
-                if (!pKFi || pKFi->isBad() || pKFi->GetMap() != pCurrentMap)
-                    continue;
-
-                pKFi->UpdateMap(pMergeMap);
-                pMergeMap->AddKeyFrame(pKFi);
-                pCurrentMap->EraseKeyFrame(pKFi);
-            }
-
-            // Loop over the MapPoints of the current map and move them to the
-            // new map
-            for (MapPoint *pMPi : vpCurrentMapMPs)
-            {
-                if (!pMPi || pMPi->isBad())
-                    continue;
-
-                pMPi->UpdateMap(pMergeMap);
-                pMergeMap->AddMapPoint(pMPi);
-                pCurrentMap->EraseMapPoint(pMPi);
-            }
-
-            // Loop over the Planes of the current map and move them to the new
-            // map
-            for (Plane *pPlane : vpCurrentMapPlanes)
-            {
-                if (!pPlane)
-                    continue;
-
-                pPlane->SetMap(pMergeMap);
-                pPlane->setId(pMergeMap->GetAllPlanes().size());
-                pMergeMap->AddMapPlane(pPlane);
-                pCurrentMap->EraseMapPlane(pPlane);
-
-                // Check if the plane exists in roomMapWalls
-                ORB_SLAM3::Plane *pRoomWallPlane =
-                    pCurrentMap->GetRoomWallPlaneById(pPlane->getId());
-                if (pRoomWallPlane)
-                {
-                    pMergeMap->AddRoomWallPlane(pRoomWallPlane);
-                    pCurrentMap->EraseRoomWallPlane(pRoomWallPlane);
-                }
-            }
-
-            // Re-associate semantic planes if they get close to each other :))
-            // after optimization
-            if (sysParams->sem_seg.reassociate.enabled)
-                Utils::reAssociateSemanticPlanes(mpAtlas);
-
-            // Loop over the Markers of the current map and move them to the new
-            // map
-            for (Marker *pMarker : vpCurrentMapMarkers)
-            {
-                if (!pMarker)
-                    continue;
-
-                pMarker->setMap(pMergeMap);
-                pMergeMap->AddMapMarker(pMarker);
-                pCurrentMap->EraseMapMarker(pMarker);
-            }
-
-            // Loop over the Doorways of the current map and move them to the
-            // new map
-            for (ORB_SLAM3::Passage *pPassage : vpCurrentMapPassages)
-            {
-                if (!pPassage)
-                    continue;
-
-                pPassage->setMap(pMergeMap);
-                pMergeMap->AddMapPassage(pPassage);
-                pCurrentMap->EraseMapPassage(pPassage);
-            }
-
-            // Loop over the Detected Rooms of the current map and move them to
-            // the new map
-            for (ORB_SLAM3::Room *pRoom : vpCurrentDetectedMapRooms)
-            {
-                if (!pRoom)
-                    continue;
-
-                pRoom->setMap(pMergeMap);
-                pMergeMap->AddDetectedMapRoom(pRoom);
-                pCurrentMap->EraseDetectedMapRoom(pRoom);
-            }
-
-            // Loop over the Marker-based Rooms of the current map and move them
-            // to the new map
-            for (ORB_SLAM3::Room *pRoom : vpCurrentMarkerBasedMapRooms)
-            {
-                if (!pRoom)
-                    continue;
-
-                pRoom->setMap(pMergeMap);
-                pMergeMap->AddCandidateMapRoom(pRoom);
-                pCurrentMap->EraseMarkerBasedMapRoom(pRoom);
-            }
+            /*!
+             * Skeleton topology is derived from the live Voxblox volume. The
+             * map-revision notification invalidates that volume after this
+             * correction, so no stale topology snapshot is retained here.
+             */
         }
     }
 
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndOptEss =
-        std::chrono::steady_clock::now();
+    const bool semanticGeometryWasOptimized =
+        hasValidRemainingMergeKeyFrame &&
+        mpTracker->mSensor != System::MONOCULAR;
 
-    double timeOptEss =
-        std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            time_EndOptEss - time_EndWeldingBA)
-            .count();
-    vdMergeOptEss_ms.push_back(timeOptEss);
-#endif
+    bool semanticGeometryWasPropagated = semanticGeometryWasOptimized;
 
+    /*!
+     * Small source maps and monocular merges do not run the merge essential
+     * graph. Propagate the final welding-BA pose deltas directly so semantic
+     * geometry follows the corrected imported keyframes rather than receiving
+     * only the coarse map-level Sim3.
+     */
+    if (!semanticGeometryWasOptimized)
+    {
+        KeyFrameAndPose finalKeyFramePoses_WorldToCamera;
+
+        for (const auto &[p_keyFrame, poseBefore_WorldToCamera] :
+             vNonCorrectedSim3)
+        {
+            (void)poseBefore_WorldToCamera;
+
+            if (p_keyFrame == nullptr || p_keyFrame->isBad())
+            {
+                continue;
+            }
+
+            const Sophus::SE3d poseAfter_WorldToCamera =
+                p_keyFrame->GetPose().cast<double>();
+
+            /*
+             * A monocular map merge can change scale. ORB-SLAM stores the
+             * corrected keyframe as SE3 by dividing the Sim3 translation by
+             * its scale, so reconstruct the corresponding Sim3 before
+             * deriving the semantic world-frame correction. Using a unit
+             * scale here would leave planes, rooms and passages at their old
+             * size while MapPoints receive the full map Sim3.
+             */
+            double poseAfterScale = 1.0;
+
+            const auto correctedPoseIterator = vCorrectedSim3.find(p_keyFrame);
+
+            if (correctedPoseIterator != vCorrectedSim3.end() &&
+                std::isfinite(correctedPoseIterator->second.scale()) &&
+                std::abs(correctedPoseIterator->second.scale()) > 1e-12)
+            {
+                poseAfterScale = correctedPoseIterator->second.scale();
+            }
+
+            finalKeyFramePoses_WorldToCamera.insert_or_assign(
+                p_keyFrame,
+                g2o::Sim3(poseAfter_WorldToCamera.unit_quaternion(),
+                          poseAfterScale *
+                              poseAfter_WorldToCamera.translation(),
+                          poseAfterScale));
+        }
+
+        Utils::propagateSemanticPoseCorrections(
+            pMergeMap,
+            vNonCorrectedSim3,
+            finalKeyFramePoses_WorldToCamera,
+            g2oSwCurrentWMerge);
+
+        semanticGeometryWasPropagated = true;
+    }
+
+    /*
+     * A map can retain orphan landmarks after every keyframe in its local
+     * window has already moved. Those points still require the map-level Sim3
+     * even though there is no essential graph left to optimize.
+     */
+    if (!hasValidRemainingMergeKeyFrame)
+    {
+        for (MapPoint *p_mapPoint : vpCurrentMapMPs)
+        {
+            if (p_mapPoint == nullptr || p_mapPoint->isBad() ||
+                p_mapPoint->GetMap() != pMergeMap)
+            {
+                continue;
+            }
+
+            const Eigen::Vector3f position_mergeWorld_m =
+                p_mapPoint->GetWorldPos();
+
+            const Eigen::Vector3f normal_mergeWorld = p_mapPoint->GetNormal();
+
+            p_mapPoint->SetWorldPos(
+                g2oSwCurrentWMerge.map(position_mergeWorld_m.cast<double>())
+                    .cast<float>());
+
+            p_mapPoint->SetNormalVector(
+                g2oSwCurrentWMerge.rotation().cast<float>() *
+                normal_mergeWorld);
+
+            p_mapPoint->UpdateNormalAndDepth();
+        }
+    }
+
+    /* ------------------------------------------------------------------ *
+     * SECTION 19 - TRANSFER THE REMAINING MAP CONTENTS
+     *
+     * Every remaining object stored inside the obsolete merge map is
+     * transferred into the surviving current map.
+     *
+     * Object Types
+     * ------------------------------------------------------------------
+     *  - KeyFrames
+     *  - MapPoints
+     *  - Planes
+     *  - Passages
+     *  - Detected Rooms
+     *  - Marker Rooms
+     *  - Markers
+     * ------------------------------------------------------------------ */
+    {
+        const bool primarySemanticGeometryWasCorrected =
+            semanticGeometryWasOptimized || semanticGeometryWasPropagated;
+
+        int nextPlaneId = 0;
+        for (Plane *p_existingPlane : pCurrentMap->GetAllPlanes())
+        {
+            if (p_existingPlane != nullptr)
+            {
+                nextPlaneId =
+                    std::max(nextPlaneId, p_existingPlane->getId() + 1);
+            }
+        }
+
+        int nextPassageId = 0;
+        for (ORB_SLAM3::Passage *p_existingPassage :
+             pCurrentMap->GetAllPassages())
+        {
+            if (p_existingPassage != nullptr)
+            {
+                nextPassageId =
+                    std::max(nextPassageId, p_existingPassage->getId() + 1);
+            }
+        }
+
+        int nextRoomId = 0;
+        for (Room *p_existingRoom : pCurrentMap->GetAllRooms())
+        {
+            if (p_existingRoom != nullptr)
+            {
+                nextRoomId = std::max(nextRoomId, p_existingRoom->getId() + 1);
+            }
+        }
+
+        int nextFloorId = 0;
+        for (Floor *p_existingFloor : pCurrentMap->GetAllFloors())
+        {
+            if (p_existingFloor != nullptr)
+            {
+                nextFloorId =
+                    std::max(nextFloorId, p_existingFloor->getId() + 1);
+            }
+        }
+
+        int nextMarkerId = 0;
+        for (Marker *p_existingMarker : pCurrentMap->GetAllMarkers())
+        {
+            if (p_existingMarker != nullptr)
+            {
+                nextMarkerId =
+                    std::max(nextMarkerId, p_existingMarker->getId() + 1);
+            }
+        }
+
+        // Get Merge Map Mutex
+        std::scoped_lock mapLocks(pCurrentMap->mMutexMapUpdate,
+                                  pMergeMap->mMutexMapUpdate);
+
+        // Loop over the KeyFrames of the current map and move them to the
+        // new map
+        for (KeyFrame *pKFi : vpCurrentMapKFs)
+        {
+            if (!pKFi || pKFi->isBad() || pKFi->GetMap() != pMergeMap)
+                continue;
+
+            pKFi->UpdateMap(pCurrentMap);
+            pCurrentMap->AddKeyFrame(pKFi);
+            pMergeMap->EraseKeyFrame(pKFi);
+        }
+
+        // Loop over the MapPoints of the current map and move them to the
+        // new map
+        for (MapPoint *pMPi : vpCurrentMapMPs)
+        {
+            if (!pMPi || pMPi->isBad() || pMPi->GetMap() != pMergeMap)
+                continue;
+
+            pMPi->UpdateMap(pCurrentMap);
+            pCurrentMap->AddMapPoint(pMPi);
+            pMergeMap->EraseMapPoint(pMPi);
+        }
+
+        /* -------------------------------------------------------------- *
+         * SECTION 20 - TRANSFER SEMANTIC OBJECTS
+         *
+         * Semantic objects are transformed into the current-map reference
+         * frame before ownership is transferred.
+         *
+         * Geometry is preserved while map ownership is updated.
+         * -------------------------------------------------------------- */
+        for (Plane *plane : vpCurrentMapPlanes)
+        {
+            /* Skip invalid planes */
+            if (plane == nullptr || plane->isBad())
+            {
+                continue;
+            }
+
+            /*!
+             * Transform the semantic geometry from the old map frame into
+             * the merged map frame before changing ownership.
+             */
+            if (!primarySemanticGeometryWasCorrected)
+            {
+                plane->applyTransform(g2oSwCurrentWMerge);
+            }
+
+            /* Update the map the plane belongs to */
+            plane->SetMap(pCurrentMap);
+
+            /*!
+             * Take index size of planes in new map to find an id to add to
+             * the map which hasn't been taken.
+             */
+            plane->setId(nextPlaneId++);
+
+            /* Add the plane to the map new merged plane to the new map */
+            pCurrentMap->AddMapPlane(plane);
+
+            /* Remove the current plane from the old map */
+            pMergeMap->EraseMapPlane(plane);
+        }
+
+        // Loop over the Markers of the current map and move them to the new
+        // map
+        for (Marker *pMarker : vpCurrentMapMarkers)
+        {
+            if (!pMarker)
+                continue;
+
+            if (!primarySemanticGeometryWasCorrected)
+            {
+                pMarker->applyTransform(g2oSwCurrentWMerge);
+            }
+
+            pMarker->setMap(pCurrentMap);
+            pMarker->setId(nextMarkerId++);
+            pCurrentMap->AddMapMarker(pMarker);
+            pMergeMap->EraseMapMarker(pMarker);
+        }
+
+        /*!
+         * Loop over the passages of the primary map and move them to the
+         * secondary map.
+         */
+        for (ORB_SLAM3::Passage *passage : vpCurrentMapPassages)
+        {
+            /* Skip invalid rooms */
+            if (passage == nullptr)
+            {
+                continue;
+            }
+
+            /*!
+             * Transform the semantic geometry from the old map frame into
+             * the merged map frame before changing ownership.
+             */
+            if (!primarySemanticGeometryWasCorrected)
+            {
+                passage->applyTransform(g2oSwCurrentWMerge);
+            }
+
+            /* Remove from the source index before changing its published ID. */
+            pMergeMap->EraseMapPassage(passage);
+            passage->setMap(pCurrentMap);
+
+            /*!
+             * Take index size of rooms in new map to find an id to add to
+             * the map which hasn't been taken.
+             */
+            passage->setId(nextPassageId++);
+
+            /* Add the room to the current map */
+            pCurrentMap->AddMapPassage(passage);
+        }
+
+        /*!
+         * Loop over the rooms of the primary map and move them to the
+         * secondary map.
+         */
+        for (ORB_SLAM3::Room *room : vpCurrentDetectedMapRooms)
+        {
+            /* Skip invalid rooms */
+            if (room == nullptr || room->isBad())
+            {
+                continue;
+            }
+
+            /*!
+             * Transform the semantic geometry from the old map frame into
+             * the merged map frame before changing ownership.
+             */
+            if (!primarySemanticGeometryWasCorrected)
+            {
+                room->applyTransform(g2oSwCurrentWMerge);
+            }
+
+            /* Set the map of the room in the current map */
+            room->setMap(pCurrentMap);
+
+            /*!
+             * Take index size of rooms in new map to find an id to add to
+             * the map which hasn't been taken.
+             */
+            room->setId(nextRoomId++);
+
+            /* Add the room to the current map */
+            pCurrentMap->AddDetectedMapRoom(room);
+
+            /* Remove the room from the merged map */
+            pMergeMap->EraseDetectedMapRoom(room);
+        }
+
+        // Loop over the Marker-based Rooms of the current map and move them
+        // to the new map
+        for (ORB_SLAM3::Room *pRoom : vpCurrentMarkerBasedMapRooms)
+        {
+            if (!pRoom)
+                continue;
+
+            if (!primarySemanticGeometryWasCorrected)
+            {
+                pRoom->applyTransform(g2oSwCurrentWMerge);
+            }
+
+            pRoom->setMap(pCurrentMap);
+            pRoom->setId(nextRoomId++);
+            pCurrentMap->AddCandidateMapRoom(pRoom);
+            pMergeMap->EraseMarkerBasedMapRoom(pRoom);
+        }
+
+        for (Floor *p_floor : vpCurrentMapFloors)
+        {
+            if (p_floor == nullptr)
+            {
+                continue;
+            }
+
+            if (!semanticGeometryWasPropagated)
+            {
+                p_floor->applyTransform(g2oSwCurrentWMerge);
+            }
+            p_floor->setMap(pCurrentMap);
+            p_floor->setId(nextFloorId++);
+            pCurrentMap->AddMapFloor(p_floor);
+            pMergeMap->EraseMapFloor(p_floor);
+        }
+
+        collapseMergedFloors(pCurrentMap);
+
+        /*
+         * Voxblox topology is derived from a TSDF/ESDF volume and is not an
+         * independently mergeable landmark set. Appending snapshots from two
+         * map frames creates disconnected duplicate edges and false wall
+         * crossings. The external Voxblox node receives the map-revision event,
+         * clears its volume, and supplies a fresh snapshot after reintegration.
+         */
+        pCurrentMap->SetSkeletonClusterPoints({});
+        pCurrentMap->SetSkeletonEdges({});
+
+        /* Rebuild imported room-wall index entries before fusion. */
+        for (Room *p_room : pCurrentMap->GetAllRooms())
+        {
+            if (p_room == nullptr || p_room->isBad())
+            {
+                continue;
+            }
+
+            for (Plane *p_wall : p_room->getWalls())
+            {
+                if (p_wall != nullptr && !p_wall->isBad())
+                {
+                    pCurrentMap->AddRoomWallPlane(p_wall);
+                }
+            }
+        }
+
+        /* Fuse only after every semantic relationship is visible. */
+        if (sysParams->sem_seg.reassociate.enabled)
+        {
+            Utils::reAssociateSemanticPlanes(mpAtlas);
+
+            std::vector<Room *> importedRooms = vpCurrentDetectedMapRooms;
+            importedRooms.insert(importedRooms.end(),
+                                 vpCurrentMarkerBasedMapRooms.begin(),
+                                 vpCurrentMarkerBasedMapRooms.end());
+
+            Utils::fuseDuplicateRoomsAfterMerge(pCurrentMap, importedRooms);
+            Utils::reAssociateRooms(mpAtlas);
+            Utils::reAssociatePassages(mpAtlas);
+        }
+    }
+
+    /* ---------------------------------------------------------------------- *
+     * SECTION 22 - FINALISE THE MERGE
+     *
+     * Merge Complete
+     * ----------------------------------------------------------------------
+     *      - Current map survives.
+     *      - Merge map contains no remaining objects.
+     *      - Atlas ownership updated.
+     *      - Merge edge inserted.
+     *      - Obsolete map removed from the atlas.
+     *
+     * After this point every surviving SLAM object belongs exclusively to
+     * pCurrentMap.
+     * ---------------------------------------------------------------------- */
+
+    mpMergeMatchedKF->AddMergeEdge(mpCurrentKF);
+    mpCurrentKF->AddMergeEdge(mpMergeMatchedKF);
+
+    pCurrentMap->IncreaseChangeIndex();
+
+    /*!
+     * A map merge changes the world-frame poses of previously integrated
+     * observations. Notify derived mapping consumers only after ownership,
+     * semantic reconciliation, and graph connectivity are fully committed.
+     * Voxblox uses this revision to discard TSDF/ESDF state expressed in the
+     * pre-merge coordinate frame.
+     */
+    pCurrentMap->InformNewBigChange();
+
+    /* All surviving objects now belong to pCurrentMap. */
+    mpAtlas->ChangeMap(pCurrentMap);
+    mpAtlas->SetMapBad(pMergeMap);
+    mpAtlas->RemoveBadMaps();
+
+    std::cout << "[FloorVerify] Map#" << pCurrentMap->GetId() << " and Map#"
+              << pMergeMap->GetId() << " result=" << floorVerificationResult
+              << " committed=1" << std::endl;
+
+    semanticUpdateLock.unlock();
     mpLocalMapper->Release();
 
     if (bRelaunchBA &&
         (!pCurrentMap->isImuInitialized() ||
          (pCurrentMap->KeyFramesInMap() < 200 && mpAtlas->CountMaps() == 1)))
     {
-        // Launch a new thread to perform Global Bundle Adjustment
-        mbRunningGBA  = true;
-        mbFinishedGBA = false;
-        mbStopGBA     = false;
-        mpThreadGBA   = new thread(&LoopClosing::RunGlobalBundleAdjustment,
-                                 this,
-                                 pMergeMap,
-                                 mpCurrentKF->mnId);
+        relaunchGlobalBundleAdjustment(pCurrentMap);
     }
-
-    mpMergeMatchedKF->AddMergeEdge(mpCurrentKF);
-    mpCurrentKF->AddMergeEdge(mpMergeMatchedKF);
-
-    pCurrentMap->IncreaseChangeIndex();
-    pMergeMap->IncreaseChangeIndex();
-
-    mpAtlas->RemoveBadMaps();
 }
 
 void LoopClosing::MergeLocalInertial()
 {
+    /* Reject stale place-recognition candidates before stopping workers */
+    if (mpCurrentKF == nullptr || mpMergeMatchedKF == nullptr ||
+        mpCurrentKF->isBad() || mpMergeMatchedKF->isBad())
+    {
+        return;
+    }
+
+    Map *pCurrentMap = mpCurrentKF->GetMap();
+    Map *pMergeMap   = mpMergeMatchedKF->GetMap();
+
+    if (pCurrentMap == nullptr || pMergeMap == nullptr ||
+        pCurrentMap == pMergeMap || pCurrentMap->IsBad() ||
+        pMergeMap->IsBad() || !mpAtlas->isActiveMap(pCurrentMap) ||
+        !mpAtlas->isActiveMap(pMergeMap))
+    {
+        return;
+    }
+
     int numTemporalKFs = 11; // [TODO] Set by parameter
 
     // Relationship to rebuild the essential graph, it is used two times, first
@@ -2200,21 +3483,8 @@ void LoopClosing::MergeLocalInertial()
     // relaunch at the end of the merge
     bool bRelaunchBA = false;
 
-    //  If a Global Bundle Adjustment is running, abort it
-    if (isRunningGBA())
-    {
-        unique_lock<mutex> lock(mMutexGBA);
-        mbStopGBA = true;
-
-        mnFullBAIdx++;
-
-        if (mpThreadGBA)
-        {
-            mpThreadGBA->detach();
-            delete mpThreadGBA;
-        }
-        bRelaunchBA = true;
-    }
+    /* Stop and reclaim GBA before either map changes frame or ownership. */
+    bRelaunchBA = stopGlobalBundleAdjustment();
 
     mpLocalMapper->RequestStop();
 
@@ -2224,15 +3494,42 @@ void LoopClosing::MergeLocalInertial()
         usleep(1000);
     }
 
-    Map *pCurrentMap = mpCurrentKF->GetMap();
-    Map *pMergeMap   = mpMergeMatchedKF->GetMap();
+    /* Keep the inertial semantic transfer atomic for the complete merge. */
+    std::unique_lock<std::mutex> semanticUpdateLock =
+        mpAtlas->acquireSemanticUpdateLock();
+
+    if (mpCurrentKF->isBad() || mpMergeMatchedKF->isBad() ||
+        mpCurrentKF->GetMap() != pCurrentMap ||
+        mpMergeMatchedKF->GetMap() != pMergeMap ||
+        !mpAtlas->isActiveMap(pCurrentMap) || !mpAtlas->isActiveMap(pMergeMap))
+    {
+        semanticUpdateLock.unlock();
+        mpLocalMapper->Release();
+        return;
+    }
+
+    std::string floorVerificationResult;
+    if (!verifyLoopMergeFloors(pCurrentMap,
+                               pMergeMap,
+                               mSold_new.inverse(),
+                               floorVerificationResult))
+    {
+        semanticUpdateLock.unlock();
+        mpLocalMapper->Release();
+        if (bRelaunchBA)
+        {
+            relaunchGlobalBundleAdjustment(pCurrentMap);
+        }
+        return;
+    }
 
     {
         float        s_on = mSold_new.scale();
         Sophus::SE3f T_on(mSold_new.rotation().cast<float>(),
                           mSold_new.translation().cast<float>());
 
-        unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+        std::unique_lock<std::mutex> currentMapUpdateLock(
+            pCurrentMap->mMutexMapUpdate);
 
         mpLocalMapper->EmptyQueue();
 
@@ -2241,7 +3538,7 @@ void LoopClosing::MergeLocalInertial()
         bool bScaleVel = false;
         if (s_on != 1)
             bScaleVel = true;
-        mpAtlas->GetCurrentMap()->ApplyScaledRotation(T_on, s_on, bScaleVel);
+        pCurrentMap->ApplyScaledRotation(T_on, s_on, bScaleVel);
         mpTracker->UpdateFrameIMU(s_on,
                                   mpCurrentKF->GetImuBias(),
                                   mpTracker->GetLastKeyFrame());
@@ -2257,33 +3554,51 @@ void LoopClosing::MergeLocalInertial()
          mpTracker->mSensor == System::IMU_RGBD) &&
         !pCurrentMap->GetIniertialBA2())
     {
-        // Map is not completly initialized
+        /* Map is not completly initialized */
         Eigen::Vector3d bg, ba;
         bg << 0., 0., 0.;
         ba << 0., 0., 0.;
         Optimizer::InertialOptimization(pCurrentMap, bg, ba);
-        IMU::Bias          b(ba[0], ba[1], ba[2], bg[0], bg[1], bg[2]);
-        unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+        IMU::Bias b(ba[0], ba[1], ba[2], bg[0], bg[1], bg[2]);
+        std::unique_lock<std::mutex> currentMapUpdateLock(
+            pCurrentMap->mMutexMapUpdate);
         mpTracker->UpdateFrameIMU(1.0f, b, mpTracker->GetLastKeyFrame());
 
-        // Set map initialized
+        /* Set map initialized */
         pCurrentMap->SetIniertialBA2();
         pCurrentMap->SetIniertialBA1();
         pCurrentMap->SetImuInitialized();
     }
 
-    // Load KFs and MPs from merge map
-    {
-        // Get Merge Map Mutex (This section stops tracking!!)
-        unique_lock<mutex> currentLock(
-            pCurrentMap->mMutexMapUpdate); // We update the current map with the
-                                           // Merge information
-        unique_lock<mutex> mergeLock(
-            pMergeMap->mMutexMapUpdate); // We remove the Kfs and MPs in the
-                                         // merged area from the old map
+    /* Retain imported room identities for post-optimization reconciliation. */
+    std::vector<Room *> importedRooms;
 
-        vector<KeyFrame *> vpMergeMapKFs = pMergeMap->GetAllKeyFrames();
-        vector<MapPoint *> vpMergeMapMPs = pMergeMap->GetAllMapPoints();
+    /* Load KFs and MPs from merge map */
+    {
+        /*!
+         * Acquire both map-update mutexes without imposing an unsafe order.
+         *
+         * @note        Get Merge Map Mutex and stop tracking.
+         */
+        std::scoped_lock mapUpdateLocks(pCurrentMap->mMutexMapUpdate,
+                                        pMergeMap->mMutexMapUpdate);
+
+        vector<KeyFrame *> vpMergeMapKFs     = pMergeMap->GetAllKeyFrames();
+        vector<MapPoint *> vpMergeMapMPs     = pMergeMap->GetAllMapPoints();
+        vector<Plane *>    vpMergeMapPlanes  = pMergeMap->GetAllPlanes();
+        vector<Marker *>   vpMergeMapMarkers = pMergeMap->GetAllMarkers();
+        vector<ORB_SLAM3::Passage *> vpMergeMapPassages =
+            pMergeMap->GetAllPassages();
+        vector<Room *> vpMergeMapDetectedRooms =
+            pMergeMap->GetAllDetectedMapRooms();
+        vector<Room *> vpMergeMapMarkerRooms =
+            pMergeMap->GetAllMarkerBasedMapRooms();
+        vector<Floor *> vpMergeMapFloors = pMergeMap->GetAllFloors();
+
+        importedRooms = vpMergeMapDetectedRooms;
+        importedRooms.insert(importedRooms.end(),
+                             vpMergeMapMarkerRooms.begin(),
+                             vpMergeMapMarkerRooms.end());
 
         for (KeyFrame *pKFi : vpMergeMapKFs)
         {
@@ -2308,6 +3623,156 @@ void LoopClosing::MergeLocalInertial()
             pMergeMap->EraseMapPoint(pMPi);
         }
 
+        int nextPlaneId = 0;
+        for (Plane *p_existingPlane : pCurrentMap->GetAllPlanes())
+        {
+            if (p_existingPlane != nullptr)
+            {
+                nextPlaneId =
+                    std::max(nextPlaneId, p_existingPlane->getId() + 1);
+            }
+        }
+
+        for (Plane *p_plane : vpMergeMapPlanes)
+        {
+            if (p_plane == nullptr || p_plane->isBad())
+            {
+                continue;
+            }
+
+            p_plane->SetMap(pCurrentMap);
+            p_plane->setId(nextPlaneId++);
+            pCurrentMap->AddMapPlane(p_plane);
+            pMergeMap->EraseMapPlane(p_plane);
+        }
+
+        int nextMarkerId = 0;
+        for (Marker *p_existingMarker : pCurrentMap->GetAllMarkers())
+        {
+            if (p_existingMarker != nullptr)
+            {
+                nextMarkerId =
+                    std::max(nextMarkerId, p_existingMarker->getId() + 1);
+            }
+        }
+
+        for (Marker *p_marker : vpMergeMapMarkers)
+        {
+            if (p_marker == nullptr)
+            {
+                continue;
+            }
+
+            p_marker->setMap(pCurrentMap);
+            p_marker->setId(nextMarkerId++);
+            pCurrentMap->AddMapMarker(p_marker);
+            pMergeMap->EraseMapMarker(p_marker);
+        }
+
+        int nextPassageId = 0;
+        for (ORB_SLAM3::Passage *p_existingPassage :
+             pCurrentMap->GetAllPassages())
+        {
+            if (p_existingPassage != nullptr)
+            {
+                nextPassageId =
+                    std::max(nextPassageId, p_existingPassage->getId() + 1);
+            }
+        }
+
+        for (ORB_SLAM3::Passage *p_passage : vpMergeMapPassages)
+        {
+            if (p_passage == nullptr)
+            {
+                continue;
+            }
+
+            pMergeMap->EraseMapPassage(p_passage);
+            p_passage->setMap(pCurrentMap);
+            p_passage->setId(nextPassageId++);
+            pCurrentMap->AddMapPassage(p_passage);
+        }
+
+        int nextRoomId = 0;
+        for (Room *p_existingRoom : pCurrentMap->GetAllRooms())
+        {
+            if (p_existingRoom != nullptr)
+            {
+                nextRoomId = std::max(nextRoomId, p_existingRoom->getId() + 1);
+            }
+        }
+
+        for (Room *p_room : vpMergeMapDetectedRooms)
+        {
+            if (p_room == nullptr || p_room->isBad())
+            {
+                continue;
+            }
+
+            p_room->setMap(pCurrentMap);
+            p_room->setId(nextRoomId++);
+            pCurrentMap->AddDetectedMapRoom(p_room);
+            pMergeMap->EraseDetectedMapRoom(p_room);
+        }
+
+        for (Room *p_room : vpMergeMapMarkerRooms)
+        {
+            if (p_room == nullptr || p_room->isBad())
+            {
+                continue;
+            }
+
+            p_room->setMap(pCurrentMap);
+            p_room->setId(nextRoomId++);
+            pCurrentMap->AddCandidateMapRoom(p_room);
+            pMergeMap->EraseMarkerBasedMapRoom(p_room);
+        }
+
+        int nextFloorId = 0;
+        for (Floor *p_existingFloor : pCurrentMap->GetAllFloors())
+        {
+            if (p_existingFloor != nullptr)
+            {
+                nextFloorId =
+                    std::max(nextFloorId, p_existingFloor->getId() + 1);
+            }
+        }
+
+        for (Floor *p_floor : vpMergeMapFloors)
+        {
+            if (p_floor == nullptr)
+            {
+                continue;
+            }
+
+            p_floor->setMap(pCurrentMap);
+            p_floor->setId(nextFloorId++);
+            pCurrentMap->AddMapFloor(p_floor);
+            pMergeMap->EraseMapFloor(p_floor);
+        }
+
+        collapseMergedFloors(pCurrentMap);
+
+        /* Rebuild derived free-space topology in the corrected map frame. */
+        pCurrentMap->SetSkeletonClusterPoints({});
+        pCurrentMap->SetSkeletonEdges({});
+
+        for (Room *p_room : pCurrentMap->GetAllRooms())
+        {
+            if (p_room == nullptr || p_room->isBad())
+            {
+                continue;
+            }
+
+            for (Plane *p_wall : p_room->getWalls())
+            {
+                if (p_wall != nullptr && !p_wall->isBad())
+                {
+                    pCurrentMap->AddRoomWallPlane(p_wall);
+                }
+            }
+        }
+
         // Save non corrected poses (already merged maps)
         vector<KeyFrame *> vpKFs = pCurrentMap->GetAllKeyFrames();
         for (KeyFrame *pKFi : vpKFs)
@@ -2318,7 +3783,10 @@ void LoopClosing::MergeLocalInertial()
         }
     }
 
-    pMergeMap->GetOriginKF()->SetFirstConnection(false);
+    if (pMergeMap->GetOriginKF() != nullptr)
+    {
+        pMergeMap->GetOriginKF()->SetFirstConnection(false);
+    }
     pNewChild =
         mpMergeMatchedKF
             ->GetParent(); // Old parent, it will be the new child of this KF
@@ -2342,6 +3810,7 @@ void LoopClosing::MergeLocalInertial()
                              // fuse duplicated points with the old map (merge)
     vector<KeyFrame *> vpCurrentConnectedKFs;
 
+    mvpMergeConnectedKFs.clear();
     mvpMergeConnectedKFs.push_back(mpMergeMatchedKF);
     vector<KeyFrame *> aux = mpMergeMatchedKF->GetVectorCovisibleKeyFrames();
     mvpMergeConnectedKFs.insert(mvpMergeConnectedKFs.end(),
@@ -2383,6 +3852,24 @@ void LoopClosing::MergeLocalInertial()
 
         pKFi->UpdateConnections();
     }
+
+    const auto finalizeInertialMerge = [this, pCurrentMap, pMergeMap]()
+    {
+        mpMergeMatchedKF->AddMergeEdge(mpCurrentKF);
+        mpCurrentKF->AddMergeEdge(mpMergeMatchedKF);
+        pCurrentMap->IncreaseChangeIndex();
+
+        /*!
+         * Inertial welding changes the same derived-map coordinate contract
+         * as a visual merge. Increment the externally observed revision after
+         * all corrected poses and semantic entities have become authoritative.
+         */
+        pCurrentMap->InformNewBigChange();
+
+        mpAtlas->ChangeMap(pCurrentMap);
+        mpAtlas->SetMapBad(pMergeMap);
+        mpAtlas->RemoveBadMaps();
+    };
     for (KeyFrame *pKFi : mvpMergeConnectedKFs)
     {
         if (!pKFi || pKFi->isBad())
@@ -2391,26 +3878,90 @@ void LoopClosing::MergeLocalInertial()
         pKFi->UpdateConnections();
     }
 
-    // [TODO] If new map is too small, we suppose that not informaiton can be
-    // propagated from new to old map
-    if (numKFnew < 10)
+    /* A sufficiently established current map can support inertial welding BA.
+     */
+    bool inertialBundleAdjustmentRan = false;
+
+    if (numKFnew >= 10)
     {
-        mpLocalMapper->Release();
-        return;
+        bool      bStopFlag         = false;
+        KeyFrame *p_currentKeyFrame = mpTracker->GetLastKeyFrame();
+
+        if (p_currentKeyFrame != nullptr)
+        {
+            Optimizer::MergeInertialBA(p_currentKeyFrame,
+                                       mpMergeMatchedKF,
+                                       &bStopFlag,
+                                       pCurrentMap,
+                                       CorrectedSim3);
+            inertialBundleAdjustmentRan = true;
+        }
     }
 
-    // Perform BA
-    bool      bStopFlag = false;
-    KeyFrame *pCurrKF   = mpTracker->GetLastKeyFrame();
+    if (inertialBundleAdjustmentRan)
+    {
+        /* Complete the post-BA pose map, including fixed deformation nodes. */
+        for (const auto &[p_keyFrame, poseBefore_WorldToCamera] :
+             NonCorrectedSim3)
+        {
+            (void)poseBefore_WorldToCamera;
 
-    Optimizer::MergeInertialBA(pCurrKF,
-                               mpMergeMatchedKF,
-                               &bStopFlag,
-                               pCurrentMap,
-                               CorrectedSim3);
+            if (p_keyFrame == nullptr || p_keyFrame->isBad() ||
+                p_keyFrame->GetMap() != pCurrentMap)
+            {
+                continue;
+            }
 
-    // Release Local Mapping.
+            const Sophus::SE3d poseAfter_WorldToCamera =
+                p_keyFrame->GetPose().cast<double>();
+
+            CorrectedSim3.insert_or_assign(
+                p_keyFrame,
+                g2o::Sim3(poseAfter_WorldToCamera.unit_quaternion(),
+                          poseAfter_WorldToCamera.translation(),
+                          1.0));
+        }
+
+        const g2o::Sim3 identityTransform_WorldToWorld(
+            Eigen::Quaterniond::Identity(),
+            Eigen::Vector3d::Zero(),
+            1.0);
+
+        Utils::propagateSemanticPoseCorrections(pCurrentMap,
+                                                NonCorrectedSim3,
+                                                CorrectedSim3,
+                                                identityTransform_WorldToWorld);
+    }
+
+    /* Fuse semantic hypotheses only after the final inertial pose correction.
+     */
+    if (SystemParams::GetParams()->sem_seg.reassociate.enabled)
+    {
+        Utils::reAssociateSemanticPlanes(mpAtlas);
+
+        Utils::fuseDuplicateRoomsAfterMerge(pCurrentMap, importedRooms);
+        Utils::reAssociateRooms(mpAtlas);
+        Utils::reAssociatePassages(mpAtlas);
+    }
+
+    finalizeInertialMerge();
+
+    std::cout << "[FloorVerify] Map#" << pCurrentMap->GetId() << " and Map#"
+              << pMergeMap->GetId() << " result=" << floorVerificationResult
+              << " committed=1" << std::endl;
+
+    /* The semantic graph and Atlas ownership are now stable for other workers.
+     */
+    semanticUpdateLock.unlock();
+
     mpLocalMapper->Release();
+
+    if (bRelaunchBA &&
+        (!pCurrentMap->isImuInitialized() ||
+         (pCurrentMap->KeyFramesInMap() < 200 && mpAtlas->CountMaps() == 1)))
+    {
+        relaunchGlobalBundleAdjustment(pCurrentMap);
+    }
 
     return;
 }
@@ -2466,6 +4017,11 @@ void LoopClosing::CheckObservations(set<KeyFrame *> &spKFsMap1,
         }
     }
     cout << "----------------------" << endl;
+}
+
+bool LoopClosing::isMergeInProgress(void)
+{
+    return mbMergeInProgress.load();
 }
 
 void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap,
@@ -2631,7 +4187,8 @@ void LoopClosing::ResetIfRequested()
 }
 
 void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
-                                            unsigned long nLoopKF)
+                                            unsigned long nLoopKF,
+                                            unsigned int  generation_in)
 {
     Verbose::PrintMess("Starting Global Bundle Adjustment",
                        Verbose::VERBOSITY_NORMAL);
@@ -2646,17 +4203,35 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
     vnGBAMPs.push_back(pActiveMap->GetAllMapPoints().size());
 #endif
 
+    /*
+     * g2o accepts a plain bool force-stop token. A first-party iteration action
+     * copies the atomic cross-thread request into this worker-local flag, so
+     * cancellation remains race-free and takes effect between iterations.
+     */
+    bool optimizerStopRequested = false;
+
     const bool bImuInit = pActiveMap->isImuInitialized();
 
     if (!bImuInit)
         Optimizer::GlobalBundleAdjustemnt(pActiveMap,
                                           10,
-                                          &mbStopGBA,
+                                          &optimizerStopRequested,
                                           nLoopKF,
                                           false,
-                                          mpTracker->GetMarkerImpact());
+                                          mpTracker->GetMarkerImpact(),
+                                          &globalBundleAdjustmentStopRequested);
     else
-        Optimizer::FullInertialBA(pActiveMap, 7, false, nLoopKF, &mbStopGBA);
+        Optimizer::FullInertialBA(pActiveMap,
+                                  7,
+                                  false,
+                                  nLoopKF,
+                                  &optimizerStopRequested,
+                                  false,
+                                  1e2F,
+                                  1e6F,
+                                  nullptr,
+                                  nullptr,
+                                  &globalBundleAdjustmentStopRequested);
 
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point time_EndGBA =
@@ -2668,13 +4243,11 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
             .count();
     vdGBA_ms.push_back(timeGBA);
 
-    if (mbStopGBA)
+    if (optimizerStopRequested)
     {
         nFGBA_abort += 1;
     }
 #endif
-
-    int idx = mnFullBAIdx;
 
     // Update all MapPoints and KeyFrames
     // Local Mapping was active during BA, that means that there might be new
@@ -2683,13 +4256,21 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
     // tree
     {
         unique_lock<mutex> lock(mMutexGBA);
-        if (idx != mnFullBAIdx)
+        if (generation_in != mnFullBAIdx)
+        {
+            mbFinishedGBA = true;
+            mbRunningGBA  = false;
             return;
+        }
 
         if (!bImuInit && pActiveMap->isImuInitialized())
+        {
+            mbFinishedGBA = true;
+            mbRunningGBA  = false;
             return;
+        }
 
-        if (!mbStopGBA)
+        if (!optimizerStopRequested)
         {
             Verbose::PrintMess("Global Bundle Adjustment finished",
                                Verbose::VERBOSITY_NORMAL);
@@ -2703,8 +4284,14 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
                 usleep(1000);
             }
 
+            std::unique_lock<std::mutex> semanticUpdateLock =
+                mpAtlas->acquireSemanticUpdateLock();
+
             // Get Map Mutex
             unique_lock<mutex> lock(pActiveMap->mMutexMapUpdate);
+
+            KeyFrameAndPose keyFramePosesBefore_WorldToCamera;
+            KeyFrameAndPose keyFramePosesAfter_WorldToCamera;
 
             //  Correct keyframes starting at map first keyframe
             list<KeyFrame *> lpKFtoCheck(pActiveMap->mvpKeyFrameOrigins.begin(),
@@ -2747,67 +4334,26 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
                 }
 
                 pKF->mTcwBefGBA = pKF->GetPose();
+
+                const Sophus::SE3d poseBefore_WorldToCamera =
+                    pKF->mTcwBefGBA.cast<double>();
+
+                keyFramePosesBefore_WorldToCamera.insert_or_assign(
+                    pKF,
+                    g2o::Sim3(poseBefore_WorldToCamera.unit_quaternion(),
+                              poseBefore_WorldToCamera.translation(),
+                              1.0));
+
                 pKF->SetPose(pKF->mTcwGBA);
-                /*cv::Mat Tco_cn = pKF->mTcwBefGBA * pKF->mTcwGBA.inv();
-                cv::Vec3d trasl = Tco_cn.rowRange(0,3).col(3);
-                double dist = cv::norm(trasl);
-                cout << "GBA: KF " << pKF->mnId << " had been moved " << dist <<
-                " meters" << endl; double desvX = 0; double desvY = 0; double
-                desvZ = 0; if(pKF->mbHasHessian)
-                {
-                    cv::Mat hessianInv = pKF->mHessianPose.inv();
 
-                    double covX = hessianInv.at<double>(3,3);
-                    desvX = std::sqrt(covX);
-                    double covY = hessianInv.at<double>(4,4);
-                    desvY = std::sqrt(covY);
-                    double covZ = hessianInv.at<double>(5,5);
-                    desvZ = std::sqrt(covZ);
-                    pKF->mbHasHessian = false;
-                }
-                if(dist > 1)
-                {
-                    cout << "--To much distance correction: It has " <<
-                pKF->GetConnectedKeyFrames().size() << " connected KFs" << endl;
-                    cout << "--It has " << pKF->GetCovisiblesByWeight(80).size()
-                << " connected KF with 80 common matches or more" << endl; cout
-                << "--It has " << pKF->GetCovisiblesByWeight(50).size() << "
-                connected KF with 50 common matches or more" << endl; cout <<
-                "--It has " << pKF->GetCovisiblesByWeight(20).size() << "
-                connected KF with 20 common matches or more" << endl;
+                const Sophus::SE3d poseAfter_WorldToCamera =
+                    pKF->GetPose().cast<double>();
 
-                    cout << "--STD in meters(x, y, z): " << desvX << ", " <<
-                desvY << ", " << desvZ << endl;
-
-
-                    string strNameFile = pKF->mNameFile;
-                    cv::Mat imLeft = cv::imread(strNameFile,
-                CV_LOAD_IMAGE_UNCHANGED);
-
-                    cv::cvtColor(imLeft, imLeft, CV_GRAY2BGR);
-
-                    vector<MapPoint*> vpMapPointsKF = pKF->GetMapPointMatches();
-                    int num_MPs = 0;
-                    for(int i=0; i<vpMapPointsKF.size(); ++i)
-                    {
-                        if(!vpMapPointsKF[i] || vpMapPointsKF[i]->isBad())
-                        {
-                            continue;
-                        }
-                        num_MPs += 1;
-                        string strNumOBs =
-                to_string(vpMapPointsKF[i]->Observations()); cv::circle(imLeft,
-                pKF->mvKeys[i].pt, 2, cv::Scalar(0, 255, 0));
-                        cv::putText(imLeft, strNumOBs, pKF->mvKeys[i].pt,
-                CV_FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 0));
-                    }
-                    cout << "--It has " << num_MPs << " MPs matched in the map"
-                << endl;
-
-                    string namefile = "./test_GBA/GBA_" + to_string(nLoopKF) +
-                "_KF" + to_string(pKF->mnId) +"_D" + to_string(dist) +".png";
-                    cv::imwrite(namefile, imLeft);
-                }*/
+                keyFramePosesAfter_WorldToCamera.insert_or_assign(
+                    pKF,
+                    g2o::Sim3(poseAfter_WorldToCamera.unit_quaternion(),
+                              poseAfter_WorldToCamera.translation(),
+                              1.0));
 
                 if (pKF->bImu)
                 {
@@ -2827,13 +4373,16 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
             {
                 MapPoint *pMP = vpMPs[i];
 
-                if (pMP->isBad())
+                if (pMP == nullptr || pMP->isBad())
                     continue;
+
+                bool mapPointWasCorrected = false;
 
                 if (pMP->mnBAGlobalForKF == nLoopKF)
                 {
                     // If optimized by Global BA, just update
                     pMP->SetWorldPos(pMP->mPosGBA);
+                    mapPointWasCorrected = true;
                 }
                 else
                 {
@@ -2841,8 +4390,39 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
                     // keyframe
                     KeyFrame *pRefKF = pMP->GetReferenceKeyFrame();
 
-                    if (pRefKF->mnBAGlobalForKF != nLoopKF)
+                    if (pRefKF == nullptr || pRefKF->isBad() ||
+                        pRefKF->GetMap() != pActiveMap ||
+                        pRefKF->mnBAGlobalForKF != nLoopKF)
+                    {
+                        pRefKF = nullptr;
+
+                        const auto observations = pMP->GetObservations();
+
+                        for (const auto &[p_observingKeyFrame, featureIndexes] :
+                             observations)
+                        {
+                            (void)featureIndexes;
+
+                            if (p_observingKeyFrame == nullptr ||
+                                p_observingKeyFrame->isBad() ||
+                                p_observingKeyFrame->GetMap() != pActiveMap ||
+                                p_observingKeyFrame->mnBAGlobalForKF != nLoopKF)
+                            {
+                                continue;
+                            }
+
+                            if (pRefKF == nullptr ||
+                                p_observingKeyFrame->mnId < pRefKF->mnId)
+                            {
+                                pRefKF = p_observingKeyFrame;
+                            }
+                        }
+                    }
+
+                    if (pRefKF == nullptr)
+                    {
                         continue;
+                    }
 
                     /*if(pRefKF->mTcwBefGBA.empty())
                         continue;*/
@@ -2856,30 +4436,37 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
 
                     // Backproject using corrected camera
                     pMP->SetWorldPos(pRefKF->GetPoseInverse() * Xc);
+                    mapPointWasCorrected = true;
+                }
+
+                if (mapPointWasCorrected)
+                {
+                    pMP->UpdateNormalAndDepth();
                 }
             }
 
-            // Correct Planes
-            const vector<Plane *> vpPlanes = pActiveMap->GetAllPlanes();
-            for (Plane *pPlane : vpPlanes)
-            {
-                if (pPlane->mnBAGlobalForKF == nLoopKF)
-                {
-                    pPlane->setGlobalEquation(pPlane->mPlaneGBA);
-                }
-                else
-                {
-                    KeyFrame *pRefKF = pPlane->refKeyFrame;
-                    if (pRefKF->mnBAGlobalForKF != nLoopKF)
-                        continue;
+            const g2o::Sim3 identityTransform_WorldToWorld(
+                Eigen::Quaterniond::Identity(),
+                Eigen::Vector3d::Zero(),
+                1.0);
 
-                    Sophus::SE3f Tcorc =
-                        pRefKF->GetPoseInverse() * pRefKF->mTcwBefGBA;
-                    g2o::Plane3D globalEquation =
-                        Utils::applyPoseToPlane(Tcorc.matrix().cast<double>(),
-                                                pPlane->getGlobalEquation());
-                    pPlane->setGlobalEquation(globalEquation);
+            /* Keep every semantic entity aligned with the corrected cameras. */
+            Utils::propagateSemanticPoseCorrections(
+                pActiveMap,
+                keyFramePosesBefore_WorldToCamera,
+                keyFramePosesAfter_WorldToCamera,
+                identityTransform_WorldToWorld);
+
+            /* Preserve plane variables which were optimized directly by GBA. */
+            for (Plane *p_plane : pActiveMap->GetAllPlanes())
+            {
+                if (p_plane == nullptr || p_plane->isBad() ||
+                    p_plane->mnBAGlobalForKF != nLoopKF)
+                {
+                    continue;
                 }
+
+                p_plane->alignGeometryToEquation(p_plane->mPlaneGBA);
             }
 
             pActiveMap->InformNewBigChange();

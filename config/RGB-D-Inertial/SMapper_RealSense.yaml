@@ -42,7 +42,8 @@ RGBD.FarThresh: 3.5
 # IMU Parameters
 IMU.Threshold: 0.1      # Default: 0.5
 IMU.FastInit: 1         # 0: disabled, 1: enabled
-IMU.Frequency: 400.0    # 400.0
+# The united RealSense IMU topic is emitted at the configured gyro cadence.
+IMU.Frequency: 200.0
 IMU.NoiseGyro: 0.0010273469802412588
 IMU.NoiseAcc: 0.005119536556707974
 IMU.GyroWalk: 3.8743601798420855e-05

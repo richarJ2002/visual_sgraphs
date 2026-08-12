@@ -26,6 +26,8 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#include <atomic>
+#include <cstdint>
 #include <opencv2/core/core.hpp>
 #include <pcl/io/pcd_io.h>
 #include <stdio.h>
@@ -120,11 +122,94 @@ class System
         BINARY_FILE = 1,
     };
 
+    struct PassageHealth
+    {
+        int           id{-1};
+        bool          passable{false};
+        std::uint64_t knownToFarCount{0U};
+        std::uint64_t farToKnownCount{0U};
+        std::uint64_t unknownCount{0U};
+        int           knownSideRoomId{-1};
+        int           farSideRoomId{-1};
+    };
+
+    struct RoomHealth
+    {
+        int              id{-1};
+        std::vector<int> passageIds;
+    };
+
+    struct FloorHealth
+    {
+        int              id{-1};
+        std::vector<int> roomIds;
+    };
+
+    struct MissionHealthSnapshot
+    {
+        double                     frameTimestamp{0.0};
+        int                        trackingState{-1};
+        int                        trackingInliers{0};
+        bool                       inertial{false};
+        bool                       inertialInitialized{false};
+        bool                       poseValid{false};
+        Sophus::SE3f               cameraPose_World;
+        std::uint64_t              mapId{0U};
+        std::uint32_t              mapCount{0U};
+        std::uint32_t              keyFrameCount{0U};
+        std::uint64_t              resetCount{0U};
+        bool                       latestKeyFramePoseValid{false};
+        double                     latestKeyFrameTimestamp{0.0};
+        Sophus::SE3f               latestKeyFramePose_World;
+        int                        currentRoomId{-1};
+        int                        lastKnownRoomId{-1};
+        std::uint32_t              confirmedRoomCount{0U};
+        std::uint32_t              unresolvedRoomCount{0U};
+        std::uint32_t              floorRoomLinkCount{0U};
+        std::vector<RoomHealth>    rooms;
+        std::vector<FloorHealth>   floors;
+        std::vector<PassageHealth> passages;
+        std::uint64_t              loopSequence{0U};
+        std::uint32_t              acceptedLoopCount{0U};
+        std::uint32_t              rejectedLoopCount{0U};
+        bool                       hasLoopEvent{false};
+        bool                       lastLoopAccepted{false};
+        std::uint64_t              lastLoopMapId{0U};
+        std::uint64_t              lastLoopCurrentKeyFrameId{0U};
+        std::uint64_t              lastLoopMatchedKeyFrameId{0U};
+        double                     lastLoopCurrentTimestamp{0.0};
+        double                     lastLoopMatchedTimestamp{0.0};
+        std::string                lastLoopReason;
+    };
+
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    // Initialize the SLAM system. It launches the Local Mapping, Loop Closing
-    // and Viewer threads.
+    /*!
+     * @brief       Initialize the SLAM system. It launches the Local Mapping,
+     *              Loop Closing and Viewer threads.
+     *
+     * @param[in]   strVocFile
+     *              TODO
+     *
+     * @param[in]   strSettingsFile
+     *              TODO
+     *
+     * @param[in]   strSysParamsFile
+     *              TODO
+     *
+     * @param[in]   sensor
+     *              TODO
+     *
+     * @param[in]   bUseViewer
+     *              TODO
+     *
+     * @param[in]   initFr
+     *              TODO
+     *
+     * @param[in]   strSequence
+     *              TODO
+     */
     System(const string &strVocFile,
            const string &strSettingsFile,
            const string &strSysParamsFile,
@@ -133,7 +218,7 @@ class System
            const int     initFr      = 0,
            const string &strSequence = std::string());
 
-    /**
+    /*!
      * @brief       Process the given stereo frame for tracking. Images must be
      *              synchronized and rectified.
      *
@@ -255,6 +340,9 @@ class System
      *              closure, global BA) since last call to this function.
      */
     bool MapChanged();
+
+    MissionHealthSnapshot
+        GetMissionHealthSnapshot(bool includeSemantics = true);
 
     /*!
      * @brief       Reset the system (clear Atlas or the active map).
@@ -407,21 +495,21 @@ class System
      * @brief       Update the skeleton cluster coming from `voxblox_skeleton`
      *              in the map.
      *
-     * @param[in]   skeletonClusterPoints
+     * @param[in]   skeletonClusterPoints_World_m_in
      *              the skeleton cluster points
      */
-    void setSkeletonCluster(
-        const std::vector<std::vector<Eigen::Vector3d>> &skeletonClusterPoints);
+    void setSkeletonCluster(const std::vector<std::vector<Eigen::Vector3d>>
+                                &skeletonClusterPoints_World_m_in);
 
     /*!
      * @brief       Stores the latest connected Voxblox skeleton edges.
      *
-     * @param[in]   skeletonEdges
+     * @param[in]   skeletonEdges_World_m_in
      *              Start and end points of each connected skeleton edge.
      */
     void setSkeletonEdges(
         const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-            &skeletonEdges);
+            &skeletonEdges_World_m_in);
 
     /*!
      * @brief       Update the GNN room candidates list
@@ -507,10 +595,22 @@ class System
     bool mbShutDown;
 
     // Tracking state
-    int                       mTrackingState;
-    std::vector<MapPoint *>   mTrackedMapPoints;
-    std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
-    std::mutex                mMutexState;
+    int                        mTrackingState{-1};
+    int                        mTrackingInliers{0};
+    double                     mLastFrameTimestamp{0.0};
+    Sophus::SE3f               mCurrentCameraPose_World;
+    bool                       mCurrentCameraPoseValid{false};
+    std::atomic<std::uint64_t> mResetCount{0U};
+    std::vector<MapPoint *>    mTrackedMapPoints;
+    std::vector<cv::KeyPoint>  mTrackedKeyPointsUn;
+    std::mutex                 mMutexState;
+
+    /*!
+     * @brief Map ID of the most recently processed frame, used to detect
+     *        map restarts for room-context carryover (WP1).
+     */
+    long unsigned int mLastProcessedMapId{0};
+    bool              mFirstMapInit{true};
 
     //
     string mStrLoadAtlasFromFile;

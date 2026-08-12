@@ -21,6 +21,12 @@ def generate_launch_description():
             ),
 
             DeclareLaunchArgument(
+                "use_sim_time",
+                default_value="false",
+                description="Use timestamps published on /clock.",
+            ),
+
+            DeclareLaunchArgument(
                 "launch_rviz",
                 default_value="true"
             ),
@@ -38,6 +44,15 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "pointcloud_topic",
                 default_value="/camera/depth/points",
+            ),
+
+            DeclareLaunchArgument(
+                "direct_gazebo_flu_cloud",
+                default_value="false",
+                description=(
+                    "Convert a direct Gazebo FLU cloud to the optical camera "
+                    "frame. Generated RGB-D clouds remain optical by default."
+                ),
             ),
 
             DeclareLaunchArgument(
@@ -98,7 +113,7 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
-                        "use_sim_time": LaunchConfiguration("offline")
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
                     },
                     {
                         "voc_file": LaunchConfiguration(
@@ -159,6 +174,11 @@ def generate_launch_description():
                     {
                         "publish_pointclouds": True
                     },
+                    {
+                        "direct_gazebo_flu_cloud": LaunchConfiguration(
+                            "direct_gazebo_flu_cloud"
+                        )
+                    },
                 ],
                 remappings=[
                     (
@@ -168,6 +188,10 @@ def generate_launch_description():
                     (
                         "/camera/depth_registered/image_raw",
                         LaunchConfiguration("depth_image_topic"),
+                    ),
+                    (
+                        "/camera/depth/points",
+                        LaunchConfiguration("pointcloud_topic"),
                     ),
                 ],
             ),
@@ -180,15 +204,12 @@ def generate_launch_description():
                 package="tf2_ros",
                 name="map_to_map_elevated",
                 executable="static_transform_publisher",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "map",
-                    "map_elevated"
+                    "--frame-id", "map",
+                    "--child-frame-id", "map_elevated",
                 ],
             ),
 
@@ -196,15 +217,12 @@ def generate_launch_description():
                 package="tf2_ros",
                 executable="static_transform_publisher",
                 name="bc_to_se",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "-3",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "build_comp",
-                    "struc_elem"
+                    "--frame-id", "build_comp",
+                    "--child-frame-id", "struc_elem",
                 ],
             ),
 
@@ -212,15 +230,12 @@ def generate_launch_description():
                 package="tf2_ros",
                 executable="static_transform_publisher",
                 name="world_to_bc",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "0.5",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "world",
-                    "build_comp"
+                    "--frame-id", "world",
+                    "--child-frame-id", "build_comp",
                 ],
             ),
 
@@ -228,15 +243,12 @@ def generate_launch_description():
                 package="tf2_ros",
                 executable="static_transform_publisher",
                 name="camera_to_camera_optical",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "camera",
-                    "camera_color_optical_frame",
+                    "--frame-id", "camera",
+                    "--child-frame-id", "camera_color_optical_frame",
                     # RealSense: camera_color_optical_frame, OpenLoris: d400_color
                 ],
             ),
@@ -259,7 +271,7 @@ def generate_launch_description():
                 ],
                 parameters=[
                     {
-                        "use_sim_time": LaunchConfiguration("offline")
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
                     }
                 ],
                 output="screen",
@@ -279,6 +291,9 @@ def generate_launch_description():
                         package="depth_image_proc",
                         plugin="depth_image_proc::PointCloudXyzrgbNode",
                         name="point_cloud_xyzrgb_node",
+                        parameters=[{
+                            "use_sim_time": LaunchConfiguration("use_sim_time")
+                        }],
                         remappings=[
                             (
                                 "rgb/camera_info",
@@ -301,7 +316,8 @@ def generate_launch_description():
                 ],
             ),
 
-            # Semantic Scene Segmenter Node (based on semantic_scene_segmenter argument)
+            # Semantic Scene Segmenter Node 
+            # (based on semantic_scene_segmenter argument)
             Node(
                 condition=IfCondition(
                     EqualsSubstitution(
@@ -315,7 +331,7 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
-                        "use_sim_time": LaunchConfiguration("offline")
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
                     },
                     {
                         "visualize": LaunchConfiguration(
@@ -348,6 +364,9 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
+                    },
+                    {
                         "visualize": LaunchConfiguration(
                             "visualize_segmented_scene"
                         )
@@ -377,6 +396,9 @@ def generate_launch_description():
                 executable="segmenter_yolo26.py",
                 output="screen",
                 parameters=[
+                    {
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
+                    },
                     {
                         "visualize": LaunchConfiguration(
                             "visualize_segmented_scene"

@@ -28,22 +28,28 @@
 namespace ORB_SLAM3
 {
 
-void GeoSemHelpers::refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane)
+bool GeoSemHelpers::refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane)
 {
     /* Confirm the mapped plane is valid */
     if (plane == nullptr || plane->isBad())
     {
-        return;
+        return false;
     }
 
-    /* Extract the accumulated global plane point cloud */
-    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud = plane->getMapClouds();
+    /* Claim one immutable generation; fitting never observes concurrent growth. */
+    const std::optional<Plane::GeometrySnapshot> geometrySnapshot =
+        plane->beginMapCloudRefit();
 
     /* Require sufficient points for a stable covariance estimate */
-    if (cloud == nullptr || cloud->size() < 20)
+    if (!geometrySnapshot.has_value() ||
+        geometrySnapshot->supportCloud == nullptr ||
+        geometrySnapshot->supportCloud->size() < 20)
     {
-        return;
+        return false;
     }
+
+    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr cloud =
+        geometrySnapshot->supportCloud;
 
     /* Calculate the centroid from all valid cloud points */
     Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
@@ -68,7 +74,7 @@ void GeoSemHelpers::refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane)
     /* Return when too few valid points remain */
     if (validPointCount < 20)
     {
-        return;
+        return false;
     }
 
     centroid /= static_cast<double>(validPointCount);
@@ -103,14 +109,14 @@ void GeoSemHelpers::refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane)
 
     if (eigenSolver.info() != Eigen::Success)
     {
-        return;
+        return false;
     }
 
     Eigen::Vector3d fittedNormal = eigenSolver.eigenvectors().col(0);
 
     if (!fittedNormal.allFinite() || fittedNormal.norm() < 1e-8)
     {
-        return;
+        return false;
     }
 
     fittedNormal.normalize();
@@ -119,7 +125,7 @@ void GeoSemHelpers::refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane)
      * Preserve the previous normal direction to prevent the plane equation
      * from changing sign between updates.
      */
-    Eigen::Vector4d previousEquation = plane->getGlobalEquation().coeffs();
+    Eigen::Vector4d previousEquation = geometrySnapshot->equation_World;
 
     const double previousNormalNorm = previousEquation.head<3>().norm();
 
@@ -141,10 +147,11 @@ void GeoSemHelpers::refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane)
 
     fittedEquation(3) = -fittedNormal.dot(centroid);
 
-    /* Update the mapped-plane geometry */
-    plane->setCentroid(centroid.cast<float>());
-
-    plane->setGlobalEquation(g2o::Plane3D(fittedEquation));
+    /* Publish the complete fitted geometry and recompute finite bounds once. */
+    return plane->completeMapCloudRefit(geometrySnapshot->cloudGeneration,
+                                        centroid,
+                                        g2o::Plane3D(fittedEquation),
+                                        validPointCount);
 }
 
 ORB_SLAM3::Plane *GeoSemHelpers::createMapPlane(
@@ -155,67 +162,124 @@ ORB_SLAM3::Plane *GeoSemHelpers::createMapPlane(
     ORB_SLAM3::Plane::planeVariant                semanticType,
     double                                        confidence)
 {
+    ORB_SLAM3::Map *p_currentMap = mpAtlas->GetCurrentMap();
+
+    if (p_currentMap == nullptr)
+    {
+        return nullptr;
+    }
+
     ORB_SLAM3::Plane *newMapPlane = new ORB_SLAM3::Plane();
     newMapPlane->setColor();
     newMapPlane->setLocalEquation(estimatedPlane);
-    newMapPlane->SetMap(mpAtlas->GetCurrentMap());
-    newMapPlane->setId(mpAtlas->GetAllPlanes().size());
+    newMapPlane->SetMap(p_currentMap);
+    newMapPlane->setId(p_currentMap->reservePlaneId());
     newMapPlane->refKeyFrame = pKF;
 
-    // The observation of the plane
-    ORB_SLAM3::Plane::Observation obs;
+    /* ---------------------------------------------------------------------- *
+     * CONSTRUCT POINT PLANE CONSTRAINT MATRIX
+     * ---------------------------------------------------------------------- */
 
-    // the observation of the plane equation
-    obs.localPlane = estimatedPlane;
+    /* Init variable which is used to construct plane constraint matrix  */
+    Eigen::Matrix4d pointPlaneConstraintMatrix;
 
-    // the observation of the plane point cloud (measurement)
-    Eigen::Matrix4d Gij;
-    Gij.setZero();
+    /* Clear variable */
+    pointPlaneConstraintMatrix.setZero();
+
+    /* If plane optimization enabled */
     if (SystemParams::GetParams()->optimization.plane_point.enabled)
     {
+        /* Iterate through points in point cloud */
         for (auto &point : planeCloud->points)
         {
+            /* Create the homogeneous coordinate point vector object */
             Eigen::Vector4d pointVec;
+
+            /* Load the point into the vector */
             pointVec << point.x, point.y, point.z, 1;
-            Gij += pointVec * pointVec.transpose();
+
+            /* Accumulate the square matrix from poitns */
+            pointPlaneConstraintMatrix += pointVec * pointVec.transpose();
         }
     }
-    obs.Gij = Gij;
 
-    // the semantic class of the observation
+    /* ---------------------------------------------------------------------- *
+     * UPDATE OBSERVATION OF PLANE
+     * ---------------------------------------------------------------------- */
+
+    /* Init observation struct to store information about the plane */
+    ORB_SLAM3::Plane::Observation obs;
+
+    /* Store the result of the plane constaint matrix */
+    obs.pointPlaneConstraintMatrix = pointPlaneConstraintMatrix;
+
+    /* Store the observes semantic type of the plane */
     obs.semanticType = semanticType;
 
-    // the aggregated confidence of the plane
+    /* Store the aggregatede confidence of the plane */
     obs.confidence = confidence;
+
+    /* Store the equation of the plane with respect to the camera */
+    obs.localPlane = estimatedPlane;
+
+    /* ---------------------------------------------------------------------- *
+     * UPDATE OBSERVATIONS OF NEW PLANE
+     * ---------------------------------------------------------------------- */
+
+    /* Add observation and keyframe to plane */
     newMapPlane->addObservation(pKF, obs);
 
-    // Set the plane type to undefined, as it is not known yet
-    newMapPlane->setPlaneType(ORB_SLAM3::Plane::planeVariant::UNDEFINED);
+    /* Set the plane type */
+    newMapPlane->setPlaneType(semanticType);
 
-    // Set the global equation of the plane
-    g2o::Plane3D globalEquation =
+    /* Get the global equation of the plane */
+    g2o::Plane3D globalEquation_World =
         Utils::applyPoseToPlane(pKF->GetPoseInverse().matrix().cast<double>(),
                                 estimatedPlane);
-    newMapPlane->setGlobalEquation(globalEquation);
 
-    // transform the plane cloud to the global frame
+    /* Set the global equation of the plane in the map world plane */
+    newMapPlane->setGlobalEquation(globalEquation_World);
+
+    /* Transform the plane cloud to the global frame */
     pcl::transformPointCloud(*planeCloud,
                              *planeCloud,
                              pKF->GetPoseInverse().matrix().cast<float>());
 
-    // Fill the plane with the pointcloud
+    /* Fill the plane with the pointcloud */
     if (!planeCloud->points.empty())
-        newMapPlane->setMapClouds(planeCloud);
-
-    if (SystemParams::GetParams()->optimization.plane_map_point.enabled)
     {
-        for (const auto &mapPoint : pKF->GetMapPoints())
-            if (newMapPlane->isPointinPlaneCloud(
-                    mapPoint->GetWorldPos().cast<double>()))
-                newMapPlane->setMapPoints(mapPoint);
+        /* Add the point clouds to the new map plane */
+        newMapPlane->replaceMapClouds(planeCloud);
+        refitMappedPlaneFromCloud(newMapPlane);
     }
 
+    /* ---------------------------------------------------------------------- *
+     * ASSOCIATE ORB MAP POINTS WITH THE PLANE
+     * ---------------------------------------------------------------------- */
+
+    /*!
+     * Associate sparse ORB map landmarks whose world positions are supported by
+     * the observed finite plane cloud. These associations may later be used to
+     * construct map-point-to-plane constraints during graph optimisation.
+     */
+    if (SystemParams::GetParams()->optimization.plane_map_point.enabled)
+    {
+        /* Iterate through the orb points (expressed in global frame) */
+        for (const auto &mapPoint : pKF->GetMapPoints())
+        {
+            /* If the orb feature is within the plane, set as map point */
+            if (newMapPlane->isPointinPlaneCloud(
+                    mapPoint->GetWorldPos().cast<double>()))
+            {
+                newMapPlane->setMapPoints(mapPoint);
+            }
+        }
+    }
+
+    /* Add the plane to the keyframe */
     pKF->AddMapPlane(newMapPlane);
+
+    /* Add the palne to the current map */
     mpAtlas->AddMapPlane(newMapPlane);
 
     return newMapPlane;
@@ -240,19 +304,19 @@ void GeoSemHelpers::updateMapPlane(
     obs.localPlane = estimatedPlane;
 
     // the observation of the plane point cloud (measurement)
-    Eigen::Matrix4d Gij;
-    Gij.setZero();
+    Eigen::Matrix4d pointPlaneConstraintMatrix;
+    pointPlaneConstraintMatrix.setZero();
     if (SystemParams::GetParams()->optimization.plane_point.enabled)
     {
         for (auto &point : planeCloud->points)
         {
             Eigen::Vector4d pointVec;
             pointVec << point.x, point.y, point.z, 1;
-            Gij += pointVec * pointVec.transpose() *
-                   (static_cast<int>(point.a) / 255.0);
+            pointPlaneConstraintMatrix += pointVec * pointVec.transpose() *
+                                          (static_cast<int>(point.a) / 255.0);
         }
     }
-    obs.Gij = Gij;
+    obs.pointPlaneConstraintMatrix = pointPlaneConstraintMatrix;
 
     // the semantic class of the observation
     obs.semanticType = semanticType;
@@ -384,17 +448,17 @@ ORB_SLAM3::Marker *
     return newMapMarker;
 }
 
-void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *mpAtlas,
-                                     ORB_SLAM3::Plane *doorPlane,
-                                     ORB_SLAM3::Plane *wallPlane,
-                                     bool              isOpenPassage,
-                                     Eigen::Vector3f   passageCentroid)
+void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
+                                     ORB_SLAM3::Plane *p_doorPlane_in,
+                                     ORB_SLAM3::Plane *p_wallPlane_in,
+                                     bool              isOpenPassage_in,
+                                     Eigen::Vector3d passageCentroid_World_m_in)
 {
     /* ---------------------------------------------------------------------- *
      * VALIDATE REQUIRED INPUTS
      * ---------------------------------------------------------------------- */
 
-    if (mpAtlas == nullptr)
+    if (p_atlas_inout == nullptr)
     {
         std::cerr << "[GeoSemHelper] Cannot create passage: Atlas is null."
                   << std::endl;
@@ -405,30 +469,50 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *mpAtlas,
      * Every passage must be associated with a wall.
      *
      * Closed door:
-     *     doorPlane != nullptr
-     *     wallPlane != nullptr
+     *     p_doorPlane_in != nullptr
+     *     p_wallPlane_in != nullptr
      *
      * Open passage:
-     *     doorPlane == nullptr
-     *     wallPlane != nullptr
+     *     p_doorPlane_in == nullptr
+     *     p_wallPlane_in != nullptr
      */
-    if (wallPlane == nullptr)
+    if (p_wallPlane_in == nullptr)
     {
         std::cerr << "[GeoSemHelper] Cannot create passage: wall plane is null"
                   << std::endl;
         return;
     }
 
-    if (wallPlane->isBad())
+    if (p_wallPlane_in->isBad())
     {
         std::cerr << "[GeoSemHelper] Cannot create passage: wall plane"
-                  << wallPlane->getId() << " is bad." << std::endl;
+                  << p_wallPlane_in->getId() << " is bad." << std::endl;
+        return;
+    }
+
+    /*!
+     * Passage creation requires the supporting wall to have sufficient observations.
+     * This prevents spurious passages on isolated wall segments that have no evidence.
+     */
+    bool wallHasConfirmedRoom = false;
+    const size_t minObs = SystemParams::GetParams()->room_seg.minimumWallObservationCount;
+    if (p_wallPlane_in->getObservationCount() >= minObs)
+    {
+        wallHasConfirmedRoom = true;
+    }
+
+    if (!wallHasConfirmedRoom)
+    {
+        std::cerr << "[GeoSemHelper] Cannot create passage: wall plane "
+                  << p_wallPlane_in->getId()
+                  << " has insufficient observations ("
+                  << p_wallPlane_in->getObservationCount() << " < " << minObs << ")." << std::endl;
         return;
     }
 
     /* Extract all passages */
     const std::vector<ORB_SLAM3::Passage *> allPassages =
-        mpAtlas->GetAllPassages();
+        p_atlas_inout->GetAllPassages();
 
     /* ---------------------------------------------------------------------- *
      * DETERMINE THE PASSAGE GEOMETRY
@@ -439,26 +523,26 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *mpAtlas,
     double height = SystemParams::GetParams()->sem_seg.max_door_height;
 
     /* Initialize variables to define the passage */
-    Eigen::Vector3f centroid;
+    Eigen::Vector3d centroid;
     g2o::Plane3D    passageEquation;
 
-    if (doorPlane != nullptr)
+    if (p_doorPlane_in != nullptr)
     {
         /* Confirm the door plane is not bad */
-        if (doorPlane->isBad())
+        if (p_doorPlane_in->isBad())
         {
-            std::cerr << '[GeoSemHelper] Cannot create passage: door plane '
-                      << doorPlane->getId() << " id bad." << std::endl;
+            std::cerr << "[GeoSemHelper] Cannot create passage: door plane "
+                      << p_doorPlane_in->getId() << " is bad." << std::endl;
             return;
         }
 
         /* Extract centroid and plane equation */
-        centroid        = doorPlane->getCentroid();
-        passageEquation = doorPlane->getGlobalEquation();
+        centroid        = p_doorPlane_in->getCentroid();
+        passageEquation = p_doorPlane_in->getGlobalEquation();
 
         /* Extract point cloud of door */
-        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr doorCloud =
-            doorPlane->getMapClouds();
+        const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr doorCloud =
+            p_doorPlane_in->getGeometrySnapshot().supportCloud;
 
         /* Use measured door dimensions when a valid point cloud if available */
         if (doorCloud != nullptr && !doorCloud->empty())
@@ -496,10 +580,11 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *mpAtlas,
          * No door exists. This is an open passage detected from the camera
          * trajectory crossing a wall plane.
          */
-        centroid = passageCentroid;
+        centroid = passageCentroid_World_m_in;
 
         /* Extract the plane coefficients of the wall */
-        Eigen::Vector4d wallEquation = wallPlane->getGlobalEquation().coeffs();
+        Eigen::Vector4d wallEquation =
+            p_wallPlane_in->getGlobalEquation().coeffs();
 
         /* Extract the magnitude of the norm from the coefficients */
         const double normalNorm = wallEquation.head<3>().norm();
@@ -507,8 +592,8 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *mpAtlas,
         if (!std::isfinite(normalNorm) || normalNorm < 1e-8)
         {
             std::cerr << "[GeoSemHelper] Cannot create open passage: wall "
-                      << wallPlane->getId() << " has an invalid plane equation."
-                      << std::endl;
+                      << p_wallPlane_in->getId()
+                      << " has an invalid plane equation." << std::endl;
             return;
         }
 
@@ -561,23 +646,20 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *mpAtlas,
         candidateEquation.head<3>() / candidateNormalNorm;
 
     /* Iterate through existing passages and see if any passage matches */
-    for (ORB_SLAM3::Passage *existingPassage : allPassages)
+    for (ORB_SLAM3::Passage *p_existingPassage : allPassages)
     {
         /* Confirm that existing passage is valid*/
-        if (existingPassage == nullptr)
+        if (p_existingPassage == nullptr)
         {
             continue;
         }
 
-        /* Do not merge an open passage with a blocked passage */
-        if (existingPassage->isPassable() != isOpenPassage)
-        {
-            continue;
-        }
+        /* Find the distance from centroid to passage */
+        Eigen::Vector3d centroidDistanceVector =
+            (centroid - p_existingPassage->getCentroid());
 
         /* Find distance from candidate passage to existing passage centroid */
-        const double centroidDistance =
-            (centroid - existingPassage->getCentroid()).norm();
+        const double centroidDistance = centroidDistanceVector.norm();
 
         /* If distance is greater than threshold, skip */
         if (centroidDistance >= duplicateDistanceThreshold)
@@ -587,7 +669,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *mpAtlas,
 
         /* Extract the equation of the existing passage */
         Eigen::Vector4d existingEquation =
-            existingPassage->getGlobalEquation().coeffs();
+            p_existingPassage->getGlobalEquation().coeffs();
 
         /* Find the normal norm of the existing plane */
         const double existingNormalNorm = existingEquation.head<3>().norm();
@@ -623,11 +705,81 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *mpAtlas,
             continue;
         }
 
-        std::cout << "[GeoSemHelper] Skipping duplicate passage near Passage#"
-                  << existingPassage->getId()
+        /*
+         * Parallel openings on unrelated nearby walls are not duplicates.
+         * Permit the two observed faces of one physical wall, but require the
+         * passage centroids to remain close to the opposite passage plane.
+         */
+        constexpr double      maximumSupportingPlaneSeparation_m = 0.30;
+        const Eigen::Vector4d normalizedCandidateEquation =
+            candidateEquation / candidateNormalNorm;
+        const Eigen::Vector4d normalizedExistingEquation =
+            existingEquation / existingNormalNorm;
+        const double candidatePlaneResidual_m =
+            std::abs(normalizedCandidateEquation.head<3>().dot(
+                         p_existingPassage->getCentroid()) +
+                     normalizedCandidateEquation(3));
+        const double existingPlaneResidual_m =
+            std::abs(normalizedExistingEquation.head<3>().dot(centroid) +
+                     normalizedExistingEquation(3));
+
+        if (candidatePlaneResidual_m > maximumSupportingPlaneSeparation_m ||
+            existingPlaneResidual_m > maximumSupportingPlaneSeparation_m)
+        {
+            continue;
+        }
+
+        /*
+         * Passage state is evidence, not identity. Confirmed connected free
+         * space promotes a prior passage hypothesis to traversable; later door
+         * observations never downgrade that stronger evidence.
+         *
+         * A passage is expected to have TWO observed wall faces that offset a
+         * physical wall (the near face and the opposite face). Geometry must
+         * never be re-anchored onto the face that happens to have been seen
+         * last, or the passage plane flips between the two faces from cycle to
+         * cycle and every side-dependent decision (far-side holds, prospective
+         * placement) flips with it. Therefore:
+         *   - When this wall is already an associated supporting face, refresh
+         *     centroid/equation normally (same-face refinement).
+         *   - When this is the FIRST time we see the *opposite* face of the
+         *     same physical wall (not yet among the supporting faces), only add
+         *     it to the passage. The passage plane stays anchored to the face
+         *     that framed the passage; a downstream mid-plane pass pairs the
+         *     two faces and recomputes a stable aperture plane.
+         */
+        const std::vector<ORB_SLAM3::Plane *> existingSupportingWalls =
+            p_existingPassage->getAssociateWalls();
+        const bool isKnownSupportingFace =
+            std::find(existingSupportingWalls.begin(),
+                      existingSupportingWalls.end(),
+                      p_wallPlane_in) != existingSupportingWalls.end();
+
+        if (isOpenPassage_in)
+        {
+            p_existingPassage->setPassable(true);
+            p_existingPassage->setCentroid(centroid);
+
+            if (isKnownSupportingFace)
+            {
+                p_existingPassage->setGlobalEquation(passageEquation);
+            }
+        }
+
+        p_existingPassage->addAssociateWall(p_wallPlane_in);
+
+        if (p_doorPlane_in != nullptr &&
+            p_existingPassage->getAssociateDoor() == nullptr)
+        {
+            p_existingPassage->setAssociateDoor(p_doorPlane_in);
+        }
+
+        std::cout << "[GeoSemHelper] Updated existing Passage#"
+                  << p_existingPassage->getId()
                   << ": centroid distance=" << centroidDistance
-                  << " m, normal alignment=" << normalAlignment << "."
-                  << std::endl;
+                  << " m, normal alignment=" << normalAlignment << ", state="
+                  << (p_existingPassage->isPassable() ? "open" : "blocked")
+                  << "." << std::endl;
 
         return;
     }
@@ -640,41 +792,42 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *mpAtlas,
     int passageId = 0;
 
     /* Extract the passages to find the id of the passage */
-    for (ORB_SLAM3::Passage *existingPassage : allPassages)
+    for (ORB_SLAM3::Passage *p_existingPassage : allPassages)
     {
         /* Check that pasasge is valid */
-        if (existingPassage != nullptr)
+        if (p_existingPassage != nullptr)
         {
             /* Set passage id to largest id + 1 of the existing passage */
-            passageId = std::max(passageId, existingPassage->getId() + 1);
+            passageId = std::max(passageId, p_existingPassage->getId() + 1);
         }
     }
 
     /* Initialize passage object */
-    ORB_SLAM3::Passage *newMapPassage = new ORB_SLAM3::Passage();
+    ORB_SLAM3::Passage *p_newMapPassage = new ORB_SLAM3::Passage();
 
     /* Fill passage object */
-    newMapPassage->setId(passageId);
-    newMapPassage->setMap(mpAtlas->GetCurrentMap());
+    p_newMapPassage->setId(passageId);
+    p_newMapPassage->setMap(p_atlas_inout->GetCurrentMap());
 
-    newMapPassage->setCentroid(centroid);
-    newMapPassage->setGlobalEquation(passageEquation);
+    p_newMapPassage->setCentroid(centroid);
+    p_newMapPassage->setGlobalEquation(passageEquation);
 
-    newMapPassage->setWidth(width);
-    newMapPassage->setHeight(height);
-    newMapPassage->setPassable(isOpenPassage);
+    p_newMapPassage->setWidth(width);
+    p_newMapPassage->setHeight(height);
+    p_newMapPassage->setPassable(isOpenPassage_in);
 
-    newMapPassage->addAssociateWall(wallPlane);
+    p_newMapPassage->addAssociateWall(p_wallPlane_in);
 
     /*!
      * Both a detected closed door and a trajectory-detected open
      * passage represent a doorway.
      */
-    newMapPassage->setPassageType(ORB_SLAM3::Passage::passageVariant::DOORWAY);
+    p_newMapPassage->setPassageType(
+        ORB_SLAM3::Passage::passageVariant::DOORWAY);
 
-    if (doorPlane != nullptr)
+    if (p_doorPlane_in != nullptr)
     {
-        newMapPassage->setAssociateDoor(doorPlane);
+        p_newMapPassage->setAssociateDoor(p_doorPlane_in);
     }
 
     /* -------------------------------------------------------------- *
@@ -683,24 +836,25 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *mpAtlas,
 
     std::ostringstream infoStream;
 
-    infoStream << (isOpenPassage ? "open" : "blocked") << ", " << std::fixed
+    infoStream << (isOpenPassage_in ? "open" : "blocked") << ", " << std::fixed
                << std::setprecision(2) << width << "x" << height << "m";
 
     std::cout << "[GeoSemHelper] Creating Passage#" << passageId
-              << " associated with wall " << wallPlane->getId();
+              << " associated with wall " << p_wallPlane_in->getId();
 
-    if (doorPlane != nullptr)
+    if (p_doorPlane_in != nullptr)
     {
-        std::cout << " and door plane " << doorPlane->getId();
+        std::cout << " and door plane " << p_doorPlane_in->getId();
     }
 
     std::cout << " (" << infoStream.str()
               << "), centroid=" << centroid.transpose() << "." << std::endl;
 
-    mpAtlas->AddMapPassage(newMapPassage);
+    p_atlas_inout->AddMapPassage(p_newMapPassage);
 
     std::cout << "[GeoSemHelper] Atlas now contains "
-              << mpAtlas->GetAllPassages().size() << " passages." << std::endl;
+              << p_atlas_inout->GetAllPassages().size() << " passages."
+              << std::endl;
 }
 
 ORB_SLAM3::Room *
@@ -808,8 +962,10 @@ size_t GeoSemHelpers::countGroundPlanePointsWithinWalls(
 {
     // [TODO] - verify the correctness of this function
     // the point cloud of the ground plane
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr groundCloud =
-        groundPlane->getMapClouds();
+    const Plane::GeometrySnapshot groundGeometry =
+        groundPlane->getGeometrySnapshot();
+    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr groundCloud =
+        groundGeometry.supportCloud;
 
     // the number of points within the walls
     size_t count = 0;
@@ -851,19 +1007,26 @@ size_t GeoSemHelpers::countGroundPlanePointsWithinWalls(
 
 void GeoSemHelpers::createMapFloor(ORB_SLAM3::Atlas *mpAtlas)
 {
+    ORB_SLAM3::Map *p_currentMap = mpAtlas->GetCurrentMap();
+
+    if (p_currentMap == nullptr)
+    {
+        return;
+    }
+
     // Create a new floor object
     Eigen::Vector3d   centroid    = Eigen::Vector3d::Zero();
     ORB_SLAM3::Floor *newMapFloor = new ORB_SLAM3::Floor();
 
     // Variables
-    int floorId = mpAtlas->GetAllFloors().size();
+    const int floorId = p_currentMap->reserveFloorId();
 
     // Fill the floor entity
     newMapFloor->setOpId(-1);
     newMapFloor->setOpIdG(-1);
     newMapFloor->setId(floorId);
     newMapFloor->setCentroid(centroid);
-    newMapFloor->setMap(mpAtlas->GetCurrentMap());
+    newMapFloor->setMap(p_currentMap);
     newMapFloor->setName("Floor#" + std::to_string(floorId));
 
     // Add the floor to the map

@@ -1,249 +1,850 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
- * 
+ *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
- * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger Voos
- * 
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
+ *
  * Original Copyright (C) 2014-2021 University of Zaragoza:
  * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
  * José M.M. Montiel, and Juan D. Tardós.
- * 
- * This file is part of vS-Graphs, which is free software: you can redistribute it
- * and/or modify it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
  *
  * vS-Graphs is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with this program.
- * If not, see <https://www.gnu.org/licenses/>.
-*/
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #ifndef LOOPCLOSING_H
 #define LOOPCLOSING_H
 
+#include <atomic>
+#include <boost/algorithm/string.hpp>
+#include <cstdint>
+#include <mutex>
+#include <thread>
+
 #include "Atlas.h"
 #include "KeyFrame.h"
-#include "Tracking.h"
+#include "KeyFrameDatabase.h"
 #include "LocalMapping.h"
 #include "ORBVocabulary.h"
-#include "KeyFrameDatabase.h"
-
-#include <thread>
-#include <mutex>
-#include <boost/algorithm/string.hpp>
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
+#include "Tracking.h"
 
 namespace ORB_SLAM3
 {
 
-    class Tracking;
-    class LocalMapping;
-    class KeyFrameDatabase;
-    class Map;
+class Tracking;
+class LocalMapping;
+class KeyFrameDatabase;
+class Map;
 
-    class LoopClosing
+class LoopClosing
+{
+  private:
+    /* ---------------------------------------------------------------------- *
+     * PRIVATE CONSTANT
+     * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief       The main Run() function runs every runInterval_s seconds.
+     */
+    const double runInterval_s = 3.0;
+
+  public:
+    /* ---------------------------------------------------------------------- *
+     * PUBLIC MEMBERS
+     * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief       Thread-safe summary of the latest validated loop event.
+     */
+    struct LoopCorrectionStatus
     {
-    public:
-        typedef pair<set<KeyFrame *>, int> ConsistentGroup;
-        typedef map<KeyFrame *, g2o::Sim3, std::less<KeyFrame *>,
-                    Eigen::aligned_allocator<std::pair<KeyFrame *const, g2o::Sim3>>>
-            KeyFrameAndPose;
+        std::uint64_t sequence{0U};
+        std::uint32_t acceptedCount{0U};
+        std::uint32_t rejectedCount{0U};
+        bool          hasEvent{false};
+        bool          lastAccepted{false};
+        unsigned long lastMapId{0U};
+        unsigned long lastCurrentKeyFrameId{0U};
+        unsigned long lastMatchedKeyFrameId{0U};
+        double        lastCurrentTimestamp{0.0};
+        double        lastMatchedTimestamp{0.0};
+        std::string   lastReason;
+    };
 
-    public:
-        LoopClosing(Atlas *pAtlas, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const bool bFixScale, const bool bActiveLC);
+    typedef pair<set<KeyFrame *>, int> ConsistentGroup;
 
-        void SetTracker(Tracking *pTracker);
+    typedef map<KeyFrame *,
+                g2o::Sim3,
+                std::less<KeyFrame *>,
+                Eigen::aligned_allocator<std::pair<KeyFrame *const, g2o::Sim3>>>
+        KeyFrameAndPose;
 
-        void SetLocalMapper(LocalMapping *pLocalMapper);
+    /* ---------------------------------------------------------------------- *
+     * PUBLIC METHODS
+     * ---------------------------------------------------------------------- */
 
-        // Main function
-        void Run();
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   pAtlas
+     *              TODO
+     *
+     * @param[in]   pDB
+     *              TODO
+     *
+     * @param[in]   pVoc
+     *              TODO
+     *
+     * @param[in]   bFixScale
+     *              TODO
+     *
+     * @param[in]   bActiveLC
+     *              TODO
+     */
+    LoopClosing(Atlas            *pAtlas,
+                KeyFrameDatabase *pDB,
+                ORBVocabulary    *pVoc,
+                const bool        bFixScale,
+                const bool        bActiveLC);
 
-        void InsertKeyFrame(KeyFrame *pKF);
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   pTracker
+     *              TODO
+     */
+    void SetTracker(Tracking *pTracker);
 
-        void RequestReset();
-        void RequestResetActiveMap(Map *pMap);
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   pLocalMapper
+     *              TODO
+     */
+    void SetLocalMapper(LocalMapping *pLocalMapper);
 
-        // This function will run in a separate thread
-        void RunGlobalBundleAdjustment(Map *pActiveMap, unsigned long nLoopKF);
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   mergeStatus_in
+     *              TODO
+     */
+    void SetMergeStatus(bool mergeStatus_in);
 
-        bool isRunningGBA()
-        {
-            unique_lock<std::mutex> lock(mMutexGBA);
-            return mbRunningGBA;
-        }
-        bool isFinishedGBA()
-        {
-            unique_lock<std::mutex> lock(mMutexGBA);
-            return mbFinishedGBA;
-        }
+    /*!
+     * @brief       TODO
+     */
+    void Run(void);
 
-        void RequestFinish();
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   pKF
+     *              TODO
+     */
+    void InsertKeyFrame(KeyFrame *pKF);
 
-        bool isFinished();
+    /*!
+     * @brief       TODO
+     */
+    void RequestReset();
 
-        Viewer *mpViewer;
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   pMap
+     *              TODO
+     */
+    void RequestResetActiveMap(Map *pMap);
+
+    /*!
+     * @brief       TODO
+     *
+     * @note        This function will run in a separate thread
+     *
+     * @param[in]   pActiveMap
+     *              TODO
+     *
+     * @param[in]   nLoopKF
+     *              TODO
+     *
+     * @param[in]   generation_in
+     *              TODO
+     */
+    void RunGlobalBundleAdjustment(Map          *pActiveMap,
+                                   unsigned long nLoopKF,
+                                   unsigned int  generation_in);
+
+    /*!
+     * @brief       TODO
+     */
+    bool isRunningGBA(void)
+    {
+        /* Lock mutext */
+        unique_lock<std::mutex> lock(mMutexGBA);
+
+        /* Return flag to indicate if global bundal adjustemnt is running */
+        return mbRunningGBA;
+    }
+
+    /*!
+     * @brief       TODO
+     */
+    bool isFinishedGBA(void)
+    {
+        /* Lock mutext */
+        unique_lock<std::mutex> lock(mMutexGBA);
+
+        /* Return flag to indicate if global bundal adjustemnt is finished */
+        return mbFinishedGBA;
+    }
+
+    /*!
+     * @brief       TODO
+     */
+    void RequestFinish(void);
+
+    /*!
+     * @brief       TODO
+     */
+    bool isFinished(void);
+
+    /*!
+     * @brief       TODO
+     */
+    bool isMergeInProgress(void);
+
+    /*!
+     * @brief       TODO
+     */
+    LoopCorrectionStatus GetLoopCorrectionStatus() const;
+
+    Viewer *mpViewer;
 
 #ifdef REGISTER_TIMES
 
-        vector<double> vdDataQuery_ms;
-        vector<double> vdEstSim3_ms;
-        vector<double> vdPRTotal_ms;
+    vector<double> vdDataQuery_ms;
+    vector<double> vdEstSim3_ms;
+    vector<double> vdPRTotal_ms;
 
-        vector<double> vdMergeMaps_ms;
-        vector<double> vdWeldingBA_ms;
-        vector<double> vdMergeOptEss_ms;
-        vector<double> vdMergeTotal_ms;
-        vector<int> vnMergeKFs;
-        vector<int> vnMergeMPs;
-        int nMerges;
+    vector<double> vdMergeMaps_ms;
+    vector<double> vdWeldingBA_ms;
+    vector<double> vdMergeOptEss_ms;
+    vector<double> vdMergeTotal_ms;
+    vector<int>    vnMergeKFs;
+    vector<int>    vnMergeMPs;
+    int            nMerges;
 
-        vector<double> vdLoopFusion_ms;
-        vector<double> vdLoopOptEss_ms;
-        vector<double> vdLoopTotal_ms;
-        vector<int> vnLoopKFs;
-        int nLoop;
+    vector<double> vdLoopFusion_ms;
+    vector<double> vdLoopOptEss_ms;
+    vector<double> vdLoopTotal_ms;
+    vector<int>    vnLoopKFs;
+    int            nLoop;
 
-        vector<double> vdGBA_ms;
-        vector<double> vdUpdateMap_ms;
-        vector<double> vdFGBATotal_ms;
-        vector<int> vnGBAKFs;
-        vector<int> vnGBAMPs;
-        int nFGBA_exec;
-        int nFGBA_abort;
+    vector<double> vdGBA_ms;
+    vector<double> vdUpdateMap_ms;
+    vector<double> vdFGBATotal_ms;
+    vector<int>    vnGBAKFs;
+    vector<int>    vnGBAMPs;
+    int            nFGBA_exec;
+    int            nFGBA_abort;
 
 #endif
 
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    protected:
-        bool CheckNewKeyFrames();
+  protected:
+    /* ---------------------------------------------------------------------- *
+     * PROTECTED MEMBERS
+     * ---------------------------------------------------------------------- */
 
-        // Methods to implement the new place recognition algorithm
-        bool NewDetectCommonRegions();
-        bool DetectAndReffineSim3FromLastKF(KeyFrame *pCurrentKF, KeyFrame *pMatchedKF, g2o::Sim3 &gScw, int &nNumProjMatches,
-                                            std::vector<MapPoint *> &vpMPs, std::vector<MapPoint *> &vpMatchedMPs);
-        bool DetectCommonRegionsFromBoW(std::vector<KeyFrame *> &vpBowCand, KeyFrame *&pMatchedKF, KeyFrame *&pLastCurrentKF, g2o::Sim3 &g2oScw,
-                                        int &nNumCoincidences, std::vector<MapPoint *> &vpMPs, std::vector<MapPoint *> &vpMatchedMPs);
-        bool DetectCommonRegionsFromLastKF(KeyFrame *pCurrentKF, KeyFrame *pMatchedKF, g2o::Sim3 &gScw, int &nNumProjMatches,
-                                           std::vector<MapPoint *> &vpMPs, std::vector<MapPoint *> &vpMatchedMPs);
-        int FindMatchesByProjection(KeyFrame *pCurrentKF, KeyFrame *pMatchedKFw, g2o::Sim3 &g2oScw,
-                                    set<MapPoint *> &spMatchedMPinOrigin, vector<MapPoint *> &vpMapPoints,
-                                    vector<MapPoint *> &vpMatchedMapPoints);
+    /*!
+     * @brief      TODO
+     */
+    bool mbResetRequested;
 
-        void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap, vector<MapPoint *> &vpMapPoints);
-        void SearchAndFuse(const vector<KeyFrame *> &vConectedKFs, vector<MapPoint *> &vpMapPoints);
+    /*!
+     * @brief      TODO
+     */
+    bool mbResetActiveMapRequested;
 
-        void CorrectLoop();
+    /*!
+     * @brief      TODO
+     */
+    Map *mpMapToReset;
 
-        void MergeLocal();
-        void MergeLocalInertial();
+    /*!
+     * @brief      TODO
+     */
+    std::mutex mMutexReset;
 
-        void CheckObservations(set<KeyFrame *> &spKFsMap1, set<KeyFrame *> &spKFsMap2);
+    /*!
+     * @brief      TODO
+     */
+    bool mbFinishRequested;
 
-        void ResetIfRequested();
-        bool mbResetRequested;
-        bool mbResetActiveMapRequested;
-        Map *mpMapToReset;
-        std::mutex mMutexReset;
+    /*!
+     * @brief      TODO
+     */
+    bool mbFinished;
 
-        bool CheckFinish();
-        void SetFinish();
-        bool mbFinishRequested;
-        bool mbFinished;
-        std::mutex mMutexFinish;
+    /*!
+     * @brief      TODO
+     */
+    std::mutex mMutexFinish;
 
-        Atlas *mpAtlas;
-        Tracking *mpTracker;
+    /*!
+     * @brief      TODO
+     */
+    Atlas *mpAtlas;
 
-        KeyFrameDatabase *mpKeyFrameDB;
-        ORBVocabulary *mpORBVocabulary;
+    /*!
+     * @brief      TODO
+     */
+    Tracking *mpTracker;
 
-        LocalMapping *mpLocalMapper;
+    /*!
+     * @brief      TODO
+     */
+    KeyFrameDatabase *mpKeyFrameDB;
 
-        std::list<KeyFrame *> mlpLoopKeyFrameQueue;
+    /*!
+     * @brief      TODO
+     */
+    ORBVocabulary *mpORBVocabulary;
 
-        std::mutex mMutexLoopQueue;
+    /*!
+     * @brief      TODO
+     */
+    LocalMapping *mpLocalMapper;
 
-        // Loop detector parameters
-        float mnCovisibilityConsistencyTh;
+    /*!
+     * @brief      TODO
+     */
+    std::list<KeyFrame *> mlpLoopKeyFrameQueue;
 
-        // Loop detector variables
-        KeyFrame *mpCurrentKF;
-        KeyFrame *mpLastCurrentKF;
-        KeyFrame *mpMatchedKF;
-        std::vector<ConsistentGroup> mvConsistentGroups;
-        std::vector<KeyFrame *> mvpEnoughConsistentCandidates;
-        std::vector<KeyFrame *> mvpCurrentConnectedKFs;
-        std::vector<MapPoint *> mvpCurrentMatchedPoints;
-        std::vector<MapPoint *> mvpLoopMapPoints;
-        cv::Mat mScw;
-        g2o::Sim3 mg2oScw;
+    /*!
+     * @brief      TODO
+     */
+    std::mutex mMutexLoopQueue;
 
-        //-------
-        Map *mpLastMap;
+    /*!
+     * @brief      Loop detector parameters
+     */
+    float mnCovisibilityConsistencyTh;
 
-        bool mbLoopDetected;
-        int mnLoopNumCoincidences;
-        int mnLoopNumNotFound;
-        KeyFrame *mpLoopLastCurrentKF;
-        g2o::Sim3 mg2oLoopSlw;
-        g2o::Sim3 mg2oLoopScw;
-        KeyFrame *mpLoopMatchedKF;
-        std::vector<MapPoint *> mvpLoopMPs;
-        std::vector<MapPoint *> mvpLoopMatchedMPs;
-        bool mbMergeDetected;
-        int mnMergeNumCoincidences;
-        int mnMergeNumNotFound;
-        KeyFrame *mpMergeLastCurrentKF;
-        g2o::Sim3 mg2oMergeSlw;
-        g2o::Sim3 mg2oMergeSmw;
-        g2o::Sim3 mg2oMergeScw;
-        KeyFrame *mpMergeMatchedKF;
-        std::vector<MapPoint *> mvpMergeMPs;
-        std::vector<MapPoint *> mvpMergeMatchedMPs;
-        std::vector<KeyFrame *> mvpMergeConnectedKFs;
+    /*!
+     * @brief      TODO
+     */
+    KeyFrame *mpCurrentKF;
 
-        g2o::Sim3 mSold_new;
-        //-------
+    /*!
+     * @brief      TODO
+     */
+    KeyFrame *mpLastCurrentKF;
 
-        long unsigned int mLastLoopKFid;
+    /*!
+     * @brief      TODO
+     */
+    KeyFrame *mpMatchedKF;
 
-        // Variables related to Global Bundle Adjustment
-        bool mbRunningGBA;
-        bool mbFinishedGBA;
-        bool mbStopGBA;
-        std::mutex mMutexGBA;
-        std::thread *mpThreadGBA;
+    /*!
+     * @brief      TODO
+     */
+    std::vector<ConsistentGroup> mvConsistentGroups;
 
-        // Fix scale in the stereo/RGB-D case
-        bool mbFixScale;
+    /*!
+     * @brief      TODO
+     */
+    std::vector<KeyFrame *> mvpEnoughConsistentCandidates;
 
-        // bool mnFullBAIdx;
-        unsigned int mnFullBAIdx;
+    /*!
+     * @brief      TODO
+     */
+    std::vector<KeyFrame *> mvpCurrentConnectedKFs;
 
-        vector<double> vdPR_CurrentTime;
-        vector<double> vdPR_MatchedTime;
-        vector<int> vnPR_TypeRecogn;
+    /*!
+     * @brief      TODO
+     */
+    std::vector<MapPoint *> mvpCurrentMatchedPoints;
 
-        // DEBUG
-        string mstrFolderSubTraj;
-        int mnNumCorrection;
-        int mnCorrectionGBA;
+    /*!
+     * @brief      TODO
+     */
+    std::vector<MapPoint *> mvpLoopMapPoints;
 
-        // To (de)activate LC
-        bool mbActiveLC = true;
+    /*!
+     * @brief      TODO
+     */
+    cv::Mat mScw;
 
-        // System parameters
-        SystemParams *sysParams;
+    /*!
+     * @brief      TODO
+     */
+    g2o::Sim3 mg2oScw;
 
+    /*!
+     * @brief      TODO
+     */
+    Map *mpLastMap;
+
+    /*!
+     * @brief      TODO
+     */
+    bool mbLoopDetected;
+
+    /*!
+     * @brief      TODO
+     */
+    int mnLoopNumCoincidences;
+
+    /*!
+     * @brief      TODO
+     */
+    int mnLoopNumNotFound;
+
+    /*!
+     * @brief      TODO
+     */
+    KeyFrame *mpLoopLastCurrentKF;
+
+    /*!
+     * @brief      TODO
+     */
+    g2o::Sim3 mg2oLoopSlw;
+
+    /*!
+     * @brief      TODO
+     */
+    g2o::Sim3 mg2oLoopScw;
+
+    /*!
+     * @brief      TODO
+     */
+    KeyFrame *mpLoopMatchedKF;
+
+    /*!
+     * @brief      TODO
+     */
+    std::vector<MapPoint *> mvpLoopMPs;
+
+    /*!
+     * @brief      TODO
+     */
+    std::vector<MapPoint *> mvpLoopMatchedMPs;
+
+    /*!
+     * @brief      TODO
+     */
+    bool mbMergeDetected;
+
+    /*!
+     * @brief      TODO
+     */
+    std::atomic_bool mbMergeInProgress;
+
+    /*!
+     * @brief      TODO
+     */
+    int mnMergeNumCoincidences;
+
+    /*!
+     * @brief      TODO
+     */
+    int mnMergeNumNotFound;
+
+    /*!
+     * @brief      TODO
+     */
+    KeyFrame *mpMergeLastCurrentKF;
+
+    /*!
+     * @brief      TODO
+     */
+    g2o::Sim3 mg2oMergeSlw;
+
+    /*!
+     * @brief      TODO
+     */
+    g2o::Sim3 mg2oMergeSmw;
+
+    /*!
+     * @brief      TODO
+     */
+    g2o::Sim3 mg2oMergeScw;
+
+    /*!
+     * @brief      TODO
+     */
+    g2o::Sim3 mg2oMergeSw1w2;
+
+    /*!
+     * @brief      TODO
+     */
+
+    /*!
+     * @brief      TODO
+     */
+    KeyFrame *mpMergeMatchedKF;
+
+    /*!
+     * @brief      TODO
+     */
+    std::vector<MapPoint *> mvpMergeMPs;
+
+    /*!
+     * @brief      TODO
+     */
+    std::vector<MapPoint *> mvpMergeMatchedMPs;
+
+    /*!
+     * @brief      TODO
+     */
+    std::vector<KeyFrame *> mvpMergeConnectedKFs;
+
+    /*!
+     * @brief      TODO
+     */
+    g2o::Sim3 mSold_new;
+
+    /*!
+     * @brief      TODO
+     */
+    long unsigned int mLastLoopKFid;
+
+    /*!
+     * @brief      TODO
+     */
+    bool mbRunningGBA;
+
+    /*!
+     * @brief      TODO
+     */
+    bool mbFinishedGBA;
+
+    /*!
+     * @brief      TODO
+     */
+    std::mutex mMutexGBA;
+
+    /*!
+     * @brief      TODO
+     */
+    std::thread *mpThreadGBA;
+
+    /*!
+     * @brief      TODO
+     */
+    std::atomic_bool globalBundleAdjustmentStopRequested{false};
+
+    /*!
+     * @brief      TODO
+     *
+     * @note        Fix scale in the stereo/RGB-D case
+     */
+    bool mbFixScale;
+
+    /*!
+     * @brief      TODO
+     */
+    unsigned int mnFullBAIdx;
+
+    /*!
+     * @brief      TODO
+     */
+    vector<double> vdPR_CurrentTime;
+
+    /*!
+     * @brief      TODO
+     */
+    vector<double> vdPR_MatchedTime;
+
+    /*!
+     * @brief      TODO
+     */
+    vector<int> vnPR_TypeRecogn;
+
+    /*!
+     * @brief      TODO
+     */
+    string mstrFolderSubTraj;
+
+    /*!
+     * @brief      TODO
+     */
+    int mnNumCorrection;
+
+    /*!
+     * @brief      TODO
+     */
+    int mnCorrectionGBA;
+
+    /*!
+     * @brief      TODO
+     */
+    mutable std::mutex mMutexLoopCorrectionStatus;
+
+    /*!
+     * @brief      TODO
+     */
+    LoopCorrectionStatus mLoopCorrectionStatus;
+
+    /*!
+     * @brief      TODO
+     */
+    bool mbActiveLC = true;
+
+    /*!
+     * @brief      TODO
+     */
+    SystemParams *sysParams;
+
+    /* ---------------------------------------------------------------------- *
+     * PROTECTED METHODS
+     * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief       TODO
+     */
+    bool CheckNewKeyFrames(void);
+
+    /*!
+     * @brief       TODO
+     */
+    bool NewDetectCommonRegions(void);
+
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   pCurrentKF
+     *              TODO
+     *
+     * @param[in]   pMatchedKF
+     *              TODO
+     *
+     * @param[in]   gScw
+     *              TODO
+     *
+     * @param[in]   nNumProjMatches
+     *              TODO
+     *
+     * @param[in]   vpMPs
+     *              TODO
+     *
+     * @param[in]   vpMatchedMPs
+     *              TODO
+     */
+    bool DetectAndReffineSim3FromLastKF(KeyFrame  *pCurrentKF,
+                                        KeyFrame  *pMatchedKF,
+                                        g2o::Sim3 &gScw,
+                                        int       &nNumProjMatches,
+                                        std::vector<MapPoint *> &vpMPs,
+                                        std::vector<MapPoint *> &vpMatchedMPs);
+
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   vpBowCand
+     *              TODO
+     *
+     * @param[in]   pMatchedKF
+     *              TODO
+     *
+     * @param[in]   pLastCurrentKF
+     *              TODO
+     *
+     * @param[in]   nNumProjMatches
+     *              TODO
+     *
+     * @param[in]   g2oScw
+     *              TODO
+     *
+     * @param[in]   nNumCoincidences
+     *              TODO
+     *
+     * @param[in]   vpMPs
+     *              TODO
+     *
+     * @param[in]   vpMatchedMPs
+     *              TODO
+     */
+    bool DetectCommonRegionsFromBoW(std::vector<KeyFrame *> &vpBowCand,
+                                    KeyFrame               *&pMatchedKF,
+                                    KeyFrame               *&pLastCurrentKF,
+                                    g2o::Sim3               &g2oScw,
+                                    int                     &nNumCoincidences,
+                                    std::vector<MapPoint *> &vpMPs,
+                                    std::vector<MapPoint *> &vpMatchedMPs);
+
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   pCurrentKF
+     *              TODO
+     *
+     * @param[in]   pMatchedKF
+     *              TODO
+     *
+     * @param[in]   gScw
+     *              TODO
+     *
+     * @param[in]   nNumProjMatches
+     *              TODO
+     *
+     * @param[in]   vpMPs
+     *              TODO
+     *
+     * @param[in]   vpMatchedMPs
+     *              TODO
+     */
+    bool DetectCommonRegionsFromLastKF(KeyFrame                *pCurrentKF,
+                                       KeyFrame                *pMatchedKF,
+                                       g2o::Sim3               &gScw,
+                                       int                     &nNumProjMatches,
+                                       std::vector<MapPoint *> &vpMPs,
+                                       std::vector<MapPoint *> &vpMatchedMPs);
+
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   pCurrentKF
+     *              TODO
+     *
+     * @param[in]   pMatchedKF
+     *              TODO
+     *
+     * @param[in]   g2oScw
+     *              TODO
+     *
+     * @param[in]   spMatchedMPinOrigin
+     *              TODO
+     *
+     * @param[in]   vpMapPoints
+     *              TODO
+     *
+     * @param[in]   vpMatchedMapPoints
+     *              TODO
+     */
+    int FindMatchesByProjection(KeyFrame           *pCurrentKF,
+                                KeyFrame           *pMatchedKFw,
+                                g2o::Sim3          &g2oScw,
+                                set<MapPoint *>    &spMatchedMPinOrigin,
+                                vector<MapPoint *> &vpMapPoints,
+                                vector<MapPoint *> &vpMatchedMapPoints);
+
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   CorrectedPosesMap
+     *              TODO
+     *
+     * @param[in]   vpMapPoints
+     *              TODO
+     */
+    void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap,
+                       vector<MapPoint *>    &vpMapPoints);
+
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   vConectedKFs
+     *              TODO
+     *
+     * @param[in]   vpMapPoints
+     *              TODO
+     */
+    void SearchAndFuse(const vector<KeyFrame *> &vConectedKFs,
+                       vector<MapPoint *>       &vpMapPoints);
+
+    /*!
+     * @brief       TODO
+     */
+    void CorrectLoop(void);
+
+    /*!
+     * @brief       Stops and joins the owned global bundle-adjustment worker.
+     *
+     * @return      True when an active optimization was interrupted; false when
+     *              the method only reclaimed an already-completed worker.
+     */
+    bool stopGlobalBundleAdjustment(void);
+
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   accepted_in
+     *              TODO
+     *
+     * @param[in]   reason_in
+     *              TODO
+     */
+    void recordLoopCorrectionEvent(bool               accepted_in,
+                                   const std::string &reason_in);
+    /*!
+     * @brief       Starts a replacement GBA worker after an interrupted merge
+     *              attempt.
+     *
+     * @param[in]   accepted_in
+     *              TODO
+     *
+     * @param[in]   reason_in
+     *              TODO
+     */
+    void relaunchGlobalBundleAdjustment(Map *p_activeMap_in);
+
+    /*!
+     * @brief       TODO
+     */
+    void MergeLocal(void);
+
+    /*!
+     * @brief       TODO
+     */
+    void MergeLocalInertial(void);
+
+    /*!
+     * @brief       TODO
+     *
+     * @param[in]   spKFsMap1
+     *              TODO
+     *
+     * @param[in]   spKFsMap2
+     *              TODO
+     */
+    void CheckObservations(set<KeyFrame *> &spKFsMap1,
+                           set<KeyFrame *> &spKFsMap2);
+
+    /*!
+     * @brief       TODO
+     */
+    void ResetIfRequested(void);
+
+    /*!
+     * @brief      TODO
+     */
+    bool CheckFinish(void);
+
+    /*!
+     * @brief      TODO
+     */
+    void SetFinish(void);
 #ifdef REGISTER_LOOP
-        string mstrFolderLoop;
+    string mstrFolderLoop;
 #endif
-    };
+};
 
-}
+} // namespace ORB_SLAM3
 
 #endif

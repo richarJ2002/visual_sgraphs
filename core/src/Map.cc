@@ -25,6 +25,8 @@
 
 #include "Map.h"
 
+#include <algorithm>
+#include <iterator>
 #include <mutex>
 
 namespace ORB_SLAM3
@@ -33,16 +35,17 @@ namespace ORB_SLAM3
 long unsigned int Map::nNextId = 0;
 
 Map::Map() :
-    mnMaxKFid(0),
-    mnBigChangeIdx(0),
-    mbImuInitialized(false),
-    mnMapChange(0),
     mpFirstRegionKF(static_cast<KeyFrame *>(NULL)),
     mbFail(false),
+    mbImuInitialized(false),
+    mnMapChange(0),
+    mnMapChangeNotified(0),
+    mnWorldFrameEpoch(0U),
+    mnMaxKFid(0),
+    mnBigChangeIdx(0),
     mIsInUse(false),
     mHasTumbnail(false),
     mbBad(false),
-    mnMapChangeNotified(0),
     mbIsInertial(false),
     mbIMU_BA1(false),
     mbIMU_BA2(false)
@@ -52,17 +55,18 @@ Map::Map() :
 }
 
 Map::Map(int initKFid) :
+    mpFirstRegionKF(static_cast<KeyFrame *>(NULL)),
+    mbFail(false),
+    mbImuInitialized(false),
+    mnMapChange(0),
+    mnMapChangeNotified(0),
+    mnWorldFrameEpoch(0U),
     mnInitKFid(initKFid),
     mnMaxKFid(initKFid),
     mnBigChangeIdx(0),
     mIsInUse(false),
     mHasTumbnail(false),
     mbBad(false),
-    mbImuInitialized(false),
-    mpFirstRegionKF(static_cast<KeyFrame *>(NULL)),
-    mnMapChange(0),
-    mbFail(false),
-    mnMapChangeNotified(0),
     mbIsInertial(false),
     mbIMU_BA1(false),
     mbIMU_BA2(false)
@@ -141,10 +145,49 @@ void Map::AddMapMarker(Marker *pMarker)
 
 void Map::AddMapPlane(Plane *pPlane)
 {
+    if (pPlane == nullptr)
+    {
+        return;
+    }
+
     unique_lock<mutex> lock(mMutexMap);
+
+    for (auto planeIterator = mPlaneIndex.begin();
+         planeIterator != mPlaneIndex.end();)
+    {
+        planeIterator =
+            planeIterator->second == pPlane &&
+                    planeIterator->first != pPlane->getId()
+                ? mPlaneIndex.erase(planeIterator)
+                : std::next(planeIterator);
+    }
+
+    const auto existingPlaneIterator = mPlaneIndex.find(pPlane->getId());
+
+    if (pPlane->getId() < 0 || (existingPlaneIterator != mPlaneIndex.end() &&
+                                existingPlaneIterator->second != pPlane))
+    {
+        while (mPlaneIndex.count(nextAvailablePlaneId) > 0)
+        {
+            ++nextAvailablePlaneId;
+        }
+
+        const int replacementPlaneId = nextAvailablePlaneId++;
+
+        std::cerr << "[Map] Plane ID collision for " << pPlane->getId()
+                  << "; reassigned to " << replacementPlaneId << "."
+                  << std::endl;
+
+        pPlane->setId(replacementPlaneId);
+    }
+    else
+    {
+        nextAvailablePlaneId =
+            std::max(nextAvailablePlaneId, pPlane->getId() + 1);
+    }
+
     mspPlanes.insert(pPlane);
-    // Add the plane to the hashmap
-    mPlaneIndex[pPlane->getId()] = pPlane;
+    mPlaneIndex.insert_or_assign(pPlane->getId(), pPlane);
 }
 
 void Map::AddRoomWallPlane(ORB_SLAM3::Plane *pPlane)
@@ -156,10 +199,26 @@ void Map::AddRoomWallPlane(ORB_SLAM3::Plane *pPlane)
 
 void ORB_SLAM3::Map::AddMapPassage(ORB_SLAM3::Passage *pPassage)
 {
+    if (pPassage == nullptr)
+    {
+        return;
+    }
+
     unique_lock<mutex> lock(mMutexMap);
+
+    const auto existingPassage = mPassageIndex.find(pPassage->getId());
+    if (pPassage->getId() < 0 ||
+        (existingPassage != mPassageIndex.end() &&
+         existingPassage->second != pPassage))
+    {
+        std::cerr << "[Map] Passage ID collision for " << pPassage->getId()
+                  << "; caller must resolve it before destination insertion."
+                  << std::endl;
+        return;
+    }
+
     mspPassages.insert(pPassage);
-    // Add the passage to the hashmap
-    mPassageIndex[pPassage->getId()] = pPassage;
+    mPassageIndex.insert_or_assign(pPassage->getId(), pPassage);
 }
 
 void Map::AddDetectedMapRoom(Room *pRoom)
@@ -174,10 +233,87 @@ void Map::AddCandidateMapRoom(Room *pRoom)
     mspMarkerBasedRooms.insert(pRoom);
 }
 
+void Map::PromoteCandidateMapRoom(Room *pRoom)
+{
+    if (pRoom == nullptr)
+    {
+        return;
+    }
+
+    unique_lock<mutex> lock(mMutexMap);
+    mspMarkerBasedRooms.erase(pRoom);
+    mspDetectedRooms.insert(pRoom);
+}
+
 void Map::AddMapFloor(Floor *pFloor)
 {
+    if (pFloor == nullptr)
+    {
+        return;
+    }
+
     unique_lock<mutex> lock(mMutexMap);
+
+    for (auto floorIterator = mFloorIndex.begin();
+         floorIterator != mFloorIndex.end();)
+    {
+        floorIterator =
+            floorIterator->second == pFloor &&
+                    floorIterator->first != pFloor->getId()
+                ? mFloorIndex.erase(floorIterator)
+                : std::next(floorIterator);
+    }
+
+    const auto existingFloorIterator = mFloorIndex.find(pFloor->getId());
+
+    if (pFloor->getId() < 0 || (existingFloorIterator != mFloorIndex.end() &&
+                                existingFloorIterator->second != pFloor))
+    {
+        while (mFloorIndex.count(nextAvailableFloorId) > 0)
+        {
+            ++nextAvailableFloorId;
+        }
+
+        const int replacementFloorId = nextAvailableFloorId++;
+
+        std::cerr << "[Map] Floor ID collision for " << pFloor->getId()
+                  << "; reassigned to " << replacementFloorId << "."
+                  << std::endl;
+
+        pFloor->setId(replacementFloorId);
+    }
+    else
+    {
+        nextAvailableFloorId =
+            std::max(nextAvailableFloorId, pFloor->getId() + 1);
+    }
+
     mspFloors.insert(pFloor);
+    mFloorIndex.insert_or_assign(pFloor->getId(), pFloor);
+}
+
+int Map::reservePlaneId(void)
+{
+    unique_lock<mutex> lock(mMutexMap);
+
+    while (mPlaneIndex.count(nextAvailablePlaneId) > 0)
+    {
+        ++nextAvailablePlaneId;
+    }
+
+    return nextAvailablePlaneId++;
+}
+
+int Map::reserveFloorId(void)
+{
+    unique_lock<mutex> lock(mMutexMap);
+
+    while (mFloorIndex.count(nextAvailableFloorId) > 0)
+    {
+        ++nextAvailableFloorId;
+    }
+
+    return nextAvailableFloorId++;
 }
 
 void Map::AddMapDoor(Door *pDoor)
@@ -189,50 +325,54 @@ void Map::AddMapDoor(Door *pDoor)
 KeyFrame *Map::GetKeyFrameById(long unsigned int mnId)
 {
     unique_lock<mutex> lock(mMutexMap);
-    KeyFrame          *retrievedKF = mKFIndex[mnId];
-    return retrievedKF;
+    const auto         keyFrameIterator = mKFIndex.find(mnId);
+    return keyFrameIterator != mKFIndex.end() ? keyFrameIterator->second
+                                              : nullptr;
 }
 
 ORB_SLAM3::Passage *Map::GetPassageById(int passageId)
 {
-    unique_lock<mutex>  lock(mMutexMap);
-    ORB_SLAM3::Passage *fetchedPassage = mPassageIndex[passageId];
-    return fetchedPassage;
+    unique_lock<mutex> lock(mMutexMap);
+    const auto         passageIterator = mPassageIndex.find(passageId);
+    return passageIterator != mPassageIndex.end() ? passageIterator->second
+                                                  : nullptr;
 }
 
 Plane *Map::GetPlaneById(int planeId)
 {
     unique_lock<mutex> lock(mMutexMap);
-    Plane             *fetchedPlane = mPlaneIndex[planeId];
-    return fetchedPlane;
+    const auto         planeIterator = mPlaneIndex.find(planeId);
+    return planeIterator != mPlaneIndex.end() ? planeIterator->second : nullptr;
 }
 
 ORB_SLAM3::Plane *Map::GetRoomWallPlaneById(int planeId)
 {
     unique_lock<mutex> lock(mMutexMap);
-    ORB_SLAM3::Plane  *fetchedPlane = mRoomWallPlaneIndex[planeId];
-    return fetchedPlane;
+    const auto         wallIterator = mRoomWallPlaneIndex.find(planeId);
+    return wallIterator != mRoomWallPlaneIndex.end() ? wallIterator->second
+                                                     : nullptr;
 }
 
 Marker *Map::GetMarkerById(int markerId)
 {
     unique_lock<mutex> lock(mMutexMap);
-    Marker            *fetchedMarker = mMarkerIndex[markerId];
-    return fetchedMarker;
+    const auto         markerIterator = mMarkerIndex.find(markerId);
+    return markerIterator != mMarkerIndex.end() ? markerIterator->second
+                                                : nullptr;
 }
 
 Floor *Map::GetFloorById(int floorId)
 {
     unique_lock<mutex> lock(mMutexMap);
-    Floor             *fetchedFloor = mFloorIndex[floorId];
-    return fetchedFloor;
+    const auto         floorIterator = mFloorIndex.find(floorId);
+    return floorIterator != mFloorIndex.end() ? floorIterator->second : nullptr;
 }
 
 Door *Map::GetDoorById(int doorId)
 {
     unique_lock<mutex> lock(mMutexMap);
-    Door              *fetchedDoor = mDoorIndex[doorId];
-    return fetchedDoor;
+    const auto         doorIterator = mDoorIndex.find(doorId);
+    return doorIterator != mDoorIndex.end() ? doorIterator->second : nullptr;
 }
 
 void Map::SetImuInitialized()
@@ -251,6 +391,11 @@ void Map::EraseMapPoint(MapPoint *pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspMapPoints.erase(pMP);
+    mvpReferenceMapPoints.erase(
+        std::remove(mvpReferenceMapPoints.begin(),
+                    mvpReferenceMapPoints.end(),
+                    pMP),
+        mvpReferenceMapPoints.end());
 
     // TODO: This only erase the pointer.
     // Delete the MapPoint
@@ -260,24 +405,80 @@ void Map::EraseMapMarker(Marker *pMarker)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspMarkers.erase(pMarker);
+
+    for (auto markerIterator = mMarkerIndex.begin();
+         markerIterator != mMarkerIndex.end();)
+    {
+        markerIterator = markerIterator->second == pMarker
+                             ? mMarkerIndex.erase(markerIterator)
+                             : std::next(markerIterator);
+    }
 }
 
 void Map::EraseMapPlane(Plane *pPlane)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspPlanes.erase(pPlane);
+
+    for (auto planeIterator = mPlaneIndex.begin();
+         planeIterator != mPlaneIndex.end();)
+    {
+        planeIterator = planeIterator->second == pPlane
+                            ? mPlaneIndex.erase(planeIterator)
+                            : std::next(planeIterator);
+    }
 }
 
 void Map::EraseRoomWallPlane(ORB_SLAM3::Plane *pPlane)
 {
     unique_lock<mutex> lock(mMutexMap);
-    mRoomWallPlaneIndex.erase(pPlane->getId());
+
+    for (auto wallIterator = mRoomWallPlaneIndex.begin();
+         wallIterator != mRoomWallPlaneIndex.end();)
+    {
+        wallIterator = wallIterator->second == pPlane
+                           ? mRoomWallPlaneIndex.erase(wallIterator)
+                           : std::next(wallIterator);
+    }
 }
 
 void Map::EraseMapPassage(ORB_SLAM3::Passage *pPassage)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspPassages.erase(pPassage);
+
+    for (auto passageIterator = mPassageIndex.begin();
+         passageIterator != mPassageIndex.end();)
+    {
+        passageIterator = passageIterator->second == pPassage
+                              ? mPassageIndex.erase(passageIterator)
+                              : std::next(passageIterator);
+    }
+}
+
+void Map::EraseMapFloor(ORB_SLAM3::Floor *p_floor_in)
+{
+    unique_lock<mutex> lock(mMutexMap);
+    mspFloors.erase(p_floor_in);
+
+    for (auto floorIterator = mFloorIndex.begin();
+         floorIterator != mFloorIndex.end();)
+    {
+        floorIterator = floorIterator->second == p_floor_in
+                            ? mFloorIndex.erase(floorIterator)
+                            : std::next(floorIterator);
+    }
+}
+
+void Map::ClearTransferredEntityIndexes()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    mFloorIndex.clear();
+    mPlaneIndex.clear();
+    mMarkerIndex.clear();
+    mKFIndex.clear();
+    mPassageIndex.clear();
+    mRoomWallPlaneIndex.clear();
 }
 
 void Map::EraseDetectedMapRoom(Room *pRoom)
@@ -296,6 +497,23 @@ void Map::EraseKeyFrame(KeyFrame *pKF)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspKeyFrames.erase(pKF);
+    mKFIndex.erase(pKF->mnId);
+    mvpKeyFrameOrigins.erase(
+        std::remove(mvpKeyFrameOrigins.begin(),
+                    mvpKeyFrameOrigins.end(),
+                    pKF),
+        mvpKeyFrameOrigins.end());
+
+    if (mpFirstRegionKF == pKF)
+    {
+        mpFirstRegionKF = nullptr;
+    }
+
+    if (mpKFinitial == pKF)
+    {
+        mpKFinitial = nullptr;
+    }
+
     if (mspKeyFrames.size() > 0)
     {
         if (pKF->mnId == mpKFlowerID->mnId)
@@ -304,6 +522,11 @@ void Map::EraseKeyFrame(KeyFrame *pKF)
                 vector<KeyFrame *>(mspKeyFrames.begin(), mspKeyFrames.end());
             sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
             mpKFlowerID = vpKFs[0];
+        }
+
+        if (mpKFinitial == nullptr)
+        {
+            mpKFinitial = mpKFlowerID;
         }
     }
     else
@@ -393,23 +616,46 @@ vector<Plane *> Map::GetAllPlanes()
 
 Plane *Map::GetBiggestGroundPlane()
 {
-    Plane          *biggestGroundPlane = nullptr;
-    size_t          maxPoints          = 0;
-    vector<Plane *> planes             = GetAllPlanes();
-    for (auto sit = planes.begin(); sit != planes.end(); sit++)
+    Plane *bestGroundPlane = nullptr;
+    std::tuple<std::size_t, std::size_t, int> bestEvidence{0U, 0U, 0};
+    bool hasBestEvidence = false;
+
+    for (Plane *pPlane : GetAllPlanes())
     {
-        Plane *pPlane = *sit;
-        if (pPlane->getPlaneType() == Plane::planeVariant::GROUND)
+        if (pPlane == nullptr || pPlane->isBad() ||
+            pPlane->getPlaneType() != Plane::planeVariant::GROUND)
         {
-            size_t numPoints = pPlane->getMapClouds()->size();
-            if (numPoints > maxPoints)
-            {
-                maxPoints          = numPoints;
-                biggestGroundPlane = pPlane;
-            }
+            continue;
+        }
+
+        const Plane::GeometrySnapshot geometry =
+            pPlane->getGeometrySnapshot();
+        const double normalNorm = geometry.equation_World.head<3>().norm();
+        if (!geometry.equation_World.allFinite() ||
+            !std::isfinite(normalNorm) || normalNorm < 1e-8)
+        {
+            continue;
+        }
+
+        if (geometry.cloudGeneration != geometry.successfulRefitGeneration ||
+            geometry.finiteSupportCount == 0U ||
+            std::abs(normalNorm - 1.0) > 1e-3)
+        {
+            continue;
+        }
+
+        const auto evidence =
+            std::make_tuple(geometry.finiteSupportCount,
+                            geometry.observationCount,
+                            -pPlane->getId());
+        if (!hasBestEvidence || evidence > bestEvidence)
+        {
+            bestEvidence = evidence;
+            bestGroundPlane = pPlane;
+            hasBestEvidence = true;
         }
     }
-    return biggestGroundPlane;
+    return bestGroundPlane;
 }
 
 std::vector<ORB_SLAM3::Passage *> Map::GetAllPassages()
@@ -439,6 +685,13 @@ vector<Room *> Map::GetAllDetectedMapRooms()
 }
 
 vector<Room *> Map::GetAllMarkerBasedMapRooms()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return vector<Room *>(mspMarkerBasedRooms.begin(),
+                          mspMarkerBasedRooms.end());
+}
+
+vector<Room *> Map::GetAllCandidateMapRooms()
 {
     unique_lock<mutex> lock(mMutexMap);
     return vector<Room *>(mspMarkerBasedRooms.begin(),
@@ -533,8 +786,18 @@ void Map::clear()
     mspPlanes.clear();
     mspMarkers.clear();
     mspPassages.clear();
+    mspFloors.clear();
+    mspDoors.clear();
     mspMapPoints.clear();
     mspKeyFrames.clear();
+
+    mPlaneIndex.clear();
+    mMarkerIndex.clear();
+    mPassageIndex.clear();
+    mFloorIndex.clear();
+    mDoorIndex.clear();
+    mKFIndex.clear();
+    mRoomWallPlaneIndex.clear();
 
     skeletonClusterPoints.clear();
     mSkeletonEdges.clear();
@@ -556,12 +819,12 @@ bool Map::IsInUse()
 
 void Map::SetBad()
 {
-    mbBad = true;
+    mbBad.store(true, std::memory_order_release);
 }
 
 bool Map::IsBad()
 {
-    return mbBad;
+    return mbBad.load(std::memory_order_acquire);
 }
 
 void Map::ApplyScaledRotation(const Sophus::SE3f &T,
@@ -574,6 +837,10 @@ void Map::ApplyScaledRotation(const Sophus::SE3f &T,
     Sophus::SE3f    Tyw = T;
     Eigen::Matrix3f Ryw = Tyw.rotationMatrix();
     Eigen::Vector3f tyw = Tyw.translation();
+
+    const g2o::Sim3 transform_oldWorldToNewWorld(Ryw.cast<double>(),
+                                                 tyw.cast<double>(),
+                                                 static_cast<double>(s));
 
     for (set<KeyFrame *>::iterator sit = mspKeyFrames.begin();
          sit != mspKeyFrames.end();
@@ -601,15 +868,72 @@ void Map::ApplyScaledRotation(const Sophus::SE3f &T,
         pMP->UpdateNormalAndDepth();
     }
 
-    for (set<Marker *>::iterator sit = mspMarkers.begin();
-         sit != mspMarkers.end();
-         sit++)
+    for (Plane *p_plane : mspPlanes)
     {
-        // MapPoint *pMP = *sit; [TODO]
-        // pMP->SetWorldPos(s * Ryw * pMP->GetWorldPos() + tyw);
-        // pMP->UpdateNormalAndDepth();
+        if (p_plane != nullptr && !p_plane->isBad())
+        {
+            p_plane->applyTransform(transform_oldWorldToNewWorld);
+        }
     }
+
+    for (Marker *p_marker : mspMarkers)
+    {
+        if (p_marker != nullptr)
+        {
+            p_marker->applyTransform(transform_oldWorldToNewWorld);
+        }
+    }
+
+    for (ORB_SLAM3::Passage *p_passage : mspPassages)
+    {
+        if (p_passage != nullptr)
+        {
+            p_passage->applyTransform(transform_oldWorldToNewWorld);
+        }
+    }
+
+    for (Room *p_room : mspDetectedRooms)
+    {
+        if (p_room != nullptr && !p_room->isBad())
+        {
+            p_room->applyTransform(transform_oldWorldToNewWorld);
+        }
+    }
+
+    for (Room *p_room : mspMarkerBasedRooms)
+    {
+        if (p_room != nullptr && !p_room->isBad())
+        {
+            p_room->applyTransform(transform_oldWorldToNewWorld);
+        }
+    }
+
+    for (Floor *p_floor : mspFloors)
+    {
+        if (p_floor != nullptr)
+        {
+            p_floor->applyTransform(transform_oldWorldToNewWorld);
+        }
+    }
+
+    for (std::vector<Eigen::Vector3d> &cluster_world : skeletonClusterPoints)
+    {
+        for (Eigen::Vector3d &point_world_m : cluster_world)
+        {
+            point_world_m = transform_oldWorldToNewWorld.map(point_world_m);
+        }
+    }
+
+    for (auto &skeletonEdge_world : mSkeletonEdges)
+    {
+        skeletonEdge_world.first =
+            transform_oldWorldToNewWorld.map(skeletonEdge_world.first);
+        skeletonEdge_world.second =
+            transform_oldWorldToNewWorld.map(skeletonEdge_world.second);
+    }
+
     mnMapChange++;
+    mnWorldFrameEpoch++;
 }
 
 void Map::SetInertialSensor()
@@ -667,6 +991,12 @@ int Map::GetMapChangeIndex()
 {
     unique_lock<mutex> lock(mMutexMap);
     return mnMapChange;
+}
+
+std::uint64_t Map::GetWorldFrameEpoch()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return mnWorldFrameEpoch;
 }
 
 void Map::IncreaseChangeIndex()

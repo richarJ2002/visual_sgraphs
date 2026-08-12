@@ -23,7 +23,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Common.hpp"
+#include "common.hpp"
 
 using namespace std;
 
@@ -114,11 +114,11 @@ int main(int argc, char **argv)
     ImageGrabber igb;
     sensorType = ORB_SLAM3::System::STEREO;
 
-    pSLAM = new ORB_SLAM3::System(voc_file,
-                                  settings_file,
-                                  sys_params_file,
-                                  sensorType,
-                                  enable_pangolin);
+    p_slamSystem = new ORB_SLAM3::System(voc_file,
+                                         settings_file,
+                                         sys_params_file,
+                                         sensorType,
+                                         enable_pangolin);
 
     // Subscribe to get raw images
     message_filters::Subscriber<sensor_msgs::Image> sub_img_left(
@@ -165,7 +165,7 @@ int main(int argc, char **argv)
     ros::spin();
 
     // Stop all threads
-    pSLAM->Shutdown();
+    p_slamSystem->Shutdown();
     ros::shutdown();
 
     return 0;
@@ -200,19 +200,19 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr &msgLeft,
     // clears the buffer
     if (minMarkerTimeDiff < 0.05)
     {
-        Sophus::SE3f Tcw = pSLAM->TrackStereo(cv_ptrLeft->image,
-                                              cv_ptrRight->image,
-                                              msg_time.toSec(),
-                                              {},
-                                              "",
-                                              matchedMarkers);
+        Sophus::SE3f Tcw = p_slamSystem->TrackStereo(cv_ptrLeft->image,
+                                                     cv_ptrRight->image,
+                                                     msg_time.toSec(),
+                                                     {},
+                                                     "",
+                                                     matchedMarkers);
         markersBuffer.clear();
     }
     else
     {
-        Sophus::SE3f Tcw = pSLAM->TrackStereo(cv_ptrLeft->image,
-                                              cv_ptrRight->image,
-                                              msg_time.toSec());
+        Sophus::SE3f Tcw = p_slamSystem->TrackStereo(cv_ptrLeft->image,
+                                                     cv_ptrRight->image,
+                                                     msg_time.toSec());
     }
 
     publishTopics(msg_time);
@@ -256,7 +256,7 @@ void ImageGrabber::GrabSegmentation(
 
     // Add the segmented image to a buffer to be processed in the
     // SemanticSegmentation thread
-    pSLAM->addSegmentedImage(&tuple);
+    p_slamSystem->addSegmentedImage(&tuple);
 }
 
 void ImageGrabber::GrabVoxbloxSkeletonGraph(

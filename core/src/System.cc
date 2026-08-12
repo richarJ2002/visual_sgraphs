@@ -120,6 +120,14 @@ System::System(const string &strVocFile,
             mStrSaveAtlasToFile = (string)node;
     }
 
+    if ((mSensor == RGBD || mSensor == IMU_RGBD) && settings_ != nullptr)
+    {
+        const double stereoDepthThreshold = settings_->thDepth();
+        const double metricCloseDepth_m = settings_->b() * stereoDepthThreshold;
+        std::cout << "Stereo.ThDepth=" << stereoDepthThreshold
+                  << " closeDepthMeters=" << metricCloseDepth_m << std::endl;
+    }
+
     node          = fsSettings["loopClosing"];
     bool activeLC = true;
     if (!node.empty())
@@ -129,7 +137,7 @@ System::System(const string &strVocFile,
 
     mStrVocabularyFilePath = strVocFile;
 
-    // ORB Vocabulary
+    /* Init the ORB vocabulary */
     std::cout << "[System] Loading ORB Vocabulary ..." << std::endl;
     mpVocabulary  = new ORBVocabulary();
     bool bVocLoad = mpVocabulary->loadFromBinFile(strVocFile);
@@ -140,7 +148,7 @@ System::System(const string &strVocFile,
         exit(-1);
     }
 
-    // Create KeyFrame Database
+    /* Create keyframe database */
     mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
     /* Init flag to indicate if a previous map is loaded */
@@ -193,6 +201,10 @@ System::System(const string &strVocFile,
         mpAtlas->SetInertialSensor();
     }
 
+    /* ---------------------------------------------------------------------- *
+     * FRAME + MAP + TRACKER OBJECTS
+     * ---------------------------------------------------------------------- */
+
     /* Create Drawers. These are used by the Viewer */
     mpFrameDrawer = new FrameDrawer(mpAtlas);
     mpMapDrawer   = new MapDrawer(mpAtlas, strSettingsFile, settings_);
@@ -211,6 +223,10 @@ System::System(const string &strVocFile,
 
     /* Set the value of marker impact */
     mpTracker->SetMarkerImpact(sysParams->markers.impact);
+
+    /* ---------------------------------------------------------------------- *
+     * LOCAL MAPPTING THREAD
+     * ---------------------------------------------------------------------- */
 
     /* Initialize the Local Mapping object */
     mpLocalMapper =
@@ -245,36 +261,59 @@ System::System(const string &strVocFile,
         mpLocalMapper->mbFarPoints = false;
     }
 
-    // Initialize the Loop Closing thread and launch
-    mpLoopCloser   = new LoopClosing(mpAtlas,
+    /* ---------------------------------------------------------------------- *
+     * LOOP CLOSING THREAD
+     * ---------------------------------------------------------------------- */
+
+    /* Initialize the Loop Closing thread */
+    mpLoopCloser = new LoopClosing(mpAtlas,
                                    mpKeyFrameDatabase,
                                    mpVocabulary,
                                    mSensor != MONOCULAR,
                                    activeLC);
+
+    /* Launch the loop closing thread */
     mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
 
-    // 🚀 [vS-Graphs v.2.0] Initialize Semantic Segmentation thread and launch
-    // [TODO] - launch threads based on flags
+    /* ---------------------------------------------------------------------- *
+     * SEMANTIC SEGMENTATION THREAD
+     * ---------------------------------------------------------------------- */
+
+    /* Initialize the Semantic Segmentation thread */
     mpSemanticSegmentation = new SemanticSegmentation(mpAtlas);
+
+    /* Launch the Semantic Segmentation thread */
     mptSemanticSegmentation =
         new thread(&SemanticSegmentation::Run, mpSemanticSegmentation);
 
-    // 🚀 [vS-Graphs v.2.0] Initialize Semantics Manager thread and launch
+    /* ---------------------------------------------------------------------- *
+     * SEMANTIC MANAGER THREAD
+     * ---------------------------------------------------------------------- */
+
+    /* Initialize the Semantic Manager thread */
     mpSemanticsManager = new SemanticsManager(mpAtlas);
+
+    /* Launch the Semantic Manager thread */
     mptSemanticsManager =
         new thread(&SemanticsManager::Run, mpSemanticsManager);
 
-    // Set pointers between threads
+    /* ---------------------------------------------------------------------- *
+     * THREAD POINTER STORAGE
+     * ---------------------------------------------------------------------- */
+
+    /* Store loop closing and local mapper thread pointers in tracker object */
     mpTracker->SetLoopClosing(mpLoopCloser);
     mpTracker->SetLocalMapper(mpLocalMapper);
 
+    /* Store tracking object and loop closing thread pointer in local mapper */
     mpLocalMapper->SetTracker(mpTracker);
     mpLocalMapper->SetLoopCloser(mpLoopCloser);
 
+    /* Store tracking object and local mapper thread pointer in loop closer */
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
-    // Initialize the Viewer thread and launch
+    /* If enabled, init the viewer */
     if (bUseViewer)
     {
         mpViewer  = new Viewer(this,
@@ -289,7 +328,7 @@ System::System(const string &strVocFile,
         mpViewer->both         = mpFrameDrawer->both;
     }
 
-    // Fix verbosity
+    /* Set verbosity level */
     Verbose::SetTh(Verbose::VERBOSITY_QUIET);
 }
 
@@ -336,19 +375,27 @@ std::vector<std::vector<Eigen::Vector3d>> System::getSkeletonCluster()
     return mpAtlas->GetSkeletoClusterPoints();
 }
 
-void System::setSkeletonCluster(
-    const std::vector<std::vector<Eigen::Vector3d>> &skeletonClusterPoints)
+void System::setSkeletonCluster(const std::vector<std::vector<Eigen::Vector3d>>
+                                    &skeletonClusterPoints_World_m_in)
 {
-    /* Adding the skeleton cluster to the SemanticsManager */
-    mpAtlas->SetSkeletonClusterPoints(skeletonClusterPoints);
+    /* Keep asynchronous skeleton replacement atomic with map remerging. */
+    std::unique_lock<std::mutex> semanticUpdateLock =
+        mpAtlas->acquireSemanticUpdateLock();
+
+    /* Add the skeleton cluster to the current semantic map. */
+    mpAtlas->SetSkeletonClusterPoints(skeletonClusterPoints_World_m_in);
 }
 
 void System::setSkeletonEdges(
     const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-        &skeletonEdges)
+        &skeletonEdges_World_m_in)
 {
-    /* Store the connected skeleton edges in the Atlas */
-    mpAtlas->SetSkeletonEdges(skeletonEdges);
+    /* Keep asynchronous skeleton replacement atomic with map remerging. */
+    std::unique_lock<std::mutex> semanticUpdateLock =
+        mpAtlas->acquireSemanticUpdateLock();
+
+    /* Store the connected skeleton edges in the current semantic map. */
+    mpAtlas->SetSkeletonEdges(skeletonEdges_World_m_in);
 }
 
 void System::setGNNRoomCandidates(
@@ -423,12 +470,14 @@ Sophus::SE3f System::TrackStereo(const cv::Mat              &imLeft,
         if (mbReset)
         {
             mpTracker->Reset();
+            mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbReset          = false;
             mbResetActiveMap = false;
         }
         else if (mbResetActiveMap)
         {
             mpTracker->ResetActiveMap();
+            mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbResetActiveMap = false;
         }
     }
@@ -445,9 +494,16 @@ Sophus::SE3f System::TrackStereo(const cv::Mat              &imLeft,
                                                   envRooms);
 
     unique_lock<mutex> lock2(mMutexState);
-    mTrackingState      = mpTracker->mState;
-    mTrackedMapPoints   = mpTracker->mCurrentFrame.mvpMapPoints;
-    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+    mTrackingState           = mpTracker->mState;
+    mTrackingInliers         = mpTracker->GetMatchesInliers();
+    mLastFrameTimestamp      = timestamp;
+    mTrackedMapPoints        = mpTracker->mCurrentFrame.mvpMapPoints;
+    mTrackedKeyPointsUn      = mpTracker->mCurrentFrame.mvKeysUn;
+    mCurrentCameraPose_World = Tcw.inverse();
+    mCurrentCameraPoseValid =
+        mTrackingState == Tracking::OK &&
+        mCurrentCameraPose_World.translation().allFinite() &&
+        mCurrentCameraPose_World.rotationMatrix().allFinite();
 
     return Tcw;
 }
@@ -507,12 +563,14 @@ Sophus::SE3f
         if (mbReset)
         {
             mpTracker->Reset();
+            mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbReset          = false;
             mbResetActiveMap = false;
         }
         else if (mbResetActiveMap)
         {
             mpTracker->ResetActiveMap();
+            mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbResetActiveMap = false;
         }
     }
@@ -533,8 +591,43 @@ Sophus::SE3f
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState      = mpTracker->mState;
+    mTrackingInliers    = mpTracker->GetMatchesInliers();
+    mLastFrameTimestamp = timestamp;
     mTrackedMapPoints   = mpTracker->mCurrentFrame.mvpMapPoints;
     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+
+    mCurrentCameraPose_World = Tcw.inverse();
+    mCurrentCameraPoseValid =
+        mTrackingState == Tracking::OK &&
+        mCurrentCameraPose_World.translation().allFinite() &&
+        mCurrentCameraPose_World.rotationMatrix().allFinite();
+
+    /* Detect map restart for room-context carryover (WP1).
+     * The SemanticsManager::Run() thread performs the actual room
+     * matching once rooms exist in the new map; we only log here. */
+    {
+        Map *currentMap = mpAtlas->GetCurrentMap();
+        if (currentMap)
+        {
+            long unsigned int mapId = currentMap->GetId();
+            if (mFirstMapInit)
+            {
+                mLastProcessedMapId = mapId;
+                mFirstMapInit       = false;
+            }
+            else if (mapId != mLastProcessedMapId)
+            {
+                const long unsigned int previousMapId = mLastProcessedMapId;
+                mLastProcessedMapId                   = mapId;
+                std::cout << "[System] Map restart detected (mapId: "
+                          << previousMapId << " -> " << mapId << ")"
+                          << std::endl;
+                /* NOTE: matchRoomsToContext() is now called from
+                 * SemanticsManager::Run() after room detection, not here. */
+            }
+        }
+    }
+
     return Tcw;
 }
 
@@ -599,12 +692,14 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat              &im,
         if (mbReset)
         {
             mpTracker->Reset();
+            mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbReset          = false;
             mbResetActiveMap = false;
         }
         else if (mbResetActiveMap)
         {
             mpTracker->ResetActiveMap();
+            mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbResetActiveMap = false;
         }
     }
@@ -651,6 +746,172 @@ bool System::MapChanged()
         return false;
 }
 
+System::MissionHealthSnapshot
+    System::GetMissionHealthSnapshot(bool includeSemantics)
+{
+    MissionHealthSnapshot snapshot;
+    snapshot.inertial = mSensor == IMU_MONOCULAR || mSensor == IMU_STEREO ||
+                        mSensor == IMU_RGBD;
+
+    {
+        std::lock_guard<std::mutex> stateLock(mMutexState);
+        snapshot.frameTimestamp   = mLastFrameTimestamp;
+        snapshot.trackingState    = mTrackingState;
+        snapshot.trackingInliers  = mTrackingInliers;
+        snapshot.poseValid        = mCurrentCameraPoseValid;
+        snapshot.cameraPose_World = mCurrentCameraPose_World;
+    }
+
+    std::unique_lock<std::mutex> semanticUpdateLock;
+    if (includeSemantics)
+    {
+        semanticUpdateLock = mpAtlas->acquireSemanticUpdateLock();
+    }
+    Map *p_activeMap = mpAtlas->GetCurrentMap();
+    snapshot.mapCount =
+        static_cast<std::uint32_t>(std::max(0, mpAtlas->CountMaps()));
+    snapshot.inertialInitialized =
+        snapshot.inertial && mpAtlas->isImuInitialized();
+    snapshot.resetCount = mResetCount.load(std::memory_order_relaxed);
+
+    if (mpSemanticsManager != nullptr)
+    {
+        snapshot.currentRoomId = mpSemanticsManager->getCurrentRoomId();
+        if (snapshot.trackingState == Tracking::LOST)
+        {
+            mpSemanticsManager->onTrackingLost();
+        }
+        snapshot.lastKnownRoomId = mpSemanticsManager->getLastKnownRoomId();
+    }
+
+    if (p_activeMap != nullptr)
+    {
+        snapshot.mapId = static_cast<std::uint64_t>(p_activeMap->GetId());
+        const std::vector<KeyFrame *> keyFrames =
+            p_activeMap->GetAllKeyFrames();
+        snapshot.keyFrameCount = static_cast<std::uint32_t>(keyFrames.size());
+        KeyFrame *p_latestKeyFrame = nullptr;
+        for (KeyFrame *p_keyFrame : keyFrames)
+        {
+            if (p_keyFrame != nullptr && !p_keyFrame->isBad() &&
+                (p_latestKeyFrame == nullptr ||
+                 p_keyFrame->mnId > p_latestKeyFrame->mnId))
+            {
+                p_latestKeyFrame = p_keyFrame;
+            }
+        }
+        if (p_latestKeyFrame != nullptr)
+        {
+            snapshot.latestKeyFrameTimestamp = p_latestKeyFrame->mTimeStamp;
+            snapshot.latestKeyFramePose_World =
+                p_latestKeyFrame->GetPoseInverse();
+            snapshot.latestKeyFramePoseValid =
+                snapshot.latestKeyFramePose_World.translation().allFinite() &&
+                snapshot.latestKeyFramePose_World.rotationMatrix().allFinite();
+        }
+
+        if (includeSemantics)
+        {
+            for (Room *p_room : p_activeMap->GetAllRooms())
+            {
+                if (p_room == nullptr || p_room->isBad())
+                {
+                    continue;
+                }
+                if (p_room->getRoomVariant() != Room::roomVariant::ROOM)
+                {
+                    ++snapshot.unresolvedRoomCount;
+                    continue;
+                }
+
+                ++snapshot.confirmedRoomCount;
+                RoomHealth room;
+                room.id = p_room->getId();
+                for (Passage *p_passage : p_room->getPassages())
+                {
+                    if (p_passage != nullptr)
+                    {
+                        room.passageIds.push_back(p_passage->getId());
+                    }
+                }
+                std::sort(room.passageIds.begin(), room.passageIds.end());
+                snapshot.rooms.push_back(std::move(room));
+            }
+
+            for (Floor *p_floor : p_activeMap->GetAllFloors())
+            {
+                if (p_floor == nullptr)
+                {
+                    continue;
+                }
+                FloorHealth floor;
+                floor.id = p_floor->getId();
+                for (Room *p_room : p_floor->getRooms())
+                {
+                    if (p_room != nullptr && !p_room->isBad() &&
+                        p_room->getRoomVariant() == Room::roomVariant::ROOM)
+                    {
+                        floor.roomIds.push_back(p_room->getId());
+                        ++snapshot.floorRoomLinkCount;
+                    }
+                }
+                std::sort(floor.roomIds.begin(), floor.roomIds.end());
+                snapshot.floors.push_back(std::move(floor));
+            }
+
+            for (Passage *p_passage : p_activeMap->GetAllPassages())
+            {
+                if (p_passage == nullptr)
+                {
+                    continue;
+                }
+                PassageHealth passage;
+                passage.id       = p_passage->getId();
+                passage.passable = p_passage->isPassable();
+                passage.knownToFarCount =
+                    p_passage->getTraversalKnownToFarCount();
+                passage.farToKnownCount =
+                    p_passage->getTraversalFarToKnownCount();
+                passage.unknownCount = p_passage->getTraversalUnknownCount();
+                const Passage::KnownSideProvenance knownSide =
+                    p_passage->getKnownSideProvenance();
+                if (knownSide.pRoom != nullptr)
+                {
+                    passage.knownSideRoomId = knownSide.pRoom->getId();
+                }
+                Room *p_farSideRoom = p_passage->getProspectiveRoom();
+                if (p_farSideRoom != nullptr)
+                {
+                    passage.farSideRoomId = p_farSideRoom->getId();
+                }
+                snapshot.passages.push_back(passage);
+            }
+        }
+    }
+
+    if (semanticUpdateLock.owns_lock())
+    {
+        semanticUpdateLock.unlock();
+    }
+    if (mpLoopCloser != nullptr)
+    {
+        const LoopClosing::LoopCorrectionStatus loop =
+            mpLoopCloser->GetLoopCorrectionStatus();
+        snapshot.loopSequence              = loop.sequence;
+        snapshot.acceptedLoopCount         = loop.acceptedCount;
+        snapshot.rejectedLoopCount         = loop.rejectedCount;
+        snapshot.hasLoopEvent              = loop.hasEvent;
+        snapshot.lastLoopAccepted          = loop.lastAccepted;
+        snapshot.lastLoopMapId             = loop.lastMapId;
+        snapshot.lastLoopCurrentKeyFrameId = loop.lastCurrentKeyFrameId;
+        snapshot.lastLoopMatchedKeyFrameId = loop.lastMatchedKeyFrameId;
+        snapshot.lastLoopCurrentTimestamp  = loop.lastCurrentTimestamp;
+        snapshot.lastLoopMatchedTimestamp  = loop.lastMatchedTimestamp;
+        snapshot.lastLoopReason            = loop.lastReason;
+    }
+    return snapshot;
+}
+
 void System::Reset()
 {
     unique_lock<mutex> lock(mMutexReset);
@@ -675,10 +936,22 @@ void System::Shutdown()
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
 
+    /*
+     * LoopClosing joins its GBA worker before reporting finished. Waiting here
+     * prevents Atlas serialization from racing a final map correction.
+     */
+    while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished())
+    {
+        usleep(1000);
+    }
+
     if (!mStrSaveAtlasToFile.empty())
     {
         Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile,
                            Verbose::VERBOSITY_NORMAL);
+
+        std::unique_lock<std::mutex> semanticUpdateLock =
+            mpAtlas->acquireSemanticUpdateLock();
         SaveAtlas(FileType::BINARY_FILE);
     }
 
@@ -799,24 +1072,37 @@ void System::SaveTrajectoryEuRoC(const string &filename)
 
     cout << endl << "Saving trajectory to " << filename << " ..." << endl;
 
-    vector<Map *> vpMaps    = mpAtlas->GetAllMaps();
-    int           numMaxKFs = 0;
-    Map          *pBiggerMap;
+    vector<Map *> vpMaps      = mpAtlas->GetAllMaps();
+    std::size_t   numMaxKFs   = 0;
+    Map          *p_biggerMap = nullptr;
     std::cout << "There are " << std::to_string(vpMaps.size())
               << " maps in the atlas" << std::endl;
     for (Map *pMap : vpMaps)
     {
-        std::cout << "  Map " << std::to_string(pMap->GetId()) << " has "
-                  << std::to_string(pMap->GetAllKeyFrames().size()) << " KFs"
-                  << std::endl;
-        if (pMap->GetAllKeyFrames().size() > numMaxKFs)
+        if (pMap == nullptr)
         {
-            numMaxKFs  = pMap->GetAllKeyFrames().size();
-            pBiggerMap = pMap;
+            continue;
+        }
+
+        const std::size_t keyFrameCount = pMap->GetAllKeyFrames().size();
+
+        std::cout << "  Map " << std::to_string(pMap->GetId()) << " has "
+                  << std::to_string(keyFrameCount) << " KFs" << std::endl;
+        if (keyFrameCount > numMaxKFs)
+        {
+            numMaxKFs   = keyFrameCount;
+            p_biggerMap = pMap;
         }
     }
 
-    vector<KeyFrame *> vpKFs = pBiggerMap->GetAllKeyFrames();
+    if (p_biggerMap == nullptr)
+    {
+        std::cerr << "Cannot save a trajectory: the Atlas has no keyframes."
+                  << std::endl;
+        return;
+    }
+
+    vector<KeyFrame *> vpKFs = p_biggerMap->GetAllKeyFrames();
     sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
@@ -869,7 +1155,7 @@ void System::SaveTrajectoryEuRoC(const string &filename)
             pKF = pKF->GetParent();
         }
 
-        if (!pKF || pKF->GetMap() != pBiggerMap)
+        if (!pKF || pKF->GetMap() != p_biggerMap)
             continue;
 
         Trw = Trw * pKF->GetPose() *
@@ -998,25 +1284,25 @@ void System::SaveKeyFrameTrajectoryEuRoC(const string &filename)
     cout << endl
          << "Saving keyframe trajectory to " << filename << " ..." << endl;
 
-    vector<Map *> vpMaps = mpAtlas->GetAllMaps();
-    Map          *pBiggerMap;
-    int           numMaxKFs = 0;
+    vector<Map *> vpMaps      = mpAtlas->GetAllMaps();
+    Map          *p_biggerMap = nullptr;
+    std::size_t   numMaxKFs   = 0;
     for (Map *pMap : vpMaps)
     {
         if (pMap && pMap->GetAllKeyFrames().size() > numMaxKFs)
         {
-            numMaxKFs  = pMap->GetAllKeyFrames().size();
-            pBiggerMap = pMap;
+            numMaxKFs   = pMap->GetAllKeyFrames().size();
+            p_biggerMap = pMap;
         }
     }
 
-    if (!pBiggerMap)
+    if (!p_biggerMap)
     {
         std::cout << "There is not a map!!" << std::endl;
         return;
     }
 
-    vector<KeyFrame *> vpKFs = pBiggerMap->GetAllKeyFrames();
+    vector<KeyFrame *> vpKFs = p_biggerMap->GetAllKeyFrames();
     sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
@@ -1316,6 +1602,7 @@ void System::ChangeDataset()
     if (mpAtlas->GetCurrentMap()->KeyFramesInMap() < 12)
     {
         mpTracker->ResetActiveMap();
+        mResetCount.fetch_add(1U, std::memory_order_relaxed);
     }
     else
     {

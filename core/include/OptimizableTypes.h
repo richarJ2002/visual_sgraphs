@@ -70,6 +70,45 @@ namespace ORB_SLAM3
     };
 
     /**
+     * The edge used to connect a MapPoint vertex (SBAPointXYZ) to a Camera vertex (SE3) using depth
+     * [Note]: it creates constraint for one measurement, i.e., depth (z)
+     * For RGB-D: adds depth residual to pose optimization
+     */
+    class EdgeSE3ProjectXYZDepth : public g2o::BaseUnaryEdge<1, double, g2o::VertexSE3Expmap>
+    {
+    public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+        EdgeSE3ProjectXYZDepth() {}
+
+        bool read(std::istream &is);
+
+        bool write(std::ostream &os) const;
+
+        void computeError()
+        {
+            const g2o::VertexSE3Expmap *v1 = static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
+            // Transform 3D point to camera frame
+            Eigen::Vector3d Xc = v1->estimate().map(Xw);
+            // Depth measurement
+            double obs = _measurement;
+            // Error is difference between measured depth and estimated depth
+            _error[0] = obs - Xc(2);
+        }
+
+        bool isDepthPositive()
+        {
+            const g2o::VertexSE3Expmap *v1 = static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
+            return (v1->estimate().map(Xw))(2) > 0.0;
+        }
+
+        virtual void linearizeOplus();
+
+        Eigen::Vector3d Xw;
+        GeometricCamera *pCamera;
+    };
+
+    /**
      * The edge used to connect a MapPoint vertex (SBAPointXYZ) to a Camera vertex (SE3)
      * [Note]: it creates constraint for two measurements, i.e., (u, v)
      */

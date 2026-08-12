@@ -176,16 +176,102 @@ class SystemParams
         bool  enable_passage_detection         = true;
         float passage_centroid_distance_thresh = 1.0f;
 
+        /*!
+         * @brief Configures persistent open-passage evidence extraction.
+         *
+         *        Candidate openings must be finite wall breaches supported on
+         *        both sides by mapped wall material and confirmed in distinct
+         *        Voxblox skeleton snapshots.
+         */
+        struct PassageDetection
+        {
+            /*! @brief Minimum edge-endpoint distance from the wall, in metres.
+             */
+            float        minimumSideDistance_m = 0.15f;
+            /*! @brief Minimum absolute edge-to-wall-normal dot product. */
+            float        minimumEdgeNormalAlignment = 0.50f;
+            /*! @brief Minimum empty in-plane aperture radius, in metres. */
+            float        minimumOpeningRadius_m = 0.30f;
+            /*! @brief Passage-test expansion of finite wall bounds, in metres.
+             */
+            float        wallBoundsMargin_m = 0.10f;
+            /*! @brief Maximum duplicate-opening separation, in metres. */
+            float        duplicatePassageDistance_m = 1.00f;
+            /*! @brief Minimum absolute normal alignment for duplicate tracks.
+             */
+            float        duplicateNormalAlignment = 0.90f;
+            /*! @brief Alignment above which a nearby opening is ambiguous. */
+            float        ambiguousDuplicateNormalAlignment = 0.70f;
+            /*! @brief Maximum ambiguous plane offset, in metres. */
+            float        ambiguousDuplicatePlaneSeparation_m = 0.75f;
+            /*! @brief Maximum crossing-cluster separation, in metres. */
+            float        crossingClusterDistance_m = 0.65f;
+            /*! @brief Distinct skeleton snapshots required for confirmation. */
+            unsigned int minimumConfirmationSnapshots = 4U;
+            /*! @brief Missed snapshots retained before discarding evidence. */
+            unsigned int maximumMissedSnapshots = 4U;
+            /*! @brief Required wall extent beside each opening, in metres. */
+            float        minimumHorizontalFlankExtent_m = 0.35f;
+            /*! @brief Required mapped wall points on each opening flank. */
+            unsigned int minimumHorizontalFlankPointCount = 12U;
+        } passageDetection;
+
         struct pointcloud
         {
             Downsample     downsample;
             OutlierRemoval outlier_removal;
         } pointcloud;
 
+        /*!
+         * @brief Controls whether a semantic wall observation is substantial
+         *        enough to create a persistent mapped plane.
+         */
+        struct WallCreation
+        {
+            /*! @brief Minimum finite points in a new wall observation. */
+            unsigned int minimumPointCount = 350U;
+            /*! @brief Minimum largest in-plane dimension, in metres. */
+            float        minimumMajorExtent_m = 0.80f;
+            /*! @brief Minimum smallest in-plane dimension, in metres. */
+            float        minimumMinorExtent_m = 0.30f;
+            /*! @brief Minimum finite observed wall area, in square metres. */
+            float        minimumArea_m2 = 0.40f;
+
+            /*!
+             * @brief Requires most wall evidence to form one spatially
+             *        connected component.
+             */
+            struct Connectivity
+            {
+                /*! @brief Enables connected-component validation. */
+                bool         enabled = true;
+                /*! @brief Maximum neighbour separation, in metres. */
+                float        clusterTolerance_m = 0.15f;
+                /*! @brief Minimum points in the largest component. */
+                unsigned int minimumComponentPointCount = 300U;
+                /*! @brief Minimum fraction belonging to that component. */
+                float        minimumComponentRatio = 0.70f;
+            } connectivity;
+        } wallCreation;
+
         struct reassociate
         {
             bool  enabled            = false;
             float association_thresh = 0.2f;
+
+            /*!
+             * @brief Permits adjacent finite fragments to be fused when they
+             *        extend the same physical wall.
+             */
+            struct WallExtension
+            {
+                /*! @brief Enables finite-extent wall-fragment fusion. */
+                bool  enabled = true;
+                /*! @brief Maximum gap along either in-plane axis, in metres. */
+                float maximumInPlaneGap_m = 1.25f;
+                /*! @brief Minimum overlap on the orthogonal axis, in metres. */
+                float minimumOrthogonalOverlap_m = 0.30f;
+            } wallExtension;
         } reassociate;
     } sem_seg;
 
@@ -210,8 +296,82 @@ class SystemParams
         float        cluster_point_wall_distance_thresh             = 0.5f;
         float        cluster_centroid_wall_centroid_distance_thresh = 5.0f;
 
+        unsigned int minimumWallSupportPointCount = 2;
+        unsigned int minimumWallObservationCount  = 3;
+        unsigned int minimumUndefendedWallHoldCycles = 5;
+        float        minimumWallSupportRatio      = 0.5f;
+        float        finiteWallBoundsMargin_m     = 0.75f;
+        float        minimumFiniteWallExtent_m    = 1.0f;
+
+        struct BoundaryTopology
+        {
+            bool         enabled                       = true;
+            unsigned int minimumWallCount              = 3;
+            float        minimumWallLength_m           = 0.75f;
+            float        maximumCornerGap_m            = 0.75f;
+            float        maximumInteriorIntersection_m = 0.30f;
+            float        minimumEnclosedArea_m2        = 2.0f;
+            float        endpointTrimRatio             = 0.02f;
+            float        decisiveConflictSupportRatio  = 1.5f;
+        } boundaryTopology;
+
+        /*!
+         * @brief Configures semantic room partitioning at confirmed passages.
+         *
+         *        Voxblox free space remains connected for ESDF planning; only
+         *        the room-level interpretation cuts graph edges through a
+         *        confirmed finite opening.
+         */
+        struct PassagePartition
+        {
+            /*! @brief Enables passage-aware semantic free-space partitioning.
+             */
+            bool  enabled = true;
+            /*! @brief Edge-to-cluster vertex association limit, in metres. */
+            float edgeVertexAssociationDistance_m = 0.15f;
+            /*! @brief Minimum reconstructed graph-vertex coverage ratio. */
+            float minimumGraphCoverageRatio = 0.65f;
+            /*! @brief Expansion applied around a passage aperture, in metres.
+             */
+            float openingMargin_m = 0.20f;
+            /*! @brief Minimum edge-endpoint passage-plane distance, in metres.
+             */
+            float minimumSideDistance_m = 0.10f;
+            /*! @brief Enables repair of pre-confirmation wall associations. */
+            bool  detachWallsBeyondPassages = true;
+            /*! @brief Room/wall side-test distance threshold, in metres. */
+            float wallCentroidMinimumSideDistance_m = 0.30f;
+        } passagePartition;
+
         int gnn_version = 1;
     } room_seg;
+
+    /*!
+     * @brief Room-tracking state machine configuration (WP13 Section 18.4).
+     *
+     *        All values are calibration-dependent initial values.
+     */
+    struct room_tracking
+    {
+        /*! Minimum continuous dwell in the crossing guard before the
+         *  CONFIRMED_ROOM <-> CROSSING_PASSAGE transitions commit (seconds).
+         */
+        float crossing_dwell_s = 2.0f;
+        /*! Minimum traversal confidence (0..1) for a crossing to count. */
+        float crossing_confidence = 0.7f;
+        /*! Maximum time in LOST_WITH_LAST_ROOM before decay to
+         *  LOST_WITHOUT_ROOM (seconds). */
+        float lost_timeout_s = 30.0f;
+        /*! Maximum time in REACQUIRING_IN_NEW_MAP before decay to
+         *  LOST_WITHOUT_ROOM (seconds). */
+        float reacquire_timeout_s = 60.0f;
+        /*! Retry backoff between failed reacquire attempts (seconds). */
+        float reacquire_retry_interval_s = 5.0f;
+        /*! Maximum failed reacquire attempts before timeout applies. */
+        unsigned int reacquire_max_retries = 3U;
+        /*! Minimum planes required to attempt a reacquire. */
+        unsigned int reacquire_min_planes = 3U;
+    } room_tracking;
 
   private:
     SystemParams();

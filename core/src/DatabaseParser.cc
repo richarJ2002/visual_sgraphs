@@ -59,13 +59,9 @@ namespace ORB_SLAM3
                 envRoom->setName(envDatum.value()["name"]);
                 envRoom->setMetaMarkerId(envDatum.value()["metaMarker"]);
 
-                // Set the room variant
-                if (envDatum.value()["isCorridor"] == true)
-                    envRoom->setRoomVariant(Room::CORRIDOR);
-                else if (envDatum.value()["isCorridor"] == false)
-                    envRoom->setRoomVariant(Room::ROOM);
-                else
-                    envRoom->setRoomVariant(Room::UNDEFINED);
+                // Set the room variant (corridors are incomplete rooms, not a
+                // distinct semantic type, so every env room is a plain ROOM)
+                envRoom->setRoomVariant(Room::ROOM);
 
                 // Fill the vector
                 envRooms.push_back(envRoom);

@@ -14,12 +14,10 @@
 #include <vector>
 #include <string>
 
-#include "FClass.h"
-
 namespace DBoW2 {
 
 /// Functions to manipulate ORB descriptors
-class FORB: protected FClass
+class FORB
 {
 public:
 
@@ -89,4 +87,3 @@ public:
 } // namespace DBoW2
 
 #endif
-

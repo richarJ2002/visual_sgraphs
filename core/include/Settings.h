@@ -175,6 +175,10 @@ class Settings
     {
         return insertKFsWhenLost_;
     }
+    bool fastInit() const
+    {
+        return fastInit_;
+    }
 
     double depthMapFactor()
     {
@@ -359,6 +363,7 @@ class Settings
     double       imuThreshold_;
     Sophus::SE3f Tbc_;
     bool         insertKFsWhenLost_;
+    bool         fastInit_{false};
 
     /*
      * RGBD stuff

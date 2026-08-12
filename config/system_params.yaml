@@ -22,7 +22,7 @@ optimization:
 
   # plane to map point factor (needs marginalize_planes to be false)
   plane_map_point:
-    enabled: false
+    enabled: true
     information_gain: 1.0
   # plane equation to keyframe factor
   plane_kf:
@@ -71,10 +71,10 @@ seg:
 
   ransac:
     # The maximum number of planes to be detected in one pointcloud
-    max_planes: 3
+    max_planes: 2
 
     # The maximum distance for a point to be considered an inlier of the plane model
-    distance_thresh: 0.02
+    distance_thresh: 0.05
 
     # The maximum number of iterations for the RANSAC algorithm
     max_iterations: 800
@@ -135,13 +135,66 @@ sem_seg:
   # Passage centroid distance threshold for associating passages (in meters)
   passage_centroid_distance_thresh: 1.0
 
+  # Open-passage evidence derived from Voxblox skeleton edges. A passage is
+  # still detected before a room is complete, but a single noisy post-merge
+  # skeleton snapshot is not sufficient to create a permanent graph entity.
+  passage_detection:
+    # Minimum signed distance of both edge endpoints from the wall (metres).
+    minimum_side_distance: 0.15
+    # Minimum alignment between the skeleton edge and wall normal.
+    minimum_edge_normal_alignment: 0.50
+    # Minimum empty in-plane radius at a candidate opening (metres).
+    minimum_opening_radius: 0.30
+    # Finite wall-bound tolerance used only for passage detection (metres).
+    wall_bounds_margin: 0.10
+    # Maximum distance for tracking the same opening across revisions (metres).
+    duplicate_passage_distance: 1.00
+    # Absolute normal dot product required for duplicate passage tracks.
+    duplicate_normal_alignment: 0.90
+    # Lower normal agreement which marks a nearby hypothesis as ambiguous.
+    ambiguous_duplicate_normal_alignment: 0.70
+    # Maximum wall-plane offset for suppressing an ambiguous duplicate (metres).
+    ambiguous_duplicate_plane_separation: 0.75
+    # Maximum separation between crossings forming one opening (metres).
+    crossing_cluster_distance: 0.65
+    # Number of distinct skeleton snapshots required for confirmation.
+    minimum_confirmation_snapshots: 4
+    # Number of missed snapshots before an unconfirmed track is discarded.
+    maximum_missed_snapshots: 4
+    # Required observed wall extent on both horizontal sides of an opening.
+    minimum_horizontal_flank_extent: 0.35
+    # Minimum wall-cloud points required on each side of an opening.
+    minimum_horizontal_flank_points: 12
+
   # The amount of votes (votes are weighted votes) for a plane to be finally classified with a semantic label
   min_votes: 1.0
 
+  # Admission policy for a new persistent wall plane. Small observations may
+  # still update an existing wall, but cannot independently become a wall.
+  wall_creation:
+    minimum_point_count: 350
+    minimum_major_extent: 0.80 # metres
+    minimum_minor_extent: 0.30 # metres
+    minimum_area: 0.40 # square metres
+    connectivity:
+      enabled: true
+      cluster_tolerance: 0.15 # metres
+      minimum_component_point_count: 300
+      minimum_component_ratio: 0.70
+
   # Whether to reassociate planes with the semantic labels - after optimization, some planes may get close
   reassociate:
-    enabled: false
+    # Reconcile duplicate semantic planes after loop closure or map merge. The
+    # fusion pass rewires Room, Passage, and KeyFrame references atomically
+    # before retiring the weaker hypothesis.
+    enabled: true
     association_thresh: 0.1
+    wall_extension:
+      # Merge adjacent finite fragments only after their equations and
+      # observation sides have also been found compatible.
+      enabled: true
+      maximum_in_plane_gap: 1.25 # metres; includes a typical doorway opening
+      minimum_orthogonal_overlap: 0.30 # metres
 
   ############################## Room Segmentation Parameters ####################################
 room_seg:
@@ -180,8 +233,80 @@ room_seg:
     cluster_point_wall_distance_thresh: 1.2
     # The maximum distance from the cluster centroid to a wall centroid to be considered part of the room
     cluster_centroid_wall_centroid_distance_thresh: 4.0
+    # Minimum finite-wall support needed before linking a wall to a room
+    minimum_wall_support_points: 2
+    # Minimum keyframe observations needed before creating an orphan-wall structural element
+    minimum_wall_observations: 3
+    # Stale semantic cycles retained before an unused weak wall is retired
+    minimum_undefended_wall_hold_cycles: 5
+    # Fraction of nearby skeleton points which must project inside the observed wall bounds
+    minimum_wall_support_ratio: 0.5
+    # Tolerance around the observed finite wall bounds (metres)
+    finite_wall_bounds_margin: 0.75
+    # Minimum observed extent along each wall tangent axis (metres)
+    minimum_finite_wall_extent: 1.0
+
+# Finite-wall topology validation. Passage detection is independent: a
+  # passage may be confirmed before either adjoining boundary is complete.
+  boundary_topology:
+    # Enable wall-clash repair and closed-boundary classification.
+    enabled: true
+    # Minimum number of finite wall segments needed to close a room boundary.
+    minimum_wall_count: 3
+    # Minimum robust horizontal wall length used by the boundary model (metres).
+    minimum_wall_length: 0.5
+    # Maximum unsupported extension from an observed wall end to a corner (metres).
+    maximum_corner_gap: 1.0
+    # Maximum distance an intersection may lie inside a wall before it is
+    # treated as a clashing/T-junction association (metres).
+    maximum_interior_intersection: 0.50
+    # Minimum horizontal area enclosed by a complete room boundary (square metres).
+    minimum_enclosed_area: 0.001
+    # Fraction trimmed from each end of a wall projection to reject outliers.
+    endpoint_trim_ratio: 0.02
+    # Remove the weaker wall in a clash only when the stronger observation
+    # score exceeds it by this ratio; otherwise retain both and flag conflict.
+    decisive_conflict_support_ratio: 1.3
+
+  # Split connected Voxblox free space at confirmed openings. This prevents a
+  # skeleton component which traverses a doorway from assigning destination-
+  # room walls to the room on the other side. It does not gate room creation or
+  # passage detection on boundary completeness.
+  passage_partition:
+    enabled: true
+    # Maximum edge-endpoint to skeleton-vertex association error (metres).
+    edge_vertex_association_distance: 0.15
+    # Fall back to the original component if too little graph is reconstructed.
+    minimum_graph_coverage_ratio: 0.65
+    # Extra half-width/half-height around a passage used to cut an edge (metres).
+    opening_margin: 0.20
+    # Minimum edge-endpoint distance from the passage plane (metres).
+    minimum_side_distance: 0.10
+    # Remove an existing wall association proven to lie through an opening.
+    detach_walls_beyond_passages: true
+    # Minimum room/wall centroid distance from opposite passage sides (metres).
+    wall_centroid_minimum_side_distance: 0.30
 
   # Parameters for GNN-based room segmentation
   gnn_based:
     # Version of the GNN-based room segmentation to use
     gnn_version: 1 # 1: Older version used in S-Graphs, 2: Newer version used in VS-Graphs
+
+# Room-tracking state machine (WP13 Section 18.4). Calibration-dependent
+# initial values; tunned against the simulated office_clean survey.
+room_tracking:
+  # Minimum continuous dwell in the crossing guard before committing the
+  # CONFIRMED_ROOM <-> CROSSING_PASSAGE transitions (seconds).
+  crossing_dwell_s: 2.0
+  # Minimum traversal confidence (0..1) for a crossing to count.
+  crossing_confidence: 0.7
+  # Maximum time in LOST_WITH_LAST_ROOM before decay to LOST_WITHOUT_ROOM (s).
+  lost_timeout_s: 30.0
+  # Maximum time in REACQUIRING_IN_NEW_MAP before decay to LOST_WITHOUT_ROOM (s).
+  reacquire_timeout_s: 60.0
+  # Retry backoff between failed reacquire attempts (seconds).
+  reacquire_retry_interval_s: 5.0
+  # Maximum failed reacquire attempts before timeout applies.
+  reacquire_max_retries: 3
+  # Minimum planes required to attempt a reacquire.
+  reacquire_min_planes: 3

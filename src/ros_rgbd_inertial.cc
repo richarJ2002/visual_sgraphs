@@ -23,15 +23,25 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Common.hpp"
+#include "common.hpp"
 
 using namespace std;
 
 class ImuGrabber : public rclcpp::Node
 {
   public:
-    ImuGrabber() :
-        rclcpp::Node("imu_grabber")
+    /*!
+     * @brief Constructs the IMU adapter with the parent node's clock mode.
+     *
+     * @param[in] useSimTime_in True when timestamps must follow `/clock`.
+     */
+    explicit ImuGrabber(const bool useSimTime_in) :
+        rclcpp::Node(
+            "imu_grabber",
+            rclcpp::NodeOptions()
+                .use_global_arguments(false)
+                .parameter_overrides(
+                    {rclcpp::Parameter("use_sim_time", useSimTime_in)}))
     {
         tfBroadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this);
         staticTfBroadcaster =
@@ -48,9 +58,41 @@ class ImuGrabber : public rclcpp::Node
 class ImageGrabber : public rclcpp::Node
 {
   public:
-    ImageGrabber(std::shared_ptr<ImuGrabber> imuGrabber) :
-        Node("image_grabber"),
-        mpImuGb(std::move(imuGrabber))
+    /** A synchronized image pair and the closest available depth cloud. */
+    struct SynchronizedRgbdPacket
+    {
+        sensor_msgs::msg::Image::ConstSharedPtr       p_rgbImageMessage;
+        sensor_msgs::msg::Image::ConstSharedPtr       p_depthImageMessage;
+        sensor_msgs::msg::PointCloud2::ConstSharedPtr p_pointCloudMessage;
+    };
+
+    /**
+     * @brief Construct the synchronized RGB-D and IMU ingestion adapter.
+     *
+     * @param[in] p_imuGrabber_in Shared owner of the IMU sample buffer.
+     * @param[in] useSimTime_in True when timestamps must follow `/clock`.
+     * @param[in] maximumTrackingRate_hz_in Maximum visual estimator rate.
+     * @param[in] maximumBufferDuration_seconds_in Allowed sensor latency.
+     */
+    ImageGrabber(std::shared_ptr<ImuGrabber> p_imuGrabber_in,
+                 bool                        useSimTime_in,
+                 double                      maximumTrackingRate_hz_in,
+                 double                      maximumBufferDuration_seconds_in,
+                 bool                        directGazeboFluCloud_in) :
+        Node("image_grabber",
+             rclcpp::NodeOptions()
+                 .use_global_arguments(false)
+                 .parameter_overrides(
+                     {rclcpp::Parameter("use_sim_time", useSimTime_in)})),
+        mpImuGb(std::move(p_imuGrabber_in)),
+        minimumTrackingInterval_seconds(
+            1.0 / std::max(1.0, maximumTrackingRate_hz_in)),
+        maximumBufferedRgbdPackets(
+            static_cast<std::size_t>(
+                std::max(1.0, maximumTrackingRate_hz_in) *
+                std::max(1.0, maximumBufferDuration_seconds_in)) +
+            1U),
+        directGazeboFluCloud(directGazeboFluCloud_in)
     {
         tfBroadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this);
         staticTfBroadcaster =
@@ -58,11 +100,25 @@ class ImageGrabber : public rclcpp::Node
     }
 
     // Variables
-    std::mutex                                                mBufMutex;
-    std::atomic<bool>                                         mustStop{false};
-    std::shared_ptr<ImuGrabber>                               mpImuGb;
-    std::queue<sensor_msgs::msg::PointCloud2::ConstSharedPtr> imgPCBuf;
-    std::queue<sensor_msgs::msg::Image::ConstSharedPtr> imgRGBBuf, imgDBuf;
+    std::mutex                         mBufMutex;
+    std::atomic<bool>                  mustStop{false};
+    std::shared_ptr<ImuGrabber>        mpImuGb;
+    std::queue<SynchronizedRgbdPacket> synchronizedRgbdPacketBuffer;
+    const double                       minimumTrackingInterval_seconds;
+    const std::size_t                  maximumBufferedRgbdPackets;
+    double                             lastReceivedRgbdTimestamp_seconds{0.0};
+    bool                               hasReceivedRgbdPacket{false};
+    double                             lastAdmittedRgbdTimestamp_seconds{0.0};
+    bool                               hasAdmittedRgbdPacket{false};
+    bool                               discardInputUntilBufferDrained{false};
+    double                             lastProcessedRgbdTimestamp_seconds{0.0};
+    bool                               hasProcessedRgbdPacket{false};
+    sensor_msgs::msg::PointCloud2::ConstSharedPtr p_latestPointCloudMessage;
+    const bool                                    directGazeboFluCloud;
+    double                             lastConsumedImuTimestamp_seconds{0.0};
+    bool                               hasConsumedImuSample{false};
+    std::vector<ORB_SLAM3::IMU::Point> pendingImuMeasurements;
+    double                             pendingMaximumImuGap_seconds{0.0};
 
     void    SyncWithImu();
     // void GrabArUcoMarker(const aruco_msgs::MarkerArray &msg);
@@ -71,16 +127,37 @@ class ImageGrabber : public rclcpp::Node
            const segmenter_ros::msg::SegmenterDataMsg &msgSegImage);
     void GrabVoxbloxSkeletonGraph(
         const visualization_msgs::msg::MarkerArray &msgSkeletonGraphs);
-    void GrabRGBD(const sensor_msgs::msg::Image::ConstSharedPtr       &msgRGB,
-                  const sensor_msgs::msg::Image::ConstSharedPtr       &msgD,
-                  const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC);
+    void GrabPointCloud(
+        const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC);
+    void GrabRGBD(const sensor_msgs::msg::Image::ConstSharedPtr &msgRGB,
+                  const sensor_msgs::msg::Image::ConstSharedPtr &msgD);
 };
 
 void ImuGrabber::GrabImu(const sensor_msgs::msg::Imu::ConstSharedPtr &imu_msg)
 {
-    mBufMutex.lock();
+    std::lock_guard<std::mutex> lock(mBufMutex);
+
+    if (!imuBuf.empty() && rclcpp::Time(imu_msg->header.stamp) <=
+                               rclcpp::Time(imuBuf.back()->header.stamp))
+    {
+        RCLCPP_WARN_THROTTLE(get_logger(),
+                             *get_clock(),
+                             5000,
+                             "Discarding a non-monotonic IMU sample.");
+        return;
+    }
+
+    constexpr std::size_t maximumBufferedImuSamples = 2500;
+    if (imuBuf.size() >= maximumBufferedImuSamples)
+    {
+        imuBuf.pop();
+        RCLCPP_WARN_THROTTLE(get_logger(),
+                             *get_clock(),
+                             5000,
+                             "IMU buffer overflow; discarding oldest sample.");
+    }
+
     imuBuf.push(imu_msg);
-    mBufMutex.unlock();
 }
 
 cv::Mat ImageGrabber::GetImage(
@@ -98,6 +175,7 @@ cv::Mat ImageGrabber::GetImage(
         RCLCPP_ERROR(this->get_logger(),
                      "[Error] Problem occured while running `cv_bridge`: %s",
                      e.what());
+        return cv::Mat();
     }
 
     return cv_ptr->image.clone();
@@ -120,7 +198,7 @@ void ImageGrabber::GrabSegmentation(
     {
         cv_imgSeg =
             cv_bridge::toCvCopy(std::make_shared<sensor_msgs::msg::Image>(
-                                    msgSegImage.segmented_image),
+                                    msgSegImage.segmented_image_uncertainty),
                                 sensor_msgs::image_encodings::BGR8);
     }
     catch (cv_bridge::Exception &e)
@@ -145,7 +223,7 @@ void ImageGrabber::GrabSegmentation(
 
     // Add the segmented image to a buffer to be processed in the
     // SemanticSegmentation thread
-    pSLAM->addSegmentedImage(&tuple);
+    p_slamSystem->addSegmentedImage(&tuple);
 }
 
 void ImageGrabber::SyncWithImu()
@@ -159,119 +237,253 @@ void ImageGrabber::SyncWithImu()
 
     while (!mustStop)
     {
-        // Make sure thread synchronization is properly handled
-        bool hasData = false;
+        sensor_msgs::msg::Image::ConstSharedPtr       p_rgbImageMessage;
+        sensor_msgs::msg::Image::ConstSharedPtr       p_depthImageMessage;
+        sensor_msgs::msg::PointCloud2::ConstSharedPtr p_pointCloudMessage;
+        std::vector<ORB_SLAM3::IMU::Point>            imuMeasurements;
+        Eigen::Vector3f angularVelocity_body_radPerSec =
+            Eigen::Vector3f::Zero();
+        double imageTimestamp_seconds     = 0.0;
+        double latestImuTimestamp_seconds = 0.0;
+        bool   waitingForImu              = false;
+        double maximumImuGap_seconds      = 0.0;
+        bool   imuContinuityOverflow      = false;
+
+        /* Transfer one synchronized sensor packet while holding both buffer
+         * mutexes. Keeping every queue access inside this critical section
+         * prevents the ROS executor from replacing a frame while this thread
+         * is reading it. */
         {
-            std::lock_guard<std::mutex> lock(mBufMutex);
-            std::lock_guard<std::mutex> lock2(mpImuGb->mBufMutex);
-            hasData = !imgRGBBuf.empty() && !mpImuGb->imuBuf.empty();
+            std::scoped_lock bufferLock(mBufMutex, mpImuGb->mBufMutex);
+
+            if (!synchronizedRgbdPacketBuffer.empty() &&
+                !mpImuGb->imuBuf.empty())
+            {
+                const SynchronizedRgbdPacket &rgbdPacket =
+                    synchronizedRgbdPacketBuffer.front();
+                imageTimestamp_seconds =
+                    rclcpp::Time(rgbdPacket.p_rgbImageMessage->header.stamp)
+                        .seconds();
+                latestImuTimestamp_seconds =
+                    rclcpp::Time(mpImuGb->imuBuf.back()->header.stamp)
+                        .seconds();
+                waitingForImu =
+                    imageTimestamp_seconds > latestImuTimestamp_seconds;
+
+                if (!waitingForImu)
+                {
+                    p_rgbImageMessage   = rgbdPacket.p_rgbImageMessage;
+                    p_depthImageMessage = rgbdPacket.p_depthImageMessage;
+                    p_pointCloudMessage = rgbdPacket.p_pointCloudMessage;
+                    synchronizedRgbdPacketBuffer.pop();
+
+                    while (!mpImuGb->imuBuf.empty() &&
+                           rclcpp::Time(mpImuGb->imuBuf.front()->header.stamp)
+                                   .seconds() <= imageTimestamp_seconds)
+                    {
+                        const auto  &p_imuMessage = mpImuGb->imuBuf.front();
+                        const double imuTimestamp_seconds =
+                            rclcpp::Time(p_imuMessage->header.stamp).seconds();
+                        if (hasConsumedImuSample)
+                        {
+                            pendingMaximumImuGap_seconds =
+                                std::max(pendingMaximumImuGap_seconds,
+                                         imuTimestamp_seconds -
+                                             lastConsumedImuTimestamp_seconds);
+                        }
+                        const cv::Point3f acceleration_body_mPerSec2(
+                            p_imuMessage->linear_acceleration.x,
+                            p_imuMessage->linear_acceleration.y,
+                            p_imuMessage->linear_acceleration.z);
+                        const cv::Point3f angularVelocity_body_radPerSecCv(
+                            p_imuMessage->angular_velocity.x,
+                            p_imuMessage->angular_velocity.y,
+                            p_imuMessage->angular_velocity.z);
+
+                        constexpr std::size_t maximumPendingImuSamples = 2500U;
+                        if (pendingImuMeasurements.size() >=
+                            maximumPendingImuSamples)
+                        {
+                            pendingImuMeasurements.clear();
+                            pendingMaximumImuGap_seconds = 0.0;
+                            hasConsumedImuSample         = false;
+                            imuContinuityOverflow        = true;
+                        }
+                        pendingImuMeasurements.emplace_back(
+                            acceleration_body_mPerSec2,
+                            angularVelocity_body_radPerSecCv,
+                            imuTimestamp_seconds);
+                        angularVelocity_body_radPerSec
+                            << p_imuMessage->angular_velocity.x,
+                            p_imuMessage->angular_velocity.y,
+                            p_imuMessage->angular_velocity.z;
+                        mpImuGb->imuBuf.pop();
+                        lastConsumedImuTimestamp_seconds = imuTimestamp_seconds;
+                        hasConsumedImuSample             = true;
+                    }
+
+                    if (hasConsumedImuSample)
+                    {
+                        maximumImuGap_seconds =
+                            std::max(pendingMaximumImuGap_seconds,
+                                     imageTimestamp_seconds -
+                                         lastConsumedImuTimestamp_seconds);
+                    }
+                    imuMeasurements = pendingImuMeasurements;
+                }
+            }
         }
 
-        if (!hasData)
+        if (!p_rgbImageMessage)
         {
+            if (waitingForImu)
+            {
+                RCLCPP_WARN_THROTTLE(
+                    get_logger(),
+                    *get_clock(),
+                    5000,
+                    "Waiting for IMU data: RGB time %.3f is ahead of the "
+                    "latest IMU time %.3f.",
+                    imageTimestamp_seconds,
+                    latestImuTimestamp_seconds);
+            }
+
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
             continue;
         }
 
-        if (!imgRGBBuf.empty() && !mpImuGb->imuBuf.empty())
+        constexpr double maximumImuGapAllowed_seconds = 0.010;
+        if (imuContinuityOverflow ||
+            maximumImuGap_seconds > maximumImuGapAllowed_seconds)
         {
-            // Variables
-            double                                        tIm = 0;
-            cv::Mat                                       im, depth;
-            Eigen::Vector3f                               Wbb;
-            std::vector<ORB_SLAM3::IMU::Point>            vImuMeas;
-            sensor_msgs::msg::PointCloud2::ConstSharedPtr msgPC;
+            RCLCPP_WARN_THROTTLE(
+                get_logger(),
+                *get_clock(),
+                5000,
+                "Discarding an inertial RGB-D frame: IMU continuity failed "
+                "(gap %.4f seconds, %zu buffered samples).",
+                maximumImuGap_seconds,
+                imuMeasurements.size());
+            pendingImuMeasurements.clear();
+            pendingMaximumImuGap_seconds = 0.0;
+            hasConsumedImuSample         = false;
+            p_slamSystem->ResetActiveMap();
+            continue;
+        }
+        if (imuMeasurements.empty())
+        {
+            RCLCPP_WARN_THROTTLE(get_logger(),
+                                 *get_clock(),
+                                 5000,
+                                 "Retaining an RGB-D frame interval until IMU "
+                                 "samples are available.");
+            continue;
+        }
 
-            // Get the first image from the buffer
-            tIm = rclcpp::Time(imgRGBBuf.front()->header.stamp).seconds();
-            double latestImuTime =
-                rclcpp::Time(mpImuGb->imuBuf.back()->header.stamp).seconds();
+        const char *processingStage = "image conversion";
+        try
+        {
+            const rclcpp::Time messageTimestamp =
+                p_rgbImageMessage->header.stamp;
+            const cv::Mat rgbImage   = GetImage(p_rgbImageMessage);
+            const cv::Mat depthImage = GetImage(p_depthImageMessage);
 
-            if (tIm > latestImuTime)
+            if (rgbImage.empty() || depthImage.empty())
             {
-                RCLCPP_WARN(this->get_logger(),
-                            "[Warning] Skipping frame ... RGB time (%.3f) is "
-                            "ahead of latest IMU time (%.3f)!",
-                            tIm,
-                            latestImuTime);
+                RCLCPP_ERROR_THROTTLE(get_logger(),
+                                      *get_clock(),
+                                      5000,
+                                      "Discarding an RGB-D frame because image "
+                                      "conversion returned an empty matrix.");
                 continue;
             }
 
-            // Get the RGB image, depth image, and pointcloud from the buffers
-            this->mBufMutex.lock();
-            rclcpp::Time msg_time = imgRGBBuf.front()->header.stamp;
-            im                    = GetImage(imgRGBBuf.front());
-            imgRGBBuf.pop();
-            depth = GetImage(imgDBuf.front());
-            imgDBuf.pop();
-            msgPC = imgPCBuf.front();
-            imgPCBuf.pop();
-            this->mBufMutex.unlock();
-
-            vImuMeas.clear();
-            mpImuGb->mBufMutex.lock();
-            if (!mpImuGb->imuBuf.empty())
+            processingStage = "point-cloud conversion";
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_pointCloud;
+            sensor_msgs::msg::PointCloud2::ConstSharedPtr
+                        p_pointCloudCameraMessage;
+            std::string cloudFailureReason;
+            if (!preparePointCloudForTracking(p_pointCloudMessage,
+                                              directGazeboFluCloud,
+                                              p_pointCloud,
+                                              p_pointCloudCameraMessage,
+                                              cloudFailureReason))
             {
-                // Load imu measurements from buffer
-                while (!mpImuGb->imuBuf.empty() &&
-                       rclcpp::Time(mpImuGb->imuBuf.front()->header.stamp)
-                               .seconds() <= tIm)
-                {
-                    double t =
-                        rclcpp::Time(mpImuGb->imuBuf.front()->header.stamp)
-                            .seconds();
-                    cv::Point3f acc(
-                        mpImuGb->imuBuf.front()->linear_acceleration.x,
-                        mpImuGb->imuBuf.front()->linear_acceleration.y,
-                        mpImuGb->imuBuf.front()->linear_acceleration.z);
-                    cv::Point3f gyr(
-                        mpImuGb->imuBuf.front()->angular_velocity.x,
-                        mpImuGb->imuBuf.front()->angular_velocity.y,
-                        mpImuGb->imuBuf.front()->angular_velocity.z);
-                    vImuMeas.push_back(ORB_SLAM3::IMU::Point(acc, gyr, t));
-                    Wbb << mpImuGb->imuBuf.front()->angular_velocity.x,
-                        mpImuGb->imuBuf.front()->angular_velocity.y,
-                        mpImuGb->imuBuf.front()->angular_velocity.z;
-                    mpImuGb->imuBuf.pop();
-                }
+                RCLCPP_WARN_THROTTLE(get_logger(),
+                                     *get_clock(),
+                                     5000,
+                                     "Discarding point cloud: %s.",
+                                     cloudFailureReason.c_str());
+                continue;
             }
-            mpImuGb->mBufMutex.unlock();
 
-            // Convert pointclouds from ros to pcl format
-            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(
-                new pcl::PointCloud<pcl::PointXYZRGB>);
-            pcl::fromROSMsg(*msgPC, *cloud);
+            processingStage    = "marker association";
+            auto nearestMarker = findNearestMarker(imageTimestamp_seconds);
+            const double markerTimeDifference_seconds = nearestMarker.first;
+            std::vector<ORB_SLAM3::Marker *> matchedMarkers =
+                std::move(nearestMarker.second);
 
-            // Find the marker with the minimum time difference compared to the
-            // current frame
-            std::pair<double, std::vector<ORB_SLAM3::Marker *>> result =
-                findNearestMarker(tIm);
-            double                           minMarkerTimeDiff = result.first;
-            std::vector<ORB_SLAM3::Marker *> matchedMarkers    = result.second;
-
-            // Tracking process sends markers found in this frame for tracking
-            // and clears the buffer
-            if (minMarkerTimeDiff < 0.05)
+            processingStage = "inertial RGB-D tracking";
+            if (markerTimeDifference_seconds < 0.05)
             {
-                pSLAM->TrackRGBD(im,
-                                 depth,
-                                 cloud,
-                                 tIm,
-                                 vImuMeas,
-                                 "",
-                                 matchedMarkers);
+                p_slamSystem->TrackRGBD(rgbImage,
+                                        depthImage,
+                                        p_pointCloud,
+                                        imageTimestamp_seconds,
+                                        imuMeasurements,
+                                        "",
+                                        matchedMarkers);
                 markersBuffer.clear();
             }
             else
             {
-                pSLAM->TrackRGBD(im, depth, cloud, tIm, vImuMeas);
+                p_slamSystem->TrackRGBD(rgbImage,
+                                        depthImage,
+                                        p_pointCloud,
+                                        imageTimestamp_seconds,
+                                        imuMeasurements);
             }
 
-            publishTopics(msg_time, Wbb, msgPC);
+            if (hasProcessedRgbdPacket)
+            {
+                const double processedFrameInterval_seconds =
+                    imageTimestamp_seconds - lastProcessedRgbdTimestamp_seconds;
+                if (processedFrameInterval_seconds > 0.5)
+                {
+                    RCLCPP_WARN(
+                        get_logger(),
+                        "Estimator input discontinuity: consecutive RGB-D "
+                        "timestamps differ by %.3f seconds.",
+                        processedFrameInterval_seconds);
+                }
+            }
+            lastProcessedRgbdTimestamp_seconds = imageTimestamp_seconds;
+            hasProcessedRgbdPacket             = true;
+
+            /* Only a completed TrackRGBD call commits this IMU interval. A
+             * rejected image or cloud therefore leaves every sample available
+             * for the next accepted visual frame. */
+            pendingImuMeasurements.clear();
+            pendingMaximumImuGap_seconds = 0.0;
+
+            processingStage = "ROS publication";
+            publishTopics(messageTimestamp,
+                          angularVelocity_body_radPerSec,
+                          p_pointCloudCameraMessage);
+        }
+        catch (const std::exception &exception)
+        {
+            RCLCPP_ERROR_THROTTLE(
+                get_logger(),
+                *get_clock(),
+                5000,
+                "Discarding a synchronized sensor frame after "
+                "an exception during %s: %s",
+                processingStage,
+                exception.what());
         }
 
-        std::chrono::milliseconds tSleep(1);
-        std::this_thread::sleep_for(tSleep);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
@@ -301,6 +513,9 @@ int main(int argc, char **argv)
     node->declare_parameter<std::string>("voc_file", "file_not_set");
     node->declare_parameter<std::string>("settings_file", "file_not_set");
     node->declare_parameter<std::string>("sys_params_file", "file_not_set");
+    node->declare_parameter<double>("maximum_tracking_rate_hz", 30.0);
+    node->declare_parameter<double>("maximum_sensor_buffer_seconds", 3.0);
+    node->declare_parameter<bool>("direct_gazebo_flu_cloud", false);
     node->declare_parameter<std::string>("frame_structural_element",
                                          "struc_elem");
     node->declare_parameter<std::string>("frame_building_component",
@@ -343,16 +558,36 @@ int main(int argc, char **argv)
     pubStaticTransform  = node->get_parameter("static_transform").as_bool();
     bool enablePangolin = node->get_parameter("enable_pangolin").as_bool();
 
-    // Initializing system threads and getting ready to process frames
-    auto imugb = std::make_shared<ImuGrabber>();
-    auto igb   = std::make_shared<ImageGrabber>(imugb);
+    const double maximumTrackingRate_hz =
+        node->get_parameter("maximum_tracking_rate_hz").as_double();
+    const double maximumSensorBuffer_seconds =
+        node->get_parameter("maximum_sensor_buffer_seconds").as_double();
+    const bool directGazeboFluCloud =
+        node->get_parameter("direct_gazebo_flu_cloud").as_bool();
 
-    sensorType = ORB_SLAM3::System::IMU_RGBD;
-    pSLAM      = new ORB_SLAM3::System(vocFile,
-                                  settingsFile,
-                                  sysParamsFile,
-                                  sensorType,
-                                  enablePangolin);
+    if (maximumTrackingRate_hz <= 0.0 || maximumSensorBuffer_seconds <= 0.0)
+    {
+        RCLCPP_ERROR(node->get_logger(),
+                     "Sensor admission parameters must be positive.");
+        rclcpp::shutdown();
+        return 1;
+    }
+
+    // Initializing system threads and getting ready to process frames
+    const bool useSimTime = node->get_parameter("use_sim_time").as_bool();
+    auto       imugb      = std::make_shared<ImuGrabber>(useSimTime);
+    auto       igb        = std::make_shared<ImageGrabber>(imugb,
+                                              useSimTime,
+                                              maximumTrackingRate_hz,
+                                              maximumSensorBuffer_seconds,
+                                              directGazeboFluCloud);
+
+    sensorType   = ORB_SLAM3::System::IMU_RGBD;
+    p_slamSystem = new ORB_SLAM3::System(vocFile,
+                                         settingsFile,
+                                         sysParamsFile,
+                                         sensorType,
+                                         enablePangolin);
 
     // Subscribe to get raw images (message_filters in ROS2)
     using message_filters::Subscriber;
@@ -368,39 +603,70 @@ int main(int argc, char **argv)
     imu_qos.reliability(rclcpp::ReliabilityPolicy::BestEffort);
     imu_qos.durability(rclcpp::DurabilityPolicy::Volatile);
 
+    /* Keep high-rate sensor ingestion independent from semantic callbacks.
+     * A single mutually-exclusive callback group allowed point-cloud and
+     * segmentation work to starve RGB-D and IMU delivery, which is fatal to
+     * inertial preintegration even when every source topic is healthy. */
+    const auto imuCallbackGroup = node->create_callback_group(
+        rclcpp::CallbackGroupType::MutuallyExclusive);
+    const auto visualCallbackGroup = node->create_callback_group(
+        rclcpp::CallbackGroupType::MutuallyExclusive);
+    const auto semanticCallbackGroup = node->create_callback_group(
+        rclcpp::CallbackGroupType::MutuallyExclusive);
+    const auto skeletonCallbackGroup = node->create_callback_group(
+        rclcpp::CallbackGroupType::MutuallyExclusive);
+
+    rclcpp::SubscriptionOptions imuSubscriptionOptions;
+    imuSubscriptionOptions.callback_group = imuCallbackGroup;
+    rclcpp::SubscriptionOptions visualSubscriptionOptions;
+    visualSubscriptionOptions.callback_group = visualCallbackGroup;
+    rclcpp::SubscriptionOptions semanticSubscriptionOptions;
+    semanticSubscriptionOptions.callback_group = semanticCallbackGroup;
+    rclcpp::SubscriptionOptions skeletonSubscriptionOptions;
+    skeletonSubscriptionOptions.callback_group = skeletonCallbackGroup;
+
     auto subImu = node->create_subscription<Imu>(
         "/imu",
         imu_qos,
-        [imugb, node](const Imu::ConstSharedPtr msg) { imugb->GrabImu(msg); });
+        [imugb](const Imu::ConstSharedPtr msg) { imugb->GrabImu(msg); },
+        imuSubscriptionOptions);
 
     auto subImgRGB =
         std::make_shared<Subscriber<Image>>(node.get(),
-                                            "/camera/rgb/image_raw");
-    auto subPointcloud =
-        std::make_shared<Subscriber<PointCloud2>>(node.get(),
-                                                  "/camera/depth/points");
+                                            "/camera/rgb/image_raw",
+                                            rmw_qos_profile_sensor_data,
+                                            visualSubscriptionOptions);
     auto subImgDepth = std::make_shared<Subscriber<Image>>(
         node.get(),
-        "/camera/depth_registered/image_raw");
+        "/camera/depth_registered/image_raw",
+        rmw_qos_profile_sensor_data,
+        visualSubscriptionOptions);
 
-    typedef ApproximateTime<Image, Image, PointCloud2> syncPolicy;
+    auto subPointcloud = node->create_subscription<PointCloud2>(
+        "/camera/depth/points",
+        rclcpp::SensorDataQoS(),
+        [igb](const PointCloud2::ConstSharedPtr msg)
+        { igb->GrabPointCloud(msg); },
+        visualSubscriptionOptions);
+
+    typedef ApproximateTime<Image, Image> syncPolicy;
     auto sync = std::make_shared<Synchronizer<syncPolicy>>(syncPolicy(10),
                                                            *subImgRGB,
-                                                           *subImgDepth,
-                                                           *subPointcloud);
+                                                           *subImgDepth);
+    sync->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.010));
     sync->registerCallback(std::bind(&ImageGrabber::GrabRGBD,
                                      igb.get(),
                                      std::placeholders::_1,
-                                     std::placeholders::_2,
-                                     std::placeholders::_3));
+                                     std::placeholders::_2));
 
     // Subscriber to get segmentation results from the SemanticSegmenter module
     auto subSegmentedImage =
         node->create_subscription<segmenter_ros::msg::SegmenterDataMsg>(
             "/camera/color/image_segment",
-            50,
+            rclcpp::QoS(rclcpp::KeepLast(50)).reliable().transient_local(),
             [igb](const segmenter_ros::msg::SegmenterDataMsg::SharedPtr msg)
-            { igb->GrabSegmentation(*msg); });
+            { igb->GrabSegmentation(*msg); },
+            semanticSubscriptionOptions);
 
     // Subsriber to get skeletonized graph from the `voxblox` module
     auto subVoxbloxSkeletonMesh =
@@ -408,49 +674,192 @@ int main(int argc, char **argv)
             "/voxblox_skeletonizer/sparse_graph",
             1,
             [igb](const visualization_msgs::msg::MarkerArray::SharedPtr msg)
-            { igb->GrabVoxbloxSkeletonGraph(*msg); });
+            { igb->GrabVoxbloxSkeletonGraph(*msg); },
+            skeletonSubscriptionOptions);
 
     static std::shared_ptr<image_transport::ImageTransport> image_transport =
         std::make_shared<image_transport::ImageTransport>(node);
     setupPublishers(node, image_transport, nodeName);
+    setupServices(node, nodeName);
 
     // Syncing images with IMU
     std::thread sync_thread(&ImageGrabber::SyncWithImu, igb);
 
-    rclcpp::spin(node);
-
-    // Stop all threads
-    pSLAM->Shutdown();
+    rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(),
+                                                      4U);
+    executor.add_node(node);
+    executor.add_node(imugb);
+    executor.add_node(igb);
+    executor.spin();
 
     // Signal the sync thread to stop and wait for it
     igb->mustStop = true;
     sync_thread.join();
+
+    // No sensor worker may call TrackRGBD while SLAM threads are stopping.
+    p_slamSystem->Shutdown();
 
     rclcpp::shutdown();
 
     return 0;
 }
 
-void ImageGrabber::GrabRGBD(
-    const sensor_msgs::msg::Image::ConstSharedPtr       &msgRGB,
-    const sensor_msgs::msg::Image::ConstSharedPtr       &msgD,
+void ImageGrabber::GrabPointCloud(
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC)
 {
-    mBufMutex.lock();
+    std::lock_guard<std::mutex> lock(mBufMutex);
 
-    if (!imgRGBBuf.empty())
-        imgRGBBuf.pop();
-    imgRGBBuf.push(msgRGB);
+    if (p_latestPointCloudMessage &&
+        rclcpp::Time(msgPC->header.stamp) <=
+            rclcpp::Time(p_latestPointCloudMessage->header.stamp))
+    {
+        RCLCPP_WARN_THROTTLE(get_logger(),
+                             *get_clock(),
+                             5000,
+                             "Discarding a non-monotonic point cloud.");
+        return;
+    }
 
-    if (!imgDBuf.empty())
-        imgDBuf.pop();
-    imgDBuf.push(msgD);
+    p_latestPointCloudMessage = msgPC;
+}
 
-    if (!imgPCBuf.empty())
-        imgPCBuf.pop();
-    imgPCBuf.push(msgPC);
+void ImageGrabber::GrabRGBD(
+    const sensor_msgs::msg::Image::ConstSharedPtr &msgRGB,
+    const sensor_msgs::msg::Image::ConstSharedPtr &msgD)
+{
+    std::lock_guard<std::mutex> lock(mBufMutex);
 
-    mBufMutex.unlock();
+    if (!p_latestPointCloudMessage)
+    {
+        RCLCPP_WARN_THROTTLE(get_logger(),
+                             *get_clock(),
+                             5000,
+                             "Waiting for the first point cloud.");
+        return;
+    }
+
+    const auto p_pointCloudMessage = p_latestPointCloudMessage;
+
+    if (discardInputUntilBufferDrained)
+    {
+        if (!synchronizedRgbdPacketBuffer.empty())
+            return;
+
+        {
+            std::lock_guard<std::mutex> imuBufferLock(mpImuGb->mBufMutex);
+            std::queue<sensor_msgs::msg::Imu::ConstSharedPtr> emptyImuBuffer;
+            mpImuGb->imuBuf.swap(emptyImuBuffer);
+        }
+
+        p_slamSystem->ResetActiveMap();
+        discardInputUntilBufferDrained = false;
+        hasAdmittedRgbdPacket          = false;
+
+        RCLCPP_WARN(get_logger(),
+                    "Restarting the active map after a sustained sensor "
+                    "processing overload.");
+        return;
+    }
+
+    const double rgbTimestamp_seconds =
+        rclcpp::Time(msgRGB->header.stamp).seconds();
+    const double depthTimestamp_seconds =
+        rclcpp::Time(msgD->header.stamp).seconds();
+    const double pointCloudTimestamp_seconds =
+        rclcpp::Time(p_pointCloudMessage->header.stamp).seconds();
+
+    if (hasReceivedRgbdPacket)
+    {
+        const double receivedFrameInterval_seconds =
+            rgbTimestamp_seconds - lastReceivedRgbdTimestamp_seconds;
+        if (receivedFrameInterval_seconds > 0.5)
+        {
+            RCLCPP_WARN(get_logger(),
+                        "RGB-D synchronizer input discontinuity: consecutive "
+                        "image pairs differ by %.3f seconds.",
+                        receivedFrameInterval_seconds);
+        }
+    }
+    lastReceivedRgbdTimestamp_seconds = rgbTimestamp_seconds;
+    hasReceivedRgbdPacket             = true;
+
+    constexpr double maximumImageTimestampSkew_seconds = 0.010;
+    if (std::abs(rgbTimestamp_seconds - depthTimestamp_seconds) >
+        maximumImageTimestampSkew_seconds)
+    {
+        RCLCPP_WARN_THROTTLE(
+            get_logger(),
+            *get_clock(),
+            5000,
+            "Discarding an RGB-D image pair whose timestamps differ by "
+            "%.3f seconds.",
+            std::abs(rgbTimestamp_seconds - depthTimestamp_seconds));
+        return;
+    }
+
+    constexpr double maximumPointCloudAge_seconds = 0.033;
+    const double     cloudImageSkew_seconds       = std::max(
+        std::abs(rgbTimestamp_seconds - pointCloudTimestamp_seconds),
+        std::abs(depthTimestamp_seconds - pointCloudTimestamp_seconds));
+    if (cloudImageSkew_seconds > maximumPointCloudAge_seconds)
+    {
+        RCLCPP_WARN_THROTTLE(
+            get_logger(),
+            *get_clock(),
+            5000,
+            "Discarding a point cloud %.3f seconds from the RGB-D image time.",
+            cloudImageSkew_seconds);
+        return;
+    }
+
+    if (hasAdmittedRgbdPacket &&
+        rgbTimestamp_seconds <= lastAdmittedRgbdTimestamp_seconds)
+    {
+        RCLCPP_WARN_THROTTLE(get_logger(),
+                             *get_clock(),
+                             5000,
+                             "Discarding a non-monotonic RGB-D packet.");
+        return;
+    }
+
+    /*!
+     * Gazebo publishes a 30 Hz sensor on discrete simulation steps, so a
+     * nominal 33.333 ms period can alternate between 33 and 34 ms. Admit that
+     * bounded quantization without allowing a genuinely faster stream through
+     * the configured tracking-rate limit.
+     */
+    const double trackingIntervalTolerance_seconds =
+        std::min(1e-3, 0.05 * minimumTrackingInterval_seconds);
+
+    if (hasAdmittedRgbdPacket && rgbTimestamp_seconds -
+                                         lastAdmittedRgbdTimestamp_seconds +
+                                         trackingIntervalTolerance_seconds <
+                                     minimumTrackingInterval_seconds)
+    {
+        return;
+    }
+
+    /* Buffer several consecutive frames so expensive first-map construction
+     * cannot turn normal camera traffic into an artificial timestamp jump.
+     * New frames are rejected at the latency boundary so already-admitted
+     * estimator input remains chronological and gap-free.
+     */
+    if (synchronizedRgbdPacketBuffer.size() >= maximumBufferedRgbdPackets)
+    {
+        discardInputUntilBufferDrained = true;
+        RCLCPP_WARN_THROTTLE(
+            get_logger(),
+            *get_clock(),
+            5000,
+            "RGB-D processing exceeded the %.1f-second latency budget; "
+            "discarding new packets while the estimator catches up.",
+            maximumBufferedRgbdPackets * minimumTrackingInterval_seconds);
+        return;
+    }
+
+    synchronizedRgbdPacketBuffer.push({msgRGB, msgD, p_pointCloudMessage});
+    lastAdmittedRgbdTimestamp_seconds = rgbTimestamp_seconds;
+    hasAdmittedRgbdPacket             = true;
 }
 
 /**

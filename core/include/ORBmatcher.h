@@ -56,6 +56,10 @@ namespace ORB_SLAM3
         // Used in Place Recognition (Loop Closing and Merging)
         int SearchByProjection(KeyFrame *pKF, Sophus::Sim3<float> &Scw, const std::vector<MapPoint *> &vpPoints, const std::vector<KeyFrame *> &vpPointsKFs, std::vector<MapPoint *> &vpMatched, std::vector<KeyFrame *> &vpMatchedKF, int th, float ratioHamming = 1.0);
 
+        // Depth-guided search for RGB-D: uses MapPoint tracked depth to constrain search radius
+        // Helps in low-texture repetitive corridors where visual appearance is ambiguous
+        int SearchByProjectionWithDepth(Frame &F, const std::vector<MapPoint *> &vpMapPoints, const float th, const bool bFarPoints, const float thFarPoints, const float thDepth);
+
         // Search matches between MapPoints in a KeyFrame and ORB in a Frame.
         // Brute force constrained to ORB that belong to the same vocabulary node (at a certain level)
         // Used in Relocalisation and Loop Detection

@@ -1,11 +1,20 @@
 cmake_minimum_required(VERSION 3.5)
+
+if(POLICY CMP0072)
+  cmake_policy(SET CMP0072 NEW)
+endif()
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW)
+  set(CMAKE_POLICY_DEFAULT_CMP0144 NEW)
+endif()
+
 project(vs_graphs)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
-MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
@@ -24,14 +33,14 @@ if(NOT OpenCV_FOUND)
   message(FATAL_ERROR "OpenCV 4.2 not found.")
 endif()
 
-MESSAGE("OPENCV VERSION:")
-MESSAGE(${OpenCV_VERSION})
+message(STATUS "OpenCV version: ${OpenCV_VERSION}")
 
 # Find required packages
 find_package(PCL REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(rclpy REQUIRED)
+set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -62,6 +71,7 @@ add_definitions(${PCL_DEFINITIONS})
 # Generate services
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SaveMap.srv"
+  "srv/GetMissionHealth.srv"
   "msg/VSGraphsWallData.msg"
   "msg/VSGraphsRoomData.msg"
   "msg/VSGraphsAllWallsData.msg"
@@ -138,6 +148,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/src/Types/SystemParams.cc
   core/src/SemanticSegmentation.cc
   core/src/SemanticsManager.cc
+  core/src/Semantic/RoomTracker.cc
   core/include/System.h
   core/include/Tracking.h
   core/include/LocalMapping.h
@@ -179,6 +190,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/include/Types/SystemParams.h
   core/include/SemanticSegmentation.h
   core/include/SemanticsManager.h
+  core/include/Semantic/RoomTracker.h
 )
 
 target_link_libraries(${PROJECT_NAME}_lib 
@@ -216,43 +228,7 @@ ament_target_dependencies(${PROJECT_NAME}_lib
 # ---------------------------------------------------------------------------
 
 set(COMMON_SOURCES
-  ${PROJECT_SOURCE_DIR}/src/Common/appendFloorMarkers.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/appendPassageMarkers.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/appendRoomMarkers.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/clearKFClsClouds.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/commonState.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/convertSE3fToCvMat.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/findNearestMarker.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/getPassageDisplayPoints.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/getRoomDisplayPoints.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/getSkeletonMarkerWorldTransform.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/mapPointToPointcloud.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishAllMappedWalls.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishAllPoints.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishBodyOdometry.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishCameraPose.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishFiducialMarkers.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishFramePointCloud.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishFreeSpaceClusters.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishKeyFrameImages.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishKeyFrameMarkers.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishPlanes.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishSegmentedCloud.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishStaticTFTransform.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishStructuralElements.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishTFTransform.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishTopics.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishTrackedPoints.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/publishTrackingImage.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/saveMapPointsAsPCDService.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/saveMapService.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/saveTrajectoryService.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/SE3fToTFTransform.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/setupPublishers.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/setupServices.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/setVoxbloxSkeletonCluster.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/transformSkeletonPointCached.cpp
-  ${PROJECT_SOURCE_DIR}/src/Common/transformSkeletonPointFromMarker.cpp
+  ${PROJECT_SOURCE_DIR}/src/common.cc
 )
 
 # ---------------------------------------------------------------------------
@@ -297,10 +273,14 @@ function(add_ros2_node target_name cpp_file)
     ${COMMON_DEPENDENCIES}
   )
 
-  rosidl_target_interfaces(
-    ${target_name}
+  rosidl_get_typesupport_target(
+    cpp_typesupport_target
     ${PROJECT_NAME}
-    "rosidl_typesupport_cpp"
+    rosidl_typesupport_cpp
+  )
+  target_link_libraries(
+    ${target_name}
+    "${cpp_typesupport_target}"
   )
 
   set_target_properties(${target_name} PROPERTIES
@@ -365,6 +345,26 @@ install(DIRECTORY
 )
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
+# ---------------------------------------------------------------------------
+# Tests (WP13 Phase 0/1): deterministic, no Gazebo.
+# RoomTracker is standalone, so the unit targets link its sources directly and
+# do not depend on the heavy production library. The multi-process bag-replay
+# harness (WP13 Section 19.1, category B) is intentionally deferred.
+# ---------------------------------------------------------------------------
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gtest(test_unit_skeleton
+    test/test_unit_skeleton.cpp
+    core/src/Semantic/RoomTracker.cc
+  )
+
+  ament_add_gtest(test_RoomTracker
+    test/test_RoomTracker.cpp
+    core/src/Semantic/RoomTracker.cc
+  )
+endif()
 
 # Ament package configuration
 ament_package()

@@ -112,6 +112,13 @@ namespace ORB_SLAM3
         std::vector<float> mvInvScaleFactor;
         std::vector<float> mvLevelSigma2;
         std::vector<float> mvInvLevelSigma2;
+
+    public:
+        // Adaptive FAST threshold: dynamically adjust thresholds when tracking degrades
+        void SetIniThFAST(int th) { iniThFAST = th; }
+        void SetMinThFAST(int th) { minThFAST = th; }
+        int GetIniThFAST() const { return iniThFAST; }
+        int GetMinThFAST() const { return minThFAST; }
     };
 
 } // namespace ORB_SLAM
