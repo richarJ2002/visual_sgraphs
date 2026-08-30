@@ -88,56 +88,67 @@ void Room::setMetaMarkerId(int value)
 
 Marker *Room::getMetaMarker() const
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     return metaMarker;
 }
 
 void Room::setMetaMarker(Marker *value)
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     metaMarker = value;
 }
 
 std::string Room::getName() const
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     return name;
 }
 
 void Room::setName(std::string value)
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     name = value;
 }
 
 std::string Room::getRoomTag() const
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     return mRoomTag;
 }
 
 void Room::setRoomTag(const std::string &tag)
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     mRoomTag = tag;
 }
 
 bool Room::hasRoomTag() const
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     return !mRoomTag.empty();
 }
 
 void Room::setMatchedContext(RoomContextSnapshot *ctx)
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     mpMatchedContext = ctx;
 }
 
 RoomContextSnapshot *Room::getMatchedContext() const
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     return mpMatchedContext;
 }
 
 Room::roomVariant Room::getRoomVariant()
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     return variant;
 }
 
 void Room::setRoomVariant(Room::roomVariant value)
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     variant = value;
 }
 

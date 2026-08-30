@@ -170,6 +170,12 @@ void SemanticSegmentation::Run()
     /* Spin thread */
     while (true)
     {
+        /* Graceful shutdown on System::Shutdown() */
+        if (CheckFinish())
+        {
+            break;
+        }
+
         /* Check if there are new segmented image in the buffer */
         if (segmentedImageBuffer.empty())
         {
@@ -894,6 +900,8 @@ void SemanticSegmentation::updatePlaneData(
             }
         }
     }
+
+    SetFinish();
 }
 
 void SemanticSegmentation::updatePlaneSemantics(int    planeId,
@@ -909,6 +917,30 @@ void SemanticSegmentation::updatePlaneSemantics(int    planeId,
 
     // cast a vote for the plane semantics
     matchedPlane->castWeightedVote(planeType, confidence);
+}
+
+void SemanticSegmentation::RequestFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+    mbFinishRequested = true;
+}
+
+bool SemanticSegmentation::CheckFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+    return mbFinishRequested;
+}
+
+void SemanticSegmentation::SetFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+    mbFinished = true;
+}
+
+bool SemanticSegmentation::isFinished()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+    return mbFinished;
 }
 
 } // namespace ORB_SLAM3

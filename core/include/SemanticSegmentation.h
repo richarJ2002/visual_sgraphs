@@ -53,6 +53,13 @@ class SemanticSegmentation
     // System parameters
     SystemParams *sysParams;
 
+    // Shutdown control (LocalMapping-style handshake)
+    std::mutex mMutexFinish;
+    bool       mbFinishRequested = false;
+    bool       mbFinished        = false;
+    bool       CheckFinish();
+    void       SetFinish();
+
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -142,6 +149,10 @@ class SemanticSegmentation
      *              the confidence of the class predictions
      */
     void updatePlaneSemantics(int planeId, int clsId, double confidence);
+
+    // Shutdown control
+    void RequestFinish();
+    bool isFinished();
 
     // Running the thread
     void Run();

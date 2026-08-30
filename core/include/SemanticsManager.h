@@ -25,12 +25,12 @@
 #include "Utils.h"
 
 #include <cstdint>
-#include <unordered_set>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/common/transforms.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace ORB_SLAM3
 {
@@ -57,6 +57,13 @@ class SemanticsManager
      * @brief       Serializes updates to the current/last-known room ids.
      */
     mutable std::mutex mMutexCurrentRoom;
+
+    // Shutdown control (LocalMapping-style handshake)
+    std::mutex mMutexFinish;
+    bool       mbFinishRequested = false;
+    bool       mbFinished        = false;
+    bool       CheckFinish();
+    void       SetFinish();
 
     /*!
      * @brief       Room-state machine implementing the WP13 Section 18.2
@@ -209,7 +216,8 @@ class SemanticsManager
     static constexpr int kMaxProspectiveRooms = 12;
 
     /*!
-     * @brief       Spatial deduplication distance for prospective rooms (meters).
+     * @brief       Spatial deduplication distance for prospective rooms
+     * (meters).
      */
     static constexpr double kProspectiveDedupDistance_m = 2.0;
 
@@ -539,6 +547,16 @@ class SemanticsManager
      * @brief       Method which runs the thread of the segmantic manager.
      */
     void Run(void);
+
+    /*!
+     * @brief       Requests a graceful stop of the semantic manager thread.
+     */
+    void RequestFinish();
+
+    /*!
+     * @brief       True once the semantic manager thread has exited Run().
+     */
+    bool isFinished();
 };
 } // namespace ORB_SLAM3
 

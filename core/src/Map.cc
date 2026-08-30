@@ -77,10 +77,9 @@ Map::Map(int initKFid) :
 
 Map::~Map()
 {
-    // TODO: erase all points from memory
+    // NOTE: map elements are intentionally not freed here; the destructor
+    // only drops the set references (ownership lives in the atlas/optimizer).
     mspMapPoints.clear();
-
-    // TODO: erase all keyframes from memory
     mspKeyFrames.clear();
 
     // Erase all markers from memory
@@ -106,7 +105,8 @@ void Map::AddKeyFrame(KeyFrame *pKF)
 {
     unique_lock<mutex> lock(mMutexMap);
 
-    // Check if the KeyFrames are already in the map
+    // First keyframe seeds the map (origin and lowest-id keyframe references);
+    // later keyframes are inserted with no id-duplicate check.
     if (mspKeyFrames.empty())
     {
         std::cout << "\n[Mapping] Map initialized with initial KeyFrame #"

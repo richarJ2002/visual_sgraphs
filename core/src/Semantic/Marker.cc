@@ -85,41 +85,49 @@ void Marker::setOpIdG(int value)
 
 double Marker::getTime() const
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     return time;
 }
 
 void Marker::setTime(double value)
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     time = value;
 }
 
 Marker::markerVariant Marker::getMarkerType() const
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     return markerType;
 }
 
 void Marker::setMarkerType(Marker::markerVariant newType)
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     markerType = newType;
 }
 
 bool Marker::isMarkerInGMap() const
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     return markerInGMap;
 }
 
 void Marker::setMarkerInGMap(bool value)
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     markerInGMap = value;
 }
 
 Sophus::SE3f Marker::getLocalPose() const
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     return localPose;
 }
 
 void Marker::setLocalPose(const Sophus::SE3f &value)
 {
+    std::lock_guard<std::mutex> lock(mMutexState);
     localPose = value;
 }
 

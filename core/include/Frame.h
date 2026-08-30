@@ -315,7 +315,7 @@ class Frame
     float mbf;
 
     // Stereo baseline in meters.
-    float mb;
+    float mb = 0.0f;
 
     // Threshold close/far points. Close points are inserted from 1 view.
     // Far points are inserted as in the monocular case from 2 views.
@@ -354,7 +354,7 @@ class Frame
     // MapPoints associated to keypoints, NULL pointer if no association.
     // Flag to identify outlier associations.
     std::vector<bool> mvbOutlier;
-    int               mnCloseMPs;
+    int               mnCloseMPs = 0;
 
     // Keypoints are assigned to cells in a grid to reduce matching complexity
     // when projecting MapPoints.
@@ -375,8 +375,8 @@ class Frame
     KeyFrame           *mpLastKeyFrame;
 
     // Pointer to previous frame
-    Frame              *mpPrevFrame;
-    IMU::Preintegrated *mpImuPreintegratedFrame;
+    Frame                              *mpPrevFrame;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFrame;
 
     // Current and Next Frame id.
     static long unsigned int nNextId;
@@ -445,9 +445,9 @@ class Frame
     GeometricCamera *mpCamera, *mpCamera2;
 
     // Number of KeyPoints extracted in the left and right images
-    int Nleft, Nright;
+    int Nleft = -1, Nright = -1;
     // Number of Non Lapping Keypoints
-    int monoLeft, monoRight;
+    int monoLeft = -1, monoRight = -1;
 
     // For stereo matching
     std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;

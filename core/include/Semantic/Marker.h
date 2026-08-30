@@ -120,6 +120,7 @@ class Marker
     Map               *mpMap;
     std::mutex         mMutexMap;
     mutable std::mutex mMutexGeometry;
+    mutable std::mutex mMutexState;
     mutable std::mutex mMutexObservations;
 };
 

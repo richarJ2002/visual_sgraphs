@@ -51,22 +51,24 @@ float Settings::readParameter<float>(cv::FileStorage   &fSettings,
     {
         if (required)
         {
-            std::cerr << "\t- Required parameter '" << name
-                      << "' does not exist! Aborting..." << std::endl;
+            VSLAM_LOG_ERROR(
+                "\t- Required parameter '%s' does not exist! Aborting...\n",
+                name.c_str());
             exit(-1);
         }
         else
         {
-            std::cerr << "\t- Skipping optional parameter '" << name << "' ..."
-                      << std::endl;
+            VSLAM_LOG_WARN("\t- Skipping optional parameter '%s' ...\n",
+                           name.c_str());
             found = false;
             return 0.0f;
         }
     }
     else if (!node.isReal())
     {
-        std::cerr << "\t- Parameter '" << name
-                  << "' is not a real number! Aborting..." << std::endl;
+        VSLAM_LOG_ERROR(
+            "\t- Parameter '%s' is not a real number! Aborting...\n",
+            name.c_str());
         exit(-1);
     }
     else
@@ -87,22 +89,23 @@ int Settings::readParameter<int>(cv::FileStorage   &fSettings,
     {
         if (required)
         {
-            std::cerr << "\t- Required parameter '" << name
-                      << "' does not exist! Aborting..." << std::endl;
+            VSLAM_LOG_ERROR(
+                "\t- Required parameter '%s' does not exist! Aborting...\n",
+                name.c_str());
             exit(-1);
         }
         else
         {
-            std::cerr << "\t- Skipping optional parameter '" << name << "' ..."
-                      << std::endl;
+            VSLAM_LOG_WARN("\t- Skipping optional parameter '%s' ...\n",
+                           name.c_str());
             found = false;
             return 0;
         }
     }
     else if (!node.isInt())
     {
-        std::cerr << "\t- Parameter '" << name
-                  << "' is not an integer! Aborting..." << std::endl;
+        VSLAM_LOG_ERROR("\t- Parameter '%s' is not an integer! Aborting...\n",
+                        name.c_str());
         exit(-1);
     }
     else
@@ -123,22 +126,23 @@ string Settings::readParameter<string>(cv::FileStorage   &fSettings,
     {
         if (required)
         {
-            std::cerr << "\t- Required parameter '" << name
-                      << "' does not exist! Aborting..." << std::endl;
+            VSLAM_LOG_ERROR(
+                "\t- Required parameter '%s' does not exist! Aborting...\n",
+                name.c_str());
             exit(-1);
         }
         else
         {
-            std::cerr << "\t- Skipping optional parameter '" << name << "' ..."
-                      << std::endl;
+            VSLAM_LOG_WARN("\t- Skipping optional parameter '%s' ...\n",
+                           name.c_str());
             found = false;
             return string();
         }
     }
     else if (!node.isString())
     {
-        std::cerr << "\t- Parameter '" << name
-                  << "' is not a string! Aborting..." << std::endl;
+        VSLAM_LOG_ERROR("\t- Parameter '%s' is not a string! Aborting...\n",
+                        name.c_str());
         exit(-1);
     }
     else
@@ -159,14 +163,15 @@ cv::Mat Settings::readParameter<cv::Mat>(cv::FileStorage   &fSettings,
     {
         if (required)
         {
-            std::cerr << "\t- Required parameter '" << name
-                      << "' does not exist! Aborting..." << std::endl;
+            VSLAM_LOG_ERROR(
+                "\t- Required parameter '%s' does not exist! Aborting...\n",
+                name.c_str());
             exit(-1);
         }
         else
         {
-            std::cerr << "\t- Skipping optional parameter '" << name << "' ..."
-                      << std::endl;
+            VSLAM_LOG_WARN("\t- Skipping optional parameter '%s' ...\n",
+                           name.c_str());
             found = false;
             return cv::Mat();
         }
@@ -190,63 +195,64 @@ Settings::Settings(const std::string &configFile, const int &sensor) :
     cv::FileStorage fSettings(configFile, cv::FileStorage::READ);
     if (!fSettings.isOpened())
     {
-        std::cerr << "\n[Settings] Could not open the configuration file at '"
-                  << configFile << "'! Aborting..." << std::endl;
+        VSLAM_LOG_ERROR("\n[Settings] Could not open the configuration file at "
+                        "'%s'! Aborting...\n",
+                        configFile.c_str());
         exit(-1);
     }
     else
-        std::cout << "\n[Settings] Loading configurations from '" << configFile
-                  << "'..." << std::endl;
+        VSLAM_LOG_INFO("\n[Settings] Loading configurations from '%s'...\n",
+                       configFile.c_str());
 
     // Read Camera#1 (monocular, stereo or RGB-D)
     readCamera1(fSettings);
-    std::cout << "[Settings] Camera#1 settings loaded!" << std::endl;
+    VSLAM_LOG_INFO("[Settings] Camera#1 settings loaded!\n");
 
     // Read Camera#2 (stereo)
     if (sensor_ == System::STEREO || sensor_ == System::IMU_STEREO)
     {
         readCamera2(fSettings);
-        std::cout << "[Settings] Camera#2 settings loaded!" << std::endl;
+        VSLAM_LOG_INFO("[Settings] Camera#2 settings loaded!\n");
     }
 
     // Read image info
     readImageInfo(fSettings);
-    std::cout << "[Settings] Camera info loaded!" << std::endl;
+    VSLAM_LOG_INFO("[Settings] Camera info loaded!\n");
 
     // Read IMU params
     if (sensor_ == System::IMU_MONOCULAR || sensor_ == System::IMU_STEREO ||
         sensor_ == System::IMU_RGBD)
     {
         readIMU(fSettings);
-        std::cout << "[Settings] IMU calibration settings loaded!" << std::endl;
+        VSLAM_LOG_INFO("[Settings] IMU calibration settings loaded!\n");
     }
 
     if (sensor_ == System::RGBD || sensor_ == System::IMU_RGBD)
     {
         readRGBD(fSettings);
-        std::cout << "[Settings] RGB-D settings loaded!" << std::endl;
+        VSLAM_LOG_INFO("[Settings] RGB-D settings loaded!\n");
     }
 
     // Read ORB parameters
     readORB(fSettings);
-    std::cout << "[Settings] ORB settings loaded!" << std::endl;
+    VSLAM_LOG_INFO("[Settings] ORB settings loaded!\n");
 
     // Read Viewer parameters
     readViewer(fSettings);
-    std::cout << "[Settings] Viewer settings loaded!" << std::endl;
+    VSLAM_LOG_INFO("[Settings] Viewer settings loaded!\n");
 
     // Read Atlas parameters
     readLoadAndSave(fSettings);
-    std::cout << "[Settings] ATLAS settings loaded!" << std::endl;
+    VSLAM_LOG_INFO("[Settings] ATLAS settings loaded!\n");
 
     // Read other parameters
     readOtherParameters(fSettings);
-    std::cout << "[Settings] Misc. parameters loaded!" << std::endl;
+    VSLAM_LOG_INFO("[Settings] Misc. parameters loaded!\n");
 
     if (bNeedToRectify_)
     {
         precomputeRectificationMaps();
-        std::cout << "[Settings] Computed rectification maps!" << std::endl;
+        VSLAM_LOG_INFO("[Settings] Computed rectification maps!\n");
     }
 }
 
@@ -350,8 +356,9 @@ void Settings::readCamera1(cv::FileStorage &fSettings)
     }
     else
     {
-        std::cerr << "[Settings] Could not find Camera#1 settings for '"
-                  << cameraModel << "'! Exiting ..." << std::endl;
+        VSLAM_LOG_ERROR("[Settings] Could not find Camera#1 settings for '%s'! "
+                        "Exiting ...\n",
+                        cameraModel.c_str());
         exit(-1);
     }
 }

@@ -642,6 +642,9 @@ float MapPoint::GetMaxDistanceInvariance()
 
 int MapPoint::PredictScale(const float &currentDist, KeyFrame *pKF)
 {
+    if (currentDist == 0.0f)
+        return 0;
+
     float ratio;
     {
         unique_lock<mutex> lock(mMutexPos);
@@ -659,6 +662,9 @@ int MapPoint::PredictScale(const float &currentDist, KeyFrame *pKF)
 
 int MapPoint::PredictScale(const float &currentDist, Frame *pF)
 {
+    if (currentDist == 0.0f)
+        return 0;
+
     float ratio;
     {
         unique_lock<mutex> lock(mMutexPos);
@@ -676,6 +682,7 @@ int MapPoint::PredictScale(const float &currentDist, Frame *pF)
 
 void MapPoint::PrintObservations()
 {
+    unique_lock<mutex> lock(mMutexFeatures);
     cout << "MP_OBS: MP " << mnId << endl;
     for (map<KeyFrame *, tuple<int, int>>::iterator mit = mObservations.begin(),
                                                     mend = mObservations.end();
@@ -705,15 +712,21 @@ void MapPoint::UpdateMap(Map *pMap)
 void MapPoint::PreSave(set<KeyFrame *> &spKF, set<MapPoint *> &spMP)
 {
     mBackupReplacedId = -1;
-    if (mpReplaced && spMP.find(mpReplaced) != spMP.end())
-        mBackupReplacedId = mpReplaced->mnId;
 
     mBackupObservationsId1.clear();
     mBackupObservationsId2.clear();
 
-    // Save the id and position in each KF who view it
+    // Snapshot the observation map and replaced pointer under the feature lock.
+    // Dropped keyframes are erased below, after the lock is released, because
+    // EraseObservation() takes mMutexFeatures again.
     std::map<KeyFrame *, std::tuple<int, int>> tmp_mObservations;
-    tmp_mObservations.insert(mObservations.begin(), mObservations.end());
+    {
+        unique_lock<mutex> lock(mMutexFeatures);
+        if (mpReplaced && spMP.find(mpReplaced) != spMP.end())
+            mBackupReplacedId = mpReplaced->mnId;
+
+        tmp_mObservations.insert(mObservations.begin(), mObservations.end());
+    }
 
     for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator
              it  = tmp_mObservations.begin(),
@@ -734,6 +747,7 @@ void MapPoint::PreSave(set<KeyFrame *> &spKF, set<MapPoint *> &spMP)
     }
 
     // Save the id of the reference KF
+    unique_lock<mutex> lock(mMutexFeatures);
     if (spKF.find(mpRefKF) != spKF.end())
     {
         mBackupRefKFId = mpRefKF->mnId;

@@ -139,7 +139,7 @@ int main(int argc, char **argv)
     /* Confirm number of arguments supplied are valid */
     if (argc > 1)
     {
-        RCLCPP_WARN(node->get_logger(),
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
                     "Arguments supplied via command line are ignored.");
     }
 
@@ -172,6 +172,8 @@ int main(int argc, char **argv)
 
     node->declare_parameter<bool>("direct_gazebo_flu_cloud", false);
 
+    node->declare_parameter<std::string>("log_level", "info");
+
     std::string vocFile      = node->get_parameter("voc_file").as_string();
     std::string settingsFile = node->get_parameter("settings_file").as_string();
     std::string sysParamsFile =
@@ -180,7 +182,7 @@ int main(int argc, char **argv)
     /* Confirm the VOC file is set */
     if (vocFile == "file_not_set" || settingsFile == "file_not_set")
     {
-        RCLCPP_ERROR(node->get_logger(),
+        RCLCPP_ERROR(rclcpp::get_logger("visual_sgraphs"),
                      "[Error] 'vocabulary' and 'settings' are not provided in "
                      "the launch file! Exiting...");
         rclcpp::shutdown();
@@ -190,7 +192,7 @@ int main(int argc, char **argv)
     /* Confirm there is a system params file set */
     if (sysParamsFile == "file_not_set")
     {
-        RCLCPP_ERROR(node->get_logger(),
+        RCLCPP_ERROR(rclcpp::get_logger("visual_sgraphs"),
                      "[Error] The `YAML` file containing system parameters is "
                      "not provided in the launch file! Exiting...");
         rclcpp::shutdown();
@@ -208,8 +210,10 @@ int main(int argc, char **argv)
     pubPointClouds  = node->get_parameter("publish_pointclouds").as_bool();
     frameBC = node->get_parameter("frame_building_component").as_string();
     frameSE = node->get_parameter("frame_structural_element").as_string();
-    pubStaticTransform  = node->get_parameter("static_transform").as_bool();
-    bool enablePangolin = node->get_parameter("enable_pangolin").as_bool();
+    pubStaticTransform      = node->get_parameter("static_transform").as_bool();
+    bool enablePangolin     = node->get_parameter("enable_pangolin").as_bool();
+    const auto verboseLevel = ORB_SLAM3::Verbose::StringToLevel(
+        node->get_parameter("log_level").as_string());
 
     /* Initializing system threads and getting ready to process frames */
     const bool useSimTime = node->get_parameter("use_sim_time").as_bool();
@@ -228,7 +232,10 @@ int main(int argc, char **argv)
                                          settingsFile,
                                          sysParamsFile,
                                          sensorType,
-                                         enablePangolin);
+                                         enablePangolin,
+                                         /*initFr*/ 0,
+                                         /*strSequence*/ std::string(),
+                                         verboseLevel);
 
     /* ---------------------------------------------------------------------- *
      * SETUP CALLBACKS

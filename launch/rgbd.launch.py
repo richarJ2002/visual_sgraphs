@@ -61,6 +61,16 @@ def generate_launch_description():
             ),
 
             DeclareLaunchArgument(
+                "log_level",
+                default_value="info",
+                description=(
+                    "Verbosity for core/ROS logging: quiet, error, warn, info "
+                    "or debug. Sets both the RCLCPP logger threshold and the "
+                    "core Verbose threshold via the log_level parameter."
+                ),
+            ),
+
+            DeclareLaunchArgument(
                 "semantic_scene_segmenter",
                 default_value="yoso",
                 description=("The method to segment the semantic scene "
@@ -110,10 +120,18 @@ def generate_launch_description():
                 name="vs_graphs",
                 package="vs_graphs",
                 executable="ros_rgbd",
-                output="screen",
+                output="both",
+                arguments=[
+                    "--ros-args",
+                    "--log-level",
+                    LaunchConfiguration("log_level"),
+                ],
                 parameters=[
                     {
                         "use_sim_time": LaunchConfiguration("use_sim_time")
+                    },
+                    {
+                        "log_level": LaunchConfiguration("log_level")
                     },
                     {
                         "voc_file": LaunchConfiguration(

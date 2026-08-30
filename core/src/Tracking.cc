@@ -2320,8 +2320,9 @@ void Tracking::PreintegrateIMU()
         return;
     }
 
-    IMU::Preintegrated *pImuPreintegratedFromLastFrame =
-        new IMU::Preintegrated(mLastFrame.mImuBias, mCurrentFrame.mImuCalib);
+    std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame =
+        std::make_shared<IMU::Preintegrated>(mLastFrame.mImuBias,
+                                             mCurrentFrame.mImuCalib);
 
     for (int i = 0; i < n; i++)
     {
@@ -2487,6 +2488,7 @@ void Tracking::Track()
     if (!pCurrentMap)
     {
         cout << "[ERROR] No active maps found in the ATLAS!" << endl;
+        return;
     }
 
     if (mState != NO_IMAGES_YET)
@@ -2875,27 +2877,6 @@ void Tracking::Track()
             //}
         }
 
-        // Save frame if recent relocalization, since they are used for IMU
-        // reset (as we are making copy, it shluld be once mCurrFrame is
-        // completely modified)
-        if ((mCurrentFrame.mnId < (mnLastRelocFrameId + mnFramesToResetIMU)) &&
-            (mCurrentFrame.mnId >
-             static_cast<unsigned long>(mnFramesToResetIMU)) &&
-            (mSensor == System::IMU_MONOCULAR ||
-             mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) &&
-            pCurrentMap->isImuInitialized())
-        {
-            // TODO check this situation
-            Verbose::PrintMess("Saving pointer to frame. imu needs reset...",
-                               Verbose::VERBOSITY_NORMAL);
-            Frame *pF       = new Frame(mCurrentFrame);
-            pF->mpPrevFrame = new Frame(mLastFrame);
-
-            // Load preintegration
-            pF->mpImuPreintegratedFrame =
-                new IMU::Preintegrated(mCurrentFrame.mpImuPreintegratedFrame);
-        }
-
         if (pCurrentMap->isImuInitialized())
         {
             if (bOK)
@@ -3056,11 +3037,17 @@ void Tracking::Track()
         }
         else
         {
-            // This can happen if tracking is lost
-            mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());
-            mlpReferences.push_back(mlpReferences.back());
-            mlFrameTimes.push_back(mlFrameTimes.back());
-            mlbLost.push_back(mState == LOST);
+            // The current frame carries no pose (e.g. tracking was lost):
+            // append the last stored entry to keep the trajectory aligned,
+            // when one exists.
+            if (!mlRelativeFramePoses.empty() && !mlpReferences.empty() &&
+                !mlFrameTimes.empty())
+            {
+                mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());
+                mlpReferences.push_back(mlpReferences.back());
+                mlFrameTimes.push_back(mlFrameTimes.back());
+                mlbLost.push_back(mState == LOST);
+            }
         }
     }
 
@@ -3606,7 +3593,9 @@ void Tracking::UpdateLastFrame()
 {
     // Update pose according to reference keyframe
     KeyFrame    *pRef = mLastFrame.mpReferenceKF;
-    Sophus::SE3f Tlr  = mlRelativeFramePoses.back();
+    Sophus::SE3f Tlr  = mlRelativeFramePoses.empty()
+                            ? Sophus::SE3f()
+                            : mlRelativeFramePoses.back();
     mLastFrame.SetPose(Tlr * pRef->GetPose());
 
     if (mnLastKeyFrameId == mLastFrame.mnId || mSensor == System::MONOCULAR ||
@@ -4172,6 +4161,7 @@ void Tracking::CreateNewKeyFrame()
         // We sort points by the measured depth by the stereo/RGBD sensor.
         // We create all those MapPoints whose depth < mThDepth.
         // If there are less than 100 close points we create the 100 closest.
+        // Both sensor branches intentionally use the same cap of 100.
         int maxPoint = 100;
         if (mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
             maxPoint = 100;
@@ -5110,7 +5100,7 @@ void Tracking::UpdateFrameIMU(const float      s,
 
         KeyFrame *pKF = *lRit;
 
-        while (pKF->isBad())
+        while (pKF->isBad() && pKF->GetParent())
         {
             pKF = pKF->GetParent();
         }

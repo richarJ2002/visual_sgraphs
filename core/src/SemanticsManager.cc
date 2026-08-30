@@ -749,8 +749,8 @@ SemanticsManager::SemanticsManager(Atlas *pAtlas)
         static_cast<double>(sysParams->room_tracking.lost_timeout_s);
     trackerConfig.reacquire_timeout_s =
         static_cast<double>(sysParams->room_tracking.reacquire_timeout_s);
-    trackerConfig.reacquire_retry_interval_s =
-        static_cast<double>(sysParams->room_tracking.reacquire_retry_interval_s);
+    trackerConfig.reacquire_retry_interval_s = static_cast<double>(
+        sysParams->room_tracking.reacquire_retry_interval_s);
     trackerConfig.reacquire_max_retries =
         sysParams->room_tracking.reacquire_max_retries;
     trackerConfig.reacquire_min_planes =
@@ -829,6 +829,12 @@ void SemanticsManager::Run(void)
 
     while (true)
     {
+        /* Graceful shutdown on System::Shutdown() */
+        if (CheckFinish())
+        {
+            break;
+        }
+
         /* Find the current time of the loop */
         const std::chrono::_V2::system_clock::time_point start =
             std::chrono::high_resolution_clock::now();
@@ -1494,6 +1500,9 @@ void SemanticsManager::Run(void)
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
+
+    /* Signal shutdown completion to ~System. */
+    SetFinish();
 }
 
 std::vector<std::vector<Eigen::Vector3d>>
@@ -3200,7 +3209,7 @@ void SemanticsManager::onTrackingLost(void)
     std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
     if (currentRoomId_ != lastKnownRoomId_)
     {
-        lastKnownRoomId_ = currentRoomId_;
+        lastKnownRoomId_     = currentRoomId_;
         trackingLostPending_ = true;
     }
 }
@@ -3210,14 +3219,14 @@ void SemanticsManager::updateRoomTrackerState(void)
     /* Consume the per-cycle signals. trackingLostPending_ is set on another
      * thread (System::GetMissionHealthSnapshot -> onTrackingLost), so it is
      * read and cleared under mMutexCurrentRoom. */
-    bool crossingPending  = false;
+    bool crossingPending     = false;
     bool trackingLostPending = false;
     {
         std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-        crossingPending     = crossingEventPending_;
-        trackingLostPending = trackingLostPending_;
-        crossingEventPending_     = false;
-        trackingLostPending_      = false;
+        crossingPending       = crossingEventPending_;
+        trackingLostPending   = trackingLostPending_;
+        crossingEventPending_ = false;
+        trackingLostPending_  = false;
     }
 
     const std::chrono::duration<double> elapsed =
@@ -3237,7 +3246,7 @@ void SemanticsManager::updateRoomTrackerState(void)
      * (Section 19.2). Only the very first room confirmation uses a
      * repository-available proxy: a confirmed ROOM in the active map. */
     VerificationVerdict verdict;
-    Map *p_activeMap = mpAtlas->GetCurrentMap();
+    Map                *p_activeMap = mpAtlas->GetCurrentMap();
     if (p_activeMap != nullptr &&
         roomTracker_.getState() == RoomTrackingState::UNKNOWN)
     {
@@ -3249,7 +3258,7 @@ void SemanticsManager::updateRoomTrackerState(void)
             if (p_room != nullptr && !p_room->isBad() &&
                 p_room->getRoomVariant() == Room::roomVariant::ROOM)
             {
-                verdict.pass     = true;
+                verdict.pass        = true;
                 verdict.inlierCount = 1U;
                 break;
             }
@@ -3294,7 +3303,8 @@ float SemanticsManager::computeGroundPlaneHeight(Plane *groundPlane)
         new pcl::PointCloud<pcl::PointXYZRGBA>);
     pcl::transformPointCloud(*planeCloud, *transformedCloud, mPlanePoseMat);
 
-    /* get the median height of the plane */
+    /* Not a median: partial_sort with std::greater keeps the lower half in
+       descending order, so [numPoint-1] is the upper edge of that half. */
     std::vector<float> yVals;
     for (const auto &point : transformedCloud->points)
     {
@@ -5893,9 +5903,13 @@ void SemanticsManager::suppressUndefendedWalls(void)
         const std::map<KeyFrame *, Plane::Observation> wallObservations =
             p_wall->getObservations();
 
-        for (const auto &[p_keyFrame, observation] : wallObservations)
+        /* Sweep every keyframe that references this plane, including
+         * those that hold it in mvpMapPlanes without an Observation
+         * entry, so no stale pointer survives retirement. */
+        const std::vector<KeyFrame *> allKeyFrames =
+            p_currentMap->GetAllKeyFrames();
+        for (KeyFrame *p_keyFrame : allKeyFrames)
         {
-            static_cast<void>(observation);
             if (p_keyFrame != nullptr)
             {
                 p_keyFrame->RemoveMapPlane(p_wall);
@@ -5905,7 +5919,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
         for (const auto &[p_keyFrame, observation] : wallObservations)
         {
             static_cast<void>(observation);
-            p_wall->eraseObservation(p_keyFrame);
+            if (p_keyFrame != nullptr)
+            {
+                p_wall->eraseObservation(p_keyFrame);
+            }
         }
 
         p_wall->setBad();
@@ -7598,6 +7615,30 @@ void SemanticsManager::associatePassagesToRooms(void)
     }
 
     disconnectedRoomIds_ = std::move(disconnectedRoomIds);
+}
+
+void SemanticsManager::RequestFinish(void)
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+    mbFinishRequested = true;
+}
+
+bool SemanticsManager::CheckFinish(void)
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+    return mbFinishRequested;
+}
+
+void SemanticsManager::SetFinish(void)
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+    mbFinished = true;
+}
+
+bool SemanticsManager::isFinished(void)
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+    return mbFinished;
 }
 
 } // namespace ORB_SLAM3

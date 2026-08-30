@@ -30,6 +30,7 @@
 #include <cstdint>
 #include <opencv2/core/core.hpp>
 #include <pcl/io/pcd_io.h>
+#include <rclcpp/logging.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
@@ -62,6 +63,12 @@
 namespace ORB_SLAM3
 {
 
+/*!
+ * @brief       Logging severity used by the ORB-SLAM3 core. All core output is
+ *              routed through ROS 2's logging framework on the global
+ *              "visual_sgraphs" logger so it shares one severity control with
+ *              the ROS-facing layer.
+ */
 class Verbose
 {
   public:
@@ -77,17 +84,93 @@ class Verbose
     static eLevel th;
 
   public:
+    /*!
+     * @brief       Emit a core diagnostic through the global "visual_sgraphs"
+     *              logger with a severity derived from the requested level.
+     *              The static gate `th` still filters by level: only messages
+     *              with `lev <= th` are emitted.
+     */
     static void PrintMess(std::string str, eLevel lev)
     {
         if (lev <= th)
-            cout << str << endl;
+        {
+            switch (lev)
+            {
+            case VERBOSITY_QUIET:
+                RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                            "%s",
+                            str.c_str());
+                break;
+            case VERBOSITY_NORMAL:
+                RCLCPP_INFO(rclcpp::get_logger("visual_sgraphs"),
+                            "%s",
+                            str.c_str());
+                break;
+            case VERBOSITY_VERBOSE:
+            case VERBOSITY_VERY_VERBOSE:
+            case VERBOSITY_DEBUG:
+                RCLCPP_DEBUG(rclcpp::get_logger("visual_sgraphs"),
+                             "%s",
+                             str.c_str());
+                break;
+            }
+        }
     }
 
     static void SetTh(eLevel _th)
     {
         th = _th;
     }
+
+    /*!
+     * @brief       Map a user-supplied log level string ("quiet", "error",
+     *              "warn", "info", "debug") to the matching `eLevel` threshold.
+     *              Unknown strings default to `VERBOSITY_QUIET` so an unset or
+     *              invalid value preserves the current quiet behaviour.
+     */
+    static eLevel StringToLevel(const std::string &level)
+    {
+        if (level == "debug")
+            return VERBOSITY_DEBUG;
+        if (level == "info")
+            return VERBOSITY_NORMAL;
+        if (level == "warn")
+            return VERBOSITY_QUIET;
+        if (level == "error")
+            return VERBOSITY_QUIET;
+        if (level == "quiet")
+            return VERBOSITY_QUIET;
+        return VERBOSITY_QUIET;
+    }
 };
+
+/*!
+ * @brief       Emit an INFO line from the ORB-SLAM3 core through the global
+ *              "visual_sgraphs" logger as a printf-style message.
+ */
+#define VSLAM_LOG_INFO(...)                                                    \
+    RCLCPP_INFO(rclcpp::get_logger("visual_sgraphs"), __VA_ARGS__)
+
+/*!
+ * @brief       Emit a WARN line from the ORB-SLAM3 core through the global
+ *              "visual_sgraphs" logger as a printf-style message.
+ */
+#define VSLAM_LOG_WARN(...)                                                    \
+    RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"), __VA_ARGS__)
+
+/*!
+ * @brief       Emit an ERROR line from the ORB-SLAM3 core through the global
+ *              "visual_sgraphs" logger as a printf-style message.
+ */
+#define VSLAM_LOG_ERROR(...)                                                   \
+    RCLCPP_ERROR(rclcpp::get_logger("visual_sgraphs"), __VA_ARGS__)
+
+/*!
+ * @brief       Emit a DEBUG line from the ORB-SLAM3 core through the global
+ *              "visual_sgraphs" logger as a printf-style message.
+ */
+#define VSLAM_LOG_DEBUG(...)                                                   \
+    RCLCPP_DEBUG(rclcpp::get_logger("visual_sgraphs"), __VA_ARGS__)
 
 class Viewer;
 class FrameDrawer;
@@ -209,14 +292,27 @@ class System
      *
      * @param[in]   strSequence
      *              TODO
+     *
+     * @param[in]   verboseLevel
+     *              Verbose threshold for core logging routed through ROS 2.
+     *              Defaults to QUIET so the current quiet behaviour is
+     *              preserved when the caller does not set a level.
      */
-    System(const string &strVocFile,
-           const string &strSettingsFile,
-           const string &strSysParamsFile,
-           const eSensor sensor,
-           const bool    bUseViewer  = true,
-           const int     initFr      = 0,
-           const string &strSequence = std::string());
+    System(const string         &strVocFile,
+           const string         &strSettingsFile,
+           const string         &strSysParamsFile,
+           const eSensor         sensor,
+           const bool            bUseViewer   = true,
+           const int             initFr       = 0,
+           const string         &strSequence  = std::string(),
+           const Verbose::eLevel verboseLevel = Verbose::VERBOSITY_QUIET);
+
+    /*!
+     * @brief       Stops and joins all worker threads and frees the thread
+     *              objects. Safe to run after Shutdown(); join() is only
+     *              performed here, never in Shutdown().
+     */
+    ~System();
 
     /*!
      * @brief       Process the given stereo frame for tracking. Images must be

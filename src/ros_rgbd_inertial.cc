@@ -493,7 +493,7 @@ int main(int argc, char **argv)
     auto node = std::make_shared<rclcpp::Node>("vs_graphs");
 
     if (argc > 1)
-        RCLCPP_WARN(node->get_logger(),
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
                     "Arguments supplied via command line are ignored.");
 
     std::string nodeName = node->get_name();
@@ -516,6 +516,7 @@ int main(int argc, char **argv)
     node->declare_parameter<double>("maximum_tracking_rate_hz", 30.0);
     node->declare_parameter<double>("maximum_sensor_buffer_seconds", 3.0);
     node->declare_parameter<bool>("direct_gazebo_flu_cloud", false);
+    node->declare_parameter<std::string>("log_level", "info");
     node->declare_parameter<std::string>("frame_structural_element",
                                          "struc_elem");
     node->declare_parameter<std::string>("frame_building_component",
@@ -528,7 +529,7 @@ int main(int argc, char **argv)
 
     if (vocFile == "file_not_set" || settingsFile == "file_not_set")
     {
-        RCLCPP_ERROR(node->get_logger(),
+        RCLCPP_ERROR(rclcpp::get_logger("visual_sgraphs"),
                      "[Error] 'vocabulary' and 'settings' are not provided in "
                      "the launch file! Exiting...");
         rclcpp::shutdown();
@@ -537,7 +538,7 @@ int main(int argc, char **argv)
 
     if (sysParamsFile == "file_not_set")
     {
-        RCLCPP_ERROR(node->get_logger(),
+        RCLCPP_ERROR(rclcpp::get_logger("visual_sgraphs"),
                      "[Error] The `YAML` file containing system parameters is "
                      "not provided in the launch file! Exiting...");
         rclcpp::shutdown();
@@ -555,8 +556,10 @@ int main(int argc, char **argv)
     pubPointClouds  = node->get_parameter("publish_pointclouds").as_bool();
     frameBC = node->get_parameter("frame_building_component").as_string();
     frameSE = node->get_parameter("frame_structural_element").as_string();
-    pubStaticTransform  = node->get_parameter("static_transform").as_bool();
-    bool enablePangolin = node->get_parameter("enable_pangolin").as_bool();
+    pubStaticTransform      = node->get_parameter("static_transform").as_bool();
+    bool enablePangolin     = node->get_parameter("enable_pangolin").as_bool();
+    const auto verboseLevel = ORB_SLAM3::Verbose::StringToLevel(
+        node->get_parameter("log_level").as_string());
 
     const double maximumTrackingRate_hz =
         node->get_parameter("maximum_tracking_rate_hz").as_double();
@@ -567,7 +570,7 @@ int main(int argc, char **argv)
 
     if (maximumTrackingRate_hz <= 0.0 || maximumSensorBuffer_seconds <= 0.0)
     {
-        RCLCPP_ERROR(node->get_logger(),
+        RCLCPP_ERROR(rclcpp::get_logger("visual_sgraphs"),
                      "Sensor admission parameters must be positive.");
         rclcpp::shutdown();
         return 1;
@@ -587,7 +590,10 @@ int main(int argc, char **argv)
                                          settingsFile,
                                          sysParamsFile,
                                          sensorType,
-                                         enablePangolin);
+                                         enablePangolin,
+                                         /*initFr*/ 0,
+                                         /*strSequence*/ std::string(),
+                                         verboseLevel);
 
     // Subscribe to get raw images (message_filters in ROS2)
     using message_filters::Subscriber;

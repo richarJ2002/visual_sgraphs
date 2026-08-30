@@ -516,7 +516,9 @@ class Plane
         const Eigen::Vector4d &normalizedEquation_World_in) const;
 
     /*!
-     * @brief       Replaces the accumulated plane cloud pointer.
+     * @brief       Appends points to the accumulated plane cloud.
+     *
+     *              Use replaceMapClouds() to substitute the whole cloud.
      */
     void setMapClouds(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud_in);
 

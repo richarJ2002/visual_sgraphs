@@ -1,5 +1,5 @@
 /*!
- * @File:         CommonState.cpp
+ * @File:         common.cc
  *
  * @Brief:        This file is a modified version of a file from ORB-SLAM3.
  *
@@ -2151,7 +2151,7 @@ sensor_msgs::msg::PointCloud2
     cloud.header.stamp    = msgTime_in;
     cloud.header.frame_id = frameWorld;
     cloud.height          = 1;
-    cloud.is_dense        = true;
+    cloud.is_dense        = false;
     cloud.is_bigendian    = false;
     cloud.width           = mapPoints_in.size();
     cloud.point_step      = numChannels * sizeof(float);
@@ -2183,6 +2183,18 @@ sensor_msgs::msg::PointCloud2
                 static_cast<float>(pointTranslation.x()),
                 static_cast<float>(pointTranslation.y()),
                 static_cast<float>(pointTranslation.z())};
+            memcpy(cloudDataPtr + (idx * cloud.point_step),
+                   dataArray,
+                   numChannels * sizeof(float));
+        }
+        else
+        {
+            /* Mark skipped map points as NaN instead of leaving a phantom
+               point at the origin; is_dense = false declares invalid values */
+            float dataArray[numChannels] = {
+                std::numeric_limits<float>::quiet_NaN(),
+                std::numeric_limits<float>::quiet_NaN(),
+                std::numeric_limits<float>::quiet_NaN()};
             memcpy(cloudDataPtr + (idx * cloud.point_step),
                    dataArray,
                    numChannels * sizeof(float));

@@ -18,6 +18,8 @@
 
 #include "Types/SystemParams.h"
 
+#include "System.h"
+
 #include <cmath>
 #include <stdexcept>
 
@@ -39,18 +41,18 @@ SystemParams *SystemParams::GetParams()
 
 void SystemParams::SetParams(const std::string &strConfigFile)
 {
-    std::cout << "[SysParams] Loading system parameters from " << strConfigFile
-              << std::endl;
+    VSLAM_LOG_INFO("[SysParams] Loading system parameters from %s\n",
+                   strConfigFile.c_str());
     try
     {
         mConfig = YAML::LoadFile(strConfigFile);
-        std::cout << "[SysParams] System parameters loaded!\n\n";
+        VSLAM_LOG_INFO("[SysParams] System parameters loaded!\n\n");
     }
     catch (YAML::BadFile &e)
     {
-        std::cout << "[SysParams] Error loading configuration file " << e.what()
-                  << std::endl;
-        std::cout << "[SysParams] Exiting ... \n\n";
+        VSLAM_LOG_ERROR("[SysParams] Error loading configuration file %s\n",
+                        e.what());
+        VSLAM_LOG_ERROR("[SysParams] Exiting ... \n\n");
         exit(1);
     }
 
@@ -396,8 +398,7 @@ void SystemParams::SetParams(const std::string &strConfigFile)
             mConfig["room_tracking"]["reacquire_max_retries"]
                 .as<unsigned int>();
         room_tracking.reacquire_min_planes =
-            mConfig["room_tracking"]["reacquire_min_planes"]
-                .as<unsigned int>();
+            mConfig["room_tracking"]["reacquire_min_planes"].as<unsigned int>();
 
         const room_seg::BoundaryTopology &boundaryTopology =
             room_seg.boundaryTopology;
@@ -459,15 +460,15 @@ void SystemParams::SetParams(const std::string &strConfigFile)
     }
     catch (YAML::Exception &e)
     {
-        std::cerr << "Error loading system parameters. Make sure all "
-                     "parameters are defined properly: "
-                  << e.what() << std::endl;
+        VSLAM_LOG_ERROR("Error loading system parameters. Make sure all "
+                        "parameters are defined properly: %s\n",
+                        e.what());
         exit(1);
     }
     catch (const std::invalid_argument &exception)
     {
-        std::cerr << "Error loading system parameters: " << exception.what()
-                  << std::endl;
+        VSLAM_LOG_ERROR("Error loading system parameters: %s\n",
+                        exception.what());
         exit(1);
     }
 }

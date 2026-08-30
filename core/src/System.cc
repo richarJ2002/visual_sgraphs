@@ -43,15 +43,17 @@ namespace ORB_SLAM3
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
-System::System(const string &strVocFile,
-               const string &strSettingsFile,
-               const string &strSysParamsFile,
-               const eSensor sensor,
-               const bool    bUseViewer,
-               const int     initFr,
-               const string &strSequence) :
+System::System(const string         &strVocFile,
+               const string         &strSettingsFile,
+               const string         &strSysParamsFile,
+               const eSensor         sensor,
+               const bool            bUseViewer,
+               const int             initFr,
+               const string         &strSequence,
+               const Verbose::eLevel verboseLevel) :
     mSensor(sensor),
     mpViewer(static_cast<Viewer *>(NULL)),
+    mptGeometricSegmentation(static_cast<std::thread *>(NULL)),
     mbReset(false),
     mbResetActiveMap(false),
     mbActivateLocalizationMode(false),
@@ -329,7 +331,56 @@ System::System(const string &strVocFile,
     }
 
     /* Set verbosity level */
-    Verbose::SetTh(Verbose::VERBOSITY_QUIET);
+    Verbose::SetTh(verboseLevel);
+}
+
+System::~System()
+{
+    {
+        unique_lock<mutex> lock(mMutexReset);
+        mbShutDown = true;
+    }
+
+    /* Request a graceful stop on every running worker thread. */
+    mpLocalMapper->RequestFinish();
+    mpLoopCloser->RequestFinish();
+    mpSemanticSegmentation->RequestFinish();
+    mpSemanticsManager->RequestFinish();
+    if (mpViewer != static_cast<Viewer *>(NULL))
+    {
+        mpViewer->RequestFinish();
+    }
+
+    /* Wait for each worker to report finished before joining. Shutdown() may
+     * have already stopped Local Mapping / Loop Closing; isFinished() is
+     * idempotent, join() below is the only join in the process. */
+    while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() ||
+           !mpSemanticSegmentation->isFinished() ||
+           !mpSemanticsManager->isFinished() ||
+           (mpViewer != static_cast<Viewer *>(NULL) && !mpViewer->isFinished()))
+    {
+        usleep(1000);
+    }
+
+    /* Join and free the thread objects (first and only join). */
+    mptLocalMapping->join();
+    mptLoopClosing->join();
+    mptSemanticSegmentation->join();
+    mptSemanticsManager->join();
+    if (mpViewer != static_cast<Viewer *>(NULL))
+    {
+        mptViewer->join();
+    }
+
+    delete mptLocalMapping;
+    delete mptLoopClosing;
+    delete mptSemanticSegmentation;
+    delete mptSemanticsManager;
+    if (mpViewer != static_cast<Viewer *>(NULL))
+    {
+        delete mptViewer;
+    }
+    delete mptGeometricSegmentation;
 }
 
 void System::parseJsonDatabase(string jsonFilePath)
@@ -363,7 +414,10 @@ void System::addSegmentedImage(
         // segmentation is not running
         ORB_SLAM3::KeyFrame *pKF =
             mpAtlas->GetKeyFrameById(std::get<0>(*tuple));
-        pKF->clearPointCloud();
+        if (pKF)
+        {
+            pKF->clearPointCloud();
+        }
         return;
     }
 

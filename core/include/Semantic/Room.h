@@ -78,6 +78,8 @@ class Room
      * PRIVATE MEMBERS
      * ---------------------------------------------------------------------- */
 
+    mutable std::mutex mMutexState;
+
     /*!
      * @brief       The room's identifier.
      */

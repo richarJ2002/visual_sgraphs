@@ -137,6 +137,10 @@ void Optimizer::BundleAdjustment(
     // Variables
     std::vector<bool> vbNotIncludedMP;
     vbNotIncludedMP.resize(vpMP.size());
+
+    if (vpKFs.empty())
+        return;
+
     ORB_SLAM3::Map *pMap = vpKFs[0]->GetMap();
 
     AtomicOptimizerStopBridge stopBridge(pStopRequested_in, pbStopFlag);
@@ -800,7 +804,7 @@ void Optimizer::BundleAdjustment(
             static_cast<g2o::VertexSE3Expmap *>(optimizer.vertex(pKF->mnId));
 
         g2o::SE3Quat SE3quat = vSE3->estimate();
-        if (nLoopKF == pMap->GetOriginKF()->mnId)
+        if (pMap->GetOriginKF() && nLoopKF == pMap->GetOriginKF()->mnId)
         {
             pKF->SetPose(Sophus::SE3f(SE3quat.rotation().cast<float>(),
                                       SE3quat.translation().cast<float>()));
@@ -2075,6 +2079,9 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
 
     // Variables
     countFixedKF = 0;
+    num_OptKF    = 0;
+    num_MPs      = 0;
+    num_edges    = 0;
     std::list<ORB_SLAM3::Room *>       localRoomList;
     ORB_SLAM3::Map                    *pCurrentMap = pKF->GetMap();
     std::list<ORB_SLAM3::Plane *>      localPlaneList;
@@ -2610,7 +2617,8 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
                 {
                     int rightIndex = get<1>(mit->second);
 
-                    if (rightIndex != -1)
+                    if (rightIndex != -1 &&
+                        rightIndex < (int)pKFi->mvKeysRight.size())
                     {
                         rightIndex -= pKFi->NLeft;
 
@@ -3596,6 +3604,7 @@ void Optimizer::OptimizeEssentialGraph(
         g2o::Sim3 CorrectedSiw = VSim3->estimate();
         vCorrectedSwc[nIDi]    = CorrectedSiw.inverse();
         double s               = CorrectedSiw.scale();
+        s                      = (s == 0.0) ? 1.0 : s;
 
         Sophus::SE3f Tiw(CorrectedSiw.rotation().cast<float>(),
                          CorrectedSiw.translation().cast<float>() / s);
@@ -4318,7 +4327,8 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
         }
         else
         {
-            float invz = 1 / P3D2c(2);
+            const double zc2 = P3D2c(2);
+            float invz = (zc2 == 0.0) ? 0.0f : static_cast<float>(1.0 / zc2);
             float x    = P3D2c(0) * invz;
             float y    = P3D2c(1) * invz;
 
@@ -4938,7 +4948,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
                 {
                     int rightIndex = get<1>(mit->second);
 
-                    if (rightIndex != -1)
+                    if (rightIndex != -1 &&
+                        rightIndex < (int)pKFi->mvKeysRight.size())
                     {
                         rightIndex -= pKFi->NLeft;
                         mVisEdges[pKFi->mnId]++;
@@ -7442,7 +7453,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     VAk->setFixed(false);
     optimizer.addVertex(VAk);
 
-    EdgeInertial *ei = new EdgeInertial(pFrame->mpImuPreintegratedFrame);
+    EdgeInertial *ei = new EdgeInertial(pFrame->mpImuPreintegratedFrame.get());
 
     ei->setVertex(0, VPk);
     ei->setVertex(1, VVk);
@@ -7470,21 +7481,26 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     ear->setInformation(InfoA);
     optimizer.addEdge(ear);
 
-    if (!pFp->mpcpi)
+    EdgePriorPoseImu *ep = nullptr;
+    if (pFp->mpcpi)
+    {
+        ep = new EdgePriorPoseImu(pFp->mpcpi);
+
+        ep->setVertex(0, VPk);
+        ep->setVertex(1, VVk);
+        ep->setVertex(2, VGk);
+        ep->setVertex(3, VAk);
+        g2o::RobustKernelHuber *rkp = new g2o::RobustKernelHuber;
+        ep->setRobustKernel(rkp);
+        rkp->setDelta(5);
+        optimizer.addEdge(ep);
+    }
+    else
+    {
         Verbose::PrintMess("pFp->mpcpi does not exist!!!\nPrevious Frame " +
                                to_string(pFp->mnId),
                            Verbose::VERBOSITY_NORMAL);
-
-    EdgePriorPoseImu *ep = new EdgePriorPoseImu(pFp->mpcpi);
-
-    ep->setVertex(0, VPk);
-    ep->setVertex(1, VVk);
-    ep->setVertex(2, VGk);
-    ep->setVertex(3, VAk);
-    g2o::RobustKernelHuber *rkp = new g2o::RobustKernelHuber;
-    ep->setRobustKernel(rkp);
-    rkp->setDelta(5);
-    optimizer.addEdge(ep);
+    }
 
     // We perform 4 optimizations, after each optimization we classify
     // observation as inlier/outlier At the next optimization, outliers are not
@@ -7641,7 +7657,8 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     H.block<3, 3>(27, 12) += Har.block<3, 3>(3, 0);
     H.block<3, 3>(27, 27) += Har.block<3, 3>(3, 3);
 
-    H.block<15, 15>(0, 0) += ep->GetHessian();
+    if (ep)
+        H.block<15, 15>(0, 0) += ep->GetHessian();
 
     int tot_in = 0, tot_out = 0;
     for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++)
