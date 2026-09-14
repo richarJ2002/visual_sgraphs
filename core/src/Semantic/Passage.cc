@@ -135,6 +135,30 @@ void Passage::setPassable(bool value)
     passable = value;
 }
 
+bool Passage::isBad()
+{
+    std::lock_guard<std::mutex> lock(mMutexMap);
+    return mbBad;
+}
+
+void Passage::setBad()
+{
+    std::lock_guard<std::mutex> lock(mMutexMap);
+    mbBad = true;
+}
+
+void Passage::setRecoveryProxy(const bool isRecoveryProxy_in)
+{
+    std::lock_guard<std::mutex> lock(mMutexType);
+    recoveryProxy = isRecoveryProxy_in;
+}
+
+bool Passage::isRecoveryProxy() const
+{
+    std::lock_guard<std::mutex> lock(mMutexType);
+    return recoveryProxy;
+}
+
 bool Passage::getTraversalEvidence() const
 {
     std::lock_guard<std::mutex> lock(mMutexType);
@@ -432,6 +456,16 @@ ORB_SLAM3::Room *Passage::getProspectiveRoom() const
     return prospectiveRoom;
 }
 
+std::optional<int> Passage::getProspectiveRoomId() const
+{
+    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    if (prospectiveRoom == nullptr)
+    {
+        return std::nullopt;
+    }
+    return prospectiveRoom->getId();
+}
+
 void Passage::setProspectiveRoom(ORB_SLAM3::Room *p_room_in)
 {
     std::lock_guard<std::mutex> lock(mMutexGeometry);
@@ -508,5 +542,152 @@ void Passage::mergeKnownSideProvenance(const KnownSideProvenance &provenance_in)
     {
         knownSideProvenance.pRoom = provenance_in.pRoom;
     }
+}
+
+bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
+{
+    if (p_duplicate_in == nullptr || p_duplicate_in == this ||
+        p_duplicate_in->getId() != getId())
+    {
+        return false;
+    }
+
+    bool canonicalIsRecoveryProxy = false;
+    {
+        std::lock_guard<std::mutex> typeLock(mMutexType);
+        canonicalIsRecoveryProxy = recoveryProxy;
+    }
+
+    bool           duplicateIsRecoveryProxy = false;
+    bool           duplicateIsPassable      = false;
+    passageVariant duplicatePassageType     = passageVariant::UNDEFINED;
+    std::size_t    duplicateKnownToFarCount = 0U;
+    std::size_t    duplicateFarToKnownCount = 0U;
+    std::size_t    duplicateUnknownCount    = 0U;
+    {
+        std::lock_guard<std::mutex> duplicateTypeLock(
+            p_duplicate_in->mMutexType);
+        duplicateIsRecoveryProxy = p_duplicate_in->recoveryProxy;
+        duplicateIsPassable      = p_duplicate_in->passable;
+        duplicatePassageType     = p_duplicate_in->passageType;
+        duplicateKnownToFarCount = p_duplicate_in->traversalKnownToFarCount;
+        duplicateFarToKnownCount = p_duplicate_in->traversalFarToKnownCount;
+        duplicateUnknownCount    = p_duplicate_in->traversalUnknownCount;
+    }
+
+    Eigen::Vector3d      duplicateCentroid = Eigen::Vector3d::Zero();
+    g2o::Plane3D         duplicateEquation;
+    double               duplicateWidth_m  = 0.0;
+    double               duplicateHeight_m = 0.0;
+    Plane               *p_duplicateDoor   = nullptr;
+    std::vector<Plane *> duplicateWalls;
+    Room                *p_duplicateProspectiveRoom = nullptr;
+    KnownSideProvenance  duplicateKnownSide;
+    {
+        std::lock_guard<std::mutex> duplicateGeometryLock(
+            p_duplicate_in->mMutexGeometry);
+        duplicateCentroid          = p_duplicate_in->centroid;
+        duplicateEquation          = p_duplicate_in->globalEquation;
+        duplicateWidth_m           = p_duplicate_in->width;
+        duplicateHeight_m          = p_duplicate_in->height;
+        p_duplicateDoor            = p_duplicate_in->associateDoor;
+        duplicateWalls             = p_duplicate_in->associateWalls;
+        p_duplicateProspectiveRoom = p_duplicate_in->prospectiveRoom;
+        duplicateKnownSide         = p_duplicate_in->knownSideProvenance;
+    }
+
+    const Eigen::Vector4d duplicateEquationCoefficients =
+        duplicateEquation.coeffs();
+    const double duplicateNormalNorm =
+        duplicateEquationCoefficients.head<3>().norm();
+    const bool duplicateHasValidObservedGeometry =
+        !duplicateIsRecoveryProxy && duplicateCentroid.allFinite() &&
+        duplicateEquationCoefficients.allFinite() &&
+        std::isfinite(duplicateNormalNorm) && duplicateNormalNorm > 1e-8 &&
+        std::isfinite(duplicateWidth_m) && duplicateWidth_m > 0.0 &&
+        std::isfinite(duplicateHeight_m) && duplicateHeight_m > 0.0;
+
+    bool replacedGeometry = false;
+    {
+        std::lock_guard<std::mutex> geometryLock(mMutexGeometry);
+        const Eigen::Vector4d       canonicalEquationCoefficients =
+            globalEquation.coeffs();
+        const double canonicalNormalNorm =
+            canonicalEquationCoefficients.head<3>().norm();
+        const bool canonicalHasValidGeometry =
+            centroid.allFinite() && canonicalEquationCoefficients.allFinite() &&
+            std::isfinite(canonicalNormalNorm) && canonicalNormalNorm > 1e-8 &&
+            std::isfinite(width) && width > 0.0 && std::isfinite(height) &&
+            height > 0.0;
+
+        replacedGeometry =
+            duplicateHasValidObservedGeometry &&
+            (canonicalIsRecoveryProxy || !canonicalHasValidGeometry);
+        if (replacedGeometry)
+        {
+            centroid       = duplicateCentroid;
+            globalEquation = duplicateEquation;
+            width          = duplicateWidth_m;
+            height         = duplicateHeight_m;
+            associateDoor  = p_duplicateDoor;
+        }
+        else if (associateDoor == nullptr)
+        {
+            associateDoor = p_duplicateDoor;
+        }
+
+        for (Plane *p_duplicateWall : duplicateWalls)
+        {
+            if (p_duplicateWall != nullptr &&
+                std::find(associateWalls.begin(),
+                          associateWalls.end(),
+                          p_duplicateWall) == associateWalls.end())
+            {
+                associateWalls.push_back(p_duplicateWall);
+            }
+        }
+
+        if (prospectiveRoom == nullptr)
+        {
+            prospectiveRoom = p_duplicateProspectiveRoom;
+        }
+        if (knownSideProvenance.pRoom == nullptr)
+        {
+            knownSideProvenance.pRoom = duplicateKnownSide.pRoom;
+        }
+        if (replacedGeometry)
+        {
+            knownSideProvenance.direction_World =
+                duplicateKnownSide.direction_World;
+        }
+        else if (!knownSideProvenance.hasDirection() &&
+                 duplicateKnownSide.hasDirection())
+        {
+            knownSideProvenance.direction_World =
+                duplicateKnownSide.direction_World;
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> typeLock(mMutexType);
+        traversalKnownToFarCount =
+            std::max(traversalKnownToFarCount, duplicateKnownToFarCount);
+        traversalFarToKnownCount =
+            std::max(traversalFarToKnownCount, duplicateFarToKnownCount);
+        traversalUnknownCount =
+            std::max(traversalUnknownCount, duplicateUnknownCount);
+        if (replacedGeometry)
+        {
+            passable      = duplicateIsPassable;
+            passageType   = duplicatePassageType;
+            recoveryProxy = false;
+        }
+        else if (passageType == passageVariant::UNDEFINED)
+        {
+            passageType = duplicatePassageType;
+        }
+    }
+
+    return replacedGeometry;
 }
 } // namespace ORB_SLAM3

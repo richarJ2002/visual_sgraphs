@@ -24,6 +24,7 @@
 
 #include <Eigen/Core>
 #include <iomanip>
+#include <optional>
 #include <sstream>
 
 namespace ORB_SLAM3
@@ -182,8 +183,9 @@ class GeoSemHelpers
      *              The centroid of the room (optional)
      */
     static ORB_SLAM3::Room *createBlankRoomCandidate(
-        Atlas          *mpAtlas,
-        Eigen::Vector3d centroid = Eigen::Vector3d::Zero());
+        Atlas             *mpAtlas,
+        Eigen::Vector3d    centroid        = Eigen::Vector3d::Zero(),
+        std::optional<int> stableRoomId_in = std::nullopt);
 
     /*!
      * @brief       Chooses a ground plane from the Atlas to be associated with
@@ -218,7 +220,9 @@ class GeoSemHelpers
      * @param       mpAtlas
      *              The current map in Atlas
      */
-    static void createMapFloor(ORB_SLAM3::Atlas *mpAtlas);
+    static void
+        createMapFloor(ORB_SLAM3::Atlas  *mpAtlas,
+                       std::optional<int> stableFloorId_in = std::nullopt);
 
     /*!
      * @brief       Refits a mapped plane equation from its accumulated global

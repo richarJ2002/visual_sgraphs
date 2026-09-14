@@ -36,7 +36,8 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane)
         return false;
     }
 
-    /* Claim one immutable generation; fitting never observes concurrent growth. */
+    /* Claim one immutable generation; fitting never observes concurrent growth.
+     */
     const std::optional<Plane::GeometrySnapshot> geometrySnapshot =
         plane->beginMapCloudRefit();
 
@@ -175,6 +176,22 @@ ORB_SLAM3::Plane *GeoSemHelpers::createMapPlane(
     newMapPlane->SetMap(p_currentMap);
     newMapPlane->setId(p_currentMap->reservePlaneId());
     newMapPlane->refKeyFrame = pKF;
+
+    /* Stamp which face of the physical surface this is, from the camera that
+     * observed it. Only the side turned toward a camera can ever be seen, so
+     * this position permanently identifies the face -- and therefore which
+     * room it bounds -- without any later re-derivation from observation
+     * history (see Plane::observationOrigin_World_m). */
+    if (pKF != nullptr)
+    {
+        const Eigen::Vector3d observationOrigin_World_m =
+            pKF->GetCameraCenter().cast<double>();
+
+        if (observationOrigin_World_m.allFinite())
+        {
+            newMapPlane->setObservationOrigin_World(observationOrigin_World_m);
+        }
+    }
 
     /* ---------------------------------------------------------------------- *
      * CONSTRUCT POINT PLANE CONSTRAINT MATRIX
@@ -491,11 +508,13 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
     }
 
     /*!
-     * Passage creation requires the supporting wall to have sufficient observations.
-     * This prevents spurious passages on isolated wall segments that have no evidence.
+     * Passage creation requires the supporting wall to have sufficient
+     * observations. This prevents spurious passages on isolated wall segments
+     * that have no evidence.
      */
-    bool wallHasConfirmedRoom = false;
-    const size_t minObs = SystemParams::GetParams()->room_seg.minimumWallObservationCount;
+    bool         wallHasConfirmedRoom = false;
+    const size_t minObs =
+        SystemParams::GetParams()->room_seg.minimumWallObservationCount;
     if (p_wallPlane_in->getObservationCount() >= minObs)
     {
         wallHasConfirmedRoom = true;
@@ -506,7 +525,8 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
         std::cerr << "[GeoSemHelper] Cannot create passage: wall plane "
                   << p_wallPlane_in->getId()
                   << " has insufficient observations ("
-                  << p_wallPlane_in->getObservationCount() << " < " << minObs << ")." << std::endl;
+                  << p_wallPlane_in->getObservationCount() << " < " << minObs
+                  << ")." << std::endl;
         return;
     }
 
@@ -788,19 +808,8 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
      * NO PASSAGE MATCH FOUND. GENERATING NEW PASSAGE
      * ---------------------------------------------------------------------- */
 
-    /* Init variable to set the passage id */
-    int passageId = 0;
-
-    /* Extract the passages to find the id of the passage */
-    for (ORB_SLAM3::Passage *p_existingPassage : allPassages)
-    {
-        /* Check that pasasge is valid */
-        if (p_existingPassage != nullptr)
-        {
-            /* Set passage id to largest id + 1 of the existing passage */
-            passageId = std::max(passageId, p_existingPassage->getId() + 1);
-        }
-    }
+    /* Passage identities belong to the mission, not to an active SLAM map. */
+    const int passageId = p_atlas_inout->reservePassageIdentity();
 
     /* Initialize passage object */
     ORB_SLAM3::Passage *p_newMapPassage = new ORB_SLAM3::Passage();
@@ -858,8 +867,9 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
 }
 
 ORB_SLAM3::Room *
-    GeoSemHelpers::createBlankRoomCandidate(ORB_SLAM3::Atlas *mpAtlas,
-                                            Eigen::Vector3d   centroid)
+    GeoSemHelpers::createBlankRoomCandidate(ORB_SLAM3::Atlas  *mpAtlas,
+                                            Eigen::Vector3d    centroid,
+                                            std::optional<int> stableRoomId_in)
 {
     /* Confirm that the mpAtlas is valid */
     if (mpAtlas == nullptr)
@@ -870,24 +880,66 @@ ORB_SLAM3::Room *
         return nullptr;
     }
 
-    /* Init variable to find the room id */
-    int roomId = 0;
-
     /* Extract the existing rooms from the map */
     const std::vector<ORB_SLAM3::Room *> existingRooms = mpAtlas->GetAllRooms();
 
-    /* Iterate through all rooms and find the maximum id */
-    for (ORB_SLAM3::Room *existingRoom : existingRooms)
+    /*!
+     * Hard invariant, enforced at this single room-creation choke point
+     * (this is the only call site in the codebase that ever constructs a
+     * new ORB_SLAM3::Room): a map may hold at most one more room than it
+     * has PASSABLE passages. A map's first room is either the mission's cold
+     * bootstrap or the topology-only recovery proxy restored after tracking
+     * loss; it needs no active-map passage yet -- that is the "+1". Every new
+     * semantic room after that must be the confirmed or prospective far side
+     * of a genuine passage.
+     *
+     * Deliberately counts isPassable() passages only, not every registered
+     * Passage object: a Passage can also be created "blocked" purely from a
+     * classified door plane sitting near a wall (detectDoorsAndDoorways(),
+     * GeoSemHelpers.cc's createMapPassage() called with isOpenPassage_in =
+     * false) -- no free-space evidence at all. Counting that toward the
+     * budget would let a semantic door classification alone unlock a new
+     * room the same way real passage evidence does, which is exactly the
+     * loophole this gate exists to close. A blocked passage earns its
+     * budget slot only once it is actually observed passable (Connected
+     * ESDF free space through the wall -- see createMapPassage()'s
+     * isOpenPassage_in = true path, reached only from
+     * updatePassages()'s skeleton-crossing candidates), matching this
+     * project's rule: a room may only be created from a genuine
+     * free-space-skeleton-crosses-wall observation, never a toggled
+     * passable/blocked state alone.
+     */
+    const std::vector<ORB_SLAM3::Passage *> currentMapPassages =
+        mpAtlas->GetAllPassages();
+    const std::size_t passablePassageCount =
+        std::count_if(currentMapPassages.begin(),
+                      currentMapPassages.end(),
+                      [](ORB_SLAM3::Passage *p_passage)
+                      {
+                          return p_passage != nullptr && !p_passage->isBad() &&
+                                 p_passage->isPassable();
+                      });
+
+    /* Recovery (explicit stable ID) restores an already-discovered identity
+     * after a tracking-loss reset; it is not new discovery and must not be
+     * blocked by the passage budget. The budget gates discovery only. */
+    if (!stableRoomId_in.has_value() &&
+        existingRooms.size() > passablePassageCount)
     {
-        /* Skip invalid rooms */
-        if (existingRoom != nullptr)
-        {
-            roomId = std::max(roomId, existingRoom->getId());
-        }
+        std::cerr << "[GeoSemHelper] Refusing to create a new room: "
+                  << existingRooms.size() << " room(s) already exist against "
+                  << passablePassageCount
+                  << " passable passage(s) in this map -- room count may "
+                     "never exceed passable-passage count + 1."
+                  << std::endl;
+
+        return nullptr;
     }
 
-    /* Incriment 1 to create new id for room */
-    roomId++;
+    const int roomId = stableRoomId_in.has_value()
+                           ? *stableRoomId_in
+                           : mpAtlas->reserveRoomIdentity();
+    mpAtlas->observeRoomIdentity(roomId);
 
     /* Create new room */
     ORB_SLAM3::Room *newRoom = new ORB_SLAM3::Room();
@@ -1005,7 +1057,8 @@ size_t GeoSemHelpers::countGroundPlanePointsWithinWalls(
     return count;
 }
 
-void GeoSemHelpers::createMapFloor(ORB_SLAM3::Atlas *mpAtlas)
+void GeoSemHelpers::createMapFloor(ORB_SLAM3::Atlas  *mpAtlas,
+                                   std::optional<int> stableFloorId_in)
 {
     ORB_SLAM3::Map *p_currentMap = mpAtlas->GetCurrentMap();
 
@@ -1019,7 +1072,10 @@ void GeoSemHelpers::createMapFloor(ORB_SLAM3::Atlas *mpAtlas)
     ORB_SLAM3::Floor *newMapFloor = new ORB_SLAM3::Floor();
 
     // Variables
-    const int floorId = p_currentMap->reserveFloorId();
+    const int floorId = stableFloorId_in.has_value()
+                            ? *stableFloorId_in
+                            : mpAtlas->reserveFloorIdentity();
+    mpAtlas->observeFloorIdentity(floorId);
 
     // Fill the floor entity
     newMapFloor->setOpId(-1);

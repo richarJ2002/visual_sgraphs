@@ -27,6 +27,7 @@
 #include "Converter.h"
 #include "G2oTypes.h"
 #include "OptimizableTypes.h"
+#include "OptimizerEdgeLookup.h"
 #include "Utils.h"
 
 #include "Thirdparty/g2o/g2o/core/block_solver.h"
@@ -830,9 +831,9 @@ void Optimizer::BundleAdjustment(
                 {
                     ORB_SLAM3::EdgeSE3ProjectXYZ *e   = vpEdgesMono[i2];
                     MapPoint                     *pMP = vpMapPointEdgeMono[i2];
-                    KeyFrame                     *pKFedge = vpEdgeKFMono[i2];
+                    KeyFrame *pKFedge = edgeSourceKeyFrame(vpEdgeKFMono, i2);
 
-                    if (pKF != pKFedge)
+                    if (pKFedge == nullptr || pKF != pKFedge)
                     {
                         continue;
                     }
@@ -856,9 +857,9 @@ void Optimizer::BundleAdjustment(
                 {
                     g2o::EdgeStereoSE3ProjectXYZ *e = vpEdgesStereo[i2];
                     MapPoint *pMP                   = vpMapPointEdgeStereo[i2];
-                    KeyFrame *pKFedge               = vpEdgeKFMono[i2];
+                    KeyFrame *pKFedge = edgeSourceKeyFrame(vpEdgeKFStereo, i2);
 
-                    if (pKF != pKFedge)
+                    if (pKFedge == nullptr || pKF != pKFedge)
                     {
                         continue;
                     }
@@ -6156,9 +6157,9 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
         {
             ORB_SLAM3::EdgeSE3ProjectXYZ *e       = vpEdgesMono[i];
             MapPoint                     *pMP     = vpMapPointEdgeMono[i];
-            KeyFrame                     *pKFedge = vpEdgeKFStereo[i];
+            KeyFrame *pKFedge = edgeSourceKeyFrame(vpEdgeKFMono, i);
 
-            if (pKFi != pKFedge)
+            if (pKFedge == nullptr || pKFi != pKFedge)
             {
                 continue;
             }
@@ -6182,9 +6183,9 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
         {
             g2o::EdgeStereoSE3ProjectXYZ *e       = vpEdgesStereo[i];
             MapPoint                     *pMP     = vpMapPointEdgeStereo[i];
-            KeyFrame                     *pKFedge = vpEdgeKFMono[i];
+            KeyFrame *pKFedge = edgeSourceKeyFrame(vpEdgeKFStereo, i);
 
-            if (pKFi != pKFedge)
+            if (pKFedge == nullptr || pKFi != pKFedge)
             {
                 continue;
             }

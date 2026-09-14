@@ -41,18 +41,18 @@ SystemParams *SystemParams::GetParams()
 
 void SystemParams::SetParams(const std::string &strConfigFile)
 {
-    VSLAM_LOG_INFO("[SysParams] Loading system parameters from %s\n",
+    VSLAM_LOG_INFO("[SysParams] Loading system parameters from %s",
                    strConfigFile.c_str());
     try
     {
         mConfig = YAML::LoadFile(strConfigFile);
-        VSLAM_LOG_INFO("[SysParams] System parameters loaded!\n\n");
+        VSLAM_LOG_INFO("[SysParams] System parameters loaded!");
     }
     catch (YAML::BadFile &e)
     {
-        VSLAM_LOG_ERROR("[SysParams] Error loading configuration file %s\n",
+        VSLAM_LOG_ERROR("[SysParams] Error loading configuration file %s",
                         e.what());
-        VSLAM_LOG_ERROR("[SysParams] Exiting ... \n\n");
+        VSLAM_LOG_ERROR("[SysParams] Exiting ...");
         exit(1);
     }
 
@@ -218,6 +218,10 @@ void SystemParams::SetParams(const std::string &strConfigFile)
             mConfig["sem_seg"]["passage_detection"]
                    ["minimum_confirmation_snapshots"]
                        .as<unsigned int>();
+        sem_seg.passageDetection.minimumCrossingClusterSize =
+            mConfig["sem_seg"]["passage_detection"]
+                   ["minimum_crossing_cluster_size"]
+                       .as<unsigned int>();
         sem_seg.passageDetection.maximumMissedSnapshots =
             mConfig["sem_seg"]["passage_detection"]["maximum_missed_snapshots"]
                 .as<unsigned int>();
@@ -269,6 +273,13 @@ void SystemParams::SetParams(const std::string &strConfigFile)
             mConfig["sem_seg"]["wall_creation"]["connectivity"]
                    ["minimum_component_ratio"]
                        .as<float>();
+        sem_seg.wallPairing.minimumThickness_m =
+            mConfig["sem_seg"]["wall_pairing"]["minimum_thickness"].as<float>();
+        sem_seg.wallPairing.maximumThickness_m =
+            mConfig["sem_seg"]["wall_pairing"]["maximum_thickness"].as<float>();
+        sem_seg.wallPairing.minimumOverlapRatio =
+            mConfig["sem_seg"]["wall_pairing"]["minimum_overlap_ratio"]
+                .as<float>();
         sem_seg.reassociate.enabled =
             mConfig["sem_seg"]["reassociate"]["enabled"].as<bool>();
         sem_seg.reassociate.association_thresh =
@@ -383,6 +394,29 @@ void SystemParams::SetParams(const std::string &strConfigFile)
                    ["wall_centroid_minimum_side_distance"]
                        .as<float>();
 
+        // Map-merge and axiom thresholds.
+        map_merge.passage_match_tolerance_m =
+            mConfig["map_merge"]["passage_match_tolerance_m"].as<float>();
+        map_merge.wall_coplanar_angle_deg =
+            mConfig["map_merge"]["wall_coplanar_angle_deg"].as<float>();
+        map_merge.wall_edge_overlap_m =
+            mConfig["map_merge"]["wall_edge_overlap_m"].as<float>();
+        map_merge.floor_match_tolerance_m =
+            mConfig["map_merge"]["floor_match_tolerance_m"].as<float>();
+        map_merge.observation_ray_check_cap =
+            mConfig["map_merge"]["observation_ray_check_cap"]
+                .as<unsigned int>();
+        map_merge.merge_cooldown_s =
+            mConfig["map_merge"]["merge_cooldown_s"].as<unsigned int>();
+        map_merge.min_anchor_rooms =
+            mConfig["map_merge"]["min_anchor_rooms"].as<unsigned int>();
+        map_merge.min_rooms_per_map =
+            mConfig["map_merge"]["min_rooms_per_map"].as<unsigned int>();
+        map_merge.min_walls_per_map =
+            mConfig["map_merge"]["min_walls_per_map"].as<unsigned int>();
+        map_merge.room_centroid_tolerance_m =
+            mConfig["map_merge"]["room_centroid_tolerance_m"].as<float>();
+
         // Room-Tracking State Machine Parameters (WP13 Section 18.4)
         room_tracking.crossing_dwell_s =
             mConfig["room_tracking"]["crossing_dwell_s"].as<float>();
@@ -399,6 +433,72 @@ void SystemParams::SetParams(const std::string &strConfigFile)
                 .as<unsigned int>();
         room_tracking.reacquire_min_planes =
             mConfig["room_tracking"]["reacquire_min_planes"].as<unsigned int>();
+
+        this->candidate_gen.top_k =
+            mConfig["candidate_gen"]["top_k"].as<unsigned int>();
+        this->candidate_gen.candidate_pair_cap =
+            mConfig["candidate_gen"]["candidate_pair_cap"].as<unsigned int>();
+        this->candidate_gen.topology_nodes_cap =
+            mConfig["candidate_gen"]["topology_nodes_cap"].as<unsigned int>();
+        this->candidate_gen.global_fallback_cap =
+            mConfig["candidate_gen"]["global_fallback_cap"].as<unsigned int>();
+        this->candidate_gen.weight_angle =
+            mConfig["candidate_gen"]["weight_angle"].as<float>();
+        this->candidate_gen.weight_extent =
+            mConfig["candidate_gen"]["weight_extent"].as<float>();
+        this->candidate_gen.weight_aperture =
+            mConfig["candidate_gen"]["weight_aperture"].as<float>();
+        this->candidate_gen.weight_topology =
+            mConfig["candidate_gen"]["weight_topology"].as<float>();
+        this->candidate_gen.angle_missing_penalty =
+            mConfig["candidate_gen"]["angle_missing_penalty"].as<float>();
+        this->candidate_gen.extent_missing_penalty =
+            mConfig["candidate_gen"]["extent_missing_penalty"].as<float>();
+        this->candidate_gen.aperture_missing_penalty =
+            mConfig["candidate_gen"]["aperture_missing_penalty"].as<float>();
+        this->candidate_gen.ambiguity_margin =
+            mConfig["candidate_gen"]["ambiguity_margin"].as<float>();
+        this->candidate_gen.angle_tolerance_rad =
+            mConfig["candidate_gen"]["angle_tolerance_rad"].as<float>();
+        this->candidate_gen.runtime_budget_ms =
+            mConfig["candidate_gen"]["runtime_budget_ms"].as<float>();
+        this->candidate_gen.descriptor_elements_cap =
+            mConfig["candidate_gen"]["descriptor_elements_cap"]
+                .as<unsigned int>();
+        this->candidate_gen.topo_refinement_iters =
+            mConfig["candidate_gen"]["topo_refinement_iters"]
+                .as<unsigned int>();
+
+        this->verification.max_normal_angle_deg =
+            mConfig["verification"]["max_normal_angle_deg"].as<float>();
+        this->verification.max_offset_m =
+            mConfig["verification"]["max_offset_m"].as<float>();
+        this->verification.max_support_dist_m =
+            mConfig["verification"]["max_support_dist_m"].as<float>();
+        this->verification.min_inlier_ratio =
+            mConfig["verification"]["min_inlier_ratio"].as<float>();
+        this->verification.max_condition_number =
+            mConfig["verification"]["max_condition_number"].as<float>();
+        this->verification.ambiguity_margin_inliers =
+            mConfig["verification"]["ambiguity_margin_inliers"]
+                .as<unsigned int>();
+        this->verification.max_walls_per_room =
+            mConfig["verification"]["max_walls_per_room"].as<unsigned int>();
+        this->verification.max_hypotheses =
+            mConfig["verification"]["max_hypotheses"].as<unsigned int>();
+        this->verification.max_support_sample_per_wall =
+            mConfig["verification"]["max_support_sample_per_wall"]
+                .as<unsigned int>();
+        this->verification.min_abs_cos_normal_angle =
+            mConfig["verification"]["min_abs_cos_normal_angle"].as<float>();
+
+        this->factor.sigma_theta_rad =
+            mConfig["factor"]["sigma_theta_rad"].as<float>();
+        this->factor.sigma_offset_m =
+            mConfig["factor"]["sigma_offset_m"].as<float>();
+        this->factor.huber_delta = mConfig["factor"]["huber_delta"].as<float>();
+        this->factor.optimizer_iterations =
+            mConfig["factor"]["optimizer_iterations"].as<unsigned int>();
 
         const room_seg::BoundaryTopology &boundaryTopology =
             room_seg.boundaryTopology;
@@ -422,6 +522,7 @@ void SystemParams::SetParams(const std::string &strConfigFile)
             passageDetection.ambiguousDuplicatePlaneSeparation_m < 0.30F ||
             passageDetection.crossingClusterDistance_m <= 0.0F ||
             passageDetection.minimumConfirmationSnapshots < 2U ||
+            passageDetection.minimumCrossingClusterSize < 1U ||
             passageDetection.minimumHorizontalFlankExtent_m <= 0.0F ||
             passageDetection.minimumHorizontalFlankPointCount < 1U ||
             passagePartition.edgeVertexAssociationDistance_m <= 0.0F ||
@@ -451,7 +552,65 @@ void SystemParams::SetParams(const std::string &strConfigFile)
             room_tracking.reacquire_retry_interval_s <= 0.0F ||
             !std::isfinite(room_tracking.reacquire_retry_interval_s) ||
             room_tracking.reacquire_max_retries < 1U ||
-            room_tracking.reacquire_min_planes < 1U)
+            room_tracking.reacquire_min_planes < 1U ||
+            this->candidate_gen.top_k < 1U ||
+            this->candidate_gen.candidate_pair_cap < 1U ||
+            this->candidate_gen.topology_nodes_cap < 1U ||
+            this->candidate_gen.global_fallback_cap < 1U ||
+            this->candidate_gen.top_k >
+                this->candidate_gen.candidate_pair_cap ||
+            this->candidate_gen.global_fallback_cap >
+                this->candidate_gen.candidate_pair_cap ||
+            this->candidate_gen.descriptor_elements_cap < 1U ||
+            this->candidate_gen.topo_refinement_iters < 1U ||
+            this->candidate_gen.weight_angle < 0.0F ||
+            this->candidate_gen.weight_extent < 0.0F ||
+            this->candidate_gen.weight_aperture < 0.0F ||
+            this->candidate_gen.weight_topology < 0.0F ||
+            this->candidate_gen.ambiguity_margin < 0.0F ||
+            this->candidate_gen.angle_missing_penalty < 0.0F ||
+            this->candidate_gen.extent_missing_penalty < 0.0F ||
+            this->candidate_gen.aperture_missing_penalty < 0.0F ||
+            this->candidate_gen.angle_tolerance_rad < 0.0F ||
+            this->candidate_gen.runtime_budget_ms < 0.0F ||
+            !std::isfinite(this->candidate_gen.weight_angle) ||
+            !std::isfinite(this->candidate_gen.weight_extent) ||
+            !std::isfinite(this->candidate_gen.weight_aperture) ||
+            !std::isfinite(this->candidate_gen.weight_topology) ||
+            !std::isfinite(this->candidate_gen.angle_missing_penalty) ||
+            !std::isfinite(this->candidate_gen.extent_missing_penalty) ||
+            !std::isfinite(this->candidate_gen.aperture_missing_penalty) ||
+            !std::isfinite(this->candidate_gen.ambiguity_margin) ||
+            !std::isfinite(this->candidate_gen.angle_tolerance_rad) ||
+            !std::isfinite(this->candidate_gen.runtime_budget_ms) ||
+            (this->candidate_gen.weight_angle == 0.0F &&
+             this->candidate_gen.weight_extent == 0.0F &&
+             this->candidate_gen.weight_aperture == 0.0F &&
+             this->candidate_gen.weight_topology == 0.0F) ||
+            this->verification.max_normal_angle_deg <= 0.0F ||
+            this->verification.max_offset_m <= 0.0F ||
+            this->verification.max_support_dist_m <= 0.0F ||
+            this->verification.min_inlier_ratio <= 0.0F ||
+            this->verification.min_inlier_ratio > 1.0F ||
+            this->verification.max_condition_number <= 0.0F ||
+            this->verification.max_walls_per_room < 3U ||
+            this->verification.max_hypotheses < 1U ||
+            this->verification.max_support_sample_per_wall < 1U ||
+            this->verification.min_abs_cos_normal_angle <= 0.0F ||
+            this->verification.min_abs_cos_normal_angle > 1.0F ||
+            !std::isfinite(this->verification.max_normal_angle_deg) ||
+            !std::isfinite(this->verification.max_offset_m) ||
+            !std::isfinite(this->verification.max_support_dist_m) ||
+            !std::isfinite(this->verification.min_inlier_ratio) ||
+            !std::isfinite(this->verification.max_condition_number) ||
+            !std::isfinite(this->verification.min_abs_cos_normal_angle) ||
+            this->factor.sigma_theta_rad <= 0.0F ||
+            this->factor.sigma_offset_m <= 0.0F ||
+            this->factor.huber_delta <= 0.0F ||
+            this->factor.optimizer_iterations < 1U ||
+            !std::isfinite(this->factor.sigma_theta_rad) ||
+            !std::isfinite(this->factor.sigma_offset_m) ||
+            !std::isfinite(this->factor.huber_delta))
         {
             throw std::invalid_argument(
                 "passage, room-topology or room-tracking configuration "
@@ -461,13 +620,13 @@ void SystemParams::SetParams(const std::string &strConfigFile)
     catch (YAML::Exception &e)
     {
         VSLAM_LOG_ERROR("Error loading system parameters. Make sure all "
-                        "parameters are defined properly: %s\n",
+                        "parameters are defined properly: %s",
                         e.what());
         exit(1);
     }
     catch (const std::invalid_argument &exception)
     {
-        VSLAM_LOG_ERROR("Error loading system parameters: %s\n",
+        VSLAM_LOG_ERROR("Error loading system parameters: %s",
                         exception.what());
         exit(1);
     }

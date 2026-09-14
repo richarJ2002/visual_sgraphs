@@ -1,0 +1,97 @@
+/**
+ * @file test_GroundPlaneFilter.cpp
+ * @brief B1 regression coverage: computeGroundPlaneHeight() must not read
+ *        past an empty (or single-point) support cloud.
+ *
+ * Before the fix, an empty support cloud made numPoint (= yVals.size() / 2)
+ * equal to 0, and yVals[numPoint - 1] underflowed to yVals[SIZE_MAX] -- an
+ * out-of-bounds read. A freshly constructed Plane (never given points via
+ * setMapClouds/replaceMapClouds) is already in exactly this state, since
+ * Plane's constructor allocates a valid but empty point cloud rather than a
+ * null one.
+ */
+
+#include "Atlas.h"
+#include "Geometric/Plane.h"
+#include "Map.h"
+#include "SemanticsManager.h"
+
+#include <gtest/gtest.h>
+
+#include <optional>
+
+namespace ORB_SLAM3
+{
+
+TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
+{
+    Atlas            atlas(0);
+    Map             *p_map = atlas.GetCurrentMap();
+    SemanticsManager manager(&atlas);
+
+    /* A freshly constructed Plane has a valid but empty support cloud --
+     * exactly the state a plane can be in before its first successful
+     * refit, or right after replaceMapClouds() clears it. */
+    Plane groundPlane;
+    groundPlane.setId(1);
+    groundPlane.SetMap(p_map);
+
+    const std::optional<float> height =
+        manager.computeGroundPlaneHeightForTest(&groundPlane);
+    EXPECT_FALSE(height.has_value());
+}
+
+TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
+{
+    /* numPoint = yVals.size() / 2 is also 0 for a single-point cloud, not
+     * only for an empty one -- the same underflow is reachable here too. */
+    Atlas            atlas(0);
+    Map             *p_map = atlas.GetCurrentMap();
+    SemanticsManager manager(&atlas);
+
+    Plane groundPlane;
+    groundPlane.setId(1);
+    groundPlane.SetMap(p_map);
+
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
+        new pcl::PointCloud<pcl::PointXYZRGBA>);
+    pcl::PointXYZRGBA point;
+    point.x = 0.0f;
+    point.y = 0.5f;
+    point.z = 0.0f;
+    cloud->push_back(point);
+    groundPlane.setMapClouds(cloud);
+
+    const std::optional<float> height =
+        manager.computeGroundPlaneHeightForTest(&groundPlane);
+    EXPECT_FALSE(height.has_value());
+}
+
+TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
+{
+    Atlas            atlas(0);
+    Map             *p_map = atlas.GetCurrentMap();
+    SemanticsManager manager(&atlas);
+
+    Plane groundPlane;
+    groundPlane.setId(1);
+    groundPlane.SetMap(p_map);
+
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
+        new pcl::PointCloud<pcl::PointXYZRGBA>);
+    for (int index = 0; index < 5; ++index)
+    {
+        pcl::PointXYZRGBA point;
+        point.x = 0.0f;
+        point.y = static_cast<float>(index) * 0.1f;
+        point.z = 0.0f;
+        cloud->push_back(point);
+    }
+    groundPlane.setMapClouds(cloud);
+
+    const std::optional<float> height =
+        manager.computeGroundPlaneHeightForTest(&groundPlane);
+    EXPECT_TRUE(height.has_value());
+}
+
+} // namespace ORB_SLAM3

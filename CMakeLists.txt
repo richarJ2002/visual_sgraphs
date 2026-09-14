@@ -16,12 +16,24 @@ ENDIF()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
+# Do not force -O3 here: CMake's own per-config defaults already give
+# Release "-O3 -DNDEBUG" and Debug "-g". Appending -O3 unconditionally used
+# to outrank a Debug build's "-O0 -g" (the compiler takes the last -O flag
+# on its command line), producing an optimized binary that claimed to be a
+# debuggable Debug build.
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+
+# System PCL allocates point buffers with plain malloc. ASan run
+# 20260830-150425 showed Eigen's handmade_aligned_free reading eight bytes
+# before such a buffer. Use the same malloc/free path across this ABI boundary.
+add_compile_definitions(EIGEN_MALLOC_ALREADY_ALIGNED=1)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -72,10 +84,15 @@ add_definitions(${PCL_DEFINITIONS})
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SaveMap.srv"
   "srv/GetMissionHealth.srv"
+  "srv/EstimatorHealth.srv"
   "msg/VSGraphsWallData.msg"
   "msg/VSGraphsRoomData.msg"
   "msg/VSGraphsAllWallsData.msg"
   "msg/VSGraphsAllDetectdetRooms.msg"
+  "msg/VSGraphsPassageData.msg"
+  "msg/VSGraphsAllPassagesData.msg"
+  "msg/VSGraphsFloorData.msg"
+  "msg/VSGraphsAllFloorsData.msg"
   DEPENDENCIES std_msgs geometry_msgs sensor_msgs
 )
 
@@ -110,7 +127,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/core/lib)
 # Create the main library
 add_library(${PROJECT_NAME}_lib SHARED
   core/src/System.cc
+  core/src/MissionHealthTopologyJson.cc
   core/src/Tracking.cc
+  core/src/ResetCause.cc
   core/src/LocalMapping.cc
   core/src/LoopClosing.cc
   core/src/ORBextractor.cc
@@ -124,15 +143,16 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/src/MapDrawer.cc
   core/src/Optimizer.cc
   core/src/Frame.cc
+  core/src/StereoMatchOutlierRejection.cc
   core/src/KeyFrameDatabase.cc
   core/src/Sim3Solver.cc
   core/src/Viewer.cc
   core/src/ImuTypes.cc
   core/src/G2oTypes.cc
-  core/src/CameraModels/Pinhole.cpp
-  core/src/CameraModels/KannalaBrandt8.cpp
-  core/src/OptimizableTypes.cpp
-  core/src/MLPnPsolver.cpp
+  core/src/CameraModels/Pinhole.cc
+  core/src/CameraModels/KannalaBrandt8.cc
+  core/src/OptimizableTypes.cc
+  core/src/MLPnPsolver.cc
   core/src/GeometricTools.cc
   core/src/TwoViewReconstruction.cc
   core/src/Utils.cc
@@ -144,11 +164,156 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/src/DatabaseParser.cc
   core/src/Semantic/Marker.cc
   core/src/Geometric/Plane.cc
+  core/src/Geometric/methods/Plane/getGeometryMetadataSnapshot.cc
+  core/src/methods/Atlas/getCoherentMapView.cc
   core/src/Semantic/Passage.cc
+  core/src/Semantic/SemanticGraphSnapshot/objects/EntityKey/operators/equality.cc
+  core/src/Semantic/SemanticGraphSnapshot/objects/EntityKey/operators/inequality.cc
+  core/src/Semantic/SemanticGraphSnapshot/objects/EntityKey/operators/lessThan.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/makeKey.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/entityRefForRoom.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/entityRefForFloor.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/entityRefForPassage.cc
+  core/src/Semantic/SemanticGraphSnapshot/public_functions/rawPlaneRef.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/appendWallRef.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/appendRoomRef.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/appendPassageRef.cc
+  core/src/Semantic/ValueOrder/doubleTotalOrderKey.cc
+  core/src/Semantic/ValueOrder/isDoubleLess.cc
+  core/src/Semantic/ValueOrder/isVector3dLess.cc
+  core/src/Semantic/ValueOrder/isVector4dLess.cc
+  core/src/Semantic/ValueOrder/isEntityRefLess.cc
+  core/src/Semantic/ValueOrder/isRawPlaneRefLess.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/isValueLessForCollisionTiebreak/room.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/isValueLessForCollisionTiebreak/wall.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/isValueLessForCollisionTiebreak/passage.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/isValueLessForCollisionTiebreak/floor.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/captureRoom.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/captureWall.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/capturePassage.cc
+  core/src/Semantic/SemanticGraphSnapshot/private_functions/captureFloor.cc
+  core/src/Semantic/SemanticGraphSnapshot/public_functions/captureSemanticGraphSnapshot.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/axiomClassFor.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/makeFinding.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/sortFindings.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/aggregateFindings.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/resolveRoomEndpoint.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/isRealPassageEndpoint.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/isKnownInvalidPassageEndpointReference.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/roomListsPassageBack.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/countRoomRecordsWithKey.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/countFloorRecordsWithKey.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/countWallRecordsWithKey.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/countPassageRecordsWithKey.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/countMapSnapshotsWithId.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/scanReversePassageEndpoints.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateRoomMalformedPassageReferences.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/canonicalRoomFloorResultFor.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluatePassageFloorAgreement.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/newellNormal.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/planeNormalFallback.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/orientation2d.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/isOnSegmentBoundingBox.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/doSegmentsIntersect.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/hasNonFiniteCoordinate.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/checkRoomBoundaryGeometry.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/isValidBoundaryWallEvidence.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/anyFindingIs.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/appendKeysFromFindings.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxFrame01.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOneWall.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxWall01.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxWall02.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/findWallByKeyInSnapshot.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOneWallTwin.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxWall03.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOnePassageProvenance.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxPass01.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOnePassageCardinality.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxPass02.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOnePassageSlotState.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxPass03.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOnePassageMapAndFloor.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxPass04.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOneRoomCreationProvenance.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxRoom01.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxRoom02.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOneRoomBoundary.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxBound01.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOneRoomFloorReciprocity.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOnePassageFloorIdentity.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxFloor01.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxLife01.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxTxn01.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxComp01.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxMerge01.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/computeLegacyMapCompleteness.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/computeConservativeMapCompleteness.cc
+  core/src/Semantic/SemanticAxiomEvaluator/public_functions/evaluateState.cc
+  core/src/Semantic/SemanticAxiomEvaluator/public_functions/evaluateTransition.cc
+  core/src/Semantic/SemanticAxiomEvaluator/public_functions/evaluateMapCompleteness.cc
+  core/src/Semantic/SemanticAxiomEvaluator/private_functions/makeAxiomCapabilityEntry.cc
+  core/src/Semantic/SemanticAxiomEvaluator/public_functions/axiomCapabilityTable.cc
+  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/axiomCodeName.cc
+  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/axiomResultName.cc
+  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/axiomClassName.cc
+  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/reasonCodeName.cc
+  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/entityKindName.cc
+  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/unavailableReasonName.cc
+  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/capabilityLevelName.cc
+  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/missingProofOwnerName.cc
+  core/src/Semantic/Sha256Digest.cc
+  core/src/Semantic/SemanticReportCache/update.cc
+  core/src/Semantic/SemanticReportCache/getLatest.cc
+  core/src/Semantic/SemanticReportCache/isAvailable.cc
+  core/src/Semantic/SemanticDiagnostics/private_functions/serializeFiniteAwareDouble.cc
+  core/src/Semantic/SemanticDiagnostics/private_functions/findingEvidenceToJson.cc
+  core/src/Semantic/SemanticDiagnostics/private_functions/entityKeysToJson.cc
+  core/src/Semantic/SemanticDiagnostics/private_functions/violationDetailToJson.cc
+  core/src/Semantic/SemanticDiagnostics/public_functions/buildSemanticDiagnosticUpdate.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeDouble.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeVector3d.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeVector4d.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeEntityKey.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeEntityRef.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeRawPlaneRef.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeRoomRecord.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeWallRecord.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializePassageRecord.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeFloorRecord.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeMapSnapshot.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeSnapshot.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeFinding.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeAggregateAxiomResult.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeLegacyMapCompletenessResult.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeMapCompletenessResult.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isFindingLessTotalOrder.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isAggregateAxiomResultLessTotalOrder.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isMapCompletenessResultLessTotalOrder.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isRoomRecordLessTopologyOnly.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isRoomRecordLessFullGeometry.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isWallRecordLessTopologyOnly.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isWallRecordLessFullGeometry.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isPassageRecordLessTopologyOnly.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isPassageRecordLessFullGeometry.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isFloorRecordLessTopologyOnly.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isFloorRecordLessFullGeometry.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isMapSnapshotLessTotalOrder.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeOpenPassageHypothesisRecord.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeUnresolvedWallHypothesisRecord.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isOpenPassageHypothesisRecordLessTopologyOnly.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isOpenPassageHypothesisRecordLessFullGeometry.cc
+  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isUnresolvedWallHypothesisRecordLessTotalOrder.cc
+  core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeSnapshotTopologyOnly.cc
+  core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeSnapshotFullGeometry.cc
+  core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeEvaluationReport.cc
+  core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeMapCompletenessResults.cc
   core/src/Types/SystemParams.cc
   core/src/SemanticSegmentation.cc
   core/src/SemanticsManager.cc
   core/src/Semantic/RoomTracker.cc
+  core/src/Semantic/SemanticCandidates.cc
+  core/src/Semantic/SemanticVerify.cc
   core/include/System.h
   core/include/Tracking.h
   core/include/LocalMapping.h
@@ -160,6 +325,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/include/MapPoint.h
   core/include/KeyFrame.h
   core/include/Atlas.h
+  core/include/AtlasCurrentMapStatus.h
   core/include/Map.h
   core/include/MapDrawer.h
   core/include/Optimizer.h
@@ -186,6 +352,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/include/DatabaseParser.h
   core/include/Semantic/Marker.h
   core/include/Geometric/Plane.h
+  core/include/Geometric/PlaneGeometryMetadataSnapshot.h
   core/include/Semantic/Passage.h
   core/include/Types/SystemParams.h
   core/include/SemanticSegmentation.h
@@ -193,7 +360,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/include/Semantic/RoomTracker.h
 )
 
-target_link_libraries(${PROJECT_NAME}_lib 
+target_link_libraries(${PROJECT_NAME}_lib
   ${OpenCV_LIBS}
   ${EIGEN3_LIBS}
   ${Pangolin_LIBRARIES}
@@ -206,7 +373,7 @@ target_link_libraries(${PROJECT_NAME}_lib
 )
 
 # ROS2 specific: Use ament_target_dependencies for ROS2 packages
-ament_target_dependencies(${PROJECT_NAME}_lib 
+ament_target_dependencies(${PROJECT_NAME}_lib
   rclcpp
   std_msgs
   cv_bridge
@@ -229,6 +396,7 @@ ament_target_dependencies(${PROJECT_NAME}_lib
 
 set(COMMON_SOURCES
   ${PROJECT_SOURCE_DIR}/src/common.cc
+  ${PROJECT_SOURCE_DIR}/src/classifySparseMarker.cc
 )
 
 # ---------------------------------------------------------------------------
@@ -301,6 +469,10 @@ add_ros2_node(
   ros_rgbd
   ${PROJECT_SOURCE_DIR}/src/ros_rgbd.cc
 )
+target_sources(ros_rgbd PRIVATE
+  ${PROJECT_SOURCE_DIR}/src/RgbdObservability.cc
+  ${PROJECT_SOURCE_DIR}/src/RgbdAllPointsCadence.cc
+)
 
 add_ros2_node(
   ros_rgbd_inertial
@@ -355,6 +527,10 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
+  target_compile_definitions(${PROJECT_NAME}_lib PRIVATE
+    VS_GRAPHS_ENABLE_ATLAS_LOCK_ORDER_TEST_HOOK
+  )
+
   ament_add_gtest(test_unit_skeleton
     test/test_unit_skeleton.cpp
     core/src/Semantic/RoomTracker.cc
@@ -363,6 +539,384 @@ if(BUILD_TESTING)
   ament_add_gtest(test_RoomTracker
     test/test_RoomTracker.cpp
     core/src/Semantic/RoomTracker.cc
+  )
+
+  ament_add_gtest(test_CandidateGen
+    test/test_CandidateGen.cpp
+    core/src/Semantic/SemanticCandidates.cc
+  )
+
+  ament_add_gtest(test_atlas_lock_order
+    test/test_atlas_lock_order.cpp
+  )
+  target_link_libraries(test_atlas_lock_order
+    ${PROJECT_NAME}_lib
+  )
+
+  ament_add_gtest(test_RoomContextPersist
+    test/test_RoomContextPersist.cpp
+  )
+  target_link_libraries(test_RoomContextPersist
+    ${PROJECT_NAME}_lib
+  )
+
+  ament_add_gtest(test_GeometricVerify
+    test/test_GeometricVerify.cpp
+  )
+  target_link_libraries(test_GeometricVerify
+    ${PROJECT_NAME}_lib
+  )
+
+  ament_add_gtest(test_room_tracker_integration
+    test/test_room_tracker_integration.cpp
+  )
+
+  # The RoomTracker contention seam changes SemanticsManager's declaration and
+  # object layout. Keep it out of the installed production library and compile
+  # a complete, consistently instrumented library only for this integration
+  # test. Reusing the production source list preserves the genuine
+  # updateTraversalEvidence() path without duplicating its implementation.
+  get_target_property(VS_GRAPHS_LIBRARY_SOURCES
+    ${PROJECT_NAME}_lib SOURCES
+  )
+  add_library(${PROJECT_NAME}_room_tracker_test_lib SHARED
+    ${VS_GRAPHS_LIBRARY_SOURCES}
+  )
+  target_compile_definitions(${PROJECT_NAME}_room_tracker_test_lib PRIVATE
+    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+  )
+  target_link_libraries(${PROJECT_NAME}_room_tracker_test_lib
+    ${OpenCV_LIBS}
+    ${EIGEN3_LIBS}
+    ${Pangolin_LIBRARIES}
+    ${PCL_LIBRARIES}
+    ${PROJECT_SOURCE_DIR}/core/Thirdparty/DBoW2/lib/libDBoW2.so
+    ${PROJECT_SOURCE_DIR}/core/Thirdparty/g2o/lib/libg2o.so
+    -lboost_system
+    -lboost_serialization
+    -lcrypto
+  )
+  ament_target_dependencies(${PROJECT_NAME}_room_tracker_test_lib
+    rclcpp
+    std_msgs
+    cv_bridge
+    sensor_msgs
+    geometry_msgs
+    tf2
+    tf2_ros
+    pcl_ros
+    nav_msgs
+    message_filters
+    image_transport
+    rviz_visual_tools
+    situational_graphs_msgs
+    segmenter_ros
+  )
+  set_target_properties(${PROJECT_NAME}_room_tracker_test_lib PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+  )
+  target_compile_definitions(test_room_tracker_integration PRIVATE
+    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+  )
+  target_link_libraries(test_room_tracker_integration
+    ${PROJECT_NAME}_room_tracker_test_lib
+  )
+  target_link_options(test_atlas_lock_order PRIVATE
+    "-Wl,--export-dynamic-symbol=vsGraphsAtlasLockOrderBeforeMapSnapshot"
+  )
+
+  # WP1 Milestone 1: exercises SemanticsManager::evaluateTopCandidateVerification
+  # against real Atlas/Map/Room/Plane/Floor objects. Reuses the same
+  # VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK-instrumented production library as
+  # test_room_tracker_integration above (built once, above).
+  ament_add_gtest(test_verification_wiring_integration
+    test/test_verification_wiring_integration.cpp
+  )
+  target_compile_definitions(test_verification_wiring_integration PRIVATE
+    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+  )
+  target_link_libraries(test_verification_wiring_integration
+    ${PROJECT_NAME}_room_tracker_test_lib
+  )
+
+  # WP1 Milestone 2: two wall-admission fixes reported directly against a
+  # live sim run (ground-aligned height/width gate, wrong-side observation
+  # backstop). Reuses the same instrumented production library as above.
+  ament_add_gtest(test_WallAdmission
+    test/test_WallAdmission.cpp
+  )
+  target_compile_definitions(test_WallAdmission PRIVATE
+    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+  )
+  target_link_libraries(test_WallAdmission
+    ${PROJECT_NAME}_room_tracker_test_lib
+  )
+
+  ament_add_gtest(test_SemanticBootstrapPhase1
+    test/test_SemanticBootstrapPhase1.cpp
+  )
+  target_compile_definitions(test_SemanticBootstrapPhase1 PRIVATE
+    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+  )
+  target_link_libraries(test_SemanticBootstrapPhase1
+    ${PROJECT_NAME}_room_tracker_test_lib
+  )
+
+  # Phase 1: wall-pair (twin-face) reconciliation (axiom (e)). Needs the
+  # private-method test hook, so it links the same instrumented production
+  # library as test_WallAdmission above.
+  ament_add_gtest(test_WallPairing
+    test/test_WallPairing.cpp
+  )
+  target_compile_definitions(test_WallPairing PRIVATE
+    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+  )
+  target_link_libraries(test_WallPairing
+    ${PROJECT_NAME}_room_tracker_test_lib
+  )
+
+  # Phase 2(ii): front-end floor-flatness reconciliation. Needs the
+  # private-method test hook, so it links the same instrumented production
+  # library as test_WallAdmission above.
+  ament_add_gtest(test_FloorFlatness
+    test/test_FloorFlatness.cpp
+  )
+  target_compile_definitions(test_FloorFlatness PRIVATE
+    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+  )
+  target_link_libraries(test_FloorFlatness
+    ${PROJECT_NAME}_room_tracker_test_lib
+  )
+
+  # User rule: a map may hold at most one more room than it has passable
+  # passages, enforced at GeoSemHelpers::createBlankRoomCandidate() (a
+  # public static method -- no private test hook needed, but reuses the
+  # already-built instrumented library for consistency).
+  ament_add_gtest(test_RoomCreationBudget
+    test/test_RoomCreationBudget.cpp
+  )
+  target_link_libraries(test_RoomCreationBudget
+    ${PROJECT_NAME}_room_tracker_test_lib
+  )
+
+  # User rule: a wall not part of a room's true closed boundary loop, and
+  # not explained by a passage, must be detached rather than silently
+  # blocking that room from ever reaching COMPLETE. Needs the private-method
+  # test hook.
+  ament_add_gtest(test_BoundaryLoopOutlierPruning
+    test/test_BoundaryLoopOutlierPruning.cpp
+  )
+  target_compile_definitions(test_BoundaryLoopOutlierPruning PRIVATE
+    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+  )
+  target_link_libraries(test_BoundaryLoopOutlierPruning
+    ${PROJECT_NAME}_room_tracker_test_lib
+  )
+
+  # User rule: manage incomplete rooms explicitly -- track unobserved
+  # angular sectors as situational-awareness data. Needs the private-method
+  # test hook.
+  ament_add_gtest(test_RoomObservationGaps
+    test/test_RoomObservationGaps.cpp
+  )
+  target_compile_definitions(test_RoomObservationGaps PRIVATE
+    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+  )
+  target_link_libraries(test_RoomObservationGaps
+    ${PROJECT_NAME}_room_tracker_test_lib
+  )
+
+  ament_add_gtest(test_rgbd_observability
+    test/test_rgbd_observability.cpp
+    src/RgbdObservability.cc
+    src/RgbdAllPointsCadence.cc
+    core/src/ResetCause.cc
+  )
+  target_include_directories(test_rgbd_observability PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/core/include
+  )
+
+  ament_add_gtest(test_SparseClusterVerdict
+    test/test_SparseClusterVerdict.cpp
+    src/classifySparseMarker.cc
+  )
+
+  # Phase 0 bug sweep (B1): computeGroundPlaneHeight() empty-cloud guard.
+  # Needs the private-method test hook, so it links the same instrumented
+  # production library as test_WallAdmission above.
+  ament_add_gtest(test_GroundPlaneFilter
+    test/test_GroundPlaneFilter.cpp
+  )
+  target_compile_definitions(test_GroundPlaneFilter PRIVATE
+    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+  )
+  target_link_libraries(test_GroundPlaneFilter
+    ${PROJECT_NAME}_room_tracker_test_lib
+  )
+
+  # Phase 0 bug sweep (B3): Frame::ComputeStereoMatches()'s outlier-rejection
+  # step, extracted into a small dependency-free helper so it's testable in
+  # isolation, without pulling in Frame's full ORB-SLAM3 dependency chain.
+  ament_add_gtest(test_StereoMatchOutlierRejection
+    test/test_StereoMatchOutlierRejection.cpp
+    core/src/StereoMatchOutlierRejection.cc
+  )
+  target_include_directories(test_StereoMatchOutlierRejection PRIVATE
+    ${PROJECT_SOURCE_DIR}/core/include
+  )
+
+  # Phase 0 bug sweep (B4): Optimizer.cc's swapped mono/stereo edge-keyframe
+  # vector lookups, extracted into a bounds-checked, dependency-free header.
+  ament_add_gtest(test_OptimizerEdgeLookup
+    test/test_OptimizerEdgeLookup.cpp
+  )
+  target_include_directories(test_OptimizerEdgeLookup PRIVATE
+    ${PROJECT_SOURCE_DIR}/core/include
+  )
+
+  # Semantic-axiom-reliability-plan.md Phase 0 (P0.4): deterministic,
+  # ROS/Gazebo-free fixture builders shared by later semantic-axiom-plan
+  # tests. Self-test only exercises plain model construction (no
+  # SemanticsManager private methods), so it links the plain production
+  # library.
+  ament_add_gtest(test_SemanticFixtures
+    test/test_SemanticFixtures.cpp
+    test/SemanticFixtures.cc
+  )
+  target_link_libraries(test_SemanticFixtures
+    ${PROJECT_NAME}_lib
+  )
+
+  # Semantic-axiom-reliability-plan.md Phase 0 (P0.5): scoped global wall
+  # precision/recall/F1 adapter fixing the comparator's matched-room-only
+  # wall denominator (gap G17). Header-only nlohmann::json parsing plus plain
+  # Eigen geometry -- no production library dependency.
+  get_filename_component(VS_GRAPHS_WORKSPACE_ROOT
+    "${PROJECT_SOURCE_DIR}/../.." ABSOLUTE
+  )
+  ament_add_gtest(test_GlobalWallMetrics
+    test/test_GlobalWallMetrics.cpp
+    test/GlobalWallMetrics.cc
+  )
+  target_compile_definitions(test_GlobalWallMetrics PRIVATE
+    VS_GRAPHS_WORKSPACE_ROOT="${VS_GRAPHS_WORKSPACE_ROOT}"
+  )
+
+  # Semantic-axiom-reliability-plan.md Phase 1 (P1.1): focused,
+  # ROS/Gazebo-free tests for the value-only SemanticGraphSnapshot capture
+  # contract. Links the production library (captureSemanticGraphSnapshot()
+  # and the model classes it reads) plus the shared fixture builders.
+  ament_add_gtest(test_SemanticGraphSnapshot
+    test/test_SemanticGraphSnapshot.cpp
+    test/SemanticFixtures.cc
+    test/SemanticGraphSnapshotTestHelpers/findRoomRecord.cc
+    test/SemanticGraphSnapshotTestHelpers/findWallRecord.cc
+    test/SemanticGraphSnapshotTestHelpers/findPassageRecord.cc
+    test/SemanticGraphSnapshotTestHelpers/findMapSnapshot.cc
+  )
+  # SemanticGraphSnapshotTestHelpers/*.cc quote-includes the sibling
+  # SemanticGraphSnapshotTestHelpers.h declaration header one directory up;
+  # that quoted include only resolves via the including file's own
+  # directory or an explicit include path, so add test/ explicitly.
+  target_include_directories(test_SemanticGraphSnapshot PRIVATE
+    ${PROJECT_SOURCE_DIR}/test
+  )
+  target_link_libraries(test_SemanticGraphSnapshot
+    ${PROJECT_NAME}_lib
+  )
+
+  # Semantic-axiom-reliability-plan.md Phase 1 (evaluator-foundation slice,
+  # P1.2/P1.3/P1.5): focused, ROS/Gazebo-free tests for the pure
+  # SemanticAxiomEvaluator module (evaluateState(), evaluateTransition(),
+  # evaluateMapCompleteness(), axiomCapabilityTable()).
+  ament_add_gtest(test_SemanticAxiomEvaluator
+    test/test_SemanticAxiomEvaluator.cpp
+    test/SemanticFixtures.cc
+  )
+  target_link_libraries(test_SemanticAxiomEvaluator
+    ${PROJECT_NAME}_lib
+  )
+
+  # Semantic-axiom-reliability-plan.md Phase 1 (evaluator-foundation slice,
+  # P1.6): focused, ROS/Gazebo-free tests for versioned canonical JSON
+  # serialization of SemanticGraphSnapshot/AxiomEvaluationReport/
+  # MapCompletenessResult.
+  ament_add_gtest(test_SemanticCanonicalSerialization
+    test/test_SemanticCanonicalSerialization.cpp
+    test/SemanticFixtures.cc
+  )
+  target_link_libraries(test_SemanticCanonicalSerialization
+    ${PROJECT_NAME}_lib
+  )
+
+  # Semantic-axiom-reliability-plan.md Phase 1 (P1.4): focused, ROS/Gazebo-
+  # free tests for the copied-value SemanticReportCache contract.
+  ament_add_gtest(test_SemanticReportCache
+    test/test_SemanticReportCache.cpp
+    test/SemanticFixtures.cc
+  )
+  target_link_libraries(test_SemanticReportCache
+    ${PROJECT_NAME}_lib
+  )
+
+  # Semantic-axiom-reliability-plan.md Phase 1 (P1.8): focused, ROS/Gazebo-
+  # free tests for the pure mission-health topology schema-2 extension.
+  ament_add_gtest(test_MissionHealthTopologyJson
+    test/test_MissionHealthTopologyJson.cpp
+  )
+  target_link_libraries(test_MissionHealthTopologyJson
+    ${PROJECT_NAME}_lib
+  )
+
+  # Semantic-axiom-reliability-plan.md Phase 1 (P1.7): focused, ROS/Gazebo-
+  # free tests for the pure SG_AXIOM/SG_VIOLATION diagnostic-update builder.
+  ament_add_gtest(test_SemanticDiagnostics
+    test/test_SemanticDiagnostics.cpp
+  )
+  target_link_libraries(test_SemanticDiagnostics
+    ${PROJECT_NAME}_lib
+  )
+
+  # Semantic-axiom-reliability-plan.md Phase 1 (P1.9): deterministic replay
+  # of 147 preserved legacy capture_attempt_*.json files through the current
+  # evaluator. Produces topology-hash stability proof and malformed-file report.
+  ament_add_gtest(test_LegacyCaptureReplay
+    test/test_LegacyCaptureReplay.cpp
+    test/LegacyCaptureReplay.cc
+  )
+  target_compile_definitions(test_LegacyCaptureReplay PRIVATE
+    VS_GRAPHS_WORKSPACE_ROOT="${VS_GRAPHS_WORKSPACE_ROOT}"
+  )
+  target_link_libraries(test_LegacyCaptureReplay
+    ${PROJECT_NAME}_lib
+  )
+
+  # Gate-run traversal repro: synthetic 3-keyframe crossing of a Passage#1-like
+  # aperture through updateTraversalEvidence().
+  ament_add_gtest(test_PassageTraversalRepro
+    test/test_PassageTraversalRepro.cpp
+  )
+  target_link_libraries(test_PassageTraversalRepro
+    ${PROJECT_NAME}_lib
+  )
+  ament_add_gtest(test_ConsecutiveMapMatcher
+    test/test_ConsecutiveMapMatcher.cpp
+  )
+  target_link_libraries(test_ConsecutiveMapMatcher
+    ${PROJECT_NAME}_lib
+  )
+
+  # Small command-line tool (not a test) that replays a corpus directory and
+  # writes the bounded LegacyReplayResult::report JSON to a file, so a
+  # Phase-1 verification session can produce legacy_replay_report.json
+  # without a gtest harness.
+  add_executable(legacy_capture_replay
+    test/legacy_capture_replay_main.cc
+    test/LegacyCaptureReplay.cc
+  )
+  target_link_libraries(legacy_capture_replay
+    ${PROJECT_NAME}_lib
   )
 endif()
 

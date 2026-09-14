@@ -123,6 +123,35 @@ class Map
     void EraseDetectedMapRoom(Room *pRoom);
     void EraseMarkerBasedMapRoom(Room *pRoom);
     void EraseRoomWallPlane(ORB_SLAM3::Plane *pPlane);
+
+    /**
+     * @brief Records the room this map started with (bootstrap entry room).
+     *        Set once; non-owning, owned by this map.
+     */
+    void setStartingRoom(ORB_SLAM3::Room *p_room_in);
+
+    /** Returns the room this map started with, if any. */
+    ORB_SLAM3::Room *getStartingRoom();
+
+    /**
+     * @brief Records the last current room at departure (reset/export).
+     *        Set on map transitions; non-owning, owned by this map.
+     */
+    void setFinalRoom(ORB_SLAM3::Room *p_room_in);
+
+    /** Returns the last current room at departure, if any. */
+    ORB_SLAM3::Room *getFinalRoom();
+
+    /**
+     * @brief Links the next map in the mission chain. Left null on
+     *        same-map clears. Non-owning; valid only while the Atlas
+     *        retains both maps.
+     */
+    void setFollowingMap(Map *p_map_in);
+
+    /** Returns the next map in the mission chain, if any. */
+    Map *getFollowingMap();
+
     void EraseMapPassage(ORB_SLAM3::Passage *pPassage);
     void EraseMapFloor(ORB_SLAM3::Floor *p_floor_in);
 
@@ -294,6 +323,12 @@ class Map
 
     KeyFrame *mpKFinitial;
     KeyFrame *mpKFlowerID;
+
+    /* Mission-chain trace links. Rooms are owned by this map (shared
+     * lifetime); the following map is Atlas-owned (see setters). */
+    ORB_SLAM3::Room *p_startingRoom{nullptr};
+    ORB_SLAM3::Room *p_finalRoom{nullptr};
+    Map             *p_followingMap{nullptr};
 
     unsigned long int mnBackupKFlowerID;
     unsigned long int mnBackupKFinitialID;

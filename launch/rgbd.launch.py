@@ -71,6 +71,38 @@ def generate_launch_description():
             ),
 
             DeclareLaunchArgument(
+                "test_run_dir",
+                default_value="",
+                description=(
+                    "Absolute test run directory. SGraph JSON archives are "
+                    "written to <test_run_dir>/output/sgraph; empty "
+                    "disables archiving."
+                ),
+            ),
+
+            DeclareLaunchArgument(
+                "sgraph_archive_enabled",
+                default_value="true",
+                description="Master on/off switch for SGraph JSON archiving.",
+            ),
+
+            DeclareLaunchArgument(
+                "sgraph_archive_interval_sec",
+                default_value="5.0",
+                description=(
+                    "Minimum sim-clock seconds between SGraph JSON archives."
+                ),
+            ),
+
+            DeclareLaunchArgument(
+                "sgraph_archive_max_files",
+                default_value="0",
+                description=(
+                    "Maximum retained SGraph JSON archives; 0 keeps all."
+                ),
+            ),
+
+            DeclareLaunchArgument(
                 "semantic_scene_segmenter",
                 default_value="yoso",
                 description=("The method to segment the semantic scene "
@@ -195,6 +227,24 @@ def generate_launch_description():
                     {
                         "direct_gazebo_flu_cloud": LaunchConfiguration(
                             "direct_gazebo_flu_cloud"
+                        )
+                    },
+                    {
+                        "test_run_dir": LaunchConfiguration("test_run_dir")
+                    },
+                    {
+                        "sgraph_archive_enabled": LaunchConfiguration(
+                            "sgraph_archive_enabled"
+                        )
+                    },
+                    {
+                        "sgraph_archive_interval_sec": LaunchConfiguration(
+                            "sgraph_archive_interval_sec"
+                        )
+                    },
+                    {
+                        "sgraph_archive_max_files": LaunchConfiguration(
+                            "sgraph_archive_max_files"
                         )
                     },
                 ],

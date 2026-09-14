@@ -20,6 +20,7 @@
 #define PASSAGE_H
 
 #include <deque>
+#include <optional>
 
 #include "Map.h"
 #include "Thirdparty/g2o/g2o/types/plane3d.h"
@@ -81,6 +82,8 @@ class Passage
     std::vector<ORB_SLAM3::Plane *> associateWalls;
     ORB_SLAM3::Room    *prospectiveRoom; // Stable far-side room handle
     KnownSideProvenance knownSideProvenance;
+    bool                mbBad{false};
+    bool                recoveryProxy{false};
 
     /*!
      * @brief       Number of independent traversal observations.
@@ -120,6 +123,20 @@ class Passage
 
     bool isPassable() const;
     void setPassable(bool value);
+
+    /*! @brief Marks this passage invalid (e.g. never resolved to any
+     *  associated room -- see associatePassagesToRooms()'s 0-room
+     *  invalidation). Passage objects are never removed from the Atlas;
+     *  callers that iterate Atlas::GetAllPassages() must skip bad ones
+     *  themselves, the same convention Plane/Room already use. */
+    bool isBad();
+    void setBad();
+
+    /** Marks topology restored without active-map supporting geometry. */
+    void setRecoveryProxy(bool isRecoveryProxy_in);
+
+    /** Returns whether this passage is historical recovery topology only. */
+    bool isRecoveryProxy() const;
 
     /*!
      * @brief       Returns whether the UAV has crossed this passage aperture.
@@ -195,6 +212,9 @@ class Passage
      */
     ORB_SLAM3::Room *getProspectiveRoom() const;
 
+    /** Copies the far-side room ID while holding the passage geometry lock. */
+    std::optional<int> getProspectiveRoomId() const;
+
     /*!
      * @brief       Sets the stable far-side room resolution for this passage.
      *              Caller retains ownership; Passage stores a non-owning
@@ -233,6 +253,19 @@ class Passage
 
     /** Copies missing known-side fields from a duplicate passage. */
     void mergeKnownSideProvenance(const KnownSideProvenance &provenance_in);
+
+    /**
+     * @brief Reconciles a same-identity duplicate into this canonical passage.
+     *
+     * A real observed duplicate replaces recovery-proxy geometry and current
+     * passability while preserving this object's stable address and ID.
+     * Topology links and traversal counters are merged without duplication.
+     * The caller must serialize semantic graph mutation for both passages.
+     *
+     * @param[in] p_duplicate_in Duplicate passage with the same stable ID.
+     * @return True when valid real geometry replaced recovery-proxy geometry.
+     */
+    bool mergeFromDuplicate(ORB_SLAM3::Passage *p_duplicate_in);
 
     /*!
      * @brief       Replaces every reference to a retired plane hypothesis.

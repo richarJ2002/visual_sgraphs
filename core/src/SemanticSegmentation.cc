@@ -176,35 +176,54 @@ void SemanticSegmentation::Run()
             break;
         }
 
-        /* Check if there are new segmented image in the buffer */
-        if (segmentedImageBuffer.empty())
+        WorkItem workItem;
+        bool     hasWorkItem = false;
+        {
+            std::lock_guard<std::mutex> lock(mMutexNewKFs);
+            if (!segmentedImageBuffer.empty())
+            {
+                workItem = std::move(segmentedImageBuffer.front());
+                segmentedImageBuffer.pop_front();
+                mDequeuedCount.fetch_add(1U, std::memory_order_relaxed);
+                hasWorkItem = true;
+            }
+        }
+
+        /* Check if there is a new segmented image in the buffer. */
+        if (!hasWorkItem)
         {
             usleep(3000);
             continue;
         }
 
-        /* Lock keyframes */
-        mMutexNewKFs.lock();
-
-        /* Retrieve oldest keyframe */
-        std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> segImgTuple =
-            segmentedImageBuffer.front();
-
-        /* Remove keyframe from front */
-        segmentedImageBuffer.pop_front();
-
-        /* Unlock keyframe */
-        mMutexNewKFs.unlock();
-
         /*!
          * Get the point cloud from the respective keyframe via the atlas -
          * ignore it if KF doesn't exist.
          */
-        KeyFrame *thisKF = mpAtlas->GetKeyFrameById(std::get<0>(segImgTuple));
+        KeyFrame *thisKF = mpAtlas->GetKeyFrameById(workItem.keyFrameId);
 
         /* If keyframe is bad continue */
         if (thisKF == nullptr || thisKF->isBad())
         {
+            recordTerminalOutcome(workItem.keyFrameId,
+                                  TerminalOutcome::MISSING_KEYFRAME);
+            continue;
+        }
+
+        if (workItem.segmentationCloud == nullptr)
+        {
+            recordTerminalOutcome(workItem.keyFrameId,
+                                  TerminalOutcome::MISSING_CLOUD);
+            continue;
+        }
+
+        Map *p_activeMap = mpAtlas->GetCurrentMap();
+        if (p_activeMap == nullptr ||
+            p_activeMap->GetId() != workItem.sourceMapId ||
+            thisKF->GetMap() != p_activeMap)
+        {
+            recordTerminalOutcome(workItem.keyFrameId,
+                                  TerminalOutcome::STALE_MAP);
             continue;
         }
 
@@ -217,14 +236,16 @@ void SemanticSegmentation::Run()
         {
             std::cerr << "[SemSeg] Skipping keyframe " << thisKF->mnId
                       << ": the RGB-D point cloud is unavailable." << std::endl;
+            recordTerminalOutcome(workItem.keyFrameId,
+                                  TerminalOutcome::MISSING_CLOUD);
             continue;
         }
 
         /* Extract the segmentation probabilities from the image */
-        pcl::PCLPointCloud2::Ptr pclPc2SegPrb = std::get<2>(segImgTuple);
+        pcl::PCLPointCloud2::Ptr pclPc2SegPrb = workItem.segmentationCloud;
 
         /* Extract the segmentation uncertainties from the image */
-        cv::Mat segImgUncertainity = std::get<1>(segImgTuple);
+        cv::Mat segImgUncertainity = workItem.uncertaintyImage;
 
         /* Init an object of point clouds for seperated classes */
         std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> clsCloudPtrs;
@@ -240,6 +261,31 @@ void SemanticSegmentation::Run()
                                  segImgUncertainity,
                                  clsCloudPtrs,
                                  thisKFPointCloud);
+
+        /*!
+         * Diagnostic visibility for a previously-silent failure mode: if the
+         * model finds no (or very few) confident WALL-class pixels in this
+         * keyframe -- e.g. a close, texture-poor, low-context wall filling
+         * the frame -- getPlanesFromClassClouds() below simply `continue`s
+         * past an empty/undersized class cloud with no trace anywhere. That
+         * made "the segmenter found nothing this frame" indistinguishable
+         * from "there was nothing to find" in every existing log. Class
+         * index 1 is WALL (Utils::getPlaneTypeFromClassId). Gate on a small
+         * count, not just empty, so this stays quiet on ordinary frames.
+         */
+        constexpr std::size_t kWallClassIndex          = 1U;
+        constexpr std::size_t kWallSilentDropLogThresh = 50U;
+        if (clsCloudPtrs.size() > kWallClassIndex &&
+            clsCloudPtrs[kWallClassIndex]->size() < kWallSilentDropLogThresh)
+        {
+            const Eigen::Vector3f cameraCenter_World =
+                thisKF->GetCameraCenter();
+            std::cout << "[SemSeg] KF#" << thisKF->mnId
+                      << " wall-class points after confidence gating: "
+                      << clsCloudPtrs[kWallClassIndex]->size() << " (camera at "
+                      << cameraCenter_World.x() << ',' << cameraCenter_World.y()
+                      << ',' << cameraCenter_World.z() << ')' << std::endl;
+        }
 
         /*!
          * clear pointclouds as they are no longer needed and consume
@@ -259,10 +305,41 @@ void SemanticSegmentation::Run()
          */
         if (thisKF->mnId - mLastProcessedKeyFrameId > 5)
         {
+            /*!
+             * A keyframe more than 5 ids behind the one just processed is
+             * NOT necessarily "skipped" -- if segmentedImageBuffer has
+             * backlogged past this window (the buffer processes strictly
+             * oldest-first; see the front()/pop_front() loop above), that
+             * keyframe is still legitimately queued, just not its turn
+             * yet. Clearing its point cloud here races the buffer's own
+             * processing: this sweep would delete data the normal
+             * processing path above (thisKF->clearPointCloud(), a few
+             * lines up) hasn't had a chance to consume, so its later
+             * dequeue finds a null point cloud and permanently logs
+             * "unavailable" -- turning a temporary backlog into
+             * unrecoverable data loss for every keyframe caught behind
+             * it. Snapshot the still-pending ids once under the buffer's
+             * own lock so this sweep only clears keyframes that are
+             * genuinely no longer queued.
+             */
+            std::unordered_set<uint64_t> pendingKeyFrameIds;
+            {
+                std::lock_guard<std::mutex> lock(mMutexNewKFs);
+                for (const WorkItem &bufferedItem : segmentedImageBuffer)
+                {
+                    pendingKeyFrameIds.insert(bufferedItem.keyFrameId);
+                }
+            }
+
             for (unsigned long int i = mLastProcessedKeyFrameId + 1;
                  i < thisKF->mnId - 5;
                  i++)
             {
+                if (pendingKeyFrameIds.count(i) > 0U)
+                {
+                    continue;
+                }
+
                 KeyFrame *pKF = mpAtlas->GetKeyFrameById(i);
                 if (pKF != nullptr &&
                     pKF->getCurrentFramePointCloud() != nullptr)
@@ -316,28 +393,115 @@ void SemanticSegmentation::Run()
                 std::cerr
                     << "[SemSeg] Discarding stale segmentation output for "
                        "keyframe "
-                    << std::get<0>(segImgTuple) << " after a map change."
+                    << workItem.keyFrameId << " after a map change."
                     << std::endl;
+                recordTerminalOutcome(workItem.keyFrameId,
+                                      TerminalOutcome::STALE_MAP);
                 continue;
             }
 
             /* Add the planes to Atlas. */
             updatePlaneData(thisKF, clsPlanes);
         }
+        recordTerminalOutcome(workItem.keyFrameId, TerminalOutcome::ACCEPTED);
     }
 }
 
 void SemanticSegmentation::AddSegmentedFrameToBuffer(
     std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *tuple)
 {
-    unique_lock<std::mutex> lock(mMutexNewKFs);
-    segmentedImageBuffer.push_back(*tuple);
+    const std::uint64_t keyFrameId = std::get<0>(*tuple);
+    KeyFrame           *p_keyFrame = mpAtlas->GetKeyFrameById(keyFrameId);
+    Map *p_sourceMap = p_keyFrame == nullptr ? nullptr : p_keyFrame->GetMap();
+
+    WorkItem droppedItem;
+    bool     didDrop = false;
+    {
+        std::lock_guard<std::mutex> lock(mMutexNewKFs);
+        if (segmentedImageBuffer.size() >= MAX_BUFFERED_WORK_ITEMS)
+        {
+            droppedItem = std::move(segmentedImageBuffer.front());
+            segmentedImageBuffer.pop_front();
+            didDrop = true;
+        }
+
+        WorkItem workItem;
+        workItem.keyFrameId        = keyFrameId;
+        workItem.sourceMapId       = p_sourceMap == nullptr
+                                         ? std::numeric_limits<std::uint64_t>::max()
+                                         : p_sourceMap->GetId();
+        workItem.uncertaintyImage  = std::get<1>(*tuple);
+        workItem.segmentationCloud = std::get<2>(*tuple);
+        segmentedImageBuffer.push_back(std::move(workItem));
+        mEnqueuedCount.fetch_add(1U, std::memory_order_relaxed);
+
+        const std::uint32_t queueDepth =
+            static_cast<std::uint32_t>(segmentedImageBuffer.size());
+        std::uint32_t priorHighWatermark =
+            mQueueHighWatermark.load(std::memory_order_relaxed);
+        while (queueDepth > priorHighWatermark &&
+               !mQueueHighWatermark.compare_exchange_weak(
+                   priorHighWatermark,
+                   queueDepth,
+                   std::memory_order_relaxed))
+        {}
+    }
+
+    if (didDrop)
+    {
+        recordTerminalOutcome(droppedItem.keyFrameId,
+                              TerminalOutcome::QUEUE_DROPPED);
+    }
 }
 
-std::list<std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr>>
-    SemanticSegmentation::GetSegmentedFrameBuffer()
+SemanticSegmentation::ProcessingStats SemanticSegmentation::GetProcessingStats()
 {
-    return segmentedImageBuffer;
+    ProcessingStats stats;
+    stats.enqueuedCount = mEnqueuedCount.load(std::memory_order_relaxed);
+    stats.dequeuedCount = mDequeuedCount.load(std::memory_order_relaxed);
+    stats.terminalCount = mTerminalCount.load(std::memory_order_relaxed);
+    stats.acceptedCount = mAcceptedCount.load(std::memory_order_relaxed);
+    stats.droppedCount  = mDroppedCount.load(std::memory_order_relaxed);
+    stats.missingKeyFrameCount =
+        mMissingKeyFrameCount.load(std::memory_order_relaxed);
+    stats.missingCloudCount =
+        mMissingCloudCount.load(std::memory_order_relaxed);
+    stats.staleMapCount = mStaleMapCount.load(std::memory_order_relaxed);
+    stats.lastTerminalKeyFrameId =
+        mLastTerminalKeyFrameId.load(std::memory_order_relaxed);
+    stats.queueHighWatermark =
+        mQueueHighWatermark.load(std::memory_order_relaxed);
+    {
+        std::lock_guard<std::mutex> lock(mMutexNewKFs);
+        stats.queueDepth =
+            static_cast<std::uint32_t>(segmentedImageBuffer.size());
+    }
+    return stats;
+}
+
+void SemanticSegmentation::recordTerminalOutcome(std::uint64_t   keyFrameId,
+                                                 TerminalOutcome outcome)
+{
+    mTerminalCount.fetch_add(1U, std::memory_order_relaxed);
+    mLastTerminalKeyFrameId.store(keyFrameId, std::memory_order_relaxed);
+    switch (outcome)
+    {
+    case TerminalOutcome::ACCEPTED:
+        mAcceptedCount.fetch_add(1U, std::memory_order_relaxed);
+        break;
+    case TerminalOutcome::QUEUE_DROPPED:
+        mDroppedCount.fetch_add(1U, std::memory_order_relaxed);
+        break;
+    case TerminalOutcome::MISSING_KEYFRAME:
+        mMissingKeyFrameCount.fetch_add(1U, std::memory_order_relaxed);
+        break;
+    case TerminalOutcome::MISSING_CLOUD:
+        mMissingCloudCount.fetch_add(1U, std::memory_order_relaxed);
+        break;
+    case TerminalOutcome::STALE_MAP:
+        mStaleMapCount.fetch_add(1U, std::memory_order_relaxed);
+        break;
+    }
 }
 
 void SemanticSegmentation::threshSeparatePointCloud(

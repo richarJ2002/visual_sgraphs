@@ -16,6 +16,7 @@
 #ifndef ROOMTRACKER_H
 #define ROOMTRACKER_H
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -82,10 +83,10 @@ enum class RoomTrackingEvent
  */
 struct TraversalGuardValues
 {
-    double dwell_s = 0.0;
-    double confidence = 0.0;
-    bool   passageDetected = false;
-    bool   passable = false;
+    double dwell_s           = 0.0;
+    double confidence        = 0.0;
+    bool   passageDetected   = false;
+    bool   passable          = false;
     bool   bothSidesObserved = false;
 };
 
@@ -93,18 +94,40 @@ struct TraversalGuardValues
  * @brief           Abstract verification-result event.
  *
  *                  Phase 4 supplies the real plane-gated geometric verifier;
- *                  until then callers populate this with synthetic pass/fail
- *                  values (Section 19.2). Only the verdict and confidence are
- *                  consumed by the transition engine in Phase 1.
+ *                  Production remains UNAVAILABLE until a future typed
+ *                  geometric-verifier producer supplies a result. Tests may
+ *                  inject deterministic values. Only the verdict and
+ *                  confidence are consumed by the transition engine in Phase 1.
  */
+enum class VerificationStatus
+{
+    UNAVAILABLE,
+    PASS,
+    REJECTED
+};
+
 struct VerificationVerdict
 {
-    bool          pass = false;
-    unsigned int  inlierCount = 0U;
-    double        inlierRatio = 0.0;
-    double        normalisedConditionNumber = 0.0;
-    double        angularResidual_rad = 0.0;
-    double        confidence = 0.0;
+    VerificationStatus status      = VerificationStatus::UNAVAILABLE;
+    bool               pass        = false;
+    unsigned int       inlierCount = 0U;
+    double             inlierRatio = 0.0;
+    double             normalisedConditionNumber = 0.0;
+    double             angularResidual_rad       = 0.0;
+    double             confidence                = 0.0;
+
+    /** Returns true only for a finite, internally consistent PASS. */
+    bool isPass() const
+    {
+        return status == VerificationStatus::PASS && pass &&
+               std::isfinite(inlierRatio) && inlierRatio >= 0.0 &&
+               inlierRatio <= 1.0 && std::isfinite(normalisedConditionNumber) &&
+               normalisedConditionNumber >= 0.0 &&
+               normalisedConditionNumber <= 1.0 &&
+               std::isfinite(angularResidual_rad) &&
+               angularResidual_rad >= 0.0 && std::isfinite(confidence) &&
+               confidence >= 0.0 && confidence <= 1.0;
+    }
 };
 
 /*!
@@ -117,7 +140,7 @@ struct VerificationVerdict
  */
 struct TrackingStatusInput
 {
-    bool lost = false;
+    bool lost          = false;
     bool newMapCreated = false;
 };
 
@@ -133,11 +156,11 @@ struct TransitionEvent
     double            timestamp_s = 0.0;
     RoomTrackingState sourceState = RoomTrackingState::UNKNOWN;
     RoomTrackingState targetState = RoomTrackingState::UNKNOWN;
-    RoomTrackingEvent event = RoomTrackingEvent::FIRST_ROOM_CONFIRMED;
-    double            dwell_s = 0.0;
-    double            confidence = 0.0;
+    RoomTrackingEvent event       = RoomTrackingEvent::FIRST_ROOM_CONFIRMED;
+    double            dwell_s     = 0.0;
+    double            confidence  = 0.0;
     bool              verificationPass = false;
-    bool              accepted = false;
+    bool              accepted         = false;
 };
 
 /*!
@@ -147,17 +170,17 @@ struct RoomTrackerConfig
 {
     /*! Minimum continuous crossed-passage dwell before committing the
      *  CONFIRMED_ROOM <-> CROSSING_PASSAGE transitions (seconds). */
-    double crossing_dwell_s = 2.0;
+    double       crossing_dwell_s = 2.0;
     /*! Minimum traversal confidence (0..1) for a crossing to count. */
-    double crossing_confidence = 0.7;
+    double       crossing_confidence = 0.7;
     /*! Maximum time in LOST_WITH_LAST_ROOM before decay to
      *  LOST_WITHOUT_ROOM (seconds). */
-    double lost_timeout_s = 30.0;
+    double       lost_timeout_s = 30.0;
     /*! Maximum time in REACQUIRING_IN_NEW_MAP before decay to
      *  LOST_WITHOUT_ROOM (seconds). */
-    double reacquire_timeout_s = 60.0;
+    double       reacquire_timeout_s = 60.0;
     /*! Retry backoff between failed reacquire attempts (seconds). */
-    double reacquire_retry_interval_s = 5.0;
+    double       reacquire_retry_interval_s = 5.0;
     /*! Maximum failed reacquire attempts before timeout applies. */
     unsigned int reacquire_max_retries = 3U;
     /*! Minimum planes required to attempt a reacquire. Consumed by the
@@ -179,7 +202,8 @@ class RoomTracker
     /*!
      * @brief       Constructs a tracker with the given configuration.
      */
-    explicit RoomTracker(const RoomTrackerConfig &config_in = RoomTrackerConfig());
+    explicit RoomTracker(
+        const RoomTrackerConfig &config_in = RoomTrackerConfig());
 
     /*!
      * @brief       Resets state, timers, retry counters and event history.
@@ -209,10 +233,10 @@ class RoomTracker
      *
      * @return      The state after the cycle.
      */
-    RoomTrackingState step(double                        now_s,
-                           const TraversalGuardValues   &crossing,
-                           const VerificationVerdict    &verification,
-                           const TrackingStatusInput    &tracking);
+    RoomTrackingState step(double                      now_s,
+                           const TraversalGuardValues &crossing,
+                           const VerificationVerdict  &verification,
+                           const TrackingStatusInput  &tracking);
 
     /*!
      * @brief       Discrete transition oracle: applies exactly one Section 18.2
@@ -233,8 +257,8 @@ class RoomTracker
      *
      * @return      The state after applying the row.
      */
-    RoomTrackingState applyEvent(RoomTrackingEvent         event,
-                                 double                    now_s,
+    RoomTrackingState applyEvent(RoomTrackingEvent           event,
+                                 double                      now_s,
                                  const TraversalGuardValues &crossing,
                                  const VerificationVerdict  &verification);
 
@@ -277,7 +301,8 @@ class RoomTracker
     /*!
      * @brief       Section 18.3 confidence formula:
      *
-     *              confidence = inlier_ratio * (1 - normalised_condition_number)
+     *              confidence = inlier_ratio * (1 -
+     * normalised_condition_number)
      *                           * exp(-angular_residual / sigma_theta_rad)
      *
      *              Non-finite or out-of-range inputs are clamped; a
@@ -294,21 +319,21 @@ class RoomTracker
      * @brief       Central row engine: applies the source row for (state,
      *              event). Returns true when the transition was committed.
      */
-    bool applyRow(RoomTrackingState         source,
-                  RoomTrackingEvent         event,
-                  double                    now_s,
+    bool applyRow(RoomTrackingState           source,
+                  RoomTrackingEvent           event,
+                  double                      now_s,
                   const TraversalGuardValues &crossing,
                   const VerificationVerdict  &verification);
 
     /*!
      * @brief       Commits target as the new state and records the event.
      */
-    void commit(RoomTrackingState         source,
-                RoomTrackingEvent         event,
-                double                    now_s,
+    void commit(RoomTrackingState           source,
+                RoomTrackingEvent           event,
+                double                      now_s,
                 const TraversalGuardValues &crossing,
                 const VerificationVerdict  &verification,
-                bool                      accepted);
+                bool                        accepted);
 
     /*!
      * @brief       Accumulates the crossing/dwell timer for the given state.
@@ -320,20 +345,20 @@ class RoomTracker
                            bool              guardSatisfied);
 
   private:
-    RoomTrackerConfig             config_;
-    RoomTrackingState             state_ = RoomTrackingState::UNKNOWN;
-    std::vector<TransitionEvent>  eventHistory_;
-    TransitionEvent               lastEvent_;
+    RoomTrackerConfig            config_;
+    RoomTrackingState            state_ = RoomTrackingState::UNKNOWN;
+    std::vector<TransitionEvent> eventHistory_;
+    TransitionEvent              lastEvent_;
 
-    double lastReceivedTime_s_ = 0.0;
-    double lastEnterStateTime_s_ = 0.0;
+    double lastReceivedTime_s_       = 0.0;
+    double lastEnterStateTime_s_     = 0.0;
     double crossingDwellStartTime_s_ = -1.0;
 
-    unsigned int reacquireRetryCount_ = 0U;
+    unsigned int reacquireRetryCount_      = 0U;
     double       reacquireLastRetryTime_s_ = -1.0;
 
-    bool  hasObservedBothSides_ = false;
-    bool  wasTrackingLost_ = false;
+    bool hasObservedBothSides_ = false;
+    bool wasTrackingLost_      = false;
 };
 
 } // namespace ORB_SLAM3

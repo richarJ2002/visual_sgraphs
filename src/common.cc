@@ -32,9 +32,21 @@
 
 #include "common.hpp"
 
+#include "MissionHealthTopologyJson.h"
+
+#include "SparseClusterVerdict.h"
+
+#include "../include/PublishTopicsTiming.h"
+
+#include <opencv2/imgcodecs.hpp>
+
+#include <chrono>
+#include <filesystem>
 #include <iomanip>
 #include <limits>
+#include <mutex>
 #include <sstream>
+#include <unordered_map>
 #include <unordered_set>
 
 /* -------------------------------------------------------------------------- *
@@ -44,13 +56,6 @@
 ORB_SLAM3::System *p_slamSystem = nullptr;
 
 ORB_SLAM3::System::eSensor sensorType = ORB_SLAM3::System::NOT_SET;
-
-/* Track which prospective-room marker IDs were published in the previous
- * frame. Prospective rooms are drawn in their own marker namespace
- * (prospectiveRoom / prospectiveRoomLabel / passageToProspective) and, once a
- * prospective is promoted to a confirmed room or cleaned up, its marker must
- * be explicitly deleted - otherwise stale cubes accumulate in RViz. */
-std::unordered_set<int> s_publishedProspectiveMarkerIds;
 
 /* -------------------------------------------------------------------------- *
  * COMMON CONFIGURATION
@@ -67,6 +72,18 @@ double yaw = 0.0;
 bool pubStaticTransform = false;
 
 bool pubPointClouds = false;
+
+/* -------------------------------------------------------------------------- *
+ * SGRAPH JSON ARCHIVE CONFIGURATION
+ * -------------------------------------------------------------------------- */
+
+std::string sgraphArchiveTestRunDir;
+
+bool sgraphArchiveEnabled = true;
+
+double sgraphArchiveIntervalSec = 5.0;
+
+int sgraphArchiveMaxFiles = 0;
 
 /* -------------------------------------------------------------------------- *
  * COORDINATE-FRAME IDENTIFIERS
@@ -108,6 +125,146 @@ std::vector<ORB_SLAM3::Room *> gnnRoomCandidates;
 std::vector<std::vector<Eigen::Vector3d>> skeletonClusterPoints;
 
 std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> skeletonEdges;
+
+namespace
+{
+struct VoxbloxHealthState
+{
+    std::mutex                            mutex;
+    std::chrono::steady_clock::time_point firstInput;
+    std::chrono::steady_clock::time_point lastInput;
+    std::chrono::steady_clock::time_point lastSkeleton;
+    std::chrono::steady_clock::time_point lastSparseGraph;
+    std::chrono::steady_clock::time_point lastReset;
+    std::chrono::steady_clock::time_point lastLog;
+    std::uint64_t                         inputCount{0U};
+    std::uint64_t                         resetRevision{0U};
+    std::int64_t                          firstInputStamp_ns{0};
+    std::int64_t                          lastInputStamp_ns{0};
+    std::int64_t                          lastSkeletonStamp_ns{0};
+    std::int64_t                          lastSparseGraphStamp_ns{0};
+    std::uint32_t                         lastInputWidth{0U};
+    std::size_t                           acceptedClusterCount{0U};
+    std::size_t                           acceptedVertexCount{0U};
+    std::size_t                           acceptedEdgeCount{0U};
+    std::string                           lastSparseSummarySignature;
+    std::chrono::steady_clock::time_point lastSparseSummaryLog;
+    bool                                  hasInput{false};
+    bool                                  hasSkeleton{false};
+    bool                                  hasSparseGraph{false};
+    bool                                  hasReset{false};
+    bool                                  wasStalled{false};
+};
+
+VoxbloxHealthState voxbloxHealth;
+
+/*!
+ * Latest completed cluster-ingest rejection counts. Written by
+ * setVoxbloxSkeletonCluster() and read back by the callback summary on the
+ * same subscription thread; the sequence distinguishes a fresh all-zero scan
+ * from stale data.
+ */
+vs_graphs::sparse::SparseIngestCounts lastSparseIngest;
+
+double ageSeconds(const std::chrono::steady_clock::time_point &now_in,
+                  const std::chrono::steady_clock::time_point &timePoint_in,
+                  const bool                                   hasTimePoint_in)
+{
+    return hasTimePoint_in
+               ? std::chrono::duration<double>(now_in - timePoint_in).count()
+               : -1.0;
+}
+
+double simulatedOutputAgeSeconds(const std::int64_t inputStamp_ns_in,
+                                 const std::int64_t firstInputStamp_ns_in,
+                                 const std::int64_t outputStamp_ns_in)
+{
+    const std::int64_t referenceStamp_ns =
+        outputStamp_ns_in > 0 ? outputStamp_ns_in : firstInputStamp_ns_in;
+    if (inputStamp_ns_in <= 0 || referenceStamp_ns <= 0 ||
+        inputStamp_ns_in < referenceStamp_ns)
+    {
+        return -1.0;
+    }
+    return static_cast<double>(inputStamp_ns_in - referenceStamp_ns) * 1e-9;
+}
+
+void observeVoxbloxInput(const std::uint32_t width_in,
+                         const rclcpp::Time &stamp_in)
+{
+    const std::chrono::steady_clock::time_point now =
+        std::chrono::steady_clock::now();
+    std::lock_guard<std::mutex> lock(voxbloxHealth.mutex);
+    if (!voxbloxHealth.hasInput)
+    {
+        voxbloxHealth.firstInput         = now;
+        voxbloxHealth.hasInput           = true;
+        voxbloxHealth.firstInputStamp_ns = stamp_in.nanoseconds();
+    }
+    voxbloxHealth.lastInput      = now;
+    voxbloxHealth.lastInputWidth = width_in;
+    voxbloxHealth.inputCount++;
+    voxbloxHealth.lastInputStamp_ns = stamp_in.nanoseconds();
+
+    const double logAge_s =
+        ageSeconds(now,
+                   voxbloxHealth.lastLog,
+                   voxbloxHealth.lastLog.time_since_epoch().count() != 0);
+    const double skeletonAge_s =
+        ageSeconds(now,
+                   voxbloxHealth.hasSkeleton ? voxbloxHealth.lastSkeleton
+                                             : voxbloxHealth.firstInput,
+                   true);
+    const double sparseAge_s =
+        ageSeconds(now,
+                   voxbloxHealth.hasSparseGraph ? voxbloxHealth.lastSparseGraph
+                                                : voxbloxHealth.firstInput,
+                   true);
+    const double inputAge_s = ageSeconds(now, voxbloxHealth.lastInput, true);
+    const double skeletonSimAge_s =
+        simulatedOutputAgeSeconds(voxbloxHealth.lastInputStamp_ns,
+                                  voxbloxHealth.firstInputStamp_ns,
+                                  voxbloxHealth.lastSkeletonStamp_ns);
+    const double sparseSimAge_s =
+        simulatedOutputAgeSeconds(voxbloxHealth.lastInputStamp_ns,
+                                  voxbloxHealth.firstInputStamp_ns,
+                                  voxbloxHealth.lastSparseGraphStamp_ns);
+    const bool hasSimTimeEvidence =
+        skeletonSimAge_s >= 0.0 && sparseSimAge_s >= 0.0;
+    const bool outputOverdue =
+        hasSimTimeEvidence ? skeletonSimAge_s >= 10.0 && sparseSimAge_s >= 10.0
+                           : skeletonAge_s >= 10.0 && sparseAge_s >= 10.0;
+    const bool stalled = inputAge_s < 2.0 && outputOverdue;
+    if (logAge_s >= 3.0 || logAge_s < 0.0 ||
+        stalled != voxbloxHealth.wasStalled)
+    {
+        const double elapsedInput_s = std::max(
+            std::chrono::duration<double>(now - voxbloxHealth.firstInput)
+                .count(),
+            1e-6);
+        std::cout
+            << "SG_PIPELINE {\"event\":\"voxblox_health\","
+               "\"state\":\""
+            << (stalled ? "VOXBLOX_STALLED" : "VOXBLOX_ACTIVE")
+            << "\",\"input_width\":" << voxbloxHealth.lastInputWidth
+            << ",\"input_rate_hz\":"
+            << static_cast<double>(voxbloxHealth.inputCount) / elapsedInput_s
+            << ",\"last_skeleton_age_s\":" << skeletonAge_s
+            << ",\"last_sparse_age_s\":" << sparseAge_s
+            << ",\"skeleton_sim_age_s\":" << skeletonSimAge_s
+            << ",\"sparse_sim_age_s\":" << sparseSimAge_s
+            << ",\"last_reset_age_s\":"
+            << ageSeconds(now, voxbloxHealth.lastReset, voxbloxHealth.hasReset)
+            << ",\"reset_revision\":" << voxbloxHealth.resetRevision
+            << ",\"accepted_clusters\":" << voxbloxHealth.acceptedClusterCount
+            << ",\"accepted_vertices\":" << voxbloxHealth.acceptedVertexCount
+            << ",\"accepted_edges\":" << voxbloxHealth.acceptedEdgeCount << "}"
+            << std::endl;
+        voxbloxHealth.lastLog    = now;
+        voxbloxHealth.wasStalled = stalled;
+    }
+}
+} // namespace
 
 /* -------------------------------------------------------------------------- *
  * PUBLICATION STATE
@@ -186,6 +343,19 @@ rclcpp::Publisher<situational_graphs_msgs::msg::PlanesData>::SharedPtr
     pubAllWalls_legacy = nullptr;
 
 /* -------------------------------------------------------------------------- *
+ * MAPPED-ROOM AND MAPPED-PASSAGE PUBLISHERS
+ * -------------------------------------------------------------------------- */
+
+rclcpp::Publisher<vs_graphs::msg::VSGraphsAllDetectdetRooms>::SharedPtr
+    pubAllRooms = nullptr;
+
+rclcpp::Publisher<vs_graphs::msg::VSGraphsAllPassagesData>::SharedPtr
+    pubAllPassages = nullptr;
+
+rclcpp::Publisher<vs_graphs::msg::VSGraphsAllFloorsData>::SharedPtr
+    pubAllFloors = nullptr;
+
+/* -------------------------------------------------------------------------- *
  * STRUCTURAL-ELEMENT PUBLISHERS
  * -------------------------------------------------------------------------- */
 
@@ -193,12 +363,14 @@ rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     pubStructuralElements = nullptr;
 
 /*!
- * @brief Removes indefinitely-lived RViz markers from a previous map revision.
+ * @brief           Removes indefinitely-lived RViz markers from a previous map
+ *                  revision.
  *
- * @param[in] p_markerPublisher_in
- *            Marker publisher whose displayed state must be cleared.
- * @param[in] msgTime_s_in
- *            Timestamp assigned to the deletion marker.
+ * @param[in]       p_markerPublisher_in
+ *                  Marker publisher whose displayed state must be cleared.
+ *
+ * @param[in]       msgTime_s_in
+ *                  Timestamp assigned to the deletion marker.
  */
 static void clearPublishedMarkers(
     const rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
@@ -221,14 +393,17 @@ static void clearPublishedMarkers(
 }
 
 /*!
- * @brief Replaces an indefinitely-displayed point cloud with an empty cloud.
+ * @brief           Replaces an indefinitely-displayed point cloud with an empty
+ *                  cloud.
  *
- * @param[in] p_pointCloudPublisher_in
- *            Point-cloud publisher whose displayed state must be cleared.
- * @param[in] frameId_in
- *            Coordinate frame assigned to the empty cloud.
- * @param[in] msgTime_s_in
- *            Timestamp assigned to the empty cloud.
+ * @param[in]       p_pointCloudPublisher_in
+ *                  Point-cloud publisher whose displayed state must be cleared.
+ *
+ * @param[in]       frameId_in
+ *                  Coordinate frame assigned to the empty cloud.
+ *
+ * @param[in]       msgTime_s_in
+ *                  Timestamp assigned to the empty cloud.
  */
 static void clearPublishedPointCloud(
     const rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
@@ -259,8 +434,8 @@ static void clearPublishedPointCloud(
  *              stale rooms and planes otherwise appear to belong to the new
  *              map.
  *
- * @param[in] msgTime_s_in
- *            Timestamp assigned to reset messages.
+ * @param[in]   msgTime_s_in
+ *              Timestamp assigned to reset messages.
  */
 static void clearMapScopedVisualization(const rclcpp::Time &msgTime_s_in)
 {
@@ -290,6 +465,22 @@ rclcpp::Service<vs_graphs::srv::SaveMap>::SharedPtr srvSaveTrajectory = nullptr;
 
 rclcpp::Service<vs_graphs::srv::GetMissionHealth>::SharedPtr
     srvGetMissionHealth = nullptr;
+
+rclcpp::Service<vs_graphs::srv::EstimatorHealth>::SharedPtr srvEstimatorHealth =
+    nullptr;
+
+std::atomic<double> estimatorFramesPerSecond{0.0};
+std::atomic<double> estimatorFrameWallSeconds{0.0};
+
+void recordEstimatorFrame(const double frameInterval_seconds)
+{
+    estimatorFramesPerSecond.store(
+        frameInterval_seconds > 1e-6 ? 1.0 / frameInterval_seconds : 0.0);
+    estimatorFrameWallSeconds.store(
+        std::chrono::duration<double>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count());
+}
 
 namespace
 {
@@ -615,56 +806,6 @@ void appendPassageMarkers(
         structuralElementMarkerArray_out.markers.push_back(
             deletePassageLabelMarker);
     };
-
-    const auto appendProspectiveDeleteMarkers =
-        [&msgTime_s_in,
-         &structuralElementMarkerArray_out](const int prospectiveMarkerId)
-    {
-        visualization_msgs::msg::Marker deleteProspectiveRoomMarker;
-
-        deleteProspectiveRoomMarker.header.frame_id = frameSE;
-        deleteProspectiveRoomMarker.header.stamp    = msgTime_s_in;
-
-        deleteProspectiveRoomMarker.ns = "prospectiveRoom";
-        deleteProspectiveRoomMarker.id = prospectiveMarkerId;
-
-        deleteProspectiveRoomMarker.action =
-            visualization_msgs::msg::Marker::DELETE;
-        structuralElementMarkerArray_out.markers.push_back(
-            deleteProspectiveRoomMarker);
-
-        visualization_msgs::msg::Marker deleteProspectiveRoomLabelMarker;
-
-        deleteProspectiveRoomLabelMarker.header.frame_id = frameSE;
-        deleteProspectiveRoomLabelMarker.header.stamp    = msgTime_s_in;
-
-        deleteProspectiveRoomLabelMarker.ns = "prospectiveRoomLabel";
-        deleteProspectiveRoomLabelMarker.id = prospectiveMarkerId;
-
-        deleteProspectiveRoomLabelMarker.action =
-            visualization_msgs::msg::Marker::DELETE;
-        structuralElementMarkerArray_out.markers.push_back(
-            deleteProspectiveRoomLabelMarker);
-
-        visualization_msgs::msg::Marker deletePassageToProspectiveMarker;
-
-        deletePassageToProspectiveMarker.header.frame_id = frameWorld;
-        deletePassageToProspectiveMarker.header.stamp    = msgTime_s_in;
-
-        deletePassageToProspectiveMarker.ns = "passageToProspective";
-        deletePassageToProspectiveMarker.id = prospectiveMarkerId;
-
-        deletePassageToProspectiveMarker.action =
-            visualization_msgs::msg::Marker::DELETE;
-        structuralElementMarkerArray_out.markers.push_back(
-            deletePassageToProspectiveMarker);
-    };
-
-    /* Delete any prospective-room marker published previously whose room is no
-     * longer shown this frame (promoted to a confirmed room or cleaned up).
-     * The ids that survive this frame are re-recorded below. */
-    std::unordered_set<int> currentProspectiveMarkerIds;
-
     for (ORB_SLAM3::Passage *mappedPassage : mappedPassages_in)
     {
         if (mappedPassage == nullptr)
@@ -673,6 +814,30 @@ void appendPassageMarkers(
         }
 
         const int passageMarkerId = static_cast<int>(mappedPassage->getId());
+
+        /* Remove invalidated passages from RViz. Passage::isBad() is a
+         * per-session addition (0-associated-room invalidation); until now
+         * every passage the Atlas ever created stayed drawn forever, since
+         * this loop had no equivalent to appendRoomMarkers()'s own
+         * isBad()-checks-delete pattern above. */
+        if (mappedPassage->isBad())
+        {
+            appendPassageDeleteMarkers(passageMarkerId);
+            continue;
+        }
+
+        /* Recovery proxies carry identity and topology but no positioned
+         * geometry until re-observed: drawing them would plant doorways at
+         * unlocated coordinates. Fresh passages always carry aperture
+         * dimensions from detection, so only proxies trip this gate. */
+        const double proxyWidth_m  = mappedPassage->getWidth();
+        const double proxyHeight_m = mappedPassage->getHeight();
+        if (mappedPassage->isRecoveryProxy() &&
+            (!std::isfinite(proxyWidth_m) || !std::isfinite(proxyHeight_m) ||
+             proxyWidth_m <= 0.0 || proxyHeight_m <= 0.0))
+        {
+            continue;
+        }
 
         geometry_msgs::msg::PointStamped passageDisplayPoint_SE;
         geometry_msgs::msg::PointStamped passageDisplayPoint_world;
@@ -756,8 +921,10 @@ void appendPassageMarkers(
         passageLabelMarker.text = passageLabel;
 
         passageLabelMarker.pose.position.x = passageDisplayPoint_SE.point.x;
+        /* Opposite side from room labels (which use + textOffset_m): the
+         * doorway label and any nearby room label no longer stack. */
         passageLabelMarker.pose.position.y =
-            passageDisplayPoint_SE.point.y + textOffset_m;
+            passageDisplayPoint_SE.point.y - textOffset_m;
         passageLabelMarker.pose.position.z = passageDisplayPoint_SE.point.z;
 
         passageLabelMarker.pose.orientation.x = 0.0;
@@ -775,183 +942,7 @@ void appendPassageMarkers(
         passageLabelMarker.lifetime = rclcpp::Duration::from_seconds(0);
 
         structuralElementMarkerArray_out.markers.push_back(passageLabelMarker);
-
-        /* ------------------------------------------------------------------ *
-         * PROSPECTIVE ROOM VISUALIZATION
-         * ------------------------------------------------------------------ *
-         * Display a marker for the prospective room on the far side of passages
-         * that have only one associated room. This provides situational
-         * awareness that the semantic graph hypothesizes traversable space
-         * beyond the opening.
-         */
-        if (mappedPassage->hasProspectiveRoom())
-        {
-            ORB_SLAM3::Room *p_prospectiveRoom =
-                mappedPassage->getProspectiveRoom();
-            if (p_prospectiveRoom != nullptr && !p_prospectiveRoom->isBad())
-            {
-                /* A prospective room is only the placeholder for the far side
-                 * of the passage. Once the real far-side room has been
-                 * detected (and is therefore drawn this frame from the room
-                 * list), the placeholder must not be drawn as well - otherwise
-                 * its label stacks on top of the confirmed room's label at the
-                 * same position. */
-                bool supersededByConfirmedRoom = false;
-                for (ORB_SLAM3::Room *p_confirmedRoom : mappedRooms_in)
-                {
-                    if (p_confirmedRoom == nullptr ||
-                        p_confirmedRoom->isBad() ||
-                        p_confirmedRoom == p_prospectiveRoom ||
-                        p_confirmedRoom->getRoomVariant() ==
-                            ORB_SLAM3::Room::roomVariant::UNDEFINED)
-                    {
-                        continue;
-                    }
-                    if ((p_confirmedRoom->getCentroid().cast<double>() -
-                         p_prospectiveRoom->getCentroid())
-                            .norm() < 1.5)
-                    {
-                        supersededByConfirmedRoom = true;
-                        break;
-                    }
-                }
-
-                geometry_msgs::msg::PointStamped roomDisplayPoint_SE;
-                geometry_msgs::msg::PointStamped roomDisplayPoint_world;
-
-                if (!supersededByConfirmedRoom &&
-                    getRoomDisplayPoints(p_prospectiveRoom,
-                                         msgTime_s_in,
-                                         roomDisplayPoint_SE,
-                                         roomDisplayPoint_world))
-                {
-                    const int prospectiveRoomMarkerId =
-                        static_cast<int>(p_prospectiveRoom->getId()) +
-                        10000; // offset to avoid collision
-
-                    currentProspectiveMarkerIds.insert(prospectiveRoomMarkerId);
-
-                    /* Purple for all rooms, prospective (unconfirmed) included
-                     */
-                    const float prospectiveColourRed   = 0.6F;
-                    const float prospectiveColourGreen = 0.0F;
-                    const float prospectiveColourBlue  = 1.0F;
-
-                    /* Prospective room node (semi-transparent cube) */
-                    visualization_msgs::msg::Marker prospectiveRoomMarker;
-                    prospectiveRoomMarker.header.frame_id = frameSE;
-                    prospectiveRoomMarker.header.stamp    = msgTime_s_in;
-                    prospectiveRoomMarker.ns              = "prospectiveRoom";
-                    prospectiveRoomMarker.id = prospectiveRoomMarkerId;
-                    prospectiveRoomMarker.type =
-                        visualization_msgs::msg::Marker::CUBE;
-                    prospectiveRoomMarker.action =
-                        visualization_msgs::msg::Marker::ADD;
-                    prospectiveRoomMarker.pose.position.x =
-                        roomDisplayPoint_SE.point.x;
-                    prospectiveRoomMarker.pose.position.y =
-                        roomDisplayPoint_SE.point.y;
-                    prospectiveRoomMarker.pose.position.z =
-                        roomDisplayPoint_SE.point.z;
-                    prospectiveRoomMarker.pose.orientation.x = 0.0;
-                    prospectiveRoomMarker.pose.orientation.y = 0.0;
-                    prospectiveRoomMarker.pose.orientation.z = 0.0;
-                    prospectiveRoomMarker.pose.orientation.w = 1.0;
-                    prospectiveRoomMarker.scale.x            = 0.30;
-                    prospectiveRoomMarker.scale.y            = 0.30;
-                    prospectiveRoomMarker.scale.z            = 0.30;
-                    prospectiveRoomMarker.color.r = prospectiveColourRed;
-                    prospectiveRoomMarker.color.g = prospectiveColourGreen;
-                    prospectiveRoomMarker.color.b = prospectiveColourBlue;
-                    prospectiveRoomMarker.color.a = 0.6F; // semi-transparent
-                    prospectiveRoomMarker.lifetime =
-                        rclcpp::Duration::from_seconds(0);
-                    structuralElementMarkerArray_out.markers.push_back(
-                        prospectiveRoomMarker);
-
-                    /* Prospective room label */
-                    visualization_msgs::msg::Marker prospectiveRoomLabelMarker;
-                    prospectiveRoomLabelMarker.header.frame_id = frameSE;
-                    prospectiveRoomLabelMarker.header.stamp    = msgTime_s_in;
-                    prospectiveRoomLabelMarker.ns = "prospectiveRoomLabel";
-                    prospectiveRoomLabelMarker.id = prospectiveRoomMarkerId;
-                    prospectiveRoomLabelMarker.type =
-                        visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
-                    prospectiveRoomLabelMarker.action =
-                        visualization_msgs::msg::Marker::ADD;
-                    prospectiveRoomLabelMarker.text =
-                        p_prospectiveRoom->getName() + " [prospective]";
-                    prospectiveRoomLabelMarker.pose.position.x =
-                        roomDisplayPoint_SE.point.x;
-                    prospectiveRoomLabelMarker.pose.position.y =
-                        roomDisplayPoint_SE.point.y + textOffset_m;
-                    prospectiveRoomLabelMarker.pose.position.z =
-                        roomDisplayPoint_SE.point.z;
-                    prospectiveRoomLabelMarker.pose.orientation.x = 0.0;
-                    prospectiveRoomLabelMarker.pose.orientation.y = 0.0;
-                    prospectiveRoomLabelMarker.pose.orientation.z = 0.0;
-                    prospectiveRoomLabelMarker.pose.orientation.w = 1.0;
-                    prospectiveRoomLabelMarker.scale.z            = 0.18;
-                    prospectiveRoomLabelMarker.color.r = prospectiveColourRed;
-                    prospectiveRoomLabelMarker.color.g = prospectiveColourGreen;
-                    prospectiveRoomLabelMarker.color.b = prospectiveColourBlue;
-                    prospectiveRoomLabelMarker.color.a = 0.9F;
-                    prospectiveRoomLabelMarker.lifetime =
-                        rclcpp::Duration::from_seconds(0);
-                    structuralElementMarkerArray_out.markers.push_back(
-                        prospectiveRoomLabelMarker);
-
-                    /* Line from passage to prospective room */
-                    visualization_msgs::msg::Marker passageToProspectiveMarker;
-                    passageToProspectiveMarker.header.frame_id = frameWorld;
-                    passageToProspectiveMarker.header.stamp    = msgTime_s_in;
-                    passageToProspectiveMarker.ns = "passageToProspective";
-                    passageToProspectiveMarker.id = prospectiveRoomMarkerId;
-                    passageToProspectiveMarker.type =
-                        visualization_msgs::msg::Marker::LINE_STRIP;
-                    passageToProspectiveMarker.action =
-                        visualization_msgs::msg::Marker::ADD;
-                    passageToProspectiveMarker.pose.orientation.x = 0.0;
-                    passageToProspectiveMarker.pose.orientation.y = 0.0;
-                    passageToProspectiveMarker.pose.orientation.z = 0.0;
-                    passageToProspectiveMarker.pose.orientation.w = 1.0;
-                    passageToProspectiveMarker.scale.x = 0.03; // thin line
-                    passageToProspectiveMarker.color.r = prospectiveColourRed;
-                    passageToProspectiveMarker.color.g = prospectiveColourGreen;
-                    passageToProspectiveMarker.color.b = prospectiveColourBlue;
-                    passageToProspectiveMarker.color.a = 0.7F;
-                    passageToProspectiveMarker.lifetime =
-                        rclcpp::Duration::from_seconds(0);
-
-                    geometry_msgs::msg::Point passagePt;
-                    passagePt.x = passageDisplayPoint_world.point.x;
-                    passagePt.y = passageDisplayPoint_world.point.y;
-                    passagePt.z = passageDisplayPoint_world.point.z;
-
-                    geometry_msgs::msg::Point roomPt;
-                    roomPt.x = roomDisplayPoint_world.point.x;
-                    roomPt.y = roomDisplayPoint_world.point.y;
-                    roomPt.z = roomDisplayPoint_world.point.z;
-
-                    passageToProspectiveMarker.points.push_back(passagePt);
-                    passageToProspectiveMarker.points.push_back(roomPt);
-                    structuralElementMarkerArray_out.markers.push_back(
-                        passageToProspectiveMarker);
-                }
-            }
-        }
     }
-
-    /* Revoke markers whose prospective room is no longer published. */
-    for (const int staleProspectiveMarkerId : s_publishedProspectiveMarkerIds)
-    {
-        if (currentProspectiveMarkerIds.count(staleProspectiveMarkerId) == 0U)
-        {
-            appendProspectiveDeleteMarkers(staleProspectiveMarkerId);
-        }
-    }
-
-    s_publishedProspectiveMarkerIds = std::move(currentProspectiveMarkerIds);
 }
 
 /*!
@@ -1191,12 +1182,64 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const ORB_SLAM3::Room *room_in)
 }
 
 void appendRoomMarkers(
-    const std::vector<ORB_SLAM3::Room *>  &mappedRooms_in,
-    const std::vector<ORB_SLAM3::Floor *> &mappedFloors_in,
-    const rclcpp::Time                    &msgTime_s_in,
-    visualization_msgs::msg::MarkerArray  &structuralElementMarkerArray_out)
+    const std::vector<ORB_SLAM3::Room *>    &mappedRooms_in,
+    const std::vector<ORB_SLAM3::Floor *>   &mappedFloors_in,
+    const std::vector<ORB_SLAM3::Passage *> &mappedPassages_in,
+    const rclcpp::Time                      &msgTime_s_in,
+    visualization_msgs::msg::MarkerArray    &structuralElementMarkerArray_out)
 {
+    /* Room-to-floor green lines were removed (operator: passages are the
+     * only room links); the floor list is kept for signature stability. */
+    (void)mappedFloors_in;
+
     constexpr double textOffset_m = -0.5;
+
+    /* A live passage prospective renders as the same room object with
+     * state-driven appearance below, never as a parallel marker set. Other
+     * provisional rooms stay hidden, as before. */
+    const auto isLiveProspectiveRoom =
+        [&mappedRooms_in, &mappedPassages_in](ORB_SLAM3::Room *p_room_in)
+    {
+        if (p_room_in == nullptr || p_room_in->isBad() ||
+            p_room_in->getRoomVariant() !=
+                ORB_SLAM3::Room::roomVariant::UNDEFINED)
+        {
+            return false;
+        }
+        bool linkedByPassage = false;
+        for (ORB_SLAM3::Passage *p_passage : mappedPassages_in)
+        {
+            if (p_passage != nullptr && !p_passage->isBad() &&
+                p_passage->getProspectiveRoom() == p_room_in)
+            {
+                linkedByPassage = true;
+                break;
+            }
+        }
+        if (!linkedByPassage)
+        {
+            return false;
+        }
+        /* A hypothesis absorbed next to a confirmed room would stack its
+         * label on the confirmed label at the same position. */
+        for (ORB_SLAM3::Room *p_otherRoom : mappedRooms_in)
+        {
+            if (p_otherRoom == nullptr || p_otherRoom == p_room_in ||
+                p_otherRoom->isBad() ||
+                p_otherRoom->getRoomVariant() !=
+                    ORB_SLAM3::Room::roomVariant::ROOM)
+            {
+                continue;
+            }
+            if ((p_otherRoom->getCentroid().cast<double>() -
+                 p_room_in->getCentroid())
+                    .norm() < 1.5)
+            {
+                return false;
+            }
+        }
+        return true;
+    };
 
     /*!
      * Cache the building-component-to-world transform once rather than
@@ -1276,20 +1319,6 @@ void appendRoomMarkers(
         structuralElementMarkerArray_out.markers.push_back(
             deleteRoomWallLineMarker);
 
-        visualization_msgs::msg::Marker deleteRoomPassageLineMarker;
-
-        deleteRoomPassageLineMarker.header.frame_id = frameWorld;
-        deleteRoomPassageLineMarker.header.stamp    = msgTime_s_in;
-
-        deleteRoomPassageLineMarker.ns = "roomPassageLine";
-        deleteRoomPassageLineMarker.id = roomId;
-
-        deleteRoomPassageLineMarker.action =
-            visualization_msgs::msg::Marker::DELETE;
-
-        structuralElementMarkerArray_out.markers.push_back(
-            deleteRoomPassageLineMarker);
-
         visualization_msgs::msg::Marker deleteRoomCompleteMarker;
 
         deleteRoomCompleteMarker.header.frame_id = frameWorld;
@@ -1317,6 +1346,20 @@ void appendRoomMarkers(
 
         structuralElementMarkerArray_out.markers.push_back(
             deleteRoomCompleteToFloorMarker);
+
+        visualization_msgs::msg::Marker deleteRoomBoundaryLoopMarker;
+
+        deleteRoomBoundaryLoopMarker.header.frame_id = frameWorld;
+        deleteRoomBoundaryLoopMarker.header.stamp    = msgTime_s_in;
+
+        deleteRoomBoundaryLoopMarker.ns = "roomBoundaryLoop";
+        deleteRoomBoundaryLoopMarker.id = roomId;
+
+        deleteRoomBoundaryLoopMarker.action =
+            visualization_msgs::msg::Marker::DELETE;
+
+        structuralElementMarkerArray_out.markers.push_back(
+            deleteRoomBoundaryLoopMarker);
     };
 
     for (ORB_SLAM3::Room *mappedRoom : mappedRooms_in)
@@ -1335,8 +1378,17 @@ void appendRoomMarkers(
         const bool isConfirmedRoom =
             roomType == ORB_SLAM3::Room::roomVariant::ROOM;
 
-        /* Remove bad and provisional structural elements from RViz */
-        if (mappedRoom->isBad() || !isConfirmedRoom)
+        /* Remove bad structural elements from RViz. Provisional rooms stay
+         * hidden unless a live passage hypothesizes them. */
+        if (mappedRoom->isBad())
+        {
+            appendRoomDeleteMarkers(roomMarkerId);
+
+            continue;
+        }
+        const bool showProspectiveRoom =
+            !isConfirmedRoom && isLiveProspectiveRoom(mappedRoom);
+        if (!isConfirmedRoom && !showProspectiveRoom)
         {
             appendRoomDeleteMarkers(roomMarkerId);
 
@@ -1392,7 +1444,10 @@ void appendRoomMarkers(
         roomMarker.color.r = roomColourRed;
         roomMarker.color.g = roomColourGreen;
         roomMarker.color.b = roomColourBlue;
-        roomMarker.color.a = 1.0F;
+        /* State-driven appearance: hypotheses render semi-transparent in the
+         * same namespace, so promotion flips appearance in place instead of
+         * swapping marker identities. */
+        roomMarker.color.a = isConfirmedRoom ? 1.0F : 0.6F;
 
         roomMarker.lifetime = rclcpp::Duration::from_seconds(0);
         structuralElementMarkerArray_out.markers.push_back(roomMarker);
@@ -1437,7 +1492,9 @@ void appendRoomMarkers(
          * it in the room label makes incomplete but traversable observations
          * explicit without changing the semantic graph topology.
          */
-        roomLabelMarker.text = mappedRoom->getName() + boundaryStatusLabel;
+        roomLabelMarker.text = isConfirmedRoom
+                                   ? mappedRoom->getName() + boundaryStatusLabel
+                                   : mappedRoom->getName() + " [prospective]";
 
         /* Keep the X, Y, and Z coordinates in their original order */
         roomLabelMarker.pose.position.x = roomDisplayPoint_SE.point.x;
@@ -1464,107 +1521,81 @@ void appendRoomMarkers(
         structuralElementMarkerArray_out.markers.push_back(roomLabelMarker);
 
         /* ------------------------------------------------------------------ *
-         * ROOM-COMPLETE VISUALIZATION: LINE FROM ROOM TO FLOOR
+         * ROOM-BOUNDARY LOOP OUTLINE: closed corner polygon, only while the
+         * validator has classed the wall loop COMPLETE (axiom (f)'s
+         * corner-alignment result, exposed via
+         * Room::getBoundaryCorners_World_m()).
          * ------------------------------------------------------------------ */
 
-        /* Helper to find the floor that owns this room. */
-        auto findRoomFloor = [&mappedFloors_in](const ORB_SLAM3::Room *room_in)
-            -> const ORB_SLAM3::Floor *
+        const std::vector<Eigen::Vector3d> boundaryCorners_World_m =
+            mappedRoom->getBoundaryCorners_World_m();
+
+        if (mappedRoom->isBoundaryComplete() &&
+            boundaryCorners_World_m.size() >= 3U)
         {
-            for (const ORB_SLAM3::Floor *floor : mappedFloors_in)
+            visualization_msgs::msg::Marker roomBoundaryLoopMarker;
+
+            roomBoundaryLoopMarker.header.frame_id = frameWorld;
+            roomBoundaryLoopMarker.header.stamp    = msgTime_s_in;
+
+            roomBoundaryLoopMarker.ns = "roomBoundaryLoop";
+            roomBoundaryLoopMarker.id = roomMarkerId;
+
+            roomBoundaryLoopMarker.type =
+                visualization_msgs::msg::Marker::LINE_STRIP;
+            roomBoundaryLoopMarker.action =
+                visualization_msgs::msg::Marker::ADD;
+
+            roomBoundaryLoopMarker.pose.orientation.w = 1.0;
+
+            roomBoundaryLoopMarker.scale.x = 0.06;
+
+            roomBoundaryLoopMarker.color.r = roomColourRed;
+            roomBoundaryLoopMarker.color.g = roomColourGreen;
+            roomBoundaryLoopMarker.color.b = roomColourBlue;
+            roomBoundaryLoopMarker.color.a = 1.0F;
+
+            roomBoundaryLoopMarker.lifetime =
+                rclcpp::Duration::from_seconds(1.0);
+
+            roomBoundaryLoopMarker.points.reserve(
+                boundaryCorners_World_m.size() + 1U);
+            for (const Eigen::Vector3d &corner_World_m :
+                 boundaryCorners_World_m)
             {
-                if (floor == nullptr)
-                {
-                    continue;
-                }
-                const std::vector<ORB_SLAM3::Room *> &floorRooms =
-                    floor->getRooms();
-                if (std::find(floorRooms.begin(), floorRooms.end(), room_in) !=
-                    floorRooms.end())
-                {
-                    return floor;
-                }
+                geometry_msgs::msg::Point cornerPoint;
+                cornerPoint.x = corner_World_m.x();
+                cornerPoint.y = corner_World_m.y();
+                cornerPoint.z = corner_World_m.z();
+                roomBoundaryLoopMarker.points.push_back(cornerPoint);
             }
-            return nullptr;
-        };
-
-        const ORB_SLAM3::Floor *associatedFloor = nullptr;
-        if (mappedRoom->isBoundaryComplete())
-        {
-            associatedFloor = findRoomFloor(mappedRoom);
-        }
-
-        if (associatedFloor != nullptr)
-        {
-            visualization_msgs::msg::Marker roomCompleteMarker;
-
-            roomCompleteMarker.header.frame_id = frameWorld;
-            roomCompleteMarker.header.stamp    = msgTime_s_in;
-
-            roomCompleteMarker.ns = "room_complete_to_floor";
-            roomCompleteMarker.id = roomMarkerId;
-
-            roomCompleteMarker.type =
-                visualization_msgs::msg::Marker::LINE_LIST;
-
-            roomCompleteMarker.action = visualization_msgs::msg::Marker::ADD;
-
-            roomCompleteMarker.pose.orientation.x = 0.0;
-            roomCompleteMarker.pose.orientation.y = 0.0;
-            roomCompleteMarker.pose.orientation.z = 0.0;
-            roomCompleteMarker.pose.orientation.w = 1.0;
-
-            roomCompleteMarker.scale.x = 0.05;
-
-            roomCompleteMarker.color.r = 0.0F;
-            roomCompleteMarker.color.g = 1.0F;
-            roomCompleteMarker.color.b = 0.0F;
-            roomCompleteMarker.color.a = 0.8F;
-
-            roomCompleteMarker.lifetime = rclcpp::Duration::from_seconds(1.0);
-
-            const Eigen::Vector3d roomCentroid_World_m =
-                mappedRoom->getCentroid();
-            const Eigen::Vector3d floorCentroid_World_m =
-                associatedFloor->getCentroid();
-
-            if (roomCentroid_World_m.allFinite() &&
-                floorCentroid_World_m.allFinite())
+            /* Close the loop back to the first corner. */
+            if (!roomBoundaryLoopMarker.points.empty())
             {
-                geometry_msgs::msg::Point roomPoint;
-                roomPoint.x = roomCentroid_World_m.x();
-                roomPoint.y = roomCentroid_World_m.y();
-                roomPoint.z = roomCentroid_World_m.z();
-
-                geometry_msgs::msg::Point floorPoint;
-                floorPoint.x = floorCentroid_World_m.x();
-                floorPoint.y = floorCentroid_World_m.y();
-                floorPoint.z = floorCentroid_World_m.z();
-
-                roomCompleteMarker.points.push_back(roomPoint);
-                roomCompleteMarker.points.push_back(floorPoint);
-
-                structuralElementMarkerArray_out.markers.push_back(
-                    roomCompleteMarker);
+                roomBoundaryLoopMarker.points.push_back(
+                    roomBoundaryLoopMarker.points.front());
             }
+
+            structuralElementMarkerArray_out.markers.push_back(
+                roomBoundaryLoopMarker);
         }
         else
         {
-            /* Remove a previously published green line when the room is not
-             * validated as COMPLETE or has no associated floor. */
-            visualization_msgs::msg::Marker staleRoomCompleteMarker;
+            /* Remove a previously published outline once the room stops
+             * being validated as COMPLETE. */
+            visualization_msgs::msg::Marker staleRoomBoundaryLoopMarker;
 
-            staleRoomCompleteMarker.header.frame_id = frameWorld;
-            staleRoomCompleteMarker.header.stamp    = msgTime_s_in;
+            staleRoomBoundaryLoopMarker.header.frame_id = frameWorld;
+            staleRoomBoundaryLoopMarker.header.stamp    = msgTime_s_in;
 
-            staleRoomCompleteMarker.ns = "room_complete_to_floor";
-            staleRoomCompleteMarker.id = roomMarkerId;
+            staleRoomBoundaryLoopMarker.ns = "roomBoundaryLoop";
+            staleRoomBoundaryLoopMarker.id = roomMarkerId;
 
-            staleRoomCompleteMarker.action =
+            staleRoomBoundaryLoopMarker.action =
                 visualization_msgs::msg::Marker::DELETE;
 
             structuralElementMarkerArray_out.markers.push_back(
-                staleRoomCompleteMarker);
+                staleRoomBoundaryLoopMarker);
         }
 
         /* ------------------------------------------------------------------ *
@@ -1589,7 +1620,11 @@ void appendRoomMarkers(
         roomWallAssociationMarker.pose.orientation.z = 0.0;
         roomWallAssociationMarker.pose.orientation.w = 1.0;
 
-        roomWallAssociationMarker.scale.x = 0.05;
+        /* Wider than floorRoomEdges (0.05) and the skeleton path so a short
+         * room-to-wall segment stays visually distinguishable even when it
+         * overlaps those longer lines on screen -- see the "Plane#5 does not
+         * seem to be linked with a wall" investigation this addresses. */
+        roomWallAssociationMarker.scale.x = 0.08;
 
         roomWallAssociationMarker.color.r = roomColourRed;
         roomWallAssociationMarker.color.g = roomColourGreen;
@@ -1668,7 +1703,9 @@ void appendRoomMarkers(
             roomWallAssociationMarker);
 
         /* ------------------------------------------------------------------ *
-         * ROOM-TO-PASSAGE ASSOCIATIONS
+         * ROOM-TO-PASSAGE ASSOCIATIONS: the only lines that connect rooms.
+         * Each segment runs from a room centroid to one of its passages,
+         * so room<->room connectivity is shown exclusively via passages.
          * ------------------------------------------------------------------ */
 
         visualization_msgs::msg::Marker roomPassageAssociationMarker;
@@ -1706,7 +1743,21 @@ void appendRoomMarkers(
 
         for (ORB_SLAM3::Passage *associatedPassage : associatedPassages)
         {
-            if (associatedPassage == nullptr)
+            if (associatedPassage == nullptr || associatedPassage->isBad())
+            {
+                continue;
+            }
+
+            /* Same recovery-proxy gate as the passage node block: an
+             * unpositioned proxy reports the origin as its centroid, which
+             * would pin a room-to-origin line (and, at reset time, a line
+             * onto the camera itself). */
+            const double proxyWidth_m  = associatedPassage->getWidth();
+            const double proxyHeight_m = associatedPassage->getHeight();
+            if (associatedPassage->isRecoveryProxy() &&
+                (!std::isfinite(proxyWidth_m) ||
+                 !std::isfinite(proxyHeight_m) || proxyWidth_m <= 0.0 ||
+                 proxyHeight_m <= 0.0))
             {
                 continue;
             }
@@ -2267,6 +2318,882 @@ void publishAllMappedWalls(std::vector<ORB_SLAM3::Plane *> wallsList_in,
     pubAllWalls_new->publish(wallDataMsg);
 }
 
+void publishAllMappedRooms(std::vector<ORB_SLAM3::Room *> roomsList_in,
+                           rclcpp::Time                   msgTime_s_in)
+{
+    /* Variables */
+    vs_graphs::msg::VSGraphsAllDetectdetRooms roomDataMsg;
+
+    /* Fill the data message header */
+    roomDataMsg.header.stamp    = msgTime_s_in;
+    roomDataMsg.header.frame_id = frameWorld;
+
+    /* Fill in the room data for each room in vector */
+    for (const auto &room : roomsList_in)
+    {
+        if (!room)
+            continue;
+
+        vs_graphs::msg::VSGraphsRoomData roomData;
+        roomData.id         = room->getId();
+        roomData.centroid.x = room->getCentroid().x();
+        roomData.centroid.y = room->getCentroid().y();
+        roomData.centroid.z = room->getCentroid().z();
+
+        for (const auto &wall : room->getWalls())
+        {
+            if (wall)
+                roomData.wall_ids.push_back(wall->getId());
+        }
+
+        /* Add the room to the message */
+        roomDataMsg.rooms.push_back(roomData);
+    }
+
+    /* Publish all mapped rooms */
+    pubAllRooms->publish(roomDataMsg);
+}
+
+void publishAllMappedPassages(std::vector<ORB_SLAM3::Passage *> passagesList_in,
+                              std::vector<ORB_SLAM3::Room *>    roomsList_in,
+                              rclcpp::Time                      msgTime_s_in)
+{
+    /* Variables */
+    vs_graphs::msg::VSGraphsAllPassagesData passageDataMsg;
+
+    /* Fill the data message header */
+    passageDataMsg.header.stamp    = msgTime_s_in;
+    passageDataMsg.header.frame_id = frameWorld;
+
+    /* Fill in the passage data for each passage in vector */
+    for (const auto &passage : passagesList_in)
+    {
+        if (!passage || passage->isBad())
+            continue;
+
+        vs_graphs::msg::VSGraphsPassageData passageData;
+        passageData.id         = passage->getId();
+        passageData.passable   = passage->isPassable();
+        passageData.centroid.x = passage->getCentroid().x();
+        passageData.centroid.y = passage->getCentroid().y();
+        passageData.centroid.z = passage->getCentroid().z();
+        passageData.width      = static_cast<float>(passage->getWidth());
+        passageData.height     = static_cast<float>(passage->getHeight());
+
+        /*!
+         * The "known-side" room is whichever mapped room owns one of this
+         * passage's associated walls (Passage stores its walls, not a
+         * direct room back-pointer); -1 if none of the currently mapped
+         * rooms claim any of them.
+         */
+        passageData.known_room_id  = -1;
+        const auto associatedWalls = passage->getAssociateWalls();
+        for (const auto &room : roomsList_in)
+        {
+            if (!room)
+                continue;
+
+            bool ownsAssociatedWall = false;
+            for (const auto &roomWall : room->getWalls())
+            {
+                if (!roomWall)
+                    continue;
+
+                for (const auto &associatedWall : associatedWalls)
+                {
+                    if (associatedWall &&
+                        associatedWall->getId() == roomWall->getId())
+                    {
+                        ownsAssociatedWall = true;
+                        break;
+                    }
+                }
+
+                if (ownsAssociatedWall)
+                    break;
+            }
+
+            if (ownsAssociatedWall)
+            {
+                passageData.known_room_id = room->getId();
+                break;
+            }
+        }
+
+        const std::optional<int> prospectiveRoomId =
+            passage->getProspectiveRoomId();
+        passageData.prospective_room_id =
+            prospectiveRoomId.has_value() ? prospectiveRoomId.value() : -1;
+
+        /*!
+         * Populate associated wall plane IDs from the passage's wall
+         * associations. This enables the SGraph JSON capture tool to record
+         * which walls each passage belongs to.
+         */
+        passageData.associated_wall_ids.clear();
+        for (const auto &associatedWall : associatedWalls)
+        {
+            if (associatedWall)
+            {
+                passageData.associated_wall_ids.push_back(
+                    static_cast<int>(associatedWall->getId()));
+            }
+        }
+
+        /* Add the passage to the message */
+        passageDataMsg.passages.push_back(passageData);
+    }
+
+    /* Publish all mapped passages */
+    pubAllPassages->publish(passageDataMsg);
+}
+
+void publishAllMappedFloors(std::vector<ORB_SLAM3::Floor *> floorsList_in,
+                            rclcpp::Time                    msgTime_s_in)
+{
+    /* Variables */
+    vs_graphs::msg::VSGraphsAllFloorsData floorDataMsg;
+
+    /* Fill the data message header */
+    floorDataMsg.header.stamp    = msgTime_s_in;
+    floorDataMsg.header.frame_id = frameWorld;
+
+    /* Fill in the floor data for each floor in vector */
+    for (const auto &floor : floorsList_in)
+    {
+        if (!floor)
+            continue;
+
+        vs_graphs::msg::VSGraphsFloorData floorData;
+        floorData.id = floor->getId();
+
+        const std::optional<ORB_SLAM3::Floor::PlaneIdentity> planeIdentity =
+            floor->getPlaneIdentity();
+        floorData.has_plane_identity = planeIdentity.has_value();
+        if (planeIdentity.has_value())
+        {
+            floorData.normal.x = planeIdentity->equation_World.x();
+            floorData.normal.y = planeIdentity->equation_World.y();
+            floorData.normal.z = planeIdentity->equation_World.z();
+            floorData.offset_d =
+                static_cast<float>(planeIdentity->equation_World.w());
+            floorData.finite_support_count =
+                static_cast<int32_t>(planeIdentity->finiteSupportCount);
+            floorData.observation_count =
+                static_cast<int32_t>(planeIdentity->observationCount);
+        }
+
+        /* Add the floor to the message */
+        floorDataMsg.floors.push_back(floorData);
+    }
+
+    /* Publish all mapped floors */
+    pubAllFloors->publish(floorDataMsg);
+}
+
+namespace
+{
+/*!
+ * @brief       Sanitises a double for nlohmann::json.
+ *
+ *              nlohmann::json rejects non-finite values, so they are stored
+ *              as strings following the MissionHealthTopologyJson convention.
+ */
+json sanitiseArchiveDouble(const double value_in)
+{
+    if (std::isnan(value_in))
+    {
+        return json("NaN");
+    }
+    if (std::isinf(value_in))
+    {
+        return json(value_in > 0.0 ? "Infinity" : "-Infinity");
+    }
+    return json(value_in);
+}
+
+json archiveVector3(const Eigen::Vector3d &vector_in)
+{
+    json array = json::array();
+    array.push_back(sanitiseArchiveDouble(vector_in.x()));
+    array.push_back(sanitiseArchiveDouble(vector_in.y()));
+    array.push_back(sanitiseArchiveDouble(vector_in.z()));
+    return array;
+}
+
+/*!
+ * @brief       Deletes the oldest SGraph archives beyond the retain limit.
+ *
+ * @param[in]   archiveDir_in
+ *              Directory holding `sgraph_<sec>_<nsec>.json` files.
+ *
+ * @param[in]   maxFiles_in
+ *              Maximum number of files to retain (positive by contract).
+ */
+void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
+                         const int                    maxFiles_in)
+{
+    std::error_code          error;
+    std::vector<std::string> fileNames;
+    for (const auto &entry :
+         std::filesystem::directory_iterator(archiveDir_in, error))
+    {
+        if (error)
+        {
+            break;
+        }
+        if (!entry.is_regular_file(error) || error)
+        {
+            continue;
+        }
+        const std::string fileName  = entry.path().filename().string();
+        const bool        isArchive = fileName.rfind("sgraph_", 0U) == 0U &&
+                               entry.path().extension() == ".json";
+        if (isArchive)
+        {
+            fileNames.push_back(fileName);
+        }
+    }
+    if (error)
+    {
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                    "Cannot prune SGraph archives in '%s'.",
+                    archiveDir_in.string().c_str());
+        return;
+    }
+
+    /* File names embed zero-padded sim stamps, so lexical order is oldest
+     * first. */
+    std::sort(fileNames.begin(), fileNames.end());
+    while (static_cast<int>(fileNames.size()) > maxFiles_in)
+    {
+        std::error_code removeError;
+        std::filesystem::remove(archiveDir_in / fileNames.front(), removeError);
+        if (removeError)
+        {
+            RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                        "Cannot remove old SGraph archive '%s'.",
+                        fileNames.front().c_str());
+            break;
+        }
+        fileNames.erase(fileNames.begin());
+    }
+}
+} // namespace
+
+void maybeArchiveSGraph(
+    const std::vector<ORB_SLAM3::Floor *>   &mappedFloors_in,
+    const std::vector<ORB_SLAM3::Room *>    &mappedRooms_in,
+    const std::vector<ORB_SLAM3::Passage *> &mappedPassages_in,
+    const rclcpp::Time                      &msgTime_s_in)
+{
+    static double        lastArchiveTime_s = -1.0e100;
+    static std::uint64_t captureCycle      = 0U;
+    static bool          warnedMissingDir  = false;
+
+    if (!sgraphArchiveEnabled)
+    {
+        return;
+    }
+
+    if (sgraphArchiveTestRunDir.empty())
+    {
+        if (!warnedMissingDir)
+        {
+            RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                        "SGraph JSON archiving is disabled: the "
+                        "'test_run_dir' parameter is empty.");
+            warnedMissingDir = true;
+        }
+        return;
+    }
+
+    if (!std::isfinite(msgTime_s_in.seconds()))
+    {
+        return;
+    }
+
+    const double now_s          = msgTime_s_in.seconds();
+    const bool   isFirstCapture = (captureCycle == 0U);
+    if (!isFirstCapture && sgraphArchiveIntervalSec > 0.0 &&
+        (now_s - lastArchiveTime_s) < sgraphArchiveIntervalSec)
+    {
+        return;
+    }
+
+    /* The file name and metadata use the ROS sim clock, never wall time. */
+    const std::int64_t totalNanoseconds = msgTime_s_in.nanoseconds();
+    if (totalNanoseconds < 0)
+    {
+        return;
+    }
+    const std::int64_t stampSeconds     = totalNanoseconds / 1000000000LL;
+    const std::int64_t stampNanoseconds = totalNanoseconds % 1000000000LL;
+
+    /* Enumerate every active Atlas map coherently; each becomes one mapN
+     * entry keyed by 0-based ordinal. Falls back to the caller-provided
+     * current-map snapshot when the Atlas is unavailable. */
+    struct SgraphMapInput
+    {
+        long                              mapId{-1};
+        bool                              isActive{true};
+        std::uint64_t                     worldFrameEpoch{0U};
+        std::vector<ORB_SLAM3::Floor *>   floorsRaw;
+        std::vector<ORB_SLAM3::Room *>    roomsRaw;
+        std::vector<ORB_SLAM3::Passage *> passagesRaw;
+    };
+    std::vector<SgraphMapInput> mapInputs;
+    ORB_SLAM3::Atlas           *p_atlas =
+        (p_slamSystem != nullptr) ? p_slamSystem->GetAtlas() : nullptr;
+    if (p_atlas != nullptr)
+    {
+        std::optional<long unsigned int> currentMapId;
+        ORB_SLAM3::AtlasCurrentMapStatus mapStatus;
+        std::vector<ORB_SLAM3::Map *>    atlasMaps =
+            p_atlas->GetCoherentMapView(currentMapId, mapStatus);
+        std::sort(atlasMaps.begin(),
+                  atlasMaps.end(),
+                  [](ORB_SLAM3::Map *first_in, ORB_SLAM3::Map *second_in)
+                  { return first_in->GetId() < second_in->GetId(); });
+        for (ORB_SLAM3::Map *p_map : atlasMaps)
+        {
+            if (p_map == nullptr || p_map->IsBad())
+            {
+                continue;
+            }
+            SgraphMapInput mapInput;
+            mapInput.mapId = static_cast<long>(p_map->GetId());
+            mapInput.isActive =
+                currentMapId.has_value() && (*currentMapId == p_map->GetId());
+            mapInput.worldFrameEpoch = p_map->GetWorldFrameEpoch();
+            mapInput.floorsRaw       = p_map->GetAllFloors();
+            mapInput.roomsRaw        = p_map->GetAllRooms();
+            mapInput.passagesRaw     = p_map->GetAllPassages();
+            mapInputs.push_back(std::move(mapInput));
+        }
+    }
+    if (mapInputs.empty())
+    {
+        SgraphMapInput fallbackInput;
+        fallbackInput.floorsRaw   = mappedFloors_in;
+        fallbackInput.roomsRaw    = mappedRooms_in;
+        fallbackInput.passagesRaw = mappedPassages_in;
+        mapInputs.push_back(std::move(fallbackInput));
+    }
+
+    json        archive;
+    std::size_t totalFloors   = 0U;
+    std::size_t totalRooms    = 0U;
+    std::size_t totalPassages = 0U;
+
+    for (std::size_t mapOrdinal = 0U; mapOrdinal < mapInputs.size();
+         ++mapOrdinal)
+    {
+        const SgraphMapInput &mapInput = mapInputs[mapOrdinal];
+
+        /* Keep only live elements, sorted by raw atlas id for determinism. */
+        std::vector<ORB_SLAM3::Floor *> floors;
+        for (ORB_SLAM3::Floor *p_floor : mapInput.floorsRaw)
+        {
+            if (p_floor != nullptr)
+            {
+                floors.push_back(p_floor);
+            }
+        }
+        std::sort(floors.begin(),
+                  floors.end(),
+                  [](ORB_SLAM3::Floor *first_in, ORB_SLAM3::Floor *second_in)
+                  { return first_in->getId() < second_in->getId(); });
+
+        std::vector<ORB_SLAM3::Room *> rooms;
+        for (ORB_SLAM3::Room *p_room : mapInput.roomsRaw)
+        {
+            if (p_room != nullptr && !p_room->isBad())
+            {
+                rooms.push_back(p_room);
+            }
+        }
+        std::sort(rooms.begin(),
+                  rooms.end(),
+                  [](ORB_SLAM3::Room *first_in, ORB_SLAM3::Room *second_in)
+                  { return first_in->getId() < second_in->getId(); });
+
+        std::vector<ORB_SLAM3::Passage *> passages;
+        for (ORB_SLAM3::Passage *p_passage : mapInput.passagesRaw)
+        {
+            if (p_passage != nullptr && !p_passage->isBad())
+            {
+                passages.push_back(p_passage);
+            }
+        }
+        std::sort(
+            passages.begin(),
+            passages.end(),
+            [](ORB_SLAM3::Passage *first_in, ORB_SLAM3::Passage *second_in)
+            { return first_in->getId() < second_in->getId(); });
+
+        /* Group rooms by floor. Index zero is synthetic when no floor exists so
+         * rooms and passages are still archived early in a run. */
+        const bool        hasFloors  = !floors.empty();
+        const std::size_t floorCount = hasFloors ? floors.size() : 1U;
+        std::vector<std::vector<ORB_SLAM3::Room *>> floorRooms(floorCount);
+        std::unordered_map<const ORB_SLAM3::Room *, std::size_t> roomFloorIndex;
+
+        for (std::size_t floorIndex = 0U; floorIndex < floors.size();
+             ++floorIndex)
+        {
+            for (ORB_SLAM3::Room *p_room : floors[floorIndex]->getRooms())
+            {
+                if (p_room == nullptr || p_room->isBad())
+                {
+                    continue;
+                }
+                if (roomFloorIndex.find(p_room) == roomFloorIndex.end())
+                {
+                    roomFloorIndex[p_room] = floorIndex;
+                }
+            }
+        }
+
+        for (ORB_SLAM3::Room *p_room : rooms)
+        {
+            std::size_t floorIndex = 0U;
+            const auto  claimed    = roomFloorIndex.find(p_room);
+            if (claimed != roomFloorIndex.end())
+            {
+                floorIndex = claimed->second;
+            }
+            else
+            {
+                ORB_SLAM3::Floor *p_floor = p_room->getFloor();
+                for (std::size_t candidate = 0U; candidate < floors.size();
+                     ++candidate)
+                {
+                    if (floors[candidate] == p_floor)
+                    {
+                        floorIndex = candidate;
+                        break;
+                    }
+                }
+            }
+            floorRooms[floorIndex].push_back(p_room);
+            roomFloorIndex[p_room] = floorIndex;
+        }
+
+        /* Zero-based room keys are scoped to their floor. */
+        std::unordered_map<const ORB_SLAM3::Room *, std::string> roomKeys;
+        for (std::vector<ORB_SLAM3::Room *> &floorRoomList : floorRooms)
+        {
+            for (std::size_t roomOrdinal = 0U;
+                 roomOrdinal < floorRoomList.size();
+                 ++roomOrdinal)
+            {
+                roomKeys[floorRoomList[roomOrdinal]] =
+                    "room" + std::to_string(roomOrdinal);
+            }
+        }
+
+        /* Assign each passage to the floor holding most of its rooms; passages
+         * without any room evidence fall back to the first floor. */
+        std::vector<std::vector<ORB_SLAM3::Passage *>> floorPassages(
+            floorCount);
+        std::unordered_map<const ORB_SLAM3::Passage *, std::vector<int>>
+            passageWallIds;
+        for (ORB_SLAM3::Passage *p_passage : passages)
+        {
+            std::vector<int> wallIds;
+            for (ORB_SLAM3::Plane *p_wall : p_passage->getAssociateWalls())
+            {
+                if (p_wall != nullptr)
+                {
+                    wallIds.push_back(p_wall->getId());
+                }
+            }
+            passageWallIds[p_passage] = wallIds;
+
+            const std::optional<int> prospectiveRoomId =
+                p_passage->getProspectiveRoomId();
+            ORB_SLAM3::Room *p_prospectiveRoom =
+                p_passage->getProspectiveRoom();
+
+            std::vector<std::size_t> votes(floorCount, 0U);
+            for (ORB_SLAM3::Room *p_room : rooms)
+            {
+                bool ownsAssociatedWall = false;
+                for (ORB_SLAM3::Plane *p_wall : p_room->getWalls())
+                {
+                    if (p_wall == nullptr)
+                    {
+                        continue;
+                    }
+                    for (const int wallId : wallIds)
+                    {
+                        if (p_wall->getId() == wallId)
+                        {
+                            ownsAssociatedWall = true;
+                            break;
+                        }
+                    }
+                    if (ownsAssociatedWall)
+                    {
+                        break;
+                    }
+                }
+                if (!ownsAssociatedWall &&
+                    ((prospectiveRoomId.has_value() &&
+                      p_room->getId() == prospectiveRoomId.value()) ||
+                     (p_prospectiveRoom != nullptr &&
+                      p_room == p_prospectiveRoom)))
+                {
+                    ownsAssociatedWall = true;
+                }
+                if (ownsAssociatedWall)
+                {
+                    votes[roomFloorIndex[p_room]]++;
+                }
+            }
+
+            std::size_t bestFloor = 0U;
+            for (std::size_t candidate = 1U; candidate < floorCount;
+                 ++candidate)
+            {
+                if (votes[candidate] > votes[bestFloor])
+                {
+                    bestFloor = candidate;
+                }
+            }
+            floorPassages[bestFloor].push_back(p_passage);
+        }
+
+        /* Index passage keys per floor so walls can list their passages. */
+        std::vector<std::unordered_map<int, std::vector<std::string>>>
+            floorWallPassages(floorCount);
+        std::vector<std::unordered_map<const ORB_SLAM3::Passage *, std::string>>
+            floorPassageKeys(floorCount);
+        for (std::size_t floorIndex = 0U; floorIndex < floorCount; ++floorIndex)
+        {
+            for (std::size_t passageOrdinal = 0U;
+                 passageOrdinal < floorPassages[floorIndex].size();
+                 ++passageOrdinal)
+            {
+                ORB_SLAM3::Passage *p_passage =
+                    floorPassages[floorIndex][passageOrdinal];
+                const std::string passageKey =
+                    "passage" + std::to_string(passageOrdinal);
+                floorPassageKeys[floorIndex][p_passage] = passageKey;
+                for (const int wallId : passageWallIds[p_passage])
+                {
+                    floorWallPassages[floorIndex][wallId].push_back(passageKey);
+                }
+            }
+        }
+
+        json mapJson;
+        mapJson["map_id"]            = mapInput.mapId;
+        mapJson["is_active"]         = mapInput.isActive;
+        mapJson["world_frame_epoch"] = mapInput.worldFrameEpoch;
+
+        for (std::size_t floorIndex = 0U; floorIndex < floorCount; ++floorIndex)
+        {
+            json              floorJson;
+            ORB_SLAM3::Floor *p_floor =
+                hasFloors ? floors[floorIndex] : nullptr;
+            if (p_floor != nullptr)
+            {
+                floorJson["floor_id"]   = p_floor->getId();
+                floorJson["floor_name"] = p_floor->getName();
+                floorJson["centroid"] = archiveVector3(p_floor->getCentroid());
+                const std::optional<ORB_SLAM3::Floor::PlaneIdentity> identity =
+                    p_floor->getPlaneIdentity();
+                floorJson["has_plane_identity"] = identity.has_value();
+                if (identity.has_value())
+                {
+                    const Eigen::Vector3d normal_World_m =
+                        identity->equation_World.head<3>();
+                    floorJson["normal"] = archiveVector3(normal_World_m);
+                    floorJson["offset_d"] =
+                        sanitiseArchiveDouble(identity->equation_World[3]);
+                    floorJson["finite_support_count"] =
+                        identity->finiteSupportCount;
+                    floorJson["observation_count"] = identity->observationCount;
+                }
+            }
+            else
+            {
+                floorJson["floor_id"]   = -1;
+                floorJson["floor_name"] = "synthetic";
+            }
+
+            for (std::size_t roomOrdinal = 0U;
+                 roomOrdinal < floorRooms[floorIndex].size();
+                 ++roomOrdinal)
+            {
+                ORB_SLAM3::Room  *p_room = floorRooms[floorIndex][roomOrdinal];
+                const std::string roomKey =
+                    "room" + std::to_string(roomOrdinal);
+
+                json roomJson;
+                roomJson["room_id"]   = p_room->getId();
+                roomJson["room_name"] = p_room->getName();
+                roomJson["room_variant"] =
+                    static_cast<int>(p_room->getRoomVariant());
+                roomJson["room_visited"] = p_room->hasPreviouslyVisited();
+                roomJson["centroid"] = archiveVector3(p_room->getCentroid());
+
+                std::vector<ORB_SLAM3::Plane *> walls;
+                for (ORB_SLAM3::Plane *p_wall : p_room->getWalls())
+                {
+                    if (p_wall == nullptr || p_wall->isBad())
+                    {
+                        continue;
+                    }
+                    if (p_wall->getPlaneType() !=
+                        ORB_SLAM3::Plane::planeVariant::WALL)
+                    {
+                        continue;
+                    }
+                    walls.push_back(p_wall);
+                }
+                std::sort(
+                    walls.begin(),
+                    walls.end(),
+                    [](ORB_SLAM3::Plane *first_in, ORB_SLAM3::Plane *second_in)
+                    { return first_in->getId() < second_in->getId(); });
+
+                for (std::size_t wallOrdinal = 0U; wallOrdinal < walls.size();
+                     ++wallOrdinal)
+                {
+                    ORB_SLAM3::Plane *p_wall = walls[wallOrdinal];
+                    const std::string wallKey =
+                        "wall" + std::to_string(wallOrdinal);
+                    const ORB_SLAM3::PlaneGeometryMetadataSnapshot geometry =
+                        p_wall->getGeometryMetadataSnapshot();
+                    const g2o::Plane3D equation_World =
+                        p_wall->getGlobalEquation();
+                    const Eigen::Vector3d normal_World_m(
+                        equation_World.normal().x(),
+                        equation_World.normal().y(),
+                        equation_World.normal().z());
+
+                    json wallJson;
+                    wallJson["wall_id"] = p_wall->getId();
+                    wallJson["wall_centroid"] =
+                        archiveVector3(geometry.centroid_World_m);
+                    json wallLimits;
+                    wallLimits["min_u_m"] =
+                        sanitiseArchiveDouble(geometry.minPlaneU_m);
+                    wallLimits["max_u_m"] =
+                        sanitiseArchiveDouble(geometry.maxPlaneU_m);
+                    wallLimits["min_v_m"] =
+                        sanitiseArchiveDouble(geometry.minPlaneV_m);
+                    wallLimits["max_v_m"] =
+                        sanitiseArchiveDouble(geometry.maxPlaneV_m);
+                    wallLimits["finite_support_count"] =
+                        geometry.finiteSupportCount;
+                    wallLimits["observation_count"] = geometry.observationCount;
+                    wallJson["wall_limits"]         = std::move(wallLimits);
+                    wallJson["wall_normal"] = archiveVector3(normal_World_m);
+                    wallJson["wall_offset_d"] =
+                        sanitiseArchiveDouble(equation_World.coeffs()[3]);
+                    wallJson["wall_extent_u_m"] = sanitiseArchiveDouble(
+                        geometry.maxPlaneU_m - geometry.minPlaneU_m);
+                    wallJson["wall_extent_v_m"] = sanitiseArchiveDouble(
+                        geometry.maxPlaneV_m - geometry.minPlaneV_m);
+                    wallJson["parent_room"] = roomKey;
+
+                    json       passageList = json::array();
+                    const auto wallPassages =
+                        floorWallPassages[floorIndex].find(p_wall->getId());
+                    if (wallPassages != floorWallPassages[floorIndex].end())
+                    {
+                        for (const std::string &passageKey :
+                             wallPassages->second)
+                        {
+                            passageList.push_back(passageKey);
+                        }
+                    }
+                    wallJson["passage_list"] = std::move(passageList);
+                    roomJson[wallKey]        = std::move(wallJson);
+                }
+                floorJson[roomKey] = std::move(roomJson);
+            }
+
+            json passagesJson = json::object();
+            for (std::size_t passageOrdinal = 0U;
+                 passageOrdinal < floorPassages[floorIndex].size();
+                 ++passageOrdinal)
+            {
+                ORB_SLAM3::Passage *p_passage =
+                    floorPassages[floorIndex][passageOrdinal];
+                const std::string passageKey =
+                    "passage" + std::to_string(passageOrdinal);
+                const std::vector<int>  &wallIds = passageWallIds[p_passage];
+                const std::optional<int> prospectiveRoomId =
+                    p_passage->getProspectiveRoomId();
+                ORB_SLAM3::Room *p_prospectiveRoom =
+                    p_passage->getProspectiveRoom();
+
+                json passageJson;
+                passageJson["passage_id"] = p_passage->getId();
+                passageJson["centroid"] =
+                    archiveVector3(p_passage->getCentroid());
+                passageJson["width_m"] =
+                    sanitiseArchiveDouble(p_passage->getWidth());
+                passageJson["height_m"] =
+                    sanitiseArchiveDouble(p_passage->getHeight());
+                passageJson["passable"] = p_passage->isPassable();
+
+                json connects = json::array();
+                for (std::size_t roomOrdinal = 0U;
+                     roomOrdinal < floorRooms[floorIndex].size();
+                     ++roomOrdinal)
+                {
+                    ORB_SLAM3::Room *p_room =
+                        floorRooms[floorIndex][roomOrdinal];
+                    bool connected = false;
+                    for (ORB_SLAM3::Plane *p_wall : p_room->getWalls())
+                    {
+                        if (p_wall == nullptr)
+                        {
+                            continue;
+                        }
+                        for (const int wallId : wallIds)
+                        {
+                            if (p_wall->getId() == wallId)
+                            {
+                                connected = true;
+                                break;
+                            }
+                        }
+                        if (connected)
+                        {
+                            break;
+                        }
+                    }
+                    if (!connected &&
+                        ((prospectiveRoomId.has_value() &&
+                          p_room->getId() == prospectiveRoomId.value()) ||
+                         (p_prospectiveRoom != nullptr &&
+                          p_room == p_prospectiveRoom)))
+                    {
+                        connected = true;
+                    }
+                    if (connected)
+                    {
+                        connects.push_back("room" +
+                                           std::to_string(roomOrdinal));
+                    }
+                }
+                passageJson["connects"] = std::move(connects);
+
+                json associatedWalls = json::array();
+                for (const int wallId : wallIds)
+                {
+                    associatedWalls.push_back(wallId);
+                }
+                passageJson["associated_wall_ids"] = std::move(associatedWalls);
+                passagesJson[passageKey]           = std::move(passageJson);
+            }
+            floorJson["passages"] = std::move(passagesJson);
+
+            mapJson["floor" + std::to_string(floorIndex)] =
+                std::move(floorJson);
+        }
+
+        archive["map" + std::to_string(mapOrdinal)] = std::move(mapJson);
+        totalFloors += floors.size();
+        totalRooms += rooms.size();
+        totalPassages += passages.size();
+    }
+
+    json metadata;
+    metadata["schema_version"]        = 2;
+    metadata["sim_timestamp_sec"]     = stampSeconds;
+    metadata["sim_timestamp_nanosec"] = stampNanoseconds;
+    metadata["ros_node"]              = "vs_graphs";
+    metadata["capture_cycle"]         = captureCycle;
+    metadata["sensor_mode"]           = sensorModeName();
+    metadata["map_count"]             = mapInputs.size();
+    metadata["floor_count_total"]     = totalFloors;
+    metadata["room_count_total"]      = totalRooms;
+    metadata["passage_count_total"]   = totalPassages;
+    archive["metadata"]               = std::move(metadata);
+
+    namespace filesystem = std::filesystem;
+    const filesystem::path archiveDir =
+        filesystem::path(sgraphArchiveTestRunDir) / "output" / "sgraph";
+    std::error_code makeError;
+    filesystem::create_directories(archiveDir, makeError);
+    if (makeError)
+    {
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                    "Cannot create SGraph archive directory '%s'.",
+                    archiveDir.string().c_str());
+        return;
+    }
+
+    /* Fixed-width zero-padded stamp: sgraph_<sec:06>_<nsec:09>.json, so
+     * lexical file order matches chronological order. */
+    std::ostringstream fileName;
+    fileName << "sgraph_" << std::setfill('0') << std::setw(6) << stampSeconds
+             << "_" << std::setfill('0') << std::setw(9) << stampNanoseconds
+             << ".json";
+    const filesystem::path archiveFile = archiveDir / fileName.str();
+    std::ofstream          output(archiveFile);
+    if (!output.is_open())
+    {
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                    "Cannot write SGraph archive '%s'.",
+                    archiveFile.string().c_str());
+        return;
+    }
+    output << archive.dump(2);
+    output.close();
+
+    /* Mirror the latest snapshot into archive/ (the live-UAV-RAM
+     * equivalent); the full time series stays in output/sgraph/. */
+    const filesystem::path liveArchiveDir =
+        filesystem::path(sgraphArchiveTestRunDir) / "archive";
+    filesystem::create_directories(liveArchiveDir, makeError);
+    if (!makeError)
+    {
+        const filesystem::path liveFile = liveArchiveDir / "sgraph_latest.json";
+        const filesystem::path stagingFile =
+            liveArchiveDir / "sgraph_latest.json.tmp";
+        std::ofstream liveOutput(stagingFile);
+        if (liveOutput.is_open())
+        {
+            liveOutput << archive.dump(2);
+            liveOutput.close();
+            filesystem::rename(stagingFile, liveFile, makeError);
+            if (makeError)
+            {
+                RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                            "Cannot publish latest SGraph to '%s'.",
+                            liveFile.string().c_str());
+            }
+        }
+    }
+
+    RCLCPP_INFO(rclcpp::get_logger("visual_sgraphs"),
+                "Archived SGraph #%llu to '%s' (%zu maps, %zu floors, "
+                "%zu rooms, %zu passages).",
+                static_cast<unsigned long long>(captureCycle),
+                archiveFile.string().c_str(),
+                mapInputs.size(),
+                totalFloors,
+                totalRooms,
+                totalPassages);
+
+    if (sgraphArchiveMaxFiles > 0)
+    {
+        pruneSgraphArchives(archiveDir, sgraphArchiveMaxFiles);
+    }
+
+    lastArchiveTime_s = now_s;
+    ++captureCycle;
+}
+
 void publishAllPoints(std::vector<ORB_SLAM3::MapPoint *> allMapPoints_in,
                       rclcpp::Time                       msgTime_s_in)
 {
@@ -2594,6 +3521,7 @@ void publishFramePointCloud(const Sophus::SE3f &cameraPose_CameraToWorld_in,
 
     /* Publish after the matching camera transform has been broadcast. */
     p_voxbloxInputPointCloudPublisher->publish(pointCloud_cameraMessage);
+    observeVoxbloxInput(pointCloud_cameraMessage.width, msgTime_s_in);
 }
 
 void publishFreeSpaceClusters(
@@ -2784,6 +3712,12 @@ void publishKeyFrameImages(
 
         /* Prevent the same keyframe from being published again */
         keyFrame->isPublished = true;
+
+        /* Mark the keyframe as in flight for the lockstep backlog signal */
+        if (p_slamSystem != nullptr)
+        {
+            p_slamSystem->IncrementSegmentationPublishedCount();
+        }
     }
 }
 
@@ -2941,8 +3875,24 @@ void publishKeyFrameMarkers(
     }
 }
 
+void publishPlanes(
+    const std::vector<ORB_SLAM3::Plane *>             &mappedPlanes_in,
+    const std::vector<ORB_SLAM3::Room *>              &mappedRooms_in,
+    const rclcpp::Time                                &msgTime_s_in,
+    vs_graphs::observability::PublishTopicsTimingSink *p_timingSink_in);
+
 void publishPlanes(const std::vector<ORB_SLAM3::Plane *> &mappedPlanes_in,
+                   const std::vector<ORB_SLAM3::Room *>  &mappedRooms_in,
                    const rclcpp::Time                    &msgTime_s_in)
+{
+    publishPlanes(mappedPlanes_in, mappedRooms_in, msgTime_s_in, nullptr);
+}
+
+void publishPlanes(
+    const std::vector<ORB_SLAM3::Plane *>             &mappedPlanes_in,
+    const std::vector<ORB_SLAM3::Room *>              &mappedRooms_in,
+    const rclcpp::Time                                &msgTime_s_in,
+    vs_graphs::observability::PublishTopicsTimingSink *p_timingSink_in)
 {
     /* Return when neither required publisher has been initialised */
     if (pubBuildingComponents == nullptr && pubPlaneLabel == nullptr)
@@ -2971,6 +3921,9 @@ void publishPlanes(const std::vector<ORB_SLAM3::Plane *> &mappedPlanes_in,
     }
 
     lastPlanePublishTime = msgTime_s_in;
+
+    const std::chrono::steady_clock::time_point planePublishStart =
+        std::chrono::steady_clock::now();
 
     /* Initialise the combined building-component point cloud */
     pcl::PointCloud<pcl::PointXYZRGB> buildingComponentPointCloud_BC;
@@ -3020,6 +3973,28 @@ void publishPlanes(const std::vector<ORB_SLAM3::Plane *> &mappedPlanes_in,
     constexpr double planeLabelVerticalOffset_m = 0.15;
     constexpr double planeNormalLength_m        = 0.45;
     constexpr double normalVectorTolerance      = 1e-9;
+
+    /* Reverse plane -> owning room(s) map, built once per publish cycle, so
+     * a plane's RViz label can state its ownership directly instead of
+     * requiring a reader to trace a possibly-cluttered roomWallLine back to
+     * its wall. */
+    std::unordered_map<ORB_SLAM3::Plane *, std::vector<int>>
+        owningRoomIdsByPlane;
+    for (ORB_SLAM3::Room *p_mappedRoom : mappedRooms_in)
+    {
+        if (p_mappedRoom == nullptr || p_mappedRoom->isBad())
+        {
+            continue;
+        }
+        for (ORB_SLAM3::Plane *p_ownedWall : p_mappedRoom->getWalls())
+        {
+            if (p_ownedWall != nullptr)
+            {
+                owningRoomIdsByPlane[p_ownedWall].push_back(
+                    p_mappedRoom->getId());
+            }
+        }
+    }
 
     /* Process every mapped plane */
     for (ORB_SLAM3::Plane *mappedPlane : mappedPlanes_in)
@@ -3189,13 +4164,8 @@ void publishPlanes(const std::vector<ORB_SLAM3::Plane *> &mappedPlanes_in,
             colouredPoint_BC.g = sourcePoint_BC.g;
             colouredPoint_BC.b = sourcePoint_BC.b;
 
-            /* Display detected door planes using a fixed magenta colour */
-            if (planeType == ORB_SLAM3::Plane::planeVariant::DOOR)
-            {
-                colouredPoint_BC.r = 204;
-                colouredPoint_BC.g = 0;
-                colouredPoint_BC.b = 102;
-            }
+            /* The construction view shows camera colours: ownership state
+             * stays on the plane labels, never repainted onto points. */
 
             buildingComponentPointCloud_BC.points.push_back(colouredPoint_BC);
         }
@@ -3234,6 +4204,55 @@ void publishPlanes(const std::vector<ORB_SLAM3::Plane *> &mappedPlanes_in,
         }
 
         planeLabelText << '\n' << "N " << finiteSupportPointCount;
+
+        const char *semanticClass = "OTHER";
+        if (planeType == ORB_SLAM3::Plane::planeVariant::WALL)
+        {
+            semanticClass = "WALL";
+        }
+        else if (planeType == ORB_SLAM3::Plane::planeVariant::GROUND)
+        {
+            semanticClass = "GROUND";
+        }
+        else if (planeType == ORB_SLAM3::Plane::planeVariant::DOOR)
+        {
+            semanticClass = "DOOR";
+        }
+
+        {
+            const auto ownerIt = owningRoomIdsByPlane.find(mappedPlane);
+            planeLabelText << '\n' << "class=" << semanticClass;
+            if (planeType == ORB_SLAM3::Plane::planeVariant::WALL)
+            {
+                planeLabelText << " lifecycle="
+                               << (ownerIt == owningRoomIdsByPlane.end() ||
+                                           ownerIt->second.empty()
+                                       ? "PENDING"
+                                       : "COMMITTED");
+            }
+            planeLabelText << '\n' << "owner=";
+            if (ownerIt == owningRoomIdsByPlane.end() ||
+                ownerIt->second.empty())
+            {
+                planeLabelText
+                    << (planeType == ORB_SLAM3::Plane::planeVariant::WALL
+                            ? "PENDING"
+                            : "NONE");
+            }
+            else
+            {
+                for (std::size_t ownerIndex = 0U;
+                     ownerIndex < ownerIt->second.size();
+                     ++ownerIndex)
+                {
+                    if (ownerIndex > 0U)
+                    {
+                        planeLabelText << ',';
+                    }
+                    planeLabelText << "Room#" << ownerIt->second[ownerIndex];
+                }
+            }
+        }
 
         planeLabelMarker.text = planeLabelText.str();
 
@@ -3333,6 +4352,64 @@ void publishPlanes(const std::vector<ORB_SLAM3::Plane *> &mappedPlanes_in,
         planeNormalMarker.lifetime = rclcpp::Duration::from_seconds(0);
 
         planeVisualizationArray.markers.push_back(std::move(planeNormalMarker));
+
+        /* ------------------------------------------------------------------ *
+         * WALL TWIN-FACE LINK (axiom (e): a physical wall's two opposite
+         * observations, linked by SemanticsManager::reconcileWallFacePairs())
+         * ------------------------------------------------------------------ */
+
+        ORB_SLAM3::Plane *p_twinFace = mappedPlane->getTwinFace();
+
+        if (p_twinFace != nullptr && !p_twinFace->isBad() &&
+            mappedPlane->getId() < p_twinFace->getId())
+        {
+            const Eigen::Vector3d twinCentroid_BC_m = p_twinFace->getCentroid();
+
+            if (twinCentroid_BC_m.allFinite())
+            {
+                visualization_msgs::msg::Marker wallTwinLineMarker;
+
+                wallTwinLineMarker.header.frame_id = frameBC;
+                wallTwinLineMarker.header.stamp    = msgTime_s_in;
+
+                wallTwinLineMarker.ns = "wallTwinLine";
+                wallTwinLineMarker.id = planeMarkerId;
+
+                wallTwinLineMarker.type =
+                    visualization_msgs::msg::Marker::LINE_LIST;
+                wallTwinLineMarker.action =
+                    visualization_msgs::msg::Marker::ADD;
+
+                wallTwinLineMarker.pose.orientation.w = 1.0;
+
+                /* Thin, distinct from the room-ownership/floor lines. */
+                wallTwinLineMarker.scale.x = 0.02;
+
+                wallTwinLineMarker.color.r = 1.0F;
+                wallTwinLineMarker.color.g = 0.85F;
+                wallTwinLineMarker.color.b = 0.0F;
+                wallTwinLineMarker.color.a = 0.8F;
+
+                geometry_msgs::msg::Point firstFacePoint_BC;
+                firstFacePoint_BC.x = planeCentroid_BC_m.x();
+                firstFacePoint_BC.y = planeCentroid_BC_m.y();
+                firstFacePoint_BC.z = planeCentroid_BC_m.z();
+
+                geometry_msgs::msg::Point secondFacePoint_BC;
+                secondFacePoint_BC.x = twinCentroid_BC_m.x();
+                secondFacePoint_BC.y = twinCentroid_BC_m.y();
+                secondFacePoint_BC.z = twinCentroid_BC_m.z();
+
+                wallTwinLineMarker.points.reserve(2);
+                wallTwinLineMarker.points.push_back(firstFacePoint_BC);
+                wallTwinLineMarker.points.push_back(secondFacePoint_BC);
+
+                wallTwinLineMarker.lifetime = rclcpp::Duration::from_seconds(0);
+
+                planeVisualizationArray.markers.push_back(
+                    std::move(wallTwinLineMarker));
+            }
+        }
     }
 
     /* Publish the aggregated building-component point cloud */
@@ -3362,6 +4439,23 @@ void publishPlanes(const std::vector<ORB_SLAM3::Plane *> &mappedPlanes_in,
     if (pubPlaneLabel != nullptr && !planeVisualizationArray.markers.empty())
     {
         pubPlaneLabel->publish(planeVisualizationArray);
+    }
+
+    if (p_timingSink_in != nullptr && p_timingSink_in->callback != nullptr)
+    {
+        try
+        {
+            p_timingSink_in->callback(
+                p_timingSink_in->p_context,
+                vs_graphs::observability::PublishTopic::PLANES,
+                true,
+                planePublishStart,
+                std::chrono::steady_clock::now());
+        }
+        catch (...)
+        {
+            /* Timing is diagnostic only and must never affect publication. */
+        }
     }
 }
 
@@ -3678,6 +4772,7 @@ void publishStructuralElements(
     /* Append the room markers */
     appendRoomMarkers(mappedRooms_in,
                       mappedFloors_in,
+                      mappedPassages_in,
                       msgTime_s_in,
                       structuralElementMarkerArray);
 
@@ -3885,6 +4980,74 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
                    const sensor_msgs::msg::PointCloud2::ConstSharedPtr
                        &pointCloud_cameraMessage_in)
 {
+    publishTopics(msgTime_s_in,
+                  angularVelocity_body_radps_in,
+                  pointCloud_cameraMessage_in,
+                  nullptr);
+}
+
+void publishTopics(
+    const rclcpp::Time    &msgTime_s_in,
+    const Eigen::Vector3f &angularVelocity_body_radps_in,
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr
+        &pointCloud_cameraMessage_in,
+    vs_graphs::observability::PublishTopicsTimingSink *p_timingSink_in,
+    const bool                                         publishAllPoints_in)
+{
+    const auto notifyTiming =
+        [p_timingSink_in](const vs_graphs::observability::PublishTopic topic_in,
+                          const bool isActualExecution_in,
+                          const std::chrono::steady_clock::time_point start_in,
+                          const std::chrono::steady_clock::time_point end_in)
+    {
+        if (p_timingSink_in == nullptr || p_timingSink_in->callback == nullptr)
+        {
+            return;
+        }
+        try
+        {
+            p_timingSink_in->callback(p_timingSink_in->p_context,
+                                      topic_in,
+                                      isActualExecution_in,
+                                      start_in,
+                                      end_in);
+        }
+        catch (...)
+        {
+            /* Timing is best-effort and must not alter publisher behaviour. */
+        }
+    };
+
+    const auto publishTimed =
+        [p_timingSink_in,
+         &notifyTiming](const vs_graphs::observability::PublishTopic topic_in,
+                        const auto &publishFunction_in)
+    {
+        if (p_timingSink_in == nullptr || p_timingSink_in->callback == nullptr)
+        {
+            publishFunction_in();
+            return;
+        }
+
+        const std::chrono::steady_clock::time_point startTime =
+            std::chrono::steady_clock::now();
+        try
+        {
+            publishFunction_in();
+        }
+        catch (...)
+        {
+            notifyTiming(topic_in,
+                         true,
+                         startTime,
+                         std::chrono::steady_clock::now());
+            throw;
+        }
+        notifyTiming(topic_in,
+                     true,
+                     startTime,
+                     std::chrono::steady_clock::now());
+    };
     /* Confirm that the SLAM system has been initialised */
     if (p_slamSystem == nullptr)
     {
@@ -4019,7 +5182,23 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
      * Publish mapped walls independently of the point-cloud visualisation
      * setting because they are consumed by GNN-based room detection.
      */
-    publishAllMappedWalls(mappedPlanes, msgTime_s_in);
+    publishTimed(vs_graphs::observability::PublishTopic::ALL_MAPPED_WALLS,
+                 [&]() { publishAllMappedWalls(mappedPlanes, msgTime_s_in); });
+
+    /*!
+     * Publish mapped rooms and passages alongside walls so an offline
+     * evaluation run can reconstruct the full generated scene graph
+     * (rooms, walls, passages) without loading a saved Atlas file.
+     */
+    publishAllMappedRooms(mappedRooms, msgTime_s_in);
+    publishAllMappedPassages(mappedPassages, mappedRooms, msgTime_s_in);
+    publishAllMappedFloors(mappedFloors, msgTime_s_in);
+
+    /*!
+     * Archive the same snapshot to JSON. The archiver rate-limits itself on
+     * the sim-clock timestamp and no-ops unless test_run_dir is set.
+     */
+    maybeArchiveSGraph(mappedFloors, mappedRooms, mappedPassages, msgTime_s_in);
 
     /* ------------------------------------------------------------------ *
      * POINT-CLOUD TOPICS
@@ -4027,12 +5206,47 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
 
     if (pubPointClouds)
     {
-        publishSegmentedCloud(mappedKeyFrames);
-        publishPlanes(mappedPlanes, msgTime_s_in);
-        publishAllPoints(p_slamSystem->GetAllMapPoints(), msgTime_s_in);
-        publishTrackedPoints(p_slamSystem->GetTrackedMapPoints(), msgTime_s_in);
-        publishFreeSpaceClusters(p_slamSystem->getSkeletonCluster(),
-                                 msgTime_s_in);
+        publishTimed(vs_graphs::observability::PublishTopic::SEGMENTED_CLOUD,
+                     [&]() { publishSegmentedCloud(mappedKeyFrames); });
+
+        const std::chrono::steady_clock::time_point planeCallStart =
+            p_timingSink_in != nullptr && p_timingSink_in->callback != nullptr
+                ? std::chrono::steady_clock::now()
+                : std::chrono::steady_clock::time_point{};
+        notifyTiming(vs_graphs::observability::PublishTopic::PLANES,
+                     false,
+                     planeCallStart,
+                     planeCallStart);
+        publishPlanes(mappedPlanes, mappedRooms, msgTime_s_in, p_timingSink_in);
+
+        if (publishAllPoints_in)
+        {
+            publishTimed(vs_graphs::observability::PublishTopic::ALL_POINTS,
+                         [&]() {
+                             publishAllPoints(p_slamSystem->GetAllMapPoints(),
+                                              msgTime_s_in);
+                         });
+        }
+        else
+        {
+            notifyTiming(vs_graphs::observability::PublishTopic::ALL_POINTS,
+                         false,
+                         std::chrono::steady_clock::time_point{},
+                         std::chrono::steady_clock::time_point{});
+        }
+        publishTimed(vs_graphs::observability::PublishTopic::TRACKED_POINTS,
+                     [&]() {
+                         publishTrackedPoints(
+                             p_slamSystem->GetTrackedMapPoints(),
+                             msgTime_s_in);
+                     });
+        publishTimed(
+            vs_graphs::observability::PublishTopic::FREE_SPACE_CLUSTERS,
+            [&]()
+            {
+                publishFreeSpaceClusters(p_slamSystem->getSkeletonCluster(),
+                                         msgTime_s_in);
+            });
     }
     else
     {
@@ -4187,6 +5401,46 @@ void publishTrackingImage(const cv::Mat      &trackingImage_bgr8_in,
 
     /* Publish through the image_transport publisher */
     pubTrackingImage->publish(trackingImageMessage);
+
+    /* Throttled loccams dump (~1 Hz wall clock): what the UAV saw, for
+     * post-run tracking-loss diagnosis. Skips when behind; never blocks. */
+    try
+    {
+        static std::chrono::steady_clock::time_point lastDumpTime =
+            std::chrono::steady_clock::now() - std::chrono::hours(1);
+        const std::chrono::steady_clock::time_point nowTime =
+            std::chrono::steady_clock::now();
+        if (!sgraphArchiveTestRunDir.empty() &&
+            (nowTime - lastDumpTime) >= std::chrono::seconds(1))
+        {
+            lastDumpTime         = nowTime;
+            namespace filesystem = std::filesystem;
+            const filesystem::path loccamsDir =
+                filesystem::path(sgraphArchiveTestRunDir) / "output" /
+                "loccams";
+            std::error_code makeError;
+            filesystem::create_directories(loccamsDir, makeError);
+            if (!makeError)
+            {
+                const std::int64_t totalNanoseconds =
+                    msgTime_s_in.nanoseconds();
+                if (totalNanoseconds >= 0)
+                {
+                    std::ostringstream fileName;
+                    fileName << "loccams_" << std::setfill('0') << std::setw(6)
+                             << (totalNanoseconds / 1000000000LL) << "_"
+                             << std::setfill('0') << std::setw(9)
+                             << (totalNanoseconds % 1000000000LL) << ".jpeg";
+                    cv::imwrite((loccamsDir / fileName.str()).string(),
+                                trackingImage_bgr8_in);
+                }
+            }
+        }
+    }
+    catch (...)
+    {
+        /* Loccams is best-effort debug output; never disturb the pipeline. */
+    }
 }
 
 void saveMapPointsAsPCDService(
@@ -4511,8 +5765,21 @@ void setupPublishers(
 
     const rclcpp::QoS pathPublisherQoS(rclcpp::KeepLast(2));
 
+    /*!
+     * Widened from 50: the external segmenter's throughput can fall well
+     * behind keyframe creation (measured: a ~80% "point cloud unavailable"
+     * rate in SemanticSegmentation, tracked to this same depth on the
+     * segmenter's own matching subscription QoS -- KeepLast(50) with
+     * reliable()/transient_local() drops the OLDEST unacknowledged message
+     * once the backlog exceeds depth, silently losing keyframes the
+     * segmenter never got a chance to process, before any C++-side buffer
+     * logic even sees them). This does not fix the underlying throughput
+     * mismatch -- it only buys more backlog headroom before loss starts.
+     * Keep in sync with scene_segment_ros/src/segmenter_yolo26.py's
+     * subscription QoS.
+     */
     const rclcpp::QoS keyFrameImagePublisherQoS =
-        rclcpp::QoS(rclcpp::KeepLast(50)).reliable().transient_local();
+        rclcpp::QoS(rclcpp::KeepLast(500)).reliable().transient_local();
 
     /* ---------------------------------------------------------------------- *
      * BASIC SLAM PUBLISHERS
@@ -4608,6 +5875,25 @@ void setupPublishers(
             standardPublisherQoS);
 
     /* ---------------------------------------------------------------------- *
+     * MAPPED-ROOM AND MAPPED-PASSAGE PUBLISHERS
+     * ---------------------------------------------------------------------- */
+
+    pubAllRooms =
+        node_in->create_publisher<vs_graphs::msg::VSGraphsAllDetectdetRooms>(
+            makeTopicName("all_mapped_rooms"),
+            standardPublisherQoS);
+
+    pubAllPassages =
+        node_in->create_publisher<vs_graphs::msg::VSGraphsAllPassagesData>(
+            makeTopicName("all_mapped_passages"),
+            standardPublisherQoS);
+
+    pubAllFloors =
+        node_in->create_publisher<vs_graphs::msg::VSGraphsAllFloorsData>(
+            makeTopicName("all_mapped_floors"),
+            standardPublisherQoS);
+
+    /* ---------------------------------------------------------------------- *
      * STRUCTURAL-ELEMENT PUBLISHER
      * ---------------------------------------------------------------------- */
 
@@ -4655,6 +5941,57 @@ void setupPublishers(
                                          : normalisedTopicNamespace.c_str());
 }
 
+void shutdownRosInterfaces()
+{
+    pubKeyFrameList.reset();
+    pubOdometry.reset();
+    pubAllMappoints.reset();
+    pubCameraPose.reset();
+    pubKFImage.reset();
+    pubTrackedMappoints.reset();
+    p_voxbloxInputPointCloudPublisher.reset();
+    p_mapRevisionPublisher.reset();
+    pubKeyFrameMarker.reset();
+    pubFreespaceCluster.reset();
+    pubCameraPoseVis.reset();
+    pubTrackingImage.reset();
+    pubDoor.reset();
+    pubFiducialMarker.reset();
+    pubPlaneLabel.reset();
+    pubBuildingComponents.reset();
+    pubSegmentedPointcloud.reset();
+    pubAllWalls_new.reset();
+    pubAllWalls_legacy.reset();
+    pubStructuralElements.reset();
+
+    srvSaveMap.reset();
+    srvSaveMapPoints.reset();
+    srvSaveTrajectory.reset();
+    srvGetMissionHealth.reset();
+    srvEstimatorHealth.reset();
+
+    tfListener_.reset();
+    tfBroadcaster.reset();
+    staticTfBroadcaster.reset();
+    tfBuffer_.reset();
+}
+
+static void getEstimatorHealthService(
+    const std::shared_ptr<vs_graphs::srv::EstimatorHealth::Request> request_in,
+    std::shared_ptr<vs_graphs::srv::EstimatorHealth::Response> response_out)
+{
+    (void)request_in;
+    const double nowWallSeconds =
+        std::chrono::duration<double>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    const double lastWallSeconds    = estimatorFrameWallSeconds.load();
+    response_out->frames_per_second = estimatorFramesPerSecond.load();
+    response_out->last_frame_age_seconds =
+        lastWallSeconds > 0.0 ? nowWallSeconds - lastWallSeconds
+                              : std::numeric_limits<double>::infinity();
+}
+
 static void getMissionHealthService(
     const std::shared_ptr<vs_graphs::srv::GetMissionHealth::Request> request_in,
     std::shared_ptr<vs_graphs::srv::GetMissionHealth::Response> response_out)
@@ -4665,8 +6002,13 @@ static void getMissionHealthService(
         return;
     }
 
+    /* Only pay for the room/floor/passage/topology enumeration -- which
+     * takes the semantic update lock -- when the caller actually asked for
+     * topology. A poller that only wants the segmentation backlog counters
+     * (e.g. a lockstep controller sampling at ~10 Hz) sets
+     * include_topology=false and gets the cheap snapshot path instead. */
     const ORB_SLAM3::System::MissionHealthSnapshot snapshot =
-        p_slamSystem->GetMissionHealthSnapshot(true);
+        p_slamSystem->GetMissionHealthSnapshot(request_in->include_topology);
     response_out->available            = true;
     response_out->mode                 = sensorModeName();
     response_out->frame_timestamp      = snapshot.frameTimestamp;
@@ -4679,6 +6021,41 @@ static void getMissionHealthService(
     response_out->map_count            = snapshot.mapCount;
     response_out->keyframe_count       = snapshot.keyFrameCount;
     response_out->reset_count          = snapshot.resetCount;
+    response_out->rgbd_frontend_accepted_count =
+        snapshot.rgbdFrontendAcceptedCount;
+    response_out->rgbd_frontend_processed_count =
+        snapshot.rgbdFrontendProcessedCount;
+    response_out->rgbd_frontend_overwritten_count =
+        snapshot.rgbdFrontendOverwrittenCount;
+    response_out->rgbd_frontend_worker_in_flight =
+        snapshot.rgbdFrontendWorkerInFlight;
+    response_out->rgbd_frontend_last_processed_sensor_timestamp_nanoseconds =
+        snapshot.rgbdFrontendLastProcessedSensorTimestampNanoseconds;
+    response_out->segmentation_published_count =
+        snapshot.segmentationPublishedCount;
+    response_out->segmentation_returned_count =
+        snapshot.segmentationReturnedCount;
+    response_out->last_returned_keyframe_id = snapshot.lastReturnedKeyFrameId;
+    response_out->segmentation_enqueued_count =
+        snapshot.segmentationEnqueuedCount;
+    response_out->segmentation_dequeued_count =
+        snapshot.segmentationDequeuedCount;
+    response_out->segmentation_terminal_count =
+        snapshot.segmentationTerminalCount;
+    response_out->segmentation_accepted_count =
+        snapshot.segmentationAcceptedCount;
+    response_out->segmentation_dropped_count =
+        snapshot.segmentationDroppedCount;
+    response_out->segmentation_missing_keyframe_count =
+        snapshot.segmentationMissingKeyFrameCount;
+    response_out->segmentation_missing_cloud_count =
+        snapshot.segmentationMissingCloudCount;
+    response_out->segmentation_stale_map_count =
+        snapshot.segmentationStaleMapCount;
+    response_out->last_terminal_keyframe_id = snapshot.lastTerminalKeyFrameId;
+    response_out->segmentation_queue_depth  = snapshot.segmentationQueueDepth;
+    response_out->segmentation_queue_high_watermark =
+        snapshot.segmentationQueueHighWatermark;
 
     if (snapshot.poseValid)
     {
@@ -4743,11 +6120,11 @@ static void getMissionHealthService(
     }
     for (const ORB_SLAM3::System::PassageHealth &passage : snapshot.passages)
     {
-        const bool traversed = passage.knownToFarCount > 0U ||
-                               passage.farToKnownCount > 0U ||
+        const bool traversed = passage.primaryTraversalCount > 0U ||
+                               passage.secondaryTraversalCount > 0U ||
                                passage.unknownCount > 0U;
-        const bool bidirectional =
-            passage.knownToFarCount > 0U && passage.farToKnownCount > 0U;
+        const bool bidirectional = passage.primaryTraversalCount > 0U &&
+                                   passage.secondaryTraversalCount > 0U;
         if (passage.passable)
         {
             ++response_out->passable_passage_count;
@@ -4760,23 +6137,38 @@ static void getMissionHealthService(
         {
             ++response_out->bidirectional_passage_count;
         }
-        response_out->traversal_known_to_far_count += passage.knownToFarCount;
-        response_out->traversal_far_to_known_count += passage.farToKnownCount;
+        response_out->traversal_known_to_far_count +=
+            passage.primaryTraversalCount;
+        response_out->traversal_far_to_known_count +=
+            passage.secondaryTraversalCount;
         response_out->traversal_unknown_count += passage.unknownCount;
 
         topology["passages"].push_back(
             {{"id", passage.id},
              {"passable", passage.passable},
-             {"known_side_room_id", passage.knownSideRoomId},
-             {"far_side_room_id", passage.farSideRoomId},
-             {"known_to_far", passage.knownToFarCount},
-             {"far_to_known", passage.farToKnownCount},
+             {"primary_room_id", passage.primaryRoomId},
+             {"secondary_room_id", passage.secondaryRoomId},
+             {"primary_traversal_count", passage.primaryTraversalCount},
+             {"secondary_traversal_count", passage.secondaryTraversalCount},
              {"unknown", passage.unknownCount},
              {"bidirectional", bidirectional}});
     }
 
     if (request_in->include_topology)
     {
+        /* P1.8 (semantic-axiom-reliability-plan.md): extend the existing
+         * schema-1 topology object to schema 2 with copied-cache evaluator
+         * additions, without changing GetMissionHealth.srv or duplicating
+         * this method's own schema-1 collection above. */
+        const bool cacheAvailable =
+            p_slamSystem->IsSemanticReportCacheAvailable();
+        const ORB_SLAM3::semantic::SemanticReportCacheEntry entry =
+            p_slamSystem->GetSemanticReportCacheEntry();
+        topology = ORB_SLAM3::augmentMissionHealthTopologyJsonWithSemantics(
+            std::move(topology),
+            entry,
+            cacheAvailable);
+
         response_out->topology_json = topology.dump();
     }
 }
@@ -4829,6 +6221,7 @@ void setupServices(const std::shared_ptr<rclcpp::Node> &node_in,
     srvSaveMapPoints.reset();
     srvSaveTrajectory.reset();
     srvGetMissionHealth.reset();
+    srvEstimatorHealth.reset();
 
     /* Create the complete-map save service */
     srvSaveMap = node_in->create_service<vs_graphs::srv::SaveMap>(
@@ -4850,9 +6243,15 @@ void setupServices(const std::shared_ptr<rclcpp::Node> &node_in,
             makeServiceName("get_mission_health"),
             &getMissionHealthService);
 
+    srvEstimatorHealth =
+        node_in->create_service<vs_graphs::srv::EstimatorHealth>(
+            makeServiceName("estimator_health"),
+            &getEstimatorHealthService);
+
     /* Confirm that all service objects were created */
     if (srvSaveMap == nullptr || srvSaveMapPoints == nullptr ||
-        srvSaveTrajectory == nullptr || srvGetMissionHealth == nullptr)
+        srvSaveTrajectory == nullptr || srvGetMissionHealth == nullptr ||
+        srvEstimatorHealth == nullptr)
     {
         RCLCPP_ERROR(
             node_in->get_logger(),
@@ -4918,10 +6317,24 @@ void setVoxbloxSkeletonCluster(
     transformedSkeletonClusters_world.reserve(
         skeletonMarkerArray_in.markers.size());
 
+    /* Reset the per-scan rejection counts before classifying markers. */
+    const std::uint64_t ingestSequence = lastSparseIngest.sequence + 1U;
+    lastSparseIngest          = vs_graphs::sparse::SparseIngestCounts();
+    lastSparseIngest.sequence = ingestSequence;
+
     /* Process every marker contained in the sparse graph message */
     for (const visualization_msgs::msg::Marker &skeletonMarker :
          skeletonMarkerArray_in.markers)
     {
+        /* Classify the marker once so every skip path carries a typed reason.
+         */
+        using vs_graphs::sparse::SparseMarkerVerdict;
+        const SparseMarkerVerdict markerVerdict =
+            vs_graphs::sparse::classifySparseMarker(
+                static_cast<int>(skeletonMarker.type),
+                skeletonMarker.ns,
+                skeletonMarker.points.size(),
+                minimumClusterVertexCount);
         /*!
          * Voxblox publishes each connected free-space component using a marker
          * namespace beginning with "connected_vertices_".
@@ -4943,14 +6356,23 @@ void setVoxbloxSkeletonCluster(
             skeletonMarker.ns == "edges";
 
         /* Ignore marker types that are not required by this pipeline */
-        if (!isConnectedVertexMarker && !isRawEdgeMarker)
+        if (markerVerdict == SparseMarkerVerdict::SPARSE_MARKER_IGNORED)
         {
+            lastSparseIngest.ignoredMarkerCount++;
             continue;
         }
 
-        /* Ignore markers without any point data */
-        if (skeletonMarker.points.empty())
+        /* Ignore cluster markers without any point data */
+        if (markerVerdict == SparseMarkerVerdict::SPARSE_CLUSTER_EMPTY)
         {
+            lastSparseIngest.emptyClusterCount++;
+            continue;
+        }
+
+        /* Ignore edge markers without any point data */
+        if (markerVerdict == SparseMarkerVerdict::SPARSE_EDGE_EMPTY)
+        {
+            lastSparseIngest.emptyEdgeCount++;
             continue;
         }
 
@@ -4963,6 +6385,14 @@ void setVoxbloxSkeletonCluster(
         if (!getSkeletonMarkerWorldTransform(skeletonMarker,
                                              T_world_skeletonMarker))
         {
+            if (isConnectedVertexMarker)
+            {
+                lastSparseIngest.clusterTransformFailureCount++;
+            }
+            else
+            {
+                lastSparseIngest.edgeTransformFailureCount++;
+            }
             continue;
         }
 
@@ -4975,6 +6405,7 @@ void setVoxbloxSkeletonCluster(
             /* Ignore undersized connected components */
             if (skeletonMarker.points.size() < minimumClusterVertexCount)
             {
+                lastSparseIngest.undersizedClusterCount++;
                 continue;
             }
 
@@ -4993,6 +6424,7 @@ void setVoxbloxSkeletonCluster(
                                             skeletonPoint_marker,
                                             skeletonPoint_world))
                 {
+                    lastSparseIngest.clusterPointDropCount++;
                     continue;
                 }
 
@@ -5044,6 +6476,7 @@ void setVoxbloxSkeletonCluster(
 
             if (!isEdgeStartValid || !isEdgeEndValid)
             {
+                lastSparseIngest.edgeTransformFailureCount++;
                 continue;
             }
 
@@ -5054,6 +6487,7 @@ void setVoxbloxSkeletonCluster(
             if (!edgeStart_world.allFinite() || !edgeEnd_world.allFinite() ||
                 edgeLength_m < 1e-6)
             {
+                lastSparseIngest.degenerateEdgeCount++;
                 continue;
             }
 
@@ -5075,6 +6509,252 @@ void setVoxbloxSkeletonCluster(
 
     /* Store the complete raw skeleton edges in the active map */
     p_slamSystem->setSkeletonEdges(skeletonEdges);
+}
+
+/*!
+ * Emits one SG_PIPELINE summary describing a sparse-graph callback: marker
+ * namespaces, actions, source frames, raw cluster/edge counts and the
+ * accepted (transformed) cluster geometry. Call only with the health-state
+ * mutex held. An unchanged payload is re-logged at most once every ten
+ * seconds so a quiet skeletonizer stays visible without flooding the log.
+ */
+void logSparseGraphCallbackSummary(
+    const visualization_msgs::msg::MarkerArray  &sparseGraphMessage_in,
+    const std::chrono::steady_clock::time_point &now_in,
+    VoxbloxHealthState                          &healthState_inout,
+    const bool                                   isReset_in)
+{
+    constexpr std::size_t MAX_LOGGED_NAMES        = 8U;
+    constexpr std::size_t MAX_LOGGED_CLUSTERS     = 8U;
+    constexpr double      SUMMARY_REPEAT_PERIOD_S = 10.0;
+
+    /* Scan the raw markers for namespaces, frames and eligible geometry. */
+    std::size_t              deleteAllMarkerCount = 0U;
+    std::size_t              clusterMarkerCount   = 0U;
+    std::size_t              clusterPointCount    = 0U;
+    std::size_t              edgeMarkerCount      = 0U;
+    std::size_t              edgePointCount       = 0U;
+    std::vector<std::string> distinctNamespaces;
+    std::vector<std::string> distinctFrames;
+
+    for (const visualization_msgs::msg::Marker &sparseMarker :
+         sparseGraphMessage_in.markers)
+    {
+        if (sparseMarker.action == visualization_msgs::msg::Marker::DELETEALL)
+        {
+            deleteAllMarkerCount++;
+        }
+
+        if (std::find(distinctNamespaces.begin(),
+                      distinctNamespaces.end(),
+                      sparseMarker.ns) == distinctNamespaces.end())
+        {
+            distinctNamespaces.push_back(sparseMarker.ns);
+        }
+
+        if (std::find(distinctFrames.begin(),
+                      distinctFrames.end(),
+                      sparseMarker.header.frame_id) == distinctFrames.end())
+        {
+            distinctFrames.push_back(sparseMarker.header.frame_id);
+        }
+
+        const bool isClusterMarker =
+            sparseMarker.type == visualization_msgs::msg::Marker::CUBE_LIST &&
+            sparseMarker.ns.rfind("connected_vertices_", 0) == 0;
+        const bool isEdgeMarker =
+            sparseMarker.type == visualization_msgs::msg::Marker::LINE_LIST &&
+            sparseMarker.ns == "edges";
+
+        if (isClusterMarker)
+        {
+            clusterMarkerCount++;
+            clusterPointCount += sparseMarker.points.size();
+        }
+
+        if (isEdgeMarker)
+        {
+            edgeMarkerCount++;
+            edgePointCount += sparseMarker.points.size();
+        }
+    }
+
+    /* Identify the payload so unchanged summaries can be throttled. */
+    std::string summarySignature =
+        std::to_string(sparseGraphMessage_in.markers.size()) + "/" +
+        std::to_string(deleteAllMarkerCount) + "/" +
+        std::to_string(clusterMarkerCount) + "/" +
+        std::to_string(clusterPointCount) + "/" +
+        std::to_string(edgeMarkerCount) + "/" + std::to_string(edgePointCount) +
+        "/" + std::to_string(healthState_inout.acceptedClusterCount) + "/" +
+        std::to_string(healthState_inout.acceptedVertexCount) + "/" +
+        std::to_string(healthState_inout.acceptedEdgeCount) + "/" +
+        std::to_string(lastSparseIngest.sequence) + "/" +
+        std::to_string(lastSparseIngest.ignoredMarkerCount) + "/" +
+        std::to_string(lastSparseIngest.emptyClusterCount) + "/" +
+        std::to_string(lastSparseIngest.emptyEdgeCount) + "/" +
+        std::to_string(lastSparseIngest.undersizedClusterCount) + "/" +
+        std::to_string(lastSparseIngest.clusterTransformFailureCount) + "/" +
+        std::to_string(lastSparseIngest.clusterPointDropCount) + "/" +
+        std::to_string(lastSparseIngest.edgeTransformFailureCount) + "/" +
+        std::to_string(lastSparseIngest.degenerateEdgeCount);
+
+    const double summaryAge_s = ageSeconds(
+        now_in,
+        healthState_inout.lastSparseSummaryLog,
+        healthState_inout.lastSparseSummaryLog.time_since_epoch().count() != 0);
+
+    if (summarySignature == healthState_inout.lastSparseSummarySignature &&
+        summaryAge_s >= 0.0 && summaryAge_s < SUMMARY_REPEAT_PERIOD_S)
+    {
+        return;
+    }
+
+    healthState_inout.lastSparseSummarySignature = summarySignature;
+    healthState_inout.lastSparseSummaryLog       = now_in;
+
+    if (isReset_in)
+    {
+        std::cout << "SG_PIPELINE {\"event\":\"voxblox_sparse_reset\","
+                     "\"markers\":"
+                  << sparseGraphMessage_in.markers.size()
+                  << ",\"reset_revision\":" << healthState_inout.resetRevision
+                  << ",\"ingest_sequence\":" << lastSparseIngest.sequence << "}"
+                  << std::endl;
+
+        return;
+    }
+
+    std::cout << "SG_PIPELINE {\"event\":\"voxblox_sparse_graph\","
+                 "\"markers\":"
+              << sparseGraphMessage_in.markers.size()
+              << ",\"delete_all\":" << deleteAllMarkerCount
+              << ",\"namespace_count\":" << distinctNamespaces.size()
+              << ",\"namespaces\":[";
+
+    for (std::size_t namespaceIndex = 0;
+         namespaceIndex < distinctNamespaces.size() &&
+         namespaceIndex < MAX_LOGGED_NAMES;
+         ++namespaceIndex)
+    {
+        std::cout << (namespaceIndex > 0 ? "," : "") << "\""
+                  << distinctNamespaces[namespaceIndex] << "\"";
+    }
+
+    std::cout << "],\"frame_count\":" << distinctFrames.size()
+              << ",\"frames\":[";
+
+    for (std::size_t frameIndex = 0;
+         frameIndex < distinctFrames.size() && frameIndex < MAX_LOGGED_NAMES;
+         ++frameIndex)
+    {
+        std::cout << (frameIndex > 0 ? "," : "") << "\""
+                  << distinctFrames[frameIndex] << "\"";
+    }
+
+    std::cout << "],\"cluster_markers\":" << clusterMarkerCount
+              << ",\"cluster_points\":" << clusterPointCount
+              << ",\"edge_markers\":" << edgeMarkerCount
+              << ",\"edge_points\":" << edgePointCount
+              << ",\"accepted_clusters\":"
+              << healthState_inout.acceptedClusterCount
+              << ",\"cluster_vertices\":[";
+
+    for (std::size_t clusterIndex = 0;
+         clusterIndex < skeletonClusterPoints.size() &&
+         clusterIndex < MAX_LOGGED_CLUSTERS;
+         ++clusterIndex)
+    {
+        std::cout << (clusterIndex > 0 ? "," : "")
+                  << skeletonClusterPoints[clusterIndex].size();
+    }
+
+    std::cout << "],\"accepted_vertices\":"
+              << healthState_inout.acceptedVertexCount
+              << ",\"accepted_edges\":" << healthState_inout.acceptedEdgeCount
+              << ",\"reset_revision\":" << healthState_inout.resetRevision
+              << ",\"ingest_sequence\":" << lastSparseIngest.sequence
+              << ",\"reject_ignored\":" << lastSparseIngest.ignoredMarkerCount
+              << ",\"reject_empty_clusters\":"
+              << lastSparseIngest.emptyClusterCount
+              << ",\"reject_empty_edges\":" << lastSparseIngest.emptyEdgeCount
+              << ",\"reject_undersized\":"
+              << lastSparseIngest.undersizedClusterCount
+              << ",\"reject_cluster_transform_failed\":"
+              << lastSparseIngest.clusterTransformFailureCount
+              << ",\"reject_points_dropped\":"
+              << lastSparseIngest.clusterPointDropCount
+              << ",\"reject_edge_transform_failed\":"
+              << lastSparseIngest.edgeTransformFailureCount
+              << ",\"reject_degenerate_edges\":"
+              << lastSparseIngest.degenerateEdgeCount << "}" << std::endl;
+}
+
+void observeVoxbloxSkeletonPublication(
+    const sensor_msgs::msg::PointCloud2 &skeletonMessage_in)
+{
+    std::lock_guard<std::mutex> lock(voxbloxHealth.mutex);
+    voxbloxHealth.lastSkeleton = std::chrono::steady_clock::now();
+    voxbloxHealth.hasSkeleton  = true;
+    const std::int64_t messageStamp_ns =
+        rclcpp::Time(skeletonMessage_in.header.stamp).nanoseconds();
+    voxbloxHealth.lastSkeletonStamp_ns =
+        messageStamp_ns > 0 ? messageStamp_ns : voxbloxHealth.lastInputStamp_ns;
+}
+
+void observeVoxbloxSparseGraphPublication(
+    const visualization_msgs::msg::MarkerArray &sparseGraphMessage_in)
+{
+    const bool isReset =
+        std::any_of(sparseGraphMessage_in.markers.begin(),
+                    sparseGraphMessage_in.markers.end(),
+                    [](const visualization_msgs::msg::Marker &marker_in) {
+                        return marker_in.action ==
+                               visualization_msgs::msg::Marker::DELETEALL;
+                    });
+
+    std::lock_guard<std::mutex>                 lock(voxbloxHealth.mutex);
+    const std::chrono::steady_clock::time_point now =
+        std::chrono::steady_clock::now();
+    if (isReset)
+    {
+        voxbloxHealth.lastReset = now;
+        voxbloxHealth.hasReset  = true;
+        voxbloxHealth.resetRevision++;
+        voxbloxHealth.acceptedClusterCount = 0U;
+        voxbloxHealth.acceptedVertexCount  = 0U;
+        voxbloxHealth.acceptedEdgeCount    = 0U;
+        logSparseGraphCallbackSummary(sparseGraphMessage_in,
+                                      now,
+                                      voxbloxHealth,
+                                      true);
+        return;
+    }
+
+    voxbloxHealth.lastSparseGraph      = now;
+    voxbloxHealth.hasSparseGraph       = true;
+    std::int64_t newestMessageStamp_ns = 0;
+    for (const visualization_msgs::msg::Marker &marker :
+         sparseGraphMessage_in.markers)
+    {
+        newestMessageStamp_ns =
+            std::max(newestMessageStamp_ns,
+                     rclcpp::Time(marker.header.stamp).nanoseconds());
+    }
+    voxbloxHealth.lastSparseGraphStamp_ns =
+        newestMessageStamp_ns > 0 ? newestMessageStamp_ns
+                                  : voxbloxHealth.lastInputStamp_ns;
+    voxbloxHealth.acceptedClusterCount = skeletonClusterPoints.size();
+    voxbloxHealth.acceptedVertexCount  = 0U;
+    for (const std::vector<Eigen::Vector3d> &cluster : skeletonClusterPoints)
+    {
+        voxbloxHealth.acceptedVertexCount += cluster.size();
+    }
+    voxbloxHealth.acceptedEdgeCount = skeletonEdges.size();
+    logSparseGraphCallbackSummary(sparseGraphMessage_in,
+                                  now,
+                                  voxbloxHealth,
+                                  false);
 }
 
 bool transformSkeletonPoint(

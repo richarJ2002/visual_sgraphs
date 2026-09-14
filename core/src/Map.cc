@@ -544,6 +544,42 @@ void Map::SetReferenceMapPoints(const vector<MapPoint *> &vpMPs)
     mvpReferenceMapPoints = vpMPs;
 }
 
+void Map::setStartingRoom(Room *p_room_in)
+{
+    unique_lock<mutex> lock(mMutexMap);
+    p_startingRoom = p_room_in;
+}
+
+Room *Map::getStartingRoom()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return p_startingRoom;
+}
+
+void Map::setFinalRoom(Room *p_room_in)
+{
+    unique_lock<mutex> lock(mMutexMap);
+    p_finalRoom = p_room_in;
+}
+
+Room *Map::getFinalRoom()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return p_finalRoom;
+}
+
+void Map::setFollowingMap(Map *p_map_in)
+{
+    unique_lock<mutex> lock(mMutexMap);
+    p_followingMap = p_map_in;
+}
+
+Map *Map::getFollowingMap()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return p_followingMap;
+}
+
 void Map::InformNewBigChange()
 {
     unique_lock<mutex> lock(mMutexMap);

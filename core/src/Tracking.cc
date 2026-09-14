@@ -34,6 +34,7 @@
 #include "ORBmatcher.h"
 #include "Optimizer.h"
 #include "Pinhole.h"
+#include "ResetCause.h"
 
 #include <cmath>
 #include <iostream>
@@ -758,10 +759,10 @@ void Tracking::newParameterLoader(Settings *settings)
                                              fMinThFAST);
 
     // Adaptive FAST threshold initialization
-    mnLastFrameFeatures = 0;
+    mnLastFrameFeatures      = 0;
     mnConsecutiveLowFeatures = 0;
-    mBaseIniThFAST = fIniThFAST;
-    mBaseMinThFAST = fMinThFAST;
+    mBaseIniThFAST           = fIniThFAST;
+    mBaseMinThFAST           = fMinThFAST;
 
     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO ||
         mSensor == System::IMU_RGBD)
@@ -907,7 +908,8 @@ void Tracking::LoadTrackingParameters(const string &strSettingPath)
 }
 
 // Adaptive FAST threshold: lower thresholds when tracking degrades
-// In low-texture corridors, fewer features are extracted, so we lower the threshold
+// In low-texture corridors, fewer features are extracted, so we lower the
+// threshold
 void Tracking::AdjustFASTThreshold()
 {
     // Count features in current frame
@@ -921,9 +923,11 @@ void Tracking::AdjustFASTThreshold()
     }
 
     // Check if feature count dropped significantly
-    float featureRatio = (float)nCurrentFeatures / (float)std::max(1, mnLastFrameFeatures);
+    float featureRatio =
+        (float)nCurrentFeatures / (float)std::max(1, mnLastFrameFeatures);
 
-    // If features dropped below 50% of previous (more sensitive), or absolute count is very low
+    // If features dropped below 50% of previous (more sensitive), or absolute
+    // count is very low
     bool lowFeatures = (featureRatio < 0.5f) || (nCurrentFeatures < 400);
 
     if (lowFeatures)
@@ -940,13 +944,13 @@ void Tracking::AdjustFASTThreshold()
     int newIniThFAST = mBaseIniThFAST;
     int newMinThFAST = mBaseMinThFAST;
 
-    if (mnConsecutiveLowFeatures >= 1)  // React faster - after just 1 frame
+    if (mnConsecutiveLowFeatures >= 1) // React faster - after just 1 frame
     {
         // Progressively lower thresholds (but not below minimum)
         // Each step reduces by 3, minimum of 1 for both (more aggressive)
         int reduction = std::min(mnConsecutiveLowFeatures, 6) * 3;
-        newIniThFAST = std::max(mBaseIniThFAST - reduction, 1);
-        newMinThFAST = std::max(mBaseMinThFAST - reduction, 1);
+        newIniThFAST  = std::max(mBaseIniThFAST - reduction, 1);
+        newMinThFAST  = std::max(mBaseMinThFAST - reduction, 1);
     }
     else if (mnConsecutiveLowFeatures == 0 && nCurrentFeatures > 2500)
     {
@@ -971,11 +975,13 @@ void Tracking::AdjustFASTThreshold()
             mpIniORBextractor->SetIniThFAST(newIniThFAST);
             mpIniORBextractor->SetMinThFAST(newMinThFAST);
         }
-        Verbose::PrintMess("[Tracking] Adaptive FAST: iniTh=" + std::to_string(newIniThFAST) +
-                           " minTh=" + std::to_string(newMinThFAST) +
-                           " (features=" + std::to_string(nCurrentFeatures) +
-                           " consecutive_low=" + std::to_string(mnConsecutiveLowFeatures) + ")",
-                           Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess(
+            "[Tracking] Adaptive FAST: iniTh=" + std::to_string(newIniThFAST) +
+                " minTh=" + std::to_string(newMinThFAST) +
+                " (features=" + std::to_string(nCurrentFeatures) +
+                " consecutive_low=" + std::to_string(mnConsecutiveLowFeatures) +
+                ")",
+            Verbose::VERBOSITY_NORMAL);
     }
 
     mnLastFrameFeatures = nCurrentFeatures;
@@ -1755,10 +1761,10 @@ bool Tracking::ParseORBParamFile(cv::FileStorage &fSettings)
                                              fMinThFAST);
 
     // Adaptive FAST threshold initialization
-    mnLastFrameFeatures = 0;
+    mnLastFrameFeatures      = 0;
     mnConsecutiveLowFeatures = 0;
-    mBaseIniThFAST = fIniThFAST;
-    mBaseMinThFAST = fMinThFAST;
+    mBaseIniThFAST           = fIniThFAST;
+    mBaseMinThFAST           = fMinThFAST;
 
     cout << endl << "ORB Extractor Parameters: " << endl;
     cout << "- Number of Features: " << nFeatures << endl;
@@ -1942,11 +1948,11 @@ bool Tracking::GetStepByStep()
 }
 
 Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat              &imRectLeft,
-                                        const cv::Mat              &imRectRight,
-                                        const double               &timestamp,
-                                        string                      filename,
-                                        const std::vector<Marker *> markers,
-                                        const std::vector<Room *>   rooms)
+                                       const cv::Mat              &imRectRight,
+                                       const double               &timestamp,
+                                       string                      filename,
+                                       const std::vector<Marker *> markers,
+                                       const std::vector<Room *>   rooms)
 {
     // Set arguments to local variables
     env_rooms = rooms;
@@ -2151,10 +2157,10 @@ Sophus::SE3f Tracking::GrabImageRGBD(
 }
 
 Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat              &im,
-                                           const double               &timestamp,
-                                           string                      filename,
-                                           const std::vector<Marker *> markers,
-                                           const std::vector<Room *>   rooms)
+                                          const double               &timestamp,
+                                          string                      filename,
+                                          const std::vector<Marker *> markers,
+                                          const std::vector<Room *>   rooms)
 {
     // Set arguments to local variables
     env_rooms = rooms;
@@ -2480,7 +2486,8 @@ void Tracking::Track()
         cout << "[Tracking] Reseting map because the Local Mapper set the 'Bad "
                 "IMU' flag ..."
              << endl;
-        mpSystem->ResetActiveMap();
+        mpSystem->RequestResetActiveMapWithCause(
+            ResetCause::LOCAL_MAPPER_BAD_IMU);
         return;
     }
 
@@ -2500,6 +2507,8 @@ void Tracking::Track()
                  << endl;
             unique_lock<mutex> lock(mMutexImuQueue);
             mlQueueImuData.clear();
+            reportResetAttribution(ResetCause::NON_MONOTONIC_SENSOR_TIMESTAMP,
+                                   ResetAction::CREATE_MAP_EXECUTION);
             CreateMapInAtlas();
             return;
         }
@@ -2518,10 +2527,14 @@ void Tracking::Track()
                          << endl;
                     if (!pCurrentMap->GetIniertialBA2())
                     {
-                        mpSystem->ResetActiveMap();
+                        mpSystem->RequestResetActiveMapWithCause(
+                            ResetCause::TIMESTAMP_JUMP_BEFORE_SECOND_IMU_BA);
                     }
                     else
                     {
+                        reportResetAttribution(
+                            ResetCause::TIMESTAMP_JUMP_AFTER_SECOND_IMU_BA,
+                            ResetAction::CREATE_MAP_EXECUTION);
                         CreateMapInAtlas();
                     }
                 }
@@ -2530,7 +2543,8 @@ void Tracking::Track()
                     cout << "Timestamp jump detected, before IMU "
                             "initialization. Reseting..."
                          << endl;
-                    mpSystem->ResetActiveMap();
+                    mpSystem->RequestResetActiveMapWithCause(
+                        ResetCause::TIMESTAMP_JUMP_BEFORE_IMU_INITIALIZATION);
                 }
                 return;
             }
@@ -2718,12 +2732,18 @@ void Tracking::Track()
 
                     if (pCurrentMap->KeyFramesInMap() < 10)
                     {
-                        mpSystem->ResetActiveMap();
+                        mpSystem->RequestResetActiveMapWithCause(
+                            ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP);
                         Verbose::PrintMess("Reseting current map...",
                                            Verbose::VERBOSITY_NORMAL);
                     }
                     else
+                    {
+                        reportResetAttribution(
+                            ResetCause::VISUAL_TRACKING_LOST_NEW_MAP,
+                            ResetAction::CREATE_MAP_EXECUTION);
                         CreateMapInAtlas();
+                    }
 
                     if (mpLastKeyFrame)
                         mpLastKeyFrame = static_cast<KeyFrame *>(NULL);
@@ -2997,7 +3017,8 @@ void Tracking::Track()
         {
             if (pCurrentMap->KeyFramesInMap() <= 10)
             {
-                mpSystem->ResetActiveMap();
+                mpSystem->RequestResetActiveMapWithCause(
+                    ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP);
                 return;
             }
             if (mSensor == System::IMU_MONOCULAR ||
@@ -3007,10 +3028,14 @@ void Tracking::Track()
                     Verbose::PrintMess(
                         "Track lost before IMU initialisation, reseting...",
                         Verbose::VERBOSITY_QUIET);
-                    mpSystem->ResetActiveMap();
+                    mpSystem->RequestResetActiveMapWithCause(
+                        ResetCause::
+                            VISUAL_TRACKING_LOST_BEFORE_IMU_INITIALIZATION);
                     return;
                 }
 
+            reportResetAttribution(ResetCause::VISUAL_TRACKING_LOST_NEW_MAP,
+                                   ResetAction::CREATE_MAP_EXECUTION);
             CreateMapInAtlas();
 
             return;
@@ -3197,7 +3222,8 @@ void Tracking::StereoInitialization()
             std::cout << "[Tracking] Insufficient points for initialization ("
                       << nPointsCreated << " < " << mnInitializationMinPoints
                       << "), resetting..." << std::endl;
-            mpSystem->ResetActiveMap();
+            mpSystem->RequestResetActiveMapWithCause(
+                ResetCause::INITIALIZATION_INSUFFICIENT_POINTS);
             return;
         }
 
@@ -3388,7 +3414,8 @@ void Tracking::CreateInitialMapMonocular()
     {
         Verbose::PrintMess("Wrong initialization, reseting...",
                            Verbose::VERBOSITY_QUIET);
-        mpSystem->ResetActiveMap();
+        mpSystem->RequestResetActiveMapWithCause(
+            ResetCause::INITIALIZATION_INVALID_MONOCULAR_MAP);
         return;
     }
 
@@ -3858,7 +3885,7 @@ bool Tracking::TrackLocalMap()
 
     // Update MapPoints Statistics
     int nCloseInliers = 0;
-    int nFarInliers = 0;
+    int nFarInliers   = 0;
     for (int i = 0; i < mCurrentFrame.N; i++)
     {
         if (mCurrentFrame.mvpMapPoints[i])
@@ -3875,8 +3902,11 @@ bool Tracking::TrackLocalMap()
                     mnMatchesInliers++;
 
                 // Track close vs far inliers for adaptive acceptance
-                if ((mSensor == System::RGBD || mSensor == System::IMU_RGBD || mSensor == System::STEREO || mSensor == System::IMU_STEREO) &&
-                    i < (int)mCurrentFrame.mvDepth.size() && mCurrentFrame.mvDepth[i] > 0)
+                if ((mSensor == System::RGBD || mSensor == System::IMU_RGBD ||
+                     mSensor == System::STEREO ||
+                     mSensor == System::IMU_STEREO) &&
+                    i < (int)mCurrentFrame.mvDepth.size() &&
+                    mCurrentFrame.mvDepth[i] > 0)
                 {
                     if (mCurrentFrame.mvDepth[i] < mThDepth)
                         nCloseInliers++;
@@ -3899,12 +3929,13 @@ bool Tracking::TrackLocalMap()
     if ((mnMatchesInliers > 10) && (mState == RECENTLY_LOST))
         return true;
 
-    // AGGRESSIVE TRACKING ACCEPTANCE for corridors: Require only 5 close inliers
-    // In featureless corridors, close points (walls/floor) are more reliable than far points
+    // AGGRESSIVE TRACKING ACCEPTANCE for corridors: Require only 5 close
+    // inliers In featureless corridors, close points (walls/floor) are more
+    // reliable than far points
     if (mSensor == System::IMU_MONOCULAR)
     {
-        // For IMU monocular, rely on IMU + minimum visual inliers - very permissive
-        // LOWERED: 8->5 with IMU, 25->15 without IMU
+        // For IMU monocular, rely on IMU + minimum visual inliers - very
+        // permissive LOWERED: 8->5 with IMU, 25->15 without IMU
         if ((mnMatchesInliers < 5 && mpAtlas->isImuInitialized()) ||
             (mnMatchesInliers < 15 && !mpAtlas->isImuInitialized()))
         {
@@ -3916,7 +3947,8 @@ bool Tracking::TrackLocalMap()
     else if (mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
     {
         // For IMU stereo/RGBD: require only 5 close inliers (AGGRESSIVE)
-        // In corridors, close points (walls) provide strong geometric constraints
+        // In corridors, close points (walls) provide strong geometric
+        // constraints
         if (nCloseInliers >= 5 && mnMatchesInliers >= 5)
             return true;
         else if (mnMatchesInliers >= 10) // fallback with more total inliers
@@ -3926,8 +3958,9 @@ bool Tracking::TrackLocalMap()
     }
     else if (mSensor == System::RGBD || mSensor == System::STEREO)
     {
-        // For visual-only stereo/RGBD: require only 5 close inliers (AGGRESSIVE)
-        // Close points are more reliable in corridors (wall/floor planes)
+        // For visual-only stereo/RGBD: require only 5 close inliers
+        // (AGGRESSIVE) Close points are more reliable in corridors (wall/floor
+        // planes)
         if (nCloseInliers >= 5)
             return true;
         else if (nCloseInliers >= 3 && mnMatchesInliers >= 10)
@@ -4024,8 +4057,10 @@ bool Tracking::NeedNewKeyFrame()
     // Require minimum 30 total inliers, 15 close inliers, 1.0s temporal spacing
     const bool bEnoughTotalInliers = (mnMatchesInliers >= mnMinInliersForKF);
     const bool bEnoughCloseInliers = (nTrackedClose >= mnMinCloseInliersForKF);
-    const bool bEnoughTimeSinceLastKF = mpLastKeyFrame &&
-        (mCurrentFrame.mTimeStamp - mpLastKeyFrame->mTimeStamp >= mdMinTemporalSpacingKF);
+    const bool bEnoughTimeSinceLastKF =
+        mpLastKeyFrame &&
+        (mCurrentFrame.mTimeStamp - mpLastKeyFrame->mTimeStamp >=
+         mdMinTemporalSpacingKF);
 
     // Thresholds
     float thRefRatio = 0.75f;
@@ -4049,17 +4084,19 @@ bool Tracking::NeedNewKeyFrame()
     // Local Mapping accept keyframes?
     bool bLocalMappingIdle = mpLocalMapper->AcceptKeyFrames();
 
-    // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
+    // Condition 1a: More than "MaxFrames" have passed from last keyframe
+    // insertion
     const bool c1a = mCurrentFrame.mnId >= mnLastKeyFrameId + mMaxFrames;
     // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
-    const bool c1b = ((mCurrentFrame.mnId >= mnLastKeyFrameId + mMinFrames) &&
-                      bLocalMappingIdle &&
-                      mpLocalMapper->KeyframesInQueue() < 5);
+    const bool c1b =
+        ((mCurrentFrame.mnId >= mnLastKeyFrameId + mMinFrames) &&
+         bLocalMappingIdle && mpLocalMapper->KeyframesInQueue() < 5);
     // Condition 1c: tracking is weak
     const bool c1c =
         mSensor != System::MONOCULAR && mSensor != System::IMU_MONOCULAR &&
         mSensor != System::IMU_STEREO && mSensor != System::IMU_RGBD &&
-        (mnMatchesInliers < nRefMatches * 0.25 || bNeedToInsertClose) && mnMatchesInliers > 20;
+        (mnMatchesInliers < nRefMatches * 0.25 || bNeedToInsertClose) &&
+        mnMatchesInliers > 20;
     // Condition 2: Few tracked points compared to reference keyframe.
     const bool c2 = (((mnMatchesInliers < nRefMatches * thRefRatio ||
                        bNeedToInsertClose)) &&
@@ -4071,9 +4108,9 @@ bool Tracking::NeedNewKeyFrame()
     if (mpLastKeyFrame)
     {
         if ((mSensor == System::IMU_MONOCULAR ||
-             mSensor == System::IMU_STEREO ||
-             mSensor == System::IMU_RGBD) &&
-            (mCurrentFrame.mTimeStamp - mpLastKeyFrame->mTimeStamp) >= mdMinTemporalSpacingKF)
+             mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) &&
+            (mCurrentFrame.mTimeStamp - mpLastKeyFrame->mTimeStamp) >=
+                mdMinTemporalSpacingKF)
         {
             c3 = true;
         }
@@ -4085,7 +4122,8 @@ bool Tracking::NeedNewKeyFrame()
     {
         c4 = true;
     }
-    // Also insert if tracking is weak (RECENTLY_LOST) and we have minimum inliers
+    // Also insert if tracking is weak (RECENTLY_LOST) and we have minimum
+    // inliers
     else if (mState == RECENTLY_LOST && mnMatchesInliers > mnMinInliersForKF)
     {
         c4 = true;
@@ -4351,17 +4389,20 @@ void Tracking::SearchLocalPoints()
         if (mnMatchesInliers < 30 && mnMatchesInliers > 0)
         {
             th = std::min(th * 3, mnMotionModelMaxSearchRadius);
-            Verbose::PrintMess("[Tracking] Expanded search radius to " + std::to_string(th) +
-                               " (inliers: " + std::to_string(mnMatchesInliers) + ")",
-                               Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess(
+                "[Tracking] Expanded search radius to " + std::to_string(th) +
+                    " (inliers: " + std::to_string(mnMatchesInliers) + ")",
+                Verbose::VERBOSITY_NORMAL);
         }
 
         // DEPTH-AIDED TRACKING: For RGB-D, use depth to guide matching window
         // In low-texture corridors, constrain search using known depth
-        if ((mSensor == System::RGBD || mSensor == System::IMU_RGBD) && mCurrentFrame.mvDepth.size() > 0)
+        if ((mSensor == System::RGBD || mSensor == System::IMU_RGBD) &&
+            mCurrentFrame.mvDepth.size() > 0)
         {
-            // Depth-guided search: reduce search radius for points with reliable depth
-            // This helps in repetitive corridors where visual appearance is ambiguous
+            // Depth-guided search: reduce search radius for points with
+            // reliable depth This helps in repetitive corridors where visual
+            // appearance is ambiguous
             matcher.SearchByProjectionWithDepth(mCurrentFrame,
                                                 mvpLocalMapPoints,
                                                 th,
@@ -4514,18 +4555,19 @@ void Tracking::UpdateLocalKeyFrames()
         pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
     }
 
-// Include also some not-already-included keyframes that are neighbors to
+    // Include also some not-already-included keyframes that are neighbors to
     // already-included keyframes
-for (vector<KeyFrame *>::const_iterator itKF    = mvpLocalKeyFrames.begin(),
+    for (vector<KeyFrame *>::const_iterator itKF    = mvpLocalKeyFrames.begin(),
                                             itEndKF = mvpLocalKeyFrames.end();
-     itKF != itEndKF;
-     itKF++)
-{
-    // Limit the number of keyframes - use configurable max (200 for corridors)
-    if (mvpLocalKeyFrames.size() > static_cast<size_t>(mnMaxKFsInLocalMap))
+         itKF != itEndKF;
+         itKF++)
     {
-        break;
-    }
+        // Limit the number of keyframes - use configurable max (200 for
+        // corridors)
+        if (mvpLocalKeyFrames.size() > static_cast<size_t>(mnMaxKFsInLocalMap))
+        {
+            break;
+        }
 
         KeyFrame *pKF = *itKF;
 
@@ -4613,20 +4655,24 @@ bool Tracking::Relocalization()
     // Compute Bag of Words Vector
     mCurrentFrame.ComputeBoW();
 
-    // STRUCTURAL PRIORS: Use room centroids from S-Graph to guide relocalization
-    // In office corridors, room/passage markers provide strong topological priors
+    // STRUCTURAL PRIORS: Use room centroids from S-Graph to guide
+    // relocalization In office corridors, room/passage markers provide strong
+    // topological priors
     vector<Eigen::Vector3f> roomCentroids;
-    vector<Room *> currentRooms;
-    Map *pCurrentMap = mpAtlas->GetCurrentMap();
+    vector<Room *>          currentRooms;
+    Map                    *pCurrentMap = mpAtlas->GetCurrentMap();
     if (pCurrentMap)
     {
         const auto &rooms = pCurrentMap->GetAllDetectedMapRooms();
         for (Room *pRoom : rooms)
         {
-            if (!pRoom->isBad() && pRoom->getBoundaryStatus() == Room::BoundaryStatus::COMPLETE)
+            if (!pRoom->isBad() &&
+                pRoom->getBoundaryStatus() == Room::BoundaryStatus::COMPLETE)
             {
                 Eigen::Vector3d centroid_d = pRoom->getCentroid();
-                roomCentroids.push_back(Eigen::Vector3f(centroid_d.x(), centroid_d.y(), centroid_d.z()));
+                roomCentroids.push_back(Eigen::Vector3f(centroid_d.x(),
+                                                        centroid_d.y(),
+                                                        centroid_d.z()));
                 currentRooms.push_back(pRoom);
             }
         }
@@ -4698,50 +4744,58 @@ bool Tracking::Relocalization()
     // This helps in repetitive corridors where visual appearance is similar
     if (!roomCentroids.empty() && !vpCandidateKFs.empty())
     {
-        // Get current frame's estimated position from IMU prediction or motion model
-        Eigen::Vector3f currentPos = mCurrentFrame.GetPose().translation().head<3>();
-        
-        // Score candidates by: visual matches + proximity to known room centroids
+        // Get current frame's estimated position from IMU prediction or motion
+        // model
+        Eigen::Vector3f currentPos =
+            mCurrentFrame.GetPose().translation().head<3>();
+
+        // Score candidates by: visual matches + proximity to known room
+        // centroids
         vector<float> candidateScores(nKFs, 0.0f);
         for (int i = 0; i < nKFs; i++)
         {
-            if (vbDiscarded[i]) continue;
-            
-            KeyFrame *pKF = vpCandidateKFs[i];
+            if (vbDiscarded[i])
+                continue;
+
+            KeyFrame       *pKF   = vpCandidateKFs[i];
             Eigen::Vector3f kfPos = pKF->GetPose().translation().head<3>();
-            
+
             // Visual match score (normalized)
-            int nmatches = vvpMapPointMatches[i].size();
+            int nmatches       = vvpMapPointMatches[i].size();
             candidateScores[i] = nmatches * 1.0f;
-            
+
             // Structural prior: proximity to room centroids
             for (size_t r = 0; r < roomCentroids.size(); r++)
             {
                 float dist = (kfPos - roomCentroids[r]).norm();
                 // Boost score if KF is near a known room centroid (within 3m)
                 if (dist < 3.0f)
-                    candidateScores[i] += (3.0f - dist) * 2.0f; // Max boost of 6
+                    candidateScores[i] +=
+                        (3.0f - dist) * 2.0f; // Max boost of 6
             }
         }
-        
+
         // Re-sort candidates by combined score (highest first)
         vector<int> sortedIndices(nKFs);
-        for (int i = 0; i < nKFs; i++) sortedIndices[i] = i;
-        std::sort(sortedIndices.begin(), sortedIndices.end(),
-                  [&](int a, int b) { return candidateScores[a] > candidateScores[b]; });
-        
+        for (int i = 0; i < nKFs; i++)
+            sortedIndices[i] = i;
+        std::sort(sortedIndices.begin(),
+                  sortedIndices.end(),
+                  [&](int a, int b)
+                  { return candidateScores[a] > candidateScores[b]; });
+
         // Reorder vectors for processing
-        vector<KeyFrame *> reorderedKFs = vpCandidateKFs;
-        vector<vector<MapPoint *>> reorderedMatches = vvpMapPointMatches;
-        vector<MLPnPsolver *> reorderedSolvers = vpMLPnPsolvers;
-        vector<bool> reorderedDiscarded = vbDiscarded;
-        
+        vector<KeyFrame *>         reorderedKFs       = vpCandidateKFs;
+        vector<vector<MapPoint *>> reorderedMatches   = vvpMapPointMatches;
+        vector<MLPnPsolver *>      reorderedSolvers   = vpMLPnPsolvers;
+        vector<bool>               reorderedDiscarded = vbDiscarded;
+
         for (int i = 0; i < nKFs; i++)
         {
-            vpCandidateKFs[i] = reorderedKFs[sortedIndices[i]];
+            vpCandidateKFs[i]     = reorderedKFs[sortedIndices[i]];
             vvpMapPointMatches[i] = reorderedMatches[sortedIndices[i]];
-            vpMLPnPsolvers[i] = reorderedSolvers[sortedIndices[i]];
-            vbDiscarded[i] = reorderedDiscarded[sortedIndices[i]];
+            vpMLPnPsolvers[i]     = reorderedSolvers[sortedIndices[i]];
+            vbDiscarded[i]        = reorderedDiscarded[sortedIndices[i]];
         }
     }
 
@@ -4855,8 +4909,8 @@ bool Tracking::Relocalization()
 
                 // If the pose is supported by enough inliers stop ransacs and
                 // continue
-                // LOWERED: 25 -> 10 inliers for relocalization in textureless corridors
-                // Use configurable threshold
+                // LOWERED: 25 -> 10 inliers for relocalization in textureless
+                // corridors Use configurable threshold
                 if (nGood >= mnRelocalizationMinInliers)
                 {
                     bMatch = true;

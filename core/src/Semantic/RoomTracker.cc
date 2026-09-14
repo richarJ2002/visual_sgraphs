@@ -79,23 +79,22 @@ const char *eventLiteral(RoomTrackingEvent event)
 
 } // namespace
 
-RoomTracker::RoomTracker(const RoomTrackerConfig &config_in)
-    : config_(config_in)
-{
-}
+RoomTracker::RoomTracker(const RoomTrackerConfig &config_in) :
+    config_(config_in)
+{}
 
 void RoomTracker::reset(double now_s)
 {
-    state_                       = RoomTrackingState::UNKNOWN;
+    state_ = RoomTrackingState::UNKNOWN;
     eventHistory_.clear();
-    lastEvent_                   = TransitionEvent();
-    lastReceivedTime_s_          = 0.0;
-    lastEnterStateTime_s_        = 0.0;
-    crossingDwellStartTime_s_    = -1.0;
-    reacquireRetryCount_         = 0U;
-    reacquireLastRetryTime_s_    = -1.0;
-    hasObservedBothSides_        = false;
-    wasTrackingLost_             = false;
+    lastEvent_                = TransitionEvent();
+    lastReceivedTime_s_       = 0.0;
+    lastEnterStateTime_s_     = 0.0;
+    crossingDwellStartTime_s_ = -1.0;
+    reacquireRetryCount_      = 0U;
+    reacquireLastRetryTime_s_ = -1.0;
+    hasObservedBothSides_     = false;
+    wasTrackingLost_          = false;
     if (now_s > 0.0)
     {
         lastReceivedTime_s_ = now_s;
@@ -207,13 +206,15 @@ double RoomTracker::accumulateDwell(RoomTrackingState state,
     return now_s - crossingDwellStartTime_s_;
 }
 
-RoomTrackingState RoomTracker::step(double                        now_s,
-                                    const TraversalGuardValues   &crossing,
-                                    const VerificationVerdict    &verification,
-                                    const TrackingStatusInput    &tracking)
+RoomTrackingState RoomTracker::step(double                      now_s,
+                                    const TraversalGuardValues &crossing,
+                                    const VerificationVerdict  &verification,
+                                    const TrackingStatusInput  &tracking)
 {
     const double effectiveNow =
-        now_s < lastReceivedTime_s_ ? lastReceivedTime_s_ : now_s;
+        !std::isfinite(now_s)
+            ? lastReceivedTime_s_
+            : (now_s < lastReceivedTime_s_ ? lastReceivedTime_s_ : now_s);
 
     const bool newlyTrackingLost = tracking.lost && !wasTrackingLost_;
 
@@ -233,7 +234,7 @@ RoomTrackingState RoomTracker::step(double                        now_s,
         {
         case RoomTrackingState::LOST_WITH_LAST_ROOM:
         {
-            if (tracking.newMapCreated && verification.pass)
+            if (tracking.newMapCreated && verification.isPass())
             {
                 /* Section 18.2 row 7 (guarded). */
                 applyEvent(RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
@@ -254,7 +255,7 @@ RoomTrackingState RoomTracker::step(double                        now_s,
         }
         case RoomTrackingState::REACQUIRING_IN_NEW_MAP:
         {
-            if (verification.pass)
+            if (verification.isPass())
             {
                 /* Section 18.2 row 9 (guarded). */
                 applyEvent(RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
@@ -292,7 +293,7 @@ RoomTrackingState RoomTracker::step(double                        now_s,
         case RoomTrackingState::UNKNOWN:
         {
             /* Section 18.2 row 1 (guarded). */
-            if (verification.pass)
+            if (verification.isPass())
             {
                 applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            effectiveNow,
@@ -307,11 +308,12 @@ RoomTrackingState RoomTracker::step(double                        now_s,
              * starts on first guard satisfaction and resets on any failure. */
             const bool guardSatisfied =
                 crossing.passageDetected && crossing.passable &&
+                std::isfinite(crossing.confidence) &&
+                crossing.confidence >= 0.0 && crossing.confidence <= 1.0 &&
                 crossing.confidence >= config_.crossing_confidence;
             TraversalGuardValues guard = crossing;
-            guard.dwell_s = accumulateDwell(state_,
-                                            effectiveNow,
-                                            guardSatisfied);
+            guard.dwell_s =
+                accumulateDwell(state_, effectiveNow, guardSatisfied);
             if (guard.dwell_s >= config_.crossing_dwell_s)
             {
                 applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
@@ -329,11 +331,10 @@ RoomTrackingState RoomTracker::step(double                        now_s,
             hasObservedBothSides_ =
                 hasObservedBothSides_ || crossing.bothSidesObserved;
             const bool guardSatisfied =
-                hasObservedBothSides_ && verification.pass;
+                hasObservedBothSides_ && verification.isPass();
             TraversalGuardValues guard = crossing;
-            guard.dwell_s = accumulateDwell(state_,
-                                            effectiveNow,
-                                            guardSatisfied);
+            guard.dwell_s =
+                accumulateDwell(state_, effectiveNow, guardSatisfied);
             guard.bothSidesObserved = hasObservedBothSides_;
             if (guard.dwell_s >= config_.crossing_dwell_s)
             {
@@ -347,7 +348,7 @@ RoomTrackingState RoomTracker::step(double                        now_s,
         case RoomTrackingState::LOST_WITHOUT_ROOM:
         {
             /* Section 18.2 row 6 (guarded). */
-            if (verification.pass)
+            if (verification.isPass())
             {
                 applyEvent(RoomTrackingEvent::ROOM_REACQUIRED,
                            effectiveNow,
@@ -365,8 +366,8 @@ RoomTrackingState RoomTracker::step(double                        now_s,
 }
 
 RoomTrackingState
-    RoomTracker::applyEvent(RoomTrackingEvent         event,
-                            double                    now_s,
+    RoomTracker::applyEvent(RoomTrackingEvent           event,
+                            double                      now_s,
                             const TraversalGuardValues &crossing,
                             const VerificationVerdict  &verification)
 {
@@ -374,9 +375,9 @@ RoomTrackingState
     return state_;
 }
 
-bool RoomTracker::applyRow(RoomTrackingState          source,
-                           RoomTrackingEvent          event,
-                           double                     now_s,
+bool RoomTracker::applyRow(RoomTrackingState           source,
+                           RoomTrackingEvent           event,
+                           double                      now_s,
                            const TraversalGuardValues &crossing,
                            const VerificationVerdict  &verification)
 {
@@ -389,13 +390,16 @@ bool RoomTracker::applyRow(RoomTrackingState          source,
                now_s,
                crossing,
                verification,
-               verification.pass);
+               verification.isPass());
     }
     else if (source == RoomTrackingState::CONFIRMED_ROOM &&
              event == RoomTrackingEvent::PASSAGE_CROSSING_DETECTED)
     {
         const bool guard =
             crossing.passageDetected && crossing.passable &&
+            std::isfinite(crossing.dwell_s) && crossing.dwell_s >= 0.0 &&
+            std::isfinite(crossing.confidence) && crossing.confidence >= 0.0 &&
+            crossing.confidence <= 1.0 &&
             crossing.dwell_s >= config_.crossing_dwell_s &&
             crossing.confidence >= config_.crossing_confidence;
         commit(source, event, now_s, crossing, verification, guard);
@@ -404,24 +408,41 @@ bool RoomTracker::applyRow(RoomTrackingState          source,
              event == RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE)
     {
         const bool guard = crossing.bothSidesObserved &&
+                           std::isfinite(crossing.dwell_s) &&
+                           crossing.dwell_s >= 0.0 &&
                            crossing.dwell_s >= config_.crossing_dwell_s &&
-                           verification.pass;
+                           verification.isPass();
         commit(source, event, now_s, crossing, verification, guard);
     }
     else if (source == RoomTrackingState::LOST_WITHOUT_ROOM &&
              event == RoomTrackingEvent::ROOM_REACQUIRED)
     {
-        commit(source, event, now_s, crossing, verification, verification.pass);
+        commit(source,
+               event,
+               now_s,
+               crossing,
+               verification,
+               verification.isPass());
     }
     else if (source == RoomTrackingState::LOST_WITH_LAST_ROOM &&
              event == RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH)
     {
-        commit(source, event, now_s, crossing, verification, verification.pass);
+        commit(source,
+               event,
+               now_s,
+               crossing,
+               verification,
+               verification.isPass());
     }
     else if (source == RoomTrackingState::REACQUIRING_IN_NEW_MAP &&
              event == RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM)
     {
-        commit(source, event, now_s, crossing, verification, verification.pass);
+        commit(source,
+               event,
+               now_s,
+               crossing,
+               verification,
+               verification.isPass());
     }
     /* Unconditional rows: no guard checks, transition always fires. */
     else if (source == RoomTrackingState::CONFIRMED_ROOM &&
@@ -453,12 +474,12 @@ bool RoomTracker::applyRow(RoomTrackingState          source,
     return eventHistory_.back().accepted;
 }
 
-void RoomTracker::commit(RoomTrackingState          source,
-                         RoomTrackingEvent          event,
-                         double                     now_s,
+void RoomTracker::commit(RoomTrackingState           source,
+                         RoomTrackingEvent           event,
+                         double                      now_s,
                          const TraversalGuardValues &crossing,
                          const VerificationVerdict  &verification,
-                         bool                       accepted)
+                         bool                        accepted)
 {
     TransitionEvent record;
     record.timestamp_s      = now_s;
@@ -466,7 +487,7 @@ void RoomTracker::commit(RoomTrackingState          source,
     record.event            = event;
     record.dwell_s          = crossing.dwell_s;
     record.confidence       = crossing.confidence;
-    record.verificationPass = verification.pass;
+    record.verificationPass = verification.isPass();
     record.targetState      = accepted ? state_ : source;
 
     /* Resolve the target state for accepted transitions. */
@@ -511,10 +532,10 @@ void RoomTracker::commit(RoomTrackingState          source,
         std::cout << "[RoomTracker] transition: " << eventToJSON(record)
                   << std::endl;
 
-        state_                 = record.targetState;
-        lastEnterStateTime_s_  = now_s;
+        state_                    = record.targetState;
+        lastEnterStateTime_s_     = now_s;
         crossingDwellStartTime_s_ = -1.0;
-        hasObservedBothSides_  = false;
+        hasObservedBothSides_     = false;
         if (record.targetState == RoomTrackingState::REACQUIRING_IN_NEW_MAP)
         {
             reacquireRetryCount_      = 0U;

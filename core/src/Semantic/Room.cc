@@ -128,6 +128,30 @@ bool Room::hasRoomTag() const
     return !mRoomTag.empty();
 }
 
+void Room::setRecoveryProxy(const bool isRecoveryProxy_in)
+{
+    std::lock_guard<std::mutex> lock(mMutexState);
+    recoveryProxy = isRecoveryProxy_in;
+}
+
+bool Room::isRecoveryProxy() const
+{
+    std::lock_guard<std::mutex> lock(mMutexState);
+    return recoveryProxy;
+}
+
+void Room::setPreviouslyVisited(const bool visited_in)
+{
+    std::lock_guard<std::mutex> lock(mMutexState);
+    previouslyVisited = visited_in;
+}
+
+bool Room::hasPreviouslyVisited() const
+{
+    std::lock_guard<std::mutex> lock(mMutexState);
+    return previouslyVisited;
+}
+
 void Room::setMatchedContext(RoomContextSnapshot *ctx)
 {
     std::lock_guard<std::mutex> lock(mMutexState);
@@ -162,6 +186,31 @@ void Room::setBoundaryStatus(const BoundaryStatus boundaryStatus_in)
 {
     std::lock_guard<std::mutex> boundaryStatusLock(mMutexBoundaryStatus);
     boundaryStatus = boundaryStatus_in;
+}
+
+std::vector<Eigen::Vector3d> Room::getBoundaryCorners_World_m() const
+{
+    std::lock_guard<std::mutex> boundaryStatusLock(mMutexBoundaryStatus);
+    return boundaryCorners_World_m;
+}
+
+void Room::setBoundaryCorners_World_m(
+    std::vector<Eigen::Vector3d> corners_World_m_in)
+{
+    std::lock_guard<std::mutex> boundaryStatusLock(mMutexBoundaryStatus);
+    boundaryCorners_World_m = std::move(corners_World_m_in);
+}
+
+std::vector<Room::ObservationGap> Room::getObservationGaps() const
+{
+    std::lock_guard<std::mutex> boundaryStatusLock(mMutexBoundaryStatus);
+    return observationGaps;
+}
+
+void Room::setObservationGaps(std::vector<ObservationGap> gaps_in)
+{
+    std::lock_guard<std::mutex> boundaryStatusLock(mMutexBoundaryStatus);
+    observationGaps = std::move(gaps_in);
 }
 
 bool Room::isBoundaryComplete() const
@@ -252,6 +301,8 @@ void Room::setWalls(Plane *p_wall_in)
     {
         return;
     }
+
+    setRecoveryProxy(false);
 
     std::lock_guard<std::mutex> lock(mMutexWalls);
 
@@ -482,9 +533,8 @@ bool Room::removePassageAssociation(ORB_SLAM3::Passage *p_removedPassage_in)
 
     std::lock_guard<std::mutex> lock(mMutexMap);
 
-    const auto removedIterator = std::find(doorways.begin(),
-                                           doorways.end(),
-                                           p_removedPassage_in);
+    const auto removedIterator =
+        std::find(doorways.begin(), doorways.end(), p_removedPassage_in);
 
     if (removedIterator == doorways.end())
     {

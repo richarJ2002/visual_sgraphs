@@ -17,11 +17,25 @@
  */
 
 #include "SemanticsManager.h"
+#include "Semantic/SemanticAxiomEvaluator.h"
+#include "Semantic/SemanticAxiomEvaluator/EnumNames.h"
+#include "Semantic/SemanticCandidates.h"
+#include "Semantic/SemanticCanonicalSerialization.h"
+#include "Semantic/SemanticGraphSnapshot.h"
+#include "Semantic/SemanticVerify.h"
+#include "Semantic/Sha256Digest.h"
+#include "Semantic/ValueOrder.h"
 #include <algorithm>
 #include <array>
 #include <chrono>
 #include <cmath>
+#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+#include <functional>
+#endif
 #include <limits>
+#include <map>
+#include <numeric>
+#include <set>
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
@@ -168,25 +182,107 @@ bool hasSeparatingFiniteWall(const std::vector<Plane *> &wallList_World_in,
  */
 struct FiniteWallSegment2d
 {
-    Plane          *p_wall        = nullptr;
+    /*!
+     * @brief       TODO
+     *
+     * @frame       N/A
+     * @unit        N/A
+     */
+    Plane *p_wall = nullptr;
+
+    /*!
+     * @brief       TODO
+     *
+     * @frame       TODO
+     * @unit        meters
+     */
     Eigen::Vector2d start_World_m = Eigen::Vector2d::Zero();
-    Eigen::Vector2d end_World_m   = Eigen::Vector2d::Zero();
-    double          length_m      = 0.0;
-    double          supportScore  = 0.0;
+
+    /*!
+     * @brief       TODO
+     *
+     * @frame       TODO
+     * @unit        meters
+     */
+    Eigen::Vector2d end_World_m = Eigen::Vector2d::Zero();
+
+    /*!
+     * @brief       TODO
+     *
+     * @frame       N/A
+     * @unit        meters
+     */
+    double length_m = 0.0;
+
+    /*!
+     * @brief       TODO
+     *
+     * @frame       N/A
+     * @unit        N/A
+     */
+    double supportScore = 0.0;
 };
 
 struct WallAdmissionEvidence
 {
-    bool        admissible        = false;
-    bool        adequateFiniteFit = false;
-    std::size_t finitePointCount  = 0U;
-    std::size_t fittedPointCount  = 0U;
-    std::size_t observationCount  = 0U;
+    /*!
+     * @brief       TODO
+     *
+     * @frame       N/A
+     * @unit        N/A
+     */
+    bool admissible = false;
+
+    /*!
+     * @brief       TODO
+     *
+     * @frame       N/A
+     * @unit        N/A
+     */
+    bool adequateFiniteFit = false;
+
+    /*!
+     * @brief       TODO
+     *
+     * @frame       N/A
+     * @unit        Number of Points
+     */
+    std::size_t finitePointCount = 0U;
+
+    /*!
+     * @brief       TODO
+     *
+     * @frame       N/A
+     * @unit        Number of Points
+     */
+    std::size_t fittedPointCount = 0U;
+    /*!
+     * @brief       TODO
+     *
+     * @frame       N/A
+     * @unit        Number of Obeservations
+     */
+    std::size_t observationCount = 0U;
 };
 
+/*!
+ * @brief           TODO
+ *
+ * @param[in]       p_wall_in
+ *                  TODO
+ *
+ * @param[in]       p_systemParams_in
+ *                  TODO
+ *
+ * @param[in]       groundNormal_World_in
+ *                  TODO
+ *
+ * @return          TODO
+ */
 WallAdmissionEvidence
-    evaluateWallAdmissionEvidence(Plane              *p_wall_in,
-                                  const SystemParams *p_systemParams_in)
+    evaluateWallAdmissionEvidence(Plane                 *p_wall_in,
+                                  const SystemParams    *p_systemParams_in,
+                                  const Eigen::Vector3d &groundNormal_World_in)
 {
     WallAdmissionEvidence evidence;
 
@@ -225,10 +321,40 @@ WallAdmissionEvidence
         return evidence;
     }
 
-    const Eigen::Vector3d axisU_World =
-        normal_World.unitOrthogonal().normalized();
-    const Eigen::Vector3d axisV_World =
-        normal_World.cross(axisU_World).normalized();
+    /*!
+     * Ground-aligned in-plane axes so the two extents below correspond to
+     * physical horizontal width and vertical height, not an arbitrary
+     * in-plane rotation. A door-frame post rotated relative to an arbitrary
+     * unitOrthogonal() axis can inflate BOTH bounding-box extents past a
+     * width/height threshold even though its true width is a few
+     * centimetres -- ground-anchoring the axes removes that degree of
+     * freedom. axisHorizontal is the wall's own horizontal (along-wall)
+     * direction: orthogonal to both the ground normal and the wall normal.
+     * Falls back to the previous arbitrary-orthogonal axes when no ground
+     * plane is available yet (early in a mission) or the wall is itself
+     * near-horizontal (groundNormal parallel to normal_World).
+     */
+    const double    groundNormalNorm = groundNormal_World_in.norm();
+    Eigen::Vector3d axisU_World      = Eigen::Vector3d::Zero();
+    Eigen::Vector3d axisV_World      = Eigen::Vector3d::Zero();
+    if (std::isfinite(groundNormalNorm) && groundNormalNorm > 1e-8)
+    {
+        const Eigen::Vector3d unitGroundNormal_World =
+            groundNormal_World_in / groundNormalNorm;
+        const Eigen::Vector3d horizontalCandidate_World =
+            unitGroundNormal_World.cross(normal_World);
+        const double horizontalNorm = horizontalCandidate_World.norm();
+        if (std::isfinite(horizontalNorm) && horizontalNorm > 1e-3)
+        {
+            axisU_World = horizontalCandidate_World / horizontalNorm;
+            axisV_World = axisU_World.cross(normal_World).normalized();
+        }
+    }
+    if (axisU_World.squaredNorm() < 0.5 || axisV_World.squaredNorm() < 0.5)
+    {
+        axisU_World = normal_World.unitOrthogonal().normalized();
+        axisV_World = normal_World.cross(axisU_World).normalized();
+    }
     double minimumU_m = std::numeric_limits<double>::infinity();
     double maximumU_m = -std::numeric_limits<double>::infinity();
     double minimumV_m = std::numeric_limits<double>::infinity();
@@ -323,16 +449,31 @@ double crossProduct2d(const Eigen::Vector2d &firstVector_in,
 }
 
 /*!
- * @brief Builds a robust finite wall segment on the horizontal ground plane.
+ * @brief           Builds a robust finite wall segment on the horizontal ground
+ *                  plane.
  *
- * @param[in] p_wall_in Wall whose observed cloud defines the finite extent.
- * @param[in] groundNormal_World_in Unit ground normal in the world frame.
- * @param[in] groundAxisU_World_in First horizontal ground axis.
- * @param[in] groundAxisV_World_in Second horizontal ground axis.
- * @param[in] endpointTrimRatio_in Fraction trimmed from both extent tails.
- * @param[in] minimumWallLength_m_in Minimum accepted horizontal length.
- * @param[out] segment_out Resulting finite horizontal segment.
- * @return True when the wall provides a valid finite segment.
+ * @param[in]       p_wall_in
+ *                  Wall whose observed cloud defines the finite extent.
+ *
+ * @param[in]       groundNormal_World_in
+ *                  Unit ground normal in the world frame.
+ *
+ * @param[in]       groundAxisU_World_in
+ *                  First horizontal ground axis.
+ *
+ * @param[in]       groundAxisV_World_in
+ *                  Second horizontal ground axis.
+ *
+ * @param[in]       endpointTrimRatio_in
+ *                  Fraction trimmed from both extent tails.
+ *
+ * @param[in]       minimumWallLength_m_in
+ *                  Minimum accepted horizontal length.
+ *
+ * @param[out]      segment_out
+ *                  Resulting finite horizontal segment.
+ *
+ * @return          True when the wall provides a valid finite segment.
  */
 bool buildFiniteWallSegment2d(Plane                 *p_wall_in,
                               const Eigen::Vector3d &groundNormal_World_in,
@@ -461,14 +602,25 @@ bool buildFiniteWallSegment2d(Plane                 *p_wall_in,
 }
 
 /*!
- * @brief Intersects the infinite lines supporting two finite wall segments.
+ * @brief           Intersects the infinite lines supporting two finite wall
+ *                  segments.
  *
- * @param[in] firstSegment_in First wall segment.
- * @param[in] secondSegment_in Second wall segment.
- * @param[out] intersection_World_m_out Intersection in horizontal world axes.
- * @param[out] firstParameter_out Parametric coordinate on the first segment.
- * @param[out] secondParameter_out Parametric coordinate on the second segment.
- * @return False when the supporting lines are parallel.
+ * @param[in]       firstSegment_in
+ *                  First wall segment.
+ *
+ * @param[in]       secondSegment_in
+ *                  Second wall segment.
+ *
+ * @param[out]      intersection_World_m_out
+ *                  Intersection in horizontal world axes.
+ *
+ * @param[out]      firstParameter_out
+ *                  Parametric coordinate on the first segment.
+ *
+ * @param[out]      secondParameter_out
+ *                  Parametric coordinate on the second segment.
+ *
+ * @return          False when the supporting lines are parallel.
  */
 bool intersectSupportingLines(const FiniteWallSegment2d &firstSegment_in,
                               const FiniteWallSegment2d &secondSegment_in,
@@ -527,9 +679,201 @@ double pointToSegmentDistance_m(const Eigen::Vector2d     &point_World_m_in,
         .norm();
 }
 
+/*! @brief Result of attempting to close a set of wall segments into one
+ *  ordered, non-open loop. */
+struct WallLoopClosure
+{
+    bool                         hasOpenBoundary = true;
+    std::vector<Eigen::Vector2d> corners_World_m;
+};
+
+/*!
+ * @brief Attempts to close the given wall segments (sorted here by angle
+ *        from the room centroid) into one ordered loop, exactly as
+ *        validateRoomBoundaries() always did for a room's full wall set.
+ *        Factored out so the caller can retry on a reduced subset when the
+ *        full set doesn't close (see validateRoomBoundaries()'s single-
+ *        outlier-exclusion retry).
+ */
+WallLoopClosure tryCloseWallLoop(
+    std::vector<FiniteWallSegment2d>                wallSegments_in,
+    const Eigen::Vector2d                          &roomCentroid_Ground_m_in,
+    const SystemParams::room_seg::BoundaryTopology &topologyParameters_in)
+{
+    WallLoopClosure result;
+
+    if (wallSegments_in.empty())
+    {
+        return result;
+    }
+
+    std::sort(
+        wallSegments_in.begin(),
+        wallSegments_in.end(),
+        [&roomCentroid_Ground_m_in](const FiniteWallSegment2d &firstSegment,
+                                    const FiniteWallSegment2d &secondSegment)
+        {
+            const Eigen::Vector2d firstMidpoint =
+                0.5 * (firstSegment.start_World_m + firstSegment.end_World_m) -
+                roomCentroid_Ground_m_in;
+            const Eigen::Vector2d secondMidpoint =
+                0.5 *
+                    (secondSegment.start_World_m + secondSegment.end_World_m) -
+                roomCentroid_Ground_m_in;
+
+            return std::atan2(firstMidpoint.y(), firstMidpoint.x()) <
+                   std::atan2(secondMidpoint.y(), secondMidpoint.x());
+        });
+
+    result.corners_World_m.reserve(wallSegments_in.size());
+
+    for (std::size_t wallIndex = 0U; wallIndex < wallSegments_in.size();
+         ++wallIndex)
+    {
+        const FiniteWallSegment2d &currentWall = wallSegments_in[wallIndex];
+        const FiniteWallSegment2d &nextWall =
+            wallSegments_in[(wallIndex + 1U) % wallSegments_in.size()];
+        Eigen::Vector2d corner_World_m;
+        double          currentParameter = 0.0;
+        double          nextParameter    = 0.0;
+
+        if (intersectSupportingLines(currentWall,
+                                     nextWall,
+                                     corner_World_m,
+                                     currentParameter,
+                                     nextParameter))
+        {
+            const double currentCornerGap_m =
+                pointToSegmentDistance_m(corner_World_m, currentWall);
+            const double nextCornerGap_m =
+                pointToSegmentDistance_m(corner_World_m, nextWall);
+
+            if (currentCornerGap_m <=
+                    topologyParameters_in.maximumCornerGap_m &&
+                nextCornerGap_m <= topologyParameters_in.maximumCornerGap_m)
+            {
+                result.corners_World_m.push_back(corner_World_m);
+                continue;
+            }
+        }
+
+        const std::array<std::pair<Eigen::Vector2d, Eigen::Vector2d>, 4>
+            endpointPairs = {
+                {{currentWall.start_World_m, nextWall.start_World_m},
+                 {currentWall.start_World_m, nextWall.end_World_m},
+                 {currentWall.end_World_m, nextWall.start_World_m},
+                 {currentWall.end_World_m, nextWall.end_World_m}}};
+
+        auto nearestEndpointPair = std::min_element(
+            endpointPairs.begin(),
+            endpointPairs.end(),
+            [](const auto &firstPair, const auto &secondPair)
+            {
+                return (firstPair.first - firstPair.second).squaredNorm() <
+                       (secondPair.first - secondPair.second).squaredNorm();
+            });
+
+        if ((nearestEndpointPair->first - nearestEndpointPair->second).norm() <=
+            topologyParameters_in.maximumCornerGap_m)
+        {
+            result.corners_World_m.push_back(
+                0.5 *
+                (nearestEndpointPair->first + nearestEndpointPair->second));
+            continue;
+        }
+
+        result.corners_World_m.clear();
+        return result;
+    }
+
+    if (result.corners_World_m.size() == wallSegments_in.size())
+    {
+        result.hasOpenBoundary = false;
+    }
+    else
+    {
+        result.corners_World_m.clear();
+    }
+
+    return result;
+}
+
 /*!
  * @brief Computes the unsigned area of an ordered horizontal polygon.
  */
+/*!
+ * @brief Finds the angular sectors (from roomCentroid_Ground_m_in) with no
+ *        wall evidence -- the "where is this room still unobserved" signal
+ *        (user rule: track and expose incomplete-room state, not just a
+ *        pass/fail boundary status).
+ *
+ *        Deliberately coarser than the corner-closing algorithm above: each
+ *        wall is reduced to its 2D midpoint angle from the centroid, not its
+ *        true angular extent, trading a small amount of precision (a wide
+ *        wall's own angular span isn't subtracted from a neighbouring gap)
+ *        for a computation that stays meaningful at any wall count,
+ *        including 0 or 1 -- the boundary-loop algorithm's own machinery
+ *        only starts producing useful output once minimumWallCount is met.
+ */
+std::vector<Room::ObservationGap> computeRoomObservationGaps(
+    const std::vector<FiniteWallSegment2d> &wallSegments_in,
+    const Eigen::Vector2d                  &roomCentroid_Ground_m_in,
+    /* An axis-aligned (or any) rectangle's four wall midpoints sit exactly
+     * on its principal axes as seen from the centroid -- always exactly 90
+     * deg apart by construction, regardless of aspect ratio. The threshold
+     * must clear that deterministic case with margin, or every well-formed
+     * rectangular room reports four phantom gaps. */
+    double gapThreshold_rad_in = 100.0 * M_PI / 180.0)
+{
+    std::vector<Room::ObservationGap> gaps;
+
+    if (wallSegments_in.empty())
+    {
+        gaps.push_back({0.0, 2.0 * M_PI});
+        return gaps;
+    }
+
+    std::vector<double> midpointAngles_rad;
+    midpointAngles_rad.reserve(wallSegments_in.size());
+    for (const FiniteWallSegment2d &segment : wallSegments_in)
+    {
+        const Eigen::Vector2d midpoint_Ground_m =
+            0.5 * (segment.start_World_m + segment.end_World_m) -
+            roomCentroid_Ground_m_in;
+        if (!midpoint_Ground_m.allFinite() ||
+            midpoint_Ground_m.squaredNorm() < 1e-12)
+        {
+            continue;
+        }
+        midpointAngles_rad.push_back(
+            std::atan2(midpoint_Ground_m.y(), midpoint_Ground_m.x()));
+    }
+
+    if (midpointAngles_rad.empty())
+    {
+        gaps.push_back({0.0, 2.0 * M_PI});
+        return gaps;
+    }
+
+    std::sort(midpointAngles_rad.begin(), midpointAngles_rad.end());
+
+    for (std::size_t index = 0U; index < midpointAngles_rad.size(); ++index)
+    {
+        const double thisAngle_rad = midpointAngles_rad[index];
+        const double nextAngle_rad = (index + 1U < midpointAngles_rad.size())
+                                         ? midpointAngles_rad[index + 1U]
+                                         : midpointAngles_rad[0] + 2.0 * M_PI;
+        const double span_rad      = nextAngle_rad - thisAngle_rad;
+
+        if (span_rad > gapThreshold_rad_in)
+        {
+            gaps.push_back({thisAngle_rad, span_rad});
+        }
+    }
+
+    return gaps;
+}
+
 double computePolygonArea_m2(
     const std::vector<Eigen::Vector2d> &polygonVertices_World_m_in)
 {
@@ -570,39 +914,48 @@ double computePolygonArea_m2(
  *              even while the passage is still being confirmed.
  * @return True when the segment crosses inside the finite opening.
  */
-bool segmentCrossesPassageOpening(
-    const Eigen::Vector3d &segmentStart_World_m_in,
-    const Eigen::Vector3d &segmentEnd_World_m_in,
-    Passage               *p_passage_in,
-    const Eigen::Vector3d &groundNormal_World_in,
-    const double           openingMargin_m_in,
-    const double           minimumSideDistance_m_in,
-    const bool             requirePassable_in = true)
+/*!
+ * @brief       Core aperture-crossing math shared by both a confirmed
+ *              Passage and a still-unconfirmed OpenPassageEvidence
+ *              hypothesis (see segmentCrossesOpenPassageEvidence below) --
+ *              the two differ only in where the plane equation, centroid,
+ *              and opening size come from, never in how the crossing test
+ *              itself works.
+ */
+static bool
+    segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,
+                           const Eigen::Vector3d &segmentEnd_World_m_in,
+                           const Eigen::Vector4d &apertureEquation_World_in,
+                           const Eigen::Vector3d &apertureCentroid_World_m_in,
+                           const double           apertureWidth_m_in,
+                           const double           apertureHeight_m_in,
+                           const Eigen::Vector3d &groundNormal_World_in,
+                           const double           openingMargin_m_in,
+                           const double           minimumSideDistance_m_in)
 {
-    if (p_passage_in == nullptr ||
-        (requirePassable_in && !p_passage_in->isPassable()) ||
-        !segmentStart_World_m_in.allFinite() ||
-        !segmentEnd_World_m_in.allFinite())
+    if (!segmentStart_World_m_in.allFinite() ||
+        !segmentEnd_World_m_in.allFinite() ||
+        !apertureCentroid_World_m_in.allFinite())
     {
         return false;
     }
 
-    Eigen::Vector4d passageEquation_World =
-        p_passage_in->getGlobalEquation().coeffs();
-    const double passageNormalNorm = passageEquation_World.head<3>().norm();
+    Eigen::Vector4d apertureEquation_World = apertureEquation_World_in;
+    const double apertureNormalNorm = apertureEquation_World.head<3>().norm();
 
-    if (!passageEquation_World.allFinite() || passageNormalNorm < 1e-8)
+    if (!apertureEquation_World.allFinite() || apertureNormalNorm < 1e-8)
     {
         return false;
     }
 
-    passageEquation_World /= passageNormalNorm;
-    const Eigen::Vector3d passageNormal_World = passageEquation_World.head<3>();
-    const double          startSide_m =
-        passageNormal_World.dot(segmentStart_World_m_in) +
-        passageEquation_World(3);
-    const double endSide_m = passageNormal_World.dot(segmentEnd_World_m_in) +
-                             passageEquation_World(3);
+    apertureEquation_World /= apertureNormalNorm;
+    const Eigen::Vector3d apertureNormal_World =
+        apertureEquation_World.head<3>();
+    const double startSide_m =
+        apertureNormal_World.dot(segmentStart_World_m_in) +
+        apertureEquation_World(3);
+    const double endSide_m = apertureNormal_World.dot(segmentEnd_World_m_in) +
+                             apertureEquation_World(3);
 
     if (startSide_m * endSide_m >= 0.0 ||
         std::abs(startSide_m) < minimumSideDistance_m_in ||
@@ -622,17 +975,11 @@ bool segmentCrossesPassageOpening(
     const Eigen::Vector3d intersection_World_m =
         segmentStart_World_m_in +
         interpolation * (segmentEnd_World_m_in - segmentStart_World_m_in);
-    const Eigen::Vector3d passageCentroid_World_m = p_passage_in->getCentroid();
-
-    if (!passageCentroid_World_m.allFinite())
-    {
-        return false;
-    }
 
     Eigen::Vector3d apertureOffset_World_m =
-        intersection_World_m - passageCentroid_World_m;
+        intersection_World_m - apertureCentroid_World_m_in;
     apertureOffset_World_m -=
-        apertureOffset_World_m.dot(passageNormal_World) * passageNormal_World;
+        apertureOffset_World_m.dot(apertureNormal_World) * apertureNormal_World;
 
     const double verticalOffset_m =
         std::abs(apertureOffset_World_m.dot(groundNormal_World_in));
@@ -643,9 +990,200 @@ bool segmentCrossesPassageOpening(
     const double horizontalOffset_m = horizontalOffset_World_m.norm();
 
     return horizontalOffset_m <=
-               0.5 * p_passage_in->getWidth() + openingMargin_m_in &&
-           verticalOffset_m <=
-               0.5 * p_passage_in->getHeight() + openingMargin_m_in;
+               0.5 * apertureWidth_m_in + openingMargin_m_in &&
+           verticalOffset_m <= 0.5 * apertureHeight_m_in + openingMargin_m_in;
+}
+
+bool segmentCrossesPassageOpening(
+    const Eigen::Vector3d &segmentStart_World_m_in,
+    const Eigen::Vector3d &segmentEnd_World_m_in,
+    Passage               *p_passage_in,
+    const Eigen::Vector3d &groundNormal_World_in,
+    const double           openingMargin_m_in,
+    const double           minimumSideDistance_m_in,
+    const bool             requirePassable_in = true)
+{
+    if (p_passage_in == nullptr ||
+        (requirePassable_in && !p_passage_in->isPassable()))
+    {
+        return false;
+    }
+
+    return segmentCrossesAperture(segmentStart_World_m_in,
+                                  segmentEnd_World_m_in,
+                                  p_passage_in->getGlobalEquation().coeffs(),
+                                  p_passage_in->getCentroid(),
+                                  p_passage_in->getWidth(),
+                                  p_passage_in->getHeight(),
+                                  groundNormal_World_in,
+                                  openingMargin_m_in,
+                                  minimumSideDistance_m_in);
+}
+
+/*!
+ * @brief       Same aperture-crossing test as segmentCrossesPassageOpening,
+ *              but against a still-unconfirmed OpenPassageEvidence
+ *              hypothesis instead of a confirmed Passage.
+ *
+ *              Passage confirmation requires several genuinely independent
+ *              Voxblox skeleton snapshots (minimumConfirmationSnapshots,
+ *              config-gated to guard against double-counting one latched ROS
+ *              message -- see the skeleton-fingerprint check in
+ *              detectDoorsAndDoorways()) and therefore real elapsed
+ *              exploration time. Until that confirmation completes, no
+ *              Passage object exists for mpAtlas->GetAllPassages() to
+ *              return, so any far-side-routing check that only consults
+ *              confirmed passages is blind for that entire window -- a wall
+ *              genuinely on the far side of a real, already-evidenced
+ *              opening falls through to ordinary admission and gets bound
+ *              to the WRONG (near) room, exactly the corruption far-side
+ *              routing exists to prevent. Using the same aperture geometry
+ *              math against the pending evidence (its supporting wall's
+ *              plane stands in for the eventual passage plane, its
+ *              openingRadius_m/heightSpan_m for the eventual width/height --
+ *              the same derivation createMapPassage() itself uses once
+ *              confirmed) closes that window without weakening the
+ *              confirmation gate itself: the passage still is not created,
+ *              only wall ADMISSION becomes conservative while its identity
+ *              is still ambiguous.
+ */
+static bool segmentCrossesOpenPassageEvidence(
+    const Eigen::Vector3d &segmentStart_World_m_in,
+    const Eigen::Vector3d &segmentEnd_World_m_in,
+    Plane                 *p_evidenceSupportingWall_in,
+    const Eigen::Vector3d &evidenceCentroid_World_m_in,
+    const double           evidenceOpeningRadius_m_in,
+    const double           evidenceHeightSpan_m_in,
+    const Eigen::Vector3d &groundNormal_World_in,
+    const double           openingMargin_m_in,
+    const double           minimumSideDistance_m_in)
+{
+    if (p_evidenceSupportingWall_in == nullptr ||
+        p_evidenceSupportingWall_in->isBad() ||
+        evidenceOpeningRadius_m_in <= 0.0)
+    {
+        return false;
+    }
+
+    constexpr double defaultOpenPassageHeight_m = 2.0;
+
+    return segmentCrossesAperture(
+        segmentStart_World_m_in,
+        segmentEnd_World_m_in,
+        p_evidenceSupportingWall_in->getGlobalEquation().coeffs(),
+        evidenceCentroid_World_m_in,
+        2.0 * evidenceOpeningRadius_m_in,
+        std::max(evidenceHeightSpan_m_in, defaultOpenPassageHeight_m),
+        groundNormal_World_in,
+        openingMargin_m_in,
+        minimumSideDistance_m_in);
+}
+
+/*!
+ * @brief       Tests whether a straight segment between two points is
+ *              blocked by a wall belonging to a room other than the ones
+ *              the segment is meant to connect.
+ *
+ *              Threading one passage's own bounded aperture is necessary
+ *              but not sufficient proof that two points are the direct two
+ *              sides of THAT passage: in a corridor with several rooms and
+ *              doors in a row, a straight line can thread one passage's
+ *              opening while still passing directly through an
+ *              intervening room's own wall. When it does, something else
+ *              -- a wall, and by implication a room -- provably sits
+ *              between the two points, so they are not each other's
+ *              direct neighbour through this passage.
+ *
+ * @param[in]   segmentStart_World_m_in
+ *              One endpoint of the candidate segment.
+ * @param[in]   segmentEnd_World_m_in
+ *              The other endpoint of the candidate segment.
+ * @param[in]   excludedRooms_in
+ *              Rooms whose own walls are not "foreign" -- typically the
+ *              rooms/placeholders the segment itself is testing.
+ * @param[in]   allRooms_in
+ *              Every currently known room to search for a blocking wall.
+ * @param[in]   groundAxisU_World_in
+ *              First horizontal ground axis (matches buildFiniteWallSegment2d).
+ * @param[in]   groundAxisV_World_in
+ *              Second horizontal ground axis.
+ * @param[in]   groundNormal_World_in
+ *              Unit ground normal in the world frame.
+ * @param[in]   endpointTrimRatio_in
+ *              Forwarded to buildFiniteWallSegment2d.
+ * @param[in]   minimumWallLength_m_in
+ *              Forwarded to buildFiniteWallSegment2d.
+ *
+ * @return      True when a foreign room's own finite wall extent blocks
+ *              the segment.
+ */
+bool segmentCrossesForeignWall(
+    const Eigen::Vector3d                &segmentStart_World_m_in,
+    const Eigen::Vector3d                &segmentEnd_World_m_in,
+    const std::vector<ORB_SLAM3::Room *> &excludedRooms_in,
+    const std::vector<ORB_SLAM3::Room *> &allRooms_in,
+    const Eigen::Vector3d                &groundAxisU_World_in,
+    const Eigen::Vector3d                &groundAxisV_World_in,
+    const Eigen::Vector3d                &groundNormal_World_in,
+    const double                          endpointTrimRatio_in,
+    const double                          minimumWallLength_m_in)
+{
+    if (!segmentStart_World_m_in.allFinite() ||
+        !segmentEnd_World_m_in.allFinite())
+    {
+        return false;
+    }
+
+    FiniteWallSegment2d testSegment;
+    testSegment.start_World_m = {
+        segmentStart_World_m_in.dot(groundAxisU_World_in),
+        segmentStart_World_m_in.dot(groundAxisV_World_in)};
+    testSegment.end_World_m = {segmentEnd_World_m_in.dot(groundAxisU_World_in),
+                               segmentEnd_World_m_in.dot(groundAxisV_World_in)};
+
+    for (ORB_SLAM3::Room *p_room : allRooms_in)
+    {
+        if (p_room == nullptr || p_room->isBad() ||
+            std::find(excludedRooms_in.begin(),
+                      excludedRooms_in.end(),
+                      p_room) != excludedRooms_in.end())
+        {
+            continue;
+        }
+
+        for (Plane *p_wall : p_room->getWalls())
+        {
+            FiniteWallSegment2d wallSegment;
+
+            if (!buildFiniteWallSegment2d(p_wall,
+                                          groundNormal_World_in,
+                                          groundAxisU_World_in,
+                                          groundAxisV_World_in,
+                                          endpointTrimRatio_in,
+                                          minimumWallLength_m_in,
+                                          wallSegment))
+            {
+                continue;
+            }
+
+            Eigen::Vector2d intersection_World_m;
+            double          testParameter = 0.0;
+            double          wallParameter = 0.0;
+
+            if (intersectSupportingLines(testSegment,
+                                         wallSegment,
+                                         intersection_World_m,
+                                         testParameter,
+                                         wallParameter) &&
+                testParameter > 0.0 && testParameter < 1.0 &&
+                wallParameter >= 0.0 && wallParameter <= 1.0)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 /*!
@@ -729,6 +1267,224 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
 
     return false;
 }
+
+/*!
+ * @brief Projects a WALL Plane's finite support cloud onto a shared in-plane
+ *        tangent frame, returning the resulting axis-aligned interval.
+ *
+ * @return false when the plane has no usable geometry (null/empty cloud, or
+ *         a degenerate equation); the caller must treat that as "cannot
+ *         claim overlap" rather than as a zero-size interval.
+ */
+bool projectPlaneFootprintOntoSharedAxes(Plane                 *p_plane_in,
+                                         const Eigen::Vector3d &axisU_World_in,
+                                         const Eigen::Vector3d &axisV_World_in,
+                                         double                &minU_m_out,
+                                         double                &maxU_m_out,
+                                         double                &minV_m_out,
+                                         double                &maxV_m_out)
+{
+    if (p_plane_in == nullptr)
+    {
+        return false;
+    }
+
+    const Plane::GeometrySnapshot geometry = p_plane_in->getGeometrySnapshot();
+    if (geometry.supportCloud == nullptr || geometry.supportCloud->empty())
+    {
+        return false;
+    }
+
+    minU_m_out = std::numeric_limits<double>::infinity();
+    maxU_m_out = -std::numeric_limits<double>::infinity();
+    minV_m_out = std::numeric_limits<double>::infinity();
+    maxV_m_out = -std::numeric_limits<double>::infinity();
+
+    for (const pcl::PointXYZRGBA &point : geometry.supportCloud->points)
+    {
+        if (!pcl::isFinite(point))
+        {
+            continue;
+        }
+        const Eigen::Vector3d point_World_m(point.x, point.y, point.z);
+        const double          pointU_m = point_World_m.dot(axisU_World_in);
+        const double          pointV_m = point_World_m.dot(axisV_World_in);
+        minU_m_out                     = std::min(minU_m_out, pointU_m);
+        maxU_m_out                     = std::max(maxU_m_out, pointU_m);
+        minV_m_out                     = std::min(minV_m_out, pointV_m);
+        maxV_m_out                     = std::max(maxV_m_out, pointV_m);
+    }
+
+    return std::isfinite(minU_m_out) && std::isfinite(maxU_m_out) &&
+           std::isfinite(minV_m_out) && std::isfinite(maxV_m_out);
+}
+
+/*!
+ * @brief Decides whether two WALL Planes are plausibly the two opposite
+ *        faces of the same physical wall (axiom (e)): parallel, a plausible
+ *        wall thickness apart, observed from opposite exterior sides, and
+ *        overlapping in-plane footprint.
+ */
+bool arePlausibleTwinWallFaces(Plane                 *p_first_in,
+                               Plane                 *p_second_in,
+                               double                 minimumThickness_m_in,
+                               double                 maximumThickness_m_in,
+                               double                 minimumOverlapRatio_in,
+                               const Eigen::Vector3d &groundNormal_World_in)
+{
+    if (p_first_in == nullptr || p_first_in->isBad() ||
+        p_second_in == nullptr || p_second_in->isBad() ||
+        p_first_in == p_second_in)
+    {
+        return false;
+    }
+
+    if (!Utils::arePlanesParallel(p_first_in, p_second_in))
+    {
+        return false;
+    }
+
+    Eigen::Vector4d equation1   = p_first_in->getGlobalEquation().coeffs();
+    Eigen::Vector4d equation2   = p_second_in->getGlobalEquation().coeffs();
+    const double    normalNorm1 = equation1.head<3>().norm();
+    const double    normalNorm2 = equation2.head<3>().norm();
+
+    if (!equation1.allFinite() || !equation2.allFinite() ||
+        normalNorm1 < 1e-8 || normalNorm2 < 1e-8)
+    {
+        return false;
+    }
+
+    equation1 /= normalNorm1;
+    equation2 /= normalNorm2;
+
+    /* Align equation2's sign to equation1's before comparing offsets --
+     * plane-equation sign is arbitrary. */
+    Eigen::Vector4d alignedEquation2 = equation2;
+    if (equation1.head<3>().dot(equation2.head<3>()) < 0.0)
+    {
+        alignedEquation2 *= -1.0;
+    }
+    const double separation_m = std::abs(equation1(3) - alignedEquation2(3));
+
+    if (separation_m < minimumThickness_m_in ||
+        separation_m > maximumThickness_m_in)
+    {
+        return false;
+    }
+
+    /* Opposite-exterior-side check, generalising isWallFaceForeignToRoom's
+     * side-sign math from plane-to-room to plane-to-plane: a wall's two
+     * faces are observed from cameras standing on opposite exterior sides,
+     * so each face's observation origin must resolve to opposite sides of
+     * the OTHER face's equation. */
+    const std::optional<Eigen::Vector3d> origin1 =
+        p_first_in->getObservationOrigin_World();
+    const std::optional<Eigen::Vector3d> origin2 =
+        p_second_in->getObservationOrigin_World();
+
+    if (!origin1.has_value() || !origin1->allFinite() || !origin2.has_value() ||
+        !origin2->allFinite())
+    {
+        /* Planes created before the stamp existed carry no face identity;
+         * make no claim rather than a wrong one. */
+        return false;
+    }
+
+    constexpr double minimumResolvableSide_m = 0.10;
+    const double     side1AtOrigin1 =
+        equation1.head<3>().dot(origin1.value()) + equation1(3);
+    const double side1AtOrigin2 =
+        equation1.head<3>().dot(origin2.value()) + equation1(3);
+    const double side2AtOrigin1 =
+        equation2.head<3>().dot(origin1.value()) + equation2(3);
+    const double side2AtOrigin2 =
+        equation2.head<3>().dot(origin2.value()) + equation2(3);
+
+    if (!std::isfinite(side1AtOrigin1) || !std::isfinite(side1AtOrigin2) ||
+        !std::isfinite(side2AtOrigin1) || !std::isfinite(side2AtOrigin2) ||
+        std::abs(side1AtOrigin1) < minimumResolvableSide_m ||
+        std::abs(side1AtOrigin2) < minimumResolvableSide_m ||
+        std::abs(side2AtOrigin1) < minimumResolvableSide_m ||
+        std::abs(side2AtOrigin2) < minimumResolvableSide_m)
+    {
+        return false;
+    }
+
+    const bool oppositeAcrossPlane1 = (side1AtOrigin1 * side1AtOrigin2) < 0.0;
+    const bool oppositeAcrossPlane2 = (side2AtOrigin1 * side2AtOrigin2) < 0.0;
+
+    if (!oppositeAcrossPlane1 || !oppositeAcrossPlane2)
+    {
+        return false;
+    }
+
+    /* In-plane footprint overlap, projected onto one shared ground-anchored
+     * tangent frame so the two planes' (possibly differently canonicalised)
+     * own local U/V axes don't have to agree. */
+    const double    groundNormalNorm = groundNormal_World_in.norm();
+    Eigen::Vector3d axisU_World      = Eigen::Vector3d::Zero();
+    Eigen::Vector3d axisV_World      = Eigen::Vector3d::Zero();
+    if (std::isfinite(groundNormalNorm) && groundNormalNorm > 1e-8)
+    {
+        const Eigen::Vector3d unitGroundNormal_World =
+            groundNormal_World_in / groundNormalNorm;
+        const Eigen::Vector3d horizontalCandidate_World =
+            unitGroundNormal_World.cross(equation1.head<3>());
+        const double horizontalNorm = horizontalCandidate_World.norm();
+        if (std::isfinite(horizontalNorm) && horizontalNorm > 1e-3)
+        {
+            axisU_World = horizontalCandidate_World / horizontalNorm;
+            axisV_World = axisU_World.cross(equation1.head<3>()).normalized();
+        }
+    }
+    if (axisU_World.squaredNorm() < 0.5 || axisV_World.squaredNorm() < 0.5)
+    {
+        axisU_World = equation1.head<3>().unitOrthogonal().normalized();
+        axisV_World = equation1.head<3>().cross(axisU_World).normalized();
+    }
+
+    double minU1 = 0.0, maxU1 = 0.0, minV1 = 0.0, maxV1 = 0.0;
+    double minU2 = 0.0, maxU2 = 0.0, minV2 = 0.0, maxV2 = 0.0;
+    if (!projectPlaneFootprintOntoSharedAxes(p_first_in,
+                                             axisU_World,
+                                             axisV_World,
+                                             minU1,
+                                             maxU1,
+                                             minV1,
+                                             maxV1) ||
+        !projectPlaneFootprintOntoSharedAxes(p_second_in,
+                                             axisU_World,
+                                             axisV_World,
+                                             minU2,
+                                             maxU2,
+                                             minV2,
+                                             maxV2))
+    {
+        return false;
+    }
+
+    const double overlapU_m = std::min(maxU1, maxU2) - std::max(minU1, minU2);
+    const double overlapV_m = std::min(maxV1, maxV2) - std::max(minV1, minV2);
+
+    if (overlapU_m <= 0.0 || overlapV_m <= 0.0)
+    {
+        return false;
+    }
+
+    const double overlapArea_m2 = overlapU_m * overlapV_m;
+    const double area1_m2       = (maxU1 - minU1) * (maxV1 - minV1);
+    const double area2_m2       = (maxU2 - minU2) * (maxV2 - minV2);
+    const double smallerArea_m2 = std::min(area1_m2, area2_m2);
+
+    if (!std::isfinite(smallerArea_m2) || smallerArea_m2 < 1e-6)
+    {
+        return false;
+    }
+
+    return (overlapArea_m2 / smallerArea_m2) >= minimumOverlapRatio_in;
+}
+
 } // namespace
 
 SemanticsManager::SemanticsManager(Atlas *pAtlas)
@@ -777,6 +1533,10 @@ void SemanticsManager::resetTemporalStateForMap(Map *p_activeMap_in)
 
     if (mapChanged)
     {
+        {
+            std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
+            currentRoomId_ = -1;
+        }
         currentCameraCenter_World_m  = Eigen::Vector3d::Zero();
         previousCameraCenter_World_m = Eigen::Vector3d::Zero();
         hasCameraCenter_             = false;
@@ -789,6 +1549,7 @@ void SemanticsManager::resetTemporalStateForMap(Map *p_activeMap_in)
         prospectiveRoomCycles_.clear();
         undefendedWalls_.clear();
         loggedOrphanWallIds_.clear();
+        loggedWallRejectionReasons_.clear();
         loggedRetiredWallIds_.clear();
         loggedRoomCleanupIds_.clear();
     }
@@ -823,6 +1584,320 @@ void SemanticsManager::resetTemporalStateForMap(Map *p_activeMap_in)
     temporalStateWorldFrameEpoch_ = worldFrameEpoch;
 }
 
+SemanticsManager::ActiveMapBootstrapResult
+    SemanticsManager::ensureActiveMapBootstrapHierarchy(
+        const std::optional<Eigen::Vector3d> &cameraPositionOverride_World_m_in)
+{
+    Map *p_activeMap = mpAtlas != nullptr ? mpAtlas->GetCurrentMap() : nullptr;
+    if (p_activeMap == nullptr)
+    {
+        std::cout << "SG_PIPELINE {\"event\":\"initialization\","
+                     "\"reason\":\"NO_ACTIVE_MAP\",\"semantic_cycle\":"
+                  << pipelineSemanticCycle_ << "}" << std::endl;
+        return ActiveMapBootstrapResult::NO_ACTIVE_MAP;
+    }
+
+    const std::vector<Room *> activeRooms = p_activeMap->GetAllRooms();
+    const auto                resolveLiveRoomById =
+        [&activeRooms](const int roomId_in) -> Room *
+    {
+        if (roomId_in < 0)
+        {
+            return nullptr;
+        }
+        for (Room *p_room : activeRooms)
+        {
+            if (p_room != nullptr && !p_room->isBad() &&
+                p_room->getRoomVariant() == Room::roomVariant::ROOM &&
+                p_room->getId() == roomId_in)
+            {
+                return p_room;
+            }
+        }
+        return nullptr;
+    };
+
+    int currentRoomId = -1;
+    {
+        std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
+        currentRoomId = currentRoomId_;
+    }
+    const int recoveryRoomId = mpAtlas->getCurrentSemanticRoomIdentity();
+
+    Room *p_bootstrapRoom = resolveLiveRoomById(currentRoomId);
+    if (p_bootstrapRoom == nullptr)
+    {
+        p_bootstrapRoom = resolveLiveRoomById(recoveryRoomId);
+    }
+    /* When a recovery identity exists (tracking-loss reset), never fall back
+     * to an arbitrary lowest-ID live room: a spurious free-space SE# created
+     * during the reset transient would otherwise hijack `currentRoomId_` away
+     * from the last-known hierarchy. The lowest-ID seed applies to cold start
+     * only (no recovery identity). */
+    if (p_bootstrapRoom == nullptr && recoveryRoomId < 0)
+    {
+        for (Room *p_room : activeRooms)
+        {
+            if (p_room != nullptr && !p_room->isBad() &&
+                p_room->getRoomVariant() == Room::roomVariant::ROOM &&
+                (p_bootstrapRoom == nullptr ||
+                 p_room->getId() < p_bootstrapRoom->getId()))
+            {
+                p_bootstrapRoom = p_room;
+            }
+        }
+    }
+
+    const std::optional<RoomContextSnapshot> recoveryContext =
+        p_bootstrapRoom == nullptr && recoveryRoomId >= 0
+            ? mpAtlas->copyLatestRoomContext(recoveryRoomId)
+            : std::nullopt;
+
+    Eigen::Vector3d cameraPosition_World_m  = Eigen::Vector3d::Zero();
+    bool            hasUsableCameraPosition = false;
+    if (cameraPositionOverride_World_m_in.has_value() &&
+        cameraPositionOverride_World_m_in->allFinite())
+    {
+        cameraPosition_World_m  = *cameraPositionOverride_World_m_in;
+        hasUsableCameraPosition = true;
+    }
+    else
+    {
+        std::vector<KeyFrame *> keyFrames = p_activeMap->GetAllKeyFrames();
+        std::sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
+        for (std::vector<KeyFrame *>::reverse_iterator keyFrameIterator =
+                 keyFrames.rbegin();
+             keyFrameIterator != keyFrames.rend();
+             ++keyFrameIterator)
+        {
+            KeyFrame *p_keyFrame = *keyFrameIterator;
+            if (p_keyFrame == nullptr || p_keyFrame->isBad())
+            {
+                continue;
+            }
+            const Eigen::Vector3d candidatePosition_World_m =
+                p_keyFrame->GetCameraCenter().cast<double>();
+            /* An exactly-zero center marks an uninitialized first-frame pose
+             * (live-observed: brand-new map, identity pose, room planted at
+             * the origin), never a genuine measurement: real computed centers
+             * carry rotation/translation noise. Accepting it misplaces the
+             * bootstrap room and poisons centroid-distance matching for the
+             * cycles until walls correct it. Fall through to the snapshot
+             * centroid, else yield and retry once poses exist. */
+            if (candidatePosition_World_m.allFinite() &&
+                !candidatePosition_World_m.isZero())
+            {
+                cameraPosition_World_m  = candidatePosition_World_m;
+                hasUsableCameraPosition = true;
+                break;
+            }
+        }
+    }
+
+    if (p_bootstrapRoom == nullptr && !hasUsableCameraPosition)
+    {
+        /* Same-map reset clears keyframes, so no camera pose exists yet while
+         * a valid recovery snapshot does. Recreate the last-known hierarchy
+         * at the snapshot centroid now (refined once keyframes return) rather
+         * than yielding the cycle to a free-space SE# with a fresh ID. */
+        if (recoveryContext.has_value() &&
+            recoveryContext->centroid.allFinite())
+        {
+            cameraPosition_World_m  = recoveryContext->centroid;
+            hasUsableCameraPosition = true;
+        }
+        else
+        {
+            std::cout << "SG_PIPELINE {\"event\":\"initialization\","
+                         "\"map_id\":"
+                      << p_activeMap->GetId()
+                      << ",\"reason\":\"NO_USABLE_CAMERA_POSE\","
+                         "\"semantic_cycle\":"
+                      << pipelineSemanticCycle_ << "}" << std::endl;
+            return ActiveMapBootstrapResult::NO_USABLE_CAMERA_POSE;
+        }
+    }
+
+    bool initializedRoom = false;
+    bool recoveredRoom   = false;
+    if (p_bootstrapRoom == nullptr)
+    {
+        p_bootstrapRoom = GeoSemHelpers::createBlankRoomCandidate(
+            mpAtlas,
+            cameraPosition_World_m,
+            recoveryContext.has_value()
+                ? std::optional<int>(recoveryContext->roomId)
+                : std::nullopt);
+        if (p_bootstrapRoom == nullptr)
+        {
+            std::cout << "SG_PIPELINE {\"event\":\"initialization\","
+                         "\"map_id\":"
+                      << p_activeMap->GetId()
+                      << ",\"reason\":\"ROOM_CREATION_FAILED\","
+                         "\"semantic_cycle\":"
+                      << pipelineSemanticCycle_ << "}" << std::endl;
+            return ActiveMapBootstrapResult::ROOM_CREATION_FAILED;
+        }
+        mpAtlas->AddCandidateMapRoom(p_bootstrapRoom);
+        p_activeMap->PromoteCandidateMapRoom(p_bootstrapRoom);
+        p_bootstrapRoom->setRoomVariant(Room::roomVariant::ROOM);
+        p_bootstrapRoom->setName("Room#" +
+                                 std::to_string(p_bootstrapRoom->getId()));
+        p_bootstrapRoom->setBoundaryStatus(Room::BoundaryStatus::UNOBSERVED);
+        p_bootstrapRoom->setRoomTag(
+            recoveryContext.has_value() && !recoveryContext->roomTag.empty()
+                ? recoveryContext->roomTag
+                : "room_" + std::to_string(p_bootstrapRoom->getId()));
+        p_bootstrapRoom->setRecoveryProxy(recoveryContext.has_value());
+        if (recoveryContext.has_value())
+        {
+            p_bootstrapRoom->setPreviouslyVisited(
+                recoveryContext->wasPreviouslyVisited);
+        }
+        initializedRoom = !recoveryContext.has_value();
+        recoveredRoom   = recoveryContext.has_value();
+    }
+
+    std::vector<Floor *> floors = p_activeMap->GetAllFloors();
+    Floor *p_canonicalFloor     = Floor::selectBestObservedFloor(floors);
+    if (p_canonicalFloor == nullptr)
+    {
+        const std::optional<int> recoveryFloorId =
+            recoveryContext.has_value() && recoveryContext->floorId >= 0
+                ? std::optional<int>(recoveryContext->floorId)
+                : std::nullopt;
+        GeoSemHelpers::createMapFloor(mpAtlas, recoveryFloorId);
+        floors           = p_activeMap->GetAllFloors();
+        p_canonicalFloor = Floor::selectBestObservedFloor(floors);
+    }
+    if (p_canonicalFloor == nullptr)
+    {
+        std::cout << "SG_PIPELINE {\"event\":\"initialization\","
+                     "\"map_id\":"
+                  << p_activeMap->GetId()
+                  << ",\"reason\":\"FLOOR_CREATION_FAILED\","
+                     "\"room_id\":"
+                  << p_bootstrapRoom->getId()
+                  << ",\"semantic_cycle\":" << pipelineSemanticCycle_ << "}"
+                  << std::endl;
+        return ActiveMapBootstrapResult::FLOOR_CREATION_FAILED;
+    }
+
+    p_canonicalFloor->addRoom(p_bootstrapRoom);
+    if (resolveLiveRoomById(currentRoomId) == nullptr)
+    {
+        {
+            std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
+            currentRoomId_ = p_bootstrapRoom->getId();
+            mpAtlas->setCurrentSemanticRoomIdentity(p_bootstrapRoom->getId());
+        }
+        /* The UAV starts inside the bootstrap room: presence evidences entry.
+         * Marked outside the current-room lock; the room owns its mutex. */
+        p_bootstrapRoom->setPreviouslyVisited(true);
+        /* Mission-chain trace: the room this map started with. Set once;
+         * later bootstrap cycles must not overwrite it. */
+        if (p_activeMap->getStartingRoom() == nullptr)
+        {
+            p_activeMap->setStartingRoom(p_bootstrapRoom);
+        }
+    }
+
+    std::size_t restoredPassageCount = 0U;
+    if (recoveredRoom)
+    {
+        for (const PassageContext &passageContext :
+             recoveryContext->passageContexts)
+        {
+            Passage *p_recoveryPassage =
+                p_activeMap->GetPassageById(passageContext.id);
+            if (p_recoveryPassage == nullptr)
+            {
+                /* New object, stable ID: position, orientation, and aperture
+                 * dimensions are not knowable across a map break, so only
+                 * frame-free state (passable, traversal history, live links
+                 * below) is restored. A zero-sized aperture shrinks geometric
+                 * tests to their margin sliver, as before this change. */
+                p_recoveryPassage = new Passage();
+                p_recoveryPassage->setId(passageContext.id);
+                p_recoveryPassage->setMap(p_activeMap);
+                p_recoveryPassage->setPassable(passageContext.passable);
+                p_recoveryPassage->setPassageType(
+                    Passage::passageVariant::DOORWAY);
+                p_recoveryPassage->setRecoveryProxy(true);
+                for (std::size_t observationIndex = 0U;
+                     observationIndex < passageContext.traversalKnownToFarCount;
+                     ++observationIndex)
+                {
+                    p_recoveryPassage->addTraversalObservation(
+                        Passage::TraversalDirection::KNOWN_TO_FAR);
+                }
+                for (std::size_t observationIndex = 0U;
+                     observationIndex < passageContext.traversalFarToKnownCount;
+                     ++observationIndex)
+                {
+                    p_recoveryPassage->addTraversalObservation(
+                        Passage::TraversalDirection::FAR_TO_KNOWN);
+                }
+                for (std::size_t observationIndex = 0U;
+                     observationIndex < passageContext.traversalUnknownCount;
+                     ++observationIndex)
+                {
+                    p_recoveryPassage->addTraversalObservation(
+                        Passage::TraversalDirection::UNKNOWN);
+                }
+                mpAtlas->AddMapPassage(p_recoveryPassage);
+            }
+
+            if (passageContext.hasKnownSideRoom &&
+                passageContext.knownSideRoomId == p_bootstrapRoom->getId())
+            {
+                p_recoveryPassage->setKnownSideRoom(p_bootstrapRoom);
+            }
+            if (passageContext.hasFarSideRoom &&
+                passageContext.secondaryRoomId == p_bootstrapRoom->getId())
+            {
+                p_recoveryPassage->setProspectiveRoom(p_bootstrapRoom);
+            }
+            if (p_recoveryPassage->getKnownSideProvenance().pRoom == nullptr &&
+                p_recoveryPassage->getProspectiveRoom() == nullptr)
+            {
+                p_recoveryPassage->setKnownSideRoom(p_bootstrapRoom);
+            }
+            p_bootstrapRoom->setDoorways(p_recoveryPassage);
+            ++restoredPassageCount;
+        }
+    }
+
+    if (initializedRoom)
+    {
+        std::cout << "SG_PIPELINE {\"event\":\"initialization\","
+                     "\"map_id\":"
+                  << p_activeMap->GetId()
+                  << ",\"reason\":\"BOOTSTRAP_CREATED\",\"room_id\":"
+                  << p_bootstrapRoom->getId()
+                  << ",\"floor_id\":" << p_canonicalFloor->getId()
+                  << ",\"semantic_cycle\":" << pipelineSemanticCycle_ << "}"
+                  << std::endl;
+        return ActiveMapBootstrapResult::INITIALIZED;
+    }
+
+    if (recoveredRoom)
+    {
+        std::cout << "SG_PIPELINE {\"event\":\"initialization\","
+                     "\"map_id\":"
+                  << p_activeMap->GetId()
+                  << ",\"reason\":\"RECOVERY_RESTORED\",\"room_id\":"
+                  << p_bootstrapRoom->getId()
+                  << ",\"floor_id\":" << p_canonicalFloor->getId()
+                  << ",\"restored_passages\":" << restoredPassageCount
+                  << ",\"semantic_cycle\":" << pipelineSemanticCycle_ << "}"
+                  << std::endl;
+        return ActiveMapBootstrapResult::RECOVERED;
+    }
+
+    return ActiveMapBootstrapResult::REUSED;
+}
+
 void SemanticsManager::Run(void)
 {
     std::size_t summaryCycle = 0U;
@@ -836,8 +1911,8 @@ void SemanticsManager::Run(void)
         }
 
         /* Find the current time of the loop */
-        const std::chrono::_V2::system_clock::time_point start =
-            std::chrono::high_resolution_clock::now();
+        const std::chrono::steady_clock::time_point start =
+            std::chrono::steady_clock::now();
 
         /*!
          * Treat one hierarchy update as an atomic semantic transaction. Map
@@ -847,7 +1922,9 @@ void SemanticsManager::Run(void)
         std::unique_lock<std::mutex> semanticUpdateLock =
             mpAtlas->acquireSemanticUpdateLock();
 
+        pipelineSemanticCycle_ = ++summaryCycle;
         resetTemporalStateForMap(mpAtlas->GetCurrentMap());
+        ensureActiveMapBootstrapHierarchy();
 
         /* Validate the low-level semantic planes */
         Plane *mainGroundPlane = mpAtlas->GetBiggestGroundPlane();
@@ -881,6 +1958,25 @@ void SemanticsManager::Run(void)
             Utils::reAssociateSemanticPlanes(mpAtlas);
         }
 
+        /*  Detect/update passage GEOMETRY before any wall-to-room admission
+         * this cycle, so admitWallToRoom()'s far-side-passage backstop (and
+         * Pass 1's free-space clustering below) can route a wall to the
+         * correct side of a doorway the moment that doorway itself becomes
+         * observable, instead of only on the NEXT cycle once a stale
+         * passage list catches up. detectDoorsAndDoorways()/updatePassages()
+         * only read Plane/Passage data (no Room dependency), so this is safe
+         * to run ahead of any room detection or association below. Passage
+         * steps that DO need current room membership (traversal evidence,
+         * room association, wall detachment, prospective-room cleanup) stay
+         * below, after Pass 1's wall admission, where room data exists to
+         * work from. */
+        if (sysParams->sem_seg.enable_passage_detection)
+        {
+            detectDoorsAndDoorways(mpAtlas);
+            updatePassages(mpAtlas);
+            mergeOverlappingPassages();
+        }
+
         /*!
          * Use free-space evidence to create and update rooms.
          *
@@ -904,15 +2000,19 @@ void SemanticsManager::Run(void)
         /* Consolidate only redundant single-wall provisional structures. */
         Utils::reAssociateRooms(mpAtlas);
 
-        /*  Detect passages after room-wall membership is current */
+        /*  Room-dependent passage steps: geometry was already refreshed
+         * above, ahead of this cycle's wall admission. */
         if (sysParams->sem_seg.enable_passage_detection)
         {
-            detectDoorsAndDoorways(mpAtlas);
-            updatePassages(mpAtlas);
             updateTraversalEvidence(mpAtlas);
             Utils::reAssociatePassages(mpAtlas);
             associatePassagesToRooms();
             detachWallsBeyondConfirmedPassages();
+
+            /* Continuous rule-invariant sweep (not just at admission time):
+             * see enforcePassageSideInvariant()'s own comment. Room<->passage
+             * association is current as of the two calls just above. */
+            enforcePassageSideInvariant();
 
             /* PROSPECTIVE ROOM CLEANUP
              * A passage reference is the stable far-side handle. Zero-wall
@@ -936,7 +2036,7 @@ void SemanticsManager::Run(void)
                 std::vector<ORB_SLAM3::Passage *> referencingPassages;
                 for (ORB_SLAM3::Passage *p_passage : allPassages)
                 {
-                    if (p_passage != nullptr &&
+                    if (p_passage != nullptr && !p_passage->isBad() &&
                         p_passage->getProspectiveRoom() == p_candidate)
                     {
                         referencingPassages.push_back(p_passage);
@@ -1023,6 +2123,11 @@ void SemanticsManager::Run(void)
          * Run AFTER Phase 2 so split clusters get correct wall ownership. */
         enforceUniqueWallOwnership();
 
+        /* Link each wall's opposite-facing twin, now that ownership has
+         * settled for this cycle. Must run before validateRoomBoundaries()
+         * so boundary/corner logic can rely on current twin identity. */
+        reconcileWallFacePairs();
+
         /* Validate room geometry without delaying independent passage data. */
         validateRoomBoundaries();
 
@@ -1044,446 +2149,277 @@ void SemanticsManager::Run(void)
         /* Associate every valid room/SE with the floor */
         getUpdatedFloors();
 
-        /* Propagate room identity from prior-map context snapshots to untagged
-         * rooms in the current map. Triggered after room detection so rooms
-         * exist to be matched. */
-        mpAtlas->matchRoomsToContext(mpAtlas->GetCurrentMap());
+        /* Re-point any room whose own ground plane disagrees with the
+         * just-refreshed canonical Floor identity. */
+        reconcileRoomGroundPlanes();
+
+        /* Room candidate generation is pre-verification only. The legacy
+         * tag-and-wall-transfer entry point remains disabled until P4. */
 
         /* Advance the room-state machine (WP13 Section 18.2). It consumes the
          * traversal crossings recorded above and reports accepted/rejected
          * transitions. It is read-only with respect to the room id members. */
-        updateRoomTrackerState();
+        const std::chrono::duration<double> roomTrackerElapsed =
+            std::chrono::steady_clock::now().time_since_epoch();
+        updateRoomTrackerState(roomTrackerElapsed.count());
 
-        /*!
-         * Deterministically merge one map pair per cycle.
-         *
-         * A new map becomes a merge candidate once both maps agree on a
-         * tagged room name. Atlas::MergeMapPair() transforms the other map's
-         * semantic graph into the current map's frame, fuses duplicate rooms,
-         * re-associates passages, and retires the other map. The semantic
-         * lock acquired above is held for the whole merge, and only one pair
-         * is merged per cycle because the active map list changes mid-merge.
-         */
-        Map *pCurrentMap = mpAtlas->GetCurrentMap();
-
-        if (pCurrentMap != nullptr && !pCurrentMap->IsBad())
+        /* P4 verification and the shared merge seam are not enabled in P1-P3.
+         * In particular, a tag match must never activate MergeMapPair(). */
+        std::map<long unsigned int, std::vector<RoomContextSnapshot>>
+             copiedContext  = mpAtlas->copyRoomContextHistory();
+        Map *p_candidateMap = mpAtlas->GetCurrentMap();
+        if (p_candidateMap != nullptr)
         {
-            const vector<Map *> allMaps = mpAtlas->GetAllMaps();
-            std::cout << "[SemMgr] Merge check: current map "
-                      << pCurrentMap->GetId()
-                      << ", total maps: " << allMaps.size() << std::endl;
-            for (Map *p_otherMap : allMaps)
+            const Atlas::SnapshotCopyResult currentSnapshot =
+                mpAtlas->copyRoomContextForMapChecked(p_candidateMap, true);
+            if (currentSnapshot.status == Atlas::SnapshotCopyStatus::COMPLETE)
             {
-                /* Skip the survivor, retired maps, and inactive maps. */
-                if (p_otherMap == nullptr || p_otherMap == pCurrentMap ||
-                    p_otherMap->IsBad() || !mpAtlas->isActiveMap(p_otherMap))
-                {
-                    continue;
-                }
-
-                std::cout << "[SemMgr] Checking merge with map "
-                          << p_otherMap->GetId() << std::endl;
-
-                /* Merge only when both maps share a tagged room name. */
-                if (sharesRoomNameTag(pCurrentMap, p_otherMap))
-                {
-                    std::cout << "[SemanticsManager] Merging map "
-                              << p_otherMap->GetId() << " into current map "
-                              << pCurrentMap->GetId() << std::endl;
-
-                    mpAtlas->MergeMapPair(pCurrentMap, p_otherMap);
-                    break;
-                }
+                copiedContext[p_candidateMap->GetId()] =
+                    currentSnapshot.snapshots;
             }
         }
-
-        /* ------------------------------------------------------------------ *
-         * SEMANTIC STATE SUMMARY (validation aid)
-         * Emit a compact, machine-grepable snapshot of the semantic topology
-         * once per cycle so run-time results can be validated from text.
-         * ------------------------------------------------------------------ */
-        const std::size_t snapshotCycle = ++summaryCycle;
-        const auto        getMapId      = [](ORB_SLAM3::Map *p_map) {
-            return p_map != nullptr ? static_cast<long long>(p_map->GetId())
-                                                : -1LL;
-        };
-        const auto formatSortedIds = [](std::vector<int> ids)
-        {
-            std::sort(ids.begin(), ids.end());
-            std::ostringstream stream;
-            stream << '[';
-            for (std::size_t index = 0U; index < ids.size(); ++index)
-            {
-                if (index > 0U)
-                {
-                    stream << ',';
-                }
-                stream << ids[index];
-            }
-            stream << ']';
-            return stream.str();
-        };
-
-        std::vector<ORB_SLAM3::Room *> summaryRooms = mpAtlas->GetAllRooms();
-        std::sort(
-            summaryRooms.begin(),
-            summaryRooms.end(),
-            [&getMapId](ORB_SLAM3::Room *p_first, ORB_SLAM3::Room *p_second)
-            {
-                if (p_first == nullptr)
-                {
-                    return false;
-                }
-                if (p_second == nullptr)
-                {
-                    return true;
-                }
-                return std::make_pair(getMapId(p_first->getMap()),
-                                      p_first->getId()) <
-                       std::make_pair(getMapId(p_second->getMap()),
-                                      p_second->getId());
-            });
-
-        std::cout << "[SemMgrSummary] SNAPSHOT_BEGIN cycle=" << snapshotCycle
+        SemanticCandidateConfig candidateConfig;
+        candidateConfig.topK = sysParams->candidate_gen.top_k;
+        candidateConfig.candidatePairCap =
+            sysParams->candidate_gen.candidate_pair_cap;
+        candidateConfig.topologyNodesCap =
+            sysParams->candidate_gen.topology_nodes_cap;
+        candidateConfig.globalFallbackCap =
+            sysParams->candidate_gen.global_fallback_cap;
+        candidateConfig.weightAngle  = sysParams->candidate_gen.weight_angle;
+        candidateConfig.weightExtent = sysParams->candidate_gen.weight_extent;
+        candidateConfig.weightAperture =
+            sysParams->candidate_gen.weight_aperture;
+        candidateConfig.weightTopology =
+            sysParams->candidate_gen.weight_topology;
+        candidateConfig.angleMissingPenalty =
+            sysParams->candidate_gen.angle_missing_penalty;
+        candidateConfig.extentMissingPenalty =
+            sysParams->candidate_gen.extent_missing_penalty;
+        candidateConfig.apertureMissingPenalty =
+            sysParams->candidate_gen.aperture_missing_penalty;
+        candidateConfig.ambiguityMargin =
+            sysParams->candidate_gen.ambiguity_margin;
+        candidateConfig.angleTolerance_rad =
+            sysParams->candidate_gen.angle_tolerance_rad;
+        candidateConfig.runtimeBudget_ms =
+            sysParams->candidate_gen.runtime_budget_ms;
+        candidateConfig.descriptorElementsCap =
+            sysParams->candidate_gen.descriptor_elements_cap;
+        candidateConfig.topoRefinementIters =
+            sysParams->candidate_gen.topo_refinement_iters;
+        /* Section 9.2's "last-confirmed room" anchor for adjacency-
+         * prioritised candidate search. -1 (unset) maps to no anchor. */
+        const int                lastKnownRoomId = getLastKnownRoomId();
+        const std::optional<int> anchorRoomId =
+            lastKnownRoomId >= 0 ? std::optional<int>(lastKnownRoomId)
+                                 : std::nullopt;
+        const std::vector<SemanticCandidate> candidates =
+            SemanticCandidates::generate(copiedContext,
+                                         candidateConfig,
+                                         anchorRoomId);
+        std::cout << "[SemMgr] semantic_candidates count=" << candidates.size()
                   << std::endl;
-        std::cout << "[SemMgrSummary] === semantic state ===" << std::endl;
-        std::cout << "[SemMgrSummary] --- planes ---" << std::endl;
-        std::vector<ORB_SLAM3::Plane *> summaryPlanes = mpAtlas->GetAllPlanes();
-        std::sort(
-            summaryPlanes.begin(),
-            summaryPlanes.end(),
-            [&getMapId](ORB_SLAM3::Plane *p_first, ORB_SLAM3::Plane *p_second)
-            {
-                if (p_first == nullptr)
-                {
-                    return false;
-                }
-                if (p_second == nullptr)
-                {
-                    return true;
-                }
-                return std::make_pair(getMapId(p_first->GetMap()),
-                                      p_first->getId()) <
-                       std::make_pair(getMapId(p_second->GetMap()),
-                                      p_second->getId());
-            });
-        for (ORB_SLAM3::Plane *p_summaryPlane : summaryPlanes)
+
+        /* Milestone 1 (WP1-master-plan.md, Part 4): run the Phase 4 verifier
+         * on the single best candidate and feed a real VerificationVerdict to
+         * roomTracker_ via submitVerificationVerdict(). This still only makes
+         * the *verdict* real -- it must not call Atlas::MergeMapPair() or
+         * otherwise mutate the Atlas; that trigger is Milestone 3's, gated
+         * behind the real-data verifier audit of Milestone 2. */
+        evaluateTopCandidateVerification(candidates);
+
+        /* Compact Phase-1 heartbeat: all values come from this completed
+         * semantic transaction and are therefore mutually consistent. */
+        Map                       *p_pipelineMap = mpAtlas->GetCurrentMap();
+        const std::vector<Plane *> pipelinePlanes =
+            p_pipelineMap != nullptr ? p_pipelineMap->GetAllPlanes()
+                                     : std::vector<Plane *>();
+        const std::vector<Room *> pipelineRooms =
+            p_pipelineMap != nullptr ? p_pipelineMap->GetAllRooms()
+                                     : std::vector<Room *>();
+        const std::vector<Passage *> pipelinePassages =
+            p_pipelineMap != nullptr ? p_pipelineMap->GetAllPassages()
+                                     : std::vector<Passage *>();
+        const std::vector<Floor *> pipelineFloors =
+            p_pipelineMap != nullptr ? p_pipelineMap->GetAllFloors()
+                                     : std::vector<Floor *>();
+        const std::vector<std::vector<Eigen::Vector3d>> pipelineClusters =
+            p_pipelineMap != nullptr
+                ? p_pipelineMap->GetSkeletonClusterPoints()
+                : std::vector<std::vector<Eigen::Vector3d>>();
+
+        std::size_t             wallClassCount      = 0U;
+        std::size_t             admissibleWallCount = 0U;
+        std::size_t             ownedWallCount      = 0U;
+        std::unordered_set<int> ownedWallIds;
+        Plane                  *p_pipelineGround   = p_pipelineMap != nullptr
+                                                         ? p_pipelineMap->GetBiggestGroundPlane()
+                                                         : nullptr;
+        Eigen::Vector3d pipelineGroundNormal_World = Eigen::Vector3d::Zero();
+        if (p_pipelineGround != nullptr && !p_pipelineGround->isBad())
         {
-            if (p_summaryPlane == nullptr || p_summaryPlane->isBad())
+            const Eigen::Vector4d equation =
+                p_pipelineGround->getGlobalEquation().coeffs();
+            if (equation.allFinite() && equation.head<3>().norm() > 1e-8)
             {
-                continue;
+                pipelineGroundNormal_World = equation.head<3>().normalized();
             }
-
-            const Plane::GeometrySnapshot geometry =
-                p_summaryPlane->getGeometrySnapshot();
-            Eigen::Vector4d normalizedEquation = geometry.equation_World;
-            const double    normalNorm = normalizedEquation.head<3>().norm();
-            if (normalizedEquation.allFinite() && std::isfinite(normalNorm) &&
-                normalNorm >= 1e-8)
-            {
-                normalizedEquation /= normalNorm;
-                for (Eigen::Index component = 0;
-                     component < normalizedEquation.head<3>().size();
-                     ++component)
-                {
-                    if (std::abs(normalizedEquation(component)) <= 1e-12)
-                    {
-                        continue;
-                    }
-                    if (normalizedEquation(component) < 0.0)
-                    {
-                        normalizedEquation = -normalizedEquation;
-                    }
-                    break;
-                }
-            }
-
-            const Plane::ObservationSideSnapshot faceSnapshot =
-                p_summaryPlane->getObservationSideSnapshot(normalizedEquation);
-            const char *face = "UNKNOWN";
-            switch (faceSnapshot.face)
-            {
-            case Plane::ObservationSideSnapshot::Face::POSITIVE:
-                face = "POSITIVE";
-                break;
-            case Plane::ObservationSideSnapshot::Face::NEGATIVE:
-                face = "NEGATIVE";
-                break;
-            case Plane::ObservationSideSnapshot::Face::AMBIGUOUS:
-                face = "AMBIGUOUS";
-                break;
-            default:
-                break;
-            }
-
-            const char *planeType = "UNDEFINED";
-            switch (p_summaryPlane->getPlaneType())
-            {
-            case Plane::planeVariant::WALL:
-                planeType = "WALL";
-                break;
-            case Plane::planeVariant::GROUND:
-                planeType = "GROUND";
-                break;
-            case Plane::planeVariant::DOOR:
-                planeType = "DOOR";
-                break;
-            case Plane::planeVariant::WINDOW:
-                planeType = "WINDOW";
-                break;
-            default:
-                break;
-            }
-
-            std::cout << "[SemMgrSummary] Plane#" << p_summaryPlane->getId()
-                      << " mapId=" << getMapId(p_summaryPlane->GetMap())
-                      << " type=" << planeType << " equation=("
-                      << normalizedEquation(0) << ',' << normalizedEquation(1)
-                      << ',' << normalizedEquation(2) << ','
-                      << normalizedEquation(3)
-                      << ") finiteSupport=" << geometry.finiteSupportCount
-                      << " centroid=(" << geometry.centroid_World_m.x() << ','
-                      << geometry.centroid_World_m.y() << ','
-                      << geometry.centroid_World_m.z() << ") bounds=("
-                      << geometry.minPlaneU_m << ',' << geometry.maxPlaneU_m
-                      << ',' << geometry.minPlaneV_m << ','
-                      << geometry.maxPlaneV_m << ") dimensions=("
-                      << geometry.maxPlaneU_m - geometry.minPlaneU_m << ','
-                      << geometry.maxPlaneV_m - geometry.minPlaneV_m
-                      << ") cloudGeneration=" << geometry.cloudGeneration
-                      << " successfulRefitGeneration="
-                      << geometry.successfulRefitGeneration << " face=" << face
-                      << " faceConsensus=" << faceSnapshot.consensusRatio
-                      << " faceEvidence=" << faceSnapshot.evidenceCount
-                      << std::endl;
         }
-
-        std::cout << "[SemMgrSummary] --- rooms ---" << std::endl;
-        for (ORB_SLAM3::Room *p_summaryRoom : summaryRooms)
+        for (Plane *p_plane : pipelinePlanes)
         {
-            if (p_summaryRoom == nullptr || p_summaryRoom->isBad())
+            if (p_plane == nullptr || p_plane->isBad() ||
+                p_plane->getPlaneType() != Plane::planeVariant::WALL)
             {
                 continue;
             }
-
-            const std::vector<ORB_SLAM3::Plane *> summaryWalls =
-                p_summaryRoom->getWalls();
-            std::vector<int> summaryWallIds;
-            for (ORB_SLAM3::Plane *p_wall : summaryWalls)
+            wallClassCount++;
+            if (evaluateWallAdmissionEvidence(p_plane,
+                                              sysParams,
+                                              pipelineGroundNormal_World)
+                    .admissible)
+            {
+                admissibleWallCount++;
+            }
+        }
+        std::size_t realRoomCount        = 0U;
+        std::size_t prospectiveRoomCount = 0U;
+        for (Room *p_room : pipelineRooms)
+        {
+            if (p_room == nullptr || p_room->isBad())
+            {
+                continue;
+            }
+            if (p_room->getRoomVariant() == Room::roomVariant::ROOM)
+            {
+                realRoomCount++;
+            }
+            else
+            {
+                prospectiveRoomCount++;
+            }
+            for (Plane *p_wall : p_room->getWalls())
             {
                 if (p_wall != nullptr && !p_wall->isBad())
                 {
-                    summaryWallIds.push_back(p_wall->getId());
+                    ownedWallIds.insert(p_wall->getId());
                 }
             }
-            const std::vector<ORB_SLAM3::Passage *> summaryPassages =
-                p_summaryRoom->getPassages();
-            std::vector<int> summaryPassageIds;
-            for (ORB_SLAM3::Passage *p_passage : summaryPassages)
-            {
-                if (p_passage != nullptr)
-                {
-                    summaryPassageIds.push_back(p_passage->getId());
-                }
-            }
-            ORB_SLAM3::Floor     *p_summaryFloor = p_summaryRoom->getFloor();
-            const Eigen::Vector3d summaryCentroid =
-                p_summaryRoom->getCentroid().cast<double>();
-            const std::string summaryVariant =
-                (p_summaryRoom->getRoomVariant() ==
-                         ORB_SLAM3::Room::roomVariant::ROOM
-                     ? "ROOM"
-                     : "UNDEFINED");
-            const std::string summaryBoundary =
-                (p_summaryRoom->getBoundaryStatus() ==
-                         ORB_SLAM3::Room::BoundaryStatus::COMPLETE
-                     ? "COMPLETE"
-                     : (p_summaryRoom->getBoundaryStatus() ==
-                                ORB_SLAM3::Room::BoundaryStatus::INCOMPLETE
-                            ? "INCOMPLETE"
-                            : "UNOBSERVED"));
-
-            std::cout << "[SemMgrSummary] Room#" << p_summaryRoom->getId()
-                      << " variant=" << summaryVariant
-                      << " mapId=" << getMapId(p_summaryRoom->getMap())
-                      << " floorId="
-                      << (p_summaryFloor != nullptr ? p_summaryFloor->getId()
-                                                    : -1)
-                      << " boundary=" << summaryBoundary
-                      << " walls=" << summaryWalls.size()
-                      << " wallIds=" << formatSortedIds(summaryWallIds)
-                      << " centroid=(" << summaryCentroid.x() << ", "
-                      << summaryCentroid.y() << ", " << summaryCentroid.z()
-                      << ")" << " passages=" << summaryPassages.size()
-                      << " passageIds=" << formatSortedIds(summaryPassageIds)
-                      << std::endl;
         }
-
-        std::cout << "[SemMgrSummary] --- candidate/prospective rooms ---"
+        ownedWallCount                  = ownedWallIds.size();
+        std::size_t skeletonVertexCount = 0U;
+        for (const std::vector<Eigen::Vector3d> &cluster : pipelineClusters)
+        {
+            skeletonVertexCount += cluster.size();
+        }
+        const std::size_t pendingWallCount = std::count_if(
+            undefendedWalls_.begin(),
+            undefendedWalls_.end(),
+            [&ownedWallIds](
+                const std::pair<const int, UndefendedWallState> &entry)
+            { return ownedWallIds.count(entry.first) == 0U; });
+        const std::size_t livePassageCount = std::count_if(
+            pipelinePassages.begin(),
+            pipelinePassages.end(),
+            [](Passage *p_passage)
+            { return p_passage != nullptr && !p_passage->isBad(); });
+        std::cout << "SG_PIPELINE {\"event\":\"heartbeat\",\"map_id\":"
+                  << (p_pipelineMap != nullptr
+                          ? static_cast<long long>(p_pipelineMap->GetId())
+                          : -1)
+                  << ",\"semantic_cycle\":" << pipelineSemanticCycle_
+                  << ",\"current_room_id\":" << getCurrentRoomId()
+                  << ",\"raw_planes\":" << pipelinePlanes.size()
+                  << ",\"wall_class_planes\":" << wallClassCount
+                  << ",\"admissible_walls\":" << admissibleWallCount
+                  << ",\"pending_walls\":" << pendingWallCount
+                  << ",\"owned_walls\":" << ownedWallCount
+                  << ",\"skeleton_clusters\":" << pipelineClusters.size()
+                  << ",\"skeleton_vertices\":" << skeletonVertexCount
+                  << ",\"skeleton_edges\":"
+                  << (p_pipelineMap != nullptr
+                          ? p_pipelineMap->GetSkeletonEdges().size()
+                          : 0U)
+                  << ",\"real_rooms\":" << realRoomCount
+                  << ",\"prospective_rooms\":" << prospectiveRoomCount
+                  << ",\"passages\":" << livePassageCount
+                  << ",\"floors\":" << pipelineFloors.size() << "}"
                   << std::endl;
-        std::vector<ORB_SLAM3::Room *> summaryCandidates =
-            mpAtlas->GetAllCandidateMapRooms();
-        std::sort(
-            summaryCandidates.begin(),
-            summaryCandidates.end(),
-            [&getMapId](ORB_SLAM3::Room *p_first, ORB_SLAM3::Room *p_second)
-            {
-                if (p_first == nullptr)
-                {
-                    return false;
-                }
-                if (p_second == nullptr)
-                {
-                    return true;
-                }
-                return std::make_pair(getMapId(p_first->getMap()),
-                                      p_first->getId()) <
-                       std::make_pair(getMapId(p_second->getMap()),
-                                      p_second->getId());
-            });
-        for (ORB_SLAM3::Room *p_summaryCandidate : summaryCandidates)
+
+        /* ------------------------------------------------------------------ *
+         * SEMANTIC MONITOR BOUNDARY (P1.4/P1.7/P1.8, semantic-axiom-
+         * reliability-plan.md): capture a complete, pointer-free snapshot
+         * plus manager-private evidence while the semantic-update lock is
+         * still held, unlock, then evaluate/digest/cache/log outside the
+         * lock. Read-only with respect to inference, ownership, passage,
+         * room, and completeness decisions -- this never mutates Atlas/Map/
+         * Room/Wall/Passage state.
+         * ------------------------------------------------------------------ */
+        const std::uint64_t semanticCycle = pipelineSemanticCycle_;
+
+        semantic::SemanticGraphSnapshot snapshot =
+            semantic::captureSemanticGraphSnapshot(mpAtlas);
+        snapshot.managerPrivateOpenPassageHypotheses =
+            captureOpenPassageHypotheses();
+        snapshot.managerPrivateOpenPassageHypothesesReason =
+            semantic::UnavailableReason::NONE;
+        snapshot.managerPrivateUnresolvedWallHypotheses =
+            captureUnresolvedWallHypotheses();
+        snapshot.managerPrivateUnresolvedWallHypothesesReason =
+            semantic::UnavailableReason::NONE;
+
+        std::optional<int> currentMapRevision;
+        if (snapshot.currentMapId.has_value())
         {
-            if (p_summaryCandidate == nullptr || p_summaryCandidate->isBad())
+            Map *p_currentMap = mpAtlas->GetCurrentMap();
+            if (p_currentMap != nullptr &&
+                p_currentMap->GetId() == *snapshot.currentMapId)
             {
-                continue;
+                currentMapRevision = p_currentMap->GetMapChangeIndex();
             }
-
-            const std::vector<ORB_SLAM3::Plane *> candidateWalls =
-                p_summaryCandidate->getWalls();
-            const Eigen::Vector3d candidateCentroid =
-                p_summaryCandidate->getCentroid().cast<double>();
-
-            std::cout << "[SemMgrSummary] CandidateRoom#"
-                      << p_summaryCandidate->getId()
-                      << " mapId=" << getMapId(p_summaryCandidate->getMap())
-                      << " walls=" << candidateWalls.size() << " centroid=("
-                      << candidateCentroid.x() << ", " << candidateCentroid.y()
-                      << ", " << candidateCentroid.z() << ")" << std::endl;
         }
 
-        std::cout << "[SemMgrSummary] --- floors ---" << std::endl;
-        std::vector<ORB_SLAM3::Floor *> summaryFloors = mpAtlas->GetAllFloors();
-        std::sort(
-            summaryFloors.begin(),
-            summaryFloors.end(),
-            [&getMapId](ORB_SLAM3::Floor *p_first, ORB_SLAM3::Floor *p_second)
-            {
-                if (p_first == nullptr)
-                {
-                    return false;
-                }
-                if (p_second == nullptr)
-                {
-                    return true;
-                }
-                return std::make_pair(getMapId(p_first->getMap()),
-                                      p_first->getId()) <
-                       std::make_pair(getMapId(p_second->getMap()),
-                                      p_second->getId());
-            });
-        for (ORB_SLAM3::Floor *p_summaryFloor : summaryFloors)
-        {
-            if (p_summaryFloor == nullptr)
-            {
-                continue;
-            }
+        /* Unlock before any evaluation/serialization/caching/logging work --
+         * the monitor must never hold the semantic-update lock while doing
+         * read-only diagnostic work. */
+        /* Continuous consecutive-map matching, old into current, inside
+         * this transaction: at most one merge per cycle; attempts and
+         * commits log via SG_PIPELINE. */
+        mpAtlas->attemptConsecutiveMergeIfGated();
+        semanticUpdateLock.unlock();
 
-            std::vector<int> summaryFloorRoomIds;
-            for (ORB_SLAM3::Room *p_room : p_summaryFloor->getRooms())
-            {
-                if (p_room != nullptr && !p_room->isBad())
-                {
-                    summaryFloorRoomIds.push_back(p_room->getId());
-                }
-            }
+        const std::chrono::steady_clock::time_point evaluationStart =
+            std::chrono::steady_clock::now();
+        const semantic::AxiomEvaluationReport evaluationReport =
+            semantic::evaluateState(snapshot);
+        const std::vector<semantic::MapCompletenessResult> completenessResults =
+            semantic::evaluateMapCompleteness(snapshot);
+        const std::string topologyDigest = semantic::sha256HexDigest(
+            semantic::serializeSnapshotTopologyOnly(snapshot).dump());
+        const std::string fullGeometryDigest = semantic::sha256HexDigest(
+            semantic::serializeSnapshotFullGeometry(snapshot).dump());
+        const std::chrono::milliseconds evaluationDuration =
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - evaluationStart);
 
-            std::cout << "[SemMgrSummary] Floor#" << p_summaryFloor->getId()
-                      << " mapId=" << getMapId(p_summaryFloor->getMap())
-                      << " planeValid="
-                      << (p_summaryFloor->hasPlaneIdentity() ? 1 : 0)
-                      << " roomIds=" << formatSortedIds(summaryFloorRoomIds)
-                      << std::endl;
-        }
+        mSemanticReportCache.update(snapshot,
+                                    evaluationReport,
+                                    completenessResults,
+                                    semanticCycle,
+                                    snapshot.currentMapId,
+                                    currentMapRevision,
+                                    topologyDigest,
+                                    fullGeometryDigest,
+                                    evaluationDuration);
 
-        std::cout << "[SemMgrSummary] --- passages ---" << std::endl;
-        std::vector<ORB_SLAM3::Passage *> summaryPassages =
-            mpAtlas->GetAllPassages();
-        std::sort(summaryPassages.begin(),
-                  summaryPassages.end(),
-                  [&getMapId](ORB_SLAM3::Passage *p_first,
-                              ORB_SLAM3::Passage *p_second)
-                  {
-                      if (p_first == nullptr)
-                      {
-                          return false;
-                      }
-                      if (p_second == nullptr)
-                      {
-                          return true;
-                      }
-                      return std::make_pair(getMapId(p_first->getMap()),
-                                            p_first->getId()) <
-                             std::make_pair(getMapId(p_second->getMap()),
-                                            p_second->getId());
-                  });
-        for (ORB_SLAM3::Passage *p_summaryPassage : summaryPassages)
-        {
-            if (p_summaryPassage == nullptr)
-            {
-                continue;
-            }
-
-            const Eigen::Vector3d passageCentroid =
-                p_summaryPassage->getCentroid().cast<double>();
-            const int prospectiveRoomId =
-                (p_summaryPassage->hasProspectiveRoom() &&
-                         p_summaryPassage->getProspectiveRoom() != nullptr
-                     ? p_summaryPassage->getProspectiveRoom()->getId()
-                     : -1);
-            const Passage::KnownSideProvenance knownSide =
-                p_summaryPassage->getKnownSideProvenance();
-            const int knownSideRoomId =
-                knownSide.pRoom != nullptr ? knownSide.pRoom->getId() : -1;
-
-            std::cout << "[SemMgrSummary] Passage#" << p_summaryPassage->getId()
-                      << " mapId=" << getMapId(p_summaryPassage->getMap())
-                      << " supportWalls="
-                      << p_summaryPassage->getAssociateWalls().size()
-                      << " centroid=(" << passageCentroid.x() << ", "
-                      << passageCentroid.y() << ", " << passageCentroid.z()
-                      << ")" << " prospectiveRoom=" << prospectiveRoomId
-                      << " knownSideRoom=" << knownSideRoomId
-                      << " knownSideDirection=("
-                      << knownSide.direction_World.x() << ','
-                      << knownSide.direction_World.y() << ','
-                      << knownSide.direction_World.z() << ')' << " passable="
-                      << (p_summaryPassage->isPassable() ? 1 : 0)
-                      << " traversed="
-                      << (p_summaryPassage->getTraversalEvidence() ? 1 : 0)
-                      << " traversalKnownToFar="
-                      << p_summaryPassage->getTraversalKnownToFarCount()
-                      << " traversalFarToKnown="
-                      << p_summaryPassage->getTraversalFarToKnownCount()
-                      << " traversalUnknown="
-                      << p_summaryPassage->getTraversalUnknownCount()
-                      << " bidirectional="
-                      << (p_summaryPassage->hasBidirectionalTraversalEvidence()
-                              ? 1
-                              : 0)
-                      << std::endl;
-        }
-        std::cout << "[SemMgrSummary] === end semantic state ===" << std::endl;
-        std::cout << "[SemMgrSummary] SNAPSHOT_END cycle=" << snapshotCycle
-                  << std::endl;
+        logSemanticDiagnostics(mSemanticReportCache.getLatest());
 
         /* Find the time after it took to run the loop */
-        const auto end = std::chrono::high_resolution_clock::now();
+        const std::chrono::steady_clock::time_point end =
+            std::chrono::steady_clock::now();
 
         /* Calculate the elapsed time */
         const std::chrono::duration<double> elapsed = end - start;
-
-        /* Allow loop closing and segmentation to update the semantic graph. */
-        semanticUpdateLock.unlock();
 
         /* Find how much longer in the loop is left */
         const double remainingSeconds = runInterval_s - elapsed.count();
@@ -1513,6 +2449,17 @@ std::vector<std::vector<Eigen::Vector3d>>
 
     /* Get the latest skeleton cluster from Atlas */
     return mpAtlas->GetSkeletoClusterPoints();
+}
+
+semantic::SemanticReportCacheEntry
+    SemanticsManager::getSemanticReportCacheEntry(void) const
+{
+    return mSemanticReportCache.getLatest();
+}
+
+bool SemanticsManager::isSemanticReportCacheAvailable(void) const
+{
+    return mSemanticReportCache.isAvailable();
 }
 
 void SemanticsManager::filterWallPlanes(void)
@@ -1558,8 +2505,15 @@ void SemanticsManager::filterGroundPlanes(Plane *groundPlane)
      */
 
     /* Get the median height of the plane to compute the threshold */
-    float threshY = computeGroundPlaneHeight(groundPlane) -
-                    sysParams->sem_seg.max_step_elevation;
+    std::optional<float> groundPlaneHeight =
+        computeGroundPlaneHeight(groundPlane);
+    if (!groundPlaneHeight.has_value())
+    {
+        /* Nothing to filter against yet -- the main ground plane's support
+           cloud is momentarily empty (e.g. right after creation/reset). */
+        return;
+    }
+    float threshY = *groundPlaneHeight - sysParams->sem_seg.max_step_elevation;
 
     /* Extract the main associated ground plane */
     int groundPlaneId = groundPlane->getId();
@@ -1575,8 +2529,15 @@ void SemanticsManager::filterGroundPlanes(Plane *groundPlane)
             continue;
         }
 
-        /* If planes above inverted y threshold, then reset plane semantics */
-        if (computeGroundPlaneHeight(plane) < threshY)
+        /* If planes above inverted y threshold, then reset plane semantics.
+           Skip (don't filter) a plane whose support cloud is momentarily
+           empty -- there's nothing to judge its height against yet. */
+        std::optional<float> planeHeight = computeGroundPlaneHeight(plane);
+        if (!planeHeight.has_value())
+        {
+            continue;
+        }
+        if (*planeHeight < threshY)
         {
             plane->resetPlaneSemantics();
             continue;
@@ -1625,8 +2586,8 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         passageParameters.ambiguousDuplicatePlaneSeparation_m);
     const double crossingClusterDistance =
         static_cast<double>(passageParameters.crossingClusterDistance_m);
-    const std::size_t minimumConfirmationCount =
-        passageParameters.minimumConfirmationSnapshots;
+    const std::size_t minimumCrossingClusterSize =
+        passageParameters.minimumCrossingClusterSize;
     const std::size_t maximumMissedUpdateCount =
         passageParameters.maximumMissedSnapshots;
     const double minimumHorizontalFlankExtent_m =
@@ -1755,8 +2716,23 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
         Eigen::Vector3d crossingPoint = Eigen::Vector3d::Zero();
 
-        double      openingRadius     = 0.0;
+        double      openingRadius = 0.0;
+        /** Vertical span of this cycle's crossing cluster, 0 when not
+         *  reliably measured (see minimumMeasuredHeightSpan below). Together
+         *  with openingRadius, this is the passage size estimate the user
+         *  asked for -- previously only door-typed (closed) passages had a
+         *  size at all. */
+        double      heightSpan_m      = 0.0;
         std::size_t confirmationCount = 0;
+        /** Number of individual skeleton-edge crossings clustered into this
+         *  opening THIS cycle alone (see crossingClusters below) -- the
+         *  same-cycle evidence-quantity signal passage creation is gated on,
+         *  the passage-side equivalent of a wall's cluster point count /
+         *  connectivity ratio. Not carried across cycles by the temporal
+         *  matching below, unlike openingRadius/heightSpan_m: strength must
+         *  be re-earned each cycle, exactly like a wall's own admission
+         *  evidence. */
+        std::size_t crossingCount = 0;
     };
 
     struct AcceptedCrossing
@@ -2166,6 +3142,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                 static_cast<double>(crossingCluster.size());
 
             double selectedPassageHeight_m = preferredPassageHeight;
+            double measuredHeightSpan_m    = 0.0;
 
             if (hasValidGroundEquation)
             {
@@ -2186,7 +3163,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                         std::max(maximumMeasuredHeight_m, measuredHeight_m);
                 }
 
-                const double measuredHeightSpan_m =
+                measuredHeightSpan_m =
                     maximumMeasuredHeight_m - minimumMeasuredHeight_m;
 
                 if (crossingCluster.size() > 1U &&
@@ -2231,6 +3208,8 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             candidate.wall          = wall;
             candidate.crossingPoint = passageCentre_World_m;
             candidate.openingRadius = maximumOpeningRadius_m;
+            candidate.heightSpan_m  = measuredHeightSpan_m;
+            candidate.crossingCount = crossingCluster.size();
 
             passageCandidates.push_back(candidate);
         }
@@ -2329,7 +3308,9 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                                             candidate.crossingPoint,
                                             1U,
                                             0U,
-                                            skeletonFingerprint});
+                                            skeletonFingerprint,
+                                            candidate.openingRadius,
+                                            candidate.heightSpan_m});
             candidate.confirmationCount = 1U;
             continue;
         }
@@ -2345,6 +3326,14 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             (previousWeight + 1.0);
         p_matchingEvidence->p_supportingWall  = candidate.wall;
         p_matchingEvidence->missedUpdateCount = 0U;
+        /* The true opening only gets more of it confirmed over time as the
+         * crossing evidence accumulates -- never shrinks a size estimate
+         * once confirmed. */
+        p_matchingEvidence->openingRadius_m =
+            std::max(p_matchingEvidence->openingRadius_m,
+                     candidate.openingRadius);
+        p_matchingEvidence->heightSpan_m =
+            std::max(p_matchingEvidence->heightSpan_m, candidate.heightSpan_m);
 
         if (p_matchingEvidence->lastConfirmedSkeletonFingerprint !=
             skeletonFingerprint)
@@ -2356,6 +3345,8 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
         candidate.crossingPoint     = p_matchingEvidence->centroid_World_m;
         candidate.confirmationCount = p_matchingEvidence->confirmationCount;
+        candidate.openingRadius     = p_matchingEvidence->openingRadius_m;
+        candidate.heightSpan_m      = p_matchingEvidence->heightSpan_m;
 
         Eigen::Vector4d supportingWallEquation =
             candidate.wall->getGlobalEquation().coeffs();
@@ -2548,6 +3539,19 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
             matchingPassage->addAssociateWall(candidate.wall);
 
+            /* Open passages previously carried no size estimate at all
+             * (only door-typed/blocked passages did) -- diameter from the
+             * best-confirmed opening radius, height from the best-confirmed
+             * vertical crossing span, floored at a typical-door default
+             * while that span is still unmeasured. Never shrinks once a
+             * larger estimate has been confirmed (candidate.openingRadius/
+             * heightSpan_m already hold the running max -- see the
+             * temporal evidence merge above). */
+            constexpr double defaultOpenPassageHeight_m = 2.0;
+            matchingPassage->setWidth(2.0 * candidate.openingRadius);
+            matchingPassage->setHeight(
+                std::max(candidate.heightSpan_m, defaultOpenPassageHeight_m));
+
             continue;
         }
 
@@ -2556,7 +3560,18 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             continue;
         }
 
-        if (candidate.confirmationCount < minimumConfirmationCount)
+        /* Same-cycle evidence-quantity gate, same semantic level/priority as
+         * a wall's own admission (cluster point count / connectivity
+         * ratio): enough of the free-space skeleton clustering through the
+         * wall THIS cycle is sufficient on its own to create the passage,
+         * no separate multi-cycle waiting period. Previously gated on
+         * candidate.confirmationCount (minimumConfirmationSnapshots
+         * genuinely distinct skeleton topology snapshots), which could take
+         * arbitrarily long real exploration time to accumulate -- during
+         * that entire window no Passage existed for anything querying
+         * mpAtlas->GetAllPassages() to see (the far-side wall-admission gap
+         * fixed elsewhere this session). */
+        if (candidate.crossingCount < minimumCrossingClusterSize)
         {
             continue;
         }
@@ -2576,6 +3591,26 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                                         candidate.wall,
                                         true,
                                         candidate.crossingPoint);
+
+        /* createMapPassage() returns void; find the passage it just
+         * registered (freshly created, so its centroid matches this
+         * candidate's crossing point exactly) to size it. Open passages
+         * previously carried no size estimate at all -- see the matching
+         * branch above for the same estimate's derivation. */
+        for (Passage *p_created : mpAtlas->GetAllPassages())
+        {
+            if (p_created == nullptr ||
+                !p_created->getCentroid().isApprox(candidate.crossingPoint,
+                                                   1e-6))
+            {
+                continue;
+            }
+            constexpr double defaultOpenPassageHeight_m = 2.0;
+            p_created->setWidth(2.0 * candidate.openingRadius);
+            p_created->setHeight(
+                std::max(candidate.heightSpan_m, defaultOpenPassageHeight_m));
+            break;
+        }
     }
 }
 
@@ -2708,6 +3743,11 @@ void SemanticsManager::updatePassages(ORB_SLAM3::Atlas *pAtlas)
 
     for (const auto &passage : allPassages)
     {
+        if (passage == nullptr || passage->isBad())
+        {
+            continue;
+        }
+
         // Updating the dimensions of the passage based on the associated door
         // plane
         ORB_SLAM3::Plane *doorPlane = passage->getAssociateDoor();
@@ -2949,6 +3989,161 @@ void SemanticsManager::updatePassages(ORB_SLAM3::Atlas *pAtlas)
     }
 }
 
+void SemanticsManager::mergeOverlappingPassages(void)
+{
+    Plane *p_groundPlane = mpAtlas->GetBiggestGroundPlane();
+    if (p_groundPlane == nullptr || p_groundPlane->isBad())
+    {
+        return;
+    }
+    const Eigen::Vector4d groundEq =
+        p_groundPlane->getGlobalEquation().coeffs();
+    const double groundNorm = groundEq.head<3>().norm();
+    if (!groundEq.allFinite() || groundNorm < 1e-8)
+    {
+        return;
+    }
+    const Eigen::Vector3d groundNormal_World = groundEq.head<3>() / groundNorm;
+
+    const std::vector<Passage *> allPassages = mpAtlas->GetAllPassages();
+
+    for (std::size_t i = 0U; i < allPassages.size(); ++i)
+    {
+        Passage *p_first = allPassages[i];
+        if (p_first == nullptr || p_first->isBad())
+        {
+            continue;
+        }
+
+        for (std::size_t j = i + 1U; j < allPassages.size(); ++j)
+        {
+            Passage *p_second = allPassages[j];
+            if (p_second == nullptr || p_second->isBad())
+            {
+                continue;
+            }
+
+            /* Must be the same physical wall's opening: near-coplanar
+             * passage equations (parallel normals, matching offset once
+             * consistently oriented). This deliberately reuses the same
+             * kind of alignment/offset gates updatePassages()'s own
+             * duplicate-detection uses, applied here across ALL existing
+             * passages rather than only against fresh detection candidates. */
+            Eigen::Vector4d firstEquation_World =
+                p_first->getGlobalEquation().coeffs();
+            Eigen::Vector4d secondEquation_World =
+                p_second->getGlobalEquation().coeffs();
+            const double firstNormalNorm = firstEquation_World.head<3>().norm();
+            const double secondNormalNorm =
+                secondEquation_World.head<3>().norm();
+            if (!firstEquation_World.allFinite() ||
+                !secondEquation_World.allFinite() || firstNormalNorm < 1e-8 ||
+                secondNormalNorm < 1e-8)
+            {
+                continue;
+            }
+            firstEquation_World /= firstNormalNorm;
+            secondEquation_World /= secondNormalNorm;
+
+            constexpr double minimumCoplanarNormalAlignment = 0.90;
+            constexpr double maximumCoplanarOffset_m        = 0.30;
+            const double normalAlignment = firstEquation_World.head<3>().dot(
+                secondEquation_World.head<3>());
+            if (std::abs(normalAlignment) < minimumCoplanarNormalAlignment)
+            {
+                continue;
+            }
+            Eigen::Vector4d orientedSecondEquation_World = secondEquation_World;
+            if (normalAlignment < 0.0)
+            {
+                orientedSecondEquation_World = -orientedSecondEquation_World;
+            }
+            if (std::abs(firstEquation_World(3) -
+                         orientedSecondEquation_World(3)) >
+                maximumCoplanarOffset_m)
+            {
+                continue;
+            }
+
+            /* Shared 2D basis in the wall's own plane: horizontal tangent
+             * (ground normal x wall normal) for width, ground normal for
+             * height -- same construction used for the ground-aligned wall
+             * admission gate. */
+            Eigen::Vector3d axisU_World =
+                groundNormal_World.cross(firstEquation_World.head<3>());
+            const double axisUNorm = axisU_World.norm();
+            if (axisUNorm < 1e-3)
+            {
+                continue;
+            }
+            axisU_World /= axisUNorm;
+            const Eigen::Vector3d &axisV_World = groundNormal_World;
+
+            const Eigen::Vector3d firstCentroid_World = p_first->getCentroid();
+            const Eigen::Vector3d secondCentroid_World =
+                p_second->getCentroid();
+            if (!firstCentroid_World.allFinite() ||
+                !secondCentroid_World.allFinite())
+            {
+                continue;
+            }
+
+            const double firstU  = firstCentroid_World.dot(axisU_World);
+            const double firstV  = firstCentroid_World.dot(axisV_World);
+            const double secondU = secondCentroid_World.dot(axisU_World);
+            const double secondV = secondCentroid_World.dot(axisV_World);
+
+            const double combinedHalfWidth_m =
+                0.5 * (p_first->getWidth() + p_second->getWidth());
+            const double combinedHalfHeight_m =
+                0.5 * (p_first->getHeight() + p_second->getHeight());
+
+            const bool overlapsInWidth =
+                std::abs(firstU - secondU) < combinedHalfWidth_m;
+            const bool overlapsInHeight =
+                std::abs(firstV - secondV) < combinedHalfHeight_m;
+            if (!overlapsInWidth || !overlapsInHeight)
+            {
+                continue;
+            }
+
+            Passage *p_survivor =
+                (p_first->getId() <= p_second->getId()) ? p_first : p_second;
+            Passage *p_absorbed = (p_survivor == p_first) ? p_second : p_first;
+
+            for (Plane *p_wall : p_absorbed->getAssociateWalls())
+            {
+                p_survivor->addAssociateWall(p_wall);
+            }
+            p_survivor->setWidth(
+                std::max(p_survivor->getWidth(), p_absorbed->getWidth()));
+            p_survivor->setHeight(
+                std::max(p_survivor->getHeight(), p_absorbed->getHeight()));
+            p_survivor->setPassable(p_survivor->isPassable() ||
+                                    p_absorbed->isPassable());
+            p_survivor->mergeKnownSideProvenance(
+                p_absorbed->getKnownSideProvenance());
+            if (!p_survivor->hasProspectiveRoom() &&
+                p_absorbed->hasProspectiveRoom())
+            {
+                p_survivor->setProspectiveRoom(
+                    p_absorbed->getProspectiveRoom());
+            }
+
+            if (loggedPassageMergeIds_
+                    .insert({p_survivor->getId(), p_absorbed->getId()})
+                    .second)
+            {
+                std::cout << "[SemMgr] Passage#" << p_absorbed->getId()
+                          << " overlaps Passage#" << p_survivor->getId()
+                          << " in their shared wall's 2D plane; merged "
+                             "evidence into Passage#"
+                          << p_survivor->getId() << "." << std::endl;
+            }
+        }
+    }
+}
+
 void SemanticsManager::updateTraversalEvidence(ORB_SLAM3::Atlas *pAtlas)
 {
     if (pAtlas == nullptr)
@@ -3083,10 +4278,6 @@ void SemanticsManager::updateTraversalEvidence(ORB_SLAM3::Atlas *pAtlas)
                                              minimumSideDistance_m,
                                              true))
             {
-                /* Report the geometrically verified crossing to the room-state
-                 * machine (Phase 1 of WP13). */
-                crossingEventPending_ = true;
-
                 const bool wasSettled = p_passage->getTraversalEvidence();
 
                 Passage::TraversalDirection traversalDirection =
@@ -3139,17 +4330,80 @@ void SemanticsManager::updateTraversalEvidence(ORB_SLAM3::Atlas *pAtlas)
                 {
                     p_reachedRoom = knownSide.pRoom;
                 }
-                if (p_reachedRoom != nullptr)
+                const std::vector<Room *> activeRooms =
+                    p_activeMap->GetAllRooms();
+                const bool reachedRoomIsLive =
+                    p_reachedRoom != nullptr && !p_reachedRoom->isBad() &&
+                    p_reachedRoom->getMap() == p_activeMap &&
+                    std::find(activeRooms.begin(),
+                              activeRooms.end(),
+                              p_reachedRoom) != activeRooms.end();
+                if (reachedRoomIsLive)
                 {
-                    std::lock_guard<std::mutex> currentRoomLock(
-                        mMutexCurrentRoom);
-                    currentRoomId_ = p_reachedRoom->getId();
+                    if (p_reachedRoom->getRoomVariant() ==
+                        Room::roomVariant::UNDEFINED)
+                    {
+                        p_activeMap->PromoteCandidateMapRoom(p_reachedRoom);
+                        p_reachedRoom->setRoomVariant(Room::roomVariant::ROOM);
+                        p_reachedRoom->setName(
+                            "Room#" + std::to_string(p_reachedRoom->getId()));
+                        p_reachedRoom->setBoundaryStatus(
+                            Room::BoundaryStatus::UNOBSERVED);
+                        prospectiveRoomCycles_.erase(p_reachedRoom->getId());
+
+                        Floor *p_floor = Floor::selectBestObservedFloor(
+                            p_activeMap->GetAllFloors());
+                        if (p_floor != nullptr)
+                        {
+                            p_floor->addRoom(p_reachedRoom);
+                        }
+                        std::cout
+                            << "SG_PIPELINE {\"event\":\"room_promotion\","
+                               "\"map_id\":"
+                            << p_activeMap->GetId()
+                            << ",\"room_id\":" << p_reachedRoom->getId()
+                            << ",\"passage_id\":" << p_passage->getId()
+                            << ",\"reason\":\"PASSAGE_TRAVERSAL\","
+                               "\"semantic_cycle\":"
+                            << pipelineSemanticCycle_ << "}" << std::endl;
+                    }
+                    const int reachedRoomId = p_reachedRoom->getId();
+                    {
+                        std::lock_guard<std::mutex> currentRoomLock(
+                            mMutexCurrentRoom);
+                        currentRoomId_ = reachedRoomId;
+                    }
+                    mpAtlas->setCurrentSemanticRoomIdentity(reachedRoomId);
+                    /* Completed passage traversal into this room: entry
+                     * evidence marks it visited. */
+                    p_reachedRoom->setPreviouslyVisited(true);
                 }
 
                 const bool addedTraversal =
                     p_passage->addTraversalObservation(traversalDirection,
                                                        p_keyFrame->mnFrameId,
                                                        p_keyFrame->mnId);
+
+                /* Only newly accepted segment evidence is a new tracker event.
+                 * The passage owns segment deduplication, so replayed history
+                 * must not republish crossing evidence. */
+                if (addedTraversal)
+                {
+                    std::lock_guard<std::mutex> currentRoomLock(
+                        mMutexCurrentRoom);
+                    crossingEventPending_ = true;
+                    crossingBothSidesPending_ =
+                        crossingBothSidesPending_ ||
+                        p_passage->hasBidirectionalTraversalEvidence();
+#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+                    std::function<void()> publishHook =
+                        std::move(roomTrackerPendingPublishHook_);
+                    if (publishHook)
+                    {
+                        publishHook();
+                    }
+#endif
+                }
 
                 if (addedTraversal && !wasSettled)
                 {
@@ -3187,6 +4441,7 @@ void SemanticsManager::seedCurrentRoomFromActiveMap(Map *p_activeMap_in)
             p_room->getRoomVariant() == Room::roomVariant::ROOM)
         {
             currentRoomId_ = p_room->getId();
+            mpAtlas->setCurrentSemanticRoomIdentity(currentRoomId_);
             return;
         }
     }
@@ -3207,72 +4462,365 @@ int SemanticsManager::getLastKnownRoomId() const
 void SemanticsManager::onTrackingLost(void)
 {
     std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-    if (currentRoomId_ != lastKnownRoomId_)
+    if (!trackingLossEpisodeActive_)
     {
-        lastKnownRoomId_     = currentRoomId_;
-        trackingLostPending_ = true;
+        lastKnownRoomId_ = currentRoomId_ >= 0 || mpAtlas == nullptr
+                               ? currentRoomId_
+                               : mpAtlas->getCurrentSemanticRoomIdentity();
+        if (mpAtlas != nullptr && lastKnownRoomId_ >= 0)
+        {
+            mpAtlas->setCurrentSemanticRoomIdentity(lastKnownRoomId_);
+        }
+        trackingLostPending_       = true;
+        trackingLossEpisodeActive_ = true;
     }
 }
 
-void SemanticsManager::updateRoomTrackerState(void)
+void SemanticsManager::onTrackingRecovered(void)
+{
+    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
+    trackingLossEpisodeActive_ = false;
+}
+
+void SemanticsManager::submitVerificationVerdict(
+    const VerificationVerdict &verdict_in)
+{
+    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
+    verificationVerdict_        = verdict_in;
+    verificationVerdictPending_ = true;
+}
+
+void SemanticsManager::updateRoomTrackerState(double now_s)
 {
     /* Consume the per-cycle signals. trackingLostPending_ is set on another
-     * thread (System::GetMissionHealthSnapshot -> onTrackingLost), so it is
-     * read and cleared under mMutexCurrentRoom. */
-    bool crossingPending     = false;
-    bool trackingLostPending = false;
+     * thread (System::TrackRGBD's real per-frame tracking state, and also
+     * reachable via the on-demand System::GetMissionHealthSnapshot RPC), so
+     * it is read and cleared under mMutexCurrentRoom. */
+    bool                crossingPending     = false;
+    bool                bothSidesPending    = false;
+    bool                trackingLostPending = false;
+    VerificationVerdict verification;
     {
         std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-        crossingPending       = crossingEventPending_;
-        trackingLostPending   = trackingLostPending_;
-        crossingEventPending_ = false;
-        trackingLostPending_  = false;
+        crossingPending           = crossingEventPending_;
+        bothSidesPending          = crossingBothSidesPending_;
+        trackingLostPending       = trackingLostPending_;
+        crossingEventPending_     = false;
+        crossingBothSidesPending_ = false;
+        trackingLostPending_      = false;
+        if (verificationVerdictPending_)
+        {
+            verification                = verificationVerdict_;
+            verificationVerdict_        = VerificationVerdict();
+            verificationVerdictPending_ = false;
+        }
     }
-
-    const std::chrono::duration<double> elapsed =
-        std::chrono::steady_clock::now().time_since_epoch();
-    const double now_s = elapsed.count();
 
     /* Passage crossing evidence. segmentCrossesPassageOpening() already
      * required a passable passage; a detected crossing is therefore direct
      * geometric evidence and carries full traversal confidence until the
      * Phase 4 verifier supplies a calibrated value. */
     TraversalGuardValues crossing;
-    crossing.passageDetected = crossingPending;
-    crossing.passable        = crossingPending;
-    crossing.confidence      = crossingPending ? 1.0 : 0.0;
-
-    /* The verification verdict is an abstract, stubbed result until Phase 4
-     * (Section 19.2). Only the very first room confirmation uses a
-     * repository-available proxy: a confirmed ROOM in the active map. */
-    VerificationVerdict verdict;
-    Map                *p_activeMap = mpAtlas->GetCurrentMap();
-    if (p_activeMap != nullptr &&
-        roomTracker_.getState() == RoomTrackingState::UNKNOWN)
-    {
-        const std::vector<Room *> rooms = p_activeMap->GetAllRooms();
-        // TODO(WP13 Phase 4): replace the room-presence proxy below with the
-        // plane-gated geometric verification verdict.
-        for (Room *p_room : rooms)
-        {
-            if (p_room != nullptr && !p_room->isBad() &&
-                p_room->getRoomVariant() == Room::roomVariant::ROOM)
-            {
-                verdict.pass        = true;
-                verdict.inlierCount = 1U;
-                break;
-            }
-        }
-    }
+    crossing.passageDetected   = crossingPending;
+    crossing.passable          = crossingPending;
+    crossing.confidence        = crossingPending ? 1.0 : 0.0;
+    crossing.bothSidesObserved = bothSidesPending;
 
     TrackingStatusInput tracking;
     tracking.lost = trackingLostPending;
-    /* TODO(WP13 Phase 2): a new-map-created signal from CreateMapInAtlas is
-     * not visible to SemanticsManager; wire it through System once Phase 2
-     * persistence lands. newMapCreated stays false here. */
+    pendingNewMapCreated_ =
+        pendingNewMapCreated_ || mpAtlas->consumeNewMapCreatedEvent();
+    tracking.newMapCreated = pendingNewMapCreated_;
+    if (tracking.lost && tracking.newMapCreated)
+    {
+        /* RoomTracker commits at most one row per cycle. Preserve the map event
+         * for the following cycle instead of losing it behind TRACKING_LOST. */
+        newMapCreatedDeferred_ = true;
+        tracking.newMapCreated = false;
+    }
+    else
+    {
+        newMapCreatedDeferred_ = false;
+    }
 
-    roomTracker_.step(now_s, crossing, verdict, tracking);
+    roomTracker_.step(now_s, crossing, verification, tracking);
+    const TransitionEvent &lastEvent = roomTracker_.getLastEvent();
+    if (lastEvent.accepted &&
+        (lastEvent.event == RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH ||
+         lastEvent.event == RoomTrackingEvent::LOST_TIMEOUT ||
+         lastEvent.event == RoomTrackingEvent::REACQUIRE_TIMEOUT))
+    {
+        pendingNewMapCreated_ = false;
+    }
 }
+
+Room *SemanticsManager::findRoomByMapAndId(long unsigned int mapId_in,
+                                           int               roomId_in) const
+{
+    for (Map *p_map : mpAtlas->GetAllMaps())
+    {
+        if (p_map == nullptr || p_map->GetId() != mapId_in)
+        {
+            continue;
+        }
+        for (Room *p_room : p_map->GetAllRooms())
+        {
+            if (p_room != nullptr && !p_room->isBad() &&
+                p_room->getRoomVariant() == Room::roomVariant::ROOM &&
+                p_room->getId() == roomId_in)
+            {
+                return p_room;
+            }
+        }
+        break;
+    }
+    return nullptr;
+}
+
+void SemanticsManager::evaluateTopCandidateVerification(
+    const std::vector<SemanticCandidate> &candidates_in)
+{
+    if (candidates_in.empty())
+    {
+        return;
+    }
+
+    const SemanticCandidate &topCandidate = candidates_in.front();
+    if (!topCandidate.minimumEvidenceSatisfied)
+    {
+        return;
+    }
+
+    /* SemanticCandidates::generateWithStatus() marks every candidate within
+     * ambiguityMargin of the best distance as `ambiguous`, including the
+     * best candidate itself -- its own distance trivially satisfies
+     * "<= best distance + margin", so `topCandidate.ambiguous` is always
+     * true and can never be read as a gate on its own. A genuine tie instead
+     * shows up as a SECOND candidate also carrying `ambiguous == true`. */
+    const bool topCandidateIsUniqueLeader =
+        candidates_in.size() == 1U || !candidates_in[1].ambiguous;
+    if (!topCandidateIsUniqueLeader)
+    {
+        return;
+    }
+
+    Room *p_roomA =
+        findRoomByMapAndId(topCandidate.mapAId, topCandidate.roomAId);
+    Room *p_roomB =
+        findRoomByMapAndId(topCandidate.mapBId, topCandidate.roomBId);
+    if (p_roomA == nullptr || p_roomB == nullptr)
+    {
+        return;
+    }
+
+    const SemanticVerifyConfig verifyConfig =
+        SemanticVerify::configFromSystemParams();
+    const std::vector<VerifyWallObservation> wallsA =
+        SemanticVerify::collectWallObservations(p_roomA, verifyConfig);
+    const std::vector<VerifyWallObservation> wallsB =
+        SemanticVerify::collectWallObservations(p_roomB, verifyConfig);
+
+    SemanticVerifyResult result =
+        SemanticVerify::verify(wallsA, wallsB, verifyConfig);
+
+    /* The floor gate can only turn a geometric PASS into a final rejection
+     * (toVerificationVerdict() ANDs pass with floorGatePassed), so only run
+     * it -- and only when both rooms actually carry a floor identity to
+     * compare -- when that outcome is in play; skipping it here (as opposed
+     * to skipping it when the two rooms could plausibly share a floor) would
+     * be what SemanticVerify.h's runFloorGate() doc warns under-reports a
+     * real pass as a false negative. */
+    Floor *p_floorA = p_roomA->getFloor();
+    Floor *p_floorB = p_roomB->getFloor();
+    if (result.pass && p_floorA != nullptr && p_floorB != nullptr &&
+        p_floorA->hasPlaneIdentity() && p_floorB->hasPlaneIdentity())
+    {
+        /* verify()'s transform_AToB maps room-A points into room B's frame,
+         * i.e. A is absorbed into B -- matches runFloorGate's
+         * absorbed->surviving convention. */
+        SemanticVerify::runFloorGate(result,
+                                     p_roomB->getMap(),
+                                     p_roomA->getMap(),
+                                     result.transform_AToB);
+    }
+
+    const auto rejectReasonName = [](VerifyRejectReason reason)
+    {
+        switch (reason)
+        {
+        case VerifyRejectReason::NONE:
+            return "NONE";
+        case VerifyRejectReason::TOO_FEW_WALLS:
+            return "TOO_FEW_WALLS";
+        case VerifyRejectReason::NO_VALID_HYPOTHESIS:
+            return "NO_VALID_HYPOTHESIS";
+        case VerifyRejectReason::AMBIGUOUS_TOP_HYPOTHESES:
+            return "AMBIGUOUS_TOP_HYPOTHESES";
+        case VerifyRejectReason::BELOW_MIN_INLIER_RATIO:
+            return "BELOW_MIN_INLIER_RATIO";
+        case VerifyRejectReason::REFINED_FIT_NOT_OBSERVABLE:
+            return "REFINED_FIT_NOT_OBSERVABLE";
+        }
+        return "unknown";
+    };
+
+    std::cout << "[SemMgr] verification_evaluated mapA=" << topCandidate.mapAId
+              << " roomA=" << topCandidate.roomAId
+              << " mapB=" << topCandidate.mapBId
+              << " roomB=" << topCandidate.roomBId
+              << " status=" << static_cast<int>(result.status)
+              << " rejectReason=" << rejectReasonName(result.rejectReason)
+              << " wallCountA=" << wallsA.size()
+              << " wallCountB=" << wallsB.size()
+              << " topInlierCount=" << result.topInlierCount
+              << " runnerUpInlierCount=" << result.runnerUpInlierCount
+              << " inlierRatio=" << result.inlierRatio
+              << " floorGateRan=" << result.floorGateRan
+              << " floorGateResult=\""
+              << (result.floorGateResult.empty() ? "-" : result.floorGateResult)
+              << "\"" << std::endl;
+
+    /* Verification only: no Atlas mutation here. This makes RoomTracker's
+     * VerificationVerdict input real; Milestone 3's shared merge trigger is
+     * a separate, deliberately gated step (see the comment above this
+     * method's call site in Run()). */
+    submitVerificationVerdict(result.toVerificationVerdict());
+}
+
+#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+void SemanticsManager::processRoomTrackerPendingForTest(double now_s)
+{
+    updateRoomTrackerState(now_s);
+}
+
+const std::vector<TransitionEvent> &
+    SemanticsManager::getRoomTrackerEventHistoryForTest() const
+{
+    return roomTracker_.getEventHistory();
+}
+
+std::pair<bool, bool> SemanticsManager::getRoomTrackerPendingForTest() const
+{
+    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
+    return {crossingEventPending_, crossingBothSidesPending_};
+}
+
+RoomTrackingState SemanticsManager::getRoomTrackerStateForTest() const
+{
+    return roomTracker_.getState();
+}
+
+bool SemanticsManager::tryLockRoomTrackerPendingMutexForTest() const
+{
+    std::unique_lock<std::mutex> currentRoomLock(mMutexCurrentRoom,
+                                                 std::try_to_lock);
+    return currentRoomLock.owns_lock();
+}
+
+void SemanticsManager::setRoomTrackerPendingPublishHookForTest(
+    std::function<void()> hook_in)
+{
+    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
+    roomTrackerPendingPublishHook_ = std::move(hook_in);
+}
+
+void SemanticsManager::evaluateTopCandidateVerificationForTest(
+    const std::vector<SemanticCandidate> &candidates_in)
+{
+    evaluateTopCandidateVerification(candidates_in);
+}
+
+bool SemanticsManager::evaluateWallAdmissionEvidenceAdmissibleForTest(
+    Plane                 *p_wall_in,
+    const Eigen::Vector3d &groundNormal_World_in) const
+{
+    return evaluateWallAdmissionEvidence(p_wall_in,
+                                         sysParams,
+                                         groundNormal_World_in)
+        .admissible;
+}
+
+bool SemanticsManager::admitWallToRoomForTest(Room  *p_room_inout,
+                                              Plane *p_candidateWall_in)
+{
+    return admitWallToRoom(p_room_inout, p_candidateWall_in);
+}
+
+void SemanticsManager::enforcePassageSideInvariantForTest(void)
+{
+    enforcePassageSideInvariant();
+}
+
+void SemanticsManager::seedCurrentRoomFromActiveMapForTest(Map *p_activeMap_in)
+{
+    seedCurrentRoomFromActiveMap(p_activeMap_in);
+}
+
+std::optional<float>
+    SemanticsManager::computeGroundPlaneHeightForTest(Plane *p_groundPlane_in)
+{
+    return computeGroundPlaneHeight(p_groundPlane_in);
+}
+
+void SemanticsManager::reconcileWallFacePairsForTest(void)
+{
+    reconcileWallFacePairs();
+}
+
+void SemanticsManager::getUpdatedFloorsForTest(void)
+{
+    getUpdatedFloors();
+}
+
+int SemanticsManager::ensureActiveMapBootstrapHierarchyForTest(
+    const Eigen::Vector3d &cameraPosition_World_m_in)
+{
+    pipelineSemanticCycle_++;
+    return static_cast<int>(
+        ensureActiveMapBootstrapHierarchy(cameraPosition_World_m_in));
+}
+
+void SemanticsManager::setCurrentRoomIdForTest(const int roomId_in)
+{
+    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
+    currentRoomId_ = roomId_in;
+    mpAtlas->setCurrentSemanticRoomIdentity(roomId_in);
+}
+
+void SemanticsManager::associateAllWallsToRoomsForTest(void)
+{
+    associateAllWallsToRooms();
+}
+
+void SemanticsManager::associatePassagesToRoomsForTest(void)
+{
+    associatePassagesToRooms();
+}
+
+void SemanticsManager::suppressUndefendedWallsForTest(void)
+{
+    suppressUndefendedWalls();
+}
+
+int SemanticsManager::getPendingWallAgeForTest(int wallId_in) const
+{
+    const std::unordered_map<int, UndefendedWallState>::const_iterator found =
+        undefendedWalls_.find(wallId_in);
+    return found == undefendedWalls_.end()
+               ? -1
+               : static_cast<int>(found->second.unresolvedCycles);
+}
+
+void SemanticsManager::reconcileRoomGroundPlanesForTest(void)
+{
+    reconcileRoomGroundPlanes();
+}
+
+void SemanticsManager::validateRoomBoundariesForTest(void)
+{
+    validateRoomBoundaries();
+}
+#endif
 
 Eigen::Vector3f SemanticsManager::transformPlaneEqToGroundReference(
     const Eigen::Vector4d &planeEq)
@@ -3294,7 +4842,8 @@ Eigen::Vector3f SemanticsManager::transformPlaneEqToGroundReference(
     return transformedPlaneCoefficients;
 }
 
-float SemanticsManager::computeGroundPlaneHeight(Plane *groundPlane)
+std::optional<float>
+    SemanticsManager::computeGroundPlaneHeight(Plane *groundPlane)
 {
     /* Transform the planeCloud according to the planePose */
     pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr planeCloud =
@@ -3312,6 +4861,16 @@ float SemanticsManager::computeGroundPlaneHeight(Plane *groundPlane)
     }
 
     size_t numPoint = yVals.size() / 2;
+
+    /* An empty (or single-point) support cloud -- plane created before its
+       first refit, or cleared during replaceMapClouds -- makes numPoint == 0,
+       leaving nothing for [numPoint - 1] to address. Report "unknown" rather
+       than substituting 0.0, which is a valid real height and would silently
+       corrupt filterGroundPlanes' threshold. */
+    if (numPoint == 0)
+    {
+        return std::nullopt;
+    }
 
     std::partial_sort(yVals.begin(),
                       yVals.begin() + numPoint,
@@ -3362,7 +4921,8 @@ std::vector<std::vector<Eigen::Vector3d>>
 
     for (Passage *p_passage : allPassages)
     {
-        if (p_passage != nullptr && p_passage->isPassable())
+        if (p_passage != nullptr && !p_passage->isBad() &&
+            p_passage->isPassable())
         {
             confirmedOpenPassages.push_back(p_passage);
         }
@@ -3746,6 +5306,393 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
     }
 }
 
+SemanticsManager::PassageSideEnforcementOutcome
+    SemanticsManager::enforcePassageApertureBackstop(
+        Room                         *p_room_inout,
+        Plane                        *p_wall_in,
+        const std::vector<Passage *> &allPassages_in,
+        const Eigen::Vector3d        &groundNormal_World_in)
+{
+    if (p_room_inout == nullptr || p_room_inout->isBad() ||
+        p_wall_in == nullptr || p_wall_in->isBad())
+    {
+        return PassageSideEnforcementOutcome::NoViolation;
+    }
+
+    for (Passage *p_passage : allPassages_in)
+    {
+        if (p_passage == nullptr || p_passage->isBad())
+        {
+            continue;
+        }
+
+        const double minimumSideDistance_m = static_cast<double>(
+            sysParams->room_seg.passagePartition.minimumSideDistance_m);
+
+        /* B2 fix: segmentCrossesPassageOpening silently reports "no crossing"
+         * whenever its segment-start point sits within minimumSideDistance_m
+         * of the passage plane -- which the room's own centroid commonly
+         * does for a sparsely-observed room. Rather than let that ambiguity
+         * masquerade as "not crossing" (silently admitting a genuine
+         * far-side wall to the near room), substitute a point pushed out
+         * along the passage's known near side when the raw centroid is too
+         * close to call. Only apply this when a reliable near-side direction
+         * is actually available (Passage::KnownSideProvenance, built up from
+         * other walls' admission history for this passage): the ambiguous
+         * centroid's own residual sign is noise, not a signal, and guessing
+         * from it can just as easily push the synthesized point to the
+         * WRONG side as the right one -- worse than the original silent
+         * no-crossing report, not better. With no known side yet, this
+         * degenerate case is left exactly as before the fix. */
+        Eigen::Vector3d segmentStart_World_m = p_room_inout->getCentroid();
+        Eigen::Vector4d passageEquation_World =
+            p_passage->getGlobalEquation().coeffs();
+        const double passageNormalNorm = passageEquation_World.head<3>().norm();
+        if (passageEquation_World.allFinite() && passageNormalNorm > 1e-8)
+        {
+            passageEquation_World /= passageNormalNorm;
+            const Eigen::Vector3d passageNormal_World =
+                passageEquation_World.head<3>();
+            const double roomCentroidSide_m =
+                passageNormal_World.dot(segmentStart_World_m) +
+                passageEquation_World(3);
+
+            if (std::abs(roomCentroidSide_m) < minimumSideDistance_m)
+            {
+                const Passage::KnownSideProvenance knownSide =
+                    p_passage->getKnownSideProvenance();
+                if (knownSide.hasDirection())
+                {
+                    segmentStart_World_m = p_passage->getCentroid() +
+                                           (minimumSideDistance_m * 2.0) *
+                                               knownSide.direction_World;
+                }
+            }
+        }
+
+        if (!segmentCrossesPassageOpening(
+                segmentStart_World_m,
+                p_wall_in->getCentroid().cast<double>(),
+                p_passage,
+                groundNormal_World_in,
+                static_cast<double>(
+                    sysParams->room_seg.passagePartition.openingMargin_m),
+                minimumSideDistance_m))
+        {
+            continue;
+        }
+
+        /* Never steal a wall already claimed by a distinct confirmed room. */
+        bool ownedByConfirmedRoom = false;
+        for (ORB_SLAM3::Room *p_other : mpAtlas->GetAllRooms())
+        {
+            if (p_other == nullptr || p_other->isBad() ||
+                p_other == p_room_inout ||
+                p_other->getRoomVariant() ==
+                    ORB_SLAM3::Room::roomVariant::UNDEFINED)
+            {
+                continue;
+            }
+            const std::vector<Plane *> otherWalls = p_other->getWalls();
+            if (std::find(otherWalls.begin(), otherWalls.end(), p_wall_in) !=
+                otherWalls.end())
+            {
+                ownedByConfirmedRoom = true;
+                break;
+            }
+        }
+        if (ownedByConfirmedRoom)
+        {
+            /* A distinct confirmed room already owns this wall. Leave it on
+             * that owner rather than re-binding it to the near room. */
+            p_room_inout->removeWall(p_wall_in);
+            return PassageSideEnforcementOutcome::RemovedUnbound;
+        }
+
+        ORB_SLAM3::Room *p_prospective = p_passage->getProspectiveRoom();
+
+        /* The wall is already sitting in the room this exact aperture
+         * crossing would route it to -- there is nothing to enforce. Live-
+         * observed 2026-09-04: this branch previously fell through the same
+         * eviction as "no prospective room exists at all", so a wall that
+         * had ALREADY been correctly rerouted to its far-side prospective
+         * kept getting evicted from it every single cycle this sweep re-ran
+         * (enforcePassageSideInvariant runs every Run() cycle), leaving it
+         * permanently homeless even though Passage#0's own SemMgrSummary
+         * line showed a perfectly live prospectiveRoom the whole time. */
+        if (p_prospective == p_room_inout)
+        {
+            continue;
+        }
+
+        if (p_prospective == nullptr || p_prospective->isBad())
+        {
+            p_room_inout->removeWall(p_wall_in);
+            std::cout << "[SemMgr] Far-side Wall#" << p_wall_in->getId()
+                      << " at Passage#" << p_passage->getId()
+                      << " has no opposite stable room; left unbound."
+                      << std::endl;
+            return PassageSideEnforcementOutcome::RemovedUnbound;
+        }
+
+        p_room_inout->removeWall(p_wall_in);
+        if (mpAtlas->GetRoomWallPlaneById(p_wall_in->getId()) == nullptr)
+        {
+            mpAtlas->AddRoomWallPlane(p_wall_in);
+        }
+        p_prospective->setWalls(p_wall_in);
+        std::cout << "[SemMgr] Redirected far-side Wall#" << p_wall_in->getId()
+                  << " to prospective Room#" << p_prospective->getId() << "."
+                  << std::endl;
+        return PassageSideEnforcementOutcome::Rerouted;
+    }
+
+    /* No CONFIRMED passage caught this wall -- but confirmation lags real
+     * exploration time behind the skeleton-crossing evidence itself (see
+     * segmentCrossesOpenPassageEvidence's own comment). Re-run the same
+     * aperture test against each pending hypothesis so this continuous
+     * re-check sweep (enforcePassageSideInvariant) catches a wall that slips
+     * in during that window just as reliably as it catches one that slips in
+     * against an already-confirmed passage. */
+    for (const OpenPassageEvidence &evidence : openPassageEvidence_)
+    {
+        if (!segmentCrossesOpenPassageEvidence(
+                p_room_inout->getCentroid(),
+                p_wall_in->getCentroid().cast<double>(),
+                evidence.p_supportingWall,
+                evidence.centroid_World_m,
+                evidence.openingRadius_m,
+                evidence.heightSpan_m,
+                groundNormal_World_in,
+                static_cast<double>(
+                    sysParams->room_seg.passagePartition.openingMargin_m),
+                static_cast<double>(sysParams->room_seg.passagePartition
+                                        .minimumSideDistance_m)))
+        {
+            continue;
+        }
+
+        bool ownedByConfirmedRoom = false;
+        for (ORB_SLAM3::Room *p_other : mpAtlas->GetAllRooms())
+        {
+            if (p_other == nullptr || p_other->isBad() ||
+                p_other == p_room_inout ||
+                p_other->getRoomVariant() ==
+                    ORB_SLAM3::Room::roomVariant::UNDEFINED)
+            {
+                continue;
+            }
+            const std::vector<Plane *> otherWalls = p_other->getWalls();
+            if (std::find(otherWalls.begin(), otherWalls.end(), p_wall_in) !=
+                otherWalls.end())
+            {
+                ownedByConfirmedRoom = true;
+                break;
+            }
+        }
+        if (ownedByConfirmedRoom)
+        {
+            continue;
+        }
+
+        p_room_inout->removeWall(p_wall_in);
+        std::cout << "[SemMgr] Far-side Wall#" << p_wall_in->getId()
+                  << " crosses an unconfirmed passage opening (evidence at "
+                     "wall "
+                  << (evidence.p_supportingWall != nullptr
+                          ? evidence.p_supportingWall->getId()
+                          : -1)
+                  << "); removed from Room#" << p_room_inout->getId()
+                  << " pending confirmation." << std::endl;
+        return PassageSideEnforcementOutcome::RemovedUnbound;
+    }
+
+    return PassageSideEnforcementOutcome::NoViolation;
+}
+
+bool SemanticsManager::isWallFaceForeignToRoom(Room  *p_room_in,
+                                               Plane *p_wall_in)
+{
+    if (p_room_in == nullptr || p_room_in->isBad() || p_wall_in == nullptr ||
+        p_wall_in->isBad())
+    {
+        return false;
+    }
+
+    /* The face's identity: the camera position it was first observed from.
+     * Only the side of a physical surface turned toward a camera can be
+     * seen, so this fixes which of the wall's two faces this plane is -- and
+     * therefore which room it bounds -- for the plane's whole lifetime. */
+    const std::optional<Eigen::Vector3d> observationOrigin_World_m =
+        p_wall_in->getObservationOrigin_World();
+
+    if (!observationOrigin_World_m.has_value() ||
+        !observationOrigin_World_m->allFinite())
+    {
+        /* Planes created before the stamp existed carry no face identity;
+         * make no claim rather than a wrong one. */
+        return false;
+    }
+
+    Eigen::Vector4d equation_World = p_wall_in->getGlobalEquation().coeffs();
+    const double    normalNorm     = equation_World.head<3>().norm();
+
+    if (!equation_World.allFinite() || normalNorm <= 1e-8)
+    {
+        return false;
+    }
+
+    equation_World /= normalNorm;
+
+    const double observedSide_m =
+        equation_World.head<3>().dot(observationOrigin_World_m.value()) +
+        equation_World(3);
+    const double roomSide_m =
+        equation_World.head<3>().dot(p_room_in->getCentroid().cast<double>()) +
+        equation_World(3);
+
+    if (!std::isfinite(observedSide_m) || !std::isfinite(roomSide_m))
+    {
+        return false;
+    }
+
+    /* Matches the resolvable-side floor already used by the association path
+     * (Utils::associatePlanes) and Plane::getObservationSideSnapshot(): a
+     * position essentially ON the plane does not identify a side. */
+    constexpr double minimumResolvableSide_m = 0.10;
+
+    if (std::abs(observedSide_m) < minimumResolvableSide_m ||
+        std::abs(roomSide_m) < minimumResolvableSide_m)
+    {
+        return false;
+    }
+
+    /* Opposite sides: the camera that produced this face was on the far side
+     * of it from this room, so this is the neighbouring room's face. The
+     * room's own face of the same physical wall is a separate plane, which
+     * it has evidently not observed yet. */
+    return observedSide_m * roomSide_m < 0.0;
+}
+
+void SemanticsManager::enforcePassageSideInvariant(void)
+{
+    /* "Continuously checking the current state of the sgraph to make sure
+     * the rules are followed" (as opposed to only at the moment a wall is
+     * newly admitted): associateAllWallsToRooms() only ever revisits ORPHAN
+     * walls (a wall that already has a room is skipped outright), so a wall
+     * admitted before a relevant passage's aperture became confidently
+     * resolvable would otherwise never be re-examined again. This sweep
+     * re-applies both the passage-aperture backstop and the wall-face
+     * ownership rule to every wall every room currently owns, every cycle.
+     *
+     * Note the two are re-checked here for different reasons.
+     * isWallFaceForeignToRoom() is itself stable -- face identity is stamped
+     * at observation and does not drift -- but the ROOM side of the
+     * comparison does move: a FREE_SPACE room's centroid is recomputed every
+     * cycle as its wall-centroid mean, so a room that grows walls can
+     * migrate across a face it once legitimately sat beside. The aperture
+     * backstop is re-checked because passage geometry itself sharpens over
+     * time. */
+    Plane          *p_groundPlane      = mpAtlas->GetBiggestGroundPlane();
+    Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
+    if (p_groundPlane != nullptr && !p_groundPlane->isBad())
+    {
+        const Eigen::Vector4d groundEq =
+            p_groundPlane->getGlobalEquation().coeffs();
+        const double groundNorm = groundEq.head<3>().norm();
+        if (groundEq.allFinite() && groundNorm > 1e-8)
+        {
+            groundNormal_World = groundEq.head<3>() / groundNorm;
+        }
+    }
+
+    const std::vector<Passage *> allPassages = mpAtlas->GetAllPassages();
+
+    for (Room *p_room : mpAtlas->GetAllRooms())
+    {
+        if (p_room == nullptr || p_room->isBad())
+        {
+            continue;
+        }
+
+        /* Copy: both backstops below may call Room::removeWall(), which
+         * would invalidate an in-progress iteration over the room's own
+         * live wall vector. */
+        const std::vector<Plane *> roomWalls = p_room->getWalls();
+        for (Plane *p_wall : roomWalls)
+        {
+            if (p_wall == nullptr || p_wall->isBad())
+            {
+                continue;
+            }
+
+            /* Prospective-placement exemption: a far-side wall that the
+             * aperture backstop deliberately routed into this prospective
+             * room must not be evicted from it by the face check below
+             * (live-observed churn: remove-then-reroute every cycle). The
+             * exemption is earned only when the same aperture test that
+             * routes the wall still places it here, synthesized from the
+             * passage's known near-side direction exactly as the backstop
+             * does. */
+            bool wallRoutedToProspective = false;
+            for (Passage *p_exemptPassage : allPassages)
+            {
+                if (p_exemptPassage == nullptr || p_exemptPassage->isBad() ||
+                    p_exemptPassage->getProspectiveRoom() != p_room)
+                {
+                    continue;
+                }
+                const Passage::KnownSideProvenance knownSide =
+                    p_exemptPassage->getKnownSideProvenance();
+                if (!knownSide.hasDirection())
+                {
+                    continue;
+                }
+                const double minimumSideDistance_m = static_cast<double>(
+                    sysParams->room_seg.passagePartition.minimumSideDistance_m);
+                const Eigen::Vector3d knownSidePoint_World_m =
+                    p_exemptPassage->getCentroid() +
+                    (minimumSideDistance_m * 2.0) * knownSide.direction_World;
+                if (segmentCrossesPassageOpening(
+                        knownSidePoint_World_m,
+                        p_wall->getCentroid().cast<double>(),
+                        p_exemptPassage,
+                        groundNormal_World,
+                        static_cast<double>(sysParams->room_seg.passagePartition
+                                                .openingMargin_m),
+                        minimumSideDistance_m))
+                {
+                    wallRoutedToProspective = true;
+                    break;
+                }
+            }
+            if (wallRoutedToProspective)
+            {
+                continue;
+            }
+
+            if (isWallFaceForeignToRoom(p_room, p_wall))
+            {
+                p_room->removeWall(p_wall);
+                std::cout << "[SemMgr] Wall#" << p_wall->getId()
+                          << " removed from Room#" << p_room->getId()
+                          << ": this face was observed from the opposite side, "
+                             "so it bounds the neighbouring room."
+                          << std::endl;
+                continue;
+            }
+
+            if (!allPassages.empty())
+            {
+                enforcePassageApertureBackstop(p_room,
+                                               p_wall,
+                                               allPassages,
+                                               groundNormal_World);
+            }
+        }
+    }
+}
+
 bool SemanticsManager::admitWallToRoom(Room  *p_room_inout,
                                        Plane *p_candidateWall_in)
 {
@@ -3761,14 +5708,6 @@ bool SemanticsManager::admitWallToRoom(Room  *p_room_inout,
                   existingWalls.end(),
                   p_candidateWall_in) != existingWalls.end();
 
-    /*! Far-side passage backstop: a wall whose centroid lies beyond ANY
-     * passable passage aperture cannot bound the near room, even when that
-     * passage is not associated with the near room. Reroute it to the
-     * passage's prospective room so the far room's wall evidence accumulates
-     * there instead of corrupting the near boundary. This chokepoint covers
-     * every admission path, including the second cluster loop and the
-     * duplicate merge. When no prospective room exists yet, the wall is left
-     * unbound so the orphan pass can claim it for the far room. */
     Plane          *p_farSideGroundPlane = mpAtlas->GetBiggestGroundPlane();
     Eigen::Vector3d farSideGroundNormal_World = Eigen::Vector3d::Zero();
     if (p_farSideGroundPlane != nullptr && !p_farSideGroundPlane->isBad())
@@ -3798,78 +5737,17 @@ bool SemanticsManager::admitWallToRoom(Room  *p_room_inout,
                   return p_first->getId() < p_second->getId();
               });
 
-    for (Passage *p_passage : allPassages)
+    switch (enforcePassageApertureBackstop(p_room_inout,
+                                           p_candidateWall_in,
+                                           allPassages,
+                                           farSideGroundNormal_World))
     {
-        if (p_passage == nullptr)
-        {
-            continue;
-        }
-
-        if (!segmentCrossesPassageOpening(
-                p_room_inout->getCentroid(),
-                p_candidateWall_in->getCentroid().cast<double>(),
-                p_passage,
-                farSideGroundNormal_World,
-                static_cast<double>(
-                    sysParams->room_seg.passagePartition.openingMargin_m),
-                static_cast<double>(sysParams->room_seg.passagePartition
-                                        .minimumSideDistance_m)))
-        {
-            continue;
-        }
-
-        /* Never steal a wall already claimed by a distinct confirmed room. */
-        bool ownedByConfirmedRoom = false;
-        for (ORB_SLAM3::Room *p_other : mpAtlas->GetAllRooms())
-        {
-            if (p_other == nullptr || p_other->isBad() ||
-                p_other == p_room_inout ||
-                p_other->getRoomVariant() ==
-                    ORB_SLAM3::Room::roomVariant::UNDEFINED)
-            {
-                continue;
-            }
-            const std::vector<Plane *> otherWalls = p_other->getWalls();
-            if (std::find(otherWalls.begin(),
-                          otherWalls.end(),
-                          p_candidateWall_in) != otherWalls.end())
-            {
-                ownedByConfirmedRoom = true;
-                break;
-            }
-        }
-        if (ownedByConfirmedRoom)
-        {
-            /* A distinct confirmed room already owns this wall. Leave it on
-             * that owner rather than re-binding it to the near room. */
-            p_room_inout->removeWall(p_candidateWall_in);
-            return false;
-        }
-
-        ORB_SLAM3::Room *p_prospective = p_passage->getProspectiveRoom();
-        if (p_prospective == nullptr || p_prospective->isBad() ||
-            p_prospective == p_room_inout)
-        {
-            p_room_inout->removeWall(p_candidateWall_in);
-            std::cout << "[SemMgr] Far-side Wall#"
-                      << p_candidateWall_in->getId() << " at Passage#"
-                      << p_passage->getId()
-                      << " has no opposite stable room; left unbound."
-                      << std::endl;
-            return false;
-        }
-
-        p_room_inout->removeWall(p_candidateWall_in);
-        if (mpAtlas->GetRoomWallPlaneById(p_candidateWall_in->getId()) ==
-            nullptr)
-        {
-            mpAtlas->AddRoomWallPlane(p_candidateWall_in);
-        }
-        p_prospective->setWalls(p_candidateWall_in);
-        std::cout << "[SemMgr] Redirected far-side Wall#"
-                  << p_candidateWall_in->getId() << " to prospective Room#"
-                  << p_prospective->getId() << "." << std::endl;
+    case PassageSideEnforcementOutcome::RemovedUnbound:
+        return false;
+    case PassageSideEnforcementOutcome::Rerouted:
         return true;
+    case PassageSideEnforcementOutcome::NoViolation:
+        break;
     }
 
     if (alreadyPresent)
@@ -3877,9 +5755,21 @@ bool SemanticsManager::admitWallToRoom(Room  *p_room_inout,
         return true;
     }
 
-    if (!evaluateWallAdmissionEvidence(p_candidateWall_in, sysParams)
+    if (!evaluateWallAdmissionEvidence(p_candidateWall_in,
+                                       sysParams,
+                                       farSideGroundNormal_World)
              .admissible)
     {
+        return false;
+    }
+
+    if (isWallFaceForeignToRoom(p_room_inout, p_candidateWall_in))
+    {
+        std::cout << "[SemMgr] Wall#" << p_candidateWall_in->getId()
+                  << " rejected from Room#" << p_room_inout->getId()
+                  << ": this face was observed from the opposite side, so it "
+                     "bounds the neighbouring room."
+                  << std::endl;
         return false;
     }
 
@@ -4001,6 +5891,84 @@ bool SemanticsManager::admitWallToRoom(Room  *p_room_inout,
         }
     }
 
+    /* Cross-room check: real walls only meet at shared corners -- a
+     * candidate whose finite segment decisively crosses the interior of
+     * another room's already-admitted wall is a modeling error, not a
+     * legitimate admission. (Twin faces from reconcileWallFacePairs() are
+     * parallel by construction and cannot trigger this.) Reject outright
+     * rather than perturb the foreign room's wall: ownership of an
+     * already-admitted wall is never taken by another room's admission
+     * attempt, only by enforceUniqueWallOwnership()/validateRoomBoundaries()'
+     * own intra-room repair. */
+    for (ORB_SLAM3::Room *p_otherRoom : mpAtlas->GetAllRooms())
+    {
+        if (p_otherRoom == nullptr || p_otherRoom->isBad() ||
+            p_otherRoom == p_room_inout)
+        {
+            continue;
+        }
+
+        for (Plane *p_otherWall : p_otherRoom->getWalls())
+        {
+            if (p_otherWall == nullptr || p_otherWall == p_candidateWall_in)
+            {
+                continue;
+            }
+
+            FiniteWallSegment2d otherRoomSegment;
+
+            if (!buildFiniteWallSegment2d(
+                    p_otherWall,
+                    groundNormal_World,
+                    groundAxisU_World,
+                    groundAxisV_World,
+                    topologyParameters.endpointTrimRatio,
+                    topologyParameters.minimumWallLength_m,
+                    otherRoomSegment))
+            {
+                continue;
+            }
+
+            Eigen::Vector2d otherIntersection_World_m;
+            double          candidateOtherParameter = 0.0;
+            double          otherRoomParameter      = 0.0;
+
+            if (!intersectSupportingLines(candidateSegment,
+                                          otherRoomSegment,
+                                          otherIntersection_World_m,
+                                          candidateOtherParameter,
+                                          otherRoomParameter) ||
+                candidateOtherParameter < 0.0 ||
+                candidateOtherParameter > 1.0 || otherRoomParameter < 0.0 ||
+                otherRoomParameter > 1.0)
+            {
+                continue;
+            }
+
+            const double candidateOtherInteriorDistance_m =
+                std::min(candidateOtherParameter,
+                         1.0 - candidateOtherParameter) *
+                candidateSegment.length_m;
+            const double otherRoomInteriorDistance_m =
+                std::min(otherRoomParameter, 1.0 - otherRoomParameter) *
+                otherRoomSegment.length_m;
+
+            if (std::max(candidateOtherInteriorDistance_m,
+                         otherRoomInteriorDistance_m) <=
+                topologyParameters.maximumInteriorIntersection_m)
+            {
+                continue;
+            }
+
+            std::cout << "[SemMgr] Wall#" << p_candidateWall_in->getId()
+                      << " rejected from Room#" << p_room_inout->getId()
+                      << ": crosses Room#" << p_otherRoom->getId()
+                      << "'s already-admitted Wall#" << p_otherWall->getId()
+                      << "." << std::endl;
+            return false;
+        }
+    }
+
     p_room_inout->setWalls(p_candidateWall_in);
     return true;
 }
@@ -4024,6 +5992,23 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
     std::vector<ORB_SLAM3::Plane *> allWalls;
     allWalls.reserve(allPlanes.size());
 
+    /* Ground-aligned axes for evaluateWallAdmissionEvidence's height/width
+     * gate (see the comment at its definition for why this must be
+     * ground-anchored rather than an arbitrary in-plane axis). */
+    Plane          *p_groundPlaneForEvidence = mpAtlas->GetBiggestGroundPlane();
+    Eigen::Vector3d groundNormalForEvidence_World = Eigen::Vector3d::Zero();
+    if (p_groundPlaneForEvidence != nullptr &&
+        !p_groundPlaneForEvidence->isBad())
+    {
+        const Eigen::Vector4d groundEq =
+            p_groundPlaneForEvidence->getGlobalEquation().coeffs();
+        const double groundNorm = groundEq.head<3>().norm();
+        if (groundEq.allFinite() && groundNorm > 1e-8)
+        {
+            groundNormalForEvidence_World = groundEq.head<3>() / groundNorm;
+        }
+    }
+
     /* For every plane, extract walls */
     for (ORB_SLAM3::Plane *plane : allPlanes)
     {
@@ -4034,7 +6019,10 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         }
 
         /* Append valid wall planes to list */
-        if (evaluateWallAdmissionEvidence(plane, sysParams).admissible)
+        if (evaluateWallAdmissionEvidence(plane,
+                                          sysParams,
+                                          groundNormalForEvidence_World)
+                .admissible)
         {
             allWalls.push_back(plane);
         }
@@ -4432,8 +6420,6 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
             matchedRoomIds.insert(room->getId());
         }
 
-        bool createdRoomCandidate = false;
-
         /*!
          * If no existing room describes this free-space cluster.
          * Create one.
@@ -4500,27 +6486,87 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
         if (room == nullptr)
         {
-            room = GeoSemHelpers::createBlankRoomCandidate(mpAtlas,
-                                                           clusterCentroid);
+            /*! Axiom: every room after the first must be discovered through
+             * a passage (a prospective-room handle, checked above via
+             * p_clusterProspective/matched wall ownership), not conjured
+             * directly from free-space geometry alone -- "if a wall is
+             * observed it must be linked to a room; if that room is new, it
+             * must be observed through a passage" (user rule). The
+             * exception is the first room -- but per-MAP, not per-mission:
+             * every tracking-loss reset starts an entirely new Map with no
+             * passages yet either, so it needs its own bootstrap room the
+             * same way the mission's very first map did. Atlas::GetAllRooms()
+             * spans every map (confirmed by reading it), so scoping this to
+             * the CURRENT map only is required -- otherwise a confirmed room
+             * surviving in an old, now-inactive map would permanently block
+             * every future map from ever bootstrapping its own first room. */
+            Map *p_currentMapForBootstrapCheck = mpAtlas->GetCurrentMap();
+            const std::vector<Room *> currentMapRooms =
+                p_currentMapForBootstrapCheck != nullptr
+                    ? p_currentMapForBootstrapCheck->GetAllRooms()
+                    : std::vector<Room *>();
+            const bool anyConfirmedRoomExistsInCurrentMap =
+                std::any_of(currentMapRooms.begin(),
+                            currentMapRooms.end(),
+                            [](ORB_SLAM3::Room *p_existingRoom)
+                            {
+                                return p_existingRoom != nullptr &&
+                                       !p_existingRoom->isBad() &&
+                                       p_existingRoom->getRoomVariant() ==
+                                           ORB_SLAM3::Room::roomVariant::ROOM;
+                            });
 
-            if (room == nullptr)
+            if (anyConfirmedRoomExistsInCurrentMap)
             {
-                std::cerr << "[SemMgr] Failed to create room "
-                             "candidate for cluster "
-                          << clusterId << "." << std::endl;
-
+                std::cout << "[SemMgr] Cluster " << clusterId
+                          << " matches no existing room, wall owner, or "
+                             "passage-linked prospective room; deferring "
+                             "(not the first room of this map, so it must be "
+                             "discovered through a passage, not created from "
+                             "geometry alone)."
+                          << std::endl;
                 continue;
             }
 
-            mpAtlas->AddCandidateMapRoom(room);
-            createdRoomCandidate = true;
+            /* Reset transient: the active map was just cleared (no live ROOM)
+             * but a last-known hierarchy exists. Bootstrap owns first-room
+             * creation with the stable ID; free-space must not conjure a
+             * fresh SE# from stale cross-map walls/clusters in this cycle. */
+            const int pendingRecoveryRoomId =
+                mpAtlas != nullptr ? mpAtlas->getCurrentSemanticRoomIdentity()
+                                   : -1;
+            if (pendingRecoveryRoomId >= 0 &&
+                mpAtlas->copyLatestRoomContext(pendingRecoveryRoomId)
+                    .has_value())
+            {
+                std::cout << "[SemMgr] Cluster " << clusterId
+                          << " deferred: recovery Room#"
+                          << pendingRecoveryRoomId
+                          << " owns first-room creation on this map."
+                          << std::endl;
+                continue;
+            }
 
-            std::cout << "[SemMgr] Created room candidate SE#" << room->getId()
-                      << " for cluster " << clusterId << "." << std::endl;
+            /*! First-room creation lives in the bootstrap hierarchy, which
+             * runs before free-space detection every cycle and promotes its
+             * room immediately: a cluster that matches no room, wall owner,
+             * or passage-linked prospective at this point describes no known
+             * space, so it is deferred rather than conjured into a duplicate
+             * first room. */
+            std::cout << "[SemMgr] Cluster " << clusterId
+                      << " deferred: first-room creation is owned by "
+                         "bootstrap; cluster matches no known space."
+                      << std::endl;
+            continue;
         }
 
-        /* The skeleton/free-space centroid is the semantic room centre */
-        room->setCentroid(clusterCentroid);
+        /* The room centre is owned by its walls, not by free space: rooms
+         * keep their creation centroid until walls arrive, then track the
+         * damped wall-centroid mean in the consolidation below. Overwriting
+         * from the cluster centroid every cycle drags the centre toward
+         * whichever free space was observed last (live-observed: across a
+         * passage onto its far side) and couples maintenance to Voxblox
+         * liveness. Free-space evidence places a room once, at creation. */
 
         const std::vector<ORB_SLAM3::Passage *> activePassages =
             mpAtlas->GetAllPassages();
@@ -4672,6 +6718,64 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     admitWallToRoom(pProspective, wall);
                     farSideBound = true;
                     break;
+                }
+
+                /* No CONFIRMED passage's aperture caught this wall. That does
+                 * not mean no opening exists here -- confirmation requires
+                 * several genuinely independent skeleton snapshots
+                 * (minimumConfirmationSnapshots) and therefore real elapsed
+                 * exploration time, so a real, already skeleton-evidenced
+                 * opening can sit here well before it earns a Passage
+                 * object. Falling through to ordinary admission for that
+                 * entire window is exactly the bug: a wall on the far side
+                 * of a genuine (if not yet confirmed) doorway gets bound to
+                 * the WRONG (near) room. Re-run the same aperture test
+                 * against each pending hypothesis's own evidence (its
+                 * supporting wall's plane + accumulated opening size) --
+                 * still no prospective room can exist yet (that requires a
+                 * confirmed Passage), so the only action available is the
+                 * same conservative one already used above for a confirmed
+                 * passage with no prospective yet: hold the wall off the
+                 * near room rather than admit it anywhere. */
+                if (!farSideBound)
+                {
+                    for (OpenPassageEvidence &evidence : openPassageEvidence_)
+                    {
+                        if (!segmentCrossesOpenPassageEvidence(
+                                room->getCentroid(),
+                                wall->getCentroid().cast<double>(),
+                                evidence.p_supportingWall,
+                                evidence.centroid_World_m,
+                                evidence.openingRadius_m,
+                                evidence.heightSpan_m,
+                                groundNormal_World,
+                                static_cast<double>(
+                                    sysParams->room_seg.passagePartition
+                                        .openingMargin_m),
+                                static_cast<double>(
+                                    sysParams->room_seg.passagePartition
+                                        .minimumSideDistance_m)))
+                        {
+                            continue;
+                        }
+
+                        room->removeWall(wall);
+                        if (mpAtlas->GetRoomWallPlaneById(wall->getId()) ==
+                            nullptr)
+                        {
+                            mpAtlas->AddRoomWallPlane(wall);
+                        }
+                        std::cout << "[SemMgr] Far-side Wall#" << wall->getId()
+                                  << " crosses an unconfirmed passage opening "
+                                     "(evidence at wall "
+                                  << (evidence.p_supportingWall != nullptr
+                                          ? evidence.p_supportingWall->getId()
+                                          : -1)
+                                  << "); held unbound pending confirmation."
+                                  << std::endl;
+                        farSideBound = true;
+                        break;
+                    }
                 }
             }
 
@@ -4930,18 +7034,26 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         roomWalls = room->getWalls();
 
         /*!
-         * The semantic room centre is the mean of its wall centroids, where
-         * each wall centroid is determined by its fitted plane equation. This
-         * guarantees the room marker always sits on the same side of its wall
-         * normals as its walls (i.e. inside its own boundary), instead of
-         * drifting across a wall because the free-space cluster mean was
-         * lopsided. Only fall back to the cluster centroid while the room has
-         * no walls yet.
+         * The semantic room centre is the mean of each wall's centroid
+         * nudged INWARD along that wall's own room-facing normal
+         * (Room::getWallNormalTowardRoom_World(), oriented against the
+         * room's own current centroid before this update replaces it) by
+         * a fixed offset, not the raw wall centroids themselves. A plain
+         * mean of wall centroids is NOT guaranteed to land inside the room:
+         * for a room only partially observed so far (e.g. two adjacent
+         * walls, no opposite pair yet), the raw mean sits near the shared
+         * corner, which can be right on -- or, depending on geometry,
+         * outside -- the room's true interior. Nudging each wall centroid
+         * inward before averaging keeps every contributing point already
+         * inside the room, so their mean is too. Rooms without walls keep
+         * their creation centroid until walls arrive: free-space evidence
+         * places a room once, at creation, and never maintains it.
          */
         if (!roomWalls.empty())
         {
-            Eigen::Vector3d wallMeanCentroid_World_m = Eigen::Vector3d::Zero();
-            std::size_t     validWallCount           = 0U;
+            constexpr double centroidInwardOffset_m   = 0.10;
+            Eigen::Vector3d  wallMeanCentroid_World_m = Eigen::Vector3d::Zero();
+            std::size_t      validWallCount           = 0U;
 
             for (ORB_SLAM3::Plane *p_roomWall : roomWalls)
             {
@@ -4953,11 +7065,22 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 const Eigen::Vector3d wallCentroid_World_m =
                     p_roomWall->getCentroid().cast<double>();
 
-                if (wallCentroid_World_m.allFinite())
+                if (!wallCentroid_World_m.allFinite())
                 {
-                    wallMeanCentroid_World_m += wallCentroid_World_m;
-                    validWallCount++;
+                    continue;
                 }
+
+                const std::optional<Eigen::Vector3d> inwardNormal_World =
+                    room->getWallNormalTowardRoom_World(p_roomWall);
+
+                const Eigen::Vector3d nudgedCentroid_World_m =
+                    inwardNormal_World
+                        ? wallCentroid_World_m +
+                              centroidInwardOffset_m * (*inwardNormal_World)
+                        : wallCentroid_World_m;
+
+                wallMeanCentroid_World_m += nudgedCentroid_World_m;
+                validWallCount++;
             }
 
             if (validWallCount > 0U)
@@ -4966,39 +7089,36 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     wallMeanCentroid_World_m /
                     static_cast<double>(validWallCount);
 
-                room->setCentroid(correctedCentroid_World_m);
+                /*!
+                 * Damped update, not a snap. This centroid feeds two
+                 * decisions that REMOVE walls -- isWallFaceForeignToRoom's
+                 * foreign-face check (enforcePassageSideInvariant) and the
+                 * passage far-side router -- which change roomWalls, which
+                 * changes the raw mean computed above. An undamped snap
+                 * closes an unstable feedback loop with no damping: remove
+                 * a wall -> centroid shifts -> another wall's side test
+                 * flips -> remove that too -> centroid shifts further.
+                 * Live-observed 2026-09-04 crossing Office 6's passage: the
+                 * same handful of walls near the doorway repeatedly
+                 * removed and re-admitted, tens of times in a row, a
+                 * previously COMPLETE room's boundary never settling.
+                 * Blending in a minority weight of the fresh mean still
+                 * lets the centroid track genuinely new evidence over
+                 * several cycles, but one cycle's wall churn can no longer
+                 * swing it far enough to flip another wall's side test.
+                 */
+                const Eigen::Vector3d previousCentroid_World_m =
+                    room->getCentroid();
+                constexpr double      centroidDampingWeight = 0.25;
+                const Eigen::Vector3d dampedCentroid_World_m =
+                    previousCentroid_World_m.allFinite()
+                        ? (centroidDampingWeight * correctedCentroid_World_m +
+                           (1.0 - centroidDampingWeight) *
+                               previousCentroid_World_m)
+                        : correctedCentroid_World_m;
+
+                room->setCentroid(dampedCentroid_World_m);
             }
-        }
-
-        /*
-         * A disconnected skeleton fragment is not, by itself, a room. When
-         * every nearby wall is already uniquely owned by another room, this
-         * new candidate has no independent boundary evidence and must not be
-         * retained or visualised as a semantic room.
-         */
-        if (createdRoomCandidate && roomWalls.empty())
-        {
-            Map *p_currentMap = mpAtlas->GetCurrentMap();
-
-            if (p_currentMap != nullptr)
-            {
-                p_currentMap->EraseDetectedMapRoom(room);
-                p_currentMap->EraseMarkerBasedMapRoom(room);
-            }
-
-            room->setBad();
-
-            if (loggedRoomCleanupIds_.insert(room->getId()).second)
-            {
-                std::cout << "[SemMgr] Retired boundary-less SE#"
-                          << room->getId() << " from free-space cluster "
-                          << clusterId
-                          << "; nearby walls already belong to an established "
-                             "room."
-                          << std::endl;
-            }
-
-            continue;
         }
 
         /*!
@@ -5087,7 +7207,24 @@ void SemanticsManager::getUpdatedFloors(void)
     /* The current implementation supports one floor */
     if (p_currentMap->GetAllFloors().empty())
     {
-        GeoSemHelpers::createMapFloor(mpAtlas);
+        /* A reset can reach this update before the new map has a usable
+         * camera pose. Recover the semantic floor identity from the last
+         * current-room hierarchy instead of consuming a new mission identity.
+         * The newly allocated Floor object deliberately carries no prior-map
+         * geometry; only its semantic ID crosses the reset boundary. */
+        std::optional<int> recoveredFloorId;
+        const int          currentSemanticRoomId =
+            mpAtlas->getCurrentSemanticRoomIdentity();
+        if (currentSemanticRoomId >= 0)
+        {
+            const std::optional<RoomContextSnapshot> recoveryContext =
+                mpAtlas->copyLatestRoomContext(currentSemanticRoomId);
+            if (recoveryContext.has_value() && recoveryContext->floorId >= 0)
+            {
+                recoveredFloorId = recoveryContext->floorId;
+            }
+        }
+        GeoSemHelpers::createMapFloor(mpAtlas, recoveredFloorId);
     }
 
     /* Collapse legacy/merge duplicates before writing any hierarchy edge. */
@@ -5171,6 +7308,111 @@ void SemanticsManager::getUpdatedFloors(void)
 
     p_keeperFloor->setRooms(confirmedRooms);
     p_keeperFloor->setCentroid(floorCentroid);
+}
+
+void SemanticsManager::reconcileRoomGroundPlanes(void)
+{
+    Map *p_currentMap = mpAtlas->GetCurrentMap();
+    if (p_currentMap == nullptr)
+    {
+        return;
+    }
+
+    std::vector<ORB_SLAM3::Floor *> floors = p_currentMap->GetAllFloors();
+    Floor *p_canonicalFloor = Floor::selectBestObservedFloor(floors);
+    if (p_canonicalFloor == nullptr || !p_canonicalFloor->hasPlaneIdentity())
+    {
+        /* No canonical identity to reconcile against yet. */
+        return;
+    }
+
+    const std::optional<Floor::PlaneIdentity> canonicalIdentity =
+        p_canonicalFloor->getPlaneIdentity();
+    if (!canonicalIdentity.has_value())
+    {
+        return;
+    }
+
+    Plane *p_canonicalGroundPlane = p_currentMap->GetBiggestGroundPlane();
+
+    for (ORB_SLAM3::Room *p_room : mpAtlas->GetAllDetectedMapRooms())
+    {
+        if (p_room == nullptr || p_room->isBad())
+        {
+            continue;
+        }
+
+        Plane *p_roomGroundPlane = p_room->getGroundPlane();
+        if (p_roomGroundPlane == nullptr || p_roomGroundPlane->isBad() ||
+            p_roomGroundPlane == p_canonicalGroundPlane)
+        {
+            /* Nothing to reconcile: no ground plane yet, or already the
+             * canonical one. */
+            continue;
+        }
+
+        const Plane::GeometrySnapshot roomGroundGeometry =
+            p_roomGroundPlane->getGeometrySnapshot();
+        const double roomGroundNormalNorm =
+            roomGroundGeometry.equation_World.head<3>().norm();
+        if (roomGroundGeometry.cloudGeneration !=
+                roomGroundGeometry.successfulRefitGeneration ||
+            roomGroundGeometry.finiteSupportCount == 0U ||
+            !roomGroundGeometry.equation_World.allFinite() ||
+            !std::isfinite(roomGroundNormalNorm) ||
+            std::abs(roomGroundNormalNorm - 1.0) > 1e-3)
+        {
+            /* Room's ground plane geometry isn't settled yet -- nothing
+             * reliable to compare. */
+            continue;
+        }
+
+        const Floor::PlaneIdentity roomIdentity{
+            roomGroundGeometry.equation_World,
+            roomGroundGeometry.finiteSupportCount,
+            roomGroundGeometry.observationCount};
+
+        double normalAngle_deg = 0.0;
+        double offset_m        = 0.0;
+        if (Floor::planeIdentitiesMatch(canonicalIdentity.value(),
+                                        roomIdentity,
+                                        Floor::kMergeMaxPlaneNormalAngle_deg,
+                                        Floor::kMergeMaxPlaneOffset_m,
+                                        normalAngle_deg,
+                                        offset_m))
+        {
+            /* Within tolerance -- nothing to reconcile. */
+            continue;
+        }
+
+        /* A real flatness disagreement. Re-point the less-observed side to
+         * the canonical plane -- a pure pointer rewire, never a geometry
+         * mutation, so it can never fight a plane's own cloud refit. */
+        if (roomIdentity.observationCount <=
+                canonicalIdentity->observationCount &&
+            p_canonicalGroundPlane != nullptr)
+        {
+            p_room->setGroundPlane(p_canonicalGroundPlane);
+            std::cout << "[SemMgr] Room#" << p_room->getId()
+                      << "'s ground plane disagreed with Floor#"
+                      << p_canonicalFloor->getId()
+                      << "'s canonical level (normal " << normalAngle_deg
+                      << " deg, offset " << offset_m
+                      << " m) -- re-pointed to the canonical plane."
+                      << std::endl;
+        }
+        else
+        {
+            std::cout << "[SemMgr] Room#" << p_room->getId()
+                      << "'s ground plane is more observed than Floor#"
+                      << p_canonicalFloor->getId()
+                      << "'s current canonical level (normal "
+                      << normalAngle_deg << " deg, offset " << offset_m
+                      << " m) -- left as-is; the floor will re-select its "
+                         "canonical identity next cycle."
+                      << std::endl;
+        }
+    }
 }
 
 ORB_SLAM3::Room *SemanticsManager::associateRooms(
@@ -5693,7 +7935,54 @@ void SemanticsManager::associateAllWallsToRooms(void)
     const std::vector<ORB_SLAM3::Plane *> allPlanes = mpAtlas->GetAllPlanes();
 
     /* Extract all current rooms and provisional structural elements */
-    std::vector<ORB_SLAM3::Room *> allRooms = mpAtlas->GetAllRooms();
+    std::vector<ORB_SLAM3::Room *> allRooms      = mpAtlas->GetAllRooms();
+    Map                           *p_activeMap   = mpAtlas->GetCurrentMap();
+    Room                          *p_currentRoom = nullptr;
+    const int                      currentRoomId = getCurrentRoomId();
+    const auto planeClassName = [](const Plane::planeVariant variant_in)
+    {
+        switch (variant_in)
+        {
+        case Plane::planeVariant::WALL:
+            return "WALL";
+        case Plane::planeVariant::GROUND:
+            return "GROUND";
+        case Plane::planeVariant::DOOR:
+            return "DOOR";
+        case Plane::planeVariant::WINDOW:
+            return "WINDOW";
+        case Plane::planeVariant::UNDEFINED:
+        default:
+            return "UNDEFINED";
+        }
+    };
+    for (Room *p_room : allRooms)
+    {
+        if (p_room != nullptr && !p_room->isBad() &&
+            p_room->getMap() == p_activeMap &&
+            p_room->getId() == currentRoomId &&
+            p_room->getRoomVariant() == Room::roomVariant::ROOM)
+        {
+            p_currentRoom = p_room;
+            break;
+        }
+    }
+
+    /* Ground-aligned axes for evaluateWallAdmissionEvidence's height/width
+     * gate (see the comment at its definition). */
+    Plane          *p_groundPlaneForEvidence = mpAtlas->GetBiggestGroundPlane();
+    Eigen::Vector3d groundNormalForEvidence_World = Eigen::Vector3d::Zero();
+    if (p_groundPlaneForEvidence != nullptr &&
+        !p_groundPlaneForEvidence->isBad())
+    {
+        const Eigen::Vector4d groundEq =
+            p_groundPlaneForEvidence->getGlobalEquation().coeffs();
+        const double groundNorm = groundEq.head<3>().norm();
+        if (groundEq.allFinite() && groundNorm > 1e-8)
+        {
+            groundNormalForEvidence_World = groundEq.head<3>() / groundNorm;
+        }
+    }
 
     /* Helper which confirms that a room already contains a wall */
     const auto roomContainsWall = [](ORB_SLAM3::Room  *room,
@@ -5727,10 +8016,42 @@ void SemanticsManager::associateAllWallsToRooms(void)
         }
 
         /* Only fitted walls with semantic and observation evidence enter. */
-        if (!evaluateWallAdmissionEvidence(wall, sysParams).admissible)
+        const WallAdmissionEvidence admissionEvidence =
+            evaluateWallAdmissionEvidence(wall,
+                                          sysParams,
+                                          groundNormalForEvidence_World);
+        if (!admissionEvidence.admissible)
         {
+            const std::string reason =
+                wall->getPlaneType() != Plane::planeVariant::WALL ||
+                        wall->getExpectedPlaneType() !=
+                            Plane::planeVariant::WALL
+                    ? "CLASS_NOT_WALL"
+                : !admissionEvidence.adequateFiniteFit
+                    ? "INADEQUATE_FINITE_FIT"
+                    : "INSUFFICIENT_OBSERVATIONS";
+            if (loggedWallRejectionReasons_[wall->getId()] != reason)
+            {
+                loggedWallRejectionReasons_[wall->getId()] = reason;
+                std::cout << "SG_PIPELINE {\"event\":\"wall_rejection\","
+                             "\"map_id\":"
+                          << (p_activeMap != nullptr
+                                  ? static_cast<long long>(p_activeMap->GetId())
+                                  : -1)
+                          << ",\"semantic_cycle\":" << pipelineSemanticCycle_
+                          << ",\"wall_id\":" << wall->getId() << ",\"class\":\""
+                          << planeClassName(wall->getPlaneType())
+                          << "\",\"lifecycle\":\"REJECTED\","
+                             "\"owner\":\"NONE\",\"reason\":\""
+                          << reason << "\",\"support\":"
+                          << admissionEvidence.fittedPointCount
+                          << ",\"observations\":"
+                          << admissionEvidence.observationCount << "}"
+                          << std::endl;
+            }
             continue;
         }
+        loggedWallRejectionReasons_.erase(wall->getId());
 
         /* Init flag which confirms whether the wall already has a parent */
         bool wallHasRoom = false;
@@ -5758,6 +8079,44 @@ void SemanticsManager::associateAllWallsToRooms(void)
             continue;
         }
 
+        const bool admitted =
+            p_currentRoom != nullptr && admitWallToRoom(p_currentRoom, wall);
+        Room *p_selectedOwner = nullptr;
+        for (Room *p_room : mpAtlas->GetAllRooms())
+        {
+            if (p_room != nullptr && !p_room->isBad() &&
+                roomContainsWall(p_room, wall))
+            {
+                p_selectedOwner = p_room;
+                break;
+            }
+        }
+
+        if (admitted && p_selectedOwner != nullptr)
+        {
+            if (mpAtlas->GetRoomWallPlaneById(wall->getId()) == nullptr)
+            {
+                mpAtlas->AddRoomWallPlane(wall);
+            }
+            undefendedWalls_.erase(wall->getId());
+            loggedOrphanWallIds_.erase(wall->getId());
+            std::cout << "SG_PIPELINE {\"event\":\"wall_admission\","
+                         "\"map_id\":"
+                      << p_activeMap->GetId()
+                      << ",\"semantic_cycle\":" << pipelineSemanticCycle_
+                      << ",\"wall_id\":" << wall->getId()
+                      << ",\"class\":\"WALL\","
+                         "\"lifecycle\":\"COMMITTED\",\"owner_room_id\":"
+                      << p_selectedOwner->getId() << ",\"reason\":\""
+                      << (p_selectedOwner == p_currentRoom
+                              ? "CURRENT_ROOM_OBSERVATION"
+                              : "PASSAGE_FAR_SIDE_PRECEDENCE")
+                      << "\",\"support\":" << admissionEvidence.fittedPointCount
+                      << ",\"observations\":"
+                      << admissionEvidence.observationCount << "}" << std::endl;
+            continue;
+        }
+
         /*!
          * The free-space detector did not assign this wall to a room.
          * Register the wall for future association via passages or room
@@ -5773,10 +8132,22 @@ void SemanticsManager::associateAllWallsToRooms(void)
 
         if (loggedOrphanWallIds_.insert(wall->getId()).second)
         {
-            std::cout << "[SemMgr] Wall " << wall->getId()
-                      << " registered as orphan (awaiting passage or room "
-                         "association)."
-                      << std::endl;
+            std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
+                         "\"map_id\":"
+                      << (p_activeMap != nullptr
+                              ? static_cast<long long>(p_activeMap->GetId())
+                              : -1)
+                      << ",\"semantic_cycle\":" << pipelineSemanticCycle_
+                      << ",\"wall_id\":" << wall->getId()
+                      << ",\"class\":\"WALL\","
+                         "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
+                         "\"reason\":\""
+                      << (p_currentRoom == nullptr ? "NO_CURRENT_ROOM"
+                                                   : "SAFE_ADMISSION_REJECTED")
+                      << "\",\"support\":" << admissionEvidence.fittedPointCount
+                      << ",\"observations\":"
+                      << admissionEvidence.observationCount
+                      << ",\"pending_age\":0}" << std::endl;
         }
     }
 }
@@ -5794,7 +8165,25 @@ void SemanticsManager::suppressUndefendedWalls(void)
     const std::vector<Room *>    allRooms    = p_currentMap->GetAllRooms();
     const std::vector<Passage *> allPassages = p_currentMap->GetAllPassages();
     const std::vector<Plane *>   allPlanes   = p_currentMap->GetAllPlanes();
-    std::unordered_set<int>      mappedWallIds;
+    const std::vector<std::vector<Eigen::Vector3d>> skeletonClusters =
+        p_currentMap->GetSkeletonClusterPoints();
+    std::unordered_set<int> mappedWallIds;
+
+    /* Ground-aligned axes for evaluateWallAdmissionEvidence's height/width
+     * gate (see the comment at its definition). */
+    Plane *p_groundPlaneForEvidence = p_currentMap->GetBiggestGroundPlane();
+    Eigen::Vector3d groundNormalForEvidence_World = Eigen::Vector3d::Zero();
+    if (p_groundPlaneForEvidence != nullptr &&
+        !p_groundPlaneForEvidence->isBad())
+    {
+        const Eigen::Vector4d groundEq =
+            p_groundPlaneForEvidence->getGlobalEquation().coeffs();
+        const double groundNorm = groundEq.head<3>().norm();
+        if (groundEq.allFinite() && groundNorm > 1e-8)
+        {
+            groundNormalForEvidence_World = groundEq.head<3>() / groundNorm;
+        }
+    }
 
     for (Plane *p_wall : allPlanes)
     {
@@ -5832,7 +8221,7 @@ void SemanticsManager::suppressUndefendedWalls(void)
                         allPassages.end(),
                         [p_wall](Passage *p_passage)
                         {
-                            if (p_passage == nullptr)
+                            if (p_passage == nullptr || p_passage->isBad())
                             {
                                 return false;
                             }
@@ -5845,11 +8234,89 @@ void SemanticsManager::suppressUndefendedWalls(void)
                                              p_wall) != passageWalls.end();
                         });
         const WallAdmissionEvidence evidence =
-            evaluateWallAdmissionEvidence(p_wall, sysParams);
+            evaluateWallAdmissionEvidence(p_wall,
+                                          sysParams,
+                                          groundNormalForEvidence_World);
 
-        if (ownedByLiveRoom || associatedWithPassage || evidence.admissible)
+        const Plane::GeometrySnapshot wallGeometry =
+            p_wall->getGeometrySnapshot();
+        const Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
+        const double wallNormalNorm = wallEquation_World.head<3>().norm();
+        bool         hasCompatibleLiveCluster = false;
+        if (wallGeometry.centroid_World_m.allFinite() &&
+            wallEquation_World.allFinite() && wallNormalNorm > 1e-8)
+        {
+            const Eigen::Vector3d wallNormal_World =
+                wallEquation_World.head<3>() / wallNormalNorm;
+            const double wallOffset_m = wallEquation_World(3) / wallNormalNorm;
+            const double maximumCentroidDistance_m =
+                2.0 * static_cast<double>(
+                          sysParams->room_seg
+                              .cluster_centroid_wall_centroid_distance_thresh);
+            const double maximumPointDistance_m = static_cast<double>(
+                sysParams->room_seg.cluster_point_wall_distance_thresh);
+
+            for (const std::vector<Eigen::Vector3d> &cluster : skeletonClusters)
+            {
+                if (cluster.empty())
+                {
+                    continue;
+                }
+                const Eigen::Vector3d clusterCentroid_World_m =
+                    Utils::computeCentroidFromPoints(cluster);
+                if (!clusterCentroid_World_m.allFinite() ||
+                    (clusterCentroid_World_m - wallGeometry.centroid_World_m)
+                            .norm() > maximumCentroidDistance_m)
+                {
+                    continue;
+                }
+                hasCompatibleLiveCluster = std::any_of(
+                    cluster.begin(),
+                    cluster.end(),
+                    [&wallNormal_World, wallOffset_m, maximumPointDistance_m](
+                        const Eigen::Vector3d &point)
+                    {
+                        return point.allFinite() &&
+                               std::abs(wallNormal_World.dot(point) +
+                                        wallOffset_m) <= maximumPointDistance_m;
+                    });
+                if (hasCompatibleLiveCluster)
+                {
+                    break;
+                }
+            }
+        }
+
+        /*!
+         * Good geometry alone does NOT defend a wall (user rule: a wall
+         * with no room does not get to persist as a wall plane, regardless
+         * of how clean its evidence looks). Only an actual owning room or
+         * a real passage association counts. A wall genuinely mid-way
+         * through bootstrapping a brand-new room is still protected below
+         * by the stagnant-cycle counter resetting on cloudGrew/
+         * observationGrew -- it keeps gaining points/observations every
+         * cycle the UAV still looks at it, so it never goes stagnant long
+         * enough to retire while real room-formation is in progress.
+         */
+        if (ownedByLiveRoom || associatedWithPassage ||
+            hasCompatibleLiveCluster)
         {
             undefendedWalls_.erase(wallId);
+            if (hasCompatibleLiveCluster && !ownedByLiveRoom &&
+                !associatedWithPassage)
+            {
+                std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
+                             "\"map_id\":"
+                          << p_currentMap->GetId()
+                          << ",\"semantic_cycle\":" << pipelineSemanticCycle_
+                          << ",\"wall_id\":" << wallId
+                          << ",\"class\":\"WALL\","
+                             "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
+                             "\"reason\":\"LIVE_CLUSTER_SUPPORT\",\"support\":"
+                          << evidence.fittedPointCount
+                          << ",\"observations\":" << evidence.observationCount
+                          << ",\"pending_age\":0}" << std::endl;
+            }
             continue;
         }
 
@@ -5894,6 +8361,19 @@ void SemanticsManager::suppressUndefendedWalls(void)
         if (state.unresolvedCycles <
             sysParams->room_seg.minimumUndefendedWallHoldCycles)
         {
+            std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
+                         "\"map_id\":"
+                      << p_currentMap->GetId()
+                      << ",\"semantic_cycle\":" << pipelineSemanticCycle_
+                      << ",\"wall_id\":" << wallId
+                      << ",\"class\":\"WALL\","
+                         "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
+                         "\"reason\":\"GRACE_ACTIVE_NO_GROWTH\","
+                         "\"support\":"
+                      << evidence.fittedPointCount
+                      << ",\"observations\":" << evidence.observationCount
+                      << ",\"pending_age\":" << state.unresolvedCycles << "}"
+                      << std::endl;
             continue;
         }
 
@@ -5934,8 +8414,18 @@ void SemanticsManager::suppressUndefendedWalls(void)
 
         if (loggedRetiredWallIds_.insert(wallId).second)
         {
-            std::cout << "[SemMgr] Retired undefended Wall#" << wallId
-                      << " after " << retiredAfterCycles << " cycles."
+            std::cout << "SG_PIPELINE {\"event\":\"wall_retirement\","
+                         "\"map_id\":"
+                      << p_currentMap->GetId()
+                      << ",\"semantic_cycle\":" << pipelineSemanticCycle_
+                      << ",\"wall_id\":" << wallId
+                      << ",\"class\":\"WALL\",\"lifecycle\":\"RETIRED\","
+                         "\"reason\":\"GRACE_EXPIRED_NO_GROWTH_NO_OWNER_NO_"
+                         "PASSAGE_NO_CLUSTER\","
+                         "\"support\":"
+                      << evidence.fittedPointCount
+                      << ",\"observations\":" << evidence.observationCount
+                      << ",\"pending_age\":" << retiredAfterCycles << "}"
                       << std::endl;
         }
     }
@@ -5946,6 +8436,93 @@ void SemanticsManager::suppressUndefendedWalls(void)
         stateIterator = mappedWallIds.count(stateIterator->first) == 0U
                             ? undefendedWalls_.erase(stateIterator)
                             : std::next(stateIterator);
+    }
+}
+
+std::vector<semantic::OpenPassageHypothesisRecord>
+    SemanticsManager::captureOpenPassageHypotheses(void) const
+{
+    std::vector<semantic::OpenPassageHypothesisRecord> records;
+    records.reserve(openPassageEvidence_.size());
+    for (const OpenPassageEvidence &evidence : openPassageEvidence_)
+    {
+        semantic::OpenPassageHypothesisRecord record;
+        record.supportingWallRef =
+            semantic::rawPlaneRef(evidence.p_supportingWall);
+        record.centroid_World_m  = evidence.centroid_World_m;
+        record.confirmationCount = evidence.confirmationCount;
+        record.missedUpdateCount = evidence.missedUpdateCount;
+        record.lastConfirmedSkeletonFingerprint =
+            evidence.lastConfirmedSkeletonFingerprint;
+        record.openingRadius_m = evidence.openingRadius_m;
+        record.heightSpan_m    = evidence.heightSpan_m;
+        records.push_back(record);
+    }
+    std::sort(records.begin(),
+              records.end(),
+              [](const semantic::OpenPassageHypothesisRecord &lhs_in,
+                 const semantic::OpenPassageHypothesisRecord &rhs_in)
+              {
+                  if (semantic::isRawPlaneRefLess(lhs_in.supportingWallRef,
+                                                  rhs_in.supportingWallRef))
+                      return true;
+                  if (semantic::isRawPlaneRefLess(rhs_in.supportingWallRef,
+                                                  lhs_in.supportingWallRef))
+                      return false;
+                  return semantic::isVector3dLess(lhs_in.centroid_World_m,
+                                                  rhs_in.centroid_World_m);
+              });
+    return records;
+}
+
+std::vector<semantic::UnresolvedWallHypothesisRecord>
+    SemanticsManager::captureUnresolvedWallHypotheses(void) const
+{
+    std::vector<semantic::UnresolvedWallHypothesisRecord> records;
+    records.reserve(undefendedWalls_.size());
+    for (const auto &[wallId, state] : undefendedWalls_)
+    {
+        semantic::UnresolvedWallHypothesisRecord record;
+        record.wallRef          = semantic::rawPlaneRef(state.p_wall);
+        record.unresolvedCycles = state.unresolvedCycles;
+        record.cloudPointCount  = state.cloudPointCount;
+        record.observationCount = state.observationCount;
+        records.push_back(record);
+    }
+    std::sort(
+        records.begin(),
+        records.end(),
+        [](const semantic::UnresolvedWallHypothesisRecord &lhs_in,
+           const semantic::UnresolvedWallHypothesisRecord &rhs_in)
+        {
+            if (semantic::isRawPlaneRefLess(lhs_in.wallRef, rhs_in.wallRef))
+                return true;
+            if (semantic::isRawPlaneRefLess(rhs_in.wallRef, lhs_in.wallRef))
+                return false;
+            return lhs_in.unresolvedCycles < rhs_in.unresolvedCycles;
+        });
+    return records;
+}
+
+void SemanticsManager::logSemanticDiagnostics(
+    const semantic::SemanticReportCacheEntry &entry_in)
+{
+    /* Pure diff/JSON construction lives in SemanticDiagnostics (P1.7,
+     * semantic-axiom-reliability-plan.md); this method's only job is
+     * deciding whether/what to print. mSemanticDiagnosticState_ is the
+     * only mutable state carried across calls. */
+    const semantic::SemanticDiagnosticUpdate update =
+        semantic::buildSemanticDiagnosticUpdate(entry_in,
+                                                mSemanticDiagnosticState_);
+    if (!update.emit)
+    {
+        return;
+    }
+
+    std::cout << "SG_AXIOM " << update.summary.dump() << std::endl;
+    for (const nlohmann::json &detail : update.violationDetails)
+    {
+        std::cout << "SG_VIOLATION " << detail.dump() << std::endl;
     }
 }
 
@@ -6035,14 +8612,21 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
         /* Passage-side routing is authoritative. A near-side owner whose
          * centroid-to-wall segment crosses an opening is not eligible; a live
          * stable far-side handle is preferred unless that would steal from a
-         * different confirmed owner. */
+         * different confirmed owner.
+         *
+         * Eligibility here is deliberately geometric only (isPassable(), the
+         * passage's own detected-opening evidence) -- traversal evidence
+         * (the camera/UAV having flown through this spot) proves only that
+         * a room change happened there, not this passage's own aperture
+         * geometry. Substituting it in as an OR-alternative would let a
+         * geometrically-unconfirmed "passage" arbitrate which confirmed
+         * room owns a contested wall, conflating motion evidence with wall
+         * identity. */
         for (Room *p_nearOwner : owners)
         {
             for (Passage *p_passage : allPassages)
             {
-                if (p_passage == nullptr ||
-                    (!p_passage->isPassable() &&
-                     !p_passage->getTraversalEvidence()) ||
+                if (p_passage == nullptr || !p_passage->isPassable() ||
                     !segmentCrossesPassageOpening(
                         p_nearOwner->getCentroid(),
                         p_wall->getCentroid().cast<double>(),
@@ -6195,6 +8779,142 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
     }
 }
 
+void SemanticsManager::reconcileWallFacePairs(void)
+{
+    Plane          *p_groundPlane      = mpAtlas->GetBiggestGroundPlane();
+    Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
+    if (p_groundPlane != nullptr && !p_groundPlane->isBad())
+    {
+        const Eigen::Vector4d groundEq =
+            p_groundPlane->getGlobalEquation().coeffs();
+        const double groundNorm = groundEq.head<3>().norm();
+        if (groundEq.allFinite() && groundNorm > 1e-8)
+        {
+            groundNormal_World = groundEq.head<3>() / groundNorm;
+        }
+    }
+
+    const double minimumThickness_m =
+        static_cast<double>(sysParams->sem_seg.wallPairing.minimumThickness_m);
+    const double maximumThickness_m =
+        static_cast<double>(sysParams->sem_seg.wallPairing.maximumThickness_m);
+    const double minimumOverlapRatio =
+        static_cast<double>(sysParams->sem_seg.wallPairing.minimumOverlapRatio);
+
+    std::vector<Plane *> wallPlanes;
+    for (Plane *p_plane : mpAtlas->GetAllPlanes())
+    {
+        if (p_plane != nullptr && !p_plane->isBad() &&
+            p_plane->getPlaneType() == Plane::planeVariant::WALL)
+        {
+            wallPlanes.push_back(p_plane);
+        }
+    }
+    /* Lock two Planes in ascending id order to avoid a lock-order hazard,
+     * matching the convention already used for passages in
+     * admitWallToRoom(). */
+    std::sort(wallPlanes.begin(),
+              wallPlanes.end(),
+              [](const Plane *p_first, const Plane *p_second)
+              {
+                  if (p_first == nullptr)
+                  {
+                      return false;
+                  }
+                  if (p_second == nullptr)
+                  {
+                      return true;
+                  }
+                  return p_first->getId() < p_second->getId();
+              });
+
+    for (Plane *p_wall : wallPlanes)
+    {
+        Plane *p_existingTwin = p_wall->getTwinFace();
+        if (p_existingTwin != nullptr)
+        {
+            /* Cheap common case: re-validate rather than search again. A
+             * lower-id plane already validated (and, if still plausible,
+             * re-linked) this pair when it was itself visited. */
+            if (p_wall->getId() < p_existingTwin->getId())
+            {
+                continue;
+            }
+
+            if (arePlausibleTwinWallFaces(p_wall,
+                                          p_existingTwin,
+                                          minimumThickness_m,
+                                          maximumThickness_m,
+                                          minimumOverlapRatio,
+                                          groundNormal_World))
+            {
+                continue;
+            }
+
+            /* Pairing is no longer plausible (e.g. one side drifted after a
+             * refit) -- unlink both sides rather than leave a stale
+             * one-directional pointer. */
+            p_existingTwin->clearTwinFace();
+            p_wall->clearTwinFace();
+        }
+    }
+
+    for (std::size_t firstIndex = 0; firstIndex < wallPlanes.size();
+         ++firstIndex)
+    {
+        Plane *p_first = wallPlanes[firstIndex];
+        if (p_first->getTwinFace() != nullptr)
+        {
+            continue;
+        }
+
+        Plane *p_bestMatch         = nullptr;
+        double bestOverlapRatio_m2 = -1.0;
+
+        for (std::size_t secondIndex = firstIndex + 1;
+             secondIndex < wallPlanes.size();
+             ++secondIndex)
+        {
+            Plane *p_second = wallPlanes[secondIndex];
+            if (p_second->getTwinFace() != nullptr)
+            {
+                continue;
+            }
+
+            if (!arePlausibleTwinWallFaces(p_first,
+                                           p_second,
+                                           minimumThickness_m,
+                                           maximumThickness_m,
+                                           minimumOverlapRatio,
+                                           groundNormal_World))
+            {
+                continue;
+            }
+
+            /* Prefer the most-overlapping plausible candidate when more
+             * than one exists, using observation count as a simple,
+             * deterministic tiebreaker proxy for "most overlap". */
+            const double candidateScore =
+                static_cast<double>(p_second->getObservationCount());
+            if (p_bestMatch == nullptr || candidateScore > bestOverlapRatio_m2)
+            {
+                p_bestMatch         = p_second;
+                bestOverlapRatio_m2 = candidateScore;
+            }
+        }
+
+        if (p_bestMatch != nullptr)
+        {
+            p_first->setTwinFace(p_bestMatch);
+            p_bestMatch->setTwinFace(p_first);
+            std::cout << "[SemMgr] Linked Wall#" << p_first->getId()
+                      << " and Wall#" << p_bestMatch->getId()
+                      << " as opposite faces of one physical wall."
+                      << std::endl;
+        }
+    }
+}
+
 void SemanticsManager::validateRoomBoundaries(void)
 {
     std::cout << "[SemMgr] validateRoomBoundaries() called" << std::endl;
@@ -6232,8 +8952,18 @@ void SemanticsManager::validateRoomBoundaries(void)
         groundNormal_World.cross(groundAxisU_World).normalized();
 
     const auto updateBoundaryStatus =
-        [](Room *p_room_in, const Room::BoundaryStatus boundaryStatus_in)
+        [](Room                               *p_room_in,
+           const Room::BoundaryStatus          boundaryStatus_in,
+           const std::vector<Eigen::Vector3d> &corners_World_m_in = {})
     {
+        /* Refresh stored corners every cycle the loop is COMPLETE (even when
+         * the status itself didn't change -- wall positions can still
+         * drift), and clear them the moment it stops being COMPLETE. */
+        p_room_in->setBoundaryCorners_World_m(
+            boundaryStatus_in == Room::BoundaryStatus::COMPLETE
+                ? corners_World_m_in
+                : std::vector<Eigen::Vector3d>{});
+
         const Room::BoundaryStatus previousBoundaryStatus =
             p_room_in->getBoundaryStatus();
 
@@ -6394,6 +9124,30 @@ void SemanticsManager::validateRoomBoundaries(void)
             }
         }
 
+        /* Situational awareness for incomplete rooms (user rule): compute
+         * this room's unobserved angular sectors from whatever wall
+         * evidence currently exists, regardless of the boundary-status
+         * outcome below -- this is precisely the "what's still missing"
+         * signal a genuinely COMPLETE room no longer needs. Runs ahead of
+         * the CONFLICTING/INCOMPLETE/UNOBSERVED branches below so it isn't
+         * skipped by any of their early `continue`s. */
+        {
+            const Eigen::Vector3d gapCentroid_World_m = p_room->getCentroid();
+            if (gapCentroid_World_m.allFinite())
+            {
+                const Eigen::Vector2d gapCentroid_Ground_m(
+                    gapCentroid_World_m.dot(groundAxisU_World),
+                    gapCentroid_World_m.dot(groundAxisV_World));
+                p_room->setObservationGaps(
+                    computeRoomObservationGaps(wallSegments,
+                                               gapCentroid_Ground_m));
+            }
+            else
+            {
+                p_room->setObservationGaps({});
+            }
+        }
+
         if (hasAmbiguousConflict)
         {
             updateBoundaryStatus(p_room, Room::BoundaryStatus::CONFLICTING);
@@ -6418,94 +9172,89 @@ void SemanticsManager::validateRoomBoundaries(void)
             roomCentroid_World_m.dot(groundAxisU_World),
             roomCentroid_World_m.dot(groundAxisV_World));
 
-        std::sort(
-            wallSegments.begin(),
-            wallSegments.end(),
-            [&roomCentroid_Ground_m](const FiniteWallSegment2d &firstSegment,
-                                     const FiniteWallSegment2d &secondSegment)
-            {
-                const Eigen::Vector2d firstMidpoint =
-                    0.5 * (firstSegment.start_World_m +
-                           firstSegment.end_World_m) -
-                    roomCentroid_Ground_m;
-                const Eigen::Vector2d secondMidpoint =
-                    0.5 * (secondSegment.start_World_m +
-                           secondSegment.end_World_m) -
-                    roomCentroid_Ground_m;
+        WallLoopClosure closure = tryCloseWallLoop(wallSegments,
+                                                   roomCentroid_Ground_m,
+                                                   topologyParameters);
 
-                return std::atan2(firstMidpoint.y(), firstMidpoint.x()) <
-                       std::atan2(secondMidpoint.y(), secondMidpoint.x());
-            });
-
-        std::vector<Eigen::Vector2d> boundaryCorners_World_m;
-        boundaryCorners_World_m.reserve(wallSegments.size());
-        bool hasOpenBoundary = false;
-
-        for (std::size_t wallIndex = 0U; wallIndex < wallSegments.size();
-             ++wallIndex)
+        /* User rule: a wall the room owns but which does not belong to the
+         * room's true closed boundary is invalid and must be pruned, not
+         * treated as an unrelated reason the whole loop fails to close.
+         * The full wallSegments set may include exactly one such outlier
+         * (e.g. a wall genuinely belonging to a neighbouring, unlinked
+         * room, or a stale duplicate) -- if closing the full set fails, and
+         * excluding exactly one wall lets the remainder close cleanly, that
+         * excluded wall is the outlier: reassign wallSegments to the
+         * closure-achieving subset so every downstream step (self-
+         * intersection, area, corner heights, and the loop-membership
+         * pruning check below) is consistent, and the excluded wall is
+         * naturally caught as "not part of the loop" and detached there
+         * (never removed here directly -- that keeps this decision subject
+         * to the same passage-explained-ness check as any other off-loop
+         * wall). Only a single outlier is handled: searching every subset
+         * of exclusions is combinatorial and unnecessary for the case this
+         * rule targets. */
+        if (closure.hasOpenBoundary &&
+            wallSegments.size() > topologyParameters.minimumWallCount)
         {
-            const FiniteWallSegment2d &currentWall = wallSegments[wallIndex];
-            const FiniteWallSegment2d &nextWall =
-                wallSegments[(wallIndex + 1U) % wallSegments.size()];
-            Eigen::Vector2d corner_World_m;
-            double          currentParameter = 0.0;
-            double          nextParameter    = 0.0;
-
-            if (intersectSupportingLines(currentWall,
-                                         nextWall,
-                                         corner_World_m,
-                                         currentParameter,
-                                         nextParameter))
-            {
-                const double currentCornerGap_m =
-                    pointToSegmentDistance_m(corner_World_m, currentWall);
-                const double nextCornerGap_m =
-                    pointToSegmentDistance_m(corner_World_m, nextWall);
-
-                if (currentCornerGap_m <=
-                        topologyParameters.maximumCornerGap_m &&
-                    nextCornerGap_m <= topologyParameters.maximumCornerGap_m)
+            std::vector<std::size_t> indicesBySupportAscending(
+                wallSegments.size());
+            std::iota(indicesBySupportAscending.begin(),
+                      indicesBySupportAscending.end(),
+                      0U);
+            std::sort(
+                indicesBySupportAscending.begin(),
+                indicesBySupportAscending.end(),
+                [&wallSegments](std::size_t firstIndex, std::size_t secondIndex)
                 {
-                    boundaryCorners_World_m.push_back(corner_World_m);
-                    continue;
-                }
-            }
-
-            const std::array<std::pair<Eigen::Vector2d, Eigen::Vector2d>, 4>
-                endpointPairs = {
-                    {{currentWall.start_World_m, nextWall.start_World_m},
-                     {currentWall.start_World_m, nextWall.end_World_m},
-                     {currentWall.end_World_m, nextWall.start_World_m},
-                     {currentWall.end_World_m, nextWall.end_World_m}}};
-
-            auto nearestEndpointPair = std::min_element(
-                endpointPairs.begin(),
-                endpointPairs.end(),
-                [](const auto &firstPair, const auto &secondPair)
-                {
-                    return (firstPair.first - firstPair.second).squaredNorm() <
-                           (secondPair.first - secondPair.second).squaredNorm();
+                    return wallSegments[firstIndex].supportScore <
+                           wallSegments[secondIndex].supportScore;
                 });
 
-            if ((nearestEndpointPair->first - nearestEndpointPair->second)
-                    .norm() <= topologyParameters.maximumCornerGap_m)
+            for (std::size_t excludeIndex : indicesBySupportAscending)
             {
-                boundaryCorners_World_m.push_back(
-                    0.5 *
-                    (nearestEndpointPair->first + nearestEndpointPair->second));
-                continue;
-            }
+                std::vector<FiniteWallSegment2d> reducedWallSegments;
+                reducedWallSegments.reserve(wallSegments.size() - 1U);
+                for (std::size_t segmentIndex = 0U;
+                     segmentIndex < wallSegments.size();
+                     ++segmentIndex)
+                {
+                    if (segmentIndex != excludeIndex)
+                    {
+                        reducedWallSegments.push_back(
+                            wallSegments[segmentIndex]);
+                    }
+                }
 
-            hasOpenBoundary = true;
-            break;
+                WallLoopClosure reducedClosure =
+                    tryCloseWallLoop(reducedWallSegments,
+                                     roomCentroid_Ground_m,
+                                     topologyParameters);
+
+                if (!reducedClosure.hasOpenBoundary)
+                {
+                    std::cout
+                        << "[SemMgr] Room#" << p_room->getId()
+                        << ": excluding Wall#"
+                        << wallSegments[excludeIndex].p_wall->getId()
+                        << " lets the remaining " << reducedWallSegments.size()
+                        << " wall(s) close a valid loop; treating it as an "
+                           "off-loop outlier."
+                        << std::endl;
+                    closure      = reducedClosure;
+                    wallSegments = reducedWallSegments;
+                    break;
+                }
+            }
         }
 
-        if (hasOpenBoundary ||
-            boundaryCorners_World_m.size() != wallSegments.size())
+        if (closure.hasOpenBoundary)
         {
             updateBoundaryStatus(p_room, Room::BoundaryStatus::INCOMPLETE);
             continue;
         }
+
+        std::vector<Eigen::Vector2d> boundaryCorners_World_m =
+            closure.corners_World_m;
 
         bool polygonSelfIntersects = false;
 
@@ -6566,8 +9315,7 @@ void SemanticsManager::validateRoomBoundaries(void)
         std::cout << "[SemMgr] Room#" << p_room->getId()
                   << " boundary validation: walls=" << wallSegments.size()
                   << ", corners=" << boundaryCorners_World_m.size()
-                  << ", hasOpenBoundary="
-                  << (hasOpenBoundary ? "true" : "false") << ", selfIntersects="
+                  << ", selfIntersects="
                   << (polygonSelfIntersects ? "true" : "false")
                   << ", area=" << enclosedArea_m2 << " m2"
                   << ", minArea=" << topologyParameters.minimumEnclosedArea_m2
@@ -6584,13 +9332,128 @@ void SemanticsManager::validateRoomBoundaries(void)
         }
         else
         {
-            updateBoundaryStatus(p_room, Room::BoundaryStatus::COMPLETE);
+            /* Lift the validated 2D ground-tangent corners back into world
+             * coordinates: U*axisU + V*axisV recovers the horizontal
+             * position exactly (the orthonormal decomposition this loop's
+             * own 2D coordinates were built from), and each corner's height
+             * is the mean of its two meeting walls' own position along the
+             * ground normal. */
+            std::vector<Eigen::Vector3d> boundaryCorners3D_World_m;
+            boundaryCorners3D_World_m.reserve(boundaryCorners_World_m.size());
+            for (std::size_t cornerIndex = 0U;
+                 cornerIndex < boundaryCorners_World_m.size();
+                 ++cornerIndex)
+            {
+                const Plane *p_currentCornerWall =
+                    wallSegments[cornerIndex].p_wall;
+                const Plane *p_nextCornerWall =
+                    wallSegments[(cornerIndex + 1U) % wallSegments.size()]
+                        .p_wall;
+                double height_m = 0.0;
+                if (p_currentCornerWall != nullptr &&
+                    p_nextCornerWall != nullptr)
+                {
+                    height_m =
+                        0.5 *
+                        (p_currentCornerWall->getCentroid().cast<double>().dot(
+                             groundNormal_World) +
+                         p_nextCornerWall->getCentroid().cast<double>().dot(
+                             groundNormal_World));
+                }
+                boundaryCorners3D_World_m.push_back(
+                    boundaryCorners_World_m[cornerIndex].x() *
+                        groundAxisU_World +
+                    boundaryCorners_World_m[cornerIndex].y() *
+                        groundAxisV_World +
+                    height_m * groundNormal_World);
+            }
+            updateBoundaryStatus(p_room,
+                                 Room::BoundaryStatus::COMPLETE,
+                                 boundaryCorners3D_World_m);
+
+            /* User rule: once a room's boundary is a genuine closed loop,
+             * any wall it still owns that is NOT one of that loop's own
+             * walls, and that no passage tied to this room explains (i.e.
+             * not one of the wall faces framing a doorway out of this
+             * room), could never actually have been observed as this
+             * room's own boundary -- detach it. This is deliberately
+             * intra-room only (mirrors the existing intra-room clash
+             * repair in admitWallToRoom()): it only prunes walls the loop
+             * computation above already excluded, never a wall that
+             * belongs to a different room. */
+            std::vector<Plane *> loopWalls;
+            loopWalls.reserve(wallSegments.size());
+            for (const FiniteWallSegment2d &segment : wallSegments)
+            {
+                if (segment.p_wall != nullptr)
+                {
+                    loopWalls.push_back(segment.p_wall);
+                }
+            }
+
+            const std::vector<Passage *> roomPassages = p_room->getPassages();
+
+            for (Plane *p_ownedWall : p_room->getWalls())
+            {
+                if (p_ownedWall == nullptr)
+                {
+                    continue;
+                }
+
+                if (std::find(loopWalls.begin(),
+                              loopWalls.end(),
+                              p_ownedWall) != loopWalls.end())
+                {
+                    continue;
+                }
+
+                const bool explainedByPassage = std::any_of(
+                    roomPassages.begin(),
+                    roomPassages.end(),
+                    [p_ownedWall](Passage *p_passage)
+                    {
+                        if (p_passage == nullptr)
+                        {
+                            return false;
+                        }
+                        const std::vector<Plane *> supportingWalls =
+                            p_passage->getAssociateWalls();
+                        return std::find(supportingWalls.begin(),
+                                         supportingWalls.end(),
+                                         p_ownedWall) != supportingWalls.end();
+                    });
+
+                if (explainedByPassage)
+                {
+                    continue;
+                }
+
+                if (p_room->removeWall(p_ownedWall))
+                {
+                    std::cout << "[SemMgr] Room#" << p_room->getId()
+                              << "'s boundary is COMPLETE; detached Wall#"
+                              << p_ownedWall->getId()
+                              << ", which is neither part of the closed wall "
+                                 "loop nor explained by any of this room's "
+                                 "passages."
+                              << std::endl;
+                }
+            }
         }
     }
 }
 
 void SemanticsManager::recomputeRoomCentroidsFromWalls(void)
 {
+    /* Same inward-nudge-then-average construction as
+     * detectRoom_FreeSpaceCluster()'s wall-centroid correction -- see that
+     * site's comment for why a plain mean of wall centroids is not
+     * guaranteed to land inside the room. Kept in sync with it rather than
+     * shared, since this function only runs for non-FREE_SPACE
+     * room_seg.method configurations (the FREE_SPACE path, this project's
+     * configured default, uses the other site directly). */
+    constexpr double centroidInwardOffset_m = 0.10;
+
     for (ORB_SLAM3::Room *p_room : mpAtlas->GetAllRooms())
     {
         if (p_room == nullptr || p_room->isBad())
@@ -6609,11 +9472,22 @@ void SemanticsManager::recomputeRoomCentroidsFromWalls(void)
 
         for (ORB_SLAM3::Plane *p_wall : roomWalls)
         {
-            if (p_wall != nullptr && !p_wall->isBad())
+            if (p_wall == nullptr || p_wall->isBad())
             {
-                wallCentroidSum += p_wall->getCentroid().cast<double>();
-                wallCount++;
+                continue;
             }
+
+            const Eigen::Vector3d wallCentroid_World_m =
+                p_wall->getCentroid().cast<double>();
+            const std::optional<Eigen::Vector3d> inwardNormal_World =
+                p_room->getWallNormalTowardRoom_World(p_wall);
+
+            wallCentroidSum +=
+                inwardNormal_World
+                    ? wallCentroid_World_m +
+                          centroidInwardOffset_m * (*inwardNormal_World)
+                    : wallCentroid_World_m;
+            wallCount++;
         }
 
         if (wallCount > 0)
@@ -6689,8 +9563,29 @@ void SemanticsManager::associatePassagesToRooms(void)
     for (ORB_SLAM3::Passage *p_passage : allPassages)
     {
         /* Skip invalid passages */
-        if (p_passage == nullptr)
+        if (p_passage == nullptr || p_passage->isBad())
         {
+            continue;
+        }
+
+        /* A recovery proxy carries only stable identity and topology. Its
+         * historical coordinates deliberately are not copied into the new
+         * map frame. Preserve its reciprocal room edge until map alignment
+         * can reconcile it with newly observed passage geometry. */
+        if (p_passage->isRecoveryProxy())
+        {
+            const Passage::KnownSideProvenance knownSide =
+                p_passage->getKnownSideProvenance();
+            Room *p_farSideRoom = p_passage->getProspectiveRoom();
+            if (knownSide.pRoom != nullptr && !knownSide.pRoom->isBad())
+            {
+                knownSide.pRoom->setDoorways(p_passage);
+            }
+            if (p_farSideRoom != nullptr && !p_farSideRoom->isBad())
+            {
+                p_farSideRoom->setDoorways(p_passage);
+            }
+            passageZeroRoomCycles_.erase(p_passage->getId());
             continue;
         }
 
@@ -6725,25 +9620,50 @@ void SemanticsManager::associatePassagesToRooms(void)
             p_passage->getKnownSideProvenance();
         if (!knownSide.hasDirection())
         {
-            /* Supporting-wall side evidence is computed from the camera centre
-             * of each keyframe that observed that wall. It therefore preserves
-             * observation-time provenance when passage confirmation is delayed.
-             */
+            /* Which side the passage was seen from is a property of the
+             * observation that produced its supporting wall face, so take it
+             * from that face's stamped observation origin
+             * (Plane::getObservationOrigin_World()). Deriving it instead from
+             * a median over the wall's whole observation history would
+             * migrate to the far side once the UAV flew through this very
+             * passage -- inverting the passage's own notion of which side it
+             * was discovered from. The median remains only as a fallback for
+             * faces created before the stamp existed. */
             for (Plane *p_supportingWall : supportingWalls)
             {
                 if (p_supportingWall == nullptr || p_supportingWall->isBad())
                 {
                     continue;
                 }
-                const Plane::ObservationSideSnapshot sideSnapshot =
-                    p_supportingWall->getObservationSideSnapshot(
-                        passageEquation_World);
-                if (!sideSnapshot.medianSignedDistance_m.has_value())
+
+                const std::optional<Eigen::Vector3d> observationOrigin_World_m =
+                    p_supportingWall->getObservationOrigin_World();
+
+                std::optional<double> observedSide_m;
+
+                if (observationOrigin_World_m.has_value() &&
+                    observationOrigin_World_m->allFinite())
+                {
+                    observedSide_m = passageEquation_World.head<3>().dot(
+                                         observationOrigin_World_m.value()) +
+                                     passageEquation_World(3);
+                }
+                else
+                {
+                    const Plane::ObservationSideSnapshot sideSnapshot =
+                        p_supportingWall->getObservationSideSnapshot(
+                            passageEquation_World);
+                    observedSide_m = sideSnapshot.medianSignedDistance_m;
+                }
+
+                if (!observedSide_m.has_value() ||
+                    !std::isfinite(observedSide_m.value()))
                 {
                     continue;
                 }
+
                 p_passage->setKnownSideDirection(
-                    sideSnapshot.medianSignedDistance_m.value() > 0.0
+                    observedSide_m.value() > 0.0
                         ? Eigen::Vector3d(passageEquation_World.head<3>())
                         : Eigen::Vector3d(-passageEquation_World.head<3>()));
                 knownSide = p_passage->getKnownSideProvenance();
@@ -6890,6 +9810,47 @@ void SemanticsManager::associatePassagesToRooms(void)
                                      p_roomWall) != supportingWalls.end();
                 });
 
+            /* Association guard: exact ownership of the passage's supporting
+             * wall is definitive adjacency evidence (handled above and
+             * below). Anything weaker -- geometric proximity of some other
+             * wall plus centroid distance -- may only compete for a side
+             * when the room has enough boundary substance to make its
+             * centroid meaningful. A single-wall room has no 2D extent; its
+             * centroid sits on that one wall and wins whatever passage
+             * happens to be nearest (typically right after a map reset,
+             * latching the fresh room onto the wrong passage and locking it
+             * in via wall ownership). Defer the edge until a second wall
+             * arrives rather than invent topology. */
+            if (!ownsExactSupportingWall)
+            {
+                constexpr std::size_t minimumWallsForProximityAssociation = 2U;
+                std::size_t           validWallCount                      = 0U;
+                for (Plane *p_roomWall : roomWalls)
+                {
+                    if (p_roomWall != nullptr && !p_roomWall->isBad())
+                    {
+                        ++validWallCount;
+                    }
+                }
+                if (validWallCount < minimumWallsForProximityAssociation)
+                {
+                    static std::set<std::pair<int, int>> reportedSparseSkips;
+                    if (reportedSparseSkips
+                            .emplace(p_passage->getId(), p_room->getId())
+                            .second)
+                    {
+                        std::cout
+                            << "[SemMgr] Passage#" << p_passage->getId()
+                            << " skipping Room#" << p_room->getId() << " (only "
+                            << validWallCount << " valid wall(s); needs "
+                            << minimumWallsForProximityAssociation
+                            << " without exact supporting-wall ownership)."
+                            << std::endl;
+                    }
+                    continue;
+                }
+            }
+
             /* Extract the room centroid */
             const Eigen::Vector3d roomCentroid_World_m = p_room->getCentroid();
 
@@ -6900,9 +9861,22 @@ void SemanticsManager::associatePassagesToRooms(void)
 
             /*!
              * A wall-centred provisional SE does not yet provide enough
-             * evidence to form a room-to-passage connection.
+             * evidence to form a room-to-passage connection -- UNLESS the
+             * room owns the passage's own exact supporting wall. Owning
+             * that wall is definitive, purely semantic (plane-equation)
+             * evidence that the room borders this passage; which side of
+             * the (nearly coincident, since the wall IS the passage's own
+             * plane) passage plane the room's overall centroid happens to
+             * land on is not meaningful evidence and must never veto it.
+             * A sparsely-observed room (e.g. one confirmed wall so far)
+             * can have its centroid sit within sideEpsilon_m purely
+             * because that one known wall is this passage's supporting
+             * wall -- silently dropping the room-to-passage edge every
+             * cycle even though ownsExactSupportingWall already proves
+             * the association.
              */
-            if (std::abs(roomSide_m) <= sideEpsilon_m)
+            if (!ownsExactSupportingWall &&
+                std::abs(roomSide_m) <= sideEpsilon_m)
             {
                 continue;
             }
@@ -6910,6 +9884,35 @@ void SemanticsManager::associatePassagesToRooms(void)
             /* Find the distance from the room to the passage */
             const double roomDistance_m =
                 (roomCentroid_World_m - passageCentroid_World_m).norm();
+
+            /* The centroid of a sparse room can lie on its only known wall.
+             * Exact ownership of the passage's supporting wall is still
+             * definitive adjacency evidence; use the stamped observation-side
+             * provenance to break the otherwise-zero side test. */
+            if (ownsExactSupportingWall &&
+                std::abs(roomSide_m) <= sideEpsilon_m)
+            {
+                const double knownSideSign =
+                    knownSide.hasDirection()
+                        ? knownSide.direction_World.dot(
+                              passageEquation_World.head<3>())
+                        : 0.0;
+                if (knownSideSign >= 0.0 &&
+                    roomDistance_m < positiveRoomDistance_m)
+                {
+                    positiveRoomDistance_m         = roomDistance_m;
+                    p_positiveSideRoom             = p_room;
+                    p_positiveExactSupportingOwner = p_room;
+                }
+                else if (knownSideSign < 0.0 &&
+                         roomDistance_m < negativeRoomDistance_m)
+                {
+                    negativeRoomDistance_m         = roomDistance_m;
+                    p_negativeSideRoom             = p_room;
+                    p_negativeExactSupportingOwner = p_room;
+                }
+                continue;
+            }
 
             /* Keep the closest room on the negative side */
             if (roomSide_m < 0.0 && roomDistance_m < negativeRoomDistance_m)
@@ -6927,6 +9930,56 @@ void SemanticsManager::associatePassagesToRooms(void)
                 p_positiveSideRoom     = p_room;
                 p_positiveExactSupportingOwner =
                     ownsExactSupportingWall ? p_room : nullptr;
+            }
+        }
+
+        /*! Axiom: both rooms a passage links must be on the same floor,
+         * except through a vertical passage / staircase (not implemented
+         * yet -- see the user's own carve-out). A same-passage,
+         * different-floor match is therefore not new information, it is a
+         * matching error: since no vertical-passage mechanism exists to
+         * produce a genuine one, one of the two sides must be wrong. Keep
+         * whichever side is closer to the passage (the stronger match) and
+         * drop the farther one back to unresolved for this cycle -- it can
+         * still recover in a later cycle, e.g. once its own floor identity
+         * is corrected, or a different room wins that side instead. */
+        if (p_negativeSideRoom != nullptr && p_positiveSideRoom != nullptr)
+        {
+            ORB_SLAM3::Floor *p_negativeFloor = p_negativeSideRoom->getFloor();
+            ORB_SLAM3::Floor *p_positiveFloor = p_positiveSideRoom->getFloor();
+
+            if (p_negativeFloor != nullptr && p_positiveFloor != nullptr &&
+                p_negativeFloor->hasPlaneIdentity() &&
+                p_positiveFloor->hasPlaneIdentity() &&
+                p_negativeFloor->getId() != p_positiveFloor->getId())
+            {
+                const bool negativeIsFarther =
+                    negativeRoomDistance_m >= positiveRoomDistance_m;
+                ORB_SLAM3::Room *p_droppedRoom =
+                    negativeIsFarther ? p_negativeSideRoom : p_positiveSideRoom;
+
+                std::cout << "[SemMgr] Passage#" << p_passage->getId()
+                          << " matched Room#" << p_negativeSideRoom->getId()
+                          << " (Floor#" << p_negativeFloor->getId()
+                          << ") and Room#" << p_positiveSideRoom->getId()
+                          << " (Floor#" << p_positiveFloor->getId()
+                          << ") on different floors -- no vertical passage "
+                             "mechanism exists, so this is a matching "
+                             "error, not a real staircase; dropping the "
+                             "farther match Room#"
+                          << p_droppedRoom->getId() << " for this cycle."
+                          << std::endl;
+
+                if (negativeIsFarther)
+                {
+                    p_negativeSideRoom             = nullptr;
+                    p_negativeExactSupportingOwner = nullptr;
+                }
+                else
+                {
+                    p_positiveSideRoom             = nullptr;
+                    p_positiveExactSupportingOwner = nullptr;
+                }
             }
         }
 
@@ -7084,12 +10137,42 @@ void SemanticsManager::associatePassagesToRooms(void)
 
         if (associatedRoomCount == 0)
         {
-            std::cout << "[SemMgr] Passage#" << p_passage->getId()
-                      << " has 0 associated rooms; camera-side provenance="
-                      << (knownSide.hasDirection() ? "known" : "missing") << "."
-                      << std::endl;
+            /* A passage linked to no room at all -- real or prospective --
+             * is not a valid passage. Give it a short grace period (fresh
+             * passages start at 0 rooms for a cycle or two before nearby
+             * wall/room evidence catches up) before invalidating it, rather
+             * than deleting on the very first zero-room cycle. Passage has
+             * no removal from the Atlas, only Plane/Room's isBad()
+             * convention (see Passage::setBad()'s own comment). */
+            constexpr std::size_t maximumZeroRoomCycles = 5U;
+            const std::size_t     zeroRoomCycles =
+                ++passageZeroRoomCycles_[p_passage->getId()];
+
+            if (zeroRoomCycles > maximumZeroRoomCycles)
+            {
+                p_passage->setBad();
+                passageZeroRoomCycles_.erase(p_passage->getId());
+                std::cout << "[SemMgr] Passage#" << p_passage->getId()
+                          << " invalidated: 0 associated rooms for "
+                          << zeroRoomCycles << " consecutive cycles."
+                          << std::endl;
+            }
+            else
+            {
+                std::cout << "[SemMgr] Passage#" << p_passage->getId()
+                          << " has 0 associated rooms (" << zeroRoomCycles
+                          << "/" << maximumZeroRoomCycles
+                          << " grace cycles); camera-side provenance="
+                          << (knownSide.hasDirection() ? "known" : "missing")
+                          << "." << std::endl;
+            }
         }
-        else if (associatedRoomCount > 2)
+        else
+        {
+            passageZeroRoomCycles_.erase(p_passage->getId());
+        }
+
+        if (associatedRoomCount > 2)
         {
             std::cout << "[SemMgr] WARNING: Passage#" << p_passage->getId()
                       << " has " << associatedRoomCount
@@ -7107,7 +10190,10 @@ void SemanticsManager::associatePassagesToRooms(void)
          *   passage_centroid + passage_normal * estimated_room_depth
          *
          * where passage_normal points from the known room toward the far side.
-         * The depth heuristic (1.7 m) is conservative for typical indoor rooms.
+         * The depth heuristic (0.15 m) deliberately stays close to the
+         * passage rather than guessing a typical room depth -- it is a
+         * placeholder handle, not a position estimate, and gets corrected
+         * the moment real far-side evidence (a wall, a cluster) arrives.
          *
          * Constraints:
          *   - Spatial deduplication: reuse existing prospective room
@@ -7255,27 +10341,105 @@ void SemanticsManager::associatePassagesToRooms(void)
                     bool             farSideConfirmedRoomExists = false;
                     ORB_SLAM3::Room *p_existingFarSideRoom      = nullptr;
 
-                    for (ORB_SLAM3::Room *p_otherRoom : allRooms)
-                    {
-                        if (p_otherRoom == nullptr || p_otherRoom->isBad() ||
-                            p_otherRoom == p_knownRoom ||
-                            p_otherRoom->getRoomVariant() ==
-                                ORB_SLAM3::Room::roomVariant::UNDEFINED)
-                        {
-                            continue;
-                        }
-                        const Eigen::Vector3d otherCentroid =
-                            p_otherRoom->getCentroid();
-                        const double otherSide =
-                            passageNormal.dot(otherCentroid) + passageEq(3);
+                    /*!
+                     * Same class of flaw as the promotion search further
+                     * below (and the same fix): a bare same-side-of-the-
+                     * infinite-passage-plane sign test, with only a 0.05m
+                     * epsilon, is satisfied by any room past this passage
+                     * on the far side -- including a room several doors
+                     * down the same corridor that is nowhere near this
+                     * specific opening. This gate runs BEFORE any
+                     * prospective placeholder exists, so it must carry the
+                     * same rigor itself rather than relying on the
+                     * promotion search to catch it later: the bounded
+                     * aperture test (segmentCrossesPassageOpening) plus the
+                     * intervening-wall test (segmentCrossesForeignWall).
+                     */
+                    Plane *p_anteChurnGroundPlane =
+                        mpAtlas->GetBiggestGroundPlane();
 
-                        if (otherSide * passageNormal.dot(knownSideDirection) <
-                                0.0 &&
-                            std::abs(otherSide) > 0.05)
+                    if (p_knownRoom != nullptr &&
+                        p_anteChurnGroundPlane != nullptr &&
+                        !p_anteChurnGroundPlane->isBad())
+                    {
+                        const Eigen::Vector4d anteChurnGroundEq =
+                            p_anteChurnGroundPlane->getGlobalEquation()
+                                .coeffs();
+                        const double anteChurnGroundNorm =
+                            anteChurnGroundEq.head<3>().norm();
+
+                        if (anteChurnGroundEq.allFinite() &&
+                            anteChurnGroundNorm > 1e-8)
                         {
-                            farSideConfirmedRoomExists = true;
-                            p_existingFarSideRoom      = p_otherRoom;
-                            break;
+                            const Eigen::Vector3d anteChurnGroundNormal_World =
+                                anteChurnGroundEq.head<3>() /
+                                anteChurnGroundNorm;
+                            const Eigen::Vector3d anteChurnGroundAxisU_World =
+                                anteChurnGroundNormal_World.unitOrthogonal()
+                                    .normalized();
+                            const Eigen::Vector3d anteChurnGroundAxisV_World =
+                                anteChurnGroundNormal_World
+                                    .cross(anteChurnGroundAxisU_World)
+                                    .normalized();
+                            const SystemParams::room_seg::PassagePartition
+                                &anteChurnPartitionParameters =
+                                    sysParams->room_seg.passagePartition;
+                            const double anteChurnOpeningMargin_m =
+                                static_cast<double>(anteChurnPartitionParameters
+                                                        .openingMargin_m);
+                            const double anteChurnMinimumSideDistance_m =
+                                static_cast<double>(anteChurnPartitionParameters
+                                                        .minimumSideDistance_m);
+                            const SystemParams::room_seg::BoundaryTopology
+                                &anteChurnTopologyParameters =
+                                    sysParams->room_seg.boundaryTopology;
+                            const Eigen::Vector3d knownRoomCentroid =
+                                p_knownRoom->getCentroid();
+                            const std::vector<ORB_SLAM3::Room *>
+                                anteChurnExcludedRooms = {p_knownRoom};
+
+                            for (ORB_SLAM3::Room *p_otherRoom : allRooms)
+                            {
+                                if (p_otherRoom == nullptr ||
+                                    p_otherRoom->isBad() ||
+                                    p_otherRoom == p_knownRoom ||
+                                    p_otherRoom->getRoomVariant() ==
+                                        ORB_SLAM3::Room::roomVariant::UNDEFINED)
+                                {
+                                    continue;
+                                }
+
+                                if (!segmentCrossesPassageOpening(
+                                        knownRoomCentroid,
+                                        p_otherRoom->getCentroid(),
+                                        p_passage,
+                                        anteChurnGroundNormal_World,
+                                        anteChurnOpeningMargin_m,
+                                        anteChurnMinimumSideDistance_m))
+                                {
+                                    continue;
+                                }
+
+                                if (segmentCrossesForeignWall(
+                                        knownRoomCentroid,
+                                        p_otherRoom->getCentroid(),
+                                        anteChurnExcludedRooms,
+                                        allRooms,
+                                        anteChurnGroundAxisU_World,
+                                        anteChurnGroundAxisV_World,
+                                        anteChurnGroundNormal_World,
+                                        anteChurnTopologyParameters
+                                            .endpointTrimRatio,
+                                        anteChurnTopologyParameters
+                                            .minimumWallLength_m))
+                                {
+                                    continue;
+                                }
+
+                                farSideConfirmedRoomExists = true;
+                                p_existingFarSideRoom      = p_otherRoom;
+                                break;
+                            }
                         }
                     }
 
@@ -7296,7 +10460,15 @@ void SemanticsManager::associatePassagesToRooms(void)
                     }
                     else
                     {
-                        constexpr double      estimatedRoomDepth_m = 1.7;
+                        /* Placeholder handle for "some room exists on the
+                         * far side of this doorway," not a real position
+                         * estimate -- it gets corrected the moment any real
+                         * far-side evidence (a wall, a cluster) arrives. Kept
+                         * close to the passage rather than out at a typical
+                         * room's centre depth so it doesn't visually or
+                         * spatially masquerade as a real room position in
+                         * the meantime. */
+                        constexpr double      estimatedRoomDepth_m = 0.15;
                         const Eigen::Vector3d prospectiveCentroid =
                             passageCentroid +
                             farSideNormal * estimatedRoomDepth_m;
@@ -7504,7 +10676,8 @@ void SemanticsManager::associatePassagesToRooms(void)
 
             if (p_prospectiveRoom != nullptr && !p_prospectiveRoom->isBad() &&
                 p_prospectiveRoom->getRoomVariant() ==
-                    ORB_SLAM3::Room::roomVariant::UNDEFINED)
+                    ORB_SLAM3::Room::roomVariant::UNDEFINED &&
+                !p_prospectiveRoom->getWalls().empty())
             {
                 /* Find a confirmed (non-prospective) room on the FAR side of
                  * the passage - i.e. on the same side as the prospective room.
@@ -7516,38 +10689,140 @@ void SemanticsManager::associatePassagesToRooms(void)
                  */
                 ORB_SLAM3::Room *p_farSideConfirmedRoom = nullptr;
 
-                Eigen::Vector4d passageEqu_World =
-                    p_passage->getGlobalEquation().coeffs();
-                const double passNorm = passageEqu_World.head<3>().norm();
+                /*!
+                 * Per WP8-B's own driving principle: "a wall observed on the
+                 * far side of ANY confirmed passage aperture belongs to that
+                 * passage's prospective room... decide which side of every
+                 * passage it lies on" -- using segmentCrossesPassageOpening,
+                 * the same purely semantic (passage width/height aperture,
+                 * not voxblox cluster geometry) test already used for wall
+                 * admission (e.g. line ~3759). A same-side-of-the-infinite-
+                 * plane sign test is NOT proof of adjacency: a room several
+                 * metres past this passage (only reachable through an
+                 * intervening, not-yet-confirmed room) satisfies "same
+                 * side" just as well as a genuinely bordering room does.
+                 * Observed directly: Passage#1 sitting between Room#4 and a
+                 * distant Room#5 kept resolving straight to Room#5,
+                 * destroying the middle prospective room meant to sit
+                 * between them, every cycle. Testing whether the segment
+                 * between the two room centroids actually threads through
+                 * THIS passage's own bounded opening (not just crosses its
+                 * infinite plane somewhere) rejects that distant match
+                 * without any distance threshold borrowed from an unrelated
+                 * (voxblox free-space cluster) subsystem.
+                 *
+                 * This still isn't sufficient on its own when the
+                 * prospective room is nothing but its creation-time
+                 * heuristic position (passage_centroid + normal * an
+                 * assumed depth, before any real wall has been admitted to
+                 * it): in a straight corridor with several doors in a row,
+                 * that guessed point and a genuinely distant, unrelated
+                 * room can both sit close enough to the corridor centreline
+                 * for the straight segment between them to thread THIS
+                 * passage's aperture too, even though a different room and
+                 * passage lie directly between them. Observed directly:
+                 * a freshly created prospective room, still with zero
+                 * walls, resolved straight to a confirmed room three doors
+                 * down the same corridor on the very cycle it was created.
+                 * Requiring at least one real, admitted wall first (the
+                 * same evidence bar promotion already applies below: "wall
+                 * ownership alone cannot promote... validated far-side
+                 * cluster evidence may promote") anchors the near endpoint
+                 * of the crossing test to an actually observed position
+                 * instead of an unvalidated depth guess.
+                 *
+                 * Also excludes the passage's own near-side/known room from
+                 * candidacy, mirroring the creation-time anti-churn guard
+                 * above (§7342-7374) -- a room that owns the passage's own
+                 * near side must never be matched as its far side.
+                 */
+                ORB_SLAM3::Room *p_knownSideRoom =
+                    p_passage->getKnownSideProvenance().pRoom;
 
-                if (std::isfinite(passNorm) && passNorm > 1e-8)
+                Plane *p_groundPlane = mpAtlas->GetBiggestGroundPlane();
+
+                if (p_groundPlane != nullptr && !p_groundPlane->isBad())
                 {
-                    passageEqu_World /= passNorm;
-                    const Eigen::Vector3d passageNormal =
-                        passageEqu_World.head<3>();
-                    const Eigen::Vector3d prospectiveCentroid =
-                        p_prospectiveRoom->getCentroid();
-                    const double passPerspectiveSide =
-                        passageNormal.dot(prospectiveCentroid) +
-                        passageEqu_World(3);
+                    const Eigen::Vector4d groundEquation_World =
+                        p_groundPlane->getGlobalEquation().coeffs();
+                    const double groundNormalNorm =
+                        groundEquation_World.head<3>().norm();
 
-                    for (ORB_SLAM3::Room *p_otherRoom : allRooms)
+                    if (groundEquation_World.allFinite() &&
+                        groundNormalNorm > 1e-8)
                     {
-                        if (p_otherRoom == nullptr || p_otherRoom->isBad() ||
-                            p_otherRoom == p_prospectiveRoom ||
-                            p_otherRoom->getRoomVariant() ==
-                                ORB_SLAM3::Room::roomVariant::UNDEFINED)
-                        {
-                            continue;
-                        }
-                        const Eigen::Vector3d otherCentroid =
-                            p_otherRoom->getCentroid();
-                        const double otherSide =
-                            passageNormal.dot(otherCentroid) +
-                            passageEqu_World(3);
+                        const Eigen::Vector3d groundNormal_World =
+                            groundEquation_World.head<3>() / groundNormalNorm;
+                        const Eigen::Vector3d groundAxisU_World =
+                            groundNormal_World.unitOrthogonal().normalized();
+                        const Eigen::Vector3d groundAxisV_World =
+                            groundNormal_World.cross(groundAxisU_World)
+                                .normalized();
+                        const SystemParams::room_seg::PassagePartition
+                            &partitionParameters =
+                                sysParams->room_seg.passagePartition;
+                        const double openingMargin_m = static_cast<double>(
+                            partitionParameters.openingMargin_m);
+                        const double minimumSideDistance_m =
+                            static_cast<double>(
+                                partitionParameters.minimumSideDistance_m);
+                        const SystemParams::room_seg::BoundaryTopology
+                            &topologyParameters =
+                                sysParams->room_seg.boundaryTopology;
+                        const Eigen::Vector3d prospectiveCentroid =
+                            p_prospectiveRoom->getCentroid();
+                        const std::vector<ORB_SLAM3::Room *> excludedRooms = {
+                            p_prospectiveRoom,
+                            p_knownSideRoom};
 
-                        if (passPerspectiveSide * otherSide > 0.0)
+                        for (ORB_SLAM3::Room *p_otherRoom : allRooms)
                         {
+                            if (p_otherRoom == nullptr ||
+                                p_otherRoom->isBad() ||
+                                p_otherRoom == p_prospectiveRoom ||
+                                p_otherRoom == p_knownSideRoom ||
+                                p_otherRoom->getRoomVariant() ==
+                                    ORB_SLAM3::Room::roomVariant::UNDEFINED)
+                            {
+                                continue;
+                            }
+
+                            if (!segmentCrossesPassageOpening(
+                                    prospectiveCentroid,
+                                    p_otherRoom->getCentroid(),
+                                    p_passage,
+                                    groundNormal_World,
+                                    openingMargin_m,
+                                    minimumSideDistance_m))
+                            {
+                                continue;
+                            }
+
+                            /*!
+                             * A candidate that threads this passage's own
+                             * aperture is still not a legitimate match when
+                             * the straight line to it is blocked by another
+                             * room's own wall -- see segmentCrossesForeignWall
+                             * above. Observed directly: a prospective
+                             * placeholder's heuristic position resolved
+                             * straight to a confirmed room three doors down
+                             * the same corridor, with the true intervening
+                             * room's own wall sitting directly on that line.
+                             */
+                            if (segmentCrossesForeignWall(
+                                    prospectiveCentroid,
+                                    p_otherRoom->getCentroid(),
+                                    excludedRooms,
+                                    allRooms,
+                                    groundAxisU_World,
+                                    groundAxisV_World,
+                                    groundNormal_World,
+                                    topologyParameters.endpointTrimRatio,
+                                    topologyParameters.minimumWallLength_m))
+                            {
+                                continue;
+                            }
+
                             p_farSideConfirmedRoom = p_otherRoom;
                             break;
                         }

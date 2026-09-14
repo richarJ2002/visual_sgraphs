@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -46,6 +47,8 @@
 #include <thread>
 #include <utility>
 #include <vector>
+
+#include "PublishTopicsTiming.h"
 
 /* -------------------------------------------------------------------------- *
  * EIGEN
@@ -179,7 +182,10 @@
  * -------------------------------------------------------------------------- */
 
 #include <vs_graphs/msg/vs_graphs_all_detectdet_rooms.hpp>
+#include <vs_graphs/msg/vs_graphs_all_floors_data.hpp>
+#include <vs_graphs/msg/vs_graphs_all_passages_data.hpp>
 #include <vs_graphs/msg/vs_graphs_all_walls_data.hpp>
+#include <vs_graphs/srv/estimator_health.hpp>
 #include <vs_graphs/srv/get_mission_health.hpp>
 #include <vs_graphs/srv/save_map.hpp>
 
@@ -214,6 +220,31 @@ using json = nlohmann::json;
  * @note        Global variable declared in `commonStat.cpp`
  */
 extern ORB_SLAM3::System *p_slamSystem;
+
+/*!
+ * @brief       Latest accepted estimator frame rate (frames/second), written
+ *              by the grabber workers and served by the estimator-health
+ *              service alpha polls before takeoff.
+ *
+ * @note        Global variable declared in `commonStat.cpp`
+ */
+extern std::atomic<double> estimatorFramesPerSecond;
+
+/*!
+ * @brief       Wall-clock seconds of the latest accepted estimator frame
+ *              (system_clock epoch). Same ownership as above.
+ *
+ * @note        Global variable declared in `commonStat.cpp`
+ */
+extern std::atomic<double> estimatorFrameWallSeconds;
+
+/*!
+ * @brief       Records one accepted estimator frame for the health service.
+ *
+ * @param[in]   frameInterval_seconds
+ *              Seconds since the previous accepted frame (0.0 for the first).
+ */
+void recordEstimatorFrame(const double frameInterval_seconds);
 
 /*!
  * @brief       Sensor configuration used by the active ORB-SLAM3 system.
@@ -420,6 +451,44 @@ extern std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> skeletonEdges;
 extern rclcpp::Time lastPlanePublishTime;
 
 /* -------------------------------------------------------------------------- *
+ * SGRAPH JSON ARCHIVE CONFIGURATION
+ * -------------------------------------------------------------------------- */
+
+/*!
+ * @brief       Absolute test-run directory receiving SGraph JSON archives.
+ *
+ *              Archives are written to `<test_run_dir>/output/sgraph`. An
+ *              empty value disables archiving. Assigned during node
+ *              initialisation from the `test_run_dir` ROS parameter.
+ */
+extern std::string sgraphArchiveTestRunDir;
+
+/*!
+ * @brief       Master on/off switch for periodic SGraph JSON archiving.
+ *
+ *              Assigned during node initialisation from the
+ *              `sgraph_archive_enabled` ROS parameter.
+ */
+extern bool sgraphArchiveEnabled;
+
+/*!
+ * @brief       Minimum sim-clock seconds between two SGraph JSON archives.
+ *
+ *              Assigned during node initialisation from the
+ *              `sgraph_archive_interval_sec` ROS parameter.
+ */
+extern double sgraphArchiveIntervalSec;
+
+/*!
+ * @brief       Maximum number of retained SGraph JSON archives.
+ *
+ *              Zero keeps every file; a positive value deletes the oldest
+ *              files first. Assigned during node initialisation from the
+ *              `sgraph_archive_max_files` ROS parameter.
+ */
+extern int sgraphArchiveMaxFiles;
+
+/* -------------------------------------------------------------------------- *
  * BASIC SLAM PUBLISHERS
  * -------------------------------------------------------------------------- */
 
@@ -604,6 +673,40 @@ extern rclcpp::Publisher<vs_graphs::msg::VSGraphsAllWallsData>::SharedPtr
  */
 extern rclcpp::Publisher<situational_graphs_msgs::msg::PlanesData>::SharedPtr
     pubAllWalls_legacy;
+
+/* -------------------------------------------------------------------------- *
+ * MAPPED-ROOM AND MAPPED-PASSAGE PUBLISHERS
+ * -------------------------------------------------------------------------- */
+
+/*!
+ * @brief       Publisher for the mapped-room representation (id, member
+ *              wall ids, centroid) for offline/evaluation consumption.
+ *
+ * @note        Global variable declared in `commonStat.cpp`
+ */
+extern rclcpp::Publisher<vs_graphs::msg::VSGraphsAllDetectdetRooms>::SharedPtr
+    pubAllRooms;
+
+/*!
+ * @brief       Publisher for the mapped-passage representation (id,
+ *              centroid, extent, known/prospective room association) for
+ *              offline/evaluation consumption.
+ *
+ * @note        Global variable declared in `commonStat.cpp`
+ */
+extern rclcpp::Publisher<vs_graphs::msg::VSGraphsAllPassagesData>::SharedPtr
+    pubAllPassages;
+
+/*!
+ * @brief       Publisher for the mapped-floor representation (id, plane
+ *              equation, observation quality) for offline/evaluation
+ *              consumption -- the only source of Z-direction constraint
+ *              when a scene's walls are a planar (e.g. Manhattan) grid.
+ *
+ * @note        Global variable declared in `commonStat.cpp`
+ */
+extern rclcpp::Publisher<vs_graphs::msg::VSGraphsAllFloorsData>::SharedPtr
+    pubAllFloors;
 
 /* -------------------------------------------------------------------------- *
  * STRUCTURAL-ELEMENT PUBLISHERS
@@ -910,6 +1013,87 @@ extern void publishAllMappedWalls(std::vector<ORB_SLAM3::Plane *> wallsList_in,
                                   rclcpp::Time                    msgTime_s_in);
 
 /*!
+ * @brief       Publishes all mapped rooms (id, member wall ids, centroid)
+ *              for offline/evaluation consumption.
+ *
+ * @param[in]   roomsList_in
+ *              The vector of mapped rooms to be published.
+ *
+ * @param       msgTime_s_in
+ *              The timestamp for the message.
+ */
+extern void publishAllMappedRooms(std::vector<ORB_SLAM3::Room *> roomsList_in,
+                                  rclcpp::Time                   msgTime_s_in);
+
+/*!
+ * @brief       Publishes all mapped passages (id, centroid, extent,
+ *              known/prospective room association) for offline/evaluation
+ *              consumption.
+ *
+ * @param[in]   passagesList_in
+ *              The vector of mapped passages to be published.
+ *
+ * @param[in]   roomsList_in
+ *              The vector of mapped rooms, used to resolve which room owns
+ *              each passage's associated walls.
+ *
+ * @param       msgTime_s_in
+ *              The timestamp for the message.
+ */
+extern void
+    publishAllMappedPassages(std::vector<ORB_SLAM3::Passage *> passagesList_in,
+                             std::vector<ORB_SLAM3::Room *>    roomsList_in,
+                             rclcpp::Time                      msgTime_s_in);
+
+/*!
+ * @brief       Publishes all mapped floors (id, plane equation, observation
+ *              quality) for offline/evaluation consumption.
+ *
+ * @param[in]   floorsList_in
+ *              The vector of mapped floors to be published.
+ *
+ * @param       msgTime_s_in
+ *              The timestamp for the message.
+ */
+extern void
+    publishAllMappedFloors(std::vector<ORB_SLAM3::Floor *> floorsList_in,
+                           rclcpp::Time                    msgTime_s_in);
+
+/*!
+ * @brief       Archives the current SGraph to a timestamped JSON file.
+ *
+ *              Every active Atlas map is archived under a 0-based `mapN` key
+ *              (sorted by raw map id) holding its `map_id`, `is_active` and
+ *              `world_frame_epoch` fields plus its `floorN`/`roomN`/`wallN`/
+ *              `passageN` hierarchy. The archive uses the ROS sim-clock
+ *              timestamp and is written to
+ *              `<sgraphArchiveTestRunDir>/output/sgraph/sgraph_<sec>_<nsec>.json`.
+ *              Archiving is rate-limited by `sgraphArchiveIntervalSec` and
+ *              disabled when `sgraphArchiveEnabled` is false or
+ *              `sgraphArchiveTestRunDir` is empty.
+ *
+ * @param[in]   mappedFloors_in
+ *              Fallback current-map floors, used only when the Atlas is
+ *              unavailable.
+ *
+ * @param[in]   mappedRooms_in
+ *              Fallback current-map rooms, used only when the Atlas is
+ *              unavailable.
+ *
+ * @param[in]   mappedPassages_in
+ *              Fallback current-map passages, used only when the Atlas is
+ *              unavailable.
+ *
+ * @param[in]   msgTime_s_in
+ *              Sim-clock timestamp of the snapshot and of the file name.
+ */
+extern void maybeArchiveSGraph(
+    const std::vector<ORB_SLAM3::Floor *>   &mappedFloors_in,
+    const std::vector<ORB_SLAM3::Room *>    &mappedRooms_in,
+    const std::vector<ORB_SLAM3::Passage *> &mappedPassages_in,
+    const rclcpp::Time                      &msgTime_s_in);
+
+/*!
  * @brief       Calls mapPointToPointscloud() function and then publishes the
  *              point cloud through the pubAllMappoints publisher.
  *
@@ -1100,7 +1284,14 @@ extern void publishKeyFrameMarkers(
  */
 extern void
     publishPlanes(const std::vector<ORB_SLAM3::Plane *> &mappedPlanes_in,
+                  const std::vector<ORB_SLAM3::Room *>  &mappedRooms_in,
                   const rclcpp::Time                    &msgTime_s_in);
+
+extern void publishPlanes(
+    const std::vector<ORB_SLAM3::Plane *>             &mappedPlanes_in,
+    const std::vector<ORB_SLAM3::Room *>              &mappedRooms_in,
+    const rclcpp::Time                                &msgTime_s_in,
+    vs_graphs::observability::PublishTopicsTimingSink *p_timingSink_in);
 
 /*!
  * @brief       Publishes the most recent available semantically segmented
@@ -1235,6 +1426,14 @@ extern void publishTopics(const rclcpp::Time    &msgTime_s_in,
                           const Eigen::Vector3f &angularVelocity_body_radps_in,
                           const sensor_msgs::msg::PointCloud2::ConstSharedPtr
                               &pointCloud_cameraMessage_in);
+
+extern void publishTopics(
+    const rclcpp::Time    &msgTime_s_in,
+    const Eigen::Vector3f &angularVelocity_body_radps_in,
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr
+        &pointCloud_cameraMessage_in,
+    vs_graphs::observability::PublishTopicsTimingSink *p_timingSink_in,
+    bool publishAllPoints_in = true);
 
 /**
  * Converts a direct cloud into the configured optical camera frame.
@@ -1384,6 +1583,15 @@ extern void setupPublishers(
     const std::shared_ptr<image_transport::ImageTransport> &imageTransport_in,
     const std::string                                      &topicNamespace_in);
 
+/**
+ * @brief       Releases all global ROS interfaces owned by Visual S-Graphs.
+ *
+ *              The cleanup is null-safe and releases the tracking-image
+ *              publisher before its image-transport owner. The TF listener is
+ *              released before the broadcasters and TF buffer.
+ */
+extern void shutdownRosInterfaces();
+
 /*!
  * @brief       Initialises the ROS services provided by the Visual S-Graphs
  *              interface.
@@ -1423,6 +1631,14 @@ extern void setupServices(const std::shared_ptr<rclcpp::Node> &node_in,
  */
 extern void setVoxbloxSkeletonCluster(
     const visualization_msgs::msg::MarkerArray &skeletonMarkerArray_in);
+
+/** Records a new volatile Voxblox skeleton publication for liveness. */
+extern void observeVoxbloxSkeletonPublication(
+    const sensor_msgs::msg::PointCloud2 &skeletonMessage_in);
+
+/** Records a new volatile Voxblox sparse-graph publication for liveness. */
+extern void observeVoxbloxSparseGraphPublication(
+    const visualization_msgs::msg::MarkerArray &sparseGraphMessage_in);
 
 /*!
  * @brief       Transforms a Voxblox skeleton point into the world frame using

@@ -53,7 +53,7 @@ namespace
 struct ObservationSideEvidence
 {
     std::optional<double> medianSignedDistance_m;
-    bool ambiguous{false};
+    bool                  ambiguous{false};
 };
 
 ObservationSideEvidence getMedianObservationSide_World_m(
@@ -67,8 +67,7 @@ ObservationSideEvidence getMedianObservationSide_World_m(
     const Plane::ObservationSideSnapshot snapshot =
         p_plane_in->getObservationSideSnapshot(planeEquation_World_in);
     return {snapshot.medianSignedDistance_m,
-            snapshot.face ==
-                Plane::ObservationSideSnapshot::Face::AMBIGUOUS};
+            snapshot.face == Plane::ObservationSideSnapshot::Face::AMBIGUOUS};
 }
 
 /*!
@@ -155,8 +154,7 @@ bool crossesPassablePassageOpening(
     const double           openingMargin_m_in,
     const double           minimumSideDistance_m_in)
 {
-    if (p_passage_in == nullptr ||
-        !p_passage_in->isPassable() ||
+    if (p_passage_in == nullptr || !p_passage_in->isPassable() ||
         !segmentStart_World_m_in.allFinite() ||
         !segmentEnd_World_m_in.allFinite())
     {
@@ -846,15 +844,15 @@ bool Utils::pointOnPlane(Eigen::Vector4d planeEquation, MapPoint *mapPoint)
     return false;
 }
 
-int Utils::associatePlanes(const vector<Plane *>                  &mappedPlanes,
-                           g2o::Plane3D                            givenPlane,
-                           pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr givenCloud,
-                           const Eigen::Matrix4d                  &kfPose,
-                           const Plane::planeVariant               obsPlaneType,
-                           const float                             threshold,
-                           const float maximumFiniteCloudDistance_m_in,
-                           const std::optional<Eigen::Vector3d>
-                               &observationOrigin_World_m_in)
+int Utils::associatePlanes(
+    const vector<Plane *>                       &mappedPlanes,
+    g2o::Plane3D                                 givenPlane,
+    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr givenCloud,
+    const Eigen::Matrix4d                       &kfPose,
+    const Plane::planeVariant                    obsPlaneType,
+    const float                                  threshold,
+    const float                           maximumFiniteCloudDistance_m_in,
+    const std::optional<Eigen::Vector3d> &observationOrigin_World_m_in)
 {
     /* Return no association when no mapped planes are available */
     if (mappedPlanes.empty())
@@ -1007,9 +1005,9 @@ int Utils::associatePlanes(const vector<Plane *>                  &mappedPlanes,
          * @note        SemanticSegmentation now supplies both planes in the
          *              global frame, therefore kfPose is normally identity.
          */
-        const g2o::Plane3D mappedPlaneInGivenFrame =
-            Utils::applyPoseToPlane(kfPose,
-                                    g2o::Plane3D(mappedGeometry.equation_World));
+        const g2o::Plane3D mappedPlaneInGivenFrame = Utils::applyPoseToPlane(
+            kfPose,
+            g2o::Plane3D(mappedGeometry.equation_World));
 
         Eigen::Vector4d mappedEquation = mappedPlaneInGivenFrame.coeffs();
 
@@ -1357,9 +1355,9 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                             otherObservationSide.medianSignedDistance_m
                                 .has_value() &&
                             candidateObservationSide.medianSignedDistance_m
-                                    .value() *
-                                    otherObservationSide
-                                        .medianSignedDistance_m.value() <
+                                        .value() *
+                                    otherObservationSide.medianSignedDistance_m
+                                        .value() <
                                 0.0)
                         {
                             continue;
@@ -1423,19 +1421,19 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 p_candidatePlane->getGeometrySnapshot();
             const Plane::GeometrySnapshot matchedGeometry =
                 p_matchedPlane->getGeometrySnapshot();
-            const auto candidateEvidence = std::make_tuple(
-                p_candidatePlane->getObservationCount(),
-                candidateGeometry.supportCloud != nullptr
-                    ? candidateGeometry.supportCloud->size()
-                    : 0U,
-                -p_candidatePlane->getId());
+            const auto candidateEvidence =
+                std::make_tuple(p_candidatePlane->getObservationCount(),
+                                candidateGeometry.supportCloud != nullptr
+                                    ? candidateGeometry.supportCloud->size()
+                                    : 0U,
+                                -p_candidatePlane->getId());
 
-            const auto matchedEvidence = std::make_tuple(
-                p_matchedPlane->getObservationCount(),
-                matchedGeometry.supportCloud != nullptr
-                    ? matchedGeometry.supportCloud->size()
-                    : 0U,
-                -p_matchedPlane->getId());
+            const auto matchedEvidence =
+                std::make_tuple(p_matchedPlane->getObservationCount(),
+                                matchedGeometry.supportCloud != nullptr
+                                    ? matchedGeometry.supportCloud->size()
+                                    : 0U,
+                                -p_matchedPlane->getId());
 
             Plane *p_retainedPlane = candidateEvidence >= matchedEvidence
                                          ? p_candidatePlane
@@ -1805,6 +1803,29 @@ void Utils::fuseDuplicateRoomsAfterMerge(
                 continue;
             }
 
+            const std::string importedIdentity  = p_importedRoom->getRoomTag();
+            const std::string candidateIdentity = p_candidateRoom->getRoomTag();
+            const bool        identitiesMatch =
+                !importedIdentity.empty() && !candidateIdentity.empty()
+                           ? importedIdentity == candidateIdentity
+                           : p_importedRoom->getId() == p_candidateRoom->getId();
+            if (identitiesMatch)
+            {
+                p_bestRetainedRoom = p_candidateRoom;
+                bestCentroidDistance_m =
+                    (p_candidateRoom->getCentroid() - importedCentroid_World_m)
+                        .norm();
+                break;
+            }
+
+            /* Geometry-only fusion remains a compatibility fallback solely
+             * for legacy unnumbered rooms. Mission rooms always carry a
+             * non-negative stable ID and must never cross identities. */
+            if (p_importedRoom->getId() >= 0 || p_candidateRoom->getId() >= 0)
+            {
+                continue;
+            }
+
             if (p_importedRoom->getHasKnownLabel() &&
                 p_candidateRoom->getHasKnownLabel() &&
                 p_importedRoom->getMetaMarkerId() !=
@@ -1928,16 +1949,14 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             const double groundNormalNorm = groundEq.head<3>().norm();
             if (groundEq.allFinite() && groundNormalNorm > 1e-8)
             {
-                mergeGroundNormal_World =
-                    groundEq.head<3>() / groundNormalNorm;
+                mergeGroundNormal_World = groundEq.head<3>() / groundNormalNorm;
             }
         }
 
         const double mergeOpeningMargin_m =
             p_systemParameters != nullptr
-                ? static_cast<double>(
-                      p_systemParameters->room_seg.passagePartition
-                          .openingMargin_m)
+                ? static_cast<double>(p_systemParameters->room_seg
+                                          .passagePartition.openingMargin_m)
                 : 0.20;
 
         const double mergeMinimumSideDistance_m =
@@ -1952,23 +1971,23 @@ void Utils::fuseDuplicateRoomsAfterMerge(
 
         const std::vector<Passage *> mergePassages =
             p_map_inout->GetAllPassages();
-        const bool roomsAreSeparatedByPassage = std::any_of(
-            mergePassages.begin(),
-            mergePassages.end(),
-            [&retainedCentroid_World_m,
-             &importedCentroid_World_m,
-             &mergeGroundNormal_World,
-             mergeOpeningMargin_m,
-             mergeMinimumSideDistance_m](Passage *p_passage)
-            {
-                return crossesPassablePassageOpening(
-                    retainedCentroid_World_m,
-                    importedCentroid_World_m,
-                    p_passage,
-                    mergeGroundNormal_World,
-                    mergeOpeningMargin_m,
-                    mergeMinimumSideDistance_m);
-            });
+        const bool roomsAreSeparatedByPassage =
+            std::any_of(mergePassages.begin(),
+                        mergePassages.end(),
+                        [&retainedCentroid_World_m,
+                         &importedCentroid_World_m,
+                         &mergeGroundNormal_World,
+                         mergeOpeningMargin_m,
+                         mergeMinimumSideDistance_m](Passage *p_passage)
+                        {
+                            return crossesPassablePassageOpening(
+                                retainedCentroid_World_m,
+                                importedCentroid_World_m,
+                                p_passage,
+                                mergeGroundNormal_World,
+                                mergeOpeningMargin_m,
+                                mergeMinimumSideDistance_m);
+                        });
 
         if (roomsAreSeparatedByPassage)
         {
@@ -2020,13 +2039,12 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             for (ORB_SLAM3::Passage *p_passage : mergePassages)
             {
                 if (p_passage != nullptr &&
-                    crossesPassablePassageOpening(
-                        retainedCentroid_World_m,
-                        importedWallCentroid_World_m,
-                        p_passage,
-                        mergeGroundNormal_World,
-                        mergeOpeningMargin_m,
-                        mergeMinimumSideDistance_m))
+                    crossesPassablePassageOpening(retainedCentroid_World_m,
+                                                  importedWallCentroid_World_m,
+                                                  p_passage,
+                                                  mergeGroundNormal_World,
+                                                  mergeOpeningMargin_m,
+                                                  mergeMinimumSideDistance_m))
                 {
                     p_separatingPassage = p_passage;
                     break;
@@ -2112,6 +2130,15 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             p_bestRetainedRoom->setDoorways(p_importedPassage);
         }
 
+        for (Passage *p_passage : p_map_inout->GetAllPassages())
+        {
+            if (p_passage != nullptr)
+            {
+                p_passage->replaceProspectiveRoom(p_importedRoom,
+                                                  p_bestRetainedRoom);
+            }
+        }
+
         const double retainedWeight = static_cast<double>(
             std::max<std::size_t>(retainedWalls.size(), 1U));
 
@@ -2139,6 +2166,13 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             p_bestRetainedRoom->setMetaMarkerId(
                 p_importedRoom->getMetaMarkerId());
             p_bestRetainedRoom->setName(p_importedRoom->getName());
+        }
+
+        /* Presence on either side proves the UAV has been there: a room fused
+         * from a visited duplicate stays visited. */
+        if (p_importedRoom->hasPreviouslyVisited())
+        {
+            p_bestRetainedRoom->setPreviouslyVisited(true);
         }
 
         for (Floor *p_floor : p_map_inout->GetAllFloors())
@@ -2176,8 +2210,8 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
         return;
     }
 
-    std::vector<Passage *> passages = p_activeMap->GetAllPassages();
-    const std::vector<Room *> activeRooms = p_activeMap->GetAllRooms();
+    std::vector<Passage *>           passages = p_activeMap->GetAllPassages();
+    const std::vector<Room *>        activeRooms = p_activeMap->GetAllRooms();
     const std::unordered_set<Room *> activeRoomSet(activeRooms.begin(),
                                                    activeRooms.end());
 
@@ -2314,9 +2348,9 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
                 [&knownSide, &retainedCentroid_World_m](Room *p_room)
             {
                 return p_room != nullptr && knownSide.hasDirection() &&
-                       knownSide.direction_World.dot(
-                           p_room->getCentroid() -
-                           retainedCentroid_World_m) < -0.20;
+                       knownSide.direction_World.dot(p_room->getCentroid() -
+                                                     retainedCentroid_World_m) <
+                           -0.20;
             };
 
             Room *p_survivingHandle = p_retainedHandle;

@@ -1,0 +1,52 @@
+/**
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            evaluateAxPass04.cc
+ *
+ * @brief           Implements evaluateAxPass04(), declared in
+ *                  private_functions.h. The per-passage logic lives in
+ *                  evaluateOnePassageMapAndFloor.cc (CPP_CODING_STANDARD.md
+ *                  Section 5.4: one ordinary function per .cc).
+ */
+
+#include "Semantic/SemanticAxiomEvaluator/private_functions.h"
+
+namespace ORB_SLAM3
+{
+namespace semantic
+{
+
+void evaluateAxPass04(const SemanticGraphSnapshot &snapshot_in,
+                      std::vector<Finding>        &findings_inout)
+{
+    for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
+    {
+        for (const PassageRecord &passage : mapSnapshot.passages)
+        {
+            if (!passage.isLive)
+            {
+                continue;
+            }
+            evaluateOnePassageMapAndFloor(passage, snapshot_in, findings_inout);
+        }
+    }
+}
+
+} // namespace semantic
+} // namespace ORB_SLAM3

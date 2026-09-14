@@ -809,6 +809,99 @@ namespace ORB_SLAM3
             _error[3] = markerPose.translation().norm();
         }
     };
+
+    /**
+     * WP13 Phase 4 (Section 17): a fixed source/target plane-pair measurement
+     * for the inter-map transform factor below. Both plane equations and the
+     * sign hypothesis are fixed at construction; the surviving plane is not a
+     * graph variable.
+     */
+    struct PlanePairMeasurement
+    {
+        Eigen::Vector3d n_A; // source plane normal (unit, absorbed map frame)
+        double d_A;          // source plane offset: n_A^T x + d_A = 0
+        Eigen::Vector3d n_B; // target plane normal (unit, surviving map frame)
+        double d_B;          // target plane offset: n_B^T x + d_B = 0
+        int sigma;           // fixed sign hypothesis for the source plane (+1/-1)
+
+        PlanePairMeasurement()
+            : n_A(Eigen::Vector3d::Zero()), d_A(0.0),
+              n_B(Eigen::Vector3d::Zero()), d_B(0.0), sigma(1)
+        {
+        }
+    };
+
+    /**
+     * WP13 Phase 4 (Section 17): one unary factor on the inter-map SE(3)
+     * transform per accepted wall correspondence. Residual is [orientation
+     * (2D tangent at n_B), offset (1D)]. Only computeError() is provided:
+     * this codebase's VertexSE3Expmap::oplusImpl perturbs on the LEFT
+     * (setEstimate(SE3Quat::exp(update) * estimate())), which is the
+     * opposite convention the plan text assumed when it specified an
+     * analytical Jacobian; rather than re-derive under the wrong convention,
+     * this edge relies on g2o::BaseUnaryEdge's own numerical
+     * linearizeOplus() (base_unary_edge.hpp), which probes the vertex's
+     * actual oplus() and is therefore correct regardless of the
+     * perturbation-side convention. This is the plan's own explicit fallback
+     * ("if analytical derivation proves intractable, numerical
+     * differentiation with central differences is the explicit fallback").
+     */
+    class EdgePlaneTransformSE3 : public g2o::BaseUnaryEdge<3, PlanePairMeasurement, g2o::VertexSE3Expmap>
+    {
+    public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+        EdgePlaneTransformSE3() {}
+
+        bool read(std::istream &is) { return false; }
+        bool write(std::ostream &os) const { return false; }
+
+        void computeError()
+        {
+            const g2o::VertexSE3Expmap *v = static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
+            const g2o::SE3Quat estimate = v->estimate();
+            const Eigen::Matrix3d R = estimate.rotation().toRotationMatrix();
+            const Eigen::Vector3d t = estimate.translation();
+
+            // Plane.cc:transformPlaneEquation law (scale fixed at 1 here):
+            // n' = R n ; d' = sigma*d - n'^T t
+            const Eigen::Vector3d n_pred = static_cast<double>(_measurement.sigma) * (R * _measurement.n_A);
+            const double d_pred = static_cast<double>(_measurement.sigma) * _measurement.d_A - n_pred.dot(t);
+
+            // Minimal rotation vector (axis-angle) that rotates n_pred onto
+            // n_B, i.e. Log_SO3(n_pred, n_B).
+            const Eigen::Vector3d &n_B = _measurement.n_B;
+            const Eigen::Vector3d axis = n_pred.cross(n_B);
+            const double sinAngle = axis.norm();
+            const double cosAngle = std::max(-1.0, std::min(1.0, n_pred.dot(n_B)));
+            const double angle = std::atan2(sinAngle, cosAngle);
+            Eigen::Vector3d logVec = Eigen::Vector3d::Zero();
+            if (sinAngle > 1e-12)
+            {
+                logVec = (axis / sinAngle) * angle;
+            }
+            else if (cosAngle < 0.0)
+            {
+                // Antipodal singularity: axis/sinAngle is 0/0 exactly where
+                // the true orientation error is at its maximum (angle ~ pi),
+                // not zero -- leaving logVec at zero here would silently
+                // mask a 180 degree misalignment as a perfect fit. Any unit
+                // vector orthogonal to n_pred is a valid rotation axis at
+                // this isolated point; unitOrthogonal() picks one
+                // deterministically.
+                logVec = n_pred.unitOrthogonal() * angle;
+            }
+
+            // Orthonormal 2D basis for the tangent plane at n_B (B_B).
+            const Eigen::Vector3d referenceAxis = (std::abs(n_B.x()) <= 0.9) ? Eigen::Vector3d::UnitX() : Eigen::Vector3d::UnitY();
+            const Eigen::Vector3d axisU = n_B.cross(referenceAxis).normalized();
+            const Eigen::Vector3d axisV = n_B.cross(axisU).normalized();
+
+            _error[0] = axisU.dot(logVec);
+            _error[1] = axisV.dot(logVec);
+            _error[2] = d_pred - _measurement.d_B;
+        }
+    };
 }
 
 #endif

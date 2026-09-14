@@ -25,6 +25,7 @@
 
 #include "System.h"
 #include "Converter.h"
+#include "ResetCause.h"
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -81,17 +82,29 @@ System::System(const string         &strVocFile,
     /* Output msg of what sensor is being used */
     std::cout << "[System] Input sensor is set to: ";
     if (mSensor == MONOCULAR)
+    {
         std::cout << "Monocular" << std::endl;
+    }
     else if (mSensor == STEREO)
+    {
         std::cout << "Stereo" << std::endl;
+    }
     else if (mSensor == RGBD)
+    {
         std::cout << "RGB-D" << std::endl;
+    }
     else if (mSensor == IMU_MONOCULAR)
+    {
         std::cout << "Monocular-Inertial" << std::endl;
+    }
     else if (mSensor == IMU_STEREO)
+    {
         std::cout << "Stereo-Inertial" << std::endl;
+    }
     else if (mSensor == IMU_RGBD)
+    {
         std::cout << "RGB-D-Inertial" << std::endl;
+    }
 
     /* Check settings file can be opened */
     cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
@@ -227,7 +240,7 @@ System::System(const string         &strVocFile,
     mpTracker->SetMarkerImpact(sysParams->markers.impact);
 
     /* ---------------------------------------------------------------------- *
-     * LOCAL MAPPTING THREAD
+     * LOCAL MAPPING THREAD
      * ---------------------------------------------------------------------- */
 
     /* Initialize the Local Mapping object */
@@ -361,7 +374,6 @@ System::~System()
     {
         usleep(1000);
     }
-
     /* Join and free the thread objects (first and only join). */
     mptLocalMapping->join();
     mptLoopClosing->join();
@@ -371,6 +383,7 @@ System::~System()
     {
         mptViewer->join();
     }
+    clearResetCause(this);
 
     delete mptLocalMapping;
     delete mptLoopClosing;
@@ -411,17 +424,30 @@ void System::addSegmentedImage(
         SystemParams::general::ModeOfOperation::GEO)
     {
         // just clear the pointcloud of the keyframe and return, as semantic
-        // segmentation is not running
+        // segmentation is not running. Still counts as "returned" -- the
+        // keyframe's round trip through the pipeline is over either way, and
+        // the lockstep backlog signal must not stall forever in GEO mode.
         ORB_SLAM3::KeyFrame *pKF =
             mpAtlas->GetKeyFrameById(std::get<0>(*tuple));
         if (pKF)
         {
             pKF->clearPointCloud();
         }
+        mSegmentationReturnedCount.fetch_add(1U, std::memory_order_relaxed);
+        mLastReturnedKeyFrameId.store(std::get<0>(*tuple),
+                                      std::memory_order_relaxed);
         return;
     }
 
     mpSemanticSegmentation->AddSegmentedFrameToBuffer(tuple);
+    mSegmentationReturnedCount.fetch_add(1U, std::memory_order_relaxed);
+    mLastReturnedKeyFrameId.store(std::get<0>(*tuple),
+                                  std::memory_order_relaxed);
+}
+
+void System::IncrementSegmentationPublishedCount()
+{
+    mSegmentationPublishedCount.fetch_add(1U, std::memory_order_relaxed);
 }
 
 std::vector<std::vector<Eigen::Vector3d>> System::getSkeletonCluster()
@@ -523,6 +549,7 @@ Sophus::SE3f System::TrackStereo(const cv::Mat              &imLeft,
         unique_lock<mutex> lock(mMutexReset);
         if (mbReset)
         {
+            (void)consumeResetCause(this);
             mpTracker->Reset();
             mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbReset          = false;
@@ -530,6 +557,8 @@ Sophus::SE3f System::TrackStereo(const cv::Mat              &imLeft,
         }
         else if (mbResetActiveMap)
         {
+            reportResetAttribution(consumeResetCause(this),
+                                   ResetAction::RESET_ACTIVE_MAP_EXECUTION);
             mpTracker->ResetActiveMap();
             mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbResetActiveMap = false;
@@ -616,6 +645,7 @@ Sophus::SE3f
         unique_lock<mutex> lock(mMutexReset);
         if (mbReset)
         {
+            (void)consumeResetCause(this);
             mpTracker->Reset();
             mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbReset          = false;
@@ -623,6 +653,8 @@ Sophus::SE3f
         }
         else if (mbResetActiveMap)
         {
+            reportResetAttribution(consumeResetCause(this),
+                                   ResetAction::RESET_ACTIVE_MAP_EXECUTION);
             mpTracker->ResetActiveMap();
             mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbResetActiveMap = false;
@@ -655,6 +687,30 @@ Sophus::SE3f
         mTrackingState == Tracking::OK &&
         mCurrentCameraPose_World.translation().allFinite() &&
         mCurrentCameraPose_World.rotationMatrix().allFinite();
+
+    /* Feed the real per-frame tracking state to SemanticsManager's reset
+     * anchor (lastKnownRoomId_ via onTrackingLost()/onTrackingRecovered()).
+     * Previously the ONLY caller of these was GetMissionHealthSnapshot(),
+     * itself only invoked from the get_mission_health ROS service -- which
+     * nothing calls unless scripts/sim_lockstep_controller.py's opt-in
+     * --lockstep mode is running. Every run without --lockstep therefore
+     * left lastKnownRoomId_ at its unset default (-1) for the whole
+     * mission: SemanticCandidates::generate() silently fell back to
+     * unanchored scoring on every single reset, never told which room the
+     * UAV was actually in when tracking was lost. This is the same
+     * TrackRGBD() call every real frame already goes through, so it fires
+     * at real tracking-loss/recovery cadence instead of only on-demand. */
+    if (mpSemanticsManager != nullptr)
+    {
+        if (mTrackingState == Tracking::LOST)
+        {
+            mpSemanticsManager->onTrackingLost();
+        }
+        else
+        {
+            mpSemanticsManager->onTrackingRecovered();
+        }
+    }
 
     /* Detect map restart for room-context carryover (WP1).
      * The SemanticsManager::Run() thread performs the actual room
@@ -745,6 +801,7 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat              &im,
         unique_lock<mutex> lock(mMutexReset);
         if (mbReset)
         {
+            (void)consumeResetCause(this);
             mpTracker->Reset();
             mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbReset          = false;
@@ -752,6 +809,8 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat              &im,
         }
         else if (mbResetActiveMap)
         {
+            reportResetAttribution(consumeResetCause(this),
+                                   ResetAction::RESET_ACTIVE_MAP_EXECUTION);
             mpTracker->ResetActiveMap();
             mResetCount.fetch_add(1U, std::memory_order_relaxed);
             mbResetActiveMap = false;
@@ -827,6 +886,50 @@ System::MissionHealthSnapshot
     snapshot.inertialInitialized =
         snapshot.inertial && mpAtlas->isImuInitialized();
     snapshot.resetCount = mResetCount.load(std::memory_order_relaxed);
+    snapshot.rgbdFrontendAcceptedCount =
+        mRgbdFrontendAcceptedCount.load(std::memory_order_relaxed);
+    snapshot.rgbdFrontendProcessedCount =
+        mRgbdFrontendProcessedCount.load(std::memory_order_relaxed);
+    snapshot.rgbdFrontendOverwrittenCount =
+        mRgbdFrontendOverwrittenCount.load(std::memory_order_relaxed);
+    snapshot.rgbdFrontendWorkerInFlight =
+        mRgbdFrontendWorkerInFlight.load(std::memory_order_relaxed);
+    snapshot.rgbdFrontendLastProcessedSensorTimestampNanoseconds =
+        mRgbdFrontendLastProcessedSensorTimestampNanoseconds.load(
+            std::memory_order_relaxed);
+    snapshot.segmentationPublishedCount =
+        mSegmentationPublishedCount.load(std::memory_order_relaxed);
+    snapshot.segmentationReturnedCount =
+        mSegmentationReturnedCount.load(std::memory_order_relaxed);
+    snapshot.lastReturnedKeyFrameId =
+        mLastReturnedKeyFrameId.load(std::memory_order_relaxed);
+
+    if (SystemParams::GetParams()->general.mode_of_operation ==
+        SystemParams::general::ModeOfOperation::GEO)
+    {
+        snapshot.segmentationTerminalCount = snapshot.segmentationReturnedCount;
+        snapshot.lastTerminalKeyFrameId    = snapshot.lastReturnedKeyFrameId;
+    }
+    else if (mpSemanticSegmentation != nullptr)
+    {
+        const SemanticSegmentation::ProcessingStats processingStats =
+            mpSemanticSegmentation->GetProcessingStats();
+        snapshot.segmentationEnqueuedCount = processingStats.enqueuedCount;
+        snapshot.segmentationDequeuedCount = processingStats.dequeuedCount;
+        snapshot.segmentationTerminalCount = processingStats.terminalCount;
+        snapshot.segmentationAcceptedCount = processingStats.acceptedCount;
+        snapshot.segmentationDroppedCount  = processingStats.droppedCount;
+        snapshot.segmentationMissingKeyFrameCount =
+            processingStats.missingKeyFrameCount;
+        snapshot.segmentationMissingCloudCount =
+            processingStats.missingCloudCount;
+        snapshot.segmentationStaleMapCount = processingStats.staleMapCount;
+        snapshot.lastTerminalKeyFrameId =
+            processingStats.lastTerminalKeyFrameId;
+        snapshot.segmentationQueueDepth = processingStats.queueDepth;
+        snapshot.segmentationQueueHighWatermark =
+            processingStats.queueHighWatermark;
+    }
 
     if (mpSemanticsManager != nullptr)
     {
@@ -834,6 +937,10 @@ System::MissionHealthSnapshot
         if (snapshot.trackingState == Tracking::LOST)
         {
             mpSemanticsManager->onTrackingLost();
+        }
+        else
+        {
+            mpSemanticsManager->onTrackingRecovered();
         }
         snapshot.lastKnownRoomId = mpSemanticsManager->getLastKnownRoomId();
     }
@@ -922,21 +1029,29 @@ System::MissionHealthSnapshot
                 PassageHealth passage;
                 passage.id       = p_passage->getId();
                 passage.passable = p_passage->isPassable();
-                passage.knownToFarCount =
+                passage.primaryRoomId =
+                    p_passage->getKnownSideProvenance().pRoom
+                        ? p_passage->getKnownSideProvenance().pRoom->getId()
+                        : -1;
+                passage.secondaryRoomId =
+                    p_passage->getProspectiveRoom()
+                        ? p_passage->getProspectiveRoom()->getId()
+                        : -1;
+                passage.primaryTraversalCount =
                     p_passage->getTraversalKnownToFarCount();
-                passage.farToKnownCount =
+                passage.secondaryTraversalCount =
                     p_passage->getTraversalFarToKnownCount();
                 passage.unknownCount = p_passage->getTraversalUnknownCount();
                 const Passage::KnownSideProvenance knownSide =
                     p_passage->getKnownSideProvenance();
                 if (knownSide.pRoom != nullptr)
                 {
-                    passage.knownSideRoomId = knownSide.pRoom->getId();
+                    passage.primaryRoomId = knownSide.pRoom->getId();
                 }
                 Room *p_farSideRoom = p_passage->getProspectiveRoom();
                 if (p_farSideRoom != nullptr)
                 {
-                    passage.farSideRoomId = p_farSideRoom->getId();
+                    passage.secondaryRoomId = p_farSideRoom->getId();
                 }
                 snapshot.passages.push_back(passage);
             }
@@ -966,6 +1081,41 @@ System::MissionHealthSnapshot
     return snapshot;
 }
 
+void System::UpdateRgbdFrontendHealth(
+    const std::uint64_t acceptedCount_in,
+    const std::uint64_t processedCount_in,
+    const std::uint64_t overwrittenCount_in,
+    const bool          isWorkerInFlight_in,
+    const std::int64_t  lastProcessedSensorTimestampNanoseconds_in) noexcept
+{
+    mRgbdFrontendAcceptedCount.store(acceptedCount_in,
+                                     std::memory_order_relaxed);
+    mRgbdFrontendProcessedCount.store(processedCount_in,
+                                      std::memory_order_relaxed);
+    mRgbdFrontendOverwrittenCount.store(overwrittenCount_in,
+                                        std::memory_order_relaxed);
+    mRgbdFrontendWorkerInFlight.store(isWorkerInFlight_in,
+                                      std::memory_order_relaxed);
+    mRgbdFrontendLastProcessedSensorTimestampNanoseconds.store(
+        lastProcessedSensorTimestampNanoseconds_in,
+        std::memory_order_relaxed);
+}
+
+semantic::SemanticReportCacheEntry System::GetSemanticReportCacheEntry() const
+{
+    if (mpSemanticsManager == nullptr)
+    {
+        return semantic::SemanticReportCacheEntry();
+    }
+    return mpSemanticsManager->getSemanticReportCacheEntry();
+}
+
+bool System::IsSemanticReportCacheAvailable() const
+{
+    return mpSemanticsManager != nullptr &&
+           mpSemanticsManager->isSemanticReportCacheAvailable();
+}
+
 void System::Reset()
 {
     unique_lock<mutex> lock(mMutexReset);
@@ -974,8 +1124,15 @@ void System::Reset()
 
 void System::ResetActiveMap()
 {
+    RequestResetActiveMapWithCause(ResetCause::UNATTRIBUTED_PUBLIC_REQUEST);
+}
+
+void System::RequestResetActiveMapWithCause(const ResetCause cause_in)
+{
     unique_lock<mutex> lock(mMutexReset);
+    retainResetCause(this, cause_in);
     mbResetActiveMap = true;
+    reportResetAttribution(cause_in, ResetAction::RESET_ACTIVE_MAP_REQUEST);
 }
 
 void System::Shutdown()
@@ -989,15 +1146,48 @@ void System::Shutdown()
 
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
+    mpSemanticSegmentation->RequestFinish();
+    mpSemanticsManager->RequestFinish();
+    if (mpViewer != static_cast<Viewer *>(NULL))
+    {
+        mpViewer->RequestFinish();
+    }
 
     /*
-     * LoopClosing joins its GBA worker before reporting finished. Waiting here
-     * prevents Atlas serialization from racing a final map correction.
+     * Workers report finished only after their owned work has drained. Waiting
+     * here prevents Atlas serialization from racing final worker updates.
      */
-    while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished())
+    std::size_t shutdownPollCount = 0U;
+    while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() ||
+           !mpSemanticSegmentation->isFinished() ||
+           !mpSemanticsManager->isFinished() ||
+           (mpViewer != static_cast<Viewer *>(NULL) && !mpViewer->isFinished()))
     {
         usleep(1000);
+        ++shutdownPollCount;
+        if (shutdownPollCount % 1000U == 0U)
+        {
+            const bool localMappingFinished = mpLocalMapper->isFinished();
+            const bool loopClosingFinished  = mpLoopCloser->isFinished();
+            const bool semanticSegmentationFinished =
+                mpSemanticSegmentation->isFinished();
+            const bool semanticsManagerFinished =
+                mpSemanticsManager->isFinished();
+            const bool viewerFinished =
+                mpViewer == static_cast<Viewer *>(NULL) ||
+                mpViewer->isFinished();
+            std::cout << "[System::Shutdown] local_mapping="
+                      << localMappingFinished
+                      << " loop_closing=" << loopClosingFinished
+                      << " semantic_segmentation="
+                      << semanticSegmentationFinished
+                      << " semantics_manager=" << semanticsManagerFinished
+                      << " viewer=" << viewerFinished << std::endl;
+        }
     }
+
+    std::cout << "[System::Shutdown] all workers completed [flushed]"
+              << std::endl;
 
     if (!mStrSaveAtlasToFile.empty())
     {
@@ -1655,11 +1845,15 @@ void System::ChangeDataset()
 {
     if (mpAtlas->GetCurrentMap()->KeyFramesInMap() < 12)
     {
+        reportResetAttribution(ResetCause::DATASET_CHANGE_SMALL_MAP,
+                               ResetAction::RESET_ACTIVE_MAP_EXECUTION);
         mpTracker->ResetActiveMap();
         mResetCount.fetch_add(1U, std::memory_order_relaxed);
     }
     else
     {
+        reportResetAttribution(ResetCause::DATASET_CHANGE_NEW_MAP,
+                               ResetAction::CREATE_MAP_EXECUTION);
         mpTracker->CreateMapInAtlas();
     }
 
@@ -1860,6 +2054,11 @@ ORB_SLAM3::Map *System::GetCurrentMap()
 {
     ORB_SLAM3::Map *pActiveMap = mpAtlas->GetCurrentMap();
     return pActiveMap;
+}
+
+ORB_SLAM3::Atlas *System::GetAtlas()
+{
+    return mpAtlas;
 }
 
 vector<MapPoint *> System::GetAllMapPoints()

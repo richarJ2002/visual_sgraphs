@@ -206,8 +206,20 @@ class SystemParams
             float        ambiguousDuplicatePlaneSeparation_m = 0.75f;
             /*! @brief Maximum crossing-cluster separation, in metres. */
             float        crossingClusterDistance_m = 0.65f;
-            /*! @brief Distinct skeleton snapshots required for confirmation. */
+            /*! @brief Distinct skeleton snapshots required for confirmation.
+             *         No longer gates passage CREATION (see
+             *         minimumCrossingClusterSize) -- retained only to cap the
+             *         temporal-evidence smoothing weight. */
             unsigned int minimumConfirmationSnapshots = 4U;
+            /*! @brief Individual skeleton-edge crossings that must cluster
+             *         into one opening in a SINGLE cycle before a passage is
+             *         created for it -- the same-cycle evidence-quantity gate
+             *         a wall's own admission uses (cluster point count /
+             *         connectivity ratio), applied at the same semantic
+             *         level and priority: enough of the free-space skeleton
+             *         breaking through the wall this cycle is sufficient on
+             *         its own, with no separate multi-cycle waiting period. */
+            unsigned int minimumCrossingClusterSize = 2U;
             /*! @brief Missed snapshots retained before discarding evidence. */
             unsigned int maximumMissedSnapshots = 4U;
             /*! @brief Required wall extent beside each opening, in metres. */
@@ -249,10 +261,30 @@ class SystemParams
                 float        clusterTolerance_m = 0.15f;
                 /*! @brief Minimum points in the largest component. */
                 unsigned int minimumComponentPointCount = 300U;
-                /*! @brief Minimum fraction belonging to that component. */
-                float        minimumComponentRatio = 0.70f;
+                /*! @brief Minimum fraction belonging to that component.
+                 *
+                 * A wall's own doorway/window cuts its single-frame mask
+                 * into two large, independently-valid fragments of near
+                 * equal size (ratio ~0.50), not one dominant blob -- so the
+                 * gate must clear ~0.50 with margin while still catching
+                 * genuinely scattered/sparse noise below it. */
+                float        minimumComponentRatio = 0.40f;
             } connectivity;
         } wallCreation;
+
+        /*!
+         * @brief Thresholds deciding when two WALL Planes are plausibly the
+         *        two opposite-facing observations of one physical wall.
+         */
+        struct WallPairing
+        {
+            /*! @brief Thinnest plausible physical wall, in metres. */
+            float minimumThickness_m = 0.05f;
+            /*! @brief Thickest plausible physical wall, in metres. */
+            float maximumThickness_m = 0.60f;
+            /*! @brief Required in-plane footprint overlap ratio. */
+            float minimumOverlapRatio = 0.30f;
+        } wallPairing;
 
         struct reassociate
         {
@@ -296,12 +328,12 @@ class SystemParams
         float        cluster_point_wall_distance_thresh             = 0.5f;
         float        cluster_centroid_wall_centroid_distance_thresh = 5.0f;
 
-        unsigned int minimumWallSupportPointCount = 2;
-        unsigned int minimumWallObservationCount  = 3;
+        unsigned int minimumWallSupportPointCount    = 2;
+        unsigned int minimumWallObservationCount     = 3;
         unsigned int minimumUndefendedWallHoldCycles = 5;
-        float        minimumWallSupportRatio      = 0.5f;
-        float        finiteWallBoundsMargin_m     = 0.75f;
-        float        minimumFiniteWallExtent_m    = 1.0f;
+        float        minimumWallSupportRatio         = 0.5f;
+        float        finiteWallBoundsMargin_m        = 0.75f;
+        float        minimumFiniteWallExtent_m       = 1.0f;
 
         struct BoundaryTopology
         {
@@ -356,22 +388,113 @@ class SystemParams
         /*! Minimum continuous dwell in the crossing guard before the
          *  CONFIRMED_ROOM <-> CROSSING_PASSAGE transitions commit (seconds).
          */
-        float crossing_dwell_s = 2.0f;
+        float        crossing_dwell_s = 2.0f;
         /*! Minimum traversal confidence (0..1) for a crossing to count. */
-        float crossing_confidence = 0.7f;
+        float        crossing_confidence = 0.7f;
         /*! Maximum time in LOST_WITH_LAST_ROOM before decay to
          *  LOST_WITHOUT_ROOM (seconds). */
-        float lost_timeout_s = 30.0f;
+        float        lost_timeout_s = 30.0f;
         /*! Maximum time in REACQUIRING_IN_NEW_MAP before decay to
          *  LOST_WITHOUT_ROOM (seconds). */
-        float reacquire_timeout_s = 60.0f;
+        float        reacquire_timeout_s = 60.0f;
         /*! Retry backoff between failed reacquire attempts (seconds). */
-        float reacquire_retry_interval_s = 5.0f;
+        float        reacquire_retry_interval_s = 5.0f;
         /*! Maximum failed reacquire attempts before timeout applies. */
         unsigned int reacquire_max_retries = 3U;
         /*! Minimum planes required to attempt a reacquire. */
         unsigned int reacquire_min_planes = 3U;
     } room_tracking;
+
+    struct candidate_gen
+    {
+        unsigned int top_k                    = 10U;
+        unsigned int candidate_pair_cap       = 1000U;
+        unsigned int topology_nodes_cap       = 128U;
+        unsigned int global_fallback_cap      = 1000U;
+        float        weight_angle             = 1.0F;
+        float        weight_extent            = 1.0F;
+        float        weight_aperture          = 1.0F;
+        float        weight_topology          = 1.0F;
+        float        angle_missing_penalty    = 1.0F;
+        float        extent_missing_penalty   = 1.0F;
+        float        aperture_missing_penalty = 1.0F;
+        float        ambiguity_margin         = 0.05F;
+        float        angle_tolerance_rad      = 1.0e-9F;
+        float        runtime_budget_ms        = 0.0F;
+        unsigned int descriptor_elements_cap  = 4096U;
+        unsigned int topo_refinement_iters    = 3U;
+    } candidate_gen;
+
+    /** WP13 Phase 4 (Section 9.3): plane-gated geometric verification gates.
+     * Initial values are the plan's own explicit figures; all
+     * calibration-dependent. */
+    struct verification
+    {
+        float        max_normal_angle_deg        = 10.0F;
+        float        max_offset_m                = 0.35F;
+        float        max_support_dist_m          = 0.25F;
+        float        min_inlier_ratio            = 0.6F;
+        float        max_condition_number        = 100.0F;
+        unsigned int ambiguity_margin_inliers    = 1U;
+        unsigned int max_walls_per_room          = 16U;
+        unsigned int max_hypotheses              = 2000U;
+        unsigned int max_support_sample_per_wall = 64U;
+        /** Section 19.5's explicit |cos(theta)| gate, distinct from
+         * max_normal_angle_deg above. */
+        float        min_abs_cos_normal_angle = 0.85F;
+    } verification;
+
+    /** WP13 Phase 4 (Section 17.4): EdgePlaneTransformSE3 factor noise model
+     * and robust threshold. No plan-given initial values beyond the Huber
+     * constant; the sigma defaults below are conservative literal choices,
+     * calibration-dependent like the rest of this section. */
+    struct factor
+    {
+        float        sigma_theta_rad      = 0.05F;
+        float        sigma_offset_m       = 0.05F;
+        float        huber_delta          = 1.345F;
+        unsigned int optimizer_iterations = 20U;
+    } factor;
+
+    /*!
+     * @brief Map-merge and axiom configuration thresholds.
+     *
+     *      Currently wired as YAML params; merge/axiom logic adopts them in
+     *      later work packages.
+     */
+    struct map_merge
+    {
+        /*! @brief Fixed spherical tolerance for passage association across maps
+         * (metres). */
+        float        passage_match_tolerance_m = 0.20f;
+        /*! @brief Wall coplanarity angle threshold (degrees); planes within
+         * this angle are considered coplanar and merge-eligible. */
+        float        wall_coplanar_angle_deg = 5.0f;
+        /*! @brief Edges within this distance count as overlapping / the same
+         * wall (metres). */
+        float        wall_edge_overlap_m = 0.50f;
+        /*! @brief Floor match tolerance for through-doorway wall axiom
+         * (metres). */
+        float        floor_match_tolerance_m = 0.10f;
+        /*! @brief Max first-to-latest observation origins checked by the
+         * through-doorway wall axiom. */
+        unsigned int observation_ray_check_cap = 5U;
+        /*! @brief Cooldown between consecutive-map merge attempts for the
+         * same old map (seconds). */
+        unsigned int merge_cooldown_s = 30U;
+        /*! @brief Minimum tag-matched anchor rooms required to estimate
+         * alignment. */
+        unsigned int min_anchor_rooms = 2U;
+        /*! @brief Minimum rooms required in each map before attempting a
+         * match. */
+        unsigned int min_rooms_per_map = 1U;
+        /*! @brief Minimum walls required in each map before attempting a
+         * match. */
+        unsigned int min_walls_per_map = 3U;
+        /*! @brief Maximum anchor-room centroid distance after alignment
+         * (metres). Rooms pair by tag; this only bounds residual drift. */
+        float room_centroid_tolerance_m = 0.50F;
+    } map_merge;
 
   private:
     SystemParams();

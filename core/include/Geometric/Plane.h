@@ -19,6 +19,7 @@
 #ifndef PLANE_H
 #define PLANE_H
 
+#include "Geometric/PlaneGeometryMetadataSnapshot.h"
 #include "Map.h"
 #include "MapPoint.h"
 #include "Semantic/Marker.h"
@@ -250,6 +251,36 @@ class Plane
     Eigen::Vector3d centroid;
 
     /*!
+     * @brief       World-frame camera position of the observation that first
+     *              created this plane face.
+     *
+     * @note        A physical wall has TWO faces, and a camera can only ever
+     *              observe the one turned toward it. This point is what makes
+     *              those two faces distinguishable: the side of the plane this
+     *              position falls on IS the face's identity, and it is stamped
+     *              once, at creation, from the observing keyframe. It is stored
+     *              as a POINT rather than a sign or a boolean deliberately --
+     *              the global equation may be refit (and its normal re-signed)
+     *              over the plane's lifetime, which would silently invert a
+     *              stored sign, whereas re-deriving the sign from this point
+     *              against the current equation stays correct.
+     */
+    std::optional<Eigen::Vector3d> observationOrigin_World_m;
+
+    /*!
+     * @brief       Non-owning link to the opposite-facing Plane hypothesis
+     *              believed to be the other face of the same physical wall,
+     *              when one has been identified.
+     *
+     * @note        Symmetric by convention: if A's twin is B, B's twin is A.
+     *              Populated and re-validated by
+     *              SemanticsManager::reconcileWallFacePairs(); nullptr when
+     *              no plausible twin has been found (or a prior one stopped
+     *              being plausible, e.g. after a refit).
+     */
+    Plane *twinFace_{nullptr};
+
+    /*!
      * @brief       A color devoted for visualization
      */
     std::vector<uint8_t> color;
@@ -454,6 +485,36 @@ class Plane
     void setCentroid(const Eigen::Vector3d &value);
 
     /*!
+     * @brief       Stamps the world-frame camera position this face was first
+     *              observed from. Intended to be called once, at creation.
+     */
+    void setObservationOrigin_World(const Eigen::Vector3d &value);
+
+    /*!
+     * @brief       Returns the world-frame camera position this face was first
+     *              observed from, when one was stamped.
+     */
+    std::optional<Eigen::Vector3d> getObservationOrigin_World(void) const;
+
+    /*!
+     * @brief       Returns the linked opposite-facing Plane hypothesis for
+     *              this wall's other side, or nullptr when none is set.
+     */
+    Plane *getTwinFace(void) const;
+
+    /*!
+     * @brief       Sets the linked opposite-facing Plane hypothesis. Caller
+     *              is responsible for setting the reverse link symmetrically
+     *              (see SemanticsManager::reconcileWallFacePairs()).
+     */
+    void setTwinFace(Plane *p_twin_in);
+
+    /*!
+     * @brief       Clears the linked opposite-facing Plane hypothesis.
+     */
+    void clearTwinFace(void);
+
+    /*!
      * @brief       Returns the plane equation in its observation frame.
      */
     g2o::Plane3D getLocalEquation(void) const;
@@ -504,12 +565,32 @@ class Plane
     std::size_t getObservationCount(void) const;
 
     /*!
-     * @brief       Returns the accumulated world-frame plane point cloud.
+     * @brief       Returns an independent deep copy of the accumulated
+     *              world-frame plane point cloud.
+     *
+     *              The copy is produced under the plane position and feature
+     *              locks so callers cannot race with concurrent writers.
      */
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr getMapClouds(void);
 
     /** Returns a deep immutable copy of the current finite geometry. */
     GeometrySnapshot getGeometrySnapshot(void) const;
+
+    /*!
+     * @brief       Returns the cheap scalar plane-geometry metadata
+     *              without deep-copying the support point cloud.
+     *
+     *              Reads exactly the fields getGeometrySnapshot() also
+     *              reads (equation, centroid, bounds, evidence counts,
+     *              cloud/refit generation numbers), under the identical
+     *              std::scoped_lock(mMutexPos, mMutexFeatures) critical
+     *              section, but omits the cloud copy. Use this whenever a
+     *              caller does not need the support cloud itself.
+     *
+     * @note        Thread-safe; self-locking, so callers must not already
+     *              hold mMutexPos or mMutexFeatures on this thread.
+     */
+    PlaneGeometryMetadataSnapshot getGeometryMetadataSnapshot(void) const;
 
     /** Applies the association path's 75% observation-side consensus rule. */
     ObservationSideSnapshot getObservationSideSnapshot(

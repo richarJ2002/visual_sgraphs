@@ -32,6 +32,7 @@
 #include "MapPoint.h"
 #include "ORBextractor.h"
 #include "ORBmatcher.h"
+#include "StereoMatchOutlierRejection.h"
 
 #include <include/CameraModels/KannalaBrandt8.h>
 #include <include/CameraModels/Pinhole.h>
@@ -1370,20 +1371,7 @@ void Frame::ComputeStereoMatches()
         }
     }
 
-    sort(vDistIdx.begin(), vDistIdx.end());
-    const float median = vDistIdx[vDistIdx.size() / 2].first;
-    const float thDist = 1.5f * 1.4f * median;
-
-    for (int i = vDistIdx.size() - 1; i >= 0; i--)
-    {
-        if (vDistIdx[i].first < thDist)
-            break;
-        else
-        {
-            mvuRight[vDistIdx[i].second] = -1;
-            mvDepth[vDistIdx[i].second]  = -1;
-        }
-    }
+    rejectOutlierStereoMatches(vDistIdx, mvuRight, mvDepth);
 }
 
 void Frame::ComputeStereoFromRGBD(const cv::Mat &imDepth)

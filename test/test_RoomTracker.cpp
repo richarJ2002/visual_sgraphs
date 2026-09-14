@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
+#include <limits>
 #include <vector>
 
 namespace ORB_SLAM3
@@ -35,9 +36,9 @@ namespace
 TraversalGuardValues nominalCrossing()
 {
     TraversalGuardValues crossing;
-    crossing.passageDetected = true;
-    crossing.passable        = true;
-    crossing.confidence      = 1.0;
+    crossing.passageDetected   = true;
+    crossing.passable          = true;
+    crossing.confidence        = 1.0;
     crossing.bothSidesObserved = false;
     return crossing;
 }
@@ -45,6 +46,7 @@ TraversalGuardValues nominalCrossing()
 VerificationVerdict passVerdict(unsigned int inliers = 5U)
 {
     VerificationVerdict verdict;
+    verdict.status      = VerificationStatus::PASS;
     verdict.pass        = true;
     verdict.inlierCount = inliers;
     verdict.inlierRatio = 1.0;
@@ -55,9 +57,9 @@ VerificationVerdict passVerdict(unsigned int inliers = 5U)
 VerificationVerdict failVerdict()
 {
     VerificationVerdict verdict;
-    verdict.pass    = false;
+    verdict.pass        = false;
     verdict.inlierCount = 0U;
-    verdict.confidence = 0.0;
+    verdict.confidence  = 0.0;
     return verdict;
 }
 
@@ -76,7 +78,7 @@ TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromConfirmedRoom)
 {
     for (int run = 0; run < 5; ++run)
     {
-        RoomTracker tracker;
+        RoomTracker  tracker;
         const double now = 100.0 + run * 1.0;
         EXPECT_EQ(tracker.applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                                      now,
@@ -96,7 +98,7 @@ TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromCrossingPassage)
 {
     for (int run = 0; run < 5; ++run)
     {
-        RoomTracker tracker;
+        RoomTracker  tracker;
         const double now = 200.0 + run;
         tracker.applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
@@ -104,11 +106,12 @@ TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromCrossingPassage)
                            passVerdict());
         TraversalGuardValues crossing = nominalCrossing();
         crossing.dwell_s              = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(tracker.applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                                     now,
-                                     crossing,
-                                     passVerdict()),
-                  RoomTrackingState::CROSSING_PASSAGE);
+        EXPECT_EQ(
+            tracker.applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                               now,
+                               crossing,
+                               passVerdict()),
+            RoomTrackingState::CROSSING_PASSAGE);
         EXPECT_EQ(tracker.applyEvent(RoomTrackingEvent::TRACKING_LOST,
                                      now + run * 0.1,
                                      TraversalGuardValues(),
@@ -122,7 +125,7 @@ TEST(RoomTrackerTransitions, UnconditionalLostTimeout)
 {
     for (int run = 0; run < 5; ++run)
     {
-        RoomTracker tracker;
+        RoomTracker  tracker;
         const double now = 300.0 + run;
         tracker.applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
@@ -146,7 +149,7 @@ TEST(RoomTrackerTransitions, UnconditionalReacquireTimeout)
 {
     for (int run = 0; run < 5; ++run)
     {
-        RoomTracker tracker;
+        RoomTracker  tracker;
         const double now = 400.0 + run;
         tracker.applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
@@ -179,7 +182,7 @@ TEST(RoomTrackerTransitions, GuardedFirstRoomConfirmed)
 {
     for (int run = 0; run < 5; ++run)
     {
-        RoomTracker tracker;
+        RoomTracker  tracker;
         const double now = 10.0 + run;
         /* Guard satisfied: verification verdict PASS. */
         EXPECT_EQ(tracker.applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
@@ -206,7 +209,7 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
 {
     for (int run = 0; run < 5; ++run)
     {
-        RoomTracker tracker;
+        RoomTracker  tracker;
         const double now = 20.0 + run;
         tracker.applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
@@ -216,12 +219,13 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
         /* Guard satisfied: passable crossing with dwell and confidence above
          * the configured thresholds. */
         TraversalGuardValues crossing = nominalCrossing();
-        crossing.dwell_s = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(tracker.applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                                     now,
-                                     crossing,
-                                     passVerdict()),
-                  RoomTrackingState::CROSSING_PASSAGE);
+        crossing.dwell_s              = tracker.getConfig().crossing_dwell_s;
+        EXPECT_EQ(
+            tracker.applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                               now,
+                               crossing,
+                               passVerdict()),
+            RoomTrackingState::CROSSING_PASSAGE);
         EXPECT_TRUE(tracker.getLastEvent().accepted);
 
         /* Guard rejected below dwell threshold. */
@@ -232,11 +236,12 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
                           passVerdict());
         TraversalGuardValues shortDwell = nominalCrossing();
         shortDwell.dwell_s = tracker.getConfig().crossing_dwell_s / 2.0;
-        EXPECT_EQ(second.applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                                    now,
-                                    shortDwell,
-                                    passVerdict()),
-                  RoomTrackingState::CONFIRMED_ROOM);
+        EXPECT_EQ(
+            second.applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                              now,
+                              shortDwell,
+                              passVerdict()),
+            RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_FALSE(second.getLastEvent().accepted);
 
         /* Guard rejected below confidence threshold. */
@@ -263,13 +268,14 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
                           TraversalGuardValues(),
                           passVerdict());
         TraversalGuardValues blocked = nominalCrossing();
-        blocked.passable = false;
-        blocked.dwell_s  = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(fourth.applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                                    now,
-                                    blocked,
-                                    passVerdict()),
-                  RoomTrackingState::CONFIRMED_ROOM);
+        blocked.passable             = false;
+        blocked.dwell_s              = tracker.getConfig().crossing_dwell_s;
+        EXPECT_EQ(
+            fourth.applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                              now,
+                              blocked,
+                              passVerdict()),
+            RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_FALSE(fourth.getLastEvent().accepted);
     }
 }
@@ -278,29 +284,31 @@ TEST(RoomTrackerTransitions, GuardedPassageTraversalComplete)
 {
     for (int run = 0; run < 5; ++run)
     {
-        RoomTracker tracker;
+        RoomTracker  tracker;
         const double now = 30.0 + run;
         tracker.applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
                            TraversalGuardValues(),
                            passVerdict());
         TraversalGuardValues crossed = nominalCrossing();
-        crossed.dwell_s = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(tracker.applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                                     now,
-                                     crossed,
-                                     passVerdict()),
-                  RoomTrackingState::CROSSING_PASSAGE);
+        crossed.dwell_s              = tracker.getConfig().crossing_dwell_s;
+        EXPECT_EQ(
+            tracker.applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                               now,
+                               crossed,
+                               passVerdict()),
+            RoomTrackingState::CROSSING_PASSAGE);
 
         /* Guard satisfied: both sides observed, dwell elapsed, verdict PASS. */
         TraversalGuardValues complete = nominalCrossing();
-        complete.bothSidesObserved = true;
-        complete.dwell_s = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(tracker.applyEvent(RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
-                                     now,
-                                     complete,
-                                     passVerdict()),
-                  RoomTrackingState::CONFIRMED_ROOM);
+        complete.bothSidesObserved    = true;
+        complete.dwell_s              = tracker.getConfig().crossing_dwell_s;
+        EXPECT_EQ(
+            tracker.applyEvent(RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
+                               now,
+                               complete,
+                               passVerdict()),
+            RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_TRUE(tracker.getLastEvent().accepted);
 
         /* Guard rejected: traversal complete verdict FAILS verification. */
@@ -314,11 +322,12 @@ TEST(RoomTrackerTransitions, GuardedPassageTraversalComplete)
                           now,
                           crossed,
                           passVerdict());
-        EXPECT_EQ(second.applyEvent(RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
-                                    now,
-                                    complete,
-                                    failVerdict()),
-                  RoomTrackingState::CROSSING_PASSAGE);
+        EXPECT_EQ(
+            second.applyEvent(RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
+                              now,
+                              complete,
+                              failVerdict()),
+            RoomTrackingState::CROSSING_PASSAGE);
         EXPECT_FALSE(second.getLastEvent().accepted);
 
         /* Guard rejected: neither side observed. */
@@ -333,13 +342,14 @@ TEST(RoomTrackerTransitions, GuardedPassageTraversalComplete)
                          crossed,
                          passVerdict());
         TraversalGuardValues oneSided = nominalCrossing();
-        oneSided.bothSidesObserved = false;
-        oneSided.dwell_s = third.getConfig().crossing_dwell_s;
-        EXPECT_EQ(third.applyEvent(RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
-                                   now,
-                                   oneSided,
-                                   passVerdict()),
-                  RoomTrackingState::CROSSING_PASSAGE);
+        oneSided.bothSidesObserved    = false;
+        oneSided.dwell_s              = third.getConfig().crossing_dwell_s;
+        EXPECT_EQ(
+            third.applyEvent(RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
+                             now,
+                             oneSided,
+                             passVerdict()),
+            RoomTrackingState::CROSSING_PASSAGE);
         EXPECT_FALSE(third.getLastEvent().accepted);
     }
 }
@@ -348,7 +358,7 @@ TEST(RoomTrackerTransitions, GuardedRoomReacquired)
 {
     for (int run = 0; run < 5; ++run)
     {
-        RoomTracker tracker;
+        RoomTracker  tracker;
         const double now = 40.0 + run;
         tracker.applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
@@ -400,7 +410,7 @@ TEST(RoomTrackerTransitions, GuardedNewMapWithRoomMatch)
 {
     for (int run = 0; run < 5; ++run)
     {
-        RoomTracker tracker;
+        RoomTracker  tracker;
         const double now = 50.0 + run;
         tracker.applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
@@ -443,7 +453,7 @@ TEST(RoomTrackerTransitions, GuardedVerifiedMatchToLastRoom)
 {
     for (int run = 0; run < 5; ++run)
     {
-        RoomTracker tracker;
+        RoomTracker  tracker;
         const double now = 60.0 + run;
         tracker.applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
@@ -460,11 +470,12 @@ TEST(RoomTrackerTransitions, GuardedVerifiedMatchToLastRoom)
                   RoomTrackingState::REACQUIRING_IN_NEW_MAP);
 
         /* Guard satisfied: full verification gates PASS. */
-        EXPECT_EQ(tracker.applyEvent(RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
-                                     now,
-                                     TraversalGuardValues(),
-                                     passVerdict(6U)),
-                  RoomTrackingState::CONFIRMED_ROOM);
+        EXPECT_EQ(
+            tracker.applyEvent(RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
+                               now,
+                               TraversalGuardValues(),
+                               passVerdict(6U)),
+            RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_TRUE(tracker.getLastEvent().accepted);
 
         /* Guard rejected: verification FAIL stays in reacquire. */
@@ -481,11 +492,12 @@ TEST(RoomTrackerTransitions, GuardedVerifiedMatchToLastRoom)
                           now,
                           TraversalGuardValues(),
                           passVerdict());
-        EXPECT_EQ(second.applyEvent(RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
-                                    now + run * 0.1,
-                                    TraversalGuardValues(),
-                                    failVerdict()),
-                  RoomTrackingState::REACQUIRING_IN_NEW_MAP);
+        EXPECT_EQ(
+            second.applyEvent(RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
+                              now + run * 0.1,
+                              TraversalGuardValues(),
+                              failVerdict()),
+            RoomTrackingState::REACQUIRING_IN_NEW_MAP);
         EXPECT_FALSE(second.getLastEvent().accepted);
     }
 }
@@ -508,11 +520,9 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
         RoomTrackingEvent::REACQUIRE_TIMEOUT,
     };
 
-    const std::vector<std::pair<RoomTrackingState,
-                                std::vector<std::string>>>
+    const std::vector<std::pair<RoomTrackingState, std::vector<std::string>>>
         definedRows = {
-            {RoomTrackingState::UNKNOWN,
-             {"FIRST_ROOM_CONFIRMED"}},
+            {RoomTrackingState::UNKNOWN, {"FIRST_ROOM_CONFIRMED"}},
             {RoomTrackingState::CONFIRMED_ROOM,
              {"PASSAGE_CROSSING_DETECTED", "TRACKING_LOST"}},
             {RoomTrackingState::CROSSING_PASSAGE,
@@ -529,14 +539,15 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
         const RoomTrackingState sourceState = entry.first;
         for (RoomTrackingEvent event : allEvents)
         {
-            if (std::find(entry.second.begin(), entry.second.end(),
+            if (std::find(entry.second.begin(),
+                          entry.second.end(),
                           RoomTracker::eventToString(event)) !=
                 entry.second.end())
             {
                 continue; /* Defined for this source state. */
             }
 
-            RoomTracker tracker;
+            RoomTracker  tracker;
             const double now = 700.0;
 
             if (sourceState != RoomTrackingState::UNKNOWN)
@@ -550,28 +561,24 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
                 {
                     /* Already reached. */
                 }
-                else if (sourceState ==
-                         RoomTrackingState::CROSSING_PASSAGE)
+                else if (sourceState == RoomTrackingState::CROSSING_PASSAGE)
                 {
                     TraversalGuardValues crossed = nominalCrossing();
-                    crossed.dwell_s =
-                        tracker.getConfig().crossing_dwell_s;
+                    crossed.dwell_s = tracker.getConfig().crossing_dwell_s;
                     tracker.applyEvent(
                         RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
                         now,
                         crossed,
                         passVerdict());
                 }
-                else if (sourceState ==
-                         RoomTrackingState::LOST_WITH_LAST_ROOM)
+                else if (sourceState == RoomTrackingState::LOST_WITH_LAST_ROOM)
                 {
                     tracker.applyEvent(RoomTrackingEvent::TRACKING_LOST,
                                        now,
                                        TraversalGuardValues(),
                                        failVerdict());
                 }
-                else if (sourceState ==
-                         RoomTrackingState::LOST_WITHOUT_ROOM)
+                else if (sourceState == RoomTrackingState::LOST_WITHOUT_ROOM)
                 {
                     tracker.applyEvent(RoomTrackingEvent::TRACKING_LOST,
                                        now,
@@ -589,22 +596,25 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
                                        now,
                                        TraversalGuardValues(),
                                        failVerdict());
-                    tracker.applyEvent(RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
-                                       now,
-                                       TraversalGuardValues(),
-                                       passVerdict());
+                    tracker.applyEvent(
+                        RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
+                        now,
+                        TraversalGuardValues(),
+                        passVerdict());
                 }
             }
 
             EXPECT_EQ(tracker.getState(), sourceState)
-                << "setup mismatch before injecting " << RoomTracker::eventToString(event);
+                << "setup mismatch before injecting "
+                << RoomTracker::eventToString(event);
             EXPECT_EQ(tracker.applyEvent(event,
                                          now + 1.0,
                                          nominalCrossing(),
                                          passVerdict()),
                       sourceState)
                 << "undefined event " << RoomTracker::eventToString(event)
-                << " must not change state " << RoomTracker::stateToString(sourceState);
+                << " must not change state "
+                << RoomTracker::stateToString(sourceState);
             EXPECT_FALSE(tracker.getLastEvent().accepted);
             EXPECT_EQ(tracker.getState(), sourceState);
         }
@@ -619,7 +629,7 @@ TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
 {
     for (int run = 0; run < 5; ++run)
     {
-        RoomTracker tracker;
+        RoomTracker  tracker;
         const double t0 = 1000.0 + run * 100.0;
 
         /* UNKNOWN -> CONFIRMED_ROOM once a room is confirmed. */
@@ -631,7 +641,7 @@ TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
 
         /* Crossing guard holds; the dwell has not yet elapsed. */
         TraversalGuardValues crossing = nominalCrossing();
-        const double t1 = t0 + 1.0; /* < crossing_dwell_s */
+        const double         t1       = t0 + 1.0; /* < crossing_dwell_s */
         EXPECT_EQ(tracker.step(t1, crossing, passVerdict(), nominalTracking()),
                   RoomTrackingState::CONFIRMED_ROOM);
 
@@ -642,7 +652,7 @@ TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
 
         /* Traversal completion needs both sides + dwell + verdict PASS. */
         TraversalGuardValues complete = nominalCrossing();
-        complete.bothSidesObserved = true;
+        complete.bothSidesObserved    = true;
         const double t3 = t2 + tracker.getConfig().crossing_dwell_s;
         EXPECT_EQ(tracker.step(t3, complete, passVerdict(), nominalTracking()),
                   RoomTrackingState::CROSSING_PASSAGE);
@@ -657,19 +667,19 @@ TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
 
 TEST(RoomTrackerStep, HysteresisResetsDwellOnGuardFailure)
 {
-    RoomTracker tracker;
+    RoomTracker  tracker;
     const double t0 = 0.0;
     tracker.step(t0, TraversalGuardValues(), passVerdict(), nominalTracking());
 
     TraversalGuardValues crossing = nominalCrossing();
-    const double t1 = t0 + 1.0;
+    const double         t1       = t0 + 1.0;
     EXPECT_EQ(tracker.step(t1, crossing, passVerdict(), nominalTracking()),
               RoomTrackingState::CONFIRMED_ROOM);
 
     /* Guard fails (confidence drops below threshold); dwell must reset. */
     TraversalGuardValues weak = crossing;
-    weak.confidence = 0.0;
-    const double t2 = t1 + 1.0;
+    weak.confidence           = 0.0;
+    const double t2           = t1 + 1.0;
     EXPECT_EQ(tracker.step(t2, weak, passVerdict(), nominalTracking()),
               RoomTrackingState::CONFIRMED_ROOM);
 
@@ -682,34 +692,111 @@ TEST(RoomTrackerStep, HysteresisResetsDwellOnGuardFailure)
               RoomTrackingState::CROSSING_PASSAGE);
 }
 
-TEST(RoomTrackerStep, TimeoutDecaysToLostWithoutRoom)
+TEST(RoomTrackerStep, InvalidCrossingGuardsFailClosed)
 {
     RoomTracker tracker;
+    tracker.step(10.0,
+                 TraversalGuardValues(),
+                 passVerdict(),
+                 nominalTracking());
+
+    TraversalGuardValues invalid = nominalCrossing();
+    invalid.confidence           = std::numeric_limits<double>::quiet_NaN();
+    EXPECT_EQ(tracker.step(11.0, invalid, passVerdict(), nominalTracking()),
+              RoomTrackingState::CONFIRMED_ROOM);
+
+    invalid            = nominalCrossing();
+    invalid.confidence = 1.1;
+    EXPECT_EQ(tracker.step(12.0, invalid, passVerdict(), nominalTracking()),
+              RoomTrackingState::CONFIRMED_ROOM);
+}
+
+TEST(RoomTrackerStep, BothSidesAndDwellAccumulateAcrossCycles)
+{
+    RoomTracker tracker;
+    tracker.step(100.0,
+                 TraversalGuardValues(),
+                 passVerdict(),
+                 nominalTracking());
+
+    TraversalGuardValues crossing = nominalCrossing();
+    EXPECT_EQ(tracker.step(101.0, crossing, passVerdict(), nominalTracking()),
+              RoomTrackingState::CONFIRMED_ROOM);
+    EXPECT_EQ(tracker.step(103.0, crossing, passVerdict(), nominalTracking()),
+              RoomTrackingState::CROSSING_PASSAGE);
+
+    TraversalGuardValues oneSide = nominalCrossing();
+    oneSide.bothSidesObserved    = true;
+    EXPECT_EQ(tracker.step(104.0, oneSide, passVerdict(), nominalTracking()),
+              RoomTrackingState::CROSSING_PASSAGE);
+    EXPECT_EQ(tracker.step(105.0,
+                           nominalCrossing(),
+                           passVerdict(),
+                           nominalTracking()),
+              RoomTrackingState::CROSSING_PASSAGE);
+    EXPECT_EQ(tracker.step(106.0,
+                           nominalCrossing(),
+                           passVerdict(),
+                           nominalTracking()),
+              RoomTrackingState::CONFIRMED_ROOM);
+}
+
+TEST(RoomTrackerStep, SteadyDomainInputIgnoresTimestampDiscontinuity)
+{
+    RoomTracker tracker;
+    tracker.step(1000.0,
+                 TraversalGuardValues(),
+                 passVerdict(),
+                 nominalTracking());
+
+    TraversalGuardValues crossing = nominalCrossing();
+    EXPECT_EQ(tracker.step(1001.0, crossing, passVerdict(), nominalTracking()),
+              RoomTrackingState::CONFIRMED_ROOM);
+    /* A SLAM timestamp reset must not make the injected steady-domain clock
+     * move backwards or complete the dwell early. */
+    EXPECT_EQ(tracker.step(2.0, crossing, passVerdict(), nominalTracking()),
+              RoomTrackingState::CONFIRMED_ROOM);
+    EXPECT_EQ(tracker.step(1003.0, crossing, passVerdict(), nominalTracking()),
+              RoomTrackingState::CROSSING_PASSAGE);
+}
+
+TEST(RoomTrackerStep, TrackingLossIsConsumedOncePerEpisode)
+{
+    RoomTracker tracker;
+    tracker.step(1.0, TraversalGuardValues(), passVerdict(), nominalTracking());
+
+    TrackingStatusInput lost;
+    lost.lost = true;
+    tracker.step(2.0, TraversalGuardValues(), failVerdict(), lost);
+    const std::size_t eventCountAfterLoss = tracker.getEventHistory().size();
+    tracker.step(3.0, TraversalGuardValues(), failVerdict(), lost);
+    EXPECT_EQ(tracker.getEventHistory().size(), eventCountAfterLoss);
+}
+
+TEST(RoomTrackerStep, TimeoutDecaysToLostWithoutRoom)
+{
+    RoomTracker  tracker;
     const double t0 = 2000.0;
     tracker.step(t0, TraversalGuardValues(), passVerdict(), nominalTracking());
 
     /* Tracking is lost once: CONFIRMED_ROOM -> LOST_WITH_LAST_ROOM. */
     TrackingStatusInput lost;
     lost.lost = true;
-    EXPECT_EQ(tracker.step(t0 + 1.0,
-                           TraversalGuardValues(),
-                           failVerdict(),
-                           lost),
-              RoomTrackingState::LOST_WITH_LAST_ROOM);
+    EXPECT_EQ(
+        tracker.step(t0 + 1.0, TraversalGuardValues(), failVerdict(), lost),
+        RoomTrackingState::LOST_WITH_LAST_ROOM);
 
     /* Loss persists; the lost_timeout decays to LOST_WITHOUT_ROOM. */
     const double tExpire = t0 + 1.0 + tracker.getConfig().lost_timeout_s;
-    EXPECT_EQ(tracker.step(tExpire,
-                           TraversalGuardValues(),
-                           failVerdict(),
-                           lost),
-              RoomTrackingState::LOST_WITHOUT_ROOM);
+    EXPECT_EQ(
+        tracker.step(tExpire, TraversalGuardValues(), failVerdict(), lost),
+        RoomTrackingState::LOST_WITHOUT_ROOM);
     EXPECT_TRUE(tracker.getLastEvent().accepted);
 }
 
 TEST(RoomTrackerStep, UndefinedTrackingLossFromUnknownIsRejected)
 {
-    RoomTracker tracker;
+    RoomTracker         tracker;
     TrackingStatusInput lost;
     lost.lost = true;
     EXPECT_EQ(tracker.step(0.0, TraversalGuardValues(), failVerdict(), lost),
@@ -718,34 +805,62 @@ TEST(RoomTrackerStep, UndefinedTrackingLossFromUnknownIsRejected)
     EXPECT_EQ(tracker.getLastEvent().event, RoomTrackingEvent::TRACKING_LOST);
 }
 
+TEST(RoomTrackerStep, UnavailableVerificationCannotConfirmOrMutateState)
+{
+    RoomTracker         tracker;
+    VerificationVerdict unavailable;
+    unavailable.pass = true;
+    TraversalGuardValues crossing;
+    TrackingStatusInput  tracking;
+
+    EXPECT_EQ(tracker.step(10.0, crossing, unavailable, tracking),
+              RoomTrackingState::UNKNOWN);
+    EXPECT_EQ(tracker.getEventHistory().size(), 0U);
+}
+
+TEST(RoomTrackerStep, MalformedPassVerdictFailsClosed)
+{
+    VerificationVerdict malformed = passVerdict();
+    malformed.inlierRatio         = std::numeric_limits<double>::infinity();
+    EXPECT_FALSE(malformed.isPass());
+
+    malformed            = passVerdict();
+    malformed.confidence = -0.1;
+    EXPECT_FALSE(malformed.isPass());
+
+    malformed      = passVerdict();
+    malformed.pass = false;
+    EXPECT_FALSE(malformed.isPass());
+
+    malformed        = passVerdict();
+    malformed.status = VerificationStatus::REJECTED;
+    EXPECT_FALSE(malformed.isPass());
+}
+
 TEST(RoomTrackerStep, ReacquireRetriesThenTimeouts)
 {
-    RoomTracker tracker;
+    RoomTracker  tracker;
     const double t0 = 3000.0;
     tracker.step(t0, TraversalGuardValues(), passVerdict(), nominalTracking());
 
     TrackingStatusInput lost;
     lost.lost = true;
-    EXPECT_EQ(tracker.step(t0 + 1.0,
-                           TraversalGuardValues(),
-                           failVerdict(),
-                           lost),
-              RoomTrackingState::LOST_WITH_LAST_ROOM);
+    EXPECT_EQ(
+        tracker.step(t0 + 1.0, TraversalGuardValues(), failVerdict(), lost),
+        RoomTrackingState::LOST_WITH_LAST_ROOM);
 
     /* New map (still lost) with a verified match -> REACQUIRING. */
     TrackingStatusInput newMap;
-    newMap.lost = true;
+    newMap.lost          = true;
     newMap.newMapCreated = true;
-    EXPECT_EQ(tracker.step(t0 + 2.0,
-                           TraversalGuardValues(),
-                           passVerdict(),
-                           newMap),
-              RoomTrackingState::REACQUIRING_IN_NEW_MAP);
+    EXPECT_EQ(
+        tracker.step(t0 + 2.0, TraversalGuardValues(), passVerdict(), newMap),
+        RoomTrackingState::REACQUIRING_IN_NEW_MAP);
 
     /* Failed verification retries at the configured interval; after the
      * configured max retries the reacquire is retired. */
-    const double tRetry = t0 + 2.0;
-    double t = tRetry;
+    const double       tRetry = t0 + 2.0;
+    double             t      = tRetry;
     const unsigned int expectedRetries =
         tracker.getConfig().reacquire_max_retries;
     for (unsigned int attempt = 0U; attempt < expectedRetries + 1U; ++attempt)

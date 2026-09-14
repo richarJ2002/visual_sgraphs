@@ -1,0 +1,192 @@
+/**
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            isValidBoundaryWallEvidence.cc
+ *
+ * @brief           Implements isValidBoundaryWallEvidence(), declared in
+ *                  private_functions.h.
+ *
+ *                  2026-09-07 proof-correctness repair: AX-BOUND-01 no
+ *                  longer treats any nonempty RoomRecord::wallRefs as
+ *                  boundary support. Each entry must be present, WALL-typed,
+ *                  live, in the room's own map, resolve to exactly one
+ *                  WallRecord (no duplicate-identity ambiguity), and that
+ *                  WallRecord's own ownerRoomRefs must resolve back to this
+ *                  room (reciprocal ownership) -- otherwise it is not
+ *                  trustworthy boundary evidence.
+ *
+ *                  2026-09-07 residual proof-closure repair: replaces the
+ *                  lossy boolean return with a typed
+ *                  RoomBoundaryWallEvidenceStatus so evaluateOneRoomBoundary()
+ *                  can distinguish a proven contradiction (INVALID -- wrong
+ *                  type, retired, cross-map, ambiguous identity, or
+ *                  non-reciprocal) from an ordinary evidence gap
+ *                  (UNAVAILABLE -- no reference attempted, no map, or the
+ *                  target WallRecord is not locatable). A known INVALID
+ *                  reference must never be silently indistinguishable from
+ *                  merely unavailable evidence.
+ *
+ *                  2026-09-07 second proof-closure repair: additionally
+ *                  validates the raw reference's own wallKey/mapId/planeId
+ *                  field consistency and wallKey.kind; the resolved
+ *                  WallRecord's own planeType and declared-map consistency;
+ *                  and reuses evaluateOneWall() itself (rather than a second,
+ *                  weaker reciprocal-ownership check) for the final
+ *                  ownership-chain proof, so this function and AX-WALL-01
+ *                  can never define "a valid wall" differently.
+ */
+
+#include "Semantic/SemanticAxiomEvaluator/private_functions.h"
+
+#include <algorithm>
+#include <cstddef>
+
+namespace ORB_SLAM3
+{
+namespace semantic
+{
+
+RoomBoundaryWallEvidenceStatus
+    isValidBoundaryWallEvidence(const RawPlaneRef           &wallRef_in,
+                                const RoomRecord            &room_in,
+                                const SemanticGraphSnapshot &snapshot_in)
+{
+    if (wallRef_in.reason != UnavailableReason::NONE)
+    {
+        /* Checkpoint-A residual repair (checkpoint 7): RawPlaneRef documents
+         * reason == NONE exactly when the underlying plane pointer was
+         * non-null; a "reason claims absent" value that nonetheless carries
+         * populated data (mapId/wallKey/a real planeType) is an invariant
+         * violation and a known contradiction, not the ordinary "nothing
+         * there" case. */
+        if (wallRef_in.mapId.has_value() || wallRef_in.wallKey.has_value() ||
+            wallRef_in.planeType != Plane::planeVariant::UNDEFINED)
+        {
+            return RoomBoundaryWallEvidenceStatus::INVALID;
+        }
+        return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+    }
+    if (wallRef_in.planeType != Plane::planeVariant::WALL)
+    {
+        /* A real, mapped, live plane pointer exists but is the wrong type:
+         * a known contradiction, not merely missing evidence. */
+        return RoomBoundaryWallEvidenceStatus::INVALID;
+    }
+    if (!wallRef_in.isLive)
+    {
+        return RoomBoundaryWallEvidenceStatus::INVALID;
+    }
+    if (!wallRef_in.mapId.has_value())
+    {
+        /* The plane exists and is live/WALL-typed but has no map of its
+         * own: same-map/reciprocity cannot be verified either way. */
+        return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+    }
+    if (*wallRef_in.mapId != room_in.key.mapId)
+    {
+        return RoomBoundaryWallEvidenceStatus::INVALID;
+    }
+    if (!wallRef_in.wallKey.has_value())
+    {
+        return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+    }
+    if (wallRef_in.wallKey->kind != EntityKind::WALL ||
+        wallRef_in.wallKey->mapId != *wallRef_in.mapId ||
+        wallRef_in.wallKey->entityId != wallRef_in.planeId)
+    {
+        /* The wallKey field itself is internally inconsistent with this
+         * same reference's own mapId/planeId/kind: a known contradiction in
+         * the raw data, not an ordinary gap. */
+        return RoomBoundaryWallEvidenceStatus::INVALID;
+    }
+
+    if (countWallRecordsWithKey(snapshot_in, *wallRef_in.wallKey) > 1U)
+    {
+        return RoomBoundaryWallEvidenceStatus::INVALID;
+    }
+    if (countMapSnapshotsWithId(snapshot_in, wallRef_in.wallKey->mapId) > 1U)
+    {
+        /* Checkpoint-A residual repair: which MapSnapshot actually holds
+         * this wall is itself ambiguous when its own containing map id is
+         * duplicated -- no first-match lookup below may supply positive
+         * proof. */
+        return RoomBoundaryWallEvidenceStatus::INVALID;
+    }
+
+    const WallRecord *p_wall = nullptr;
+    for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
+    {
+        if (mapSnapshot.mapId != wallRef_in.wallKey->mapId)
+        {
+            continue;
+        }
+        p_wall = findRecordByKey(mapSnapshot.walls, *wallRef_in.wallKey);
+        break;
+    }
+    if (p_wall == nullptr)
+    {
+        return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+    }
+    if (!p_wall->isLive || p_wall->planeType != Plane::planeVariant::WALL)
+    {
+        return RoomBoundaryWallEvidenceStatus::INVALID;
+    }
+    if (p_wall->declaredMapId.has_value() &&
+        *p_wall->declaredMapId != p_wall->key.mapId)
+    {
+        return RoomBoundaryWallEvidenceStatus::INVALID;
+    }
+
+    /* Reuse the complete wall-record -> owner-ref -> live room-record ->
+     * reciprocal wall-ref chain evaluateOneWall() already proves for
+     * AX-WALL-01, rather than a second, independently maintained
+     * reciprocal-ownership check that could drift out of agreement with
+     * it. */
+    std::vector<Finding> wallOwnershipScratch;
+    evaluateOneWall(*p_wall, snapshot_in, wallOwnershipScratch);
+    /* Checkpoint-A residual repair (checkpoint 7): the aggregate AX-WALL-01
+     * result for this wall must be a clean PASS -- a PASS finding
+     * accompanied by an UNKNOWN (e.g. the wall's or owner's own declared map
+     * being genuinely absent) is not full positive proof and must not be
+     * reused as valid boundary evidence. */
+    if (anyFindingIs(wallOwnershipScratch, AxiomResult::FAIL))
+    {
+        return RoomBoundaryWallEvidenceStatus::INVALID;
+    }
+    if (anyFindingIs(wallOwnershipScratch, AxiomResult::UNKNOWN))
+    {
+        return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+    }
+    for (const Finding &finding : wallOwnershipScratch)
+    {
+        if (finding.result == AxiomResult::PASS &&
+            finding.reasonCode ==
+                ReasonCode::WALL_OWNERSHIP_SINGLE_VALID_OWNER &&
+            std::find(finding.involvedKeys.begin(),
+                      finding.involvedKeys.end(),
+                      room_in.key) != finding.involvedKeys.end())
+        {
+            return RoomBoundaryWallEvidenceStatus::VALID;
+        }
+    }
+    return RoomBoundaryWallEvidenceStatus::INVALID;
+}
+
+} // namespace semantic
+} // namespace ORB_SLAM3

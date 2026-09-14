@@ -23,6 +23,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "RgbdObservability.h"
 #include "common.hpp"
 
 #include <condition_variable>
@@ -41,6 +42,8 @@ class ImageGrabber : public rclcpp::Node
         sensor_msgs::msg::Image::ConstSharedPtr       p_rgbImageMessage;
         sensor_msgs::msg::Image::ConstSharedPtr       p_depthImageMessage;
         sensor_msgs::msg::PointCloud2::ConstSharedPtr p_pointCloudMessage;
+        std::int64_t sensorTimestampNanoseconds{0};
+        vs_graphs::observability::RgbdObservability::SteadyTime callbackArrival;
     };
 
     /*!
@@ -65,12 +68,10 @@ class ImageGrabber : public rclcpp::Node
     }
 
     /*!
-     * @brief       Processes only the newest available coherent sensor packet.
+     * @brief       Processes the newest coherent sensor packet.
      *
-     *              Superseded packets are intentionally replaced while tracking
-     *              is busy. This bounds latency and prevents DDS queue overflow
-     *              from later presenting ORB-SLAM3 with stale bursts followed
-     *              by large, unpredictable timestamp discontinuities.
+     *              A pending packet is replaced while tracking is busy, as in
+     *              the established RGB-D delivery path.
      */
     void ProcessRgbdPackets();
 
@@ -78,6 +79,9 @@ class ImageGrabber : public rclcpp::Node
      * @brief       Requests worker shutdown and wakes a waiting worker.
      */
     void RequestStop();
+
+    /** Logs a cumulative summary without holding packet/accounting locks. */
+    void LogRgbdObservabilitySummary(const std::string &event_in) const;
 
     /*!
      * @brief       Callback function to get scene segmentation results from the
@@ -100,7 +104,7 @@ class ImageGrabber : public rclcpp::Node
         const visualization_msgs::msg::MarkerArray &msgSkeletonGraph);
 
     /*!
-     * @brief       Admits the newest coherent RGB-D packet without blocking ROS
+     * @brief       Admits a coherent RGB-D packet without blocking ROS
      *              input.
      *
      * @param[in]   msgRGB_in
@@ -118,6 +122,9 @@ class ImageGrabber : public rclcpp::Node
                  const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC_in);
 
   private:
+    /** Publishes a lock-free copy of frontend progress into System health. */
+    void PublishRgbdFrontendHealth() const;
+
     std::mutex              rgbdPacketMutex;
     std::condition_variable rgbdPacketCondition;
     SynchronizedRgbdPacket  latestRgbdPacket;
@@ -128,6 +135,7 @@ class ImageGrabber : public rclcpp::Node
     bool                    hasProcessedRgbdPacket{false};
     double                  lastProcessedRgbdTimestamp_seconds{0.0};
     const bool              directGazeboFluCloud;
+    vs_graphs::observability::RgbdObservability rgbdObservability;
 };
 
 int main(int argc, char **argv)
@@ -174,6 +182,11 @@ int main(int argc, char **argv)
 
     node->declare_parameter<std::string>("log_level", "info");
 
+    node->declare_parameter<std::string>("test_run_dir", "");
+    node->declare_parameter<bool>("sgraph_archive_enabled", true);
+    node->declare_parameter<double>("sgraph_archive_interval_sec", 5.0);
+    node->declare_parameter<int>("sgraph_archive_max_files", 0);
+
     std::string vocFile      = node->get_parameter("voc_file").as_string();
     std::string settingsFile = node->get_parameter("settings_file").as_string();
     std::string sysParamsFile =
@@ -215,6 +228,14 @@ int main(int argc, char **argv)
     const auto verboseLevel = ORB_SLAM3::Verbose::StringToLevel(
         node->get_parameter("log_level").as_string());
 
+    sgraphArchiveTestRunDir = node->get_parameter("test_run_dir").as_string();
+    sgraphArchiveEnabled =
+        node->get_parameter("sgraph_archive_enabled").as_bool();
+    sgraphArchiveIntervalSec =
+        node->get_parameter("sgraph_archive_interval_sec").as_double();
+    sgraphArchiveMaxFiles = static_cast<int>(
+        node->get_parameter("sgraph_archive_max_files").as_int());
+
     /* Initializing system threads and getting ready to process frames */
     const bool useSimTime = node->get_parameter("use_sim_time").as_bool();
     const bool directGazeboFluCloud =
@@ -243,8 +264,8 @@ int main(int argc, char **argv)
 
     /*!
      * Keep sensor admission separate from semantic callbacks. The RGB-D
-     * callback only replaces a pending packet; the worker owns all expensive
-     * conversion, tracking, and publication work.
+     * callback only replaces the pending coherent packet; the worker owns all
+     * expensive conversion, tracking, and publication work.
      */
     using message_filters::Subscriber;
     using message_filters::Synchronizer;
@@ -324,16 +345,31 @@ int main(int argc, char **argv)
             semanticSubscriptionOptions);
 
     /* Subsriber to get skeletonized graph from the `voxblox` module */
+    /* Match the skeletonizer transient-local publisher so the latest usable
+     * graph is received even when this node joins after publication. */
     auto subVoxbloxSkeletonMesh =
         node->create_subscription<visualization_msgs::msg::MarkerArray>(
             "/voxblox_skeletonizer/sparse_graph",
-            1,
+            rclcpp::QoS(1).transient_local(),
             [igb](const visualization_msgs::msg::MarkerArray::SharedPtr msg)
-            { igb->GrabVoxbloxSkeletonGraph(*msg); },
+            {
+                igb->GrabVoxbloxSkeletonGraph(*msg);
+                observeVoxbloxSparseGraphPublication(*msg);
+            },
+            skeletonSubscriptionOptions);
+
+    /* Match the skeletonizer transient-local publisher so the latest usable
+     * cloud is received even when this node joins after publication. */
+    auto subVoxbloxSkeleton =
+        node->create_subscription<sensor_msgs::msg::PointCloud2>(
+            "/voxblox_skeletonizer/skeleton",
+            rclcpp::QoS(1).transient_local(),
+            [](const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+            { observeVoxbloxSkeletonPublication(*msg); },
             skeletonSubscriptionOptions);
 
     /* Init image transport */
-    static std::shared_ptr<image_transport::ImageTransport> image_transport =
+    std::shared_ptr<image_transport::ImageTransport> image_transport =
         std::make_shared<image_transport::ImageTransport>(node);
 
     /* ---------------------------------------------------------------------- *
@@ -374,38 +410,80 @@ int main(int argc, char **argv)
 
     igb->RequestStop();
     rgbdProcessingThread.join();
+    igb->LogRgbdObservabilitySummary("shutdown_after_worker_join");
     p_slamSystem->Shutdown();
+    delete p_slamSystem;
+    p_slamSystem = nullptr;
+    shutdownRosInterfaces();
+    image_transport.reset();
     rclcpp::shutdown();
-
     return 0;
 }
 
 void ImageGrabber::ProcessRgbdPackets()
 {
-    while (rclcpp::ok())
+    constexpr std::chrono::seconds        summaryPeriod{10};
+    std::chrono::steady_clock::time_point nextSummaryDeadline =
+        std::chrono::steady_clock::now() + summaryPeriod;
+
+    while (true)
     {
+        if (std::chrono::steady_clock::now() >= nextSummaryDeadline)
+        {
+            LogRgbdObservabilitySummary("periodic");
+            nextSummaryDeadline =
+                std::chrono::steady_clock::now() + summaryPeriod;
+        }
+
         SynchronizedRgbdPacket rgbdPacket;
 
         {
             std::unique_lock<std::mutex> packetLock(rgbdPacketMutex);
-            rgbdPacketCondition.wait(
+            const bool packetOrStopReady = rgbdPacketCondition.wait_until(
                 packetLock,
+                nextSummaryDeadline,
                 [this]() { return stopRequested || hasPendingRgbdPacket; });
 
             if (stopRequested)
+            {
+                const bool hadPendingPacket = hasPendingRgbdPacket;
+                hasPendingRgbdPacket        = false;
+                packetLock.unlock();
+                if (hadPendingPacket)
+                {
+                    rgbdObservability.recordShutdownPendingDrop();
+                    PublishRgbdFrontendHealth();
+                }
                 break;
+            }
 
-            rgbdPacket           = latestRgbdPacket;
+            if (!packetOrStopReady)
+            {
+                packetLock.unlock();
+                LogRgbdObservabilitySummary("periodic");
+                nextSummaryDeadline =
+                    std::chrono::steady_clock::now() + summaryPeriod;
+                continue;
+            }
+
+            rgbdPacket           = std::move(latestRgbdPacket);
             hasPendingRgbdPacket = false;
         }
+
+        const std::chrono::steady_clock::time_point workerStartTime =
+            std::chrono::steady_clock::now();
+        rgbdObservability.recordWorkerStart(rgbdPacket.callbackArrival,
+                                            workerStartTime);
+        PublishRgbdFrontendHealth();
 
         const double rgbTimestamp_seconds =
             rclcpp::Time(rgbdPacket.p_rgbImageMessage->header.stamp).seconds();
 
         cv_bridge::CvImageConstPtr p_depthImage;
         cv_bridge::CvImageConstPtr p_rgbImage;
-        const auto packetStartTime = std::chrono::steady_clock::now();
 
+        const std::chrono::steady_clock::time_point imageConversionStart =
+            std::chrono::steady_clock::now();
         try
         {
             p_depthImage = cv_bridge::toCvShare(rgbdPacket.p_depthImageMessage);
@@ -413,6 +491,8 @@ void ImageGrabber::ProcessRgbdPackets()
         }
         catch (const cv_bridge::Exception &exception)
         {
+            rgbdObservability.recordImageConversionReject();
+            PublishRgbdFrontendHealth();
             RCLCPP_ERROR_THROTTLE(
                 get_logger(),
                 *get_clock(),
@@ -421,17 +501,23 @@ void ImageGrabber::ProcessRgbdPackets()
                 exception.what());
             continue;
         }
-        const auto imageConversionEndTime = std::chrono::steady_clock::now();
+        rgbdObservability.recordImageConversion(
+            imageConversionStart,
+            std::chrono::steady_clock::now());
 
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr        p_pointCloud;
         sensor_msgs::msg::PointCloud2::ConstSharedPtr p_pointCloudCameraMessage;
         std::string                                   cloudFailureReason;
+        const std::chrono::steady_clock::time_point   cloudPreparationStart =
+            std::chrono::steady_clock::now();
         if (!preparePointCloudForTracking(rgbdPacket.p_pointCloudMessage,
                                           directGazeboFluCloud,
                                           p_pointCloud,
                                           p_pointCloudCameraMessage,
                                           cloudFailureReason))
         {
+            rgbdObservability.recordCloudConversionReject();
+            PublishRgbdFrontendHealth();
             RCLCPP_WARN_THROTTLE(get_logger(),
                                  *get_clock(),
                                  5000,
@@ -439,36 +525,64 @@ void ImageGrabber::ProcessRgbdPackets()
                                  cloudFailureReason.c_str());
             continue;
         }
-        const auto pointCloudConversionEndTime =
-            std::chrono::steady_clock::now();
+        rgbdObservability.recordCloudPreparation(
+            cloudPreparationStart,
+            std::chrono::steady_clock::now());
 
+        const std::chrono::steady_clock::time_point markerAssociationStart =
+            std::chrono::steady_clock::now();
         auto         nearestMarker = findNearestMarker(rgbTimestamp_seconds);
         const double markerTimeDifference_seconds = nearestMarker.first;
         std::vector<ORB_SLAM3::Marker *> matchedMarkers =
             std::move(nearestMarker.second);
+        rgbdObservability.recordMarkerAssociation(
+            markerAssociationStart,
+            std::chrono::steady_clock::now());
 
+        rgbdObservability.recordTrackCall();
+        const std::chrono::steady_clock::time_point trackStart =
+            std::chrono::steady_clock::now();
+        try
+        {
+            if (markerTimeDifference_seconds < 0.05)
+            {
+                p_slamSystem->TrackRGBD(p_rgbImage->image,
+                                        p_depthImage->image,
+                                        p_pointCloud,
+                                        rgbTimestamp_seconds,
+                                        {},
+                                        "",
+                                        matchedMarkers);
+            }
+            else
+            {
+                p_slamSystem->TrackRGBD(p_rgbImage->image,
+                                        p_depthImage->image,
+                                        p_pointCloud,
+                                        rgbTimestamp_seconds);
+            }
+        }
+        catch (...)
+        {
+            rgbdObservability.recordTrackFailure();
+            PublishRgbdFrontendHealth();
+            LogRgbdObservabilitySummary("track_exception");
+            throw;
+        }
+        const std::chrono::steady_clock::time_point trackEnd =
+            std::chrono::steady_clock::now();
+        rgbdObservability.recordTrackDuration(trackStart, trackEnd);
+        rgbdObservability.recordTrackCompletion();
         if (markerTimeDifference_seconds < 0.05)
         {
-            p_slamSystem->TrackRGBD(p_rgbImage->image,
-                                    p_depthImage->image,
-                                    p_pointCloud,
-                                    rgbTimestamp_seconds,
-                                    {},
-                                    "",
-                                    matchedMarkers);
             markersBuffer.clear();
         }
-        else
-        {
-            p_slamSystem->TrackRGBD(p_rgbImage->image,
-                                    p_depthImage->image,
-                                    p_pointCloud,
-                                    rgbTimestamp_seconds);
-        }
+        double estimatorInterval_seconds = 0.0;
         if (hasProcessedRgbdPacket)
         {
             const double frameInterval_seconds =
                 rgbTimestamp_seconds - lastProcessedRgbdTimestamp_seconds;
+            estimatorInterval_seconds = frameInterval_seconds;
             if (frameInterval_seconds > 0.5)
             {
                 RCLCPP_WARN_THROTTLE(
@@ -482,32 +596,44 @@ void ImageGrabber::ProcessRgbdPackets()
         }
         hasProcessedRgbdPacket             = true;
         lastProcessedRgbdTimestamp_seconds = rgbTimestamp_seconds;
-        const auto trackingEndTime         = std::chrono::steady_clock::now();
+        recordEstimatorFrame(estimatorInterval_seconds);
 
         const rclcpp::Time messageTimestamp =
             rgbdPacket.p_rgbImageMessage->header.stamp;
-        publishTopics(messageTimestamp,
-                      Eigen::Vector3f::Zero(),
-                      p_pointCloudCameraMessage);
-        const auto publicationEndTime = std::chrono::steady_clock::now();
-
-        const auto durationMilliseconds =
-            [](const auto startTime_in, const auto endTime_in)
+        const std::chrono::steady_clock::time_point publishStart =
+            std::chrono::steady_clock::now();
+        vs_graphs::observability::PublishTopicsTimingSink timingSink =
+            rgbdObservability.publishTopicsTimingSink();
+        try
         {
-            return std::chrono::duration<double, std::milli>(endTime_in -
-                                                             startTime_in)
-                .count();
-        };
-        RCLCPP_INFO(
-            get_logger(),
-            "RGB-D stages [ms]: image %.1f, cloud %.1f, tracking %.1f, "
-            "publication %.1f, total %.1f.",
-            durationMilliseconds(packetStartTime, imageConversionEndTime),
-            durationMilliseconds(imageConversionEndTime,
-                                 pointCloudConversionEndTime),
-            durationMilliseconds(pointCloudConversionEndTime, trackingEndTime),
-            durationMilliseconds(trackingEndTime, publicationEndTime),
-            durationMilliseconds(packetStartTime, publicationEndTime));
+            publishTopics(messageTimestamp,
+                          Eigen::Vector3f::Zero(),
+                          p_pointCloudCameraMessage,
+                          &timingSink,
+                          true);
+        }
+        catch (...)
+        {
+            const std::chrono::steady_clock::time_point publishEnd =
+                std::chrono::steady_clock::now();
+            rgbdObservability.recordPublishTopics(publishStart, publishEnd);
+            rgbdObservability.recordPublishTopicsFailure();
+            PublishRgbdFrontendHealth();
+            throw;
+        }
+        rgbdObservability.recordPublishTopics(publishStart,
+                                              std::chrono::steady_clock::now());
+        rgbdObservability.recordProcessed(rgbdPacket.sensorTimestampNanoseconds,
+                                          workerStartTime,
+                                          std::chrono::steady_clock::now());
+        PublishRgbdFrontendHealth();
+
+        if (std::chrono::steady_clock::now() >= nextSummaryDeadline)
+        {
+            LogRgbdObservabilitySummary("periodic");
+            nextSummaryDeadline =
+                std::chrono::steady_clock::now() + summaryPeriod;
+        }
     }
 }
 
@@ -519,6 +645,38 @@ void ImageGrabber::RequestStop()
     }
 
     rgbdPacketCondition.notify_all();
+}
+
+void ImageGrabber::LogRgbdObservabilitySummary(
+    const std::string &event_in) const
+{
+    const vs_graphs::observability::RgbdObservabilitySnapshot snapshot =
+        rgbdObservability.snapshot();
+    const std::string summary =
+        vs_graphs::observability::formatRgbdObservabilitySummary(snapshot,
+                                                                 event_in);
+    RCLCPP_INFO(get_logger(), "%s", summary.c_str());
+}
+
+void ImageGrabber::PublishRgbdFrontendHealth() const
+{
+    if (p_slamSystem == nullptr)
+    {
+        return;
+    }
+
+    const vs_graphs::observability::RgbdObservabilitySnapshot snapshot =
+        rgbdObservability.snapshot();
+    const std::uint64_t terminalCount =
+        snapshot.processedPackets + snapshot.imageConversionRejects +
+        snapshot.cloudConversionRejects + snapshot.trackFailures +
+        snapshot.publishTopicsFailures + snapshot.shutdownPendingDrops;
+    p_slamSystem->UpdateRgbdFrontendHealth(
+        snapshot.pendingStores,
+        terminalCount,
+        snapshot.pendingOverwrites,
+        snapshot.workersInFlight > 0U,
+        snapshot.lastProcessedSensorTimestampNanoseconds);
 }
 
 void ImageGrabber::GrabSegmentation(
@@ -579,6 +737,10 @@ void ImageGrabber::GrabRGBD(
     const sensor_msgs::msg::Image::ConstSharedPtr       &msgD_in,
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC_in)
 {
+    const std::chrono::steady_clock::time_point callbackArrival =
+        std::chrono::steady_clock::now();
+    rgbdObservability.recordCallbackAdmission(callbackArrival);
+
     const double rgbTimestamp_seconds =
         rclcpp::Time(msgRGB_in->header.stamp).seconds();
     const double depthTimestamp_seconds =
@@ -591,6 +753,7 @@ void ImageGrabber::GrabRGBD(
         std::abs(rgbTimestamp_seconds - depthTimestamp_seconds);
     if (rgbDepthSkew_seconds > maximumRgbDepthSkew_seconds)
     {
+        rgbdObservability.recordRgbDepthSkewReject();
         RCLCPP_WARN_THROTTLE(
             get_logger(),
             *get_clock(),
@@ -606,6 +769,7 @@ void ImageGrabber::GrabRGBD(
         std::abs(depthTimestamp_seconds - pointCloudTimestamp_seconds));
     if (cloudImageSkew_seconds > maximumCloudImageSkew_seconds)
     {
+        rgbdObservability.recordCloudImageSkewReject();
         RCLCPP_WARN_THROTTLE(
             get_logger(),
             *get_clock(),
@@ -616,24 +780,58 @@ void ImageGrabber::GrabRGBD(
         return;
     }
 
+    bool didRejectNonMonotonic = false;
+    bool didRejectShutdown     = false;
+    bool didOverwritePending   = false;
     {
         std::lock_guard<std::mutex> packetLock(rgbdPacketMutex);
 
-        if (hasReceivedRgbdPacket &&
-            rgbTimestamp_seconds <= lastReceivedRgbdTimestamp_seconds)
+        if (stopRequested)
         {
-            RCLCPP_WARN_THROTTLE(get_logger(),
-                                 *get_clock(),
-                                 5000,
-                                 "Discarding a non-monotonic RGB-D packet.");
-            return;
+            didRejectShutdown = true;
         }
-
-        latestRgbdPacket                  = {msgRGB_in, msgD_in, msgPC_in};
-        hasPendingRgbdPacket              = true;
-        hasReceivedRgbdPacket             = true;
-        lastReceivedRgbdTimestamp_seconds = rgbTimestamp_seconds;
+        else if (hasReceivedRgbdPacket &&
+                 rgbTimestamp_seconds <= lastReceivedRgbdTimestamp_seconds)
+        {
+            didRejectNonMonotonic = true;
+        }
+        else
+        {
+            didOverwritePending = hasPendingRgbdPacket;
+            latestRgbdPacket    = {
+                msgRGB_in,
+                msgD_in,
+                msgPC_in,
+                rclcpp::Time(msgRGB_in->header.stamp).nanoseconds(),
+                callbackArrival};
+            hasPendingRgbdPacket              = true;
+            hasReceivedRgbdPacket             = true;
+            lastReceivedRgbdTimestamp_seconds = rgbTimestamp_seconds;
+        }
     }
 
+    if (didRejectShutdown)
+    {
+        rgbdObservability.recordShutdownAdmissionReject();
+        RCLCPP_WARN_THROTTLE(get_logger(),
+                             *get_clock(),
+                             5000,
+                             "Discarding an RGB-D packet after shutdown "
+                             "was requested.");
+        return;
+    }
+
+    if (didRejectNonMonotonic)
+    {
+        rgbdObservability.recordNonMonotonicReject();
+        RCLCPP_WARN_THROTTLE(get_logger(),
+                             *get_clock(),
+                             5000,
+                             "Discarding a non-monotonic RGB-D packet.");
+        return;
+    }
+
+    rgbdObservability.recordPendingStore(1U, didOverwritePending);
+    PublishRgbdFrontendHealth();
     rgbdPacketCondition.notify_one();
 }

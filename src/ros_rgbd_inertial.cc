@@ -23,6 +23,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "ResetCause.h"
 #include "common.hpp"
 
 using namespace std;
@@ -367,7 +368,8 @@ void ImageGrabber::SyncWithImu()
             pendingImuMeasurements.clear();
             pendingMaximumImuGap_seconds = 0.0;
             hasConsumedImuSample         = false;
-            p_slamSystem->ResetActiveMap();
+            p_slamSystem->RequestResetActiveMapWithCause(
+                ORB_SLAM3::ResetCause::IMU_DELIVERY_GAP);
             continue;
         }
         if (imuMeasurements.empty())
@@ -444,10 +446,12 @@ void ImageGrabber::SyncWithImu()
                                         imuMeasurements);
             }
 
+            double estimatorInterval_seconds = 0.0;
             if (hasProcessedRgbdPacket)
             {
                 const double processedFrameInterval_seconds =
                     imageTimestamp_seconds - lastProcessedRgbdTimestamp_seconds;
+                estimatorInterval_seconds = processedFrameInterval_seconds;
                 if (processedFrameInterval_seconds > 0.5)
                 {
                     RCLCPP_WARN(
@@ -459,6 +463,7 @@ void ImageGrabber::SyncWithImu()
             }
             lastProcessedRgbdTimestamp_seconds = imageTimestamp_seconds;
             hasProcessedRgbdPacket             = true;
+            recordEstimatorFrame(estimatorInterval_seconds);
 
             /* Only a completed TrackRGBD call commits this IMU interval. A
              * rejected image or cloud therefore leaves every sample available
@@ -517,6 +522,10 @@ int main(int argc, char **argv)
     node->declare_parameter<double>("maximum_sensor_buffer_seconds", 3.0);
     node->declare_parameter<bool>("direct_gazebo_flu_cloud", false);
     node->declare_parameter<std::string>("log_level", "info");
+    node->declare_parameter<std::string>("test_run_dir", "");
+    node->declare_parameter<bool>("sgraph_archive_enabled", true);
+    node->declare_parameter<double>("sgraph_archive_interval_sec", 5.0);
+    node->declare_parameter<int>("sgraph_archive_max_files", 0);
     node->declare_parameter<std::string>("frame_structural_element",
                                          "struc_elem");
     node->declare_parameter<std::string>("frame_building_component",
@@ -560,6 +569,14 @@ int main(int argc, char **argv)
     bool enablePangolin     = node->get_parameter("enable_pangolin").as_bool();
     const auto verboseLevel = ORB_SLAM3::Verbose::StringToLevel(
         node->get_parameter("log_level").as_string());
+
+    sgraphArchiveTestRunDir = node->get_parameter("test_run_dir").as_string();
+    sgraphArchiveEnabled =
+        node->get_parameter("sgraph_archive_enabled").as_bool();
+    sgraphArchiveIntervalSec =
+        node->get_parameter("sgraph_archive_interval_sec").as_double();
+    sgraphArchiveMaxFiles = static_cast<int>(
+        node->get_parameter("sgraph_archive_max_files").as_int());
 
     const double maximumTrackingRate_hz =
         node->get_parameter("maximum_tracking_rate_hz").as_double();
@@ -675,12 +692,27 @@ int main(int argc, char **argv)
             semanticSubscriptionOptions);
 
     // Subsriber to get skeletonized graph from the `voxblox` module
+    // Match the skeletonizer transient-local publisher so the latest usable
+    // graph is received even when this node joins after publication.
     auto subVoxbloxSkeletonMesh =
         node->create_subscription<visualization_msgs::msg::MarkerArray>(
             "/voxblox_skeletonizer/sparse_graph",
-            1,
+            rclcpp::QoS(1).transient_local(),
             [igb](const visualization_msgs::msg::MarkerArray::SharedPtr msg)
-            { igb->GrabVoxbloxSkeletonGraph(*msg); },
+            {
+                igb->GrabVoxbloxSkeletonGraph(*msg);
+                observeVoxbloxSparseGraphPublication(*msg);
+            },
+            skeletonSubscriptionOptions);
+
+    // Match the skeletonizer transient-local publisher so the latest usable
+    // cloud is received even when this node joins after publication.
+    auto subVoxbloxSkeleton =
+        node->create_subscription<sensor_msgs::msg::PointCloud2>(
+            "/voxblox_skeletonizer/skeleton",
+            rclcpp::QoS(1).transient_local(),
+            [](const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+            { observeVoxbloxSkeletonPublication(*msg); },
             skeletonSubscriptionOptions);
 
     static std::shared_ptr<image_transport::ImageTransport> image_transport =
@@ -757,7 +789,8 @@ void ImageGrabber::GrabRGBD(
             mpImuGb->imuBuf.swap(emptyImuBuffer);
         }
 
-        p_slamSystem->ResetActiveMap();
+        p_slamSystem->RequestResetActiveMapWithCause(
+            ORB_SLAM3::ResetCause::SENSOR_PROCESSING_OVERLOAD);
         discardInputUntilBufferDrained = false;
         hasAdmittedRgbdPacket          = false;
 

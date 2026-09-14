@@ -50,9 +50,11 @@
 #include "LoopClosing.h"
 #include "MapDrawer.h"
 #include "ORBVocabulary.h"
+#include "ResetCause.h"
 #include "Semantic/Marker.h"
 #include "Semantic/Passage.h"
 #include "Semantic/Room.h"
+#include "Semantic/SemanticReportCache/objects/SemanticReportCacheEntry.h"
 #include "SemanticSegmentation.h"
 #include "SemanticsManager.h"
 #include "Settings.h"
@@ -74,11 +76,36 @@ class Verbose
   public:
     enum eLevel
     {
-        VERBOSITY_QUIET        = 0,
-        VERBOSITY_NORMAL       = 1,
-        VERBOSITY_VERBOSE      = 2,
+        /*!
+         * @brief       Quiet mode: only warning-level messages are emitted.
+         *              Default level that preserves quiet behaviour when no
+         *              verbosity is explicitly set by the caller.
+         */
+        VERBOSITY_QUIET = 0,
+
+        /*!
+         * @brief       Normal mode: informational messages are emitted at
+         *              RCLCPP_INFO severity.
+         */
+        VERBOSITY_NORMAL = 1,
+
+        /*!
+         * @brief       Verbose mode: detailed debug messages are emitted at
+         *              RCLCPP_DEBUG severity.
+         */
+        VERBOSITY_VERBOSE = 2,
+
+        /*!
+         * @brief       Very verbose mode: additional debug detail beyond
+         * Verbose, also emitted at RCLCPP_DEBUG severity.
+         */
         VERBOSITY_VERY_VERBOSE = 3,
-        VERBOSITY_DEBUG        = 4
+
+        /*!
+         * @brief       Debug mode: maximum debug detail emitted at
+         *              RCLCPP_DEBUG severity. Use for development diagnostics.
+         */
+        VERBOSITY_DEBUG = 4
     };
 
     static eLevel th;
@@ -117,9 +144,20 @@ class Verbose
         }
     }
 
-    static void SetTh(eLevel _th)
+    /*!
+     * @brief       Set the global verbose threshold for core logging routed
+     *              through ROS 2's "visual_sgraphs" logger. Only messages
+     *              with a level less than or equal to this threshold will
+     *              be emitted.
+     *
+     * @param[in]   _th_in
+     *              The verbose level threshold. See @ref Verbose::eLevel
+     * "VERBOSITY_QUIET", VERBOSITY_NORMAL, VERBOSITY_VERBOSE,
+     * VERBOSITY_VERY_VERBOSE, or VERBOSITY_DEBUG.
+     */
+    static void SetTh(eLevel _th_in)
     {
-        th = _th;
+        th = _th_in;
     }
 
     /*!
@@ -131,15 +169,26 @@ class Verbose
     static eLevel StringToLevel(const std::string &level)
     {
         if (level == "debug")
+        {
             return VERBOSITY_DEBUG;
+        }
         if (level == "info")
+        {
             return VERBOSITY_NORMAL;
+        }
         if (level == "warn")
+        {
             return VERBOSITY_QUIET;
+        }
         if (level == "error")
+        {
             return VERBOSITY_QUIET;
+        }
         if (level == "quiet")
+        {
             return VERBOSITY_QUIET;
+        }
+
         return VERBOSITY_QUIET;
     }
 };
@@ -186,83 +235,611 @@ class SemanticsManager;
 class System
 {
   public:
-    // Input sensor
+    /*!
+     * @brief       Enumerator to indicate which sensor is being used by the
+     *              system.
+     */
     enum eSensor
     {
-        NOT_SET       = -1,
-        MONOCULAR     = 0,
-        STEREO        = 1,
-        RGBD          = 2,
+        /*!
+         * @brief       A sensor is not set. This is considered invalid.
+         */
+        NOT_SET = -1,
+
+        /*!
+         * @brief       Monocular Visual Camera setup.
+         */
+        MONOCULAR = 0,
+
+        /*!
+         * @brief       Stereo Visual Camera setup.
+         */
+        STEREO = 1,
+
+        /*!
+         * @brief       RGBD Visual Camera setup.
+         */
+        RGBD = 2,
+
+        /*!
+         * @brief       Visual Monocular Camera with IMU setup.
+         */
         IMU_MONOCULAR = 3,
-        IMU_STEREO    = 4,
-        IMU_RGBD      = 5,
+
+        /*!
+         * @brief       Visual Stereo Camera with IMU setup.
+         */
+        IMU_STEREO = 4,
+
+        /*!
+         * @brief       RGBD Visual Camera with IMU setup.
+         */
+        IMU_RGBD = 5,
     };
 
-    // File type
+    /*!
+     * @brief       Enumerator to indicate which file type is being used.
+     */
     enum FileType
     {
-        TEXT_FILE   = 0,
+        /*!
+         * @brief       Text file type is being used.
+         */
+        TEXT_FILE = 0,
+
+        /*!
+         * @brief       Binary file type is being used.
+         */
         BINARY_FILE = 1,
     };
 
+    /*!
+     * @brief       Struct which indicates the health of the passage semantic
+     *              element.
+     */
     struct PassageHealth
     {
-        int           id{-1};
-        bool          passable{false};
-        std::uint64_t knownToFarCount{0U};
-        std::uint64_t farToKnownCount{0U};
+        /*!
+         * @brief       ID of the passage semantic element.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        int id{-1};
+
+        /*!
+         * @brief       Flag to indicate if passage is passable or blocked. If
+         *              `true` then the passage is considered to be passable.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        bool passable{false};
+
+        /*!
+         * @brief       Room id from which the passage was first observed
+         *              (the primary/observing side).
+         *
+         *                                   primaryRoomId
+         *                            (Room Passage Was Observed)
+         *                                        ||
+         *                                        \/
+         *                                      Passage
+         *                                        ||
+         *                                        \/
+         *                                  secondaryRoomId
+         *                      (Room connecting to the observed passage)
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        int primaryRoomId{-1};
+
+        /*!
+         * @brief       Room id of the room which the passage connects to
+         *              from the observing/primary side.
+         *
+         *                                   primaryRoomId
+         *                            (Room Passage Was Observed)
+         *                                        ||
+         *                                        \/
+         *                                      Passage
+         *                                        ||
+         *                                        \/
+         *                                  secondaryRoomId
+         *                      (Room connecting to the observed passage)
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        int secondaryRoomId{-1};
+
+        /*!
+         * @brief       Number of traversals from the primary/observing side
+         *              into the secondary/far side.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint64_t primaryTraversalCount{0U};
+
+        /*!
+         * @brief       Number of traversals from the secondary/far side
+         *              back to the primary/observing side.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint64_t secondaryTraversalCount{0U};
+
+        /*!
+         * @brief       Number of untraversed/unknown observations.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
         std::uint64_t unknownCount{0U};
-        int           knownSideRoomId{-1};
-        int           farSideRoomId{-1};
     };
 
+    /*!
+     * @brief       Struct indicating the health of a room semantic element,
+     *              listing associated passage IDs.
+     *
+     * @frame       N/A
+     * @unit        N/A
+     */
     struct RoomHealth
     {
-        int              id{-1};
+
+        /*!
+         * @brief       ID of the room semantic element.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        int id{-1};
+
+        /*!
+         * @brief       Vector of passage IDs associated with this room.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
         std::vector<int> passageIds;
     };
 
+    /*!
+     * @brief       Struct indicating the health of a floor semantic element,
+     *              listing associated room IDs.
+     *
+     * @frame       N/A
+     * @unit        N/A
+     */
     struct FloorHealth
     {
-        int              id{-1};
+
+        /*!
+         * @brief       ID of the floor semantic element.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        int id{-1};
+
+        /*!
+         * @brief       Vector of room IDs located on this floor.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
         std::vector<int> roomIds;
     };
 
+    /*!
+     * @brief       Snapshot of the mission health status, capturing tracking,
+     *              semantic, and loop closure state at a given point in time.
+     *
+     * This structure is populated by @ref GetMissionHealthSnapshot
+     * "GetMissionHealthSnapshot()" and @ref GetSemanticReportCacheEntry
+     * "GetSemanticReportCacheEntry()". It provides a comprehensive view of the
+     * system's current state, including pose validity, map statistics, and
+     * semantic segmentation progress. A default-constructed instance is
+     * returned when no SemanticsManager exists or no complete semantic
+     * evaluation cycle has completed yet.
+     *
+     * @frame       N/A
+     * @unit        N/A
+     */
     struct MissionHealthSnapshot
     {
-        double                     frameTimestamp{0.0};
-        int                        trackingState{-1};
-        int                        trackingInliers{0};
-        bool                       inertial{false};
-        bool                       inertialInitialized{false};
-        bool                       poseValid{false};
-        Sophus::SE3f               cameraPose_World;
-        std::uint64_t              mapId{0U};
-        std::uint32_t              mapCount{0U};
-        std::uint32_t              keyFrameCount{0U};
-        std::uint64_t              resetCount{0U};
-        bool                       latestKeyFramePoseValid{false};
-        double                     latestKeyFrameTimestamp{0.0};
-        Sophus::SE3f               latestKeyFramePose_World;
-        int                        currentRoomId{-1};
-        int                        lastKnownRoomId{-1};
-        std::uint32_t              confirmedRoomCount{0U};
-        std::uint32_t              unresolvedRoomCount{0U};
-        std::uint32_t              floorRoomLinkCount{0U};
-        std::vector<RoomHealth>    rooms;
-        std::vector<FloorHealth>   floors;
+
+        /*!
+         * @brief       Timestamp of the frame at which this snapshot was taken.
+         *
+         * @frame       N/A
+         * @unit        seconds
+         */
+        double frameTimestamp{0.0};
+
+        /*!
+         * @brief       Current tracking state code. Corresponds to the tracking
+         *              state machine status (e.g. INITIALIZED, TRACKING, LOST).
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        int trackingState{-1};
+
+        /*!
+         * @brief       Number of inliers from the most recent tracking frame.
+         *              Higher values indicate more reliable tracking.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        int trackingInliers{0};
+
+        /*!
+         * @brief       Whether the IMU subsystem is active. When `true`, IMU
+         * data is being used for pose estimation.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        bool inertial{false};
+
+        /*!
+         * @brief       Whether the IMU has been initialized and its bias
+         * estimates are valid. Initialization typically requires a period of
+         *              stationary operation.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        bool inertialInitialized{false};
+
+        /*!
+         * @brief       Whether the camera pose is currently valid. If `false`,
+         * the pose should not be relied upon for navigation or planning.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        bool poseValid{false};
+
+        /*!
+         * @brief       Current camera pose in the world frame, representing the
+         *              estimated position and orientation of the camera.
+         *
+         * @frame       World
+         * @unit        meters / radians (Sophus SE3f convention)
+         */
+        Sophus::SE3f cameraPose_World;
+
+        /*!
+         * @brief       Identifier of the most recently processed map.
+         * Incremented on map restarts or when a new map is loaded.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint64_t mapId{0U};
+
+        /*!
+         * @brief       Total count of map instances or map reloads that have
+         *              occurred since the system started.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint32_t mapCount{0U};
+
+        /*!
+         * @brief       Total number of keyframes currently in the map.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint32_t keyFrameCount{0U};
+
+        /*!
+         * @brief       Total number of system resets that have occurred since
+         *              initialization. Incremented by @ref Reset "Reset()" and
+         *              @ref RequestResetActiveMapWithCause
+         * "RequestResetActiveMapWithCause().
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint64_t resetCount{0U};
+
+        /*! Number of coherent RGB-D packets accepted by the frontend. */
+        std::uint64_t rgbdFrontendAcceptedCount{0U};
+
+        /*! Number of accepted RGB-D packets reaching a terminal worker state.
+         */
+        std::uint64_t rgbdFrontendProcessedCount{0U};
+
+        /*! Number of pending RGB-D packets replaced by a newer packet. */
+        std::uint64_t rgbdFrontendOverwrittenCount{0U};
+
+        /*! True while the RGB-D worker owns a packet. */
+        bool rgbdFrontendWorkerInFlight{false};
+
+        /*! Sensor timestamp of the latest successfully tracked RGB-D packet. */
+        std::int64_t rgbdFrontendLastProcessedSensorTimestampNanoseconds{0};
+
+        /*!
+         * @brief       Number of keyframes currently in-flight and queued for
+         *              semantic segmentation (i.e. published to the segmenter
+         * but not yet returned). See also @ref segmentationReturnedCount and
+         * @ref lastReturnedKeyFrameId.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint64_t segmentationPublishedCount{0U};
+
+        /*!
+         * @brief       Number of keyframes for which semantic segmentation
+         * results have been received back from the segmentation pipeline. When
+         * combined with @ref segmentationPublishedCount, the difference
+         * indicates how many keyframes remain in-flight.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint64_t segmentationReturnedCount{0U};
+
+        /*!
+         * @brief       Identifier of the last keyframe whose segmentation
+         * result was returned. Keyframes with IDs greater than this value are
+         * still in-flight or pending.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint64_t lastReturnedKeyFrameId{0U};
+
+        /*! Number of returned segmentations enqueued for plane processing. */
+        std::uint64_t segmentationEnqueuedCount{0U};
+
+        /*! Number of segmentation work items removed from the work queue. */
+        std::uint64_t segmentationDequeuedCount{0U};
+
+        /*! Number of segmentation work items reaching a terminal outcome. */
+        std::uint64_t segmentationTerminalCount{0U};
+
+        /*! Number of work items accepted into active-map plane association. */
+        std::uint64_t segmentationAcceptedCount{0U};
+
+        /*! Number of work items discarded by the bounded-queue policy. */
+        std::uint64_t segmentationDroppedCount{0U};
+
+        /*! Number of terminal results rejected for a missing keyframe. */
+        std::uint64_t segmentationMissingKeyFrameCount{0U};
+
+        /*! Number of terminal results rejected for unavailable cloud data. */
+        std::uint64_t segmentationMissingCloudCount{0U};
+
+        /*! Number of terminal results rejected because their map was stale. */
+        std::uint64_t segmentationStaleMapCount{0U};
+
+        /*! Identifier of the most recent terminally processed keyframe. */
+        std::uint64_t lastTerminalKeyFrameId{0U};
+
+        /*! Current number of returned results awaiting processing. */
+        std::uint32_t segmentationQueueDepth{0U};
+
+        /*! Largest processing queue depth observed during this process. */
+        std::uint32_t segmentationQueueHighWatermark{0U};
+
+        /*!
+         * @brief       Whether the latest keyframe's pose is currently valid.
+         * If `false`, the latest keyframe pose should not be used for critical
+         * decisions.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        bool latestKeyFramePoseValid{false};
+
+        /*!
+         * @brief       Timestamp of the latest keyframe that has been
+         * processed.
+         *
+         * @frame       N/A
+         * @unit        seconds
+         */
+        double latestKeyFrameTimestamp{0.0};
+
+        /*!
+         * @brief       Pose of the latest keyframe in the world frame,
+         * representing the estimated position and orientation at the time of
+         * that keyframe's capture.
+         *
+         * @frame       World
+         * @unit        meters / radians (Sophus SE3f convention)
+         */
+        Sophus::SE3f latestKeyFramePose_World;
+
+        /*!
+         * @brief       Identifier of the current room as determined by the
+         *              semantic mapping subsystem. This room is the one most
+         *              recently observed by the system.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        int currentRoomId{-1};
+
+        /*!
+         * @brief       Identifier of the last known room, saved before a
+         * potential room change or reset. Used for carryover of room context
+         *              across map restarts (see WP1 room-context carryover).
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        int lastKnownRoomId{-1};
+
+        /*!
+         * @brief       Number of rooms that have been confirmed (i.e. their
+         *              topology has been validated and they are part of the
+         *              persistent map).
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint32_t confirmedRoomCount{0U};
+
+        /*!
+         * @brief       Number of rooms that are currently unresolved, meaning
+         *              their topology has not yet been fully validated or they
+         *              are still being mapped.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint32_t unresolvedRoomCount{0U};
+
+        /*!
+         * @brief       Number of floor-room linkage observations recorded. This
+         *              counts how many times a room has been associated with a
+         *              floor in the semantic map.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint32_t floorRoomLinkCount{0U};
+
+        /*!
+         * @brief       Vector of room health entries, each describing the
+         *              passages associated with a room and its traversal stats.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::vector<RoomHealth> rooms;
+
+        /*!
+         * @brief       Vector of floor health entries, each listing the rooms
+         *              that exist on that floor.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::vector<FloorHealth> floors;
+
+        /*!
+         * @brief       Vector of passage health entries, each describing the
+         *              traversal counts and room connections for a passage.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
         std::vector<PassageHealth> passages;
-        std::uint64_t              loopSequence{0U};
-        std::uint32_t              acceptedLoopCount{0U};
-        std::uint32_t              rejectedLoopCount{0U};
-        bool                       hasLoopEvent{false};
-        bool                       lastLoopAccepted{false};
-        std::uint64_t              lastLoopMapId{0U};
-        std::uint64_t              lastLoopCurrentKeyFrameId{0U};
-        std::uint64_t              lastLoopMatchedKeyFrameId{0U};
-        double                     lastLoopCurrentTimestamp{0.0};
-        double                     lastLoopMatchedTimestamp{0.0};
-        std::string                lastLoopReason;
+
+        /*!
+         * @brief       Sequence number of the most recent loop closure event.
+         *              Incremented each time a loop is closed.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint64_t loopSequence{0U};
+
+        /*!
+         * @brief       Number of loop closures that have been accepted (i.e.
+         *              their pose graph optimization converged successfully).
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint32_t acceptedLoopCount{0U};
+
+        /*!
+         * @brief       Number of loop closures that have been rejected (i.e.
+         *              their pose graph optimization failed or was deemed
+         *              inconsistent).
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint32_t rejectedLoopCount{0U};
+
+        /*!
+         * @brief       Whether a loop event has occurred since the last
+         * snapshot. A loop closure was detected and processed.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        bool hasLoopEvent{false};
+
+        /*!
+         * @brief       Whether the most recent loop closure was accepted
+         * (`true`) or rejected (`false`).
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        bool lastLoopAccepted{false};
+
+        /*!
+         * @brief       Map ID associated with the most recent loop closure
+         * event.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint64_t lastLoopMapId{0U};
+
+        /*!
+         * @brief       Keyframe ID that was current at the time the most recent
+         *              loop was initiated.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint64_t lastLoopCurrentKeyFrameId{0U};
+
+        /*!
+         * @brief       Keyframe ID that was matched against the current frame
+         *              during the most recent loop closure search.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::uint64_t lastLoopMatchedKeyFrameId{0U};
+
+        /*!
+         * @brief       Timestamp of the current frame when the most recent loop
+         *              closure was initiated.
+         *
+         * @frame       N/A
+         * @unit        seconds
+         */
+        double lastLoopCurrentTimestamp{0.0};
+
+        /*!
+         * @brief       Timestamp at which the loop closure match was found,
+         *              corresponding to the matched keyframe's timestamp.
+         *
+         * @frame       N/A
+         * @unit        seconds
+         */
+        double lastLoopMatchedTimestamp{0.0};
+
+        /*!
+         * @brief       Human-readable reason string for the most recent loop
+         *              closure event. May describe why a loop was accepted or
+         *              rejected, or provide details about the loop detection.
+         *
+         * @frame       N/A
+         * @unit        N/A
+         */
+        std::string lastLoopReason;
     };
 
   public:
@@ -273,30 +850,46 @@ class System
      *              Loop Closing and Viewer threads.
      *
      * @param[in]   strVocFile
-     *              TODO
+     *              Path to the ORB vocabulary file. Used for place recognition
+     *              and feature matching. Must be a valid vocabulary file
+     *              generated by ORB-SLAM3.
      *
      * @param[in]   strSettingsFile
-     *              TODO
+     *              Path to the system settings YAML file. Contains
+     * configuration for cameras, IMU, and other system parameters.
      *
      * @param[in]   strSysParamsFile
-     *              TODO
+     *              Path to the system parameters file. Contains additional
+     *              parameters specific to the system configuration.
      *
      * @param[in]   sensor
-     *              TODO
+     *              Sensor type enum indicating the camera/IMU configuration.
+     *              Valid values are @ref eSensor "MONOCULAR, STEREO, RGBD,
+     *              IMU_MONOCULAR, IMU_STEREO, IMU_RGBD". The sensor type
+     *              determines which tracking method (TrackStereo, TrackRGBD,
+     *              TrackMonocular) is used.
      *
      * @param[in]   bUseViewer
-     *              TODO
+     *              If `true` (default), the Viewer thread is launched to
+     *              visualize the map and camera pose. Set to `false` to
+     *              disable the viewer for headless or embedded operation.
      *
      * @param[in]   initFr
-     *              TODO
+     *              Index of the initial frame to start processing from. Useful
+     *              when resuming a sequence from a specific frame. Defaults to
+     * 0.
      *
      * @param[in]   strSequence
-     *              TODO
+     *              Optional name/identifier for the sequence being processed.
+     *              Used for logging and dataset organization. Defaults to
+     *              empty string.
      *
      * @param[in]   verboseLevel
-     *              Verbose threshold for core logging routed through ROS 2.
-     *              Defaults to QUIET so the current quiet behaviour is
-     *              preserved when the caller does not set a level.
+     *              Verbose threshold for core logging routed through ROS 2's
+     *              "visual_sgraphs" logger. Levels range from
+     *              @ref Verbose::eLevel "VERBOSITY_QUIET (default)" to
+     *              VERBOSITY_DEBUG. Set to QUIET to suppress informational
+     *              messages and preserve the current quiet behaviour.
      */
     System(const string         &strVocFile,
            const string         &strSettingsFile,
@@ -431,6 +1024,18 @@ class System
      */
     ORB_SLAM3::Map *GetCurrentMap();
 
+    /**
+     * @brief       Get the Atlas owning every map in the system.
+     *
+     *              Exposed so ROS-layer consumers (e.g. the SGraph JSON
+     *              archiver) can enumerate all active maps coherently. The
+     *              Atlas remains owned by the System; the caller must not
+     *              delete it.
+     *
+     * @return      Pointer to the Atlas, or nullptr before initialisation.
+     */
+    ORB_SLAM3::Atlas *GetAtlas();
+
     /*!
      * @brief       Returns true if there have been a big map change (loop
      *              closure, global BA) since last call to this function.
@@ -440,25 +1045,82 @@ class System
     MissionHealthSnapshot
         GetMissionHealthSnapshot(bool includeSemantics = true);
 
+    /**
+     * @brief       Updates RGB-D frontend progress exposed through mission
+     *              health. Safe to call from the callback or worker thread.
+     *
+     * @param[in]   acceptedCount_in
+     *              Coherent packets accepted into the bounded frontend.
+     * @param[in]   processedCount_in
+     *              Accepted packets that reached a terminal worker outcome.
+     * @param[in]   overwrittenCount_in
+     *              Pending packets replaced before worker ownership.
+     * @param[in]   isWorkerInFlight_in
+     *              Whether the frontend worker currently owns a packet.
+     * @param[in]   lastProcessedSensorTimestampNanoseconds_in
+     *              Latest successfully tracked sensor timestamp, in
+     *              nanoseconds.
+     */
+    void UpdateRgbdFrontendHealth(
+        std::uint64_t acceptedCount_in,
+        std::uint64_t processedCount_in,
+        std::uint64_t overwrittenCount_in,
+        bool          isWorkerInFlight_in,
+        std::int64_t  lastProcessedSensorTimestampNanoseconds_in) noexcept;
+
+    /*!
+     * @brief       Returns a copied snapshot of the latest complete semantic
+     *              evaluation cycle (SemanticsManager's own
+     *              SemanticReportCache), or a meaningless default value when
+     *              no SemanticsManager exists yet or no cycle has completed
+     *              -- check IsSemanticReportCacheAvailable() first.
+     */
+    semantic::SemanticReportCacheEntry GetSemanticReportCacheEntry() const;
+
+    /*!
+     * @brief       True once mpSemanticsManager exists and has cached at least
+     *              one complete semantic evaluation cycle.
+     */
+    bool IsSemanticReportCacheAvailable() const;
+
     /*!
      * @brief       Reset the system (clear Atlas or the active map).
      */
     void Reset();
 
     /*!
-     * @brief       TODO
+     * @brief       Reset the active map (clear the current map while retaining
+     *              the overall Atlas state). This is useful for restarting the
+     *              system with a fresh map while keeping map topology and
+     *              previously built map points.
      */
     void ResetActiveMap();
 
     /*!
+     * @brief       Requests an active-map reset while retaining its
+     *              package-internal cause. Multiple unlike requests coalesced
+     *              by the existing boolean reset flag are reported as such
+     *              rather than assigned one misleading cause.
+     *
+     * @param[in]   cause_in
+     *              The cause of the reset request. This is used to report
+     *              multiple unlike requests as a combined cause rather than
+     *              assigning one misleading cause.
+     */
+    void RequestResetActiveMapWithCause(ResetCause cause_in);
+
+    /*!
      * @brief       All threads will be requested to finish. It waits until all
      *              threads have finished. This function must be called before
-     *              saving the trajectory.
+     *              saving the trajectory to ensure a clean shutdown.
      */
     void Shutdown();
 
     /*!
      * @brief       Reset the system (clear Atlas or the active map).
+     *
+     * @return      `true` if the system was successfully reset, `false`
+     *              otherwise.
      */
     bool isShutDown();
 
@@ -486,34 +1148,82 @@ class System
     void SaveKeyFrameTrajectoryTUM(const string &filename);
 
     /*!
-     * @brief       TODO
+     * @brief       Save camera trajectory in the EuRoC MAV dataset format.
+     *              Only for stereo and RGB-D. This method does not work for
+     *              monocular. Call Shutdown() before saving.
+     *
+     * @param[in]   filename
+     *              Path to the output file where the trajectory will be saved
+     *              in EuRoC format.
+     *
+     * @note        Call first Shutdown()
+     *
+     * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
     void SaveTrajectoryEuRoC(const string &filename);
 
     /*!
-     * @brief       TODO
+     * @brief       Save keyframe poses in the EuRoC MAV dataset format. This
+     *              method works for all sensor input. Call Shutdown() before
+     *              saving.
+     *
+     * @param[in]   filename
+     *              Path to the output file where the keyframe poses will be
+     *              saved in EuRoC format.
+     *
+     * @note        Call first Shutdown()
+     *
+     * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
     void SaveKeyFrameTrajectoryEuRoC(const string &filename);
 
     /*!
-     * @brief       TODO
+     * @brief       Save camera trajectory in the EuRoC MAV dataset format,
+     *              including map data. Only for stereo and RGB-D. Call
+     *              Shutdown() before saving.
+     *
+     * @param[in]   filename
+     *              Path to the output file where the trajectory will be saved.
+     *
+     * @param[in]   pMap
+     *              Pointer to the map to include in the trajectory save.
+     *
+     * @note        Call first Shutdown()
+     *
+     * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
     void SaveTrajectoryEuRoC(const string &filename, Map *pMap);
 
     /*!
-     * @brief       TODO
+     * @brief       Save keyframe poses in the EuRoC MAV dataset format,
+     *              including map data. Works for all sensor input. Call
+     *              Shutdown() before saving.
+     *
+     * @param[in]   filename
+     *              Path to the output file where the keyframe poses will be
+     *              saved.
+     *
+     * @param[in]   pMap
+     *              Pointer to the map to include in the keyframe trajectory
+     * save.
+     *
+     * @note        Call first Shutdown()
+     *
+     * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
     void SaveKeyFrameTrajectoryEuRoC(const string &filename, Map *pMap);
 
     /*!
-     * @brief       Save data used for initialization debug.
+     * @brief       Save data used for initialization debug. This dump includes
+     *              keyframe poses, map point positions, and other debugging
+     *              information useful for diagnosing the initialization phase.
+     *
+     * @param[in]   iniIdx
+     *              Index specifying which initialization debug data to save.
+     *              Multiple debug dumps may be available for different
+     *              initialization attempts.
      */
     void SaveDebugData(const int &iniIdx);
-
-    //
-    // Call first Shutdown()
-    // See format details at:
-    // http://www.cvlibs.net/datasets/kitti/eval_odometry.php
 
     /*!
      * @brief       Save camera trajectory in the KITTI dataset format. Only for
@@ -526,48 +1236,279 @@ class System
      */
     void SaveTrajectoryKITTI(const string &filename);
 
-    // TODO: Save/Load functions
+    /*!
+     * @brief       Save the map to a file. The format (text or binary) is
+     *              determined by the system configuration.
+     *
+     * @param[in]   filename
+     *              Path to the output file where the map will be saved.
+     *
+     * @return      `true` if the map was saved successfully, `false`
+     *              otherwise. Returns `false` if the system is not properly
+     *              initialized or if saving is not supported for the current
+     *              sensor configuration.
+     */
     bool SaveMap(const string &filename);
+
+    /*!
+     * @brief       Save map points as a PCD (Point Cloud Data) file. This can
+     *              be used for offline analysis or visualization of the map
+     *              points.
+     *
+     * @param[in]   filename
+     *              Path to the output PCD file where map points will be saved.
+     *
+     * @return      `true` if the map points were saved successfully, `false`
+     *              otherwise. Returns `false` if the system is not properly
+     *              initialized or if there are no map points to save.
+     */
     bool SaveMapPointsAsPCD(const string &filename);
-    // LoadMap(const string &filename);
 
-    // Information from most recent processed frame
-    // You can call this right after TrackMonocular (or stereo or RGBD)
-    int                                GetTrackingState();
-    cv::Mat                            GetCurrentFrame();
-    std::vector<ORB_SLAM3::Room *>     GetAllRooms();
-    std::vector<ORB_SLAM3::Floor *>    GetAllFloors();
-    std::vector<ORB_SLAM3::Plane *>    GetAllPlanes();
-    std::vector<ORB_SLAM3::Door *>     GetAllDoors();
-    std::vector<ORB_SLAM3::Marker *>   GetAllMarkers();
-    std::vector<ORB_SLAM3::Passage *>  GetAllPassages();
+    /*!
+     * @brief       Get the current tracking state code. This reflects the
+     *              current state of the tracking system (e.g. INITIALIZED,
+     *              TRACKING, LOST). Updated after each frame processing.
+     *
+     * @return      Tracking state code integer.
+     */
+    int GetTrackingState();
+
+    /*!
+     * @brief       Get a copy of the current frame image. The returned image
+     *              is in the same format as the input (monocular, stereo, or
+     *              RGB-D depending on the sensor configuration).
+     *
+     * @return      Current frame as a cv::Mat. May be empty if no frame
+     *              has been processed yet.
+     */
+    cv::Mat GetCurrentFrame();
+
+    /*!
+     * @brief       Get all rooms in the current map. Rooms are semantic
+     *              elements that group related passages and have associated
+     *              traversal statistics.
+     *
+     * @return      Vector of pointers to Room objects. May be empty if no
+     *              rooms have been created yet.
+     */
+    std::vector<ORB_SLAM3::Room *> GetAllRooms();
+
+    /*!
+     * @brief       Get all floors in the current map. Floors are semantic
+     *              elements that group related rooms.
+     *
+     * @return      Vector of pointers to Floor objects. May be empty if no
+     *              floors have been created yet.
+     */
+    std::vector<ORB_SLAM3::Floor *> GetAllFloors();
+
+    /*!
+     * @brief       Get all planes in the current map. Planes represent
+     *              geometric planes detected in the environment (e.g., walls,
+     *              floors, ceilings).
+     *
+     * @return      Vector of pointers to Plane objects. May be empty if no
+     *              planes have been detected yet.
+     */
+    std::vector<ORB_SLAM3::Plane *> GetAllPlanes();
+
+    /*!
+     * @brief       Get all doors in the current map. Doors are semantic
+     *              elements representing doorways between rooms.
+     *
+     * @return      Vector of pointers to Door objects. May be empty if no
+     *              doors have been detected yet.
+     */
+    std::vector<ORB_SLAM3::Door *> GetAllDoors();
+
+    /*!
+     * @brief       Get all markers (fiducial markers/AprilTags) in the current
+     *              map. Markers are used for place recognition and
+     *              localization.
+     *
+     * @return      Vector of pointers to Marker objects. May be empty if no
+     *              markers have been detected yet.
+     */
+    std::vector<ORB_SLAM3::Marker *> GetAllMarkers();
+
+    /*!
+     * @brief       Get all passages in the current map. Passages connect rooms
+     *              and have traversal statistics tracking how many times they
+     *              have been crossed.
+     *
+     * @return      Vector of pointers to Passage objects. May be empty if no
+     *              passages have been detected yet.
+     */
+    std::vector<ORB_SLAM3::Passage *> GetAllPassages();
+
+    /*!
+     * @brief       Get all keyframes in the current map. Keyframes represent
+     *              key poses from which the map was built.
+     *
+     * @return      Vector of pointers to KeyFrame objects. May be empty if
+     *              no keyframes have been created yet.
+     */
     std::vector<ORB_SLAM3::KeyFrame *> GetAllKeyFrames();
-    std::vector<ORB_SLAM3::MapPoint *> GetAllMapPoints();
-    std::vector<ORB_SLAM3::MapPoint *> GetTrackedMapPoints();
-    std::vector<Sophus::SE3f>          GetAllKeyframePoses();
-    std::vector<cv::KeyPoint>          GetTrackedKeyPointsUn();
 
-    // singular version of GetAllKeyFrames
+    /*!
+     * @brief       Get all map points in the current map. Map points are
+     *              3D points that have been triangulated and tracked.
+     *
+     * @return      Vector of pointers to MapPoint objects. May be empty if
+     *              no map points have been created yet.
+     */
+    std::vector<ORB_SLAM3::MapPoint *> GetAllMapPoints();
+
+    /*!
+     * @brief       Get only the map points that are currently being tracked.
+     *              These are map points that have been observed in the most
+     *              recent frame and are likely to remain in the map.
+     *
+     * @return      Vector of pointers to MapPoint objects currently being
+     *              tracked. May be empty if no points are being tracked.
+     */
+    std::vector<ORB_SLAM3::MapPoint *> GetTrackedMapPoints();
+
+    /*!
+     * @brief       Get all keyframe poses in the current map. Each pose
+     *              represents the camera position and orientation at the
+     *              time the keyframe was captured.
+     *
+     * @return      Vector of Sophus::SE3f poses, one per keyframe. May be
+     *              empty if no keyframes have been created yet.
+     */
+    std::vector<Sophus::SE3f> GetAllKeyframePoses();
+
+    /*!
+     * @brief       Get the un-tracked keypoints from the current frame. These
+     *              are keypoints that were detected but not yet associated
+     *              with MapPoints.
+     *
+     * @return      Vector of cv::KeyPoint objects representing un-tracked
+     *              keypoints. May be empty if all keypoints are tracked.
+     */
+    std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
+
+    /*!
+     * @brief       Get the pose of a specific keyframe.
+     *
+     * @param[in]   pKF
+     *              Pointer to the KeyFrame whose pose is requested. Must not
+     *              be null and must belong to the current map.
+     *
+     * @return      The camera pose (Sophus::SE3f) of the requested keyframe.
+     *              Returns an empty pose if the keyframe pointer is invalid.
+     */
     Sophus::SE3f GetKeyFramePose(KeyFrame *pKF);
 
-    Sophus::SE3f    GetCamTwc();
-    Sophus::SE3f    GetImuTwb();
+    /*!
+     * @brief       Get the camera pose in the world frame. This is the
+     *              estimated position and orientation of the camera relative
+     *              to the world origin.
+     *
+     * @return      Camera pose as Sophus::SE3f. May be invalid if the
+     *              system has not yet initialized the pose.
+     */
+    Sophus::SE3f GetCamTwc();
+
+    /*!
+     * @brief       Get the IMU pose in the body frame. Represents the
+     *              estimated position and orientation of the IMU relative
+     *              to the body frame.
+     *
+     * @return      IMU pose as Sophus::SE3f. May be invalid if IMU data
+     *              has not been sufficiently processed.
+     */
+    Sophus::SE3f GetImuTwb();
+
+    /*!
+     * @brief       Get the IMU velocity in the body frame. Represents the
+     *              linear velocity of the IMU in the body frame.
+     *
+     * @return      IMU velocity as Eigen::Vector3f. May be invalid if IMU
+     *              data has not been sufficiently processed.
+     */
     Eigen::Vector3f GetImuVwb();
-    bool            isImuPreintegrated();
 
-    // For debugging
+    /*!
+     * @brief       Check whether IMU preintegration is active. When `true`,
+     *              IMU preintegrated measurements are being used for pose
+     *              estimation, which reduces drift between IMU updates.
+     *
+     * @return      `true` if IMU preintegration is enabled and active,
+     *              `false` otherwise.
+     */
+    bool isImuPreintegrated();
+
+    /*!
+     * @brief       Get the time elapsed since IMU initialization. This
+     *              represents how long the IMU has been running and
+     *              accumulating data since it was first started.
+     *
+     * @return      Time in seconds since IMU initialization. A value
+     *              greater than ~0.1 seconds typically indicates the IMU
+     *              has converged and is providing reliable data.
+     */
     double GetTimeFromIMUInit();
-    bool   isLost();
-    bool   isFinished();
 
+    /*!
+     * @brief       Check whether the system considers its current state as
+     *              finished/initialized. The system is considered finished
+     *              when the IMU has been initialized for a sufficient
+     *              duration (typically > 0.1s) and the pose is valid.
+     *
+     * @return      `true` if the system is finished/initialized, `false`
+     *              otherwise. When `false`, the pose and tracking state
+     *              should not be relied upon for critical decisions.
+     */
+    bool isFinished();
+
+    /*!
+     * @brief       Check if the system has lost the current pose estimate.
+     *              The system is considered "lost" when the tracker state
+     *              is Tracking::LOST, meaning the camera pose cannot be
+     *              reliably estimated from the current frame.
+     *
+     * @return      `true` if the system has lost tracking, `false` otherwise.
+     *              When `true`, the system needs to re-localize or restart.
+     */
+    bool isLost();
+
+    /*!
+     * @brief       Change the dataset being processed. This allows the system
+     *              to switch between different datasets or configuration
+     *              profiles without restarting.
+     *
+     * @note        This function is currently a placeholder. Full dataset
+     *              switching support may be added in future versions.
+     */
     void ChangeDataset();
 
+    /*!
+     * @brief       Get the image scale factor used by the system. This factor
+     *              relates the image pixel coordinates to real-world metrics.
+     *
+     * @return      Image scale factor. The mapping from pixels to meters
+     *              depends on the specific sensor configuration and
+     *              calibration.
+     */
     float GetImageScale();
+
+    /*!
+     * @brief       Marks one keyframe as handed off to the semantic
+     *              segmentation pipeline. Called from the publish site
+     *              (`common.cc`) at the exact instant the keyframe image is
+     *              queued for the segmenter, so the lockstep controller's
+     *              `published - returned` backlog signal covers the whole
+     *              in-flight window, not just what `System` can see
+     *              internally.
+     */
+    void IncrementSegmentationPublishedCount();
 
     /*!
      * @brief       Parse the JSON file containing the environment data
      *
-     * @param       jsonFilePath
+     * @param[in]   jsonFilePath
      *              The path to the JSON file
      */
     void parseJsonDatabase(string jsonFilePath);
@@ -576,7 +1517,7 @@ class System
      * @brief       Add the segmented image to the buffer in the
      *              SemanticSegmentation
      *
-     * @param       tuple
+     * @param[in]   tuple
      *              The address of the tuple of segmented image and pointcloud
      */
     void addSegmentedImage(
@@ -620,100 +1561,368 @@ class System
 #endif
 
   private:
-    bool SaveAtlas(int type);
-    bool LoadAtlas(int type);
-
-    string CalculateCheckSum(string filename, int type);
-
-    // Input sensor
+    /*!
+     * @brief       Sensor type. Indicates the camera/IMU configuration used
+     *              by the system (MONOCULAR, STEREO, RGBD, IMU_MONOCULAR,
+     *              IMU_STEREO, IMU_RGBD). Determines which tracking method
+     *              is used (TrackStereo, TrackRGBD, TrackMonocular).
+     */
     eSensor mSensor;
 
-    // ORB vocabulary used for place recognition and feature matching.
+    /*!
+     * @brief       ORB vocabulary used for place recognition and feature
+     *              matching.
+     */
     ORBVocabulary *mpVocabulary;
 
-    // KeyFrame database for place recognition (relocalization and loop
-    // detection).
+    /*!
+     * @brief       KeyFrame database for place recognition (relocalization and
+     *              loop detection).
+     */
     KeyFrameDatabase *mpKeyFrameDatabase;
 
-    // Map structure that stores the pointers to all KeyFrames and MapPoints.
-    // Map* mpMap;
-    Atlas *mpAtlas;
-
-    // Tracker. It receives a frame and computes the associated camera pose.
-    // It also decides when to insert a new keyframe, create some new MapPoints
-    // and performs relocalization if tracking fails.
-    Tracking *mpTracker;
-
-    // Local Mapper. It manages the local map and performs local bundle
-    // adjustment.
-    LocalMapping *mpLocalMapper;
-
-    // Loop Closer. It searches loops with every new keyframe. If there is a
-    // loop it performs a pose graph optimization and full bundle adjustment (in
-    // a new thread) afterwards.
-    LoopClosing *mpLoopCloser;
-
-    // The viewer draws the map and the current camera pose. It uses Pangolin.
-    Viewer *mpViewer;
-
-    FrameDrawer *mpFrameDrawer;
-    MapDrawer   *mpMapDrawer;
-
-    // Geometric & Semantic Segmentation
-    SemanticSegmentation *mpSemanticSegmentation;
-    SemanticsManager     *mpSemanticsManager;
-
-    // List of rooms in the environment
-    std::vector<ORB_SLAM3::Room *> envRooms;
-
-    // System threads: Local Mapping, Loop Closing, Viewer.
-    // 🚀 [vS-Graphs v.2.0] Two new threads: Geometric Segmentation and Semantic
-    // Segmentation The Tracking thread "lives" in the main execution thread
-    // that creates the System object.
-    std::thread *mptViewer;
-    std::thread *mptLoopClosing;
-    std::thread *mptLocalMapping;
-    std::thread *mptSemanticSegmentation;
-    std::thread *mptSemanticsManager;
-    std::thread *mptGeometricSegmentation;
-
-    // Reset flag
-    std::mutex mMutexReset;
-    bool       mbReset;
-    bool       mbResetActiveMap;
-
-    // Change mode flags
-    std::mutex mMutexMode;
-    bool       mbActivateLocalizationMode;
-    bool       mbDeactivateLocalizationMode;
-
-    // Shutdown flag
-    bool mbShutDown;
-
-    // Tracking state
-    int                        mTrackingState{-1};
-    int                        mTrackingInliers{0};
-    double                     mLastFrameTimestamp{0.0};
-    Sophus::SE3f               mCurrentCameraPose_World;
-    bool                       mCurrentCameraPoseValid{false};
-    std::atomic<std::uint64_t> mResetCount{0U};
-    std::vector<MapPoint *>    mTrackedMapPoints;
-    std::vector<cv::KeyPoint>  mTrackedKeyPointsUn;
-    std::mutex                 mMutexState;
+    /*!
+     * @brief       Save the current Atlas to a file. The type parameter
+     * determines the format (text or binary) and which map data to persist.
+     *
+     * @param[in]   type
+     *              Format/type specifier for saving. See @ref FileType
+     * "FileType" for valid values (TEXT_FILE, BINARY_FILE).
+     *
+     * @return      `true` if the Atlas was saved successfully, `false`
+     * otherwise.
+     *
+     * @frame       N/A
+     * @unit        N/A
+     */
+    bool SaveAtlas(int type);
 
     /*!
-     * @brief Map ID of the most recently processed frame, used to detect
-     *        map restarts for room-context carryover (WP1).
+     * @brief       Load an Atlas from a file. The type parameter determines the
+     *              format and which map data to restore.
+     *
+     * @param[in]   type
+     *              Format/type specifier for loading. See @ref FileType
+     * "FileType" for valid values (TEXT_FILE, BINARY_FILE).
+     *
+     * @return      `true` if the Atlas was loaded successfully, `false`
+     * otherwise.
+     *
+     * @frame       N/A
+     * @unit        N/A
+     */
+    bool LoadAtlas(int type);
+
+    /*!
+     * @brief       Calculate a checksum for a file to verify data integrity.
+     *              Used when loading/saving Atlas data to ensure the file has
+     *              not been corrupted.
+     *
+     * @param[in]   filename
+     *              Path to the file for which to calculate the checksum.
+     *
+     * @param[in]   type
+     *              Format/type specifier affecting the checksum algorithm. See
+     *              @ref FileType "FileType" for valid values.
+     *
+     * @return      Checksum string representing the file's content hash.
+     *
+     * @frame       N/A
+     * @unit        N/A
+     */
+    string CalculateCheckSum(string filename, int type);
+
+    /*!
+     * @brief       Atlas pointer. Owned by the System class. Provides access to
+     *              the global map, keyframes, and map points.
+     */
+    Atlas *mpAtlas;
+
+    /*!
+     * @brief       Tracker pointer. Owned by the System class. Receives frames
+     * and computes the associated camera pose. Also decides when to insert new
+     * keyframes, create MapPoints, and perform relocalization if tracking
+     * fails.
+     */
+    Tracking *mpTracker;
+
+    /*!
+     * @brief       Local Mapping pointer. Owned by the System class. Manages
+     * the local map and performs local bundle adjustment.
+     */
+    LocalMapping *mpLocalMapper;
+
+    /*!
+     * @brief       Loop Closing pointer. Owned by the System class. Searches
+     * for loops with every new keyframe. If a loop is found, performs pose
+     * graph optimization and full bundle adjustment in a separate thread.
+     */
+    LoopClosing *mpLoopCloser;
+
+    /*!
+     * @brief       Viewer pointer. Owned by the System class. Draws the map and
+     *              the current camera pose using Pangolin. Set to `nullptr`
+     * when
+     *              @ref bUseViewer "bUseViewer" is `false`.
+     */
+    Viewer *mpViewer;
+
+    /*!
+     * @brief       Frame Drawer pointer. Owned by the System class. Handles the
+     *              drawing of frames for visualization.
+     */
+    FrameDrawer *mpFrameDrawer;
+
+    /*!
+     * @brief       Map Drawer pointer. Owned by the System class. Handles the
+     *              drawing of the map structure.
+     */
+    MapDrawer *mpMapDrawer;
+
+    /*!
+     * @brief       Semantic Segmentation pointer. Owned by the System class.
+     *              Processes RGB-D images to produce semantic segmentations.
+     */
+    SemanticSegmentation *mpSemanticSegmentation;
+
+    /*!
+     * @brief       Semantics Manager pointer. Owned by the System class.
+     * Manages the semantic evaluation pipeline, including room/floor/passage
+     *              topology and segmentation result caching.
+     */
+    SemanticsManager *mpSemanticsManager;
+
+    /* ---------------------------------------------------------------------- *
+     * SLAM SYSTEM THREADS
+     * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief       Viewer thread. Launched when @ref bUseViewer "bUseViewer" is
+     *              `true`. Handles visualization of the map and camera pose.
+     *              Set to `nullptr` when viewer is disabled.
+     */
+    std::thread *mptViewer;
+
+    /*!
+     * @brief       Loop Closing thread. Processes new keyframes for loop
+     *              detection and, if a loop is found, performs pose graph
+     *              optimization and full bundle adjustment in a separate
+     * thread.
+     */
+    std::thread *mptLoopClosing;
+
+    /*!
+     * @brief       Local Mapping thread. Performs local bundle adjustment and
+     *              manages the local map. Runs concurrently with tracking.
+     */
+    std::thread *mptLocalMapping;
+
+    /*!
+     * @brief       Semantic Segmentation thread. Processes incoming RGB-D
+     * frames and produces semantic segmentations. Communicates with the main
+     * system through shared atomic counters.
+     */
+    std::thread *mptSemanticSegmentation;
+
+    /*!
+     * @brief       Semantics Manager thread. Manages the semantic evaluation
+     *              pipeline, including room/floor/passage topology updates and
+     *              segmentation result caching.
+     */
+    std::thread *mptSemanticsManager;
+
+    /*!
+     * @brief       Geometric Segmentation thread. Handles geometric scene
+     *              segmentation (e.g., plane, floor, wall detection).
+     */
+    std::thread *mptGeometricSegmentation;
+
+    /*!
+     * @brief       Reset mutex. Protects the reset operation to ensure thread-
+     *              safe shutdown and map clearing.
+     */
+    std::mutex mMutexReset;
+
+    /*!
+     * @brief       Reset flag. When `true`, requests a full system reset
+     * (clears Atlas and active map). Must be handled carefully across threads.
+     */
+    bool mbReset;
+
+    /*!
+     * @brief       Reset active map flag. When `true`, requests a reset of only
+     *              the active map while retaining the overall Atlas state.
+     */
+    bool mbResetActiveMap;
+
+    /*!
+     * @brief       Mode mutex. Protects mode transitions (e.g. localization
+     *              mode activation/deactivation) to ensure thread safety.
+     */
+    std::mutex mMutexMode;
+
+    /*!
+     * @brief       Localization mode activation flag. When `true`, the local
+     *              mapping thread is paused and only camera tracking runs.
+     */
+    bool mbActivateLocalizationMode;
+
+    /*!
+     * @brief       Localization mode deactivation flag. When `true`, resumes
+     * the local mapping thread and resumes full SLAM operation.
+     */
+    bool mbDeactivateLocalizationMode;
+
+    /*!
+     * @brief       Shutdown flag. When `true`, requests all threads to finish.
+     *              After all threads have been joined via @ref Shutdown(), the
+     *              system is fully shut down.
+     */
+    bool mbShutDown;
+
+    /*!
+     * @brief       Current tracking state. Updated by the tracker and read by
+     *              various services. Values correspond to the tracking state
+     *              machine enumeration.
+     */
+    int mTrackingState{-1};
+
+    /*!
+     * @brief       Number of inliers from the most recent tracking frame.
+     *              Used to assess tracking quality.
+     */
+    int mTrackingInliers{0};
+
+    /*!
+     * @brief       Timestamp of the last processed frame. Used for timing
+     *              analysis and frame-to-frame consistency checks.
+     */
+    double mLastFrameTimestamp{0.0};
+
+    /*!
+     * @brief       Current camera pose in the world frame. Updated by the
+     * tracker after each frame processing. Represents the estimated position
+     * and orientation of the camera.
+     */
+    Sophus::SE3f mCurrentCameraPose_World;
+
+    /*!
+     * @brief       Whether the current camera pose is valid. If `false`, the
+     * pose should not be relied upon for navigation or planning.
+     */
+    bool mCurrentCameraPoseValid{false};
+
+    /*!
+     * @brief       Reset counter. Atomic counter tracking the number of system
+     *              resets. Written from the reset thread and read by the
+     * mission health service.
+     */
+    std::atomic<std::uint64_t> mResetCount{0U};
+
+    /*! RGB-D frontend counters sampled by the mission-health service. */
+    std::atomic<std::uint64_t> mRgbdFrontendAcceptedCount{0U};
+    std::atomic<std::uint64_t> mRgbdFrontendProcessedCount{0U};
+    std::atomic<std::uint64_t> mRgbdFrontendOverwrittenCount{0U};
+    std::atomic<bool>          mRgbdFrontendWorkerInFlight{false};
+    std::atomic<std::int64_t>
+        mRgbdFrontendLastProcessedSensorTimestampNanoseconds{0};
+
+    /*!
+     * @brief       In-flight semantic-segmentation keyframe accounting.
+     *              `mSegmentationPublishedCount` increments when a keyframe is
+     *              queued for the segmenter; `mSegmentationReturnedCount` and
+     *              `mLastReturnedKeyFrameId` increment/advance in
+     *              `addSegmentedImage` once the result comes back, on every
+     *              code path -- including the GEO-mode early return, which does
+     *              not reach the semantic buffer but still ends that keyframe's
+     *              time in flight. `std::atomic` rather than a mutex: written
+     *              from the publish thread and the segmentation-callback
+     * thread, read from the mission health service thread at ~10 Hz, and the
+     * two writers need no ordering relative to each other beyond eventual
+     * consistency.
+     */
+    std::atomic<std::uint64_t> mSegmentationPublishedCount{0U};
+
+    /*!
+     * @brief       In-frame semantic-segmentation result counting.
+     *              Increments when the semantic segmentation pipeline returns a
+     *              result for a keyframe. Combined with
+     *              @ref mSegmentationPublishedCount, the difference indicates
+     * how many keyframes remain in-flight.
+     */
+    std::atomic<std::uint64_t> mSegmentationReturnedCount{0U};
+
+    /*!
+     * @brief       Last returned keyframe ID. Advances in
+     *              `addSegmentedImage` when a segmentation result is received.
+     *              Used together with @ref mSegmentationPublishedCount and
+     *              @ref mSegmentationReturnedCount to track in-flight
+     * keyframes.
+     */
+    std::atomic<std::uint64_t> mLastReturnedKeyFrameId{0U};
+
+    /*!
+     * @brief       Tracked map points. List of MapPoint pointers currently
+     * being tracked. Maintained for quick access without traversing the full
+     * Atlas.
+     */
+    std::vector<MapPoint *> mTrackedMapPoints;
+
+    /*!
+     * @brief       Un-tracked keypoints from the current frame. These are
+     * keypoints that were detected but not yet associated with MapPoints.
+     */
+    std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
+
+    /*!
+     * @brief       State mutex. Protects shared state related to tracking and
+     *              map management. Ensures exclusive access when modifying
+     *              tracking-related data structures.
+     */
+    std::mutex mMutexState;
+
+    /*!
+     * @brief       Map ID of the most recently processed frame, used to detect
+     *              map restarts for room-context carryover (WP1).
      */
     long unsigned int mLastProcessedMapId{0};
-    bool              mFirstMapInit{true};
 
-    //
+    /*!
+     * @brief       Initial map initialization flag. When `true`, the first map
+     *              build is in progress. Set to `false` once the initial map
+     *              has been built and the system is tracking.
+     */
+    bool mFirstMapInit{true};
+
+    /*!
+     * @brief       File path for loading an Atlas from disk. Used to resume
+     *              processing from a saved map state.
+     */
     string mStrLoadAtlasFromFile;
+
+    /*!
+     * @brief       File path for saving the Atlas to disk. Used to persist the
+     *              map state for later resumption.
+     */
     string mStrSaveAtlasToFile;
 
+    /*!
+     * @brief       File path for the ORB vocabulary. Used by the System
+     *              constructor to locate the vocabulary file for place
+     *              recognition and feature matching.
+     */
     string mStrVocabularyFilePath;
 
+    /*!
+     * @brief       Vector of Room pointers from the environment. Maintained for
+     *              quick access to room objects without traversing the Atlas.
+     */
+    std::vector<ORB_SLAM3::Room *> envRooms;
+
+    /*!
+     * @brief       Settings object. Contains all configuration parameters for
+     * the SLAM system, read from the YAML settings file.
+     */
     Settings *settings_;
 };
 

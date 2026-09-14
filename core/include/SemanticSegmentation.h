@@ -23,6 +23,8 @@
 #include "GeoSemHelpers.h"
 #include "Utils.h"
 
+#include <atomic>
+#include <deque>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/common/transforms.h>
 #include <pcl/point_cloud.h>
@@ -35,7 +37,46 @@ class Atlas;
 
 class SemanticSegmentation
 {
+  public:
+    /**
+     * @brief       Lock-free counters plus a coherent queue-depth sample for
+     *              processing-aware simulation lockstep.
+     */
+    struct ProcessingStats
+    {
+        std::uint64_t enqueuedCount{0U};
+        std::uint64_t dequeuedCount{0U};
+        std::uint64_t terminalCount{0U};
+        std::uint64_t acceptedCount{0U};
+        std::uint64_t droppedCount{0U};
+        std::uint64_t missingKeyFrameCount{0U};
+        std::uint64_t missingCloudCount{0U};
+        std::uint64_t staleMapCount{0U};
+        std::uint64_t lastTerminalKeyFrameId{0U};
+        std::uint32_t queueDepth{0U};
+        std::uint32_t queueHighWatermark{0U};
+    };
+
   private:
+    enum class TerminalOutcome
+    {
+        ACCEPTED,
+        QUEUE_DROPPED,
+        MISSING_KEYFRAME,
+        MISSING_CLOUD,
+        STALE_MAP
+    };
+
+    struct WorkItem
+    {
+        std::uint64_t            keyFrameId{0U};
+        std::uint64_t            sourceMapId{0U};
+        cv::Mat                  uncertaintyImage;
+        pcl::PCLPointCloud2::Ptr segmentationCloud;
+    };
+
+    static constexpr std::size_t MAX_BUFFERED_WORK_ITEMS = 32U;
+
     bool mGeoRuns;
 
     Atlas *mpAtlas;
@@ -47,8 +88,21 @@ class SemanticSegmentation
 
     unsigned long int mLastProcessedKeyFrameId = 0;
 
-    std::list<std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr>>
-        segmentedImageBuffer;
+    std::deque<WorkItem> segmentedImageBuffer;
+
+    std::atomic<std::uint64_t> mEnqueuedCount{0U};
+    std::atomic<std::uint64_t> mDequeuedCount{0U};
+    std::atomic<std::uint64_t> mTerminalCount{0U};
+    std::atomic<std::uint64_t> mAcceptedCount{0U};
+    std::atomic<std::uint64_t> mDroppedCount{0U};
+    std::atomic<std::uint64_t> mMissingKeyFrameCount{0U};
+    std::atomic<std::uint64_t> mMissingCloudCount{0U};
+    std::atomic<std::uint64_t> mStaleMapCount{0U};
+    std::atomic<std::uint64_t> mLastTerminalKeyFrameId{0U};
+    std::atomic<std::uint32_t> mQueueHighWatermark{0U};
+
+    void recordTerminalOutcome(std::uint64_t   keyFrameId,
+                               TerminalOutcome outcome);
 
     // System parameters
     SystemParams *sysParams;
@@ -66,11 +120,14 @@ class SemanticSegmentation
     SemanticSegmentation(Atlas *pAtlas);
 
     // Semantic segmentation frame buffer processing
-    std::list<std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr>>
-        GetSegmentedFrameBuffer();
-
     void AddSegmentedFrameToBuffer(
         std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *tuple);
+
+    /**
+     * @brief       Returns processing counters used by mission health and
+     *              simulation lockstep. Safe to call from any thread.
+     */
+    ProcessingStats GetProcessingStats();
 
     /**
      * @brief       Segments the point cloud into class specific point clouds

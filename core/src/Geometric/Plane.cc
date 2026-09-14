@@ -23,6 +23,7 @@
 #include <cmath>
 #include <limits>
 #include <pcl/octree/octree_search.h>
+#include <vector>
 
 namespace ORB_SLAM3
 {
@@ -130,14 +131,26 @@ void Plane::setMapPoints(MapPoint *value)
 
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr Plane::getMapClouds(void)
 {
-    unique_lock<mutex> lock(mMutexFeatures);
-    return planeCloud;
+    /*!
+     * Publishers retain this result after the lock is released, so return a
+     * snapshot instead of an alias to the concurrently updated member cloud.
+     */
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloudCopy(
+        new pcl::PointCloud<pcl::PointXYZRGBA>);
+
+    std::scoped_lock lock(mMutexPos, mMutexFeatures);
+    if (planeCloud != nullptr)
+    {
+        *planeCloudCopy = *planeCloud;
+    }
+
+    return planeCloudCopy;
 }
 
 Plane::GeometrySnapshot Plane::getGeometrySnapshot(void) const
 {
-    std::scoped_lock lock(mMutexPos, mMutexFeatures);
-    GeometrySnapshot snapshot;
+    std::scoped_lock                        lock(mMutexPos, mMutexFeatures);
+    GeometrySnapshot                        snapshot;
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloudCopy(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
     if (planeCloud != nullptr)
@@ -169,8 +182,8 @@ Plane::ObservationSideSnapshot Plane::getObservationSideSnapshot(
         return snapshot;
     }
 
-    constexpr double minimumReliableSideDistance_m = 0.10;
-    constexpr double minimumSignConsensusRatio = 0.75;
+    constexpr double    minimumReliableSideDistance_m = 0.10;
+    constexpr double    minimumSignConsensusRatio     = 0.75;
     std::vector<double> signedDistances_m;
 
     for (const auto &[p_keyFrame, observation] : getObservations())
@@ -200,13 +213,13 @@ Plane::ObservationSideSnapshot Plane::getObservationSideSnapshot(
         return snapshot;
     }
 
-    const std::size_t positiveCount = static_cast<std::size_t>(std::count_if(
+    const std::size_t positiveCount  = static_cast<std::size_t>(std::count_if(
         signedDistances_m.begin(),
         signedDistances_m.end(),
         [](const double distance_m) { return distance_m > 0.0; }));
-    const std::size_t negativeCount = signedDistances_m.size() - positiveCount;
+    const std::size_t negativeCount  = signedDistances_m.size() - positiveCount;
     const std::size_t consensusCount = std::max(positiveCount, negativeCount);
-    snapshot.consensusRatio = static_cast<double>(consensusCount) /
+    snapshot.consensusRatio          = static_cast<double>(consensusCount) /
                               static_cast<double>(signedDistances_m.size());
     if (snapshot.consensusRatio < minimumSignConsensusRatio)
     {
@@ -526,7 +539,7 @@ std::optional<Plane::GeometrySnapshot> Plane::beginMapCloudRefit(void)
     }
 
     lastRefitAttemptGeneration = cloudGeneration;
-    GeometrySnapshot snapshot;
+    GeometrySnapshot                        snapshot;
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloudCopy(
         new pcl::PointCloud<pcl::PointXYZRGBA>(*planeCloud));
     snapshot.supportCloud              = cloudCopy;
@@ -543,11 +556,10 @@ std::optional<Plane::GeometrySnapshot> Plane::beginMapCloudRefit(void)
     return snapshot;
 }
 
-bool Plane::completeMapCloudRefit(
-    const std::uint64_t sourceCloudGeneration_in,
-    const Eigen::Vector3d &centroid_World_m_in,
-    const g2o::Plane3D    &equation_World_in,
-    const std::size_t      finitePointCount_in)
+bool Plane::completeMapCloudRefit(const std::uint64_t sourceCloudGeneration_in,
+                                  const Eigen::Vector3d &centroid_World_m_in,
+                                  const g2o::Plane3D    &equation_World_in,
+                                  const std::size_t      finitePointCount_in)
 {
     std::scoped_lock lock(mMutexPos, mMutexType, mMutexFeatures);
 
@@ -556,10 +568,10 @@ bool Plane::completeMapCloudRefit(
         return false;
     }
 
-    centroid                              = centroid_World_m_in;
-    globalEquation                        = equation_World_in;
+    centroid                            = centroid_World_m_in;
+    globalEquation                      = equation_World_in;
     lastSuccessfulRefitFinitePointCount = finitePointCount_in;
-    successfulRefitGeneration             = sourceCloudGeneration_in;
+    successfulRefitGeneration           = sourceCloudGeneration_in;
 
     updatePlaneBoundsWithoutLock();
     return true;
@@ -567,6 +579,21 @@ bool Plane::completeMapCloudRefit(
 
 bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &point)
 {
+    /*!
+     * A NaN/Inf point (e.g. from a near-degenerate plane/line intersection
+     * upstream, more likely when pose estimates are noisy) reaching
+     * octree->radiusSearch() below trips PCL's own internal assertion
+     * ("Invalid (NaN, Inf) point coordinates given to nearestKSearch!") and
+     * aborts the process. Mirrors the same guard already used at the other
+     * PCL nearest-neighbour call site (Utils.cc's finite-cloud-overlap
+     * check) -- a point that isn't finite cannot be "in" the cloud, so
+     * false is the correct answer, not a crash.
+     */
+    if (!point.allFinite())
+    {
+        return false;
+    }
+
     unique_lock<mutex> lock(mMutexFeatures);
     pcl::PointXYZRGBA  pointPCL;
     pointPCL.x = point(0);
@@ -724,7 +751,8 @@ void Plane::updatePlaneBoundsWithoutLock(void)
     /* Normalize the norm vector */
     Eigen::Vector3d normalVector = wallEquation.head<3>() / normalMagnitude;
 
-    for (Eigen::Index component = 0; component < normalVector.size(); ++component)
+    for (Eigen::Index component = 0; component < normalVector.size();
+         ++component)
     {
         if (std::abs(normalVector(component)) <= 1e-12)
         {
@@ -749,8 +777,8 @@ void Plane::updatePlaneBoundsWithoutLock(void)
 
     /* Match finiteWallExtentsAreCompatible(): deterministic X/Y reference. */
     const Eigen::Vector3d referenceAxis = std::abs(planeNormal.x()) <= 0.90
-                                               ? Eigen::Vector3d::UnitX()
-                                               : Eigen::Vector3d::UnitY();
+                                              ? Eigen::Vector3d::UnitX()
+                                              : Eigen::Vector3d::UnitY();
 
     /* Construct orthonormal axes lying inside the plane */
     const Eigen::Vector3d axisU = planeNormal.cross(referenceAxis).normalized();
@@ -764,6 +792,16 @@ void Plane::updatePlaneBoundsWithoutLock(void)
     {
         return;
     }
+
+    /* Collect in-plane projections first: bounds are outlier-trimmed
+     * percentiles, not raw minima/maxima, so a few stray map points (bad
+     * triangulations, edge bleed from neighbouring surfaces) cannot
+     * stretch a wall quad metres past its real surface. Sparse clouds keep
+     * exact min/max -- trimming needs enough samples to mean anything. */
+    std::vector<double> projectionsU;
+    std::vector<double> projectionsV;
+    projectionsU.reserve(planeCloud->points.size());
+    projectionsV.reserve(planeCloud->points.size());
 
     /* Iterate through associated map points */
     for (const pcl::PointXYZRGBA &point : planeCloud->points)
@@ -779,15 +817,10 @@ void Plane::updatePlaneBoundsWithoutLock(void)
                                           static_cast<double>(point.y),
                                           static_cast<double>(point.z));
 
-        /* Emit actual canonical world projections, not centroid-relative extents. */
-        const double pointU_Plane = point_World.dot(axisU);
-        const double pointV_Plane = point_World.dot(axisV);
-
-        /* Update finite plane bounds */
-        minPlaneU = std::min(minPlaneU, pointU_Plane);
-        maxPlaneU = std::max(maxPlaneU, pointU_Plane);
-        minPlaneV = std::min(minPlaneV, pointV_Plane);
-        maxPlaneV = std::max(maxPlaneV, pointV_Plane);
+        /* Emit actual canonical world projections, not centroid-relative
+         * extents. */
+        projectionsU.push_back(point_World.dot(axisU));
+        projectionsV.push_back(point_World.dot(axisV));
 
         /* Set flag to indicate that a valid point is linked with the plane */
         foundValidPoint = true;
@@ -797,6 +830,40 @@ void Plane::updatePlaneBoundsWithoutLock(void)
     if (!foundValidPoint)
     {
         mbBad = true;
+        return;
+    }
+
+    constexpr std::size_t minimumRobustPoints = 10U;
+    constexpr double      lowerPercentile     = 0.01;
+    constexpr double      upperPercentile     = 0.99;
+
+    const auto robustBound = [](std::vector<double> &samples_inout,
+                                double               percentile_in)
+    {
+        std::sort(samples_inout.begin(), samples_inout.end());
+        const double position =
+            percentile_in *
+            static_cast<double>(samples_inout.size() - 1U);
+        return samples_inout[static_cast<std::size_t>(position)];
+    };
+
+    if (projectionsU.size() < minimumRobustPoints)
+    {
+        const auto [minU, maxU] =
+            std::minmax_element(projectionsU.begin(), projectionsU.end());
+        const auto [minV, maxV] =
+            std::minmax_element(projectionsV.begin(), projectionsV.end());
+        minPlaneU = *minU;
+        maxPlaneU = *maxU;
+        minPlaneV = *minV;
+        maxPlaneV = *maxV;
+    }
+    else
+    {
+        minPlaneU = robustBound(projectionsU, lowerPercentile);
+        maxPlaneU = robustBound(projectionsU, upperPercentile);
+        minPlaneV = robustBound(projectionsV, lowerPercentile);
+        maxPlaneV = robustBound(projectionsV, upperPercentile);
     }
 }
 
@@ -804,6 +871,36 @@ void Plane::setCentroid(const Eigen::Vector3d &value)
 {
     unique_lock<mutex> lock(mMutexPos);
     centroid = value;
+}
+
+void Plane::setObservationOrigin_World(const Eigen::Vector3d &value)
+{
+    unique_lock<mutex> lock(mMutexPos);
+    observationOrigin_World_m = value;
+}
+
+std::optional<Eigen::Vector3d> Plane::getObservationOrigin_World(void) const
+{
+    unique_lock<mutex> lock(mMutexPos);
+    return observationOrigin_World_m;
+}
+
+Plane *Plane::getTwinFace(void) const
+{
+    unique_lock<mutex> lock(mMutexPos);
+    return twinFace_;
+}
+
+void Plane::setTwinFace(Plane *p_twin_in)
+{
+    unique_lock<mutex> lock(mMutexPos);
+    twinFace_ = p_twin_in;
+}
+
+void Plane::clearTwinFace(void)
+{
+    unique_lock<mutex> lock(mMutexPos);
+    twinFace_ = nullptr;
 }
 
 std::map<KeyFrame *, Plane::Observation> Plane::getObservations(void) const
@@ -860,8 +957,7 @@ void Plane::mergeObservation(KeyFrame          *p_keyFrame_in,
     std::scoped_lock lock(mMutexFeatures, mMutexType);
     auto evidenceFromObservation = [](const Observation &observation)
     {
-        std::map<planeVariant, double> evidence =
-            observation.semanticEvidence;
+        std::map<planeVariant, double> evidence = observation.semanticEvidence;
         if (evidence.empty() &&
             observation.semanticType != planeVariant::UNDEFINED &&
             std::isfinite(observation.confidence))
@@ -887,7 +983,7 @@ void Plane::mergeObservation(KeyFrame          *p_keyFrame_in,
     else
     {
         Observation &retainedObservation = existingIterator->second;
-        const double retainedConfidence = retainedObservation.confidence;
+        const double retainedConfidence  = retainedObservation.confidence;
         retainedObservation.pointPlaneConstraintMatrix +=
             observation_in.pointPlaneConstraintMatrix;
 
@@ -903,7 +999,7 @@ void Plane::mergeObservation(KeyFrame          *p_keyFrame_in,
 
         if (observation_in.confidence > retainedConfidence)
         {
-            retainedObservation.localPlane = observation_in.localPlane;
+            retainedObservation.localPlane   = observation_in.localPlane;
             retainedObservation.semanticType = observation_in.semanticType;
         }
     }
@@ -936,14 +1032,14 @@ void Plane::rebuildSemanticVotesWithoutLock(void)
         }
     }
 
-    double maxVotes = 0.0;
-    planeVariant maxType = planeVariant::UNDEFINED;
+    double       maxVotes = 0.0;
+    planeVariant maxType  = planeVariant::UNDEFINED;
     for (const auto &[semanticType, votes] : semanticVotes)
     {
         if (votes > maxVotes)
         {
             maxVotes = votes;
-            maxType = semanticType;
+            maxType  = semanticType;
         }
     }
     planeType = maxVotes >= SystemParams::GetParams()->sem_seg.min_votes

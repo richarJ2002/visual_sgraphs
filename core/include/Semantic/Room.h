@@ -73,6 +73,22 @@ class Room
         CONFLICTING = 3
     };
 
+    /*!
+     * @brief One angular sector, measured counter-clockwise from the room's
+     *        own centroid in the ground plane, with no observed wall inside
+     *        it -- a candidate direction worth revisiting to complete this
+     *        room's boundary.
+     */
+    struct ObservationGap
+    {
+        /*! @brief Sector start angle in the ground-plane (U,V) tangent
+         *  frame, radians, atan2 convention. */
+        double startAngle_rad{0.0};
+        /*! @brief Always positive; the sector runs
+         *  [startAngle_rad, startAngle_rad + spanAngle_rad). */
+        double spanAngle_rad{0.0};
+    };
+
   private:
     /* ---------------------------------------------------------------------- *
      * PRIVATE MEMBERS
@@ -130,6 +146,13 @@ class Room
      */
     bool hasKnownLabel{false};
 
+    /*! True while identity/topology was restored without fresh map geometry. */
+    bool recoveryProxy{false};
+
+    /*! True once the UAV has entered this room. Observed mission state only;
+     *  never consulted by creation, promotion, retirement, or merge paths. */
+    bool previouslyVisited{false};
+
     /*!
      * @brief       The meta-marker assigned for the room.
      */
@@ -168,6 +191,19 @@ class Room
      * @brief Current validation result for the finite horizontal wall loop.
      */
     BoundaryStatus boundaryStatus{BoundaryStatus::UNOBSERVED};
+
+    /*!
+     * @brief Ordered, closed-loop corner points of the finite wall boundary,
+     *        in world coordinates. Only meaningful while boundaryStatus ==
+     *        COMPLETE; empty otherwise.
+     */
+    std::vector<Eigen::Vector3d> boundaryCorners_World_m;
+
+    /*!
+     * @brief Currently unobserved angular sectors around this room's own
+     *        centroid. See getObservationGaps() for when this is populated.
+     */
+    std::vector<ObservationGap> observationGaps;
 
   public:
     /* ---------------------------------------------------------------------- *
@@ -264,6 +300,48 @@ class Room
     bool isBoundaryComplete() const;
 
     /*!
+     * @brief Returns the ordered, closed-loop corner points of the room's
+     *        finite wall boundary, in world coordinates.
+     *
+     *        Populated by SemanticsManager::validateRoomBoundaries() only
+     *        while getBoundaryStatus() == COMPLETE; empty otherwise. This is
+     *        the same corner set the validator already computes to decide
+     *        boundary completeness, exposed here for consumers (e.g. RViz
+     *        visualization). A wall Plane's own finite bounds are never
+     *        mutated to match these corners -- those bounds are owned by the
+     *        measurement/refit pipeline.
+     */
+    std::vector<Eigen::Vector3d> getBoundaryCorners_World_m() const;
+
+    /*!
+     * @brief Sets the room's finite wall boundary corner points.
+     */
+    void setBoundaryCorners_World_m(
+        std::vector<Eigen::Vector3d> corners_World_m_in);
+
+    /*!
+     * @brief Returns the room's currently unobserved angular sectors --
+     *        directions around the room's own centroid with no wall
+     *        evidence yet.
+     *
+     *        Populated by SemanticsManager::validateRoomBoundaries() every
+     *        cycle this room has a finite centroid, regardless of
+     *        BoundaryStatus (unlike getBoundaryCorners_World_m(), which is
+     *        COMPLETE-only): this is precisely the "what's still missing"
+     *        signal a COMPLETE room by definition no longer has. A room
+     *        with zero walls reports one full-circle gap; a genuinely
+     *        COMPLETE room reports none. Diagnostic/situational-awareness
+     *        data only -- read by nothing else yet; a future observation
+     *        planner is the intended consumer, not built here.
+     */
+    std::vector<ObservationGap> getObservationGaps() const;
+
+    /*!
+     * @brief Sets the room's currently unobserved angular sectors.
+     */
+    void setObservationGaps(std::vector<ObservationGap> gaps_in);
+
+    /*!
      * @brief       Reports whether the room has an externally known label.
      */
     bool getHasKnownLabel() const;
@@ -326,6 +404,18 @@ class Room
      */
     bool hasRoomTag() const;
 
+    /** Marks identity restored after a map reset but not yet re-observed. */
+    void setRecoveryProxy(bool isRecoveryProxy_in);
+
+    /** Returns whether this room still lacks fresh active-map observations. */
+    bool isRecoveryProxy() const;
+
+    /** Marks that the UAV has entered this room. */
+    void setPreviouslyVisited(bool visited_in);
+
+    /** Returns whether the UAV has entered this room. */
+    bool hasPreviouslyVisited() const;
+
     /*!
      * @brief       Stores a non-owning pointer to the context snapshot from
      *              which the room identity was inherited.
@@ -376,7 +466,8 @@ class Room
      * @brief       Removes a single passage association from this room.
      *
      *              Used to enforce the invariant that a passage is associated
-     *              with at most two rooms (one per side of its supporting wall).
+     *              with at most two rooms (one per side of its supporting
+     * wall).
      *
      * @param[in]   p_removedPassage_in
      *              Passage whose association should be revoked.

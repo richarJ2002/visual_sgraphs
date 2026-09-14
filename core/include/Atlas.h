@@ -26,6 +26,7 @@
 #ifndef ATLAS_H
 #define ATLAS_H
 
+#include "AtlasCurrentMapStatus.h"
 #include "Geometric/Plane.h"
 #include "GeometricCamera.h"
 #include "KannalaBrandt8.h"
@@ -37,12 +38,18 @@
 #include "Semantic/Marker.h"
 #include "Semantic/Passage.h"
 #include "Semantic/Room.h"
+#include "Semantic/RoomContextSnapshot.h"
 
 #include <Eigen/Core>
+#include <atomic>
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/vector.hpp>
+#include <chrono>
+#include <cstdint>
+#include <limits>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <vector>
 
@@ -63,6 +70,21 @@ class KannalaBrandt8;
 class KeyFrameDatabase;
 
 /*!
+ * @brief Per-old-map bookkeeping for continuous consecutive-map matching.
+ *
+ * Lives in the Atlas (not in either map) because it describes a map PAIR
+ * relationship across semantic cycles: when the pair was last attempted
+ * and what the content looked like then, so unchanged pairs are not
+ * re-attempted every cycle.
+ */
+struct MergeAttemptState
+{
+    std::chrono::steady_clock::time_point lastAttemptTime{};
+    std::size_t                           contentHashAtLastAttempt{0U};
+    bool                                  hasEverAttempted{false};
+};
+
+/*!
  * @brief Serialisable snapshot of a room's geometric context at the moment a
  *        map is abandoned.
  *
@@ -72,20 +94,6 @@ class KeyFrameDatabase;
  * are stored so that a best-match comparison can verify the room identity
  * rather than relying on a fragile centroid-only heuristic.
  */
-struct RoomContextSnapshot
-{
-    int             roomId;   //!< Room::getId()
-    Eigen::Vector3d centroid; //!< Room centroid (world frame)
-    std::vector<Eigen::Vector3d>
-        wallNormals; //!< Oriented wall normals toward room
-    std::vector<Eigen::Vector3d> wallCentroids; //!< Per-wall centroids
-    std::vector<double> wallDistances; //!< Per-wall `g2o::Plane3D::distance()`
-    std::vector<Eigen::Vector3d>
-           passageCentroids; //!< Detected passage openings
-    double timestamp;        //!< When the snapshot was taken (s)
-    std::string roomTag;     //!< Persistent identity tag "room_<id>" for cross-restart matching
-};
-
 class Atlas
 {
     friend class boost::serialization::access;
@@ -112,6 +120,18 @@ class Atlas
     }
 
   public:
+    enum class SnapshotCopyStatus
+    {
+        COMPLETE,
+        UNAVAILABLE_LIVE_GENERATION
+    };
+
+    struct SnapshotCopyResult
+    {
+        SnapshotCopyStatus status{
+            SnapshotCopyStatus::UNAVAILABLE_LIVE_GENERATION};
+        std::vector<RoomContextSnapshot> snapshots;
+    };
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     Atlas();
@@ -135,6 +155,31 @@ class Atlas
     void AddCandidateMapRoom(Room *room);
     void AddMapPassage(ORB_SLAM3::Passage *passage);
     void AddRoomWallPlane(ORB_SLAM3::Plane *pPlane);
+
+    /** Reserves the next mission-stable room identity, beginning at zero. */
+    int reserveRoomIdentity(void);
+
+    /** Reserves the next mission-stable passage identity, beginning at zero. */
+    int reservePassageIdentity(void);
+
+    /** Reserves the next mission-stable floor identity, beginning at zero. */
+    int reserveFloorIdentity(void);
+
+    /** Advances the room allocator past an explicitly restored identity. */
+    void observeRoomIdentity(int roomId_in);
+
+    /** Advances the passage allocator past an explicitly restored identity. */
+    void observePassageIdentity(int passageId_in);
+
+    /** Advances the floor allocator past an explicitly restored identity. */
+    void observeFloorIdentity(int floorId_in);
+
+    /** Stores the mission-stable identity occupied by the camera. */
+    void setCurrentSemanticRoomIdentity(int roomId_in);
+
+    /** Returns the last mission-stable room identity, or -1 before bootstrap.
+     */
+    int getCurrentSemanticRoomIdentity(void) const;
 
     std::vector<GeometricCamera *> GetAllCameras();
     GeometricCamera               *AddCamera(GeometricCamera *pCam);
@@ -212,6 +257,51 @@ class Atlas
     Map *GetCurrentMap();
 
     /*!
+     * @brief       Returns the current map's id, its truthful status
+     *              relative to the active map set, and every active Atlas
+     *              map, as one coherent, non-mutating value view.
+     *
+     *              Unlike GetCurrentMap(), this method never creates a map:
+     *              an Atlas with no current map (e.g. immediately after
+     *              clearAtlas(), or before the first CreateNewMap()) reports
+     *              an empty \p currentMapId_out, \p currentMapStatus_out ==
+     *              AtlasCurrentMapStatus::NO_CURRENT_MAP, and an empty
+     *              returned vector, rather than fabricating a new map as a
+     *              read side effect. All three facts are read under one
+     *              mMutexAtlas critical section, so no concurrent
+     *              ChangeMap()/SetMapBad()/map add or remove can produce a
+     *              torn read across them -- the two-call race possible with
+     *              separate GetCurrentMap() and GetAllMaps() calls cannot
+     *              occur here. This is a narrower guarantee than "the
+     *              current map always names an active map": Atlas's own
+     *              state can already be transiently incoherent independent
+     *              of any race, because SetMapBad(p_map_in) erases
+     *              \p p_map_in from the active set and marks it bad without
+     *              clearing mpCurrentMap -- a later ChangeMap() call is what
+     *              eventually installs a replacement current map. When
+     *              \p p_map_in == the current map, every call to this method
+     *              between those two events truthfully reports
+     *              \p currentMapId_out naming a map absent from the returned
+     *              vector, via \p currentMapStatus_out ==
+     *              AtlasCurrentMapStatus::CURRENT_MAP_NOT_ACTIVE, rather than
+     *              silently claiming a consistency invariant that does not
+     *              hold at that instant. This method never busy-waits,
+     *              unlike GetCurrentMap().
+     *
+     * @param[out]  currentMapId_out
+     *              Set to the current map's id, or left empty when
+     *              mpCurrentMap is null at the moment of the read.
+     * @param[out]  currentMapStatus_out
+     *              Set to NO_CURRENT_MAP, CURRENT_MAP_ACTIVE, or
+     *              CURRENT_MAP_NOT_ACTIVE; see AtlasCurrentMapStatus.h.
+     * @return      Every active Atlas map, sorted by id -- identical
+     *              content and order to GetAllMaps().
+     */
+    std::vector<Map *>
+        GetCoherentMapView(std::optional<long unsigned int> &currentMapId_out,
+                           AtlasCurrentMapStatus &currentMapStatus_out);
+
+    /*!
      * @brief       Acquires exclusive access to semantic-map mutations.
      *
      *              Loop closing holds this lock while semantic entities are
@@ -256,11 +346,27 @@ class Atlas
     void MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in);
 
     /*!
+     * @brief Attempts validated consecutive-map merges, old into current.
+     *
+     * Runs the continuous shape-matching scheduler over every non-bad,
+     * non-current map: room-prior seed gate, minimum-shape gate,
+     * cooldown/change gate, shared-Horn transform estimation, then the
+     * consecutive merge gate. On ACCEPT the old map is fused via
+     * MergeMapPair (which retires it); on anything else nothing mutates.
+     * At most one merge commits per call.
+     *
+     * The caller must already hold the semantic-update lock (see
+     * \ref acquireSemanticUpdateLock); this method does not acquire it.
+     */
+    void attemptConsecutiveMergeIfGated(void);
+
+    /*!
      * @brief Captures the room geometry of the current map before it is
      *        stranded by a restart.
      *
-     * Called internally from \ref createNewMapWhileAtlasLocked and
-     * \ref clearAtlas so that room identity survives map transitions.
+     * Called internally from \ref createNewMapWhileAtlasLocked,
+     * \ref clearMap, and \ref clearAtlas so that room identity survives map
+     * transitions.
      */
     void exportRoomContextFromCurrentMap();
 
@@ -276,6 +382,34 @@ class Atlas
      * @param[in] pNewMap Map whose rooms should be examined/tagged.
      */
     void matchRoomsToContext(Map *pNewMap);
+
+    /** Copies room history without exposing references beyond the lock scope.
+     */
+    std::map<long unsigned int, std::vector<RoomContextSnapshot>>
+        copyRoomContextHistory() const;
+
+    /** Copies invariant context from a live map under the semantic transaction.
+     */
+    std::vector<RoomContextSnapshot> copyRoomContextForMap(Map *p_map_in);
+
+    /** Copies the newest departed-map snapshot for one stable room identity. */
+    std::optional<RoomContextSnapshot>
+        copyLatestRoomContext(int roomId_in) const;
+
+    /** Copies live entities only when the caller owns the semantic transaction.
+     */
+    SnapshotCopyResult
+        copyRoomContextForMapChecked(Map *p_map_in,
+                                     bool callerOwnsSemanticLock);
+
+    /** Returns and clears the map-created lifecycle event. */
+    bool consumeNewMapCreatedEvent();
+
+    /** Reads the lifecycle event without acknowledging it. */
+    bool peekNewMapCreatedEvent() const;
+
+    /** Acknowledges the pending lifecycle event after verified handling. */
+    void acknowledgeNewMapCreatedEvent();
 
     /*!
      * @brief Returns the vector of context snapshots stored for \p mapId.
@@ -376,10 +510,28 @@ class Atlas
         mRoomContextHistory;
 
     /*!
+     * @brief Continuous-match bookkeeping per old map ID. Guarded by
+     *        mMutexAtlas like the other Atlas-owned indexes.
+     */
+    std::map<long unsigned int, MergeAttemptState> mConsecutiveMergeState;
+
+    /*!
      * @brief Protects \ref mRoomContextHistory against concurrent access from
      *        tracking and the semantic worker thread.
      */
-    std::mutex mRoomContextMutex;
+    mutable std::mutex mRoomContextMutex;
+
+    /*! Mission-wide semantic allocators survive active-map replacement. */
+    std::atomic<int> nextRoomIdentity_{0};
+    std::atomic<int> nextPassageIdentity_{0};
+    std::atomic<int> nextFloorIdentity_{0};
+
+    /*! Last occupied semantic identity; map-local temporal resets do not clear
+     * it. */
+    std::atomic<int> currentSemanticRoomIdentity_{-1};
+
+    /*! Pending lifecycle event, protected by mRoomContextMutex. */
+    bool newMapCreatedPending_{false};
 };
 
 } // namespace ORB_SLAM3

@@ -1,3 +1,22 @@
+###############################################################################
+# 📋 Table of Contents (auto-summary; keep in sync with top-level sections)  #
+###############################################################################
+# general:                      General mode & env database path              #
+# markers:                      Marker trust impact                            #
+# optimization:                 Plane-based optimization factors               #
+# refine_map_points:            Refining map points using semantics            #
+# plane_based_covisibility:     Plane-based covisibility graph config        #
+# seg:                          Common segmentation parameters               #
+# geo_seg:                      Geometric segmentation parameters              #
+# sem_seg:                      Semantic segmentation parameters               #
+# room_seg:                     Room segmentation parameters                 #
+# room_tracking:                Room-tracking state machine (WP13 Section 18.4) #
+# candidate_gen:                Candidate generation & topology              #
+# verification:                 Geometric verification gates                   #
+# factor:                     Edge-plane transform noise model                 #
+# map_merge:                    Map merge & axiom thresholds      #
+###############################################################################
+
 ################################ General Parameters #############################################
 general:
   # Specify the mode of operation for the segmentation pipeline
@@ -157,8 +176,17 @@ sem_seg:
     ambiguous_duplicate_plane_separation: 0.75
     # Maximum separation between crossings forming one opening (metres).
     crossing_cluster_distance: 0.65
-    # Number of distinct skeleton snapshots required for confirmation.
+    # Number of distinct skeleton snapshots required for confirmation. No
+    # longer gates passage creation (see minimum_crossing_cluster_size
+    # below) -- retained only to cap the temporal-evidence smoothing weight.
     minimum_confirmation_snapshots: 4
+    # Individual skeleton-edge crossings that must cluster into one opening
+    # in a SINGLE cycle before a passage is created for it -- same-cycle
+    # evidence-quantity gate, same semantic level/priority as a wall's own
+    # admission (cluster point count / connectivity ratio). Enough of the
+    # free-space skeleton breaking through the wall this cycle is
+    # sufficient on its own; no separate multi-cycle waiting period.
+    minimum_crossing_cluster_size: 2
     # Number of missed snapshots before an unconfirmed track is discarded.
     maximum_missed_snapshots: 4
     # Required observed wall extent on both horizontal sides of an opening.
@@ -180,7 +208,21 @@ sem_seg:
       enabled: true
       cluster_tolerance: 0.15 # metres
       minimum_component_point_count: 300
-      minimum_component_ratio: 0.70
+      # A wall's own doorway/window splits its single-frame mask into two
+      # large, independently-valid fragments of near-equal size (ratio
+      # ~0.50), not one dominant blob -- 0.70 rejected every such wall
+      # outright. 0.40 clears that case with margin while still catching
+      # genuinely scattered/sparse candidates.
+      minimum_component_ratio: 0.40
+
+  # Twin-face reconciliation: a physical wall can produce two independent
+  # WALL Planes, one per face, distinguished by observationOrigin_World_m.
+  # These thresholds decide when two such Planes are plausibly the two faces
+  # of the same physical wall (SemanticsManager::reconcileWallFacePairs()).
+  wall_pairing:
+    minimum_thickness: 0.05 # metres -- thinnest plausible physical wall
+    maximum_thickness: 0.60 # metres -- thickest plausible physical wall
+    minimum_overlap_ratio: 0.30 # required in-plane footprint overlap
 
   # Whether to reassociate planes with the semantic labels - after optimization, some planes may get close
   reassociate:
@@ -237,7 +279,14 @@ room_seg:
     minimum_wall_support_points: 2
     # Minimum keyframe observations needed before creating an orphan-wall structural element
     minimum_wall_observations: 3
-    # Stale semantic cycles retained before an unused weak wall is retired
+    # Stale semantic cycles retained before an unused weak wall is retired.
+    # A wall with no room, no passage association, and no growing evidence
+    # should not persist as a floating orphan in the sgraph/visualization --
+    # 1 is the minimum the retirement logic allows (the first sighting of
+    # an undefended wall is always spared one cycle so newly-created
+    # evidence isn't retired before room-creation logic in the same Run()
+    # cycle gets a chance to claim it; this is the very next check after
+    # that).
     minimum_undefended_wall_hold_cycles: 5
     # Fraction of nearby skeleton points which must project inside the observed wall bounds
     minimum_wall_support_ratio: 0.5
@@ -310,3 +359,65 @@ room_tracking:
   reacquire_max_retries: 3
   # Minimum planes required to attempt a reacquire.
   reacquire_min_planes: 3
+
+candidate_gen:
+  top_k: 10
+  candidate_pair_cap: 1000
+  topology_nodes_cap: 128
+  global_fallback_cap: 1000
+  weight_angle: 1.0
+  weight_extent: 1.0
+  weight_aperture: 1.0
+  weight_topology: 1.0
+  angle_missing_penalty: 1.0
+  extent_missing_penalty: 1.0
+  aperture_missing_penalty: 1.0
+  ambiguity_margin: 0.05
+  angle_tolerance_rad: 1.0e-9
+  runtime_budget_ms: 0.0
+  descriptor_elements_cap: 4096
+  topo_refinement_iters: 3
+
+verification:
+  max_normal_angle_deg: 10.0
+  max_offset_m: 0.35
+  max_support_dist_m: 0.25
+  min_inlier_ratio: 0.6
+  max_condition_number: 100.0
+  ambiguity_margin_inliers: 1
+  max_walls_per_room: 16
+  max_hypotheses: 2000
+  max_support_sample_per_wall: 64
+  min_abs_cos_normal_angle: 0.85
+
+factor:
+  sigma_theta_rad: 0.05
+  sigma_offset_m: 0.05
+  huber_delta: 1.345
+  optimizer_iterations: 20
+
+# Map-merge & axiom thresholds
+map_merge:
+  # Fixed spherical tolerance for passage association across maps (metres)
+  passage_match_tolerance_m: 0.20
+  # Wall coplanarity angle threshold (degrees); planes within this angle are
+  # considered coplanar and merge-eligible.
+  wall_coplanar_angle_deg: 5.0
+  # Edges within this distance count as overlapping / the same wall.
+  wall_edge_overlap_m: 0.50
+  # Floor match tolerance for through-doorway wall axiom (metres).
+  floor_match_tolerance_m: 0.10
+  # Max first-to-latest observation origins checked by the through-doorway
+  # wall axiom.
+  observation_ray_check_cap: 5
+  # Cooldown between consecutive-map merge attempts for the same old map (s).
+  merge_cooldown_s: 30
+  # Minimum tag-matched anchor rooms required to estimate alignment.
+  min_anchor_rooms: 2
+  # Minimum rooms required in each map before attempting a match.
+  min_rooms_per_map: 1
+  # Minimum walls required in each map before attempting a match.
+  min_walls_per_map: 3
+  # Maximum anchor-room centroid distance after alignment (metres). Rooms
+  # are matched by tag; this only bounds residual centre drift.
+  room_centroid_tolerance_m: 0.50
