@@ -51,11 +51,11 @@ float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 cv::BFMatcher Frame::BFmatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
 Frame::Frame() :
-    mpcpi(NULL),
-    mpImuPreintegrated(NULL),
-    mpPrevFrame(NULL),
-    mpImuPreintegratedFrame(NULL),
-    mpReferenceKF(static_cast<KeyFrame *>(NULL)),
+    mpcpi(nullptr),
+    mpImuPreintegrated(nullptr),
+    mpPrevFrame(nullptr),
+    mpImuPreintegratedFrame(nullptr),
+    mpReferenceKF(static_cast<KeyFrame *>(nullptr)),
     mbIsSet(false),
     mbImuPreintegrated(false),
     mbHasPose(false),
@@ -173,7 +173,7 @@ Frame::Frame(const cv::Mat              &imColor,
              Frame                      *pPrevF,
              const IMU::Calib           &ImuCalib,
              const std::vector<Marker *> markers) :
-    mpcpi(NULL),
+    mpcpi(nullptr),
     mpORBvocabulary(voc),
     mpORBextractorLeft(extractorLeft),
     mpORBextractorRight(extractorRight),
@@ -184,10 +184,10 @@ Frame::Frame(const cv::Mat              &imColor,
     mbf(bf),
     mThDepth(thDepth),
     mImuCalib(ImuCalib),
-    mpImuPreintegrated(NULL),
+    mpImuPreintegrated(nullptr),
     mpPrevFrame(pPrevF),
-    mpImuPreintegratedFrame(NULL),
-    mpReferenceKF(static_cast<KeyFrame *>(NULL)),
+    mpImuPreintegratedFrame(nullptr),
+    mpReferenceKF(static_cast<KeyFrame *>(nullptr)),
     mbIsSet(false),
     mbImuPreintegrated(false),
     mpCamera(pCamera),
@@ -251,7 +251,7 @@ Frame::Frame(const cv::Mat              &imColor,
 #endif
 
     // Initialize MapPoints
-    mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(NULL));
+    mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(nullptr));
 
     // Initialize MapMarkers
     mvpMapMarkers = markers;
@@ -324,7 +324,7 @@ Frame::Frame(const cv::Mat              &imColor,
              Frame                      *pPrevF,
              const IMU::Calib           &ImuCalib,
              const std::vector<Marker *> markers) :
-    mpcpi(NULL),
+    mpcpi(nullptr),
     mpORBvocabulary(voc),
     mpORBextractorLeft(extractorLeft),
     mpORBextractorRight(extractorRight),
@@ -335,10 +335,10 @@ Frame::Frame(const cv::Mat              &imColor,
     mbf(bf),
     mThDepth(thDepth),
     mImuCalib(ImuCalib),
-    mpImuPreintegrated(NULL),
+    mpImuPreintegrated(nullptr),
     mpPrevFrame(pPrevF),
-    mpImuPreintegratedFrame(NULL),
-    mpReferenceKF(static_cast<KeyFrame *>(NULL)),
+    mpImuPreintegratedFrame(nullptr),
+    mpReferenceKF(static_cast<KeyFrame *>(nullptr)),
     mbImuPreintegrated(false),
     mpCamera(pCamera),
     mpCamera2(pCamera2),
@@ -478,10 +478,10 @@ Frame::Frame(const cv::Mat                                &imColor,
              Frame                                        *pPrevF,
              const IMU::Calib                             &ImuCalib,
              const std::vector<Marker *>                   markers) :
-    mpcpi(NULL),
+    mpcpi(nullptr),
     mpORBvocabulary(voc),
     mpORBextractorLeft(extractor),
-    mpORBextractorRight(static_cast<ORBextractor *>(NULL)),
+    mpORBextractorRight(static_cast<ORBextractor *>(nullptr)),
     mTimeStamp(timeStamp),
     mK(K.clone()),
     mK_(Converter::toMatrix3f(K)),
@@ -489,10 +489,10 @@ Frame::Frame(const cv::Mat                                &imColor,
     mbf(bf),
     mThDepth(thDepth),
     mImuCalib(ImuCalib),
-    mpImuPreintegrated(NULL),
+    mpImuPreintegrated(nullptr),
     mpPrevFrame(pPrevF),
-    mpImuPreintegratedFrame(NULL),
-    mpReferenceKF(static_cast<KeyFrame *>(NULL)),
+    mpImuPreintegratedFrame(nullptr),
+    mpReferenceKF(static_cast<KeyFrame *>(nullptr)),
     mbIsSet(false),
     mbImuPreintegrated(false),
     mpCamera(pCamera),
@@ -540,7 +540,7 @@ Frame::Frame(const cv::Mat                                &imColor,
     ComputeStereoFromRGBD(imDepth);
 
     // Initialize MapPoints
-    mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(NULL));
+    mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(nullptr));
 
     // Initialize MapMarkers
     mvpMapMarkers = markers;
@@ -607,10 +607,10 @@ Frame::Frame(const cv::Mat              &imColor,
              Frame                      *pPrevF,
              const IMU::Calib           &ImuCalib,
              const std::vector<Marker *> markers) :
-    mpcpi(NULL),
+    mpcpi(nullptr),
     mpORBvocabulary(voc),
     mpORBextractorLeft(extractor),
-    mpORBextractorRight(static_cast<ORBextractor *>(NULL)),
+    mpORBextractorRight(static_cast<ORBextractor *>(nullptr)),
     mTimeStamp(timeStamp),
     mK(static_cast<Pinhole *>(pCamera)->toK()),
     mK_(static_cast<Pinhole *>(pCamera)->toK_()),
@@ -618,10 +618,10 @@ Frame::Frame(const cv::Mat              &imColor,
     mbf(bf),
     mThDepth(thDepth),
     mImuCalib(ImuCalib),
-    mpImuPreintegrated(NULL),
+    mpImuPreintegrated(nullptr),
     mpPrevFrame(pPrevF),
-    mpImuPreintegratedFrame(NULL),
-    mpReferenceKF(static_cast<KeyFrame *>(NULL)),
+    mpImuPreintegratedFrame(nullptr),
+    mpReferenceKF(static_cast<KeyFrame *>(nullptr)),
     mbIsSet(false),
     mbImuPreintegrated(false),
     mpCamera(pCamera),
@@ -673,7 +673,7 @@ Frame::Frame(const cv::Mat              &imColor,
     mvuRight   = vector<float>(N, -1);
 
     // Initialize MapPoints
-    mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(NULL));
+    mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(nullptr));
 
     // Initialize MapMarkers
     mvpMapMarkers = markers;

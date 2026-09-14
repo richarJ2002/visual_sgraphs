@@ -35,7 +35,7 @@ namespace ORB_SLAM3
 long unsigned int Map::nNextId = 0;
 
 Map::Map() :
-    mpFirstRegionKF(static_cast<KeyFrame *>(NULL)),
+    mpFirstRegionKF(static_cast<KeyFrame *>(nullptr)),
     mbFail(false),
     mbImuInitialized(false),
     mnMapChange(0),
@@ -51,11 +51,11 @@ Map::Map() :
     mbIMU_BA2(false)
 {
     mnId       = nNextId++;
-    mThumbnail = static_cast<GLubyte *>(NULL);
+    mThumbnail = static_cast<GLubyte *>(nullptr);
 }
 
 Map::Map(int initKFid) :
-    mpFirstRegionKF(static_cast<KeyFrame *>(NULL)),
+    mpFirstRegionKF(static_cast<KeyFrame *>(nullptr)),
     mbFail(false),
     mbImuInitialized(false),
     mnMapChange(0),
@@ -72,7 +72,7 @@ Map::Map(int initKFid) :
     mbIMU_BA2(false)
 {
     mnId       = nNextId++;
-    mThumbnail = static_cast<GLubyte *>(NULL);
+    mThumbnail = static_cast<GLubyte *>(nullptr);
 }
 
 Map::~Map()
@@ -95,7 +95,7 @@ Map::~Map()
 
     if (mThumbnail)
         delete mThumbnail;
-    mThumbnail = static_cast<GLubyte *>(NULL);
+    mThumbnail = static_cast<GLubyte *>(nullptr);
 
     mvpReferenceMapPoints.clear();
     mvpKeyFrameOrigins.clear();
@@ -816,7 +816,7 @@ void Map::clear()
          sit++)
     {
         KeyFrame *pKF = *sit;
-        pKF->UpdateMap(static_cast<Map *>(NULL));
+        pKF->UpdateMap(static_cast<Map *>(nullptr));
     }
 
     mspPlanes.clear();

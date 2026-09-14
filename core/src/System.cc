@@ -53,8 +53,8 @@ System::System(const string         &strVocFile,
                const string         &strSequence,
                const Verbose::eLevel verboseLevel) :
     mSensor(sensor),
-    mpViewer(static_cast<Viewer *>(NULL)),
-    mptGeometricSegmentation(static_cast<std::thread *>(NULL)),
+    mpViewer(static_cast<Viewer *>(nullptr)),
+    mptGeometricSegmentation(static_cast<std::thread *>(nullptr)),
     mbReset(false),
     mbResetActiveMap(false),
     mbActivateLocalizationMode(false),
@@ -359,7 +359,7 @@ System::~System()
     mpLoopCloser->RequestFinish();
     mpSemanticSegmentation->RequestFinish();
     mpSemanticsManager->RequestFinish();
-    if (mpViewer != static_cast<Viewer *>(NULL))
+    if (mpViewer != static_cast<Viewer *>(nullptr))
     {
         mpViewer->RequestFinish();
     }
@@ -370,7 +370,7 @@ System::~System()
     while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() ||
            !mpSemanticSegmentation->isFinished() ||
            !mpSemanticsManager->isFinished() ||
-           (mpViewer != static_cast<Viewer *>(NULL) && !mpViewer->isFinished()))
+           (mpViewer != static_cast<Viewer *>(nullptr) && !mpViewer->isFinished()))
     {
         usleep(1000);
     }
@@ -379,7 +379,7 @@ System::~System()
     mptLoopClosing->join();
     mptSemanticSegmentation->join();
     mptSemanticsManager->join();
-    if (mpViewer != static_cast<Viewer *>(NULL))
+    if (mpViewer != static_cast<Viewer *>(nullptr))
     {
         mptViewer->join();
     }
@@ -389,7 +389,7 @@ System::~System()
     delete mptLoopClosing;
     delete mptSemanticSegmentation;
     delete mptSemanticsManager;
-    if (mpViewer != static_cast<Viewer *>(NULL))
+    if (mpViewer != static_cast<Viewer *>(nullptr))
     {
         delete mptViewer;
     }
@@ -1148,7 +1148,7 @@ void System::Shutdown()
     mpLoopCloser->RequestFinish();
     mpSemanticSegmentation->RequestFinish();
     mpSemanticsManager->RequestFinish();
-    if (mpViewer != static_cast<Viewer *>(NULL))
+    if (mpViewer != static_cast<Viewer *>(nullptr))
     {
         mpViewer->RequestFinish();
     }
@@ -1161,7 +1161,7 @@ void System::Shutdown()
     while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() ||
            !mpSemanticSegmentation->isFinished() ||
            !mpSemanticsManager->isFinished() ||
-           (mpViewer != static_cast<Viewer *>(NULL) && !mpViewer->isFinished()))
+           (mpViewer != static_cast<Viewer *>(nullptr) && !mpViewer->isFinished()))
     {
         usleep(1000);
         ++shutdownPollCount;
@@ -1174,7 +1174,7 @@ void System::Shutdown()
             const bool semanticsManagerFinished =
                 mpSemanticsManager->isFinished();
             const bool viewerFinished =
-                mpViewer == static_cast<Viewer *>(NULL) ||
+                mpViewer == static_cast<Viewer *>(nullptr) ||
                 mpViewer->isFinished();
             std::cout << "[System::Shutdown] local_mapping="
                       << localMappingFinished

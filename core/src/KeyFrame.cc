@@ -65,10 +65,10 @@ KeyFrame::KeyFrame() :
     mb(0),
     mThDepth(0),
     N(0),
-    mvKeys(static_cast<vector<cv::KeyPoint>>(NULL)),
-    mvKeysUn(static_cast<vector<cv::KeyPoint>>(NULL)),
-    mvuRight(static_cast<vector<float>>(NULL)),
-    mvDepth(static_cast<vector<float>>(NULL)),
+    mvKeys(),
+    mvKeysUn(),
+    mvuRight(),
+    mvDepth(),
     mnScaleLevels(0),
     mfScaleFactor(0),
     mfLogScaleFactor(0),
@@ -79,10 +79,10 @@ KeyFrame::KeyFrame() :
     mnMinY(0),
     mnMaxX(0),
     mnMaxY(0),
-    mPrevKF(static_cast<KeyFrame *>(NULL)),
-    mNextKF(static_cast<KeyFrame *>(NULL)),
+    mPrevKF(static_cast<KeyFrame *>(nullptr)),
+    mNextKF(static_cast<KeyFrame *>(nullptr)),
     mbFirstConnection(true),
-    mpParent(NULL),
+    mpParent(nullptr),
     mbNotErase(false),
     mbToBeErased(false),
     mbBad(false),
@@ -144,15 +144,15 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     mnMaxX(F.mnMaxX),
     mnMaxY(F.mnMaxY),
     mK_(F.mK_),
-    mPrevKF(NULL),
-    mNextKF(NULL),
+    mPrevKF(nullptr),
+    mNextKF(nullptr),
     mpImuPreintegrated(F.mpImuPreintegrated),
     mImuCalib(F.mImuCalib),
     mvpMapPoints(F.mvpMapPoints),
     mpKeyFrameDB(pKFDB),
     mpORBvocabulary(F.mpORBvocabulary),
     mbFirstConnection(true),
-    mpParent(NULL),
+    mpParent(nullptr),
     mDistCoef(F.mDistCoef),
     mbNotErase(false),
     mnDataset(F.mnDataset),
@@ -390,7 +390,7 @@ void KeyFrame::UpdateBestCovisibles()
     list<int>        lWs;
     for (size_t i = 0, iend = vPairs.size(); i < iend; i++)
     {
-        if (vPairs[i].second != NULL)
+        if (vPairs[i].second != nullptr)
         {
             if (!vPairs[i].second->isBad())
             {
@@ -631,7 +631,7 @@ bool ORB_SLAM3::KeyFrame::ReplaceMapPassage(
 void KeyFrame::EraseMapPointMatch(const int &idx)
 {
     unique_lock<mutex> lock(mMutexFeatures);
-    mvpMapPoints[idx] = static_cast<MapPoint *>(NULL);
+    mvpMapPoints[idx] = static_cast<MapPoint *>(nullptr);
 }
 
 void KeyFrame::EraseMapPointMatch(MapPoint *pMP)
@@ -639,9 +639,9 @@ void KeyFrame::EraseMapPointMatch(MapPoint *pMP)
     tuple<size_t, size_t> indexes = pMP->GetIndexInKeyFrame(this);
     size_t leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
     if (leftIndex != -1)
-        mvpMapPoints[leftIndex] = static_cast<MapPoint *>(NULL);
+        mvpMapPoints[leftIndex] = static_cast<MapPoint *>(nullptr);
     if (rightIndex != -1)
-        mvpMapPoints[rightIndex] = static_cast<MapPoint *>(NULL);
+        mvpMapPoints[rightIndex] = static_cast<MapPoint *>(nullptr);
 }
 
 void KeyFrame::ReplaceMapPointMatch(const int &idx, MapPoint *pMP)
@@ -822,7 +822,7 @@ void KeyFrame::UpdateConnections(bool upParent)
     // In case no keyframe counter is over threshold add the one with maximum
     // counter
     int       nmax   = 0;
-    KeyFrame *pKFmax = NULL;
+    KeyFrame *pKFmax = nullptr;
     int       th     = 15;
 
     vector<pair<int, KeyFrame *>> vPairs;
@@ -1408,7 +1408,7 @@ void KeyFrame::PostLoad(map<long unsigned int, KeyFrame *>   &mpKFid,
         if (mvBackupMapPointsId[i] != -1)
             mvpMapPoints[i] = mpMPid[mvBackupMapPointsId[i]];
         else
-            mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
+            mvpMapPoints[i] = static_cast<MapPoint *>(nullptr);
     }
 
     // Conected KeyFrames with him weight

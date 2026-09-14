@@ -907,6 +907,17 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
+  # WP-00.8.1 (gated): Boost serialization round-trip self-consistency over
+  # all Boost sites (Map/MapPoint/Atlas/ImuTypes/KeyFrameDatabase/KeyFrame/
+  # SerializationUtils + 3 CameraModels). ROS/Gazebo-free, links production
+  # library like test_atlas_lock_order.
+  ament_add_gtest(test_SerializationRoundTrip
+    test/test_SerializationRoundTrip.cpp
+  )
+  target_link_libraries(test_SerializationRoundTrip
+    ${PROJECT_NAME}_lib
+  )
+
   # Small command-line tool (not a test) that replays a corpus directory and
   # writes the bounded LegacyReplayResult::report JSON to a file, so a
   # Phase-1 verification session can produce legacy_replay_report.json

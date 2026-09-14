@@ -49,9 +49,9 @@ MapPoint::MapPoint() :
     mnVisible(1),
     mnFound(1),
     mbBad(false),
-    mpReplaced(static_cast<MapPoint *>(NULL))
+    mpReplaced(static_cast<MapPoint *>(nullptr))
 {
-    mpReplaced = static_cast<MapPoint *>(NULL);
+    mpReplaced = static_cast<MapPoint *>(nullptr);
 }
 
 MapPoint::MapPoint(const Eigen::Vector3f &Pos, KeyFrame *pRefKF, Map *pMap) :
@@ -70,7 +70,7 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, KeyFrame *pRefKF, Map *pMap) :
     mnVisible(1),
     mnFound(1),
     mbBad(false),
-    mpReplaced(static_cast<MapPoint *>(NULL)),
+    mpReplaced(static_cast<MapPoint *>(nullptr)),
     mfMinDistance(0),
     mfMaxDistance(0),
     mpMap(pMap),
@@ -109,7 +109,7 @@ MapPoint::MapPoint(const double invDepth,
     mnVisible(1),
     mnFound(1),
     mbBad(false),
-    mpReplaced(static_cast<MapPoint *>(NULL)),
+    mpReplaced(static_cast<MapPoint *>(nullptr)),
     mfMinDistance(0),
     mfMaxDistance(0),
     mpMap(pMap),
@@ -144,11 +144,11 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos,
     mnCorrectedByKF(0),
     mnCorrectedReference(0),
     mnBAGlobalForKF(0),
-    mpRefKF(static_cast<KeyFrame *>(NULL)),
+    mpRefKF(static_cast<KeyFrame *>(nullptr)),
     mnVisible(1),
     mnFound(1),
     mbBad(false),
-    mpReplaced(NULL),
+    mpReplaced(nullptr),
     mpMap(pMap),
     mnOriginMapId(pMap->GetId())
 {
@@ -763,7 +763,7 @@ void MapPoint::PostLoad(map<long unsigned int, KeyFrame *> &mpKFid,
         cout << "ERROR: MP without KF reference " << mBackupRefKFId
              << "; Num obs: " << nObs << endl;
     }
-    mpReplaced = static_cast<MapPoint *>(NULL);
+    mpReplaced = static_cast<MapPoint *>(nullptr);
     if (mBackupReplacedId >= 0)
     {
         map<long unsigned int, MapPoint *>::iterator it =

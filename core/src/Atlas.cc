@@ -382,14 +382,14 @@ static bool resurfaceProxyFromTransferred(Passage *p_proxy_inout,
 
 Atlas::Atlas()
 {
-    mpCurrentMap = static_cast<Map *>(NULL);
+    mpCurrentMap = static_cast<Map *>(nullptr);
 }
 
 Atlas::Atlas(int initKFid) :
     mnLastInitKFidMap(initKFid),
     mHasViewer(false)
 {
-    mpCurrentMap = static_cast<Map *>(NULL);
+    mpCurrentMap = static_cast<Map *>(nullptr);
     CreateNewMap();
 }
 
@@ -897,7 +897,7 @@ void Atlas::clearAtlas()
 {
     unique_lock<mutex> lock(mMutexAtlas);
     mspMaps.clear();
-    mpCurrentMap      = static_cast<Map *>(NULL);
+    mpCurrentMap      = static_cast<Map *>(nullptr);
     mnLastInitKFidMap = 0;
 }
 

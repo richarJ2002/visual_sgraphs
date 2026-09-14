@@ -88,7 +88,7 @@ class Frame
           const float                &bf,
           const float                &thDepth,
           GeometricCamera            *pCamera,
-          Frame                      *pPrevF   = static_cast<Frame *>(NULL),
+          Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
           const IMU::Calib           &ImuCalib = IMU::Calib(),
           const std::vector<Marker *> markers  = std::vector<Marker *>{});
 
@@ -107,7 +107,7 @@ class Frame
           GeometricCamera            *pCamera,
           GeometricCamera            *pCamera2,
           Sophus::SE3f               &Tlr,
-          Frame                      *pPrevF   = static_cast<Frame *>(NULL),
+          Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
           const IMU::Calib           &ImuCalib = IMU::Calib(),
           const std::vector<Marker *> markers  = std::vector<Marker *>{});
 
@@ -124,7 +124,7 @@ class Frame
           const float                                  &bf,
           const float                                  &thDepth,
           GeometricCamera                              *pCamera,
-          Frame                      *pPrevF   = static_cast<Frame *>(NULL),
+          Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
           const IMU::Calib           &ImuCalib = IMU::Calib(),
           const std::vector<Marker *> markers  = std::vector<Marker *>{});
 
@@ -138,7 +138,7 @@ class Frame
           cv::Mat                    &distCoef,
           const float                &bf,
           const float                &thDepth,
-          Frame                      *pPrevF   = static_cast<Frame *>(NULL),
+          Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
           const IMU::Calib           &ImuCalib = IMU::Calib(),
           const std::vector<Marker *> markers  = std::vector<Marker *>{});
 
@@ -351,7 +351,7 @@ class Frame
     // ORB descriptor, each row associated to a keypoint.
     cv::Mat mDescriptors, mDescriptorsRight;
 
-    // MapPoints associated to keypoints, NULL pointer if no association.
+    // MapPoints associated to keypoints, nullptr pointer if no association.
     // Flag to identify outlier associations.
     std::vector<bool> mvbOutlier;
     int               mnCloseMPs = 0;
