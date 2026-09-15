@@ -918,6 +918,17 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
+  # WP-03.8 skeleton: fault-injection registry + probe-macro test. Test-only
+  # TU (never linked into ${PROJECT_NAME}_lib); the toggle is enabled for
+  # this target only so production builds keep zero-cost disabled probes.
+  ament_add_gtest(test_FaultInjection
+    test/test_FaultInjection.cpp
+    core/src/Semantic/FaultInjection.cc
+  )
+  target_compile_definitions(test_FaultInjection PRIVATE
+    VS_GRAPHS_ENABLE_FAULT_INJECTION=1
+  )
+
   # Small command-line tool (not a test) that replays a corpus directory and
   # writes the bounded LegacyReplayResult::report JSON to a file, so a
   # Phase-1 verification session can produce legacy_replay_report.json

@@ -16,6 +16,20 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            SystemParams.h
+ *
+ * @brief           Declares the SystemParams YAML-backed calibration store.
+ *
+ *  @note           WP-01C/WP-04/WP-05 deferred by pilot scope (§17.4): member
+ *                  identifiers (snake_case, m_ prefix, Get/Set PascalCase),
+ *                  unscoped enums without underlying types, raw-new singleton,
+ *                  and void-plus-exit(1) failure handling stay as-is here.
+ *                  Renaming or status-converting them cascades to consumers
+ *                  repo-wide (ROS/YAML keys frozen per §16.3) and needs the
+ *                  group-level WP-02/WP-04 step with maintainer sign-off.
+ */
+
 #include <iostream>
 #include <yaml-cpp/yaml.h>
 
@@ -497,7 +511,7 @@ class SystemParams
         unsigned int min_walls_per_map = 3U;
         /*! @brief Maximum anchor-room centroid distance after alignment
          * (metres). Rooms pair by tag; this only bounds residual drift. */
-        float room_centroid_tolerance_m = 0.50F;
+        float        room_centroid_tolerance_m = 0.50F;
     } map_merge;
 
   private:
