@@ -98,7 +98,7 @@ class Room
      * PRIVATE MEMBERS
      * ---------------------------------------------------------------------- */
 
-    mutable std::mutex mMutexState;
+    mutable std::mutex stateMutex;
 
     /*!
      * @brief       The room's identifier.
@@ -118,7 +118,7 @@ class Room
     /*!
      * @brief       Marks the room as bad (if true, the room will not be used).
      */
-    bool mbBad{false};
+    bool isBadFlag{false};
 
     /*!
      * @brief       The identifier of the room's meta-marker (containing
@@ -136,13 +136,13 @@ class Room
      *              (e.g. "room_5"). Empty when the room has not been
      *              matched to a prior-map context.
      */
-    std::string mRoomTag;
+    std::string roomTag;
 
     /*!
      * @brief       Non-owning pointer to the WP1 context snapshot from which
      *              the room identity was inherited.  nullptr when unset.
      */
-    RoomContextSnapshot *mpMatchedContext{nullptr};
+    RoomContextSnapshot *p_matchedContext{nullptr};
 
     /*!
      * @brief       Checks if it is a candidate room (meta-marker detected) or
@@ -160,15 +160,15 @@ class Room
     /*!
      * @brief       The meta-marker assigned for the room.
      */
-    Marker *metaMarker{nullptr};
+    Marker *p_metaMarker{nullptr};
 
     /*!
      * @brief       The ground plane associated with the room.
      */
-    geometric::Plane *groundPlane{nullptr};
+    geometric::Plane *p_groundPlane{nullptr};
 
     /*! @brief Non-owning floor node in the semantic hierarchy. */
-    Floor *floor{nullptr};
+    Floor *p_floor{nullptr};
 
     /*!
      * @brief       The room's semantic type (e.g., corridor, room, etc.).
@@ -243,7 +243,7 @@ class Room
     /*!
      * @brief       Sets the room identifier assigned by the atlas.
      */
-    void setId(int value);
+    void setId(int id_in);
 
     /*!
      * @brief       Returns the local optimizer vertex identifier.
@@ -253,7 +253,7 @@ class Room
     /*!
      * @brief       Sets the local optimizer vertex identifier.
      */
-    void setOpId(int value);
+    void setOpId(int opId_in);
 
     /*!
      * @brief       Returns the global optimizer vertex identifier.
@@ -263,7 +263,7 @@ class Room
     /*!
      * @brief       Sets the global optimizer vertex identifier.
      */
-    void setOpIdG(int value);
+    void setOpIdG(int opIdG_in);
 
     /*!
      * @brief       Reports whether the room has been invalidated.
@@ -283,7 +283,7 @@ class Room
     /*!
      * @brief       Updates the room's classification.
      */
-    void setRoomVariant(roomVariant value);
+    void setRoomVariant(roomVariant variant_in);
 
     /*!
      * @brief Returns the latest finite-wall boundary validation result.
@@ -353,7 +353,7 @@ class Room
     /*!
      * @brief       Sets whether the room has an externally known label.
      */
-    void setHasKnownLabel(bool value);
+    void setHasKnownLabel(bool hasKnownLabel_in);
 
     /*!
      * @brief       Returns the identifier of the room's metadata marker.
@@ -363,7 +363,7 @@ class Room
     /*!
      * @brief       Sets the identifier of the room's metadata marker.
      */
-    void setMetaMarkerId(int value);
+    void setMetaMarkerId(int metaMarkerId_in);
 
     /*!
      * @brief       Returns the non-owning metadata marker associated with the
@@ -374,7 +374,7 @@ class Room
     /*!
      * @brief       Associates a non-owning metadata marker with the room.
      */
-    void setMetaMarker(Marker *value);
+    void setMetaMarker(Marker *p_metaMarker_in);
 
     /*!
      * @brief       Returns the human-readable room label.
@@ -384,7 +384,7 @@ class Room
     /*!
      * @brief       Sets the human-readable room label.
      */
-    void setName(std::string value);
+    void setName(std::string name_in);
 
     /*!
      * @brief       Returns the persistent room identity tag assigned by
@@ -398,10 +398,10 @@ class Room
     /*!
      * @brief       Assigns a persistent room identity tag.
      *
-     * @param[in]   tag
+     * @param[in]   tag_in
      *              Tag string (e.g. "room_5") propagated from a prior map.
      */
-    void setRoomTag(const std::string &tag);
+    void setRoomTag(const std::string &tag_in);
 
     /*!
      * @brief       Reports whether the room carries a persistent identity tag.
@@ -424,10 +424,10 @@ class Room
      * @brief       Stores a non-owning pointer to the context snapshot from
      *              which the room identity was inherited.
      *
-     * @param[in]   ctx
+     * @param[in]   p_matchedContext_in
      *              Pointer to a snapshot owned by the Atlas, or nullptr.
      */
-    void setMatchedContext(RoomContextSnapshot *ctx);
+    void setMatchedContext(RoomContextSnapshot *p_matchedContext_in);
 
     /*!
      * @brief       Returns the context snapshot associated with this room,
@@ -438,7 +438,7 @@ class Room
     /*!
      * @brief       Adds a non-owning passage association to the room.
      */
-    void setDoorways(vs_graphs::core::semantic::Passage *value);
+    void setDoorways(vs_graphs::core::semantic::Passage *p_passage_in);
 
     /*!
      * @brief       Returns the passages associated with the room.
@@ -597,7 +597,7 @@ class Room
     /*!
      * @brief       Sets the room centroid in the active map frame.
      */
-    void setCentroid(Eigen::Vector3d value);
+    void setCentroid(Eigen::Vector3d centroid_in);
 
     /*!
      * @brief       Returns the map that owns this room.
@@ -607,7 +607,7 @@ class Room
     /*!
      * @brief       Assigns the room to a map.
      */
-    void setMap(Map *pMap);
+    void setMap(Map *p_map_in);
 
   protected:
     /* ---------------------------------------------------------------------- *
@@ -617,25 +617,25 @@ class Room
     /*!
      * @brief       Non-owning pointer to the map that owns this room.
      */
-    Map *mpMap{nullptr};
+    Map *p_map{nullptr};
 
     /*!
      * @brief       Protects access to the owning-map association.
      */
-    mutable std::mutex mMutexMap;
+    mutable std::mutex mapMutex;
 
     /*!
      * @brief Protects the room's non-owning wall membership collection.
      */
-    mutable std::mutex mMutexWalls;
+    mutable std::mutex wallsMutex;
 
     /*! @brief Protects the non-owning room-to-floor hierarchy edge. */
-    mutable std::mutex mMutexFloor;
+    mutable std::mutex floorMutex;
 
     /*!
      * @brief Protects the independently updated boundary-validation state.
      */
-    mutable std::mutex mMutexBoundaryStatus;
+    mutable std::mutex boundaryStatusMutex;
 };
 } // namespace semantic
 } // namespace core

@@ -11,11 +11,12 @@
  * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details: https://www.gnu.org/licenses/
-*/
+ */
 
 #ifndef ORBEXTRACTOR_H
 #define ORBEXTRACTOR_H
 
+#include <cstdint>
 #include <vector>
 #include <list>
 #include <opencv2/opencv.hpp>
@@ -28,99 +29,99 @@ namespace core
     class ExtractorNode
     {
     public:
-        ExtractorNode() : bNoMore(false) {}
+        ExtractorNode() : isExhausted(false) {}
 
-        void DivideNode(ExtractorNode &n1, ExtractorNode &n2, ExtractorNode &n3, ExtractorNode &n4);
+        void DivideNode(ExtractorNode &node1_out, ExtractorNode &node2_out, ExtractorNode &node3_out, ExtractorNode &node4_out);
 
-        std::vector<cv::KeyPoint> vKeys;
-        cv::Point2i UL, UR, BL, BR;
-        std::list<ExtractorNode>::iterator lit;
-        bool bNoMore;
+        std::vector<cv::KeyPoint> keys;
+        cv::Point2i topLeft, topRight, bottomLeft, bottomRight;
+        std::list<ExtractorNode>::iterator nodeIterator;
+        bool isExhausted;
     };
 
     class ORBextractor
     {
     public:
-        enum
+        enum class Score : std::uint8_t
         {
-            HARRIS_SCORE = 0,
-            FAST_SCORE = 1
+            HARRIS_SCORE = 0U,
+            FAST_SCORE   = 1U
         };
 
-        ORBextractor(int nfeatures, float scaleFactor, int nlevels,
-                     int iniThFAST, int minThFAST);
+        ORBextractor(int featureCount_in, float scaleFactor_in, int levelCount_in,
+                     int initialFastThreshold_in, int minimumFastThreshold_in);
 
         ~ORBextractor() {}
 
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
         // Mask is ignored in the current implementation.
-        int operator()(cv::InputArray _image, cv::InputArray _mask,
-                       std::vector<cv::KeyPoint> &_keypoints,
-                       cv::OutputArray _descriptors, std::vector<int> &vLappingArea);
+        int operator()(cv::InputArray image_in, cv::InputArray mask_in,
+                       std::vector<cv::KeyPoint> &keypoints_out,
+                       cv::OutputArray descriptors_out, std::vector<int> &lappingArea_in);
 
-        int inline GetLevels()
+        int inline getLevelCount()
         {
-            return nlevels;
+            return levelCount;
         }
 
-        float inline GetScaleFactor()
+        float inline getScaleFactor()
         {
             return scaleFactor;
         }
 
-        std::vector<float> inline GetScaleFactors()
+        std::vector<float> inline getScaleFactors()
         {
-            return mvScaleFactor;
+            return scaleFactors;
         }
 
-        std::vector<float> inline GetInverseScaleFactors()
+        std::vector<float> inline getInverseScaleFactors()
         {
-            return mvInvScaleFactor;
+            return inverseScaleFactors;
         }
 
-        std::vector<float> inline GetScaleSigmaSquares()
+        std::vector<float> inline getScaleSigmaSquares()
         {
-            return mvLevelSigma2;
+            return levelSigmaSquares;
         }
 
-        std::vector<float> inline GetInverseScaleSigmaSquares()
+        std::vector<float> inline getInverseScaleSigmaSquares()
         {
-            return mvInvLevelSigma2;
+            return inverseLevelSigmaSquares;
         }
 
-        std::vector<cv::Mat> mvImagePyramid;
+        std::vector<cv::Mat> imagePyramid;
 
     protected:
-        void ComputePyramid(cv::Mat image);
-        void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
-        std::vector<cv::KeyPoint> DistributeOctTree(const std::vector<cv::KeyPoint> &vToDistributeKeys, const int &minX,
-                                                    const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
+        void computePyramid(cv::Mat image_in);
+        void computeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &keypointsPerLevel_out);
+        std::vector<cv::KeyPoint> distributeOctTree(const std::vector<cv::KeyPoint> &keysToDistribute_in, const int &minX_in,
+                                                    const int &maxX_in, const int &minY_in, const int &maxY_in, const int &featureCount_in, const int &level_in);
 
-        void ComputeKeyPointsOld(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
-        std::vector<cv::Point> pattern;
+        void computeKeyPointsOld(std::vector<std::vector<cv::KeyPoint>> &keypointsPerLevel_out);
+        std::vector<cv::Point> briefPattern;
 
-        int nfeatures;
+        int featureCount;
         double scaleFactor;
-        int nlevels;
-        int iniThFAST;
-        int minThFAST;
+        int levelCount;
+        int initialFastThreshold;
+        int minimumFastThreshold;
 
-        std::vector<int> mnFeaturesPerLevel;
+        std::vector<int> featuresPerLevel;
 
-        std::vector<int> umax;
+        std::vector<int> orientationMaxOffset;
 
-        std::vector<float> mvScaleFactor;
-        std::vector<float> mvInvScaleFactor;
-        std::vector<float> mvLevelSigma2;
-        std::vector<float> mvInvLevelSigma2;
+        std::vector<float> scaleFactors;
+        std::vector<float> inverseScaleFactors;
+        std::vector<float> levelSigmaSquares;
+        std::vector<float> inverseLevelSigmaSquares;
 
     public:
         // Adaptive FAST threshold: dynamically adjust thresholds when tracking degrades
-        void SetIniThFAST(int th) { iniThFAST = th; }
-        void SetMinThFAST(int th) { minThFAST = th; }
-        int GetIniThFAST() const { return iniThFAST; }
-        int GetMinThFAST() const { return minThFAST; }
+        void setInitialFastThreshold(int threshold_in) { initialFastThreshold = threshold_in; }
+        void setMinimumFastThreshold(int threshold_in) { minimumFastThreshold = threshold_in; }
+        int getInitialFastThreshold() const { return initialFastThreshold; }
+        int getMinimumFastThreshold() const { return minimumFastThreshold; }
     };
 
 } // namespace core

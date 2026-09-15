@@ -691,24 +691,24 @@ TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
      * effect on the verifier. This exercises configFromSystemParams()
      * threading distinctive, non-default loaded values through, proving the
      * wiring actually exists now. */
-    types::SystemParams *params            = types::SystemParams::GetParams();
+    types::SystemParams *params            = types::SystemParams::getParams();
     const auto    savedVerification = params->verification;
     const auto    savedFactor       = params->factor;
 
-    params->verification.max_normal_angle_deg        = 17.5F;
-    params->verification.max_offset_m                = 0.42F;
-    params->verification.max_support_dist_m          = 0.31F;
-    params->verification.min_inlier_ratio            = 0.7F;
-    params->verification.max_condition_number        = 55.0F;
-    params->verification.ambiguity_margin_inliers    = 2U;
-    params->verification.max_walls_per_room          = 12U;
-    params->verification.max_hypotheses              = 500U;
-    params->verification.max_support_sample_per_wall = 32U;
-    params->verification.min_abs_cos_normal_angle    = 0.7F;
-    params->factor.sigma_theta_rad                   = 0.11F;
-    params->factor.sigma_offset_m                    = 0.09F;
-    params->factor.huber_delta                       = 2.0F;
-    params->factor.optimizer_iterations              = 7U;
+    params->verification.maxNormalAngle_deg        = 17.5F;
+    params->verification.maxOffset_m                = 0.42F;
+    params->verification.maxSupportDist_m          = 0.31F;
+    params->verification.minInlierRatio            = 0.7F;
+    params->verification.maxConditionNumber        = 55.0F;
+    params->verification.ambiguityMarginInliers    = 2U;
+    params->verification.maxWallsPerRoom          = 12U;
+    params->verification.maxHypotheses              = 500U;
+    params->verification.maxSupportSamplePerWall = 32U;
+    params->verification.minAbsCosNormalAngle    = 0.7F;
+    params->factor.sigmaTheta_rad                   = 0.11F;
+    params->factor.sigmaOffset_m                    = 0.09F;
+    params->factor.huberDelta                       = 2.0F;
+    params->factor.optimizerIterations              = 7U;
 
     const semantic::SemanticVerifyConfig config =
         semantic::SemanticVerify::configFromSystemParams();

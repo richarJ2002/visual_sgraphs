@@ -157,10 +157,10 @@ SemanticSegmentation::SemanticSegmentation(Atlas *pAtlas)
     mpAtlas = pAtlas;
 
     /* Get the system parameters */
-    sysParams = types::SystemParams::GetParams();
+    sysParams = types::SystemParams::getParams();
 
     /* Set the booleans according to the mode of operation */
-    mGeoRuns = !(sysParams->general.mode_of_operation ==
+    mGeoRuns = !(sysParams->general.modeOfOperation ==
                  types::SystemParams::general::ModeOfOperation::SEM);
 }
 
@@ -513,12 +513,12 @@ void SemanticSegmentation::threshSeparatePointCloud(
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr         &thisKFPointCloud)
 {
     /* Extract parameters on thresholds */
-    const uint8_t confidenceThresh = sysParams->sem_seg.conf_thresh * 255;
-    const float   probThresh       = sysParams->sem_seg.prob_thresh;
+    const uint8_t confidenceThresh = sysParams->semSeg.confThresh * 255;
+    const float   probThresh       = sysParams->semSeg.probThresh;
     const float   distanceThreshNear =
-        sysParams->pointcloud.distance_thresh.first;
+        sysParams->pointcloud.distanceThresh.first;
     const float distanceThreshFar =
-        sysParams->pointcloud.distance_thresh.second;
+        sysParams->pointcloud.distanceThresh.second;
 
     /* Parse the PointCloud2 message */
     const int width      = pclPc2SegPrb->width;
@@ -690,14 +690,14 @@ std::vector<std::vector<
         /* Downsample points into grid based on points within voxel grid */
         filteredCloud = Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
             filteredCloud,
-            sysParams->sem_seg.pointcloud.downsample.leaf_size,
-            sysParams->sem_seg.pointcloud.downsample.min_points_per_voxel);
+            sysParams->semSeg.pointcloud.downsample.leafSize,
+            sysParams->semSeg.pointcloud.downsample.minPointsPerVoxel);
 
         /* Remove points that are statically isolated from neighbors */
         filteredCloud = Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(
             filteredCloud,
-            sysParams->sem_seg.pointcloud.outlier_removal.std_threshold,
-            sysParams->sem_seg.pointcloud.outlier_removal.mean_threshold);
+            sysParams->semSeg.pointcloud.outlierRemoval.stdThreshold,
+            sysParams->semSeg.pointcloud.outlierRemoval.meanThreshold);
 
         /*!
          * Filtering removes arbitrary points, so the result is no longer an
@@ -728,7 +728,7 @@ std::vector<std::vector<
          * greater than a threshold. This parameter is set in
          * `system_params.yaml`
          */
-        if (filteredCloud->points.size() > sysParams->seg.pointclouds_thresh)
+        if (filteredCloud->points.size() > sysParams->seg.pointcloudsThresh)
         {
             extractedPlanes =
                 Utils::ransacPlaneFitting<pcl::PointXYZRGBA,
@@ -831,7 +831,7 @@ void SemanticSegmentation::updatePlaneData(
                 globalPlaneCloud,
                 Eigen::Matrix4d::Identity(),
                 semanticType,
-                sysParams->seg.plane_association.ominus_thresh,
+                sysParams->seg.planeAssociation.ominusThresh,
                 -1.0F,
                 pKF->GetCameraCenter().cast<double>());
 
@@ -865,9 +865,9 @@ void SemanticSegmentation::updatePlaneData(
                      */
                     if (semanticType == vs_graphs::core::geometric::Plane::planeVariant::WALL)
                     {
-                        const types::SystemParams::sem_seg::WallCreation
+                        const types::SystemParams::semSeg::WallCreation
                             &wallCreationParams =
-                                sysParams->sem_seg.wallCreation;
+                                sysParams->semSeg.wallCreation;
 
                         WallComponentSupport connectedSupport;
 

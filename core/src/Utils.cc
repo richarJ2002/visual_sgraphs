@@ -301,47 +301,47 @@ bool finiteWallExtentsAreCompatible(
 }
 } // namespace
 
-double Utils::calculateEuclideanDistance(const Eigen::Vector3f &p1,
-                                         const Eigen::Vector3f &p2)
+double Utils::calculateEuclideanDistance(const Eigen::Vector3f &point1_in,
+                                         const Eigen::Vector3f &point2_in)
 {
-    double dx = p1.x() - p2.x();
-    double dy = p1.y() - p2.y();
-    double dz = p1.z() - p2.z();
+    double dx = point1_in.x() - point2_in.x();
+    double dy = point1_in.y() - point2_in.y();
+    double dz = point1_in.z() - point2_in.z();
     return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-double Utils::calculateDistancePointToPlane(const Eigen::Vector4d &plane,
-                                            const Eigen::Vector3d &point)
+double Utils::calculateDistancePointToPlane(const Eigen::Vector4d &plane_in,
+                                            const Eigen::Vector3d &point_in)
 {
-    // Find the distance of the point from a given plane
-    return fabs(plane.head<3>().dot(point) + plane(3));
+    // Find the distance of the point_in from a given plane_in
+    return fabs(plane_in.head<3>().dot(point_in) + plane_in(3));
 }
 
-Eigen::Vector3d Utils::lineIntersectsPlane(const Eigen::Vector4d &plane,
-                                           const Eigen::Vector3d &lineStart,
-                                           const Eigen::Vector3d &lineEnd)
+Eigen::Vector3d Utils::lineIntersectsPlane(const Eigen::Vector4d &plane_in,
+                                           const Eigen::Vector3d &lineStart_in,
+                                           const Eigen::Vector3d &lineEnd_in)
 {
     // Calculate the direction vector of the line
-    Eigen::Vector3d lineDirection = lineEnd - lineStart;
+    Eigen::Vector3d lineDirection = lineEnd_in - lineStart_in;
 
-    // [TODO] - check if the line is parallel to the plane
+    // [TODO] - check if the line is parallel to the plane_in
 
     // Calculate the intersection point
-    double t = -(plane.head<3>().dot(lineStart) + plane(3)) /
-               plane.head<3>().dot(lineDirection);
-    return lineStart + t * lineDirection;
+    double t = -(plane_in.head<3>().dot(lineStart_in) + plane_in(3)) /
+               plane_in.head<3>().dot(lineDirection);
+    return lineStart_in + t * lineDirection;
 }
 
-bool Utils::arePlanesFacingEachOther(const vs_graphs::core::geometric::Plane *plane1,
-                                     const vs_graphs::core::geometric::Plane *plane2)
+bool Utils::arePlanesFacingEachOther(const vs_graphs::core::geometric::Plane *p_plane1_in,
+                                     const vs_graphs::core::geometric::Plane *p_plane2_in)
 {
-    if (plane1 == nullptr || plane2 == nullptr)
+    if (p_plane1_in == nullptr || p_plane2_in == nullptr)
     {
         return false;
     }
 
-    Eigen::Vector4d equation1 = plane1->getGlobalEquation().coeffs();
-    Eigen::Vector4d equation2 = plane2->getGlobalEquation().coeffs();
+    Eigen::Vector4d equation1 = p_plane1_in->getGlobalEquation().coeffs();
+    Eigen::Vector4d equation2 = p_plane2_in->getGlobalEquation().coeffs();
 
     const double normalNorm1 = equation1.head<3>().norm();
     const double normalNorm2 = equation2.head<3>().norm();
@@ -359,7 +359,7 @@ bool Utils::arePlanesFacingEachOther(const vs_graphs::core::geometric::Plane *pl
         std::abs(equation1.head<3>().dot(equation2.head<3>()));
 
     const double minimumParallelAlignment =
-        std::abs(types::SystemParams::GetParams()->room_seg.plane_facing_dot_thresh);
+        std::abs(types::SystemParams::getParams()->roomSeg.planeFacingDotThresh);
 
     if (normalAlignment < minimumParallelAlignment)
     {
@@ -382,17 +382,17 @@ bool Utils::arePlanesFacingEachOther(const vs_graphs::core::geometric::Plane *pl
     return perpendicularSeparation_m > 1e-3;
 }
 
-bool Utils::arePlanesApartEnough(const vs_graphs::core::geometric::Plane *plane1,
-                                 const vs_graphs::core::geometric::Plane *plane2,
-                                 const double           &threshold)
+bool Utils::arePlanesApartEnough(const vs_graphs::core::geometric::Plane *p_plane1_in,
+                                 const vs_graphs::core::geometric::Plane *p_plane2_in,
+                                 const double           &threshold_in)
 {
-    if (plane1 == nullptr || plane2 == nullptr)
+    if (p_plane1_in == nullptr || p_plane2_in == nullptr)
     {
         return false;
     }
 
-    Eigen::Vector4d equation1 = plane1->getGlobalEquation().coeffs();
-    Eigen::Vector4d equation2 = plane2->getGlobalEquation().coeffs();
+    Eigen::Vector4d equation1 = p_plane1_in->getGlobalEquation().coeffs();
+    Eigen::Vector4d equation2 = p_plane2_in->getGlobalEquation().coeffs();
 
     const double normalNorm1 = equation1.head<3>().norm();
     const double normalNorm2 = equation2.head<3>().norm();
@@ -421,20 +421,20 @@ bool Utils::arePlanesApartEnough(const vs_graphs::core::geometric::Plane *plane1
     const double perpendicularSeparation_m =
         std::abs(equation1(3) - equation2(3));
 
-    return perpendicularSeparation_m > threshold;
+    return perpendicularSeparation_m > threshold_in;
 }
 
-bool Utils::arePlanesPerpendicular(const vs_graphs::core::geometric::Plane *plane1,
-                                   const vs_graphs::core::geometric::Plane *plane2)
+bool Utils::arePlanesPerpendicular(const vs_graphs::core::geometric::Plane *p_plane1_in,
+                                   const vs_graphs::core::geometric::Plane *p_plane2_in)
 {
     // Get the threshold value
     double threshold =
-        types::SystemParams::GetParams()->room_seg.walls_perpendicularity_thresh *
+        types::SystemParams::getParams()->roomSeg.wallsPerpendicularityThresh *
         Utils::DEG_TO_RAD;
 
     // Extract and normalize plane normals
-    Eigen::Vector3d normal1 = plane1->getGlobalEquation().normal().normalized();
-    Eigen::Vector3d normal2 = plane2->getGlobalEquation().normal().normalized();
+    Eigen::Vector3d normal1 = p_plane1_in->getGlobalEquation().normal().normalized();
+    Eigen::Vector3d normal2 = p_plane2_in->getGlobalEquation().normal().normalized();
 
     // Compute the absolute dot product (clamped for safety)
     double dotProduct = std::clamp(std::abs(normal1.dot(normal2)), -1.0, 1.0);
@@ -446,17 +446,17 @@ bool Utils::arePlanesPerpendicular(const vs_graphs::core::geometric::Plane *plan
     return std::abs(angle - M_PI_2) < threshold;
 }
 
-bool Utils::arePlanesParallel(const vs_graphs::core::geometric::Plane *plane1,
-                              const vs_graphs::core::geometric::Plane *plane2)
+bool Utils::arePlanesParallel(const vs_graphs::core::geometric::Plane *p_plane1_in,
+                              const vs_graphs::core::geometric::Plane *p_plane2_in)
 {
     // Get the threshold value
     double threshold =
-        types::SystemParams::GetParams()->room_seg.walls_parallelism_thresh *
+        types::SystemParams::getParams()->roomSeg.wallsParallelismThresh *
         Utils::DEG_TO_RAD;
 
     // Extract and normalize plane normals
-    Eigen::Vector3d normal1 = plane1->getGlobalEquation().normal().normalized();
-    Eigen::Vector3d normal2 = plane2->getGlobalEquation().normal().normalized();
+    Eigen::Vector3d normal1 = p_plane1_in->getGlobalEquation().normal().normalized();
+    Eigen::Vector3d normal2 = p_plane2_in->getGlobalEquation().normal().normalized();
 
     // Compute the dot product (clamped to avoid floating-point domain errors)
     double dotProduct = std::clamp(std::abs(normal1.dot(normal2)), -1.0, 1.0);
@@ -469,22 +469,22 @@ bool Utils::arePlanesParallel(const vs_graphs::core::geometric::Plane *plane1,
 }
 
 std::vector<std::pair<vs_graphs::core::geometric::Plane *, vs_graphs::core::geometric::Plane *>>
-    Utils::getFacingPlanes(const std::vector<vs_graphs::core::geometric::Plane *> &planes)
+    Utils::getFacingPlanes(const std::vector<vs_graphs::core::geometric::Plane *> &planes_in)
 {
     // Variables
-    vs_graphs::core::types::SystemParams *sysParams = vs_graphs::core::types::SystemParams::GetParams();
+    vs_graphs::core::types::SystemParams *sysParams = vs_graphs::core::types::SystemParams::getParams();
     std::vector<std::pair<vs_graphs::core::geometric::Plane *, vs_graphs::core::geometric::Plane *>> facingPlanes;
-    double minValidSpace = sysParams->room_seg.min_wall_distance_thresh;
+    double minValidSpace = sysParams->roomSeg.minWallDistanceThresh;
 
-    // Loop through all the planes
-    for (size_t idx1 = 0; idx1 < planes.size(); ++idx1)
+    // Loop through all the planes_in
+    for (size_t idx1 = 0; idx1 < planes_in.size(); ++idx1)
     {
-        vs_graphs::core::geometric::Plane *plane1 = planes[idx1];
-        for (size_t idx2 = idx1 + 1; idx2 < planes.size(); ++idx2)
+        vs_graphs::core::geometric::Plane *plane1 = planes_in[idx1];
+        for (size_t idx2 = idx1 + 1; idx2 < planes_in.size(); ++idx2)
         {
             // Variables
-            vs_graphs::core::geometric::Plane *plane2 = planes[idx2];
-            // Check if the planes are facing each other
+            vs_graphs::core::geometric::Plane *plane2 = planes_in[idx2];
+            // Check if the planes_in are facing each other
             bool isFacing = Utils::arePlanesFacingEachOther(plane1, plane2);
             if (isFacing)
             {
@@ -496,51 +496,51 @@ std::vector<std::pair<vs_graphs::core::geometric::Plane *, vs_graphs::core::geom
     return facingPlanes;
 }
 
-Eigen::Vector4d Utils::correctPlaneDirection(const Eigen::Vector4d &plane)
+Eigen::Vector4d Utils::correctPlaneDirection(const Eigen::Vector4d &plane_in)
 {
     // Check if the transformation is needed
-    if (plane(3) > 0)
-        return -plane;
+    if (plane_in(3) > 0)
+        return -plane_in;
     else
-        return plane;
+        return plane_in;
 }
 
-g2o::Plane3D Utils::applyPoseToPlane(const Eigen::Matrix4d &kfPose,
-                                     const g2o::Plane3D    &plane)
+g2o::Plane3D Utils::applyPoseToPlane(const Eigen::Matrix4d &keyframePose_in,
+                                     const g2o::Plane3D    &plane_in)
 {
-    Eigen::Vector4d v = plane.coeffs();
+    Eigen::Vector4d v = plane_in.coeffs();
     Eigen::Vector4d v2;
-    Eigen::Matrix3d R = kfPose.block<3, 3>(0, 0);
+    Eigen::Matrix3d R = keyframePose_in.block<3, 3>(0, 0);
     v2.head<3>()      = R * v.head<3>();
-    v2(3)             = v(3) - kfPose.block<3, 1>(0, 3).dot(v2.head<3>());
+    v2(3)             = v(3) - keyframePose_in.block<3, 1>(0, 3).dot(v2.head<3>());
     return g2o::Plane3D(v2);
 }
 
 Eigen::Vector3d
-    Utils::computeCentroidFromPoints(const std::vector<Eigen::Vector3d> &points)
+    Utils::computeCentroidFromPoints(const std::vector<Eigen::Vector3d> &points_in)
 {
-    // Check if there are points in the vector
-    if (points.empty())
+    // Check if there are points_in in the vector
+    if (points_in.empty())
         return Eigen::Vector3d(0.0, 0.0, 0.0);
 
     // Variables
     Eigen::Vector3d sum(0.0, 0.0, 0.0);
 
-    // Calculate the sum of the points
-    for (const auto &point : points)
+    // Calculate the sum of the points_in
+    for (const auto &point : points_in)
         sum += point;
 
     // Return the centroid of the cluster
-    return sum / points.size();
+    return sum / points_in.size();
 }
 
 template <typename PointT>
 typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDownsample(
-    const typename pcl::PointCloud<PointT>::Ptr &cloud,
-    const float                                  leafSize,
-    const unsigned int                           minPointsPerVoxel)
+    const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
+    const float                                  leafSize_in,
+    const unsigned int                           minPointsPerVoxel_in)
 {
-    // The filtered point cloud object
+    // The filtered point p_cloud_in object
     typename pcl::PointCloud<PointT>::Ptr filteredCloud(
         new pcl::PointCloud<PointT>());
 
@@ -549,13 +549,13 @@ typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDownsample(
         new pcl::VoxelGrid<PointT>());
 
     // Set the parameters of the downsampling filter
-    downsampleFilter->setLeafSize(leafSize, leafSize, leafSize);
-    downsampleFilter->setMinimumPointsNumberPerVoxel(minPointsPerVoxel);
-    downsampleFilter->setInputCloud(cloud);
+    downsampleFilter->setLeafSize(leafSize_in, leafSize_in, leafSize_in);
+    downsampleFilter->setMinimumPointsNumberPerVoxel(minPointsPerVoxel_in);
+    downsampleFilter->setInputCloud(p_cloud_in);
 
     // Apply the downsampling filter
     downsampleFilter->filter(*filteredCloud);
-    filteredCloud->header = cloud->header;
+    filteredCloud->header = p_cloud_in->header;
     filteredCloud->width  = filteredCloud->size();
     filteredCloud->height = 1;
 
@@ -569,23 +569,23 @@ template pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
 
 template <typename PointT>
 typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDistanceFilter(
-    const typename pcl::PointCloud<PointT>::Ptr &cloud)
+    const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in)
 {
     // Variables
     double                        distance;
     const std::pair<float, float> thresholds =
-        types::SystemParams::GetParams()->pointcloud.distance_thresh;
+        types::SystemParams::getParams()->pointcloud.distanceThresh;
     const float thresholdNear = thresholds.first;
     const float thresholdFar  = thresholds.second;
 
-    // Define the filtered point cloud object
+    // Define the filtered point p_cloud_in object
     typename pcl::PointCloud<PointT>::Ptr filteredCloud(
         new pcl::PointCloud<PointT>());
-    filteredCloud->reserve(cloud->size());
+    filteredCloud->reserve(p_cloud_in->size());
 
-    // Filter the point cloud
-    std::copy_if(cloud->begin(),
-                 cloud->end(),
+    // Filter the point p_cloud_in
+    std::copy_if(p_cloud_in->begin(),
+                 p_cloud_in->end(),
                  std::back_inserter(filteredCloud->points),
                  [&](const PointT &p)
                  {
@@ -602,7 +602,7 @@ typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDistanceFilter(
 
     filteredCloud->height   = 1;
     filteredCloud->is_dense = false;
-    filteredCloud->header   = cloud->header;
+    filteredCloud->header   = p_cloud_in->header;
     filteredCloud->width    = filteredCloud->size();
 
     return filteredCloud;
@@ -613,30 +613,30 @@ template pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
 
 template <typename PointT>
 typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudOutlierRemoval(
-    const typename pcl::PointCloud<PointT>::Ptr &cloud,
-    const int                                    meanThresh,
-    const float                                  stdDevThresh)
+    const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
+    const int                                    meanThreshold_in,
+    const float                                  stdDevThreshold_in)
 {
-    // Check if the input cloud is empty
-    if (cloud->points.size() == 0)
-        return cloud;
+    // Check if the input p_cloud_in is empty
+    if (p_cloud_in->points.size() == 0)
+        return p_cloud_in;
 
-    // Create a container for the filtered cloud
+    // Create a container for the filtered p_cloud_in
     typename pcl::PointCloud<PointT>::Ptr filteredCloud(
         new pcl::PointCloud<PointT>);
 
     // Create the filtering object: StatisticalOutlierRemoval
     pcl::StatisticalOutlierRemoval<PointT> outlierRemoval;
-    outlierRemoval.setInputCloud(cloud);
-    outlierRemoval.setMeanK(meanThresh);
-    outlierRemoval.setStddevMulThresh(stdDevThresh);
+    outlierRemoval.setInputCloud(p_cloud_in);
+    outlierRemoval.setMeanK(meanThreshold_in);
+    outlierRemoval.setStddevMulThresh(stdDevThreshold_in);
     outlierRemoval.filter(*filteredCloud);
 
-    filteredCloud->header = cloud->header;
+    filteredCloud->header = p_cloud_in->header;
     filteredCloud->width  = filteredCloud->size();
     filteredCloud->height = 1;
 
-    // Return the filtered cloud
+    // Return the filtered p_cloud_in
     return filteredCloud;
 }
 template pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
@@ -646,18 +646,18 @@ template pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
         const float);
 
 std::pair<double, double> Utils::computePlaneWidthHeight(
-    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr cloud)
+    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud_in)
 {
-    if (cloud->points.empty())
+    if (p_cloud_in->points.empty())
         return std::make_pair(0.0, 0.0);
 
-    // Apply PCA to find the principal axes of the point cloud
+    // Apply PCA to find the principal axes of the point p_cloud_in
     pcl::PCA<pcl::PointXYZRGBA> pca;
-    pca.setInputCloud(cloud);
+    pca.setInputCloud(p_cloud_in);
 
     // Project all points onto the PCA space
     pcl::PointCloud<pcl::PointXYZRGBA> projected;
-    pca.project(*cloud, projected);
+    pca.project(*p_cloud_in, projected);
 
     // Find min/max along each principal axis
     pcl::PointXYZRGBA minPt, maxPt;
@@ -672,18 +672,18 @@ std::pair<double, double> Utils::computePlaneWidthHeight(
 
 template <typename PointT, template <typename> class SegmentationType>
 std::vector<std::pair<typename pcl::PointCloud<PointT>::Ptr, Eigen::Vector4d>>
-    Utils::ransacPlaneFitting(typename pcl::PointCloud<PointT>::Ptr &cloud)
+    Utils::ransacPlaneFitting(typename pcl::PointCloud<PointT>::Ptr &cloud_inout)
 {
     /* Initialize Variables */
     std::vector<
         std::pair<typename pcl::PointCloud<PointT>::Ptr, Eigen::Vector4d>>
                   extractedPlanes;
-    types::SystemParams *sysParams = types::SystemParams::GetParams();
+    types::SystemParams *sysParams = types::SystemParams::getParams();
 
     /* Extract planes from point clouds */
     for (unsigned int i = 0;
-         i < sysParams->seg.ransac.max_planes &&
-         cloud->points.size() > sysParams->seg.pointclouds_thresh;
+         i < sysParams->seg.ransac.maxPlanes &&
+         cloud_inout->points.size() > sysParams->seg.pointcloudsThresh;
          i++)
     {
         try
@@ -697,10 +697,10 @@ std::vector<std::pair<typename pcl::PointCloud<PointT>::Ptr, Eigen::Vector4d>>
             SegmentationType<PointT> seg;
 
             /* Fill the values of the segmentation object */
-            seg.setInputCloud(cloud);
+            seg.setInputCloud(cloud_inout);
             seg.setNumberOfThreads(8);
-            seg.setMaxIterations(sysParams->seg.ransac.max_iterations);
-            seg.setDistanceThreshold(sysParams->seg.ransac.distance_thresh);
+            seg.setMaxIterations(sysParams->seg.ransac.maxIterations);
+            seg.setDistanceThreshold(sysParams->seg.ransac.distanceThresh);
             seg.setOptimizeCoefficients(true);
             seg.setMethodType(pcl::SAC_RANSAC);
             seg.setModelType(pcl::SACMODEL_PLANE);
@@ -733,51 +733,51 @@ std::vector<std::pair<typename pcl::PointCloud<PointT>::Ptr, Eigen::Vector4d>>
             typename pcl::PointCloud<PointT>::Ptr extractedCloud(
                 new pcl::PointCloud<PointT>);
 
-            /* Create a point cloud containing the points within the plane */
+            /* Create a point cloud_inout containing the points within the plane */
             for (const auto &idx : inliers->indices)
             {
-                /* Fill the point cloud with indices */
+                /* Fill the point cloud_inout with indices */
                 PointT inPoint;
-                inPoint.r = cloud->points[idx].r;
-                inPoint.g = cloud->points[idx].g;
-                inPoint.b = cloud->points[idx].b;
-                inPoint.x = cloud->points[idx].x;
-                inPoint.y = cloud->points[idx].y;
-                inPoint.z = cloud->points[idx].z;
-                inPoint.a = cloud->points[idx].a;
+                inPoint.r = cloud_inout->points[idx].r;
+                inPoint.g = cloud_inout->points[idx].g;
+                inPoint.b = cloud_inout->points[idx].b;
+                inPoint.x = cloud_inout->points[idx].x;
+                inPoint.y = cloud_inout->points[idx].y;
+                inPoint.z = cloud_inout->points[idx].z;
+                inPoint.a = cloud_inout->points[idx].a;
 
-                /* Add the point to the extrcated cloud of the plane */
+                /* Add the point to the extrcated cloud_inout of the plane */
                 extractedCloud->points.push_back(inPoint);
             }
 
-            /* Set the width of the cloud */
+            /* Set the width of the cloud_inout */
             extractedCloud->width =
                 static_cast<std::uint32_t>(extractedCloud->points.size());
 
-            /* Set the height of the cloud */
+            /* Set the height of the cloud_inout */
             extractedCloud->height = 1;
 
-            /* Extract flag to indicate that the cloud is dense */
-            extractedCloud->is_dense = cloud->is_dense;
+            /* Extract flag to indicate that the cloud_inout is dense */
+            extractedCloud->is_dense = cloud_inout->is_dense;
 
-            /* Add the extracted cloud to the vector */
+            /* Add the extracted cloud_inout to the vector */
             extractedPlanes.push_back(std::make_pair(extractedCloud, plane));
 
-            /* Remove the inliers into a distinct output cloud. PCL filters do
-             * not preserve organized-cloud metadata reliably when their input
+            /* Remove the inliers into a distinct output cloud_inout. PCL filters do
+             * not preserve organized-cloud_inout metadata reliably when their input
              * and output alias; that produced width/size mismatches during
              * repeated plane extraction. */
-            extract.setInputCloud(cloud);
+            extract.setInputCloud(cloud_inout);
             extract.setIndices(inliers);
             extract.setNegative(true);
             typename pcl::PointCloud<PointT>::Ptr p_remainingCloud(
                 new pcl::PointCloud<PointT>);
             extract.filter(*p_remainingCloud);
-            p_remainingCloud->header   = cloud->header;
+            p_remainingCloud->header   = cloud_inout->header;
             p_remainingCloud->width    = p_remainingCloud->size();
             p_remainingCloud->height   = 1;
-            p_remainingCloud->is_dense = cloud->is_dense;
-            cloud                      = std::move(p_remainingCloud);
+            p_remainingCloud->is_dense = cloud_inout->is_dense;
+            cloud_inout                      = std::move(p_remainingCloud);
         }
         catch (const std::exception &e)
         {
@@ -795,9 +795,9 @@ template std::vector<
     Utils::ransacPlaneFitting<pcl::PointXYZRGBA, pcl::WeightedSACSegmentation>(
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
 
-vs_graphs::core::geometric::Plane::planeVariant Utils::getPlaneTypeFromClassId(int clsId)
+vs_graphs::core::geometric::Plane::planeVariant Utils::getPlaneTypeFromClassId(int classId_in)
 {
-    switch (clsId)
+    switch (classId_in)
     {
     case 0:
         return vs_graphs::core::geometric::Plane::planeVariant::GROUND;
@@ -812,9 +812,9 @@ vs_graphs::core::geometric::Plane::planeVariant Utils::getPlaneTypeFromClassId(i
     }
 }
 
-int Utils::getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::planeVariant planeType)
+int Utils::getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::planeVariant planeType_in)
 {
-    switch (planeType)
+    switch (planeType_in)
     {
     case vs_graphs::core::geometric::Plane::planeVariant::GROUND:
         return 0;
@@ -829,50 +829,50 @@ int Utils::getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::planeVaria
     }
 }
 
-bool Utils::pointOnPlane(Eigen::Vector4d planeEquation, MapPoint *mapPoint)
+bool Utils::pointOnPlane(Eigen::Vector4d planeEquation_in, MapPoint *p_mapPoint_in)
 {
-    if (mapPoint->isBad())
+    if (p_mapPoint_in->isBad())
         return false;
 
     // Find the distance of the point from a given plane
     double pointPlaneDist =
-        calculateDistancePointToPlane(planeEquation,
-                                      mapPoint->GetWorldPos().cast<double>());
+        calculateDistancePointToPlane(planeEquation_in,
+                                      p_mapPoint_in->GetWorldPos().cast<double>());
 
     // Apply a threshold
-    if (pointPlaneDist < types::SystemParams::GetParams()->seg.plane_point_dist_thresh)
+    if (pointPlaneDist < types::SystemParams::getParams()->seg.planePointDistThresh)
         return true;
 
     return false;
 }
 
 int Utils::associatePlanes(
-    const vector<geometric::Plane *>                       &mappedPlanes,
-    g2o::Plane3D                                 givenPlane,
-    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr givenCloud,
-    const Eigen::Matrix4d                       &kfPose,
-    const geometric::Plane::planeVariant                    obsPlaneType,
-    const float                                  threshold,
+    const vector<geometric::Plane *>                       &mappedPlanes_in,
+    g2o::Plane3D                                 observedPlane_in,
+    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
+    const Eigen::Matrix4d                       &keyframePose_in,
+    const geometric::Plane::planeVariant                    observedPlaneType_in,
+    const float                                  threshold_in,
     const float                           maximumFiniteCloudDistance_m_in,
     const std::optional<Eigen::Vector3d> &observationOrigin_World_m_in)
 {
     /* Return no association when no mapped planes are available */
-    if (mappedPlanes.empty())
+    if (mappedPlanes_in.empty())
     {
         return -1;
     }
 
     /* Confirm the observed plane point cloud is valid */
-    if (givenCloud == nullptr || givenCloud->empty())
+    if (p_observedCloud_in == nullptr || p_observedCloud_in->empty())
     {
         return -1;
     }
 
     /* Extract the system parameters */
-    types::SystemParams *sysParams = types::SystemParams::GetParams();
+    types::SystemParams *sysParams = types::SystemParams::getParams();
 
     /* Extract and normalize the observed plane equation */
-    Eigen::Vector4d givenEquation   = givenPlane.coeffs();
+    Eigen::Vector4d givenEquation   = observedPlane_in.coeffs();
     const double    givenNormalNorm = givenEquation.head<3>().norm();
 
     /* Confirm norm is valid */
@@ -889,7 +889,7 @@ int Utils::associatePlanes(
 
     std::size_t validGivenPointCount = 0;
 
-    for (const pcl::PointXYZRGBA &point : givenCloud->points)
+    for (const pcl::PointXYZRGBA &point : p_observedCloud_in->points)
     {
         if (!pcl::isFinite(point))
         {
@@ -914,32 +914,32 @@ int Utils::associatePlanes(
     /*!
      * Association thresholds.
      *
-     * @note        The ominus threshold is used here as the maximum angular
+     * @note        The ominus threshold_in is used here as the maximum angular
      *              difference in radians.
      */
     const double maximumAngularDifference =
-        std::max(0.01, static_cast<double>(threshold));
+        std::max(0.01, static_cast<double>(threshold_in));
 
     const double maximumPlaneDistance = std::max(
         0.01,
-        static_cast<double>(sysParams->seg.plane_association.distance_thresh));
+        static_cast<double>(sysParams->seg.planeAssociation.distanceThresh));
 
     const double maximumCentroidDistance = std::max(
         0.10,
-        static_cast<double>(sysParams->seg.plane_association.centroid_thresh));
+        static_cast<double>(sysParams->seg.planeAssociation.centroidThresh));
 
     const bool useWallExtension =
-        obsPlaneType == geometric::Plane::planeVariant::WALL &&
-        sysParams->sem_seg.reassociate.wallExtension.enabled;
+        observedPlaneType_in == geometric::Plane::planeVariant::WALL &&
+        sysParams->semSeg.reassociate.wallExtension.enabled;
 
     const double configuredFiniteCloudDistance_m =
         maximumFiniteCloudDistance_m_in > 0.0F
             ? static_cast<double>(maximumFiniteCloudDistance_m_in)
         : useWallExtension
-            ? static_cast<double>(sysParams->sem_seg.reassociate.wallExtension
+            ? static_cast<double>(sysParams->semSeg.reassociate.wallExtension
                                       .maximumInPlaneGap_m)
-            : static_cast<double>(sysParams->seg.plane_association
-                                      .cluster_separation.tolerance);
+            : static_cast<double>(sysParams->seg.planeAssociation
+                                      .clusterSeparation.tolerance);
 
     const double maximumFiniteCloudDistance =
         std::max(0.05, configuredFiniteCloudDistance_m);
@@ -961,7 +961,7 @@ int Utils::associatePlanes(
     double bestAssociationScore = std::numeric_limits<double>::max();
 
     /* Iterate through every mapped plane */
-    for (geometric::Plane *mappedPlane : mappedPlanes)
+    for (geometric::Plane *mappedPlane : mappedPlanes_in)
     {
         /* Skip invalid mapped planes */
         if (mappedPlane == nullptr || mappedPlane->isBad())
@@ -991,9 +991,9 @@ int Utils::associatePlanes(
             mappedPlane->getExpectedPlaneType();
 
         const bool semanticTypesCompatible =
-            obsPlaneType == geometric::Plane::planeVariant::UNDEFINED ||
+            observedPlaneType_in == geometric::Plane::planeVariant::UNDEFINED ||
             mappedPlaneType == geometric::Plane::planeVariant::UNDEFINED ||
-            mappedPlaneType == obsPlaneType;
+            mappedPlaneType == observedPlaneType_in;
 
         if (!semanticTypesCompatible)
         {
@@ -1005,10 +1005,10 @@ int Utils::associatePlanes(
          * observation.
          *
          * @note        SemanticSegmentation now supplies both planes in the
-         *              global frame, therefore kfPose is normally identity.
+         *              global frame, therefore keyframePose_in is normally identity.
          */
         const g2o::Plane3D mappedPlaneInGivenFrame = Utils::applyPoseToPlane(
-            kfPose,
+            keyframePose_in,
             g2o::Plane3D(mappedGeometry.equation_World));
 
         Eigen::Vector4d mappedEquation = mappedPlaneInGivenFrame.coeffs();
@@ -1032,7 +1032,7 @@ int Utils::associatePlanes(
         }
 
         /* Keep observations from opposite sides as distinct wall faces. */
-        if (obsPlaneType == geometric::Plane::planeVariant::WALL &&
+        if (observedPlaneType_in == geometric::Plane::planeVariant::WALL &&
             observationOrigin_World_m_in.has_value() &&
             observationOrigin_World_m_in->allFinite())
         {
@@ -1089,11 +1089,11 @@ int Utils::associatePlanes(
         const bool finiteWallExtentsCompatible =
             useWallExtension && finiteWallExtentsAreCompatible(
                                     mappedCloud,
-                                    givenCloud,
+                                    p_observedCloud_in,
                                     mappedEquation.head<3>(),
-                                    sysParams->sem_seg.reassociate.wallExtension
+                                    sysParams->semSeg.reassociate.wallExtension
                                         .maximumInPlaneGap_m,
-                                    sysParams->sem_seg.reassociate.wallExtension
+                                    sysParams->semSeg.reassociate.wallExtension
                                         .minimumOrthogonalOverlap_m);
 
         /* Extract the global mapped-plane centroid */
@@ -1113,7 +1113,7 @@ int Utils::associatePlanes(
         mappedCloudSearch.setInputCloud(mappedCloud);
 
         const std::size_t samplingStride =
-            std::max<std::size_t>(1, givenCloud->size() / maximumSampleCount);
+            std::max<std::size_t>(1, p_observedCloud_in->size() / maximumSampleCount);
 
         std::size_t sampledPointCount     = 0;
         std::size_t overlappingPointCount = 0;
@@ -1124,11 +1124,11 @@ int Utils::associatePlanes(
 
         std::vector<float> nearestSquaredDistance(1);
 
-        for (std::size_t pointIndex = 0; pointIndex < givenCloud->size();
+        for (std::size_t pointIndex = 0; pointIndex < p_observedCloud_in->size();
              pointIndex += samplingStride)
         {
             const pcl::PointXYZRGBA &queryPoint =
-                givenCloud->points[pointIndex];
+                p_observedCloud_in->points[pointIndex];
 
             if (!pcl::isFinite(queryPoint))
             {
@@ -1245,31 +1245,31 @@ int Utils::associatePlanes(
 }
 
 void Utils::clusterPlaneClouds(
-    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &cloud,
-    std::vector<pcl::PointIndices>                &clusterIndices)
+    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &p_cloud_in,
+    std::vector<pcl::PointIndices>                &clusterIndices_out)
 {
     pcl::search::KdTree<pcl::PointXYZRGBA>::Ptr tree(
         new pcl::search::KdTree<pcl::PointXYZRGBA>);
-    tree->setInputCloud(cloud);
+    tree->setInputCloud(p_cloud_in);
     pcl::EuclideanClusterExtraction<pcl::PointXYZRGBA> ec;
     ec.setClusterTolerance(
-        types::SystemParams::GetParams()
-            ->seg.plane_association.cluster_separation.tolerance);
+        types::SystemParams::getParams()
+            ->seg.planeAssociation.clusterSeparation.tolerance);
     ec.setMinClusterSize(10);
     ec.setMaxClusterSize(2500000);
     ec.setSearchMethod(tree);
-    ec.setInputCloud(cloud);
-    ec.extract(clusterIndices);
+    ec.setInputCloud(p_cloud_in);
+    ec.extract(clusterIndices_out);
 }
 
-void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
+void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
 {
-    if (p_atlas_in == nullptr)
+    if (p_atlas_inout == nullptr)
     {
         return;
     }
 
-    types::SystemParams *p_systemParams = types::SystemParams::GetParams();
+    types::SystemParams *p_systemParams = types::SystemParams::getParams();
 
     bool mergedPlaneInPass = true;
 
@@ -1277,7 +1277,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
     {
         mergedPlaneInPass = false;
 
-        const std::vector<geometric::Plane *> mappedPlanes = p_atlas_in->GetAllPlanes();
+        const std::vector<geometric::Plane *> mappedPlanes = p_atlas_inout->GetAllPlanes();
 
         for (geometric::Plane *p_candidatePlane : mappedPlanes)
         {
@@ -1380,11 +1380,11 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 
             const bool useWallExtensionDistance =
                 p_candidatePlane->getPlaneType() == geometric::Plane::planeVariant::WALL &&
-                p_systemParams->sem_seg.reassociate.wallExtension.enabled;
+                p_systemParams->semSeg.reassociate.wallExtension.enabled;
 
             const float maximumFiniteCloudDistance_m =
                 useWallExtensionDistance
-                    ? p_systemParams->sem_seg.reassociate.wallExtension
+                    ? p_systemParams->semSeg.reassociate.wallExtension
                           .maximumInPlaneGap_m
                     : -1.0F;
 
@@ -1396,7 +1396,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 candidateAssociationGeometry.supportCloud,
                 Eigen::Matrix4d::Identity(),
                 p_candidatePlane->getPlaneType(),
-                p_systemParams->sem_seg.reassociate.association_thresh,
+                p_systemParams->semSeg.reassociate.associationThresh,
                 maximumFiniteCloudDistance_m);
 
             if (matchedPlaneId < 0)
@@ -1480,7 +1480,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             const geometric::Plane::planeVariant retainedPlaneType =
                 p_retainedPlane->getPlaneType();
 
-            for (semantic::Room *p_room : p_atlas_in->GetAllRooms())
+            for (semantic::Room *p_room : p_atlas_inout->GetAllRooms())
             {
                 if (p_room == nullptr || p_room->isBad())
                 {
@@ -1491,7 +1491,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 p_room->replaceGroundPlane(p_retiredPlane, p_retainedPlane);
             }
 
-            for (vs_graphs::core::semantic::Passage *p_passage : p_atlas_in->GetAllPassages())
+            for (vs_graphs::core::semantic::Passage *p_passage : p_atlas_inout->GetAllPassages())
             {
                 if (p_passage != nullptr)
                 {
@@ -1500,7 +1500,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 }
             }
 
-            for (KeyFrame *p_keyFrame : p_atlas_in->GetAllKeyFrames())
+            for (KeyFrame *p_keyFrame : p_atlas_inout->GetAllKeyFrames())
             {
                 if (p_keyFrame != nullptr && !p_keyFrame->isBad())
                 {
@@ -1509,7 +1509,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 }
             }
 
-            Map *p_currentMap = p_atlas_in->GetCurrentMap();
+            Map *p_currentMap = p_atlas_inout->GetCurrentMap();
 
             if (p_currentMap != nullptr)
             {
@@ -1545,7 +1545,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
     }
 }
 
-void Utils::reAssociateRooms(Atlas *mpAtlas)
+void Utils::reAssociateRooms(Atlas *p_atlas_inout)
 {
     /*!
      * Re-run the targeted provisional-room consolidation pass.
@@ -1554,7 +1554,7 @@ void Utils::reAssociateRooms(Atlas *mpAtlas)
      *              a confirmed room or corridor to absorb redundant,
      *              single-wall provisional structural elements.
      */
-    const std::vector<vs_graphs::core::semantic::Room *> allRooms = mpAtlas->GetAllRooms();
+    const std::vector<vs_graphs::core::semantic::Room *> allRooms = p_atlas_inout->GetAllRooms();
 
     for (vs_graphs::core::semantic::Room *room : allRooms)
     {
@@ -1598,7 +1598,7 @@ void Utils::reAssociateRooms(Atlas *mpAtlas)
          * Consolidate only redundant single-wall provisional structural
          * elements whose wall already belongs to this confirmed room.
          */
-        Utils::consolidateProvisionalRooms(room, mpAtlas);
+        Utils::consolidateProvisionalRooms(room, p_atlas_inout);
     }
 }
 
@@ -1612,12 +1612,12 @@ void Utils::fuseDuplicateRoomsAfterMerge(
         return;
     }
 
-    const types::SystemParams *p_systemParameters = types::SystemParams::GetParams();
+    const types::SystemParams *p_systemParameters = types::SystemParams::getParams();
 
     const double maximumRoomCentroidDistance_m =
         p_systemParameters != nullptr
             ? static_cast<double>(
-                  p_systemParameters->room_seg.center_distance_thresh)
+                  p_systemParameters->roomSeg.centerDistanceThresh)
             : 2.0;
 
     constexpr double minimumRoomSideDistance_m = 0.20;
@@ -1957,14 +1957,14 @@ void Utils::fuseDuplicateRoomsAfterMerge(
 
         const double mergeOpeningMargin_m =
             p_systemParameters != nullptr
-                ? static_cast<double>(p_systemParameters->room_seg
+                ? static_cast<double>(p_systemParameters->roomSeg
                                           .passagePartition.openingMargin_m)
                 : 0.20;
 
         const double mergeMinimumSideDistance_m =
             p_systemParameters != nullptr
                 ? static_cast<double>(
-                      p_systemParameters->room_seg.passagePartition
+                      p_systemParameters->roomSeg.passagePartition
                           .minimumSideDistance_m)
                 : 0.30;
 
@@ -2242,8 +2242,8 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
                   return p_firstPassage->getId() < p_secondPassage->getId();
               });
 
-    const types::SystemParams::sem_seg::PassageDetection &passageParameters =
-        types::SystemParams::GetParams()->sem_seg.passageDetection;
+    const types::SystemParams::semSeg::PassageDetection &passageParameters =
+        types::SystemParams::getParams()->semSeg.passageDetection;
 
     /*
      * Use the same geometrically constrained identity gate as online passage
@@ -2948,18 +2948,18 @@ void Utils::propagateSemanticPoseCorrections(
     p_map_inout->SetSkeletonEdges(skeletonEdges_OldWorld_m);
 }
 
-void Utils::consolidateProvisionalRooms(vs_graphs::core::semantic::Room *selectedRoom,
-                                        Atlas           *mpAtlas)
+void Utils::consolidateProvisionalRooms(vs_graphs::core::semantic::Room *p_selectedRoom_inout,
+                                        Atlas           *p_atlas_inout)
 {
     /* Confirm the selected room is valid */
-    if (selectedRoom == nullptr || selectedRoom->isBad())
+    if (p_selectedRoom_inout == nullptr || p_selectedRoom_inout->isBad())
     {
         return;
     }
 
     /* Extract all walls assigned to the cluster-backed room */
     const std::vector<vs_graphs::core::geometric::Plane *> selectedWalls =
-        selectedRoom->getWalls();
+        p_selectedRoom_inout->getWalls();
 
     /* Create a set containing the selected wall IDs */
     std::unordered_set<int> selectedWallIds;
@@ -2981,20 +2981,20 @@ void Utils::consolidateProvisionalRooms(vs_graphs::core::semantic::Room *selecte
     }
 
     /* Extract all rooms and provisional structural elements */
-    const std::vector<vs_graphs::core::semantic::Room *> allRooms = mpAtlas->GetAllRooms();
+    const std::vector<vs_graphs::core::semantic::Room *> allRooms = p_atlas_inout->GetAllRooms();
 
     /* Iterate through every possible redundant structural element */
     for (vs_graphs::core::semantic::Room *candidateRoom : allRooms)
     {
         /* Skip invalid rooms and the selected room itself */
-        if (candidateRoom == nullptr || candidateRoom == selectedRoom ||
+        if (candidateRoom == nullptr || candidateRoom == p_selectedRoom_inout ||
             candidateRoom->isBad())
         {
             continue;
         }
 
         const std::vector<vs_graphs::core::semantic::Passage *> activePassages =
-            mpAtlas->GetAllPassages();
+            p_atlas_inout->GetAllPassages();
         const bool candidateIsLiveProspective = std::any_of(
             activePassages.begin(),
             activePassages.end(),
@@ -3097,7 +3097,7 @@ void Utils::consolidateProvisionalRooms(vs_graphs::core::semantic::Room *selecte
 
             /* Check whether the selected room already contains the passage */
             const std::vector<vs_graphs::core::semantic::Passage *> selectedPassages =
-                selectedRoom->getPassages();
+                p_selectedRoom_inout->getPassages();
 
             const bool alreadyPresent = std::any_of(
                 selectedPassages.begin(),
@@ -3111,16 +3111,16 @@ void Utils::consolidateProvisionalRooms(vs_graphs::core::semantic::Room *selecte
             /* Copy the passage relationship if required */
             if (!alreadyPresent)
             {
-                selectedRoom->setDoorways(passage);
+                p_selectedRoom_inout->setDoorways(passage);
             }
         }
 
         /* Preserve floor membership before retiring the provisional room. */
-        for (vs_graphs::core::semantic::Floor *p_floor : mpAtlas->GetAllFloors())
+        for (vs_graphs::core::semantic::Floor *p_floor : p_atlas_inout->GetAllFloors())
         {
             if (p_floor != nullptr)
             {
-                p_floor->replaceRoom(candidateRoom, selectedRoom);
+                p_floor->replaceRoom(candidateRoom, p_selectedRoom_inout);
             }
         }
 
@@ -3366,14 +3366,14 @@ bool Utils::collectCorrespondingWalls(
            normalsA_out.size() == normalsB_out.size();
 }
 
-double Utils::calcSoftMin(vector<double> &values)
+double Utils::calcSoftMin(vector<double> &values_in)
 {
     // parameter controlling the softness/sharpness of the soft-min
     // the smaller the value, the more conservative the soft-min
     const double tau = 0.1;
 
     // soft-min = sum(exp(-value/tau) * value) / sum(exp(-value/tau))
-    Eigen::Map<Eigen::VectorXd> confs(values.data(), values.size());
+    Eigen::Map<Eigen::VectorXd> confs(values_in.data(), values_in.size());
     Eigen::VectorXd             term = ((1.0 - confs.array()) / tau).exp();
     return ((term / term.sum()).array() * confs.array()).sum();
 }

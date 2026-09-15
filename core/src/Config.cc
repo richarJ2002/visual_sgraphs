@@ -27,9 +27,10 @@ namespace vs_graphs
 namespace core
 {
 
-    bool ConfigParser::ParseConfigFile(std::string &strConfigFile)
-    {
-        return true;
+bool ConfigParser::parseConfigFile(const std::string &configFilePath_in)
+{
+    (void)configFilePath_in;
+    return true;
     }
 
 } // namespace core

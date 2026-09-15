@@ -2075,7 +2075,7 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocal()
     constexpr int kNumTemporalKFs = 25;
 
     /* Extract the system parameters */
-    sysParams = types::SystemParams::GetParams();
+    sysParams = types::SystemParams::getParams();
 
     /* Reject stale place-recognition candidates before stopping other workers.
      */
@@ -3455,7 +3455,7 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocal()
         }
 
         /* Fuse only after every semantic relationship is visible. */
-        if (sysParams->sem_seg.reassociate.enabled)
+        if (sysParams->semSeg.reassociate.enabled)
         {
             Utils::reAssociateSemanticPlanes(mpAtlas);
         }
@@ -3469,7 +3469,7 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocal()
          * an optional geometry-reassociation feature. */
         Utils::fuseDuplicateRoomsAfterMerge(pCurrentMap, importedRooms);
 
-        if (sysParams->sem_seg.reassociate.enabled)
+        if (sysParams->semSeg.reassociate.enabled)
         {
             Utils::reAssociateRooms(mpAtlas);
             Utils::reAssociatePassages(mpAtlas);
@@ -4045,7 +4045,7 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocalInertial()
 
     /* Fuse semantic hypotheses only after the final inertial pose correction.
      */
-    if (types::SystemParams::GetParams()->sem_seg.reassociate.enabled)
+    if (types::SystemParams::getParams()->semSeg.reassociate.enabled)
     {
         Utils::reAssociateSemanticPlanes(mpAtlas);
     }
@@ -4054,7 +4054,7 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocalInertial()
      * geometry reassociation is disabled. */
     Utils::fuseDuplicateRoomsAfterMerge(pCurrentMap, importedRooms);
 
-    if (types::SystemParams::GetParams()->sem_seg.reassociate.enabled)
+    if (types::SystemParams::getParams()->semSeg.reassociate.enabled)
     {
         Utils::reAssociateRooms(mpAtlas);
         Utils::reAssociatePassages(mpAtlas);

@@ -135,7 +135,7 @@ void Optimizer::BundleAdjustment(
     const std::atomic_bool                   *pStopRequested_in)
 {
     // System parameters
-    vs_graphs::core::types::SystemParams *sysParams = vs_graphs::core::types::SystemParams::GetParams();
+    vs_graphs::core::types::SystemParams *sysParams = vs_graphs::core::types::SystemParams::getParams();
 
     // Variables
     std::vector<bool> vbNotIncludedMP;
@@ -433,7 +433,7 @@ void Optimizer::BundleAdjustment(
         int               opIdG  = maxOpId + nPlanes;
         vPlane->setId(opIdG);
         vPlane->setEstimate(vpPlane->getGlobalEquation());
-        if (sysParams->optimization.marginalize_planes)
+        if (sysParams->optimization.marginalizePlanes)
             vPlane->setMarginalized(true);
         optimizer.addVertex(vPlane);
         nPlanes++;
@@ -466,7 +466,7 @@ void Optimizer::BundleAdjustment(
 
             if (optimizer.vertex(opIdG) && optimizer.vertex(pKFi->mnId))
             {
-                if (sysParams->optimization.plane_kf.enabled)
+                if (sysParams->optimization.planeKf.enabled)
                 {
                     vs_graphs::core::EdgeVertexPlaneProjectSE3KF *e =
                         new vs_graphs::core::EdgeVertexPlaneProjectSE3KF();
@@ -479,7 +479,7 @@ void Optimizer::BundleAdjustment(
                     e->setInformation(
                         Eigen::Matrix<double, 3, 3>::Identity() *
                         obs.confidence *
-                        sysParams->optimization.plane_kf.information_gain);
+                        sysParams->optimization.planeKf.informationGain);
                     e->setMeasurement(planeLocalEquation);
 
                     g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
@@ -489,7 +489,7 @@ void Optimizer::BundleAdjustment(
                 }
 
                 // adding plane-point constraints
-                if (sysParams->optimization.plane_point.enabled)
+                if (sysParams->optimization.planePoint.enabled)
                 {
                     // get the class index of the plane
                     int clsCloudIdx =
@@ -510,8 +510,8 @@ void Optimizer::BundleAdjustment(
                         e->setInformation(
                             Eigen::Matrix<double, 1, 1>::Identity() *
                             obs.confidence *
-                            sysParams->optimization.plane_point
-                                .information_gain);
+                            sysParams->optimization.planePoint
+                                .informationGain);
                         e->setMeasurement(obs.pointPlaneConstraintMatrix);
 
                         g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
@@ -1546,7 +1546,7 @@ void Optimizer::FullInertialBA(Map                    *pMap,
 
 int Optimizer::PoseOptimization(Frame *pFrame)
 {
-    types::SystemParams *sysParams = types::SystemParams::GetParams();
+    types::SystemParams *sysParams = types::SystemParams::getParams();
 
     g2o::SparseOptimizer                    optimizer;
     g2o::BlockSolver_6_3::LinearSolverType *linearSolver;
@@ -1840,7 +1840,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
         // before the last step, remove bad map points
         KeyFrame *refKF = pFrame->mpReferenceKF;
-        if (sysParams->refine_map_points.enabled && refKF && it == 2)
+        if (sysParams->refineMapPoints.enabled && refKF && it == 2)
         {
             vector<geometric::Plane *>               vpPlanes;
             std::unordered_map<int, bool> planeCheck;
@@ -1893,7 +1893,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                     Eigen::Vector3d pMPw = pMP->GetWorldPos().cast<double>();
                     double distance = planeEq.head<3>().dot(pMPw) + planeEq(3);
                     if (distance <
-                        -sysParams->refine_map_points.max_distance_for_delete)
+                        -sysParams->refineMapPoints.maxDistanceForDelete)
                     {
                         // get the intersection point of the line joining the
                         // camera center and the map point with the plane
@@ -2078,7 +2078,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                                       double               markerImpact)
 {
     // System parameters
-    vs_graphs::core::types::SystemParams *sysParams = vs_graphs::core::types::SystemParams::GetParams();
+    vs_graphs::core::types::SystemParams *sysParams = vs_graphs::core::types::SystemParams::getParams();
 
     // Variables
     countFixedKF = 0;
@@ -2109,10 +2109,10 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
     pKF->mnBALocalForKF          = pKF->mnId;
 
     // [LBA] Fill in the neighbor KeyFrames
-    if (sysParams->plane_based_covisibility.enabled)
+    if (sysParams->planeBasedCovisibility.enabled)
         // Get the KeyFrames that see the same planes
         neighborKeyFrameVec = pKF->GetBestCovisibilityKeyFrames(
-            sysParams->plane_based_covisibility.max_keyframes);
+            sysParams->planeBasedCovisibility.maxKeyframes);
     else
         // Get the KeyFrames that see the same MapPoints
         neighborKeyFrameVec = pKF->GetVectorCovisibleKeyFrames();
@@ -2718,7 +2718,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
         int opId = maxOpId + nPlanes;
         vPlane->setId(opId);
 
-        if (sysParams->optimization.marginalize_planes)
+        if (sysParams->optimization.marginalizePlanes)
             vPlane->setMarginalized(true);
 
         g2o::Plane3D planeGlobalEquation = pMapPlane->getGlobalEquation();
@@ -2730,8 +2730,8 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
         pMapPlane->setOpId(opId);
 
         // Adding edge between plane and MapPoints
-        if (sysParams->optimization.plane_map_point.enabled &&
-            !sysParams->optimization.marginalize_planes)
+        if (sysParams->optimization.planeMapPoint.enabled &&
+            !sysParams->optimization.marginalizePlanes)
         {
             set<MapPoint *> sMPs = pMapPlane->getMapPoints();
             for (set<MapPoint *>::iterator lit  = sMPs.begin(),
@@ -2757,8 +2757,8 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                      optimizer.vertex(opId)));
                     e->setInformation(Eigen::Matrix<double, 1, 1>::Identity() *
-                                      sysParams->optimization.plane_map_point
-                                          .information_gain);
+                                      sysParams->optimization.planeMapPoint
+                                          .informationGain);
 
                     g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
                     e->setRobustKernel(rk);
@@ -2800,7 +2800,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
 
             if (optimizer.vertex(opId) && optimizer.vertex(pKFi->mnId))
             {
-                if (sysParams->optimization.plane_kf.enabled)
+                if (sysParams->optimization.planeKf.enabled)
                 {
                     vs_graphs::core::EdgeVertexPlaneProjectSE3KF *e =
                         new vs_graphs::core::EdgeVertexPlaneProjectSE3KF();
@@ -2813,7 +2813,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                     e->setInformation(
                         Eigen::Matrix<double, 3, 3>::Identity() *
                         obs.confidence *
-                        sysParams->optimization.plane_kf.information_gain);
+                        sysParams->optimization.planeKf.informationGain);
                     e->setMeasurement(obs.localPlane);
 
                     g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
@@ -2828,7 +2828,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                 }
 
                 // Adding plane-point constraints
-                if (sysParams->optimization.plane_point.enabled)
+                if (sysParams->optimization.planePoint.enabled)
                 {
                     // Get the class index of the plane
                     int clsCloudIdx = Utils::getClassIdFromPlaneType(
@@ -2849,8 +2849,8 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                         e->setInformation(
                             Eigen::Matrix<double, 1, 1>::Identity() *
                             obs.confidence *
-                            sysParams->optimization.plane_point
-                                .information_gain);
+                            sysParams->optimization.planePoint
+                                .informationGain);
                         e->setMeasurement(obs.pointPlaneConstraintMatrix);
 
                         g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;

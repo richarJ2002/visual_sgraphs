@@ -224,30 +224,30 @@ double symmetricSupportDistance(const VerifyWallObservation &wallA_in,
 
 SemanticVerifyConfig SemanticVerify::configFromSystemParams()
 {
-    const auto &loadedVerification = types::SystemParams::GetParams()->verification;
-    const auto &loadedFactor       = types::SystemParams::GetParams()->factor;
+    const auto &loadedVerification = types::SystemParams::getParams()->verification;
+    const auto &loadedFactor       = types::SystemParams::getParams()->factor;
 
     SemanticVerifyConfig config;
     config.maxNormalAngle_deg =
-        static_cast<double>(loadedVerification.max_normal_angle_deg);
-    config.maxOffset_m = static_cast<double>(loadedVerification.max_offset_m);
+        static_cast<double>(loadedVerification.maxNormalAngle_deg);
+    config.maxOffset_m = static_cast<double>(loadedVerification.maxOffset_m);
     config.maxSupportDist_m =
-        static_cast<double>(loadedVerification.max_support_dist_m);
+        static_cast<double>(loadedVerification.maxSupportDist_m);
     config.minInlierRatio =
-        static_cast<double>(loadedVerification.min_inlier_ratio);
+        static_cast<double>(loadedVerification.minInlierRatio);
     config.maxConditionNumber =
-        static_cast<double>(loadedVerification.max_condition_number);
-    config.ambiguityMarginInliers = loadedVerification.ambiguity_margin_inliers;
-    config.maxWallsPerRoom        = loadedVerification.max_walls_per_room;
-    config.maxHypotheses          = loadedVerification.max_hypotheses;
+        static_cast<double>(loadedVerification.maxConditionNumber);
+    config.ambiguityMarginInliers = loadedVerification.ambiguityMarginInliers;
+    config.maxWallsPerRoom        = loadedVerification.maxWallsPerRoom;
+    config.maxHypotheses          = loadedVerification.maxHypotheses;
     config.maxSupportSamplePerWall =
-        loadedVerification.max_support_sample_per_wall;
+        loadedVerification.maxSupportSamplePerWall;
     config.minAbsCosNormalAngle =
-        static_cast<double>(loadedVerification.min_abs_cos_normal_angle);
-    config.sigmaTheta_rad = static_cast<double>(loadedFactor.sigma_theta_rad);
-    config.sigmaOffset_m  = static_cast<double>(loadedFactor.sigma_offset_m);
-    config.huberDelta     = static_cast<double>(loadedFactor.huber_delta);
-    config.optimizerIterations = loadedFactor.optimizer_iterations;
+        static_cast<double>(loadedVerification.minAbsCosNormalAngle);
+    config.sigmaTheta_rad = static_cast<double>(loadedFactor.sigmaTheta_rad);
+    config.sigmaOffset_m  = static_cast<double>(loadedFactor.sigmaOffset_m);
+    config.huberDelta     = static_cast<double>(loadedFactor.huberDelta);
+    config.optimizerIterations = loadedFactor.optimizerIterations;
     return config;
 }
 
@@ -1485,7 +1485,7 @@ AlignmentCheck checkConsecutivePassageTopology(
 }
 
 /*! @brief Maximum plane offset for wall pairing. Mirrors the verification
- * default (SemanticVerifyConfig::maxOffset_m); the map_merge section tunes
+ * default (SemanticVerifyConfig::maxOffset_m); the mapMerge section tunes
  * the angle and the edge overlap, not the offset. */
 constexpr double kConsecutiveMaxPlaneOffset_m = 0.35;
 
@@ -1599,7 +1599,7 @@ AlignmentCheck checkConsecutiveWallEdgeOverlap(
                 }
                 hasCompatibleWall = true;
                 /* In-plane axis from the surviving wall normal. Walls are
-                 * near-vertical by admission (max_tilt_wall), so normal x
+                 * near-vertical by admission (maxTiltWall), so normal x
                  * world-Z spans the wall length. */
                 Eigen::Vector3d axis =
                     survivingWall.normal_World.cross(Eigen::Vector3d::UnitZ());
@@ -1819,15 +1819,15 @@ SemanticVerify::MapMergeConfig SemanticVerify::mapMergeConfigFromSystemParams()
 {
     MapMergeConfig config;
     config.passage_match_tolerance_m = static_cast<double>(
-        types::SystemParams::GetParams()->map_merge.passage_match_tolerance_m);
+        types::SystemParams::getParams()->mapMerge.passageMatchTolerance_m);
     config.wall_coplanar_angle_deg = static_cast<double>(
-        types::SystemParams::GetParams()->map_merge.wall_coplanar_angle_deg);
+        types::SystemParams::getParams()->mapMerge.wallCoplanarAngle_deg);
     config.wall_edge_overlap_m = static_cast<double>(
-        types::SystemParams::GetParams()->map_merge.wall_edge_overlap_m);
+        types::SystemParams::getParams()->mapMerge.wallEdgeOverlap_m);
     config.floor_match_tolerance_m = static_cast<double>(
-        types::SystemParams::GetParams()->map_merge.floor_match_tolerance_m);
+        types::SystemParams::getParams()->mapMerge.floorMatchTolerance_m);
     config.room_centroid_tolerance_m = static_cast<double>(
-        types::SystemParams::GetParams()->map_merge.room_centroid_tolerance_m);
+        types::SystemParams::getParams()->mapMerge.roomCentroidTolerance_m);
     return config;
 }
 

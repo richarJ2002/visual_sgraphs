@@ -615,20 +615,20 @@ camera_models::GeometricCamera *Atlas::AddCamera(camera_models::GeometricCamera 
             std::cout << "Not pCam" << std::endl;
         if (!pCam_i)
             std::cout << "Not pCam_i" << std::endl;
-        if (pCam->GetType() != pCam_i->GetType())
+        if (pCam->getType() != pCam_i->getType())
             continue;
 
-        if (pCam->GetType() == camera_models::GeometricCamera::CAM_PINHOLE)
+        if (pCam->getType() == camera_models::GeometricCamera::CAM_PINHOLE)
         {
-            if (((camera_models::Pinhole *)pCam_i)->IsEqual(pCam))
+            if (((camera_models::Pinhole *)pCam_i)->isEqual(pCam))
             {
                 bAlreadyInMap = true;
                 index_cam     = i;
             }
         }
-        else if (pCam->GetType() == camera_models::GeometricCamera::CAM_FISHEYE)
+        else if (pCam->getType() == camera_models::GeometricCamera::CAM_FISHEYE)
         {
-            if (((camera_models::KannalaBrandt8 *)pCam_i)->IsEqual(pCam))
+            if (((camera_models::KannalaBrandt8 *)pCam_i)->isEqual(pCam))
             {
                 bAlreadyInMap = true;
                 index_cam     = i;
@@ -1512,15 +1512,15 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         return;
     }
 
-    types::SystemParams      *p_params = types::SystemParams::GetParams();
+    types::SystemParams      *p_params = types::SystemParams::getParams();
     const unsigned int cooldown_s =
-        p_params != nullptr ? p_params->map_merge.merge_cooldown_s : 30U;
+        p_params != nullptr ? p_params->mapMerge.mergeCooldown_s : 30U;
     const unsigned int minimumAnchors =
-        p_params != nullptr ? p_params->map_merge.min_anchor_rooms : 2U;
+        p_params != nullptr ? p_params->mapMerge.minAnchorRooms : 2U;
     const unsigned int minimumRooms =
-        p_params != nullptr ? p_params->map_merge.min_rooms_per_map : 1U;
+        p_params != nullptr ? p_params->mapMerge.minRoomsPerMap : 1U;
     const unsigned int minimumWalls =
-        p_params != nullptr ? p_params->map_merge.min_walls_per_map : 3U;
+        p_params != nullptr ? p_params->mapMerge.minWallsPerMap : 3U;
     const semantic::SemanticVerify::MapMergeConfig mergeConfig =
         semantic::SemanticVerify::mapMergeConfigFromSystemParams();
 
@@ -1740,7 +1740,7 @@ void Atlas::PostLoad()
     map<unsigned int, camera_models::GeometricCamera *> mpCams;
     for (camera_models::GeometricCamera *pCam : mvpCameras)
     {
-        mpCams[pCam->GetId()] = pCam;
+        mpCams[pCam->getId()] = pCam;
     }
 
     mspMaps.clear();

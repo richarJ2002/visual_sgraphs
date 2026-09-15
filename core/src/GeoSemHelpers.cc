@@ -206,7 +206,7 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     pointPlaneConstraintMatrix.setZero();
 
     /* If plane optimization enabled */
-    if (types::SystemParams::GetParams()->optimization.plane_point.enabled)
+    if (types::SystemParams::getParams()->optimization.planePoint.enabled)
     {
         /* Iterate through points in point cloud */
         for (auto &point : planeCloud->points)
@@ -281,7 +281,7 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
      * the observed finite plane cloud. These associations may later be used to
      * construct map-point-to-plane constraints during graph optimisation.
      */
-    if (types::SystemParams::GetParams()->optimization.plane_map_point.enabled)
+    if (types::SystemParams::getParams()->optimization.planeMapPoint.enabled)
     {
         /* Iterate through the orb points (expressed in global frame) */
         for (const auto &mapPoint : pKF->GetMapPoints())
@@ -325,7 +325,7 @@ void GeoSemHelpers::updateMapPlane(
     // the observation of the plane point cloud (measurement)
     Eigen::Matrix4d pointPlaneConstraintMatrix;
     pointPlaneConstraintMatrix.setZero();
-    if (types::SystemParams::GetParams()->optimization.plane_point.enabled)
+    if (types::SystemParams::getParams()->optimization.planePoint.enabled)
     {
         for (auto &point : planeCloud->points)
         {
@@ -367,7 +367,7 @@ void GeoSemHelpers::updateMapPlane(
         refitMappedPlaneFromCloud(currentPlane);
     }
 
-    if (types::SystemParams::GetParams()->optimization.plane_map_point.enabled)
+    if (types::SystemParams::getParams()->optimization.planeMapPoint.enabled)
     {
         for (const auto &mapPoint : pKF->GetMapPoints())
             if (currentPlane->isPointinPlaneCloud(
@@ -516,7 +516,7 @@ void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
      */
     bool         wallHasConfirmedRoom = false;
     const size_t minObs =
-        types::SystemParams::GetParams()->room_seg.minimumWallObservationCount;
+        types::SystemParams::getParams()->roomSeg.minimumWallObservationCount;
     if (p_wallPlane_in->getObservationCount() >= minObs)
     {
         wallHasConfirmedRoom = true;
@@ -541,8 +541,8 @@ void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
      * ---------------------------------------------------------------------- */
 
     /* Extract the max door height and width */
-    double width  = types::SystemParams::GetParams()->sem_seg.max_door_width;
-    double height = types::SystemParams::GetParams()->sem_seg.max_door_height;
+    double width  = types::SystemParams::getParams()->semSeg.maxDoorWidth;
+    double height = types::SystemParams::getParams()->semSeg.maxDoorHeight;
 
     /* Initialize variables to define the passage */
     Eigen::Vector3d centroid;
@@ -583,7 +583,7 @@ void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
                 width = std::min(
                     measuredWidth,
                     static_cast<double>(
-                        types::SystemParams::GetParams()->sem_seg.max_door_width));
+                        types::SystemParams::getParams()->semSeg.maxDoorWidth));
             }
 
             /* Clip the height dimension of the door */
@@ -592,7 +592,7 @@ void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
                 height = std::min(
                     measuredHeight,
                     static_cast<double>(
-                        types::SystemParams::GetParams()->sem_seg.max_door_height));
+                        types::SystemParams::getParams()->semSeg.maxDoorHeight));
             }
         }
     }
@@ -646,7 +646,7 @@ void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
 
     /* Extract the duplicate distacne threshold */
     const double duplicateDistanceThreshold =
-        types::SystemParams::GetParams()->sem_seg.passage_centroid_distance_thresh;
+        types::SystemParams::getParams()->semSeg.passageCentroidDistanceThresh;
 
     /* Extract parameters from passage equation */
     Eigen::Vector4d candidateEquation = passageEquation.coeffs();

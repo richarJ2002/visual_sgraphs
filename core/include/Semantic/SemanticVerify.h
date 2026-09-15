@@ -186,8 +186,8 @@ class SemanticVerify
 {
   public:
     /** Builds a SemanticVerifyConfig from the loaded SystemParams::verification
-     * / factor YAML fields (SystemParams::GetParams() must already have been
-     * populated via SystemParams::SetParams()). This is the only place those
+     * / factor YAML fields (SystemParams::getParams() must already have been
+     * populated via SystemParams::setParams()). This is the only place those
      * fields are read into a SemanticVerifyConfig: SemanticVerifyConfig's
      * own default-member-initialisers are literal fallbacks for callers that
      * construct one directly (as every current test does), not a live link
@@ -245,7 +245,7 @@ class SemanticVerify
         const SemanticVerifyConfig &config_in = SemanticVerifyConfig());
 
     /** Tolerances for consecutive-map (post-reset) merge validation. Sourced
-     * from the map_merge SystemParams section via
+     * from the mapMerge SystemParams section via
      * mapMergeConfigFromSystemParams(); defaults mirror the YAML.
      *
      * Companion checks intentionally reuse shared constants so the
@@ -263,13 +263,13 @@ class SemanticVerify
         double room_centroid_tolerance_m{0.50};
     };
 
-    /** Builds a MapMergeConfig from the live SystemParams map_merge section.
+    /** Builds a MapMergeConfig from the live SystemParams mapMerge section.
      * Falls back to the struct defaults when SystemParams is unavailable. */
     static MapMergeConfig mapMergeConfigFromSystemParams();
 
     /** Consecutive-map variant of evaluateMapMergeGate: same decision
      * vocabulary, but wall/passage/floor tolerances come from MapMergeConfig
-     * (map_merge params) instead of SemanticVerifyConfig, rooms pair by
+     * (mapMerge params) instead of SemanticVerifyConfig, rooms pair by
      * non-empty room tag only (never by map-local ID), and wall pairs must
      * additionally overlap along the wall direction. Verification only:
      * mutates nothing. */

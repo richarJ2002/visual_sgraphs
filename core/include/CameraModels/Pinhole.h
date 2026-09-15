@@ -40,62 +40,62 @@ namespace camera_models
     public:
         Pinhole()
         {
-            mvParameters.resize(4);
-            mnId = nNextId++;
-            mnType = CAM_PINHOLE;
+            parameters.resize(4);
+            id = nextId++;
+            type = CAM_PINHOLE;
         }
-        Pinhole(const std::vector<float> _vParameters) : GeometricCamera(_vParameters), tvr(nullptr)
+        Pinhole(const std::vector<float> parameters_in) : GeometricCamera(parameters_in), p_twoViewReconstruction(nullptr)
         {
-            assert(mvParameters.size() == 4);
-            mnId = nNextId++;
-            mnType = CAM_PINHOLE;
+            assert(parameters.size() == 4);
+            id = nextId++;
+            type = CAM_PINHOLE;
         }
 
-        Pinhole(Pinhole *pPinhole) : GeometricCamera(pPinhole->mvParameters), tvr(nullptr)
+        Pinhole(Pinhole *p_pinhole_in) : GeometricCamera(p_pinhole_in->parameters), p_twoViewReconstruction(nullptr)
         {
-            assert(mvParameters.size() == 4);
-            mnId = nNextId++;
-            mnType = CAM_PINHOLE;
+            assert(parameters.size() == 4);
+            id = nextId++;
+            type = CAM_PINHOLE;
         }
 
         ~Pinhole()
         {
-            if (tvr)
-                delete tvr;
+            if (p_twoViewReconstruction)
+                delete p_twoViewReconstruction;
         }
 
-        cv::Point2f project(const cv::Point3f &p3D);
-        Eigen::Vector2d project(const Eigen::Vector3d &v3D);
-        Eigen::Vector2f project(const Eigen::Vector3f &v3D);
-        Eigen::Vector2f projectMat(const cv::Point3f &p3D);
+        cv::Point2f project(const cv::Point3f &point3D_in);
+        Eigen::Vector2d project(const Eigen::Vector3d &point3D_in);
+        Eigen::Vector2f project(const Eigen::Vector3f &point3D_in);
+        Eigen::Vector2f projectMat(const cv::Point3f &point3D_in);
 
-        float uncertainty2(const Eigen::Matrix<double, 2, 1> &p2D);
+        float uncertainty2(const Eigen::Matrix<double, 2, 1> &point2D_in);
 
-        Eigen::Vector3f unprojectEig(const cv::Point2f &p2D);
-        cv::Point3f unproject(const cv::Point2f &p2D);
+        Eigen::Vector3f unprojectEig(const cv::Point2f &point2D_in);
+        cv::Point3f unproject(const cv::Point2f &point2D_in);
 
-        Eigen::Matrix<double, 2, 3> projectJac(const Eigen::Vector3d &v3D);
+        Eigen::Matrix<double, 2, 3> projectJac(const Eigen::Vector3d &point3D_in);
 
-        bool ReconstructWithTwoViews(const std::vector<cv::KeyPoint> &vKeys1, const std::vector<cv::KeyPoint> &vKeys2, const std::vector<int> &vMatches12,
-                                     Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated);
+        bool ReconstructWithTwoViews(const std::vector<cv::KeyPoint> &keys1_in, const std::vector<cv::KeyPoint> &keys2_in, const std::vector<int> &matches12_in,
+                                     Sophus::SE3f &pose21_out, std::vector<cv::Point3f> &points3D_out, std::vector<bool> &triangulated_out);
 
         cv::Mat toK();
         Eigen::Matrix3f toK_();
 
-        bool epipolarConstrain(GeometricCamera *pCamera2, const cv::KeyPoint &kp1, const cv::KeyPoint &kp2, const Eigen::Matrix3f &R12, const Eigen::Vector3f &t12, const float sigmaLevel, const float unc);
+        bool epipolarConstrain(GeometricCamera *p_otherCamera_in, const cv::KeyPoint &keypoint1_in, const cv::KeyPoint &keypoint2_in, const Eigen::Matrix3f &rotation12_in, const Eigen::Vector3f &translation12_in, const float sigmaLevel_in, const float uncertainty_in);
 
-        bool matchAndtriangulate(const cv::KeyPoint &kp1, const cv::KeyPoint &kp2, GeometricCamera *pOther,
-                                 Sophus::SE3f &Tcw1, Sophus::SE3f &Tcw2,
-                                 const float sigmaLevel1, const float sigmaLevel2,
-                                 Eigen::Vector3f &x3Dtriangulated) { return false; }
+        bool matchAndtriangulate(const cv::KeyPoint &keypoint1_in, const cv::KeyPoint &keypoint2_in, GeometricCamera *p_otherCamera_in,
+                                 Sophus::SE3f &pose1_in, Sophus::SE3f &pose2_in,
+                                 const float sigmaLevel1_in, const float sigmaLevel2_in,
+                                 Eigen::Vector3f &point3D_out) { return false; }
 
-        friend std::ostream &operator<<(std::ostream &os, const Pinhole &ph);
-        friend std::istream &operator>>(std::istream &os, Pinhole &ph);
+        friend std::ostream &operator<<(std::ostream &os, const Pinhole &pinhole_in);
+        friend std::istream &operator>>(std::istream &is, Pinhole &pinhole_inout);
 
-        bool IsEqual(GeometricCamera *pCam);
+        bool isEqual(GeometricCamera *p_camera_in);
 
     private:
-        TwoViewReconstruction *tvr;
+        TwoViewReconstruction *p_twoViewReconstruction;
     };
 } // namespace camera_models
 } // namespace core

@@ -59,135 +59,135 @@ class Utils
 
     /**
      * @brief Calculate the Euclidean distance between two points
-     * @param point1 first point
-     * @param point2 second point
+     * @param point1_in first point
+     * @param point2_in second point
      */
-    static double calculateEuclideanDistance(const Eigen::Vector3f &p1,
-                                             const Eigen::Vector3f &p2);
+    static double calculateEuclideanDistance(const Eigen::Vector3f &point1_in,
+                                             const Eigen::Vector3f &point2_in);
 
     /**
      * @brief Calculate the distance between a point and a plane
-     * @param plane the plane equation
-     * @param point the given point
+     * @param plane_in the plane equation
+     * @param point_in the given point
      */
-    static double calculateDistancePointToPlane(const Eigen::Vector4d &plane,
-                                                const Eigen::Vector3d &point);
+    static double calculateDistancePointToPlane(const Eigen::Vector4d &plane_in,
+                                                const Eigen::Vector3d &point_in);
 
     /**
      * @brief Calculates the intersection point of a line and a plane
-     * @param plane the plane equation
-     * @param lineStart the start point of the line
-     * @param lineEnd the end point of the line
+     * @param plane_in the plane equation
+     * @param lineStart_in the start point of the line
+     * @param lineEnd_in the end point of the line
      */
-    static Eigen::Vector3d lineIntersectsPlane(const Eigen::Vector4d &plane,
-                                               const Eigen::Vector3d &lineStart,
-                                               const Eigen::Vector3d &lineEnd);
+    static Eigen::Vector3d lineIntersectsPlane(const Eigen::Vector4d &plane_in,
+                                               const Eigen::Vector3d &lineStart_in,
+                                               const Eigen::Vector3d &lineEnd_in);
 
     /**
      * @brief Checks to see if two planes are apart enough from each other,
      * given a threshold
-     * @param plane1 first plane
-     * @param plane2 second plane
-     * @param threshold the threshold value for perpendicularity
+     * @param p_plane1_in first plane
+     * @param p_plane2_in second plane
+     * @param threshold_in the threshold value for perpendicularity
      */
-    static bool arePlanesApartEnough(const geometric::Plane  *plane1,
-                                     const geometric::Plane  *plane2,
-                                     const double &threshold);
+    static bool arePlanesApartEnough(const geometric::Plane  *p_plane1_in,
+                                     const geometric::Plane  *p_plane2_in,
+                                     const double &threshold_in);
 
     /**
      * @brief Checks to see if two planes are perpendicular to each other or not
-     * @param plane1 first plane
-     * @param plane2 second plane
+     * @param p_plane1_in first plane
+     * @param p_plane2_in second plane
      */
-    static bool arePlanesPerpendicular(const vs_graphs::core::geometric::Plane *plane1,
-                                       const vs_graphs::core::geometric::Plane *plane2);
+    static bool arePlanesPerpendicular(const vs_graphs::core::geometric::Plane *p_plane1_in,
+                                       const vs_graphs::core::geometric::Plane *p_plane2_in);
 
     /**
      * @brief Checks to see if two planes are parallel to each other or not
-     * @param plane1 first plane
-     * @param plane2 second plane
+     * @param p_plane1_in first plane
+     * @param p_plane2_in second plane
      */
-    static bool arePlanesParallel(const vs_graphs::core::geometric::Plane *plane1,
-                                  const vs_graphs::core::geometric::Plane *plane2);
+    static bool arePlanesParallel(const vs_graphs::core::geometric::Plane *p_plane1_in,
+                                  const vs_graphs::core::geometric::Plane *p_plane2_in);
 
     /**
      * @brief Checks to see if two planes are facing each other or not
-     * @param plane1 first plane (small plane, e.g., door)
-     * @param plane2 second plane (big plane, e.g., wall)
+     * @param p_plane1_in first plane (small plane, e.g., door)
+     * @param p_plane2_in second plane (big plane, e.g., wall)
      */
-    static bool arePlanesFacingEachOther(const vs_graphs::core::geometric::Plane *plane1,
-                                         const vs_graphs::core::geometric::Plane *plane2);
+    static bool arePlanesFacingEachOther(const vs_graphs::core::geometric::Plane *p_plane1_in,
+                                         const vs_graphs::core::geometric::Plane *p_plane2_in);
 
     /**
      * @brief Returns the planes that are facing each other from the given list
-     * @param planes list of planes to be checked
+     * @param planes_in list of planes to be checked
      */
     static std::vector<std::pair<geometric::Plane *, geometric::Plane *>>
-        getFacingPlanes(const std::vector<geometric::Plane *> &planes);
+        getFacingPlanes(const std::vector<geometric::Plane *> &planes_in);
 
     /**
      * @brief Corrects the given plane equations to apply calculations
-     * @param plane the input plane
+     * @param plane_in the input plane
      */
-    static Eigen::Vector4d correctPlaneDirection(const Eigen::Vector4d &plane);
+    static Eigen::Vector4d correctPlaneDirection(const Eigen::Vector4d &plane_in);
 
     /**
      * @brief Converts the plane equation from local to global
-     * @param kfPose the pose of the current keyframe
-     * @param plane the plane equation in the local map
+     * @param keyframePose_in the pose of the current keyframe
+     * @param plane_in the plane equation in the local map
      */
-    static g2o::Plane3D applyPoseToPlane(const Eigen::Matrix4d &kfPose,
-                                         const g2o::Plane3D    &plane);
+    static g2o::Plane3D applyPoseToPlane(const Eigen::Matrix4d &keyframePose_in,
+                                         const g2o::Plane3D    &plane_in);
 
     /**
      * @brief Gets the centeroid of a set or cluster of points
-     * @param points the given cluster of points
+     * @param points_in the given cluster of points
      */
     static Eigen::Vector3d
-        computeCentroidFromPoints(const std::vector<Eigen::Vector3d> &points);
+        computeCentroidFromPoints(const std::vector<Eigen::Vector3d> &points_in);
 
     /**
      * @brief Downsamples the pointclouds based on the given leaf size
      *
-     * @param cloud the pointcloud to be downsampled
-     * @param leafSize the leaf size for downsampling
+     * @param p_cloud_in the pointcloud to be downsampled
+     * @param leafSize_in the leaf size for downsampling
      */
     template <typename PointT>
     static typename pcl::PointCloud<PointT>::Ptr
-        pointcloudDownsample(const typename pcl::PointCloud<PointT>::Ptr &cloud,
-                             const float        leafSize,
-                             const unsigned int minPointsPerVoxel);
+        pointcloudDownsample(const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
+                             const float        leafSize_in,
+                             const unsigned int minPointsPerVoxel_in);
 
     /**
      * @brief Filters the pointclouds based on the given min/max distance
      * acceptable
      *
-     * @param cloud the pointcloud to be filtered
+     * @param p_cloud_in the pointcloud to be filtered
      */
     template <typename PointT>
     static typename pcl::PointCloud<PointT>::Ptr pointcloudDistanceFilter(
-        const typename pcl::PointCloud<PointT>::Ptr &cloud);
+        const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in);
 
     /**
      * @brief Removes the points that are farther away from their neighbors
      *
-     * @param cloud the pointcloud to be filtered
-     * @param meanThresh the mean threshold for neighbor points
-     * @param stdDevThresh the standard deviation threshold for neighbor points
+     * @param p_cloud_in the pointcloud to be filtered
+     * @param meanThreshold_in the mean threshold for neighbor points
+     * @param stdDevThreshold_in the standard deviation threshold for neighbor points
      */
     template <typename PointT>
     static typename pcl::PointCloud<PointT>::Ptr pointcloudOutlierRemoval(
-        const typename pcl::PointCloud<PointT>::Ptr &cloud,
-        const int                                    meanThresh,
-        const float                                  stdDevThresh);
+        const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
+        const int                                    meanThreshold_in,
+        const float                                  stdDevThreshold_in);
 
     /**
      * @brief Computes the width and height of a plane given its point cloud
-     * @param cloud the point cloud of the plane
+     * @param p_cloud_in the point cloud of the plane
      */
     static std::pair<double, double>
         computePlaneWidthHeight(
-            pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr cloud);
+            pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud_in);
 
     /**
      * @brief Performs PCL ransac to get the plane equations from the a given
@@ -199,34 +199,36 @@ class Utils
     template <typename PointT, template <typename> class SegmentationType>
     static std::vector<
         std::pair<typename pcl::PointCloud<PointT>::Ptr, Eigen::Vector4d>>
-        ransacPlaneFitting(typename pcl::PointCloud<PointT>::Ptr &cloud);
+        ransacPlaneFitting(typename pcl::PointCloud<PointT>::Ptr &cloud_inout);
 
     /**
      * @brief Checks to see if the given point is on the plane or not
-     * @param planeEquation the plane equation
-     * @param mapPoint the point to be checked
+     * @param planeEquation_in the plane equation
+     * @param p_mapPoint_in the point to be checked
      */
-    static bool pointOnPlane(Eigen::Vector4d planeEquation, MapPoint *mapPoint);
+    static bool pointOnPlane(Eigen::Vector4d planeEquation_in, MapPoint *p_mapPoint_in);
 
     /**
      * @brief associates given planes with the mapped planes
-     * @param mappedPlanes the mapped planes
-     * @param givenPlane the given plane (in the same frame as the kfPose,
-     * global if kfPose is identity)
-     * @param kfPose the pose of the current keyframe
-     * @param threshold the threshold value for association
+     * @param mappedPlanes_in the mapped planes
+     * @param observedPlane_in the given plane (in the same frame as the
+     * keyframePose_in, global if keyframePose_in is identity)
+     * @param p_observedCloud_in the given plane's support cloud
+     * @param keyframePose_in the pose of the current keyframe
+     * @param observedPlaneType_in the observed plane variant
+     * @param threshold_in the threshold value for association
      * @param maximumFiniteCloudDistance_m_in optional finite-cloud gap override
      * @param observationOrigin_World_m_in optional observing camera origin used
      *        to keep opposite wall faces separate
      * @return the plane id of the mapped plane
      */
     static int
-        associatePlanes(const vector<geometric::Plane *>                  &mappedPlanes,
-                        g2o::Plane3D                            givenPlane,
-                        pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr givenCloud,
-                        const Eigen::Matrix4d                   &kfPose,
-                        const geometric::Plane::planeVariant                obsPlaneType,
-                        const float                              threshold,
+        associatePlanes(const vector<geometric::Plane *>                  &mappedPlanes_in,
+                        g2o::Plane3D                            observedPlane_in,
+                        pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
+                        const Eigen::Matrix4d                   &keyframePose_in,
+                        const geometric::Plane::planeVariant                observedPlaneType_in,
+                        const float                              threshold_in,
                         const float maximumFiniteCloudDistance_m_in = -1.0F,
                         const std::optional<Eigen::Vector3d>
                             &observationOrigin_World_m_in = std::nullopt);
@@ -234,30 +236,30 @@ class Utils
     /**
      * @brief Clusters the point cloud into separate clouds based on the plane
      * detection
-     * @param cloud the point cloud to be clustered
-     * @param clusterIndices the vector of point indices for each cluster
+     * @param p_cloud_in the point cloud to be clustered
+     * @param clusterIndices_out the vector of point indices for each cluster
      */
     static void
-        clusterPlaneClouds(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &cloud,
-                           std::vector<pcl::PointIndices> &clusterIndices);
+        clusterPlaneClouds(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &p_cloud_in,
+                           std::vector<pcl::PointIndices> &clusterIndices_out);
 
     /*!
      * @brief       Re-associates semantically classified planes if they get
      *              closer after optimization
      *
-     * @param[in]   mpAtlas
+     * @param[in]   p_atlas_inout
      *              A pointer to the Atlas
      */
-    static void reAssociateSemanticPlanes(Atlas *mpAtlas);
+    static void reAssociateSemanticPlanes(Atlas *p_atlas_inout);
 
     /*!
      * @brief       Re-associates semantically classified planes if they get
      *              closer after optimization
      *
-     * @param[in]   mpAtlas
+     * @param[in]   p_atlas_inout
      *              a pointer to the Atlas
      */
-    static void reAssociateRooms(Atlas *mpAtlas);
+    static void reAssociateRooms(Atlas *p_atlas_inout);
 
     /*!
      * @brief Fuses duplicate confirmed rooms introduced by a map merge.
@@ -315,29 +317,29 @@ class Utils
      * @brief       Consolidates redundant single-wall provisional structural
      *              elements into a room supported by a free-space cluster.
      *
-     * @param[in]   selectedRoom
+     * @param[in]   p_selectedRoom_inout
      *              The cluster-backed room which has absorbed the walls
      *
-     * @param[in]   mpAtlas
+     * @param[in]   p_atlas_inout
      *              a pointer to the Atlas
      */
-    static void consolidateProvisionalRooms(vs_graphs::core::semantic::Room *selectedRoom,
-                                            Atlas           *mpAtlas);
+    static void consolidateProvisionalRooms(vs_graphs::core::semantic::Room *p_selectedRoom_inout,
+                                            Atlas           *p_atlas_inout);
 
     /**
      * @brief Gets the planeVariant type from the class id
-     * @param clsId the class id
+     * @param classId_in the class id
      * @return the planeVariant type
      */
-    static vs_graphs::core::geometric::Plane::planeVariant getPlaneTypeFromClassId(int clsId);
+    static vs_graphs::core::geometric::Plane::planeVariant getPlaneTypeFromClassId(int classId_in);
 
     /**
      * @brief Gets the class id from the planeVariant type
-     * @param planeType the planeVariant type
+     * @param planeType_in the planeVariant type
      * @return the class id
      */
     static int
-        getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::planeVariant planeType);
+        getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::planeVariant planeType_in);
 
     /**
      * @brief Computes the rigid transform mapping map A into map B using
@@ -403,10 +405,10 @@ class Utils
      * @brief Calculates the soft-min approximation of the given values
      * soft-min is an estimate of the quality of the segment based on per-pixel
      * uncertainities
-     * @param values the input values
+     * @param values_in the input values
      * @return the soft-min value
      */
-    static double calcSoftMin(vector<double> &values);
+    static double calcSoftMin(vector<double> &values_in);
 };
 } // namespace core
 } // namespace vs_graphs

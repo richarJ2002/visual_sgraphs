@@ -715,7 +715,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
     setSeedRooms(p_map0, p_map1, r0_1, r1_1);
     /* Cooldown would suppress the immediate second attempt; the change-gate
      * is what this case exercises. */
-    SystemParams::GetParams()->map_merge.merge_cooldown_s = 0U;
+    SystemParams::getParams()->mapMerge.mergeCooldown_s = 0U;
     testing::internal::CaptureStdout();
     atlas.attemptConsecutiveMergeIfGated();
     string output1 = testing::internal::GetCapturedStdout();
@@ -766,7 +766,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
         << "TC9: second attempt should produce at least 1 line, got " << count2;
     EXPECT_GE(count1, 1U)
         << "TC9: first attempt should produce at least 1 line, got " << count1;
-    SystemParams::GetParams()->map_merge.merge_cooldown_s = 30U;
+    SystemParams::getParams()->mapMerge.mergeCooldown_s = 30U;
 }
 
 // TC10a: coplanar but disjoint wall extents contradict

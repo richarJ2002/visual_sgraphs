@@ -27,17 +27,18 @@ namespace core
 DBParser::DBParser() {}
 DBParser::~DBParser() {}
 
-json DBParser::jsonParser(string jsonFilePath)
+json DBParser::parseJsonFile(std::string jsonFilePath_in)
 {
     try
     {
-        VSLAM_LOG_INFO("- Loading JSON data from %s\n", jsonFilePath.c_str());
+        VSLAM_LOG_INFO("- Loading JSON data from %s\n",
+                       jsonFilePath_in.c_str());
         // Reading the JSON file from the given path
-        ifstream jsonFile(jsonFilePath);
+        ifstream jsonFile(jsonFilePath_in);
         // Parsing the JSON file to get the envrionment data
-        json     envData = json::parse(jsonFile);
+        json     environmentData = json::parse(jsonFile);
         // Return parsed data
-        return envData;
+        return environmentData;
     }
     catch (json::parse_error &ex)
     {
@@ -48,42 +49,44 @@ json DBParser::jsonParser(string jsonFilePath)
     }
 }
 
-std::vector<semantic::Room *> DBParser::getEnvRooms(json envData)
+std::vector<semantic::Room *>
+    DBParser::getEnvironmentRooms(json environmentData_in)
 {
-    envRooms.clear();
+    environmentRooms.clear();
 
     // Check if the JSON file contains rooms
-    if (envData["rooms"].size() != 0)
+    if (environmentData_in["rooms"].size() != 0)
     {
-        for (const auto &envDatum : envData["rooms"].items())
+        for (const auto &environmentDatum : environmentData_in["rooms"].items())
         {
             // Initialization
-            semantic::Room *envRoom = new semantic::Room();
+            semantic::Room *p_environmentRoom = new semantic::Room();
 
             // Fill the room entity
-            envRoom->setOpId(-1);
-            envRoom->setOpIdG(-1);
-            envRoom->setId(stoi(envDatum.key()));
-            envRoom->setName(envDatum.value()["name"]);
-            envRoom->setMetaMarkerId(envDatum.value()["metaMarker"]);
+            p_environmentRoom->setOpId(-1);
+            p_environmentRoom->setOpIdG(-1);
+            p_environmentRoom->setId(stoi(environmentDatum.key()));
+            p_environmentRoom->setName(environmentDatum.value()["name"]);
+            p_environmentRoom->setMetaMarkerId(
+                environmentDatum.value()["metaMarker"]);
 
             // Set the room variant (corridors are incomplete rooms, not a
             // distinct semantic type, so every env room is a plain ROOM)
-            envRoom->setRoomVariant(semantic::Room::ROOM);
+            p_environmentRoom->setRoomVariant(semantic::Room::ROOM);
 
             // Fill the vector
-            envRooms.push_back(envRoom);
+            environmentRooms.push_back(p_environmentRoom);
         }
 
         // Print the loaded rooms
         VSLAM_LOG_INFO("- Fetched %d rooms from the JSON file! [e.g., '%s'].\n",
-                       static_cast<int>(envRooms.size()),
-                       envRooms[0]->getName().c_str());
+                       static_cast<int>(environmentRooms.size()),
+                       environmentRooms[0]->getName().c_str());
     }
     else
         VSLAM_LOG_INFO("- No rooms found in the JSON file!\n");
 
-    return envRooms;
+    return environmentRooms;
 }
 } // namespace core
 } // namespace vs_graphs

@@ -135,7 +135,7 @@ struct RoomRecord
 
     /*! @brief Always NOT_TRACKED_BY_CURRENT_SCHEMA in this slice: Room has
      *  no field recording how/why it was created (confirmed by direct
-     *  source read of Room.h/Room.cc -- mRoomTag, mpMatchedContext, and
+     *  source read of Room.h/Room.cc -- roomTag, p_matchedContext, and
      *  the meta-marker fields record identity/labelling, not creation
      *  provenance). A later phase that adds a provenance field on Room is
      *  the owner of resolving this to an actual value. */

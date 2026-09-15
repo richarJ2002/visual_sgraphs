@@ -205,11 +205,11 @@ System::System(const string         &strVocFile,
     }
 
     /* Load the system parameters */
-    types::SystemParams *sysParams = types::SystemParams::GetParams();
-    sysParams->SetParams(strSysParamsFile);
+    types::SystemParams *sysParams = types::SystemParams::getParams();
+    sysParams->setParams(strSysParamsFile);
 
     /* Parse the environment database, if provided */
-    parseJsonDatabase(sysParams->general.env_database);
+    parseJsonDatabase(sysParams->general.envDatabase);
 
     /* If the sensor is integrated with IMU, initialize the IMU first */
     if (mSensor == IMU_STEREO || mSensor == IMU_MONOCULAR ||
@@ -411,9 +411,9 @@ void System::parseJsonDatabase(string jsonFilePath)
     // Creating an object of the database loader
     vs_graphs::core::DBParser parser;
     // Load JSON file
-    json                envData = parser.jsonParser(jsonFilePath);
+    json                envData = parser.parseJsonFile(jsonFilePath);
     // Getting semantic entities
-    envRooms = parser.getEnvRooms(envData);
+    envRooms = parser.getEnvironmentRooms(envData);
     // Printing the success message
     std::cout << "- JSON loaded and candidates created!\n";
 }
@@ -422,7 +422,7 @@ void System::addSegmentedImage(
     std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *tuple)
 {
     // Adding the segmented image to the buffer of the SemanticSegmentation
-    if (types::SystemParams::GetParams()->general.mode_of_operation ==
+    if (types::SystemParams::getParams()->general.modeOfOperation ==
         types::SystemParams::general::ModeOfOperation::GEO)
     {
         // just clear the pointcloud of the keyframe and return, as semantic
@@ -906,7 +906,7 @@ System::MissionHealthSnapshot
     snapshot.lastReturnedKeyFrameId =
         mLastReturnedKeyFrameId.load(std::memory_order_relaxed);
 
-    if (types::SystemParams::GetParams()->general.mode_of_operation ==
+    if (types::SystemParams::getParams()->general.modeOfOperation ==
         types::SystemParams::general::ModeOfOperation::GEO)
     {
         snapshot.segmentationTerminalCount = snapshot.segmentationReturnedCount;

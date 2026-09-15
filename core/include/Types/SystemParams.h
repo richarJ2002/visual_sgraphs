@@ -21,15 +21,14 @@
  *
  * @brief           Declares the SystemParams YAML-backed calibration store.
  *
- *  @note           WP-01C/WP-04/WP-05 deferred by pilot scope (§17.4): member
- *                  identifiers (snake_case, m_ prefix, Get/Set PascalCase),
- *                  unscoped enums without underlying types, raw-new singleton,
- *                  and void-plus-exit(1) failure handling stay as-is here.
- *                  Renaming or status-converting them cascades to consumers
- *                  repo-wide (ROS/YAML keys frozen per §16.3) and needs the
- *                  group-level WP-02/WP-04 step with maintainer sign-off.
+ *  @note           WP-01C naming applied: lowerCamelCase members (`p_`
+ *                  prefix for the singleton pointer), `getParams`/
+ *                  `setParams` accessors, scoped enums with fixed values
+ *                  and underlying types. YAML key string literals are
+ *                  frozen (ros_freeze.csv) and unchanged.
  */
 
+#include <cstdint>
 #include <iostream>
 #include <yaml-cpp/yaml.h>
 
@@ -45,38 +44,38 @@ namespace types
 class SystemParams
 {
   public:
-    static SystemParams *GetParams();
-    void                 SetParams(const std::string &strConfigFile);
+    static SystemParams *getParams();
+    void                 setParams(const std::string &configFilePath_in);
 
     // Common struct definitions
     struct Constraint
     {
         bool  enabled          = false;
-        float information_gain = 0.1f;
+        float informationGain = 0.1f;
     };
     struct Downsample
     {
-        float        leaf_size            = 0.03f;
-        unsigned int min_points_per_voxel = 5;
+        float        leafSize            = 0.03f;
+        unsigned int minPointsPerVoxel = 5;
     };
     struct OutlierRemoval
     {
-        float        std_threshold  = 1.0;
-        unsigned int mean_threshold = 50;
+        float        stdThreshold  = 1.0;
+        unsigned int meanThreshold = 50;
     };
 
     // Structs for different modules
     struct general
     {
         // enum for mode of operation
-        enum ModeOfOperation
+        enum class ModeOfOperation : std::uint8_t
         {
-            SEM_GEO = 0,
-            SEM     = 1,
-            GEO     = 2
+            SEM_GEO = 0U,
+            SEM     = 1U,
+            GEO     = 2U
         };
-        ModeOfOperation mode_of_operation = SEM_GEO;
-        std::string     env_database      = "";
+        ModeOfOperation modeOfOperation = ModeOfOperation::SEM_GEO;
+        std::string     envDatabase      = "";
     } general;
 
     struct markers
@@ -86,62 +85,62 @@ class SystemParams
 
     struct pointcloud
     {
-        std::pair<float, float> distance_thresh = std::make_pair(0.2f, 10.0f);
+        std::pair<float, float> distanceThresh = std::make_pair(0.2f, 10.0f);
     } pointcloud;
 
     struct optimization
     {
-        bool       marginalize_planes = false;
-        Constraint plane_map_point;
-        Constraint plane_kf;
-        Constraint plane_point;
+        bool       marginalizePlanes = false;
+        Constraint planeMapPoint;
+        Constraint planeKf;
+        Constraint planePoint;
     } optimization;
 
-    struct refine_map_points
+    struct refineMapPoints
     {
         bool  enabled                 = false;
-        float max_distance_for_delete = 0.5f;
+        float maxDistanceForDelete = 0.5f;
         struct octree
         {
             float        resolution    = 0.1f;
-            float        search_radius = 0.5f;
-            unsigned int min_neighbors = 2;
+            float        searchRadius = 0.5f;
+            unsigned int minNeighbors = 2;
         } octree;
-    } refine_map_points;
+    } refineMapPoints;
 
-    struct plane_based_covisibility
+    struct planeBasedCovisibility
     {
         bool         enabled         = true;
-        unsigned int max_keyframes   = 75;
-        unsigned int score_per_plane = 60;
-    } plane_based_covisibility;
+        unsigned int maxKeyframes   = 75;
+        unsigned int scorePerPlane = 60;
+    } planeBasedCovisibility;
 
     struct seg
     {
-        unsigned int pointclouds_thresh      = 200;
-        float        plane_point_dist_thresh = 0.2f;
+        unsigned int pointcloudsThresh      = 200;
+        float        planePointDistThresh = 0.2f;
 
-        struct plane_association
+        struct planeAssociation
         {
             /*!
              *@brief        Maximum angular difference between associated planes
              *              in radians.
              */
-            float ominus_thresh = 0.18f;
+            float ominusThresh = 0.18f;
 
             /*!
              * @brief       Maximum perpendicular separation between associated
              *              planes.
              */
-            float distance_thresh = 0.12f;
+            float distanceThresh = 0.12f;
 
             /*!
              * @brief       Maximum centroid distance before finite cloud
              *              compatibility is required.
              */
-            float centroid_thresh = 2.5f;
+            float centroidThresh = 2.5f;
 
-            struct cluster_separation
+            struct clusterSeparation
             {
                 /*!
                  * @brief       Enables finite point-cloud compatibility
@@ -156,43 +155,43 @@ class SystemParams
                 float tolerance = 0.35f;
 
                 Downsample downsample;
-            } cluster_separation;
+            } clusterSeparation;
 
-        } plane_association;
+        } planeAssociation;
 
         struct ransac
         {
-            unsigned int max_planes      = 2;
-            float        distance_thresh = 0.04f;
-            unsigned int max_iterations  = 600;
+            unsigned int maxPlanes      = 2;
+            float        distanceThresh = 0.04f;
+            unsigned int maxIterations  = 600;
         } ransac;
     } seg;
 
-    struct geo_seg
+    struct geoSeg
     {
         struct pointcloud
         {
             Downsample     downsample;
-            OutlierRemoval outlier_removal;
+            OutlierRemoval outlierRemoval;
         } pointcloud;
-    } geo_seg;
+    } geoSeg;
 
-    struct sem_seg
+    struct semSeg
     {
-        float min_votes          = 1.0f;
-        float prob_thresh        = 0.5f;
-        float conf_thresh        = 0.5f;
-        float max_tilt_wall      = 0.3f;
-        float max_tilt_ground    = 0.2f;
-        float max_step_elevation = 0.2f;
+        float minVotes          = 1.0f;
+        float probThresh        = 0.5f;
+        float confThresh        = 0.5f;
+        float maxTiltWall      = 0.3f;
+        float maxTiltGround    = 0.2f;
+        float maxStepElevation = 0.2f;
 
-        int   passage_kf_window                = 7;
-        float max_door_width                   = 1.5f;
-        float max_door_height                  = 2.0f;
-        float max_wall_door_distance           = 0.5f;
-        float max_kf_passage_distance          = 1.0f;
-        bool  enable_passage_detection         = true;
-        float passage_centroid_distance_thresh = 1.0f;
+        int   passageKfWindow                = 7;
+        float maxDoorWidth                   = 1.5f;
+        float maxDoorHeight                  = 2.0f;
+        float maxWallDoorDistance           = 0.5f;
+        float maxKfPassageDistance          = 1.0f;
+        bool  enablePassageDetection         = true;
+        float passageCentroidDistanceThresh = 1.0f;
 
         /*!
          * @brief Configures persistent open-passage evidence extraction.
@@ -249,7 +248,7 @@ class SystemParams
         struct pointcloud
         {
             Downsample     downsample;
-            OutlierRemoval outlier_removal;
+            OutlierRemoval outlierRemoval;
         } pointcloud;
 
         /*!
@@ -307,7 +306,7 @@ class SystemParams
         struct reassociate
         {
             bool  enabled            = false;
-            float association_thresh = 0.2f;
+            float associationThresh = 0.2f;
 
             /*!
              * @brief Permits adjacent finite fragments to be fused when they
@@ -323,28 +322,28 @@ class SystemParams
                 float minimumOrthogonalOverlap_m = 0.30f;
             } wallExtension;
         } reassociate;
-    } sem_seg;
+    } semSeg;
 
-    struct room_seg
+    struct roomSeg
     {
-        enum Method
+        enum class Method : std::uint8_t
         {
-            GEOMETRIC  = 0,
-            FREE_SPACE = 1,
-            GNN        = 2
+            GEOMETRIC  = 0U,
+            FREE_SPACE = 1U,
+            GNN        = 2U
         };
-        Method method = FREE_SPACE;
+        Method method = Method::FREE_SPACE;
 
-        float center_distance_thresh        = 1.5f;
-        float plane_facing_dot_thresh       = -0.8f;
-        float min_wall_distance_thresh      = 1.0f;
-        float walls_parallelism_thresh      = 10.0f;
-        float walls_perpendicularity_thresh = 10.0f;
+        float centerDistanceThresh        = 1.5f;
+        float planeFacingDotThresh       = -0.8f;
+        float minWallDistanceThresh      = 1.0f;
+        float wallsParallelismThresh      = 10.0f;
+        float wallsPerpendicularityThresh = 10.0f;
 
-        unsigned int min_cluster_vertices                           = 5;
-        float        marker_wall_distance_thresh                    = 3.0f;
-        float        cluster_point_wall_distance_thresh             = 0.5f;
-        float        cluster_centroid_wall_centroid_distance_thresh = 5.0f;
+        unsigned int minClusterVertices                           = 5;
+        float        markerWallDistanceThresh                    = 3.0f;
+        float        clusterPointWallDistanceThresh             = 0.5f;
+        float        clusterCentroidWallCentroidDistanceThresh = 5.0f;
 
         unsigned int minimumWallSupportPointCount    = 2;
         unsigned int minimumWallObservationCount     = 3;
@@ -393,73 +392,73 @@ class SystemParams
             float wallCentroidMinimumSideDistance_m = 0.30f;
         } passagePartition;
 
-        int gnn_version = 1;
-    } room_seg;
+        int gnnVersion = 1;
+    } roomSeg;
 
     /*!
      * @brief Room-tracking state machine configuration (WP13 Section 18.4).
      *
      *        All values are calibration-dependent initial values.
      */
-    struct room_tracking
+    struct roomTracking
     {
         /*! Minimum continuous dwell in the crossing guard before the
          *  CONFIRMED_ROOM <-> CROSSING_PASSAGE transitions commit (seconds).
          */
-        float        crossing_dwell_s = 2.0f;
+        float        crossingDwell_s = 2.0f;
         /*! Minimum traversal confidence (0..1) for a crossing to count. */
-        float        crossing_confidence = 0.7f;
+        float        crossingConfidence = 0.7f;
         /*! Maximum time in LOST_WITH_LAST_ROOM before decay to
          *  LOST_WITHOUT_ROOM (seconds). */
-        float        lost_timeout_s = 30.0f;
+        float        lostTimeout_s = 30.0f;
         /*! Maximum time in REACQUIRING_IN_NEW_MAP before decay to
          *  LOST_WITHOUT_ROOM (seconds). */
-        float        reacquire_timeout_s = 60.0f;
+        float        reacquireTimeout_s = 60.0f;
         /*! Retry backoff between failed reacquire attempts (seconds). */
-        float        reacquire_retry_interval_s = 5.0f;
+        float        reacquireRetryInterval_s = 5.0f;
         /*! Maximum failed reacquire attempts before timeout applies. */
-        unsigned int reacquire_max_retries = 3U;
+        unsigned int reacquireMaxRetries = 3U;
         /*! Minimum planes required to attempt a reacquire. */
-        unsigned int reacquire_min_planes = 3U;
-    } room_tracking;
+        unsigned int reacquireMinPlanes = 3U;
+    } roomTracking;
 
-    struct candidate_gen
+    struct candidateGen
     {
-        unsigned int top_k                    = 10U;
-        unsigned int candidate_pair_cap       = 1000U;
-        unsigned int topology_nodes_cap       = 128U;
-        unsigned int global_fallback_cap      = 1000U;
-        float        weight_angle             = 1.0F;
-        float        weight_extent            = 1.0F;
-        float        weight_aperture          = 1.0F;
-        float        weight_topology          = 1.0F;
-        float        angle_missing_penalty    = 1.0F;
-        float        extent_missing_penalty   = 1.0F;
-        float        aperture_missing_penalty = 1.0F;
-        float        ambiguity_margin         = 0.05F;
-        float        angle_tolerance_rad      = 1.0e-9F;
-        float        runtime_budget_ms        = 0.0F;
-        unsigned int descriptor_elements_cap  = 4096U;
-        unsigned int topo_refinement_iters    = 3U;
-    } candidate_gen;
+        unsigned int topK                    = 10U;
+        unsigned int candidatePairCap       = 1000U;
+        unsigned int topologyNodesCap       = 128U;
+        unsigned int globalFallbackCap      = 1000U;
+        float        weightAngle             = 1.0F;
+        float        weightExtent            = 1.0F;
+        float        weightAperture          = 1.0F;
+        float        weightTopology          = 1.0F;
+        float        angleMissingPenalty    = 1.0F;
+        float        extentMissingPenalty   = 1.0F;
+        float        apertureMissingPenalty = 1.0F;
+        float        ambiguityMargin         = 0.05F;
+        float        angleTolerance_rad      = 1.0e-9F;
+        float        runtimeBudget_ms        = 0.0F;
+        unsigned int descriptorElementsCap  = 4096U;
+        unsigned int topoRefinementIters    = 3U;
+    } candidateGen;
 
     /** WP13 Phase 4 (Section 9.3): plane-gated geometric verification gates.
      * Initial values are the plan's own explicit figures; all
      * calibration-dependent. */
     struct verification
     {
-        float        max_normal_angle_deg        = 10.0F;
-        float        max_offset_m                = 0.35F;
-        float        max_support_dist_m          = 0.25F;
-        float        min_inlier_ratio            = 0.6F;
-        float        max_condition_number        = 100.0F;
-        unsigned int ambiguity_margin_inliers    = 1U;
-        unsigned int max_walls_per_room          = 16U;
-        unsigned int max_hypotheses              = 2000U;
-        unsigned int max_support_sample_per_wall = 64U;
+        float        maxNormalAngle_deg        = 10.0F;
+        float        maxOffset_m                = 0.35F;
+        float        maxSupportDist_m          = 0.25F;
+        float        minInlierRatio            = 0.6F;
+        float        maxConditionNumber        = 100.0F;
+        unsigned int ambiguityMarginInliers    = 1U;
+        unsigned int maxWallsPerRoom          = 16U;
+        unsigned int maxHypotheses              = 2000U;
+        unsigned int maxSupportSamplePerWall = 64U;
         /** Section 19.5's explicit |cos(theta)| gate, distinct from
-         * max_normal_angle_deg above. */
-        float        min_abs_cos_normal_angle = 0.85F;
+         * maxNormalAngle_deg above. */
+        float        minAbsCosNormalAngle = 0.85F;
     } verification;
 
     /** WP13 Phase 4 (Section 17.4): EdgePlaneTransformSE3 factor noise model
@@ -468,10 +467,10 @@ class SystemParams
      * calibration-dependent like the rest of this section. */
     struct factor
     {
-        float        sigma_theta_rad      = 0.05F;
-        float        sigma_offset_m       = 0.05F;
-        float        huber_delta          = 1.345F;
-        unsigned int optimizer_iterations = 20U;
+        float        sigmaTheta_rad      = 0.05F;
+        float        sigmaOffset_m       = 0.05F;
+        float        huberDelta          = 1.345F;
+        unsigned int optimizerIterations = 20U;
     } factor;
 
     /*!
@@ -480,44 +479,44 @@ class SystemParams
      *      Currently wired as YAML params; merge/axiom logic adopts them in
      *      later work packages.
      */
-    struct map_merge
+    struct mapMerge
     {
         /*! @brief Fixed spherical tolerance for passage association across maps
          * (metres). */
-        float        passage_match_tolerance_m = 0.20f;
+        float        passageMatchTolerance_m = 0.20f;
         /*! @brief Wall coplanarity angle threshold (degrees); planes within
          * this angle are considered coplanar and merge-eligible. */
-        float        wall_coplanar_angle_deg = 5.0f;
+        float        wallCoplanarAngle_deg = 5.0f;
         /*! @brief Edges within this distance count as overlapping / the same
          * wall (metres). */
-        float        wall_edge_overlap_m = 0.50f;
+        float        wallEdgeOverlap_m = 0.50f;
         /*! @brief Floor match tolerance for through-doorway wall axiom
          * (metres). */
-        float        floor_match_tolerance_m = 0.10f;
+        float        floorMatchTolerance_m = 0.10f;
         /*! @brief Max first-to-latest observation origins checked by the
          * through-doorway wall axiom. */
-        unsigned int observation_ray_check_cap = 5U;
+        unsigned int observationRayCheckCap = 5U;
         /*! @brief Cooldown between consecutive-map merge attempts for the
          * same old map (seconds). */
-        unsigned int merge_cooldown_s = 30U;
+        unsigned int mergeCooldown_s = 30U;
         /*! @brief Minimum tag-matched anchor rooms required to estimate
          * alignment. */
-        unsigned int min_anchor_rooms = 2U;
+        unsigned int minAnchorRooms = 2U;
         /*! @brief Minimum rooms required in each map before attempting a
          * match. */
-        unsigned int min_rooms_per_map = 1U;
+        unsigned int minRoomsPerMap = 1U;
         /*! @brief Minimum walls required in each map before attempting a
          * match. */
-        unsigned int min_walls_per_map = 3U;
+        unsigned int minWallsPerMap = 3U;
         /*! @brief Maximum anchor-room centroid distance after alignment
          * (metres). Rooms pair by tag; this only bounds residual drift. */
-        float        room_centroid_tolerance_m = 0.50F;
-    } map_merge;
+        float        roomCentroidTolerance_m = 0.50F;
+    } mapMerge;
 
   private:
     SystemParams();
-    static SystemParams *mSystemParams;
-    YAML::Node           mConfig;
+    static SystemParams *p_systemParams;
+    YAML::Node           config;
 };
 } // namespace types
 } // namespace core

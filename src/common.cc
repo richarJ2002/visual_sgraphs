@@ -6282,7 +6282,7 @@ void setVoxbloxSkeletonCluster(
     }
 
     /* Obtain the configured room-segmentation parameters */
-    const auto *systemParameters = vs_graphs::core::types::SystemParams::GetParams();
+    const auto *systemParameters = vs_graphs::core::types::SystemParams::getParams();
 
     if (systemParameters == nullptr)
     {
@@ -6298,7 +6298,7 @@ void setVoxbloxSkeletonCluster(
      * large unsigned integer.
      */
     const int configuredMinimumClusterVertices =
-        systemParameters->room_seg.min_cluster_vertices;
+        systemParameters->roomSeg.minClusterVertices;
 
     const std::size_t minimumClusterVertexCount =
         configuredMinimumClusterVertices > 0

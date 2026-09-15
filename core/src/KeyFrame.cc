@@ -750,10 +750,10 @@ void KeyFrame::UpdateConnections(bool upParent)
 
     // for all plane observations in the keyframe check in which other keyframes
     // are they seen increase counter for those keyframes
-    if (types::SystemParams::GetParams()->plane_based_covisibility.enabled)
+    if (types::SystemParams::getParams()->planeBasedCovisibility.enabled)
     {
         unsigned int scorePerPlane =
-            types::SystemParams::GetParams()->plane_based_covisibility.score_per_plane;
+            types::SystemParams::getParams()->planeBasedCovisibility.scorePerPlane;
         for (vector<geometric::Plane *>::iterator vit  = mvpMapPlanes.begin(),
                                        vend = mvpMapPlanes.end();
              vit != vend;
@@ -1371,11 +1371,11 @@ void KeyFrame::PreSave(set<KeyFrame *>        &spKF,
     // Camera data
     mnBackupIdCamera = -1;
     if (mpCamera && spCam.find(mpCamera) != spCam.end())
-        mnBackupIdCamera = mpCamera->GetId();
+        mnBackupIdCamera = mpCamera->getId();
 
     mnBackupIdCamera2 = -1;
     if (mpCamera2 && spCam.find(mpCamera2) != spCam.end())
-        mnBackupIdCamera2 = mpCamera2->GetId();
+        mnBackupIdCamera2 = mpCamera2->getId();
 
     // Inertial data
     mBackupPrevKFId = -1;

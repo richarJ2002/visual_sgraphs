@@ -33,7 +33,7 @@ Room::~Room() = default;
 
 void Room::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
 
     centroid = transform_oldWorldToNewWorld_in.map(centroid);
 }
@@ -43,9 +43,9 @@ int Room::getId() const
     return id;
 }
 
-void Room::setId(int value)
+void Room::setId(int id_in)
 {
-    id = value;
+    id = id_in;
 }
 
 int Room::getOpId() const
@@ -53,9 +53,9 @@ int Room::getOpId() const
     return opId;
 }
 
-void Room::setOpId(int value)
+void Room::setOpId(int opId_in)
 {
-    opId = value;
+    opId = opId_in;
 }
 
 int Room::getOpIdG() const
@@ -63,21 +63,21 @@ int Room::getOpIdG() const
     return opIdG;
 }
 
-void Room::setOpIdG(int value)
+void Room::setOpIdG(int opIdG_in)
 {
-    opIdG = value;
+    opIdG = opIdG_in;
 }
 
 void Room::setBad()
 {
-    unique_lock<mutex> lock(mMutexMap);
-    mbBad = true;
+    unique_lock<mutex> lock(mapMutex);
+    isBadFlag = true;
 }
 
 bool Room::isBad()
 {
-    unique_lock<mutex> lock(mMutexMap);
-    return mbBad;
+    unique_lock<mutex> lock(mapMutex);
+    return isBadFlag;
 }
 
 int Room::getMetaMarkerId() const
@@ -85,135 +85,135 @@ int Room::getMetaMarkerId() const
     return metaMarkerId;
 }
 
-void Room::setMetaMarkerId(int value)
+void Room::setMetaMarkerId(int metaMarkerId_in)
 {
-    metaMarkerId = value;
+    metaMarkerId = metaMarkerId_in;
 }
 
 Marker *Room::getMetaMarker() const
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    return metaMarker;
+    std::lock_guard<std::mutex> lock(stateMutex);
+    return p_metaMarker;
 }
 
-void Room::setMetaMarker(Marker *value)
+void Room::setMetaMarker(Marker *p_metaMarker_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    metaMarker = value;
+    std::lock_guard<std::mutex> lock(stateMutex);
+    p_metaMarker = p_metaMarker_in;
 }
 
 std::string Room::getName() const
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
+    std::lock_guard<std::mutex> lock(stateMutex);
     return name;
 }
 
-void Room::setName(std::string value)
+void Room::setName(std::string name_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    name = value;
+    std::lock_guard<std::mutex> lock(stateMutex);
+    name = name_in;
 }
 
 std::string Room::getRoomTag() const
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    return mRoomTag;
+    std::lock_guard<std::mutex> lock(stateMutex);
+    return roomTag;
 }
 
-void Room::setRoomTag(const std::string &tag)
+void Room::setRoomTag(const std::string &tag_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    mRoomTag = tag;
+    std::lock_guard<std::mutex> lock(stateMutex);
+    roomTag = tag_in;
 }
 
 bool Room::hasRoomTag() const
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    return !mRoomTag.empty();
+    std::lock_guard<std::mutex> lock(stateMutex);
+    return !roomTag.empty();
 }
 
 void Room::setRecoveryProxy(const bool isRecoveryProxy_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
+    std::lock_guard<std::mutex> lock(stateMutex);
     recoveryProxy = isRecoveryProxy_in;
 }
 
 bool Room::isRecoveryProxy() const
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
+    std::lock_guard<std::mutex> lock(stateMutex);
     return recoveryProxy;
 }
 
 void Room::setPreviouslyVisited(const bool visited_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
+    std::lock_guard<std::mutex> lock(stateMutex);
     previouslyVisited = visited_in;
 }
 
 bool Room::hasPreviouslyVisited() const
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
+    std::lock_guard<std::mutex> lock(stateMutex);
     return previouslyVisited;
 }
 
-void Room::setMatchedContext(RoomContextSnapshot *ctx)
+void Room::setMatchedContext(RoomContextSnapshot *p_matchedContext_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    mpMatchedContext = ctx;
+    std::lock_guard<std::mutex> lock(stateMutex);
+    p_matchedContext = p_matchedContext_in;
 }
 
 RoomContextSnapshot *Room::getMatchedContext() const
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    return mpMatchedContext;
+    std::lock_guard<std::mutex> lock(stateMutex);
+    return p_matchedContext;
 }
 
 Room::roomVariant Room::getRoomVariant()
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
+    std::lock_guard<std::mutex> lock(stateMutex);
     return variant;
 }
 
-void Room::setRoomVariant(Room::roomVariant value)
+void Room::setRoomVariant(Room::roomVariant variant_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    variant = value;
+    std::lock_guard<std::mutex> lock(stateMutex);
+    variant = variant_in;
 }
 
 Room::BoundaryStatus Room::getBoundaryStatus() const
 {
-    std::lock_guard<std::mutex> boundaryStatusLock(mMutexBoundaryStatus);
+    std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
     return boundaryStatus;
 }
 
 void Room::setBoundaryStatus(const BoundaryStatus boundaryStatus_in)
 {
-    std::lock_guard<std::mutex> boundaryStatusLock(mMutexBoundaryStatus);
+    std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
     boundaryStatus = boundaryStatus_in;
 }
 
 std::vector<Eigen::Vector3d> Room::getBoundaryCorners_World_m() const
 {
-    std::lock_guard<std::mutex> boundaryStatusLock(mMutexBoundaryStatus);
+    std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
     return boundaryCorners_World_m;
 }
 
 void Room::setBoundaryCorners_World_m(
     std::vector<Eigen::Vector3d> corners_World_m_in)
 {
-    std::lock_guard<std::mutex> boundaryStatusLock(mMutexBoundaryStatus);
+    std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
     boundaryCorners_World_m = std::move(corners_World_m_in);
 }
 
 std::vector<Room::ObservationGap> Room::getObservationGaps() const
 {
-    std::lock_guard<std::mutex> boundaryStatusLock(mMutexBoundaryStatus);
+    std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
     return observationGaps;
 }
 
 void Room::setObservationGaps(std::vector<ObservationGap> gaps_in)
 {
-    std::lock_guard<std::mutex> boundaryStatusLock(mMutexBoundaryStatus);
+    std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
     observationGaps = std::move(gaps_in);
 }
 
@@ -227,14 +227,14 @@ bool Room::getHasKnownLabel() const
     return hasKnownLabel;
 }
 
-void Room::setHasKnownLabel(bool value)
+void Room::setHasKnownLabel(bool hasKnownLabel_in)
 {
-    hasKnownLabel = value;
+    hasKnownLabel = hasKnownLabel_in;
 }
 
 std::vector<geometric::Plane *> Room::getWalls() const
 {
-    std::lock_guard<std::mutex> lock(mMutexWalls);
+    std::lock_guard<std::mutex> lock(wallsMutex);
     return walls;
 }
 
@@ -254,7 +254,7 @@ std::optional<Eigen::Vector3d>
     Eigen::Vector3d roomCentroid_World_m;
 
     {
-        std::lock_guard<std::mutex> lock(mMutexMap);
+        std::lock_guard<std::mutex> lock(mapMutex);
         roomCentroid_World_m = centroid;
     }
 
@@ -308,7 +308,7 @@ void Room::setWalls(geometric::Plane *p_wall_in)
 
     setRecoveryProxy(false);
 
-    std::lock_guard<std::mutex> lock(mMutexWalls);
+    std::lock_guard<std::mutex> lock(wallsMutex);
 
     /* Deduplicate membership within this room; the manager owns global policy.
      */
@@ -332,7 +332,7 @@ bool Room::replaceWall(geometric::Plane *p_retiredWall_in, geometric::Plane *p_r
         return false;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexWalls);
+    std::lock_guard<std::mutex> lock(wallsMutex);
 
     bool                 replacedRetiredWall = false;
     std::vector<geometric::Plane *> rebuiltWalls;
@@ -374,7 +374,7 @@ bool Room::removeWall(geometric::Plane *p_wall_in)
         return false;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexWalls);
+    std::lock_guard<std::mutex> lock(wallsMutex);
 
     const auto wallIterator =
         std::remove(walls.begin(), walls.end(), p_wall_in);
@@ -386,13 +386,13 @@ bool Room::removeWall(geometric::Plane *p_wall_in)
 
 void Room::clearWalls()
 {
-    std::lock_guard<std::mutex> lock(mMutexWalls);
+    std::lock_guard<std::mutex> lock(wallsMutex);
     walls.clear();
 }
 
 std::size_t Room::removeInvalidWalls()
 {
-    std::lock_guard<std::mutex> lock(mMutexWalls);
+    std::lock_guard<std::mutex> lock(wallsMutex);
 
     walls.erase(std::remove_if(walls.begin(),
                                walls.end(),
@@ -406,14 +406,14 @@ std::size_t Room::removeInvalidWalls()
 
 geometric::Plane *Room::getGroundPlane() const
 {
-    std::lock_guard<std::mutex> lock(mMutexWalls);
-    return groundPlane;
+    std::lock_guard<std::mutex> lock(wallsMutex);
+    return p_groundPlane;
 }
 
 void Room::setGroundPlane(geometric::Plane *p_groundPlane_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexWalls);
-    groundPlane = p_groundPlane_in;
+    std::lock_guard<std::mutex> lock(wallsMutex);
+    p_groundPlane = p_groundPlane_in;
 }
 
 bool Room::replaceGroundPlane(geometric::Plane *p_retiredGround_in,
@@ -425,56 +425,58 @@ bool Room::replaceGroundPlane(geometric::Plane *p_retiredGround_in,
         return false;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexWalls);
+    std::lock_guard<std::mutex> lock(wallsMutex);
 
-    if (groundPlane != p_retiredGround_in)
+    if (p_groundPlane != p_retiredGround_in)
     {
         return false;
     }
 
-    groundPlane = p_retainedGround_in;
+    p_groundPlane = p_retainedGround_in;
     return true;
 }
 
 Floor *Room::getFloor() const
 {
-    std::lock_guard<std::mutex> lock(mMutexFloor);
-    return floor;
+    std::lock_guard<std::mutex> lock(floorMutex);
+    return p_floor;
 }
 
 void Room::setFloor(Floor *p_floor_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexFloor);
-    floor = p_floor_in;
+    std::lock_guard<std::mutex> lock(floorMutex);
+    p_floor = p_floor_in;
 }
 
 std::vector<vs_graphs::core::semantic::Passage *> Room::getPassages() const
 {
-    std::lock_guard<std::mutex> lock(mMutexMap);
+    std::lock_guard<std::mutex> lock(mapMutex);
     return doorways;
 }
 
-void Room::setDoorways(vs_graphs::core::semantic::Passage *value)
+void Room::setDoorways(vs_graphs::core::semantic::Passage *p_passage_in)
 {
-    if (value == nullptr)
+    if (p_passage_in == nullptr)
     {
         return;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexMap);
+    std::lock_guard<std::mutex> lock(mapMutex);
 
     const bool alreadyPresent =
         std::any_of(doorways.begin(),
                     doorways.end(),
-                    [value](vs_graphs::core::semantic::Passage *existingPassage)
+                    [p_passage_in](
+                        vs_graphs::core::semantic::Passage *existingPassage)
                     {
                         return existingPassage != nullptr &&
-                               existingPassage->getId() == value->getId();
+                               existingPassage->getId() ==
+                                   p_passage_in->getId();
                     });
 
     if (!alreadyPresent)
     {
-        doorways.push_back(value);
+        doorways.push_back(p_passage_in);
     }
 }
 
@@ -487,7 +489,7 @@ bool Room::replacePassageAssociation(vs_graphs::core::semantic::Passage *p_retir
         return false;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexMap);
+    std::lock_guard<std::mutex> lock(mapMutex);
 
     bool                              replacedAssociation = false;
     std::vector<vs_graphs::core::semantic::Passage *> rebuiltPassages;
@@ -524,7 +526,7 @@ bool Room::replacePassageAssociation(vs_graphs::core::semantic::Passage *p_retir
 
 void Room::clearPassages()
 {
-    std::lock_guard<std::mutex> lock(mMutexMap);
+    std::lock_guard<std::mutex> lock(mapMutex);
     doorways.clear();
 }
 
@@ -535,7 +537,7 @@ bool Room::removePassageAssociation(vs_graphs::core::semantic::Passage *p_remove
         return false;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexMap);
+    std::lock_guard<std::mutex> lock(mapMutex);
 
     const auto removedIterator =
         std::find(doorways.begin(), doorways.end(), p_removedPassage_in);
@@ -551,26 +553,26 @@ bool Room::removePassageAssociation(vs_graphs::core::semantic::Passage *p_remove
 
 Eigen::Vector3d Room::getCentroid() const
 {
-    std::lock_guard<std::mutex> lock(mMutexMap);
+    std::lock_guard<std::mutex> lock(mapMutex);
     return centroid;
 }
 
-void Room::setCentroid(Eigen::Vector3d value)
+void Room::setCentroid(Eigen::Vector3d centroid_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexMap);
-    centroid = value;
+    std::lock_guard<std::mutex> lock(mapMutex);
+    centroid = centroid_in;
 }
 
 core::Map *Room::getMap()
 {
-    unique_lock<mutex> lock(mMutexMap);
-    return mpMap;
+    unique_lock<mutex> lock(mapMutex);
+    return p_map;
 }
 
-void Room::setMap(core::Map *pMap)
+void Room::setMap(core::Map *p_map_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    mpMap = pMap;
+    unique_lock<mutex> lock(mapMutex);
+    p_map = p_map_in;
 }
 } // namespace semantic
 } // namespace core

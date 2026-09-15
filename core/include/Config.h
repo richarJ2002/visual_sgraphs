@@ -52,13 +52,13 @@ namespace core
     class ConfigParser
     {
     public:
-        bool ParseConfigFile(std::string &strConfigFile);
+        bool parseConfigFile(const std::string &configFilePath_in);
 
     private:
-        ViewerConfig mViewerConfig;
-        CameraConfig mCameraConfig;
-        ORBExtractorConfig mORBConfig;
-        IMUConfig mIMUConfig;
+        ViewerConfig viewerConfig;
+        CameraConfig cameraConfig;
+        ORBExtractorConfig orbConfig;
+        IMUConfig imuConfig;
     };
 
 } // namespace core

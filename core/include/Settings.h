@@ -31,6 +31,7 @@
 
 #include "CameraModels/GeometricCamera.h"
 
+#include <cstdint>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
@@ -49,11 +50,11 @@ class Settings
     /*
      * Enum for the different camera types implemented
      */
-    enum CameraType
+    enum class CameraType : std::uint8_t
     {
-        PinHole       = 0,
-        Rectified     = 1,
-        KannalaBrandt = 2
+        PINHOLE        = 0U,
+        RECTIFIED      = 1U,
+        KANNALA_BRANDT = 2U
     };
 
     /*
@@ -64,7 +65,7 @@ class Settings
     /*
      * Constructor from file
      */
-    Settings(const std::string &configFile, const int &sensor);
+    Settings(const std::string &configFilePath_in, const int &sensor_in);
 
     /*
      * Ostream operator overloading to dump settings to the terminal
@@ -76,332 +77,332 @@ class Settings
      */
     CameraType cameraType()
     {
-        return cameraType_;
+        return cameraModel;
     }
     camera_models::GeometricCamera *camera1()
     {
-        return calibration1_;
+        return calibration1;
     }
     camera_models::GeometricCamera *camera2()
     {
-        return calibration2_;
+        return calibration2;
     }
     cv::Mat camera1DistortionCoef()
     {
-        return cv::Mat(vPinHoleDistorsion1_.size(),
+        return cv::Mat(pinholeDistortion1.size(),
                        1,
                        CV_32F,
-                       vPinHoleDistorsion1_.data());
+                       pinholeDistortion1.data());
     }
     cv::Mat camera2DistortionCoef()
     {
-        return cv::Mat(vPinHoleDistorsion2_.size(),
+        return cv::Mat(pinholeDistortion2.size(),
                        1,
                        CV_32F,
-                       vPinHoleDistorsion2_.data());
+                       pinholeDistortion2.data());
     }
 
     Sophus::SE3f Tlr()
     {
-        return Tlr_;
+        return stereoTransform;
     }
     double bf()
     {
-        return bf_;
+        return baselineFocal;
     }
     double b()
     {
-        return b_;
+        return stereoBaseline;
     }
     double thDepth()
     {
-        return thDepth_;
+        return depthThreshold;
     }
 
     bool needToUndistort()
     {
-        return bNeedToUndistort_;
+        return undistortNeeded;
     }
 
     cv::Size newImSize()
     {
-        return newImSize_;
+        return newImageSize;
     }
     double fps()
     {
-        return fps_;
+        return framesPerSecond;
     }
     bool rgb()
     {
-        return bRGB_;
+        return rgbEnabled;
     }
     bool needToResize()
     {
-        return bNeedToResize1_;
+        return resize1Needed;
     }
     bool needToRectify()
     {
-        return bNeedToRectify_;
+        return rectifyNeeded;
     }
 
     // IMU parameters
     double accWalk()
     {
-        return accWalk_;
+        return accelWalkNoise;
     }
     double gyroWalk()
     {
-        return gyroWalk_;
+        return gyroWalkNoise;
     }
     double noiseAcc()
     {
-        return noiseAcc_;
+        return accelNoise;
     }
     double imuFrequency()
     {
-        return imuFrequency_;
+        return imuSampleRate;
     }
     double imuThreshold()
     {
-        return imuThreshold_;
+        return imuErrorThreshold;
     }
     double noiseGyro()
     {
-        return noiseGyro_;
+        return gyroNoise;
     }
     Sophus::SE3f Tbc()
     {
-        return Tbc_;
+        return bodyToCamera;
     }
     bool insertKFsWhenLost()
     {
-        return insertKFsWhenLost_;
+        return insertKeyframesWhenLost;
     }
     bool fastInit() const
     {
-        return fastInit_;
+        return fastInitEnabled;
     }
 
     double depthMapFactor()
     {
-        return depthMapFactor_;
+        return depthMapScale;
     }
 
     int nFeatures()
     {
-        return nFeatures_;
+        return featureCount;
     }
     int nLevels()
     {
-        return nLevels_;
+        return pyramidLevels;
     }
     double initThFAST()
     {
-        return initThFAST_;
+        return initialFastThreshold;
     }
     double minThFAST()
     {
-        return minThFAST_;
+        return minimumFastThreshold;
     }
     double scaleFactor()
     {
-        return scaleFactor_;
+        return orbScaleFactor;
     }
 
     double keyFrameSize()
     {
-        return keyFrameSize_;
+        return viewerKeyFrameSize;
     }
     double keyFrameLineWidth()
     {
-        return keyFrameLineWidth_;
+        return viewerKeyFrameLineWidth;
     }
     double graphLineWidth()
     {
-        return graphLineWidth_;
+        return viewerGraphLineWidth;
     }
     double pointSize()
     {
-        return pointSize_;
+        return viewerPointSize;
     }
     double cameraSize()
     {
-        return cameraSize_;
+        return viewerCameraSize;
     }
     double cameraLineWidth()
     {
-        return cameraLineWidth_;
+        return viewerCameraLineWidth;
     }
     double viewPointX()
     {
-        return viewPointX_;
+        return viewerViewPointX;
     }
     double viewPointY()
     {
-        return viewPointY_;
+        return viewerViewPointY;
     }
     double viewPointZ()
     {
-        return viewPointZ_;
+        return viewerViewPointZ;
     }
     double viewPointF()
     {
-        return viewPointF_;
+        return viewerViewPointF;
     }
     double imageViewerScale()
     {
-        return imageViewerScale_;
+        return viewerImageScale;
     }
 
     std::string atlasLoadFile()
     {
-        return sLoadFrom_;
+        return atlasLoadPath;
     }
     std::string atlasSaveFile()
     {
-        return sSaveto_;
+        return atlasSavePath;
     }
 
     double thFarPoints()
     {
-        return thFarPoints_;
+        return farPointsThreshold;
     }
 
     cv::Mat M1l()
     {
-        return M1l_;
+        return rectifyMap1Left;
     }
     cv::Mat M2l()
     {
-        return M2l_;
+        return rectifyMap2Left;
     }
     cv::Mat M1r()
     {
-        return M1r_;
+        return rectifyMap1Right;
     }
     cv::Mat M2r()
     {
-        return M2r_;
+        return rectifyMap2Right;
     }
 
   private:
     template <typename T>
-    T readParameter(cv::FileStorage   &fSettings,
-                    const std::string &name,
-                    bool              &found,
-                    const bool         required = true)
+    T readParameter(cv::FileStorage   &storage_in,
+                    const std::string &name_in,
+                    bool              &found_out,
+                    const bool         required_in = true)
     {
-        cv::FileNode node = fSettings[name];
+        cv::FileNode node = storage_in[name_in];
         if (node.empty())
         {
-            if (required)
+            if (required_in)
             {
-                std::cerr << name
+                std::cerr << name_in
                           << " required parameter does not exist, aborting..."
                           << std::endl;
                 exit(-1);
             }
             else
             {
-                std::cerr << name << " optional parameter does not exist..."
+                std::cerr << name_in << " optional parameter does not exist..."
                           << std::endl;
-                found = false;
+                found_out = false;
                 return T();
             }
         }
         else
         {
-            found = true;
+            found_out = true;
             return (T)node;
         }
     }
 
-    void readCamera1(cv::FileStorage &fSettings);
-    void readCamera2(cv::FileStorage &fSettings);
-    void readImageInfo(cv::FileStorage &fSettings);
-    void readIMU(cv::FileStorage &fSettings);
-    void readRGBD(cv::FileStorage &fSettings);
-    void readORB(cv::FileStorage &fSettings);
-    void readViewer(cv::FileStorage &fSettings);
-    void readLoadAndSave(cv::FileStorage &fSettings);
-    void readOtherParameters(cv::FileStorage &fSettings);
+    void readCamera1(cv::FileStorage &storage_in);
+    void readCamera2(cv::FileStorage &storage_in);
+    void readImageInfo(cv::FileStorage &storage_in);
+    void readIMU(cv::FileStorage &storage_in);
+    void readRGBD(cv::FileStorage &storage_in);
+    void readORB(cv::FileStorage &storage_in);
+    void readViewer(cv::FileStorage &storage_in);
+    void readLoadAndSave(cv::FileStorage &storage_in);
+    void readOtherParameters(cv::FileStorage &storage_in);
 
     void precomputeRectificationMaps();
 
-    int        sensor_;
-    CameraType cameraType_; // Camera type
+    int        sensor;
+    CameraType cameraModel; // Camera type
 
     /*
      * Visual stuff
      */
-    camera_models::GeometricCamera    *calibration1_, *calibration2_; // Camera calibration
-    camera_models::GeometricCamera    *originalCalib1_, *originalCalib2_;
-    std::vector<double> vPinHoleDistorsion1_, vPinHoleDistorsion2_;
+    camera_models::GeometricCamera    *calibration1, *calibration2; // Camera calibration
+    camera_models::GeometricCamera    *originalCalibration1, *originalCalibration2;
+    std::vector<double> pinholeDistortion1, pinholeDistortion2;
 
-    cv::Size originalImSize_, newImSize_;
-    double   fps_;
-    bool     bRGB_;
+    cv::Size originalImageSize, newImageSize;
+    double   framesPerSecond;
+    bool     rgbEnabled;
 
-    bool bNeedToUndistort_;
-    bool bNeedToRectify_;
-    bool bNeedToResize1_, bNeedToResize2_;
+    bool undistortNeeded;
+    bool rectifyNeeded;
+    bool resize1Needed, resize2Needed;
 
-    Sophus::SE3f Tlr_;
-    double       thDepth_;
-    double       bf_, b_;
+    Sophus::SE3f stereoTransform;
+    double       depthThreshold;
+    double       baselineFocal, stereoBaseline;
 
     /*
      * Rectification stuff
      */
-    cv::Mat M1l_, M2l_;
-    cv::Mat M1r_, M2r_;
+    cv::Mat rectifyMap1Left, rectifyMap2Left;
+    cv::Mat rectifyMap1Right, rectifyMap2Right;
 
     /*
      * Inertial stuff
      */
-    double       noiseGyro_, noiseAcc_;
-    double       gyroWalk_, accWalk_;
-    double       imuFrequency_;
-    double       imuThreshold_;
-    Sophus::SE3f Tbc_;
-    bool         insertKFsWhenLost_;
-    bool         fastInit_{false};
+    double       gyroNoise, accelNoise;
+    double       gyroWalkNoise, accelWalkNoise;
+    double       imuSampleRate;
+    double       imuErrorThreshold;
+    Sophus::SE3f bodyToCamera;
+    bool         insertKeyframesWhenLost;
+    bool         fastInitEnabled{false};
 
     /*
      * RGBD stuff
      */
-    double depthMapFactor_;
-    double nearThresh_, farThresh_;
+    double depthMapScale;
+    double nearThreshold, farThreshold;
 
     /*
      * ORB stuff
      */
-    int    nFeatures_;
-    double scaleFactor_;
-    int    nLevels_;
-    int    initThFAST_, minThFAST_;
+    int    featureCount;
+    double orbScaleFactor;
+    int    pyramidLevels;
+    int    initialFastThreshold, minimumFastThreshold;
 
     /*
      * Viewer stuff
      */
-    double keyFrameSize_;
-    double keyFrameLineWidth_;
-    double graphLineWidth_;
-    double pointSize_;
-    double cameraSize_;
-    double cameraLineWidth_;
-    double viewPointX_, viewPointY_, viewPointZ_, viewPointF_;
-    double imageViewerScale_;
+    double viewerKeyFrameSize;
+    double viewerKeyFrameLineWidth;
+    double viewerGraphLineWidth;
+    double viewerPointSize;
+    double viewerCameraSize;
+    double viewerCameraLineWidth;
+    double viewerViewPointX, viewerViewPointY, viewerViewPointZ, viewerViewPointF;
+    double viewerImageScale;
 
     /*
      * Save & load maps
      */
-    std::string sLoadFrom_, sSaveto_;
+    std::string atlasLoadPath, atlasSavePath;
 
     /*
      * Other stuff
      */
-    double thFarPoints_;
+    double farPointsThreshold;
 };
 } // namespace core
 } // namespace vs_graphs;

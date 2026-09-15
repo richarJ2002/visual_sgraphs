@@ -204,13 +204,13 @@ Frame::Frame(const cv::Mat              &imColor,
     mnId = nNextId++;
 
     // Scale Level Info
-    mnScaleLevels     = mpORBextractorLeft->GetLevels();
-    mfScaleFactor     = mpORBextractorLeft->GetScaleFactor();
+    mnScaleLevels     = mpORBextractorLeft->getLevelCount();
+    mfScaleFactor     = mpORBextractorLeft->getScaleFactor();
     mfLogScaleFactor  = log(mfScaleFactor);
-    mvScaleFactors    = mpORBextractorLeft->GetScaleFactors();
-    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-    mvLevelSigma2     = mpORBextractorLeft->GetScaleSigmaSquares();
-    mvInvLevelSigma2  = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+    mvScaleFactors    = mpORBextractorLeft->getScaleFactors();
+    mvInvScaleFactors = mpORBextractorLeft->getInverseScaleFactors();
+    mvLevelSigma2     = mpORBextractorLeft->getScaleSigmaSquares();
+    mvInvLevelSigma2  = mpORBextractorLeft->getInverseScaleSigmaSquares();
 
     // ORB extraction
 #ifdef REGISTER_TIMES
@@ -358,13 +358,13 @@ Frame::Frame(const cv::Mat              &imColor,
     mnId = nNextId++;
 
     // Scale Level Info
-    mnScaleLevels     = mpORBextractorLeft->GetLevels();
-    mfScaleFactor     = mpORBextractorLeft->GetScaleFactor();
+    mnScaleLevels     = mpORBextractorLeft->getLevelCount();
+    mfScaleFactor     = mpORBextractorLeft->getScaleFactor();
     mfLogScaleFactor  = log(mfScaleFactor);
-    mvScaleFactors    = mpORBextractorLeft->GetScaleFactors();
-    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-    mvLevelSigma2     = mpORBextractorLeft->GetScaleSigmaSquares();
-    mvInvLevelSigma2  = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+    mvScaleFactors    = mpORBextractorLeft->getScaleFactors();
+    mvInvScaleFactors = mpORBextractorLeft->getInverseScaleFactors();
+    mvLevelSigma2     = mpORBextractorLeft->getScaleSigmaSquares();
+    mvInvLevelSigma2  = mpORBextractorLeft->getInverseScaleSigmaSquares();
 
     // ORB extraction
 #ifdef REGISTER_TIMES
@@ -376,15 +376,15 @@ Frame::Frame(const cv::Mat              &imColor,
         this,
         0,
         imLeft,
-        static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->mvLappingArea[0],
-        static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->mvLappingArea[1]);
+        static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->lappingArea[0],
+        static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->lappingArea[1]);
     thread threadRight(
         &Frame::ExtractORB,
         this,
         1,
         imRight,
-        static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->mvLappingArea[0],
-        static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->mvLappingArea[1]);
+        static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->lappingArea[0],
+        static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->lappingArea[1]);
     threadLeft.join();
     threadRight.join();
 #ifdef REGISTER_TIMES
@@ -509,13 +509,13 @@ Frame::Frame(const cv::Mat                                &imColor,
     mnId = nNextId++;
 
     // Get the scale level info from the ORB extractor
-    mnScaleLevels     = mpORBextractorLeft->GetLevels();
-    mfScaleFactor     = mpORBextractorLeft->GetScaleFactor();
+    mnScaleLevels     = mpORBextractorLeft->getLevelCount();
+    mfScaleFactor     = mpORBextractorLeft->getScaleFactor();
     mfLogScaleFactor  = log(mfScaleFactor);
-    mvScaleFactors    = mpORBextractorLeft->GetScaleFactors();
-    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-    mvLevelSigma2     = mpORBextractorLeft->GetScaleSigmaSquares();
-    mvInvLevelSigma2  = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+    mvScaleFactors    = mpORBextractorLeft->getScaleFactors();
+    mvInvScaleFactors = mpORBextractorLeft->getInverseScaleFactors();
+    mvLevelSigma2     = mpORBextractorLeft->getScaleSigmaSquares();
+    mvInvLevelSigma2  = mpORBextractorLeft->getInverseScaleSigmaSquares();
 
     // ORB extraction
 #ifdef REGISTER_TIMES
@@ -638,13 +638,13 @@ Frame::Frame(const cv::Mat              &imColor,
     mnId = nNextId++;
 
     // Scale Level Info
-    mnScaleLevels     = mpORBextractorLeft->GetLevels();
-    mfScaleFactor     = mpORBextractorLeft->GetScaleFactor();
+    mnScaleLevels     = mpORBextractorLeft->getLevelCount();
+    mfScaleFactor     = mpORBextractorLeft->getScaleFactor();
     mfLogScaleFactor  = log(mfScaleFactor);
-    mvScaleFactors    = mpORBextractorLeft->GetScaleFactors();
-    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-    mvLevelSigma2     = mpORBextractorLeft->GetScaleSigmaSquares();
-    mvInvLevelSigma2  = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+    mvScaleFactors    = mpORBextractorLeft->getScaleFactors();
+    mvInvScaleFactors = mpORBextractorLeft->getInverseScaleFactors();
+    mvLevelSigma2     = mpORBextractorLeft->getScaleSigmaSquares();
+    mvInvLevelSigma2  = mpORBextractorLeft->getInverseScaleSigmaSquares();
 
     // ORB extraction
 #ifdef REGISTER_TIMES
@@ -1216,7 +1216,7 @@ void Frame::ComputeStereoMatches()
 
     const int thOrbDist = (ORBmatcher::TH_HIGH + ORBmatcher::TH_LOW) / 2;
 
-    const int nRows = mpORBextractorLeft->mvImagePyramid[0].rows;
+    const int nRows = mpORBextractorLeft->imagePyramid[0].rows;
 
     // Assign keypoints to row table
     vector<vector<size_t>> vRowIndices(nRows, vector<size_t>());
@@ -1306,7 +1306,7 @@ void Frame::ComputeStereoMatches()
 
             // sliding window search
             const int w  = 5;
-            cv::Mat   IL = mpORBextractorLeft->mvImagePyramid[kpL.octave]
+            cv::Mat   IL = mpORBextractorLeft->imagePyramid[kpL.octave]
                              .rowRange(scaledvL - w, scaledvL + w + 1)
                              .colRange(scaleduL - w, scaleduL + w + 1);
 
@@ -1319,12 +1319,12 @@ void Frame::ComputeStereoMatches()
             const float iniu = scaleduR0 + L - w;
             const float endu = scaleduR0 + L + w + 1;
             if (iniu < 0 ||
-                endu >= mpORBextractorRight->mvImagePyramid[kpL.octave].cols)
+                endu >= mpORBextractorRight->imagePyramid[kpL.octave].cols)
                 continue;
 
             for (int incR = -L; incR <= +L; incR++)
             {
-                cv::Mat IR = mpORBextractorRight->mvImagePyramid[kpL.octave]
+                cv::Mat IR = mpORBextractorRight->imagePyramid[kpL.octave]
                                  .rowRange(scaledvL - w, scaledvL + w + 1)
                                  .colRange(scaleduR0 + incR - w,
                                            scaleduR0 + incR + w + 1);

@@ -194,10 +194,10 @@ Tracking::Tracking(System           *pSys,
               << " camera(s) in Atlas!" << std::endl;
     for (camera_models::GeometricCamera *pCam : vpCams)
     {
-        std::cout << "- Camera " << pCam->GetId();
-        if (pCam->GetType() == camera_models::GeometricCamera::CAM_PINHOLE)
+        std::cout << "- Camera " << pCam->getId();
+        if (pCam->getType() == camera_models::GeometricCamera::CAM_PINHOLE)
             std::cout << " is a pinhole!" << std::endl;
-        else if (pCam->GetType() == camera_models::GeometricCamera::CAM_FISHEYE)
+        else if (pCam->getType() == camera_models::GeometricCamera::CAM_FISHEYE)
             std::cout << " is a fisheye!" << std::endl;
         else
             std::cout << " is unknown!" << std::endl;
@@ -703,7 +703,7 @@ void Tracking::newParameterLoader(Settings *settings)
 
     if ((mSensor == System::STEREO || mSensor == System::IMU_STEREO ||
          mSensor == System::IMU_RGBD) &&
-        settings->cameraType() == Settings::KannalaBrandt)
+        settings->cameraType() == Settings::CameraType::KANNALA_BRANDT)
     {
         mpCamera2 = settings->camera2();
         mpCamera2 = mpAtlas->AddCamera(mpCamera2);
@@ -962,20 +962,20 @@ void Tracking::AdjustFASTThreshold()
     }
 
     // Apply new thresholds if changed
-    if (newIniThFAST != mpORBextractorLeft->GetIniThFAST() ||
-        newMinThFAST != mpORBextractorLeft->GetMinThFAST())
+    if (newIniThFAST != mpORBextractorLeft->getInitialFastThreshold() ||
+        newMinThFAST != mpORBextractorLeft->getMinimumFastThreshold())
     {
-        mpORBextractorLeft->SetIniThFAST(newIniThFAST);
-        mpORBextractorLeft->SetMinThFAST(newMinThFAST);
+        mpORBextractorLeft->setInitialFastThreshold(newIniThFAST);
+        mpORBextractorLeft->setMinimumFastThreshold(newMinThFAST);
         if (mpORBextractorRight)
         {
-            mpORBextractorRight->SetIniThFAST(newIniThFAST);
-            mpORBextractorRight->SetMinThFAST(newMinThFAST);
+            mpORBextractorRight->setInitialFastThreshold(newIniThFAST);
+            mpORBextractorRight->setMinimumFastThreshold(newMinThFAST);
         }
         if (mpIniORBextractor)
         {
-            mpIniORBextractor->SetIniThFAST(newIniThFAST);
-            mpIniORBextractor->SetMinThFAST(newMinThFAST);
+            mpIniORBextractor->setInitialFastThreshold(newIniThFAST);
+            mpIniORBextractor->setMinimumFastThreshold(newMinThFAST);
         }
         Verbose::PrintMess(
             "[Tracking] Adaptive FAST: iniTh=" + std::to_string(newIniThFAST) +
@@ -1522,9 +1522,9 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
                     rightLappingEnd   = rightLappingEnd * mImageScale;
                 }
 
-                static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->mvLappingArea[0] =
+                static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->lappingArea[0] =
                     leftLappingBegin;
-                static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->mvLappingArea[1] =
+                static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->lappingArea[1] =
                     leftLappingEnd;
 
                 mpFrameDrawer->both = true;
@@ -1535,9 +1535,9 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
 
                 mTlr = Converter::toSophus(cvTlr);
 
-                static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->mvLappingArea[0] =
+                static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->lappingArea[0] =
                     rightLappingBegin;
-                static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->mvLappingArea[1] =
+                static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->lappingArea[1] =
                     rightLappingEnd;
 
                 std::cout << "- Camera1 Lapping: " << leftLappingBegin << ", "
@@ -3402,7 +3402,7 @@ void Tracking::CreateInitialMapMonocular()
         nullptr,
         0,
         true,
-        types::SystemParams::GetParams()->markers.impact);
+        types::SystemParams::getParams()->markers.impact);
 
     float medianDepth = pKFini->ComputeSceneMedianDepth(2);
     float invMedianDepth;

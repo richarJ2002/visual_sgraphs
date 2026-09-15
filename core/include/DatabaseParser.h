@@ -18,6 +18,8 @@
 
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <vector>
 #include "Thirdparty/nlohmann/json.hpp"
 
 #include "Semantic/Room.h"
@@ -34,7 +36,7 @@ namespace core
     class DBParser
     {
     private:
-        std::vector<semantic::Room *> envRooms; // Rooms available in the real environment
+        std::vector<semantic::Room *> environmentRooms; // Rooms available in the real environment
 
     public:
         DBParser();
@@ -42,16 +44,16 @@ namespace core
 
         /**
          * @brief Parses the JSON file and returns a dictionary of its values.
-         * @param jsonFilePath the path of the JSON file
+         * @param jsonFilePath_in the path of the JSON file
          */
-        json jsonParser(string jsonFilePath);
+        json parseJsonFile(std::string jsonFilePath_in);
 
         /**
          * @brief Parses the dictionary containing rooms data in the real environment
          * and returns a list of rooms.
-         * @param envData the JSON file containing the rooms data
+         * @param environmentData_in the JSON file containing the rooms data
          */
-        std::vector<semantic::Room *> getEnvRooms(json envData);
+        std::vector<semantic::Room *> getEnvironmentRooms(json environmentData_in);
     };
 } // namespace core
 } // namespace vs_graphs

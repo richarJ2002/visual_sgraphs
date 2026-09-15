@@ -51,7 +51,7 @@ Plane::Plane(void)
 
     octree = boost::make_shared<
         pcl::octree::OctreePointCloudSearch<pcl::PointXYZRGBA>>(
-        types::SystemParams::GetParams()->refine_map_points.octree.resolution);
+        types::SystemParams::getParams()->refineMapPoints.octree.resolution);
 
     minPlaneU = std::numeric_limits<double>::max();
     maxPlaneU = std::numeric_limits<double>::lowest();
@@ -604,17 +604,17 @@ bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &point)
     pointPCL.y = point(1);
     pointPCL.z = point(2);
 
-    types::SystemParams      *sysParams = types::SystemParams::GetParams();
+    types::SystemParams      *sysParams = types::SystemParams::getParams();
     std::vector<int>   pointIdxRadiusSearch;
     std::vector<float> pointRadiusSquaredDistance;
 
     if (octree->radiusSearch(
             pointPCL,
-            sysParams->refine_map_points.octree.search_radius,
+            sysParams->refineMapPoints.octree.searchRadius,
             pointIdxRadiusSearch,
             pointRadiusSquaredDistance,
-            sysParams->refine_map_points.octree.min_neighbors) ==
-        sysParams->refine_map_points.octree.min_neighbors)
+            sysParams->refineMapPoints.octree.minNeighbors) ==
+        sysParams->refineMapPoints.octree.minNeighbors)
     {
         return true;
     }
@@ -674,7 +674,7 @@ void Plane::castWeightedVote(Plane::planeVariant semanticType,
     }
 
     // set the plane type if votes above a certain threshold
-    if (maxVotes >= types::SystemParams::GetParams()->sem_seg.min_votes)
+    if (maxVotes >= types::SystemParams::getParams()->semSeg.minVotes)
         planeType = maxType;
     else
         planeType = planeVariant::UNDEFINED;
@@ -1046,7 +1046,7 @@ void Plane::rebuildSemanticVotesWithoutLock(void)
             maxType  = semanticType;
         }
     }
-    planeType = maxVotes >= types::SystemParams::GetParams()->sem_seg.min_votes
+    planeType = maxVotes >= types::SystemParams::getParams()->semSeg.minVotes
                     ? maxType
                     : planeVariant::UNDEFINED;
 }

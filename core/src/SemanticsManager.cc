@@ -375,7 +375,7 @@ WallAdmissionEvidence
         const double fitDistance_m =
             std::abs(normal_World.dot(point_World_m) + equation_World(3));
 
-        if (fitDistance_m > p_systemParams_in->seg.ransac.distance_thresh)
+        if (fitDistance_m > p_systemParams_in->seg.ransac.distanceThresh)
         {
             continue;
         }
@@ -394,8 +394,8 @@ WallAdmissionEvidence
     const double majorExtent_m = std::max(extentU_m, extentV_m);
     const double minorExtent_m = std::min(extentU_m, extentV_m);
     const double area_m2       = majorExtent_m * minorExtent_m;
-    const types::SystemParams::sem_seg::WallCreation &wallCreation =
-        p_systemParams_in->sem_seg.wallCreation;
+    const types::SystemParams::semSeg::WallCreation &wallCreation =
+        p_systemParams_in->semSeg.wallCreation;
     const double fitSupportRatio =
         evidence.finitePointCount > 0U
             ? static_cast<double>(evidence.fittedPointCount) /
@@ -405,7 +405,7 @@ WallAdmissionEvidence
     evidence.adequateFiniteFit =
         evidence.fittedPointCount >= 20U &&
         fitSupportRatio >=
-            p_systemParams_in->room_seg.minimumWallSupportRatio &&
+            p_systemParams_in->roomSeg.minimumWallSupportRatio &&
         std::isfinite(majorExtent_m) && std::isfinite(minorExtent_m) &&
         std::isfinite(area_m2) &&
         majorExtent_m >= wallCreation.minimumMajorExtent_m &&
@@ -424,7 +424,7 @@ WallAdmissionEvidence
     const bool repeatedObservationEvidence =
         evidence.observationCount >=
         std::max<std::size_t>(
-            p_systemParams_in->room_seg.minimumWallObservationCount,
+            p_systemParams_in->roomSeg.minimumWallObservationCount,
             1U);
     const bool wallDominatesSemantics =
         p_wall_in->getPlaneType() == geometric::Plane::planeVariant::WALL &&
@@ -700,7 +700,7 @@ struct WallLoopClosure
 WallLoopClosure tryCloseWallLoop(
     std::vector<FiniteWallSegment2d>                wallSegments_in,
     const Eigen::Vector2d                          &roomCentroid_Ground_m_in,
-    const types::SystemParams::room_seg::BoundaryTopology &topologyParameters_in)
+    const types::SystemParams::roomSeg::BoundaryTopology &topologyParameters_in)
 {
     WallLoopClosure result;
 
@@ -1495,24 +1495,24 @@ SemanticsManager::SemanticsManager(Atlas *pAtlas)
     mpAtlas = pAtlas;
 
     /* Get the system parameters */
-    sysParams = types::SystemParams::GetParams();
+    sysParams = types::SystemParams::getParams();
 
     /* Configure the room-tracking state machine (WP13 Section 18.4). */
     semantic::RoomTrackerConfig trackerConfig;
     trackerConfig.crossing_dwell_s =
-        static_cast<double>(sysParams->room_tracking.crossing_dwell_s);
+        static_cast<double>(sysParams->roomTracking.crossingDwell_s);
     trackerConfig.crossing_confidence =
-        static_cast<double>(sysParams->room_tracking.crossing_confidence);
+        static_cast<double>(sysParams->roomTracking.crossingConfidence);
     trackerConfig.lost_timeout_s =
-        static_cast<double>(sysParams->room_tracking.lost_timeout_s);
+        static_cast<double>(sysParams->roomTracking.lostTimeout_s);
     trackerConfig.reacquire_timeout_s =
-        static_cast<double>(sysParams->room_tracking.reacquire_timeout_s);
+        static_cast<double>(sysParams->roomTracking.reacquireTimeout_s);
     trackerConfig.reacquire_retry_interval_s = static_cast<double>(
-        sysParams->room_tracking.reacquire_retry_interval_s);
+        sysParams->roomTracking.reacquireRetryInterval_s);
     trackerConfig.reacquire_max_retries =
-        sysParams->room_tracking.reacquire_max_retries;
+        sysParams->roomTracking.reacquireMaxRetries;
     trackerConfig.reacquire_min_planes =
-        sysParams->room_tracking.reacquire_min_planes;
+        sysParams->roomTracking.reacquireMinPlanes;
     roomTracker_ = semantic::RoomTracker(trackerConfig);
 }
 
@@ -1955,7 +1955,7 @@ void SemanticsManager::Run(void)
          * observation-side compatibility before atomically rewiring every
          * existing reference to the retained plane.
          */
-        if (sysParams->sem_seg.reassociate.enabled)
+        if (sysParams->semSeg.reassociate.enabled)
         {
             Utils::reAssociateSemanticPlanes(mpAtlas);
         }
@@ -1972,7 +1972,7 @@ void SemanticsManager::Run(void)
          * room association, wall detachment, prospective-room cleanup) stay
          * below, after Pass 1's wall admission, where room data exists to
          * work from. */
-        if (sysParams->sem_seg.enable_passage_detection)
+        if (sysParams->semSeg.enablePassageDetection)
         {
             detectDoorsAndDoorways(mpAtlas);
             updatePassages(mpAtlas);
@@ -1984,8 +1984,8 @@ void SemanticsManager::Run(void)
          *
          * @note         This is the preferred wall-to-room association method.
          */
-        if (sysParams->room_seg.method ==
-            types::SystemParams::room_seg::Method::FREE_SPACE)
+        if (sysParams->roomSeg.method ==
+            types::SystemParams::roomSeg::Method::FREE_SPACE)
         {
             detectRoom_FreeSpaceCluster();
         }
@@ -2004,7 +2004,7 @@ void SemanticsManager::Run(void)
 
         /*  Room-dependent passage steps: geometry was already refreshed
          * above, ahead of this cycle's wall admission. */
-        if (sysParams->sem_seg.enable_passage_detection)
+        if (sysParams->semSeg.enablePassageDetection)
         {
             updateTraversalEvidence(mpAtlas);
             Utils::reAssociatePassages(mpAtlas);
@@ -2110,8 +2110,8 @@ void SemanticsManager::Run(void)
          * clusters. Now that passages exist, partitionFreeSpaceAtPassages()
          * will split clusters at doorways, yielding correct per-room clusters.
          */
-        if (sysParams->room_seg.method ==
-            types::SystemParams::room_seg::Method::FREE_SPACE)
+        if (sysParams->roomSeg.method ==
+            types::SystemParams::roomSeg::Method::FREE_SPACE)
         {
             detectRoom_FreeSpaceCluster(); // Second pass - updates existing
                                            // rooms
@@ -2142,8 +2142,8 @@ void SemanticsManager::Run(void)
          * wall-centroid mean drifts rooms away from the cluster each cycle,
          * which breaks the centroid-keyed room matching in associateRooms()
          * and spawns a duplicate room every run. */
-        if (sysParams->room_seg.method !=
-            types::SystemParams::room_seg::Method::FREE_SPACE)
+        if (sysParams->roomSeg.method !=
+            types::SystemParams::roomSeg::Method::FREE_SPACE)
         {
             recomputeRoomCentroidsFromWalls();
         }
@@ -2181,35 +2181,35 @@ void SemanticsManager::Run(void)
             }
         }
         semantic::SemanticCandidateConfig candidateConfig;
-        candidateConfig.topK = sysParams->candidate_gen.top_k;
+        candidateConfig.topK = sysParams->candidateGen.topK;
         candidateConfig.candidatePairCap =
-            sysParams->candidate_gen.candidate_pair_cap;
+            sysParams->candidateGen.candidatePairCap;
         candidateConfig.topologyNodesCap =
-            sysParams->candidate_gen.topology_nodes_cap;
+            sysParams->candidateGen.topologyNodesCap;
         candidateConfig.globalFallbackCap =
-            sysParams->candidate_gen.global_fallback_cap;
-        candidateConfig.weightAngle  = sysParams->candidate_gen.weight_angle;
-        candidateConfig.weightExtent = sysParams->candidate_gen.weight_extent;
+            sysParams->candidateGen.globalFallbackCap;
+        candidateConfig.weightAngle  = sysParams->candidateGen.weightAngle;
+        candidateConfig.weightExtent = sysParams->candidateGen.weightExtent;
         candidateConfig.weightAperture =
-            sysParams->candidate_gen.weight_aperture;
+            sysParams->candidateGen.weightAperture;
         candidateConfig.weightTopology =
-            sysParams->candidate_gen.weight_topology;
+            sysParams->candidateGen.weightTopology;
         candidateConfig.angleMissingPenalty =
-            sysParams->candidate_gen.angle_missing_penalty;
+            sysParams->candidateGen.angleMissingPenalty;
         candidateConfig.extentMissingPenalty =
-            sysParams->candidate_gen.extent_missing_penalty;
+            sysParams->candidateGen.extentMissingPenalty;
         candidateConfig.apertureMissingPenalty =
-            sysParams->candidate_gen.aperture_missing_penalty;
+            sysParams->candidateGen.apertureMissingPenalty;
         candidateConfig.ambiguityMargin =
-            sysParams->candidate_gen.ambiguity_margin;
+            sysParams->candidateGen.ambiguityMargin;
         candidateConfig.angleTolerance_rad =
-            sysParams->candidate_gen.angle_tolerance_rad;
+            sysParams->candidateGen.angleTolerance_rad;
         candidateConfig.runtimeBudget_ms =
-            sysParams->candidate_gen.runtime_budget_ms;
+            sysParams->candidateGen.runtimeBudget_ms;
         candidateConfig.descriptorElementsCap =
-            sysParams->candidate_gen.descriptor_elements_cap;
+            sysParams->candidateGen.descriptorElementsCap;
         candidateConfig.topoRefinementIters =
-            sysParams->candidate_gen.topo_refinement_iters;
+            sysParams->candidateGen.topoRefinementIters;
         /* Section 9.2's "last-confirmed room" anchor for adjacency-
          * prioritised candidate search. -1 (unset) maps to no anchor. */
         const int                lastKnownRoomId = getLastKnownRoomId();
@@ -2488,7 +2488,7 @@ void SemanticsManager::filterWallPlanes(void)
              * value should be close to 0.00)
              */
             if (abs(transformedPlaneCoefficients(1)) >
-                sysParams->sem_seg.max_tilt_wall)
+                sysParams->semSeg.maxTiltWall)
             {
                 plane->resetPlaneSemantics();
             }
@@ -2515,7 +2515,7 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *groundPlane)
            cloud is momentarily empty (e.g. right after creation/reset). */
         return;
     }
-    float threshY = *groundPlaneHeight - sysParams->sem_seg.max_step_elevation;
+    float threshY = *groundPlaneHeight - sysParams->semSeg.maxStepElevation;
 
     /* Extract the main associated ground plane */
     int groundPlaneId = groundPlane->getId();
@@ -2558,7 +2558,7 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *groundPlane)
          * reference, this value should be close to 0.00.
          */
         if (abs(transformedPlaneCoefficients(0)) >
-            sysParams->sem_seg.max_tilt_ground)
+            sysParams->semSeg.maxTiltGround)
         {
             plane->resetPlaneSemantics();
         }
@@ -2567,8 +2567,8 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *groundPlane)
 void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
     const std::vector<vs_graphs::core::geometric::Plane *> &wallPlanes)
 {
-    const types::SystemParams::sem_seg::PassageDetection &passageParameters =
-        sysParams->sem_seg.passageDetection;
+    const types::SystemParams::semSeg::PassageDetection &passageParameters =
+        sysParams->semSeg.passageDetection;
 
     const double minimumSideDistance =
         static_cast<double>(passageParameters.minimumSideDistance_m);
@@ -3672,7 +3672,7 @@ void SemanticsManager::detectDoorsAndDoorways(vs_graphs::core::Atlas *pAtlas)
 
         // Quality gate: minimum observations, not room confirmation status
         if (wall->getObservationCount() >=
-            sysParams->room_seg.minimumWallObservationCount)
+            sysParams->roomSeg.minimumWallObservationCount)
         {
             confirmedWallPlanes.push_back(wall);
         }
@@ -3681,7 +3681,7 @@ void SemanticsManager::detectDoorsAndDoorways(vs_graphs::core::Atlas *pAtlas)
             std::cout << "[SemMgr] Skipping wall " << wall->getId()
                       << " for passage detection: insufficient observations ("
                       << wall->getObservationCount() << " < "
-                      << sysParams->room_seg.minimumWallObservationCount << ")."
+                      << sysParams->roomSeg.minimumWallObservationCount << ")."
                       << std::endl;
         }
     }
@@ -3713,7 +3713,7 @@ void SemanticsManager::detectDoorsAndDoorways(vs_graphs::core::Atlas *pAtlas)
             if (Utils::arePlanesApartEnough(
                     door,
                     wall,
-                    sysParams->sem_seg.max_wall_door_distance))
+                    sysParams->semSeg.maxWallDoorDistance))
             {
                 continue;
             }
@@ -3774,11 +3774,11 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *pAtlas)
 
             /* Extract the max width */
             const double maxWidth =
-                static_cast<double>(sysParams->sem_seg.max_door_width);
+                static_cast<double>(sysParams->semSeg.maxDoorWidth);
 
             /* Extract the max height */
             const double maxHeight =
-                static_cast<double>(sysParams->sem_seg.max_door_height);
+                static_cast<double>(sysParams->semSeg.maxDoorHeight);
 
             /* Determine if dimensions are valid */
             const bool validDimensions =
@@ -4217,9 +4217,9 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
     }
 
     const double openingMargin_m = static_cast<double>(
-        sysParams->room_seg.passagePartition.openingMargin_m);
+        sysParams->roomSeg.passagePartition.openingMargin_m);
     const double minimumSideDistance_m = static_cast<double>(
-        sysParams->room_seg.passagePartition.minimumSideDistance_m);
+        sysParams->roomSeg.passagePartition.minimumSideDistance_m);
     const std::vector<semantic::Passage *> passages = p_activeMap->GetAllPassages();
 
     /* Passage confirmation is delayed relative to flight. Replay a bounded
@@ -4910,8 +4910,8 @@ std::vector<std::vector<Eigen::Vector3d>>
         const std::vector<std::vector<Eigen::Vector3d>>
             &freeSpaceClusters_World_m_in) const
 {
-    const types::SystemParams::room_seg::PassagePartition &partitionParameters =
-        sysParams->room_seg.passagePartition;
+    const types::SystemParams::roomSeg::PassagePartition &partitionParameters =
+        sysParams->roomSeg.passagePartition;
 
     if (!partitionParameters.enabled || freeSpaceClusters_World_m_in.empty())
     {
@@ -4968,7 +4968,7 @@ std::vector<std::vector<Eigen::Vector3d>>
     const double minimumSideDistance_m =
         static_cast<double>(partitionParameters.minimumSideDistance_m);
     const std::size_t minimumClusterVertexCount =
-        std::max<std::size_t>(sysParams->room_seg.min_cluster_vertices, 1U);
+        std::max<std::size_t>(sysParams->roomSeg.minClusterVertices, 1U);
     std::vector<std::vector<Eigen::Vector3d>> partitionedClusters_World_m;
 
     for (const std::vector<Eigen::Vector3d> &cluster_World_m :
@@ -5131,8 +5131,8 @@ std::vector<std::vector<Eigen::Vector3d>>
 
 void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
 {
-    const types::SystemParams::room_seg::PassagePartition &partitionParameters =
-        sysParams->room_seg.passagePartition;
+    const types::SystemParams::roomSeg::PassagePartition &partitionParameters =
+        sysParams->roomSeg.passagePartition;
 
     if (!partitionParameters.enabled ||
         !partitionParameters.detachWallsBeyondPassages)
@@ -5329,7 +5329,7 @@ SemanticsManager::PassageSideEnforcementOutcome
         }
 
         const double minimumSideDistance_m = static_cast<double>(
-            sysParams->room_seg.passagePartition.minimumSideDistance_m);
+            sysParams->roomSeg.passagePartition.minimumSideDistance_m);
 
         /* B2 fix: segmentCrossesPassageOpening silently reports "no crossing"
          * whenever its segment-start point sits within minimumSideDistance_m
@@ -5378,7 +5378,7 @@ SemanticsManager::PassageSideEnforcementOutcome
                 p_passage,
                 groundNormal_World_in,
                 static_cast<double>(
-                    sysParams->room_seg.passagePartition.openingMargin_m),
+                    sysParams->roomSeg.passagePartition.openingMargin_m),
                 minimumSideDistance_m))
         {
             continue;
@@ -5467,8 +5467,8 @@ SemanticsManager::PassageSideEnforcementOutcome
                 evidence.heightSpan_m,
                 groundNormal_World_in,
                 static_cast<double>(
-                    sysParams->room_seg.passagePartition.openingMargin_m),
-                static_cast<double>(sysParams->room_seg.passagePartition
+                    sysParams->roomSeg.passagePartition.openingMargin_m),
+                static_cast<double>(sysParams->roomSeg.passagePartition
                                         .minimumSideDistance_m)))
         {
             continue;
@@ -5651,7 +5651,7 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                     continue;
                 }
                 const double minimumSideDistance_m = static_cast<double>(
-                    sysParams->room_seg.passagePartition.minimumSideDistance_m);
+                    sysParams->roomSeg.passagePartition.minimumSideDistance_m);
                 const Eigen::Vector3d knownSidePoint_World_m =
                     p_exemptPassage->getCentroid() +
                     (minimumSideDistance_m * 2.0) * knownSide.direction_World;
@@ -5660,7 +5660,7 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                         p_wall->getCentroid().cast<double>(),
                         p_exemptPassage,
                         groundNormal_World,
-                        static_cast<double>(sysParams->room_seg.passagePartition
+                        static_cast<double>(sysParams->roomSeg.passagePartition
                                                 .openingMargin_m),
                         minimumSideDistance_m))
                 {
@@ -5775,8 +5775,8 @@ bool SemanticsManager::admitWallToRoom(semantic::Room  *p_room_inout,
         return false;
     }
 
-    const types::SystemParams::room_seg::BoundaryTopology &topologyParameters =
-        sysParams->room_seg.boundaryTopology;
+    const types::SystemParams::roomSeg::BoundaryTopology &topologyParameters =
+        sysParams->roomSeg.boundaryTopology;
     geometric::Plane *p_groundPlane = mpAtlas->GetBiggestGroundPlane();
 
     if (!topologyParameters.enabled || p_groundPlane == nullptr ||
@@ -6096,8 +6096,8 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
              */
             const double coarseCentroidDistanceThreshold =
                 2.0 * static_cast<double>(
-                          sysParams->room_seg
-                              .cluster_centroid_wall_centroid_distance_thresh);
+                          sysParams->roomSeg
+                              .clusterCentroidWallCentroidDistanceThresh);
 
             if (centroidDistance >= coarseCentroidDistanceThreshold)
             {
@@ -6190,8 +6190,8 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
             const double wallExtentV_m = maximumWallV_m - minimumWallV_m;
 
             /* Skip small fragments without erasing their semantic evidence. */
-            if (wallExtentU_m < sysParams->room_seg.minimumFiniteWallExtent_m ||
-                wallExtentV_m < sysParams->room_seg.minimumFiniteWallExtent_m)
+            if (wallExtentU_m < sysParams->roomSeg.minimumFiniteWallExtent_m ||
+                wallExtentV_m < sysParams->roomSeg.minimumFiniteWallExtent_m)
             {
                 continue;
             }
@@ -6222,7 +6222,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
                 /* If the plane distance is larger than threshold, skip point */
                 if (planeDistance >=
-                    sysParams->room_seg.cluster_point_wall_distance_thresh)
+                    sysParams->roomSeg.clusterPointWallDistanceThresh)
                 {
                     continue;
                 }
@@ -6247,16 +6247,16 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 const bool insideFiniteWall =
                     projectedU >=
                         minimumWallU_m -
-                            sysParams->room_seg.finiteWallBoundsMargin_m &&
+                            sysParams->roomSeg.finiteWallBoundsMargin_m &&
                     projectedU <=
                         maximumWallU_m +
-                            sysParams->room_seg.finiteWallBoundsMargin_m &&
+                            sysParams->roomSeg.finiteWallBoundsMargin_m &&
                     projectedV >=
                         minimumWallV_m -
-                            sysParams->room_seg.finiteWallBoundsMargin_m &&
+                            sysParams->roomSeg.finiteWallBoundsMargin_m &&
                     projectedV <=
                         maximumWallV_m +
-                            sysParams->room_seg.finiteWallBoundsMargin_m;
+                            sysParams->roomSeg.finiteWallBoundsMargin_m;
 
                 /*!
                  * If the point is within the wall plane, incriment counter or
@@ -6274,7 +6274,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
             /* If the plane distance from cluster is far from threshold, skip */
             if (minimumPlaneDistance >
-                sysParams->room_seg.cluster_point_wall_distance_thresh)
+                sysParams->roomSeg.clusterPointWallDistanceThresh)
             {
                 continue;
             }
@@ -6293,9 +6293,9 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
              */
 
             if (supportedPointCount >=
-                    sysParams->room_seg.minimumWallSupportPointCount &&
+                    sysParams->roomSeg.minimumWallSupportPointCount &&
                 finiteSupportRatio >=
-                    sysParams->room_seg.minimumWallSupportRatio)
+                    sysParams->roomSeg.minimumWallSupportRatio)
             {
                 closestWalls.push_back(wall);
             }
@@ -6644,10 +6644,10 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             p_passage,
                             groundNormal_World,
                             static_cast<double>(
-                                sysParams->room_seg.passagePartition
+                                sysParams->roomSeg.passagePartition
                                     .openingMargin_m),
                             static_cast<double>(
-                                sysParams->room_seg.passagePartition
+                                sysParams->roomSeg.passagePartition
                                     .minimumSideDistance_m),
                             false))
                     {
@@ -6752,10 +6752,10 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                 evidence.heightSpan_m,
                                 groundNormal_World,
                                 static_cast<double>(
-                                    sysParams->room_seg.passagePartition
+                                    sysParams->roomSeg.passagePartition
                                         .openingMargin_m),
                                 static_cast<double>(
-                                    sysParams->room_seg.passagePartition
+                                    sysParams->roomSeg.passagePartition
                                         .minimumSideDistance_m)))
                         {
                             continue;
@@ -6916,9 +6916,9 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                     clusterCentroid,
                                     p_passage,
                                     groundNormal_World,
-                                    sysParams->room_seg.passagePartition
+                                    sysParams->roomSeg.passagePartition
                                         .openingMargin_m,
-                                    sysParams->room_seg.passagePartition
+                                    sysParams->roomSeg.passagePartition
                                         .minimumSideDistance_m))
                             {
                                 continue;
@@ -7133,7 +7133,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
          */
         const bool validFreeSpaceCluster =
             cluster.size() >=
-            static_cast<std::size_t>(sysParams->room_seg.min_cluster_vertices);
+            static_cast<std::size_t>(sysParams->roomSeg.minClusterVertices);
 
         /*!
          * Require at least one associated wall before inserting the free-space
@@ -7425,7 +7425,7 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
 {
     /* Extract parameter on centre distance threshold of room */
     const double centerDistanceThreshold =
-        static_cast<double>(sysParams->room_seg.center_distance_thresh);
+        static_cast<double>(sysParams->roomSeg.centerDistanceThresh);
 
     constexpr double sideEpsilon = 0.20;
 
@@ -7470,7 +7470,7 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
             mpAtlas->GetAllPlanes(),
             roomCenter_World,
             clusterCentroid_World_in,
-            static_cast<double>(sysParams->room_seg.finiteWallBoundsMargin_m));
+            static_cast<double>(sysParams->roomSeg.finiteWallBoundsMargin_m));
 
         /* Extract the walls from the room */
         const std::vector<vs_graphs::core::geometric::Plane *> roomWallsList =
@@ -7640,9 +7640,9 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
     }
 
     const double maximumClusterSupportDistance_m =
-        static_cast<double>(sysParams->room_seg.center_distance_thresh);
+        static_cast<double>(sysParams->roomSeg.centerDistanceThresh);
     const double finiteWallBoundsMargin_m =
-        static_cast<double>(sysParams->room_seg.finiteWallBoundsMargin_m);
+        static_cast<double>(sysParams->roomSeg.finiteWallBoundsMargin_m);
     const Eigen::Vector3d retainedCentroid_World_m =
         p_retainedRoom_inout->getCentroid();
 
@@ -7766,9 +7766,9 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                                         duplicateCentroid_World_m,
                                         p_passage,
                                         groundNormal_World,
-                                        sysParams->room_seg.passagePartition
+                                        sysParams->roomSeg.passagePartition
                                             .openingMargin_m,
-                                        sysParams->room_seg.passagePartition
+                                        sysParams->roomSeg.passagePartition
                                             .minimumSideDistance_m);
                                 });
             }
@@ -8253,10 +8253,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
             const double wallOffset_m = wallEquation_World(3) / wallNormalNorm;
             const double maximumCentroidDistance_m =
                 2.0 * static_cast<double>(
-                          sysParams->room_seg
-                              .cluster_centroid_wall_centroid_distance_thresh);
+                          sysParams->roomSeg
+                              .clusterCentroidWallCentroidDistanceThresh);
             const double maximumPointDistance_m = static_cast<double>(
-                sysParams->room_seg.cluster_point_wall_distance_thresh);
+                sysParams->roomSeg.clusterPointWallDistanceThresh);
 
             for (const std::vector<Eigen::Vector3d> &cluster : skeletonClusters)
             {
@@ -8361,7 +8361,7 @@ void SemanticsManager::suppressUndefendedWalls(void)
         state.unresolvedCycles++;
 
         if (state.unresolvedCycles <
-            sysParams->room_seg.minimumUndefendedWallHoldCycles)
+            sysParams->roomSeg.minimumUndefendedWallHoldCycles)
         {
             std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                          "\"map_id\":"
@@ -8634,8 +8634,8 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                         p_wall->getCentroid().cast<double>(),
                         p_passage,
                         groundNormal_World,
-                        sysParams->room_seg.passagePartition.openingMargin_m,
-                        sysParams->room_seg.passagePartition
+                        sysParams->roomSeg.passagePartition.openingMargin_m,
+                        sysParams->roomSeg.passagePartition
                             .minimumSideDistance_m,
                         false))
                 {
@@ -8797,11 +8797,11 @@ void SemanticsManager::reconcileWallFacePairs(void)
     }
 
     const double minimumThickness_m =
-        static_cast<double>(sysParams->sem_seg.wallPairing.minimumThickness_m);
+        static_cast<double>(sysParams->semSeg.wallPairing.minimumThickness_m);
     const double maximumThickness_m =
-        static_cast<double>(sysParams->sem_seg.wallPairing.maximumThickness_m);
+        static_cast<double>(sysParams->semSeg.wallPairing.maximumThickness_m);
     const double minimumOverlapRatio =
-        static_cast<double>(sysParams->sem_seg.wallPairing.minimumOverlapRatio);
+        static_cast<double>(sysParams->semSeg.wallPairing.minimumOverlapRatio);
 
     std::vector<geometric::Plane *> wallPlanes;
     for (geometric::Plane *p_plane : mpAtlas->GetAllPlanes())
@@ -8921,8 +8921,8 @@ void SemanticsManager::validateRoomBoundaries(void)
 {
     std::cout << "[SemMgr] validateRoomBoundaries() called" << std::endl;
 
-    const types::SystemParams::room_seg::BoundaryTopology &topologyParameters =
-        sysParams->room_seg.boundaryTopology;
+    const types::SystemParams::roomSeg::BoundaryTopology &topologyParameters =
+        sysParams->roomSeg.boundaryTopology;
 
     if (!topologyParameters.enabled)
     {
@@ -9452,7 +9452,7 @@ void SemanticsManager::recomputeRoomCentroidsFromWalls(void)
      * site's comment for why a plain mean of wall centroids is not
      * guaranteed to land inside the room. Kept in sync with it rather than
      * shared, since this function only runs for non-FREE_SPACE
-     * room_seg.method configurations (the FREE_SPACE path, this project's
+     * roomSeg.method configurations (the FREE_SPACE path, this project's
      * configured default, uses the other site directly). */
     constexpr double centroidInwardOffset_m = 0.10;
 
@@ -10383,18 +10383,18 @@ void SemanticsManager::associatePassagesToRooms(void)
                                 anteChurnGroundNormal_World
                                     .cross(anteChurnGroundAxisU_World)
                                     .normalized();
-                            const types::SystemParams::room_seg::PassagePartition
+                            const types::SystemParams::roomSeg::PassagePartition
                                 &anteChurnPartitionParameters =
-                                    sysParams->room_seg.passagePartition;
+                                    sysParams->roomSeg.passagePartition;
                             const double anteChurnOpeningMargin_m =
                                 static_cast<double>(anteChurnPartitionParameters
                                                         .openingMargin_m);
                             const double anteChurnMinimumSideDistance_m =
                                 static_cast<double>(anteChurnPartitionParameters
                                                         .minimumSideDistance_m);
-                            const types::SystemParams::room_seg::BoundaryTopology
+                            const types::SystemParams::roomSeg::BoundaryTopology
                                 &anteChurnTopologyParameters =
-                                    sysParams->room_seg.boundaryTopology;
+                                    sysParams->roomSeg.boundaryTopology;
                             const Eigen::Vector3d knownRoomCentroid =
                                 p_knownRoom->getCentroid();
                             const std::vector<vs_graphs::core::semantic::Room *>
@@ -10568,11 +10568,11 @@ void SemanticsManager::associatePassagesToRooms(void)
                                                      passageEq(3));
 
                                         if (openingDistance_m <=
-                                                sysParams->sem_seg
+                                                sysParams->semSeg
                                                     .passageDetection
                                                     .duplicatePassageDistance_m &&
                                             normalAlignment >=
-                                                sysParams->sem_seg
+                                                sysParams->semSeg
                                                     .passageDetection
                                                     .duplicateNormalAlignment &&
                                             planeResidual_m <= 0.30)
@@ -10760,17 +10760,17 @@ void SemanticsManager::associatePassagesToRooms(void)
                         const Eigen::Vector3d groundAxisV_World =
                             groundNormal_World.cross(groundAxisU_World)
                                 .normalized();
-                        const types::SystemParams::room_seg::PassagePartition
+                        const types::SystemParams::roomSeg::PassagePartition
                             &partitionParameters =
-                                sysParams->room_seg.passagePartition;
+                                sysParams->roomSeg.passagePartition;
                         const double openingMargin_m = static_cast<double>(
                             partitionParameters.openingMargin_m);
                         const double minimumSideDistance_m =
                             static_cast<double>(
                                 partitionParameters.minimumSideDistance_m);
-                        const types::SystemParams::room_seg::BoundaryTopology
+                        const types::SystemParams::roomSeg::BoundaryTopology
                             &topologyParameters =
-                                sysParams->room_seg.boundaryTopology;
+                                sysParams->roomSeg.boundaryTopology;
                         const Eigen::Vector3d prospectiveCentroid =
                             p_prospectiveRoom->getCentroid();
                         const std::vector<vs_graphs::core::semantic::Room *> excludedRooms = {

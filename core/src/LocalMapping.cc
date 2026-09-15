@@ -214,7 +214,7 @@ void LocalMapping::Run()
                             num_OptKF_BA,
                             num_MPs_BA,
                             num_edges_BA,
-                            types::SystemParams::GetParams()->markers.impact);
+                            types::SystemParams::getParams()->markers.impact);
                         b_doneLBA = true;
                     }
                 }
