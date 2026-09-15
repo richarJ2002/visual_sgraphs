@@ -39,7 +39,9 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/segmentation/sac_segmentation.h>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 class Utils
 {
@@ -88,8 +90,8 @@ class Utils
      * @param plane2 second plane
      * @param threshold the threshold value for perpendicularity
      */
-    static bool arePlanesApartEnough(const Plane  *plane1,
-                                     const Plane  *plane2,
+    static bool arePlanesApartEnough(const geometric::Plane  *plane1,
+                                     const geometric::Plane  *plane2,
                                      const double &threshold);
 
     /**
@@ -97,31 +99,31 @@ class Utils
      * @param plane1 first plane
      * @param plane2 second plane
      */
-    static bool arePlanesPerpendicular(const ORB_SLAM3::Plane *plane1,
-                                       const ORB_SLAM3::Plane *plane2);
+    static bool arePlanesPerpendicular(const vs_graphs::core::geometric::Plane *plane1,
+                                       const vs_graphs::core::geometric::Plane *plane2);
 
     /**
      * @brief Checks to see if two planes are parallel to each other or not
      * @param plane1 first plane
      * @param plane2 second plane
      */
-    static bool arePlanesParallel(const ORB_SLAM3::Plane *plane1,
-                                  const ORB_SLAM3::Plane *plane2);
+    static bool arePlanesParallel(const vs_graphs::core::geometric::Plane *plane1,
+                                  const vs_graphs::core::geometric::Plane *plane2);
 
     /**
      * @brief Checks to see if two planes are facing each other or not
      * @param plane1 first plane (small plane, e.g., door)
      * @param plane2 second plane (big plane, e.g., wall)
      */
-    static bool arePlanesFacingEachOther(const ORB_SLAM3::Plane *plane1,
-                                         const ORB_SLAM3::Plane *plane2);
+    static bool arePlanesFacingEachOther(const vs_graphs::core::geometric::Plane *plane1,
+                                         const vs_graphs::core::geometric::Plane *plane2);
 
     /**
      * @brief Returns the planes that are facing each other from the given list
      * @param planes list of planes to be checked
      */
-    static std::vector<std::pair<Plane *, Plane *>>
-        getFacingPlanes(const std::vector<Plane *> &planes);
+    static std::vector<std::pair<geometric::Plane *, geometric::Plane *>>
+        getFacingPlanes(const std::vector<geometric::Plane *> &planes);
 
     /**
      * @brief Corrects the given plane equations to apply calculations
@@ -219,11 +221,11 @@ class Utils
      * @return the plane id of the mapped plane
      */
     static int
-        associatePlanes(const vector<Plane *>                  &mappedPlanes,
+        associatePlanes(const vector<geometric::Plane *>                  &mappedPlanes,
                         g2o::Plane3D                            givenPlane,
                         pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr givenCloud,
                         const Eigen::Matrix4d                   &kfPose,
-                        const Plane::planeVariant                obsPlaneType,
+                        const geometric::Plane::planeVariant                obsPlaneType,
                         const float                              threshold,
                         const float maximumFiniteCloudDistance_m_in = -1.0F,
                         const std::optional<Eigen::Vector3d>
@@ -273,7 +275,7 @@ class Utils
      */
     static void fuseDuplicateRoomsAfterMerge(
         Map                       *p_map_inout,
-        const std::vector<Room *> &importedRooms_in);
+        const std::vector<semantic::Room *> &importedRooms_in);
 
     /*!
      * @brief       Fuses duplicate passage entities after optimization or map
@@ -319,7 +321,7 @@ class Utils
      * @param[in]   mpAtlas
      *              a pointer to the Atlas
      */
-    static void consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
+    static void consolidateProvisionalRooms(vs_graphs::core::semantic::Room *selectedRoom,
                                             Atlas           *mpAtlas);
 
     /**
@@ -327,7 +329,7 @@ class Utils
      * @param clsId the class id
      * @return the planeVariant type
      */
-    static ORB_SLAM3::Plane::planeVariant getPlaneTypeFromClassId(int clsId);
+    static vs_graphs::core::geometric::Plane::planeVariant getPlaneTypeFromClassId(int clsId);
 
     /**
      * @brief Gets the class id from the planeVariant type
@@ -335,7 +337,7 @@ class Utils
      * @return the class id
      */
     static int
-        getClassIdFromPlaneType(ORB_SLAM3::Plane::planeVariant planeType);
+        getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::planeVariant planeType);
 
     /**
      * @brief Computes the rigid transform mapping map A into map B using
@@ -370,8 +372,8 @@ class Utils
      * @return the number of accepted wall pairs
      */
     static std::size_t
-        matchWallsBetweenRooms(const Room                   *p_roomA_in,
-                               const Room                   *p_roomB_in,
+        matchWallsBetweenRooms(const semantic::Room                   *p_roomA_in,
+                               const semantic::Room                   *p_roomB_in,
                                std::vector<Eigen::Vector3d> &normalsA_out,
                                std::vector<Eigen::Vector3d> &centroidsA_out,
                                std::vector<Eigen::Vector3d> &normalsB_out,
@@ -406,6 +408,7 @@ class Utils
      */
     static double calcSoftMin(vector<double> &values);
 };
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // UTILS_H

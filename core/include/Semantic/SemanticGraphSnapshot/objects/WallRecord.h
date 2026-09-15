@@ -39,7 +39,9 @@
 #include "Semantic/SemanticGraphSnapshot/objects/RawPlaneRef.h"
 #include "Semantic/SemanticGraphSnapshot/objects/UnavailableReason.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -67,7 +69,7 @@ struct WallRecord
     /*! @brief Plane::getPlaneType() at capture time; always WALL for a
      *  record captured through this snapshot's wall-enumeration path,
      *  retained explicitly rather than assumed. */
-    Plane::planeVariant planeType{Plane::planeVariant::WALL};
+    geometric::Plane::planeVariant planeType{geometric::Plane::planeVariant::WALL};
 
     /*! @brief PlaneGeometryMetadataSnapshot::equation_World. */
     Eigen::Vector4d equation_World{Eigen::Vector4d::Zero()};
@@ -170,6 +172,7 @@ struct WallRecord
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_GRAPH_SNAPSHOT_WALL_RECORD_H

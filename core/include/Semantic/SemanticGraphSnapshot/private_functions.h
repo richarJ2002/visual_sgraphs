@@ -38,7 +38,9 @@
 #include "Semantic/SemanticGraphSnapshot/public_functions.h"
 #include "Semantic/ValueOrder.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -86,7 +88,7 @@ EntityRef entityRefForPassage(Passage *p_passage_in);
  *  a null \p p_wall_in appends nothing (Room::setWalls() rejects null
  *  before insertion, so this is not currently reachable, but is handled
  *  safely regardless). Never dereferences a null pointer. */
-void appendWallRef(Plane *p_wall_in, std::vector<RawPlaneRef> &refs_inout);
+void appendWallRef(geometric::Plane *p_wall_in, std::vector<RawPlaneRef> &refs_inout);
 
 /*! @brief Appends entityRefForRoom(\p p_room_in) to \p refs_inout when
  *  non-null (regardless of map/liveness -- see FloorRecord::roomRefs and
@@ -202,9 +204,9 @@ RoomRecord captureRoom(Room             *p_room_in,
  *                                         built.
  */
 WallRecord captureWall(
-    Plane                                           *p_wall_in,
+    geometric::Plane                                           *p_wall_in,
     long unsigned int                                mapId_in,
-    const std::map<Plane *, std::vector<EntityRef>> &wallOwnersByPointer_in);
+    const std::map<geometric::Plane *, std::vector<EntityRef>> &wallOwnersByPointer_in);
 
 /*! @brief Captures one PassageRecord. \p p_passage_in must not be null. */
 PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in);
@@ -213,7 +215,8 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in);
 FloorRecord captureFloor(Floor *p_floor_in, long unsigned int mapId_in);
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #include "Semantic/SemanticGraphSnapshot/private_functions/sortByKey.tpp"
 

@@ -29,7 +29,9 @@
 
 #include "Semantic/SemanticAxiomEvaluator/EnumNames.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -51,4 +53,5 @@ nlohmann::json entityKeysToJson(const std::vector<EntityKey> &keys_in)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

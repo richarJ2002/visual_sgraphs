@@ -34,7 +34,9 @@
 
 #include "Semantic/SemanticAxiomEvaluator/objects/AxiomEvaluationReport.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -67,6 +69,7 @@ struct SemanticDiagnosticState
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_DIAGNOSTICS_STATE_H

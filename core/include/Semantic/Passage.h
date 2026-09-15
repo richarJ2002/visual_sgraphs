@@ -25,10 +25,14 @@
 #include "Map.h"
 #include "Thirdparty/g2o/g2o/types/plane3d.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 class Map;
-class Plane;
+namespace geometric { class Plane; }
+namespace semantic
+{
 class Marker;
 class Room;
 
@@ -47,7 +51,7 @@ class Passage
     {
         /** Non-owning room known to occupy the observing side, when available.
          */
-        ORB_SLAM3::Room *pRoom{nullptr};
+        vs_graphs::core::semantic::Room *pRoom{nullptr};
 
         /**
          * Unit world-frame direction from the passage toward the observing
@@ -78,9 +82,9 @@ class Passage
     Eigen::Vector3d                 centroid;
     passageVariant                  passageType;
     g2o::Plane3D                    globalEquation;
-    ORB_SLAM3::Plane               *associateDoor;
-    std::vector<ORB_SLAM3::Plane *> associateWalls;
-    ORB_SLAM3::Room    *prospectiveRoom; // Stable far-side room handle
+    vs_graphs::core::geometric::Plane               *associateDoor;
+    std::vector<vs_graphs::core::geometric::Plane *> associateWalls;
+    vs_graphs::core::semantic::Room    *prospectiveRoom; // Stable far-side room handle
     KnownSideProvenance knownSideProvenance;
     bool                mbBad{false};
     bool                recoveryProxy{false};
@@ -200,17 +204,17 @@ class Passage
     g2o::Plane3D getGlobalEquation() const;
     void         setGlobalEquation(const g2o::Plane3D &value);
 
-    ORB_SLAM3::Plane *getAssociateDoor() const;
-    void              setAssociateDoor(ORB_SLAM3::Plane *value);
+    vs_graphs::core::geometric::Plane *getAssociateDoor() const;
+    void              setAssociateDoor(vs_graphs::core::geometric::Plane *value);
 
-    void addAssociateWall(ORB_SLAM3::Plane *p_wall_in);
+    void addAssociateWall(vs_graphs::core::geometric::Plane *p_wall_in);
 
     /*!
      * @brief       Returns the stable room handle on the far side of this
      *              passage. It starts as a prospective UNDEFINED room and is
      *              retained when that same object is promoted to ROOM.
      */
-    ORB_SLAM3::Room *getProspectiveRoom() const;
+    vs_graphs::core::semantic::Room *getProspectiveRoom() const;
 
     /** Copies the far-side room ID while holding the passage geometry lock. */
     std::optional<int> getProspectiveRoomId() const;
@@ -220,7 +224,7 @@ class Passage
      *              Caller retains ownership; Passage stores a non-owning
      * reference.
      */
-    void setProspectiveRoom(ORB_SLAM3::Room *p_room_in);
+    void setProspectiveRoom(vs_graphs::core::semantic::Room *p_room_in);
 
     /*!
      * @brief       Checks whether this passage has a prospective room assigned.
@@ -238,8 +242,8 @@ class Passage
      *
      * @return      True when this passage referenced the retired room.
      */
-    bool replaceProspectiveRoom(ORB_SLAM3::Room *p_retiredRoom_in,
-                                ORB_SLAM3::Room *p_retainedRoom_in);
+    bool replaceProspectiveRoom(vs_graphs::core::semantic::Room *p_retiredRoom_in,
+                                vs_graphs::core::semantic::Room *p_retainedRoom_in);
 
     /** Returns the non-owning known-side room and sign-stable direction. */
     KnownSideProvenance getKnownSideProvenance() const;
@@ -249,7 +253,7 @@ class Passage
 
     /** Links the persisted known side to a room without changing its direction.
      */
-    void setKnownSideRoom(ORB_SLAM3::Room *p_room_in);
+    void setKnownSideRoom(vs_graphs::core::semantic::Room *p_room_in);
 
     /** Copies missing known-side fields from a duplicate passage. */
     void mergeKnownSideProvenance(const KnownSideProvenance &provenance_in);
@@ -265,7 +269,7 @@ class Passage
      * @param[in] p_duplicate_in Duplicate passage with the same stable ID.
      * @return True when valid real geometry replaced recovery-proxy geometry.
      */
-    bool mergeFromDuplicate(ORB_SLAM3::Passage *p_duplicate_in);
+    bool mergeFromDuplicate(vs_graphs::core::semantic::Passage *p_duplicate_in);
 
     /*!
      * @brief       Replaces every reference to a retired plane hypothesis.
@@ -282,20 +286,22 @@ class Passage
      *
      * @return      True when at least one association was replaced.
      */
-    bool replacePlaneAssociation(ORB_SLAM3::Plane *p_retiredPlane_in,
-                                 ORB_SLAM3::Plane *p_retainedPlane_in);
+    bool replacePlaneAssociation(vs_graphs::core::geometric::Plane *p_retiredPlane_in,
+                                 vs_graphs::core::geometric::Plane *p_retainedPlane_in);
 
-    std::vector<ORB_SLAM3::Plane *> getAssociateWalls() const;
+    std::vector<vs_graphs::core::geometric::Plane *> getAssociateWalls() const;
 
-    ORB_SLAM3::Map *getMap();
-    void            setMap(ORB_SLAM3::Map *pMap);
+    vs_graphs::core::Map *getMap();
+    void            setMap(vs_graphs::core::Map *pMap);
 
   protected:
-    ORB_SLAM3::Map    *mpMap;
+    vs_graphs::core::Map    *mpMap;
     std::mutex         mMutexMap;
     mutable std::mutex mMutexType, mMutexGeometry;
 };
 
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
 
 #endif

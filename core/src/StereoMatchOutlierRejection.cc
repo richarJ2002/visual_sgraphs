@@ -8,7 +8,9 @@
 
 #include <algorithm>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 void rejectOutlierStereoMatches(std::vector<std::pair<int, int>> &vDistIdx,
@@ -36,4 +38,5 @@ void rejectOutlierStereoMatches(std::vector<std::pair<int, int>> &vDistIdx,
     }
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

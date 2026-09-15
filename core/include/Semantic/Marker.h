@@ -22,10 +22,14 @@
 #include "KeyFrame.h"
 #include "Map.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 class Map;
 class KeyFrame;
+namespace semantic
+{
 
 class Marker
 {
@@ -124,6 +128,8 @@ class Marker
     mutable std::mutex mMutexObservations;
 };
 
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
 
 #endif

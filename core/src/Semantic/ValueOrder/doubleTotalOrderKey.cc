@@ -28,7 +28,9 @@
 #include <cstdint>
 #include <cstring>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -76,4 +78,5 @@ std::uint64_t doubleTotalOrderKey(double value_in)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

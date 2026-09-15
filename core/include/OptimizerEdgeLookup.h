@@ -4,13 +4,15 @@
  *        keyframe vector.
  */
 
-#ifndef ORB_SLAM3_OPTIMIZER_EDGE_LOOKUP_H
-#define ORB_SLAM3_OPTIMIZER_EDGE_LOOKUP_H
+#ifndef VS_GRAPHS_CORE_OPTIMIZER_EDGE_LOOKUP_H
+#define VS_GRAPHS_CORE_OPTIMIZER_EDGE_LOOKUP_H
 
 #include <cstddef>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 /**
@@ -35,6 +37,7 @@ inline PointerT edgeSourceKeyFrame(const std::vector<PointerT> &edgeKeyFrames_in
                                               : nullptr;
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif

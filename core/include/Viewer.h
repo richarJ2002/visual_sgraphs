@@ -31,7 +31,9 @@
 
 #include <mutex>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class Tracking;
@@ -98,6 +100,6 @@ namespace ORB_SLAM3
         bool mbStopTrack;
     };
 
-}
-
+} // namespace core
+} // namespace vs_graphs
 #endif // VIEWER_H

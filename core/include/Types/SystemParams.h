@@ -22,7 +22,11 @@
 #ifndef SYSTEMPARAMS_H
 #define SYSTEMPARAMS_H
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace types
 {
 class SystemParams
 {
@@ -501,6 +505,8 @@ class SystemParams
     static SystemParams *mSystemParams;
     YAML::Node           mConfig;
 };
-} // namespace ORB_SLAM3
+} // namespace types
+} // namespace core
+} // namespace vs_graphs
 
 #endif

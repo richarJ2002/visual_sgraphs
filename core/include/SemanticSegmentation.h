@@ -31,7 +31,9 @@
 #include <pcl/point_types.h>
 #include <unordered_map>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 class Atlas;
 
@@ -105,7 +107,7 @@ class SemanticSegmentation
                                TerminalOutcome outcome);
 
     // System parameters
-    SystemParams *sysParams;
+    types::SystemParams *sysParams;
 
     // Shutdown control (LocalMapping-style handshake)
     std::mutex mMutexFinish;
@@ -214,6 +216,7 @@ class SemanticSegmentation
     // Running the thread
     void Run();
 };
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTICSEG_H

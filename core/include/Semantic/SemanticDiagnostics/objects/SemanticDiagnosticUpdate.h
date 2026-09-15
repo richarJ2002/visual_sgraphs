@@ -35,7 +35,9 @@
 
 #include "Thirdparty/nlohmann/json.hpp"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -63,6 +65,7 @@ struct SemanticDiagnosticUpdate
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_DIAGNOSTICS_UPDATE_H

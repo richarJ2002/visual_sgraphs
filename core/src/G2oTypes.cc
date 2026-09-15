@@ -23,7 +23,9 @@
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Converter.h"
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     ImuCamPose::ImuCamPose(KeyFrame *pKF) : its(0)
@@ -858,4 +860,5 @@ namespace ORB_SLAM3
         return W;
     }
 
-}
+} // namespace core
+} // namespace vs_graphs

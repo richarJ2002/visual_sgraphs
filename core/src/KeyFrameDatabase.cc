@@ -22,7 +22,9 @@
 
 using namespace std;
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     KeyFrameDatabase::KeyFrameDatabase(const ORBVocabulary &voc) : mpVoc(&voc)
@@ -840,4 +842,5 @@ namespace ORB_SLAM3
         mvInvertedFile.resize(mpVoc->size());
     }
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs

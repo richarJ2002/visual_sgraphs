@@ -44,12 +44,14 @@
 #include "Converter.h"
 #include <math.h>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 class KeyFrame;
 class Frame;
-class GeometricCamera;
+namespace camera_models { class GeometricCamera; }
 
 typedef Eigen::Matrix<double, 6, 1>   Vector6d;
 typedef Eigen::Matrix<double, 9, 1>   Vector9d;
@@ -116,7 +118,7 @@ class ImuCamPose
     std::vector<Eigen::Matrix3d>   Rcb, Rbc;
     std::vector<Eigen::Vector3d>   tcb, tbc;
     double                         bf;
-    std::vector<GeometricCamera *> pCamera;
+    std::vector<camera_models::GeometricCamera *> pCamera;
 
     // For posegraph 4DoF
     Eigen::Matrix3d Rwb0;
@@ -1065,6 +1067,7 @@ class Edge4DoF
     Eigen::Vector3d dtij;
 };
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // G2OTYPES_H

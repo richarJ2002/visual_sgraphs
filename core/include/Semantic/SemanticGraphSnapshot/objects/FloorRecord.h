@@ -35,7 +35,9 @@
 #include "Semantic/SemanticGraphSnapshot/objects/EntityKey.h"
 #include "Semantic/SemanticGraphSnapshot/objects/EntityRef.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -80,6 +82,7 @@ struct FloorRecord
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_GRAPH_SNAPSHOT_FLOOR_RECORD_H

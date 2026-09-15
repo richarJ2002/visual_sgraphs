@@ -20,7 +20,9 @@
 #include <sophus/se3.hpp>
 #include <Eigen/Core>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class KeyFrame;
@@ -78,6 +80,7 @@ namespace ORB_SLAM3
         }
     };
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs
 
 #endif // GEOMETRIC_TOOLS_H

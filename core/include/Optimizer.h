@@ -47,7 +47,9 @@
 
 #include <atomic>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 class LoopClosing;
 
@@ -55,13 +57,13 @@ class Optimizer
 {
   public:
     void static BundleAdjustment(
-        const std::vector<ORB_SLAM3::KeyFrame *> &vpKF,
-        const std::vector<ORB_SLAM3::MapPoint *> &vpMP,
-        const std::vector<ORB_SLAM3::Marker *>   &vpMarkers,
-        const std::vector<ORB_SLAM3::Plane *>    &vpPlanes,
-        const std::vector<ORB_SLAM3::Passage *>  &vpDoorways,
-        const std::vector<ORB_SLAM3::Room *>     &vpRooms,
-        const std::vector<ORB_SLAM3::Floor *>    &vpFloors,
+        const std::vector<vs_graphs::core::KeyFrame *> &vpKF,
+        const std::vector<vs_graphs::core::MapPoint *> &vpMP,
+        const std::vector<vs_graphs::core::semantic::Marker *>   &vpMarkers,
+        const std::vector<vs_graphs::core::geometric::Plane *>    &vpPlanes,
+        const std::vector<vs_graphs::core::semantic::Passage *>  &vpDoorways,
+        const std::vector<vs_graphs::core::semantic::Room *>     &vpRooms,
+        const std::vector<vs_graphs::core::semantic::Floor *>    &vpFloors,
         int                                       nIterations       = 5,
         bool                                     *pbStopFlag        = nullptr,
         const unsigned long                       nLoopKF           = 0,
@@ -145,12 +147,12 @@ class Optimizer
      * keyframe.
      */
     void static OptimizeEssentialGraph(
-        ORB_SLAM3::KeyFrame                *pCurKF,
-        ORB_SLAM3::Map                     *p_sourceMap_inout,
-        std::vector<ORB_SLAM3::KeyFrame *> &vpFixedKFs,
-        std::vector<ORB_SLAM3::KeyFrame *> &vpFixedCorrectedKFs,
-        std::vector<ORB_SLAM3::KeyFrame *> &vpNonFixedKFs,
-        std::vector<ORB_SLAM3::MapPoint *> &vpNonCorrectedMPs,
+        vs_graphs::core::KeyFrame                *pCurKF,
+        vs_graphs::core::Map                     *p_sourceMap_inout,
+        std::vector<vs_graphs::core::KeyFrame *> &vpFixedKFs,
+        std::vector<vs_graphs::core::KeyFrame *> &vpFixedCorrectedKFs,
+        std::vector<vs_graphs::core::KeyFrame *> &vpNonFixedKFs,
+        std::vector<vs_graphs::core::MapPoint *> &vpNonCorrectedMPs,
         const g2o::Sim3 &transform_mergeWorldToCurrentWorld_in);
 
     // For inertial loopclosing
@@ -219,6 +221,7 @@ class Optimizer
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // OPTIMIZER_H

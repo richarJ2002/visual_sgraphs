@@ -28,7 +28,9 @@
 
 #include <mutex>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 long unsigned int MapPoint::nNextId = 0;
@@ -794,4 +796,5 @@ void MapPoint::PostLoad(map<long unsigned int, KeyFrame *> &mpKFid,
     mBackupObservationsId2.clear();
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

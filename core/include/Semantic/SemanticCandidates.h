@@ -10,7 +10,11 @@
 #include <string>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
 {
 
 struct CandidateCueBreakdown
@@ -126,6 +130,8 @@ class SemanticCandidates
         std::optional<int>             anchorRoomId_in = std::nullopt);
 };
 
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_CANDIDATES_H

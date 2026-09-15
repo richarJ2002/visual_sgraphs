@@ -32,7 +32,9 @@
 #include "Semantic/SemanticAxiomEvaluator/objects/AxiomCode.h"
 #include "Semantic/SemanticAxiomEvaluator/objects/AxiomResult.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -65,6 +67,7 @@ struct AggregateAxiomResult
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_AXIOM_EVALUATOR_AGGREGATE_AXIOM_RESULT_H

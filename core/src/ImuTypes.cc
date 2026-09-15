@@ -20,7 +20,9 @@
 
 #include <iostream>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     namespace IMU
@@ -423,4 +425,5 @@ namespace ORB_SLAM3
 
     } // namespace IMU
 
-} // namespace ORB_SLAM2
+} // namespace core
+} // namespace vs_graphs

@@ -34,12 +34,14 @@
 
 #include "Semantic/SemanticGraphSnapshot/private_functions.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
 
-SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in)
+SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
 {
     SemanticGraphSnapshot snapshot;
     if (p_atlas_in == nullptr)
@@ -54,7 +56,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in)
      * before trusting that currentMapId names an entry in maps -- see
      * SemanticGraphSnapshot::currentMapStatus's Doxygen and
      * AtlasCurrentMapStatus.h. */
-    const std::vector<Map *> maps =
+    const std::vector<core::Map *> maps =
         p_atlas_in->GetCoherentMapView(snapshot.currentMapId,
                                        snapshot.currentMapStatus);
 
@@ -79,8 +81,8 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in)
      * one-to-one fields naming a relationship target by its own identity
      * (floorRef, knownSideRoomRef, prospectiveRoomRef), which have no such
      * containing-enumeration context. */
-    std::map<Plane *, std::vector<EntityRef>> wallOwnersByPointer;
-    for (Map *p_map : maps)
+    std::map<geometric::Plane *, std::vector<EntityRef>> wallOwnersByPointer;
+    for (core::Map *p_map : maps)
     {
         if (p_map == nullptr)
         {
@@ -110,7 +112,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in)
             ownerRef.localId                   = p_room->getId();
             ownerRef.isLive                    = !p_room->isBad();
             ownerRef.livenessUnavailableReason = UnavailableReason::NONE;
-            for (Plane *p_wall : p_room->getWalls())
+            for (geometric::Plane *p_wall : p_room->getWalls())
             {
                 if (p_wall == nullptr)
                 {
@@ -126,7 +128,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in)
         std::sort(ownerRefs.begin(), ownerRefs.end(), &isEntityRefLess);
     }
 
-    for (Map *p_map : maps)
+    for (core::Map *p_map : maps)
     {
         if (p_map == nullptr)
         {
@@ -172,10 +174,10 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in)
         }
         sortByKey(mapSnapshot.rooms);
 
-        for (Plane *p_plane : p_map->GetAllPlanes())
+        for (geometric::Plane *p_plane : p_map->GetAllPlanes())
         {
             if (p_plane == nullptr ||
-                p_plane->getPlaneType() != Plane::planeVariant::WALL)
+                p_plane->getPlaneType() != geometric::Plane::planeVariant::WALL)
             {
                 continue;
             }
@@ -223,4 +225,5 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

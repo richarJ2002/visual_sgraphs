@@ -9,7 +9,9 @@
 #include <mutex>
 #include <unordered_map>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace
 {
@@ -141,4 +143,5 @@ void reportResetAttribution(const ResetCause  cause_in,
     std::cout << formatResetAttribution(cause_in, action_in) << std::endl;
 }
 
-} /* namespace ORB_SLAM3 */
+} // namespace core
+} // namespace vs_graphs

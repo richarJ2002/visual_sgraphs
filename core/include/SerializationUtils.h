@@ -27,7 +27,9 @@
 
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     template <class Archive>
@@ -165,6 +167,7 @@ namespace ORB_SLAM3
         }
     }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SERIALIZATION_UTILS_H

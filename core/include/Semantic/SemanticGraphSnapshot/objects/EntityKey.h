@@ -28,7 +28,9 @@
 
 #include "Semantic/SemanticGraphSnapshot/objects/EntityKind.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -69,6 +71,7 @@ bool operator!=(const EntityKey &lhs_in, const EntityKey &rhs_in);
 bool operator<(const EntityKey &lhs_in, const EntityKey &rhs_in);
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_GRAPH_SNAPSHOT_ENTITY_KEY_H

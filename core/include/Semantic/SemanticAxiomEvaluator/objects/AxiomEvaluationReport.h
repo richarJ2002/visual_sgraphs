@@ -31,7 +31,9 @@
 #include "Semantic/SemanticAxiomEvaluator/objects/AggregateAxiomResult.h"
 #include "Semantic/SemanticAxiomEvaluator/objects/Finding.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -59,6 +61,7 @@ struct AxiomEvaluationReport
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_AXIOM_EVALUATOR_AXIOM_EVALUATION_REPORT_H

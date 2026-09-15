@@ -23,8 +23,8 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef ORB_SLAM3_SETTINGS_H
-#define ORB_SLAM3_SETTINGS_H
+#ifndef VS_GRAPHS_CORE_SETTINGS_H
+#define VS_GRAPHS_CORE_SETTINGS_H
 
 // Flag to activate the measurement of time in each process (track,localmap,
 // place recognition). #define REGISTER_TIMES
@@ -36,7 +36,9 @@
 #include <string>
 #include <unistd.h>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 class System;
@@ -76,11 +78,11 @@ class Settings
     {
         return cameraType_;
     }
-    GeometricCamera *camera1()
+    camera_models::GeometricCamera *camera1()
     {
         return calibration1_;
     }
-    GeometricCamera *camera2()
+    camera_models::GeometricCamera *camera2()
     {
         return calibration2_;
     }
@@ -332,8 +334,8 @@ class Settings
     /*
      * Visual stuff
      */
-    GeometricCamera    *calibration1_, *calibration2_; // Camera calibration
-    GeometricCamera    *originalCalib1_, *originalCalib2_;
+    camera_models::GeometricCamera    *calibration1_, *calibration2_; // Camera calibration
+    camera_models::GeometricCamera    *originalCalib1_, *originalCalib2_;
     std::vector<double> vPinHoleDistorsion1_, vPinHoleDistorsion2_;
 
     cv::Size originalImSize_, newImSize_;
@@ -401,6 +403,7 @@ class Settings
      */
     double thFarPoints_;
 };
-}; // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs;
 
-#endif // ORB_SLAM3_SETTINGS_H
+#endif // VS_GRAPHS_CORE_SETTINGS_H

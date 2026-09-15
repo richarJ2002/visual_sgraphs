@@ -21,7 +21,9 @@
 
 #include "KeyFrame.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class Sim3Solver
@@ -50,8 +52,8 @@ namespace ORB_SLAM3
 
         void CheckInliers();
 
-        void Project(const std::vector<Eigen::Vector3f> &vP3Dw, std::vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw, GeometricCamera *pCamera);
-        void FromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc, std::vector<Eigen::Vector2f> &vP2D, GeometricCamera *pCamera);
+        void Project(const std::vector<Eigen::Vector3f> &vP3Dw, std::vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw, camera_models::GeometricCamera *pCamera);
+        void FromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc, std::vector<Eigen::Vector2f> &vP2D, camera_models::GeometricCamera *pCamera);
 
     protected:
         // KeyFrames and matches
@@ -117,9 +119,10 @@ namespace ORB_SLAM3
         // cv::Mat mK1;
         // cv::Mat mK2;
 
-        GeometricCamera *pCamera1, *pCamera2;
+        camera_models::GeometricCamera *pCamera1, *pCamera2;
     };
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SIM3SOLVER_H

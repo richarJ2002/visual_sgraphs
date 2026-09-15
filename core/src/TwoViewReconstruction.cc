@@ -23,7 +23,9 @@
 #include <thread>
 
 using namespace std;
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
     TwoViewReconstruction::TwoViewReconstruction(const Eigen::Matrix3f &k, float sigma, int iterations)
     {
@@ -920,4 +922,5 @@ namespace ORB_SLAM3
             R2 = -R2;
     }
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs

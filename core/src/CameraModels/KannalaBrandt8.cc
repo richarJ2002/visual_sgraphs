@@ -17,7 +17,11 @@
 #include <boost/serialization/export.hpp>
 
 
-namespace ORB_SLAM3 {
+namespace vs_graphs
+{
+namespace core
+{
+namespace camera_models {
 
     cv::Point2f KannalaBrandt8::project(const cv::Point3f &p3D) {
         const float x2_plus_y2 = p3D.x * p3D.x + p3D.y * p3D.y;
@@ -415,4 +419,6 @@ namespace ORB_SLAM3 {
         return is_same_camera;
     }
 
-}
+} // namespace camera_models
+} // namespace core
+} // namespace vs_graphs

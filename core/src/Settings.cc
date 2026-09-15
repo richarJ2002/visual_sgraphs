@@ -37,7 +37,9 @@
 
 using namespace std;
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 template <>
@@ -277,8 +279,8 @@ void Settings::readCamera1(cv::FileStorage &fSettings)
         float cy     = readParameter<float>(fSettings, "Camera1.cy", found);
         vCalibration = {fx, fy, cx, cy};
 
-        calibration1_   = new Pinhole(vCalibration);
-        originalCalib1_ = new Pinhole(vCalibration);
+        calibration1_   = new camera_models::Pinhole(vCalibration);
+        originalCalib1_ = new camera_models::Pinhole(vCalibration);
 
         // Check if the PinHole is distorted
         readParameter<float>(fSettings, "Camera1.k1", found, false);
@@ -320,10 +322,10 @@ void Settings::readCamera1(cv::FileStorage &fSettings)
         float cy     = readParameter<float>(fSettings, "Camera1.cy", found);
         vCalibration = {fx, fy, cx, cy};
 
-        calibration1_   = new Pinhole(vCalibration);
-        originalCalib1_ = new Pinhole(vCalibration);
+        calibration1_   = new camera_models::Pinhole(vCalibration);
+        originalCalib1_ = new camera_models::Pinhole(vCalibration);
     }
-    else if (cameraModel == "KannalaBrandt8")
+    else if (cameraModel == "camera_models::KannalaBrandt8")
     {
         cameraType_ = KannalaBrandt;
 
@@ -339,8 +341,8 @@ void Settings::readCamera1(cv::FileStorage &fSettings)
         float k3 = readParameter<float>(fSettings, "Camera1.k4", found);
 
         vCalibration    = {fx, fy, cx, cy, k0, k1, k2, k3};
-        calibration1_   = new KannalaBrandt8(vCalibration);
-        originalCalib1_ = new KannalaBrandt8(vCalibration);
+        calibration1_   = new camera_models::KannalaBrandt8(vCalibration);
+        originalCalib1_ = new camera_models::KannalaBrandt8(vCalibration);
 
         if (sensor_ == System::STEREO || sensor_ == System::IMU_STEREO)
         {
@@ -350,7 +352,7 @@ void Settings::readCamera1(cv::FileStorage &fSettings)
             int colEnd =
                 readParameter<int>(fSettings, "Camera1.overlappingEnd", found);
             std::vector<int> vOverlapping = {colBegin, colEnd};
-            static_cast<KannalaBrandt8 *>(calibration1_)->mvLappingArea =
+            static_cast<camera_models::KannalaBrandt8 *>(calibration1_)->mvLappingArea =
                 vOverlapping;
         }
     }
@@ -379,8 +381,8 @@ void Settings::readCamera2(cv::FileStorage &fSettings)
 
         vCalibration = {fx, fy, cx, cy};
 
-        calibration2_   = new Pinhole(vCalibration);
-        originalCalib2_ = new Pinhole(vCalibration);
+        calibration2_   = new camera_models::Pinhole(vCalibration);
+        originalCalib2_ = new camera_models::Pinhole(vCalibration);
 
         // Check if it is a distorted PinHole
         readParameter<float>(fSettings, "Camera2.k1", found, false);
@@ -422,8 +424,8 @@ void Settings::readCamera2(cv::FileStorage &fSettings)
 
         vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
 
-        calibration2_   = new KannalaBrandt8(vCalibration);
-        originalCalib2_ = new KannalaBrandt8(vCalibration);
+        calibration2_   = new camera_models::KannalaBrandt8(vCalibration);
+        originalCalib2_ = new camera_models::KannalaBrandt8(vCalibration);
 
         int colBegin =
             readParameter<int>(fSettings, "Camera2.overlappingBegin", found);
@@ -431,7 +433,7 @@ void Settings::readCamera2(cv::FileStorage &fSettings)
             readParameter<int>(fSettings, "Camera2.overlappingEnd", found);
         vector<int> vOverlapping = {colBegin, colEnd};
 
-        static_cast<KannalaBrandt8 *>(calibration2_)->mvLappingArea =
+        static_cast<camera_models::KannalaBrandt8 *>(calibration2_)->mvLappingArea =
             vOverlapping;
     }
 
@@ -529,14 +531,14 @@ void Settings::readImageInfo(cv::FileStorage &fSettings)
 
                 if (cameraType_ == KannalaBrandt)
                 {
-                    static_cast<KannalaBrandt8 *>(calibration1_)
+                    static_cast<camera_models::KannalaBrandt8 *>(calibration1_)
                         ->mvLappingArea[0] *= scaleColFactor;
-                    static_cast<KannalaBrandt8 *>(calibration1_)
+                    static_cast<camera_models::KannalaBrandt8 *>(calibration1_)
                         ->mvLappingArea[1] *= scaleColFactor;
 
-                    static_cast<KannalaBrandt8 *>(calibration2_)
+                    static_cast<camera_models::KannalaBrandt8 *>(calibration2_)
                         ->mvLappingArea[0] *= scaleColFactor;
-                    static_cast<KannalaBrandt8 *>(calibration2_)
+                    static_cast<camera_models::KannalaBrandt8 *>(calibration2_)
                         ->mvLappingArea[1] *= scaleColFactor;
                 }
             }
@@ -586,7 +588,7 @@ void Settings::readRGBD(cv::FileStorage &fSettings)
     farThresh_  = readParameter<float>(fSettings, "RGBD.FarThresh", found);
 
     // set distance threshold in the system params
-    SystemParams::GetParams()->pointcloud.distance_thresh =
+    types::SystemParams::GetParams()->pointcloud.distance_thresh =
         std::make_pair(nearThresh_, farThresh_);
 }
 
@@ -653,9 +655,9 @@ void Settings::readOtherParameters(cv::FileStorage &fSettings)
 void Settings::precomputeRectificationMaps()
 {
     // Precompute rectification maps, new calibrations, ...
-    cv::Mat K1 = static_cast<Pinhole *>(calibration1_)->toK();
+    cv::Mat K1 = static_cast<camera_models::Pinhole *>(calibration1_)->toK();
     K1.convertTo(K1, CV_64F);
-    cv::Mat K2 = static_cast<Pinhole *>(calibration2_)->toK();
+    cv::Mat K2 = static_cast<camera_models::Pinhole *>(calibration2_)->toK();
     K2.convertTo(K2, CV_64F);
 
     cv::Mat cvTlr;
@@ -730,7 +732,7 @@ std::ostream &operator<<(std::ostream &output, const Settings &settings)
     output << "\t- Camera#1 parameters (";
     if (settings.cameraType_ == Settings::PinHole ||
         settings.cameraType_ == Settings::Rectified)
-        output << "Pinhole";
+        output << "camera_models::Pinhole";
     else
         output << "Kannala-Brandt";
     output << "): [";
@@ -752,7 +754,7 @@ std::ostream &operator<<(std::ostream &output, const Settings &settings)
     {
         output << "\t- Camera#2 parameters (";
         if (settings.cameraType_ == Settings::PinHole)
-            output << "Pinhole";
+            output << "camera_models::Pinhole";
         else
             output << "Kannala-Brandt";
         output << "): [";
@@ -821,10 +823,10 @@ std::ostream &operator<<(std::ostream &output, const Settings &settings)
         if (settings.cameraType_ == Settings::KannalaBrandt)
         {
             auto vOverlapping1 =
-                static_cast<KannalaBrandt8 *>(settings.calibration1_)
+                static_cast<camera_models::KannalaBrandt8 *>(settings.calibration1_)
                     ->mvLappingArea;
             auto vOverlapping2 =
-                static_cast<KannalaBrandt8 *>(settings.calibration2_)
+                static_cast<camera_models::KannalaBrandt8 *>(settings.calibration2_)
                     ->mvLappingArea;
             output << "\t- Camera 1 overlapping area: [ " << vOverlapping1[0]
                    << " , " << vOverlapping1[1] << " ]" << endl;
@@ -866,4 +868,5 @@ std::ostream &operator<<(std::ostream &output, const Settings &settings)
 
     return output;
 }
-}; // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs;

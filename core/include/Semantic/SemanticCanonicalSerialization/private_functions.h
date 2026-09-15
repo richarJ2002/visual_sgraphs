@@ -57,7 +57,9 @@
 #include "Semantic/SemanticAxiomEvaluator/objects.h"
 #include "Semantic/SemanticCanonicalSerialization/public_functions.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -298,6 +300,7 @@ bool isUnresolvedWallHypothesisRecordLessTotalOrder(
     const UnresolvedWallHypothesisRecord &rhs_in);
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_CANONICAL_SERIALIZATION_PRIVATE_FUNCTIONS_H

@@ -32,7 +32,9 @@
 #include "Semantic/SemanticGraphSnapshot/objects/RoomRecord.h"
 #include "Semantic/SemanticGraphSnapshot/objects/WallRecord.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -68,6 +70,7 @@ struct MapSnapshot
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_GRAPH_SNAPSHOT_MAP_SNAPSHOT_H

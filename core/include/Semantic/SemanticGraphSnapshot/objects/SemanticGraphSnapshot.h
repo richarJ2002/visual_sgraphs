@@ -36,7 +36,9 @@
 #include "Semantic/SemanticGraphSnapshot/objects/UnavailableReason.h"
 #include "Semantic/SemanticGraphSnapshot/objects/UnresolvedWallHypothesisRecord.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -123,6 +125,7 @@ struct SemanticGraphSnapshot
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_GRAPH_SNAPSHOT_OBJECT_H

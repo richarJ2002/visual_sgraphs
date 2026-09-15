@@ -60,7 +60,9 @@
 using namespace cv;
 using namespace std;
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     const int PATCH_SIZE = 31;
@@ -1191,4 +1193,5 @@ namespace ORB_SLAM3
         }
     }
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs

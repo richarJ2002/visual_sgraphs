@@ -35,11 +35,15 @@
 #include <pcl/octree/octree_search.h>
 #include <set>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 class Map;
-class Marker;
 class MapPoint;
+namespace semantic { class Marker; }
+namespace geometric
+{
 
 class Plane
 {
@@ -669,6 +673,8 @@ class Plane
      */
     mutable std::mutex mMutexFeatures, mMutexPos;
 };
-} // namespace ORB_SLAM3
+} // namespace geometric
+} // namespace core
+} // namespace vs_graphs
 
 #endif

@@ -24,7 +24,9 @@
 
 #include "Thirdparty/DBoW2/DUtils/Random.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> &vpMatched12, const bool bFixScale,
@@ -449,7 +451,7 @@ namespace ORB_SLAM3
         return mBestScale;
     }
 
-    void Sim3Solver::Project(const vector<Eigen::Vector3f> &vP3Dw, vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw, GeometricCamera *pCamera)
+    void Sim3Solver::Project(const vector<Eigen::Vector3f> &vP3Dw, vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw, camera_models::GeometricCamera *pCamera)
     {
         Eigen::Matrix3f Rcw = Tcw.block<3, 3>(0, 0);
         Eigen::Vector3f tcw = Tcw.block<3, 1>(0, 3);
@@ -465,7 +467,7 @@ namespace ORB_SLAM3
         }
     }
 
-    void Sim3Solver::FromCameraToImage(const vector<Eigen::Vector3f> &vP3Dc, vector<Eigen::Vector2f> &vP2D, GeometricCamera *pCamera)
+    void Sim3Solver::FromCameraToImage(const vector<Eigen::Vector3f> &vP3Dc, vector<Eigen::Vector2f> &vP2D, camera_models::GeometricCamera *pCamera)
     {
         vP2D.clear();
         vP2D.reserve(vP3Dc.size());
@@ -477,4 +479,5 @@ namespace ORB_SLAM3
         }
     }
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs

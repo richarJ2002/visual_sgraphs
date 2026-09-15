@@ -33,7 +33,9 @@
 #include "Semantic/SemanticGraphSnapshot/objects/EntityKey.h"
 #include "Semantic/SemanticGraphSnapshot/objects/UnavailableReason.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -81,7 +83,7 @@ struct RawPlaneRef
     /*! @brief The referenced plane's accepted Plane::planeVariant at
      *  capture time; meaningful only when reason ==
      *  UnavailableReason::NONE. */
-    Plane::planeVariant planeType{Plane::planeVariant::UNDEFINED};
+    geometric::Plane::planeVariant planeType{geometric::Plane::planeVariant::UNDEFINED};
 
     /*! @brief UnavailableReason::NONE when a plane was actually referenced;
      *  UnavailableReason::NULL_REFERENCE (the default) when the underlying
@@ -100,6 +102,7 @@ struct RawPlaneRef
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_GRAPH_SNAPSHOT_RAW_PLANE_REF_H

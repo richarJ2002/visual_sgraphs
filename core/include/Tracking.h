@@ -57,7 +57,9 @@
 #include <mutex>
 #include <unordered_set>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 class Viewer;
 class FrameDrawer;
@@ -100,21 +102,21 @@ class Tracking
                                  const cv::Mat              &imRectRight,
                                  const double               &timestamp,
                                  string                      filename,
-                                 const std::vector<Marker *> markers,
-                                 const std::vector<Room *>   rooms);
+                                 const std::vector<semantic::Marker *> markers,
+                                 const std::vector<semantic::Room *>   rooms);
     Sophus::SE3f
                  GrabImageRGBD(const cv::Mat                                &imRGB,
                                const cv::Mat                                &imD,
                                const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &pointcloud,
                                const double                                 &timestamp,
                                string                                        filename,
-                               const std::vector<Marker *>                   markers,
-                               const std::vector<Room *>                     rooms);
+                               const std::vector<semantic::Marker *>                   markers,
+                               const std::vector<semantic::Room *>                     rooms);
     Sophus::SE3f GrabImageMonocular(const cv::Mat              &im,
                                     const double               &timestamp,
                                     string                      filename,
-                                    const std::vector<Marker *> markers,
-                                    const std::vector<Room *>   rooms);
+                                    const std::vector<semantic::Marker *> markers,
+                                    const std::vector<semantic::Room *>   rooms);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
 
@@ -176,7 +178,7 @@ class Tracking
      * @param currentMarker the address of the current marker
      */
     std::vector<MapPoint *>
-        findPointsCloseToMarker(const Marker *currentMarker);
+        findPointsCloseToMarker(const semantic::Marker *currentMarker);
 
     /**
      * @brief Get the points close to a given location
@@ -260,7 +262,7 @@ class Tracking
     bool mbWriteStats;
 
     // Semantic map entities
-    std::vector<ORB_SLAM3::Room *> env_rooms;
+    std::vector<vs_graphs::core::semantic::Room *> env_rooms;
 
 #ifdef REGISTER_TIMES
     void LocalMapStats2File();
@@ -467,7 +469,7 @@ class Tracking
     int mBaseIniThFAST;
     int mBaseMinThFAST;
 
-    GeometricCamera *mpCamera, *mpCamera2;
+    camera_models::GeometricCamera *mpCamera, *mpCamera2;
 
     int initID, lastID;
 
@@ -491,6 +493,7 @@ class Tracking
     cv::Mat mImRight;
 };
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // TRACKING_H

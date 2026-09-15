@@ -30,12 +30,14 @@
 
 #include "Semantic/SemanticGraphSnapshot/private_functions.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
 
-RawPlaneRef rawPlaneRef(Plane *p_plane_in)
+RawPlaneRef rawPlaneRef(geometric::Plane *p_plane_in)
 {
     RawPlaneRef ref;
     if (p_plane_in == nullptr)
@@ -46,11 +48,11 @@ RawPlaneRef rawPlaneRef(Plane *p_plane_in)
     ref.planeId   = p_plane_in->getId();
     ref.isLive    = !p_plane_in->isBad();
     ref.planeType = p_plane_in->getPlaneType();
-    Map *p_map    = p_plane_in->GetMap();
+    core::Map *p_map    = p_plane_in->GetMap();
     if (p_map != nullptr)
     {
         ref.mapId = p_map->GetId();
-        if (ref.planeType == Plane::planeVariant::WALL)
+        if (ref.planeType == geometric::Plane::planeVariant::WALL)
         {
             ref.wallKey =
                 makeKey(EntityKind::WALL, p_map->GetId(), p_plane_in->getId());
@@ -60,4 +62,5 @@ RawPlaneRef rawPlaneRef(Plane *p_plane_in)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

@@ -22,7 +22,9 @@
 
 #include "Config.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     bool ConfigParser::ParseConfigFile(std::string &strConfigFile)
@@ -30,4 +32,5 @@ namespace ORB_SLAM3
         return true;
     }
 
-}
+} // namespace core
+} // namespace vs_graphs

@@ -27,7 +27,9 @@
 
 #include <algorithm>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -43,4 +45,5 @@ bool isOnSegmentBoundingBox(const Eigen::Vector2d &p_in,
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

@@ -29,7 +29,9 @@
 
 #include "Map.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -39,7 +41,7 @@ FloorRecord captureFloor(Floor *p_floor_in, long unsigned int mapId_in)
     FloorRecord record;
     record.key = makeKey(EntityKind::FLOOR, mapId_in, p_floor_in->getId());
 
-    Map *p_declaredMap = p_floor_in->getMap();
+    core::Map *p_declaredMap = p_floor_in->getMap();
     if (p_declaredMap != nullptr)
     {
         record.declaredMapId = p_declaredMap->GetId();
@@ -62,4 +64,5 @@ FloorRecord captureFloor(Floor *p_floor_in, long unsigned int mapId_in)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

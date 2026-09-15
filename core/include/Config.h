@@ -28,7 +28,9 @@
 #include <stdlib.h>
 #include <string>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class ViewerConfig
@@ -59,6 +61,6 @@ namespace ORB_SLAM3
         IMUConfig mIMUConfig;
     };
 
-}
-
+} // namespace core
+} // namespace vs_graphs
 #endif // CONFIG_H

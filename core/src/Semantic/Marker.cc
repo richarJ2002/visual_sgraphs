@@ -18,7 +18,11 @@
 
 #include "Semantic/Marker.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
 {
 Marker::Marker() :
     id(-1),
@@ -143,13 +147,13 @@ void Marker::setGlobalPose(const Sophus::SE3f &value)
     globalPose = value;
 }
 
-std::map<KeyFrame *, Sophus::SE3f> Marker::getObservations() const
+std::map<core::KeyFrame *, Sophus::SE3f> Marker::getObservations() const
 {
     std::lock_guard<std::mutex> lock(mMutexObservations);
     return observations;
 }
 
-void Marker::addObservation(KeyFrame           *p_keyFrame_in,
+void Marker::addObservation(core::KeyFrame           *p_keyFrame_in,
                             const Sophus::SE3f &markerPose_markerToCamera_in)
 {
     if (p_keyFrame_in == nullptr || p_keyFrame_in->isBad())
@@ -161,7 +165,7 @@ void Marker::addObservation(KeyFrame           *p_keyFrame_in,
     observations.insert_or_assign(p_keyFrame_in, markerPose_markerToCamera_in);
 }
 
-void Marker::eraseObservation(KeyFrame *p_keyFrame_in)
+void Marker::eraseObservation(core::KeyFrame *p_keyFrame_in)
 {
     if (p_keyFrame_in == nullptr)
     {
@@ -172,15 +176,17 @@ void Marker::eraseObservation(KeyFrame *p_keyFrame_in)
     observations.erase(p_keyFrame_in);
 }
 
-Map *Marker::getMap()
+core::Map *Marker::getMap()
 {
     unique_lock<mutex> lock(mMutexMap);
     return mpMap;
 }
 
-void Marker::setMap(Map *pMap)
+void Marker::setMap(core::Map *pMap)
 {
     unique_lock<mutex> lock(mMutexMap);
     mpMap = pMap;
 }
-}; // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs;

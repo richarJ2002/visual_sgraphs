@@ -28,7 +28,9 @@
 
 #include <cstdint>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -81,6 +83,7 @@ enum class MissingProofOwner : std::uint8_t
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_AXIOM_EVALUATOR_MISSING_PROOF_OWNER_H

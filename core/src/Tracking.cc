@@ -44,7 +44,9 @@
 
 using namespace std;
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 Tracking::Tracking(System           *pSys,
                    ORBVocabulary    *pVoc,
@@ -187,15 +189,15 @@ Tracking::Tracking(System           *pSys,
     mbInitWith3KFs = false;
     mnNumDataset   = 0;
 
-    vector<GeometricCamera *> vpCams = mpAtlas->GetAllCameras();
+    vector<camera_models::GeometricCamera *> vpCams = mpAtlas->GetAllCameras();
     std::cout << "\n[Tracking] Found " << vpCams.size()
               << " camera(s) in Atlas!" << std::endl;
-    for (GeometricCamera *pCam : vpCams)
+    for (camera_models::GeometricCamera *pCam : vpCams)
     {
         std::cout << "- Camera " << pCam->GetId();
-        if (pCam->GetType() == GeometricCamera::CAM_PINHOLE)
+        if (pCam->GetType() == camera_models::GeometricCamera::CAM_PINHOLE)
             std::cout << " is a pinhole!" << std::endl;
-        else if (pCam->GetType() == GeometricCamera::CAM_FISHEYE)
+        else if (pCam->GetType() == camera_models::GeometricCamera::CAM_FISHEYE)
             std::cout << " is a fisheye!" << std::endl;
         else
             std::cout << " is unknown!" << std::endl;
@@ -1137,11 +1139,11 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
 
         vector<float> vCamCalib{fx, fy, cx, cy};
 
-        mpCamera = new Pinhole(vCamCalib);
+        mpCamera = new camera_models::Pinhole(vCamCalib);
 
         mpCamera = mpAtlas->AddCamera(mpCamera);
 
-        std::cout << "- Camera: Pinhole" << std::endl;
+        std::cout << "- Camera: camera_models::Pinhole" << std::endl;
         std::cout << "- Image scale: " << mImageScale << std::endl;
         std::cout << "- fx: " << fx << std::endl;
         std::cout << "- fy: " << fy << std::endl;
@@ -1168,7 +1170,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
         mK_(0, 2) = cx;
         mK_(1, 2) = cy;
     }
-    else if (sCameraName == "KannalaBrandt8")
+    else if (sCameraName == "camera_models::KannalaBrandt8")
     {
         float fx    = 0.0F;
         float fy    = 0.0F;
@@ -1302,7 +1304,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
             }
 
             vector<float> vCamCalib{fx, fy, cx, cy, k1, k2, k3, k4};
-            mpCamera = new KannalaBrandt8(vCamCalib);
+            mpCamera = new camera_models::KannalaBrandt8(vCamCalib);
             mpCamera = mpAtlas->AddCamera(mpCamera);
             std::cout << "- Camera: Fisheye" << std::endl;
             std::cout << "- Image scale: " << mImageScale << std::endl;
@@ -1520,22 +1522,22 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
                     rightLappingEnd   = rightLappingEnd * mImageScale;
                 }
 
-                static_cast<KannalaBrandt8 *>(mpCamera)->mvLappingArea[0] =
+                static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->mvLappingArea[0] =
                     leftLappingBegin;
-                static_cast<KannalaBrandt8 *>(mpCamera)->mvLappingArea[1] =
+                static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->mvLappingArea[1] =
                     leftLappingEnd;
 
                 mpFrameDrawer->both = true;
 
                 vector<float> vCamCalib2{fx, fy, cx, cy, k1, k2, k3, k4};
-                mpCamera2 = new KannalaBrandt8(vCamCalib2);
+                mpCamera2 = new camera_models::KannalaBrandt8(vCamCalib2);
                 mpCamera2 = mpAtlas->AddCamera(mpCamera2);
 
                 mTlr = Converter::toSophus(cvTlr);
 
-                static_cast<KannalaBrandt8 *>(mpCamera2)->mvLappingArea[0] =
+                static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->mvLappingArea[0] =
                     rightLappingBegin;
-                static_cast<KannalaBrandt8 *>(mpCamera2)->mvLappingArea[1] =
+                static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->mvLappingArea[1] =
                     rightLappingEnd;
 
                 std::cout << "- Camera1 Lapping: " << leftLappingBegin << ", "
@@ -1951,8 +1953,8 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat              &imRectLeft,
                                        const cv::Mat              &imRectRight,
                                        const double               &timestamp,
                                        string                      filename,
-                                       const std::vector<Marker *> markers,
-                                       const std::vector<Room *>   rooms)
+                                       const std::vector<semantic::Marker *> markers,
+                                       const std::vector<semantic::Room *>   rooms)
 {
     // Set arguments to local variables
     env_rooms = rooms;
@@ -2079,8 +2081,8 @@ Sophus::SE3f Tracking::GrabImageRGBD(
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &pointcloud,
     const double                                 &timestamp,
     string                                        filename,
-    const std::vector<Marker *>                   markers,
-    const std::vector<Room *>                     rooms)
+    const std::vector<semantic::Marker *>                   markers,
+    const std::vector<semantic::Room *>                     rooms)
 {
     // Set arguments to local variables
     env_rooms = rooms;
@@ -2159,8 +2161,8 @@ Sophus::SE3f Tracking::GrabImageRGBD(
 Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat              &im,
                                           const double               &timestamp,
                                           string                      filename,
-                                          const std::vector<Marker *> markers,
-                                          const std::vector<Room *>   rooms)
+                                          const std::vector<semantic::Marker *> markers,
+                                          const std::vector<semantic::Room *>   rooms)
 {
     // Set arguments to local variables
     env_rooms = rooms;
@@ -3147,8 +3149,8 @@ void Tracking::StereoInitialization()
             mCurrentFrame.SetPose(Sophus::SE3f());
 
         // Create KeyFrame
-        ORB_SLAM3::KeyFrame *pKFini =
-            new ORB_SLAM3::KeyFrame(mCurrentFrame,
+        vs_graphs::core::KeyFrame *pKFini =
+            new vs_graphs::core::KeyFrame(mCurrentFrame,
                                     mpAtlas->GetCurrentMap(),
                                     mpKeyFrameDB);
 
@@ -3400,7 +3402,7 @@ void Tracking::CreateInitialMapMonocular()
         nullptr,
         0,
         true,
-        SystemParams::GetParams()->markers.impact);
+        types::SystemParams::GetParams()->markers.impact);
 
     float medianDepth = pKFini->ComputeSceneMedianDepth(2);
     float invMedianDepth;
@@ -4659,15 +4661,15 @@ bool Tracking::Relocalization()
     // relocalization In office corridors, room/passage markers provide strong
     // topological priors
     vector<Eigen::Vector3f> roomCentroids;
-    vector<Room *>          currentRooms;
+    vector<semantic::Room *>          currentRooms;
     Map                    *pCurrentMap = mpAtlas->GetCurrentMap();
     if (pCurrentMap)
     {
         const auto &rooms = pCurrentMap->GetAllDetectedMapRooms();
-        for (Room *pRoom : rooms)
+        for (semantic::Room *pRoom : rooms)
         {
             if (!pRoom->isBad() &&
-                pRoom->getBoundaryStatus() == Room::BoundaryStatus::COMPLETE)
+                pRoom->getBoundaryStatus() == semantic::Room::BoundaryStatus::COMPLETE)
             {
                 Eigen::Vector3d centroid_d = pRoom->getCentroid();
                 roomCentroids.push_back(Eigen::Vector3f(centroid_d.x(),
@@ -5142,7 +5144,7 @@ void Tracking::UpdateFrameIMU(const float      s,
                               KeyFrame        *pCurrentKeyFrame)
 {
     Map                                  *pMap = pCurrentKeyFrame->GetMap();
-    list<ORB_SLAM3::KeyFrame *>::iterator lRit = mlpReferences.begin();
+    list<vs_graphs::core::KeyFrame *>::iterator lRit = mlpReferences.begin();
     list<bool>::iterator                  lbL  = mlbLost.begin();
     for (auto lit  = mlRelativeFramePoses.begin(),
               lend = mlRelativeFramePoses.end();
@@ -5292,7 +5294,7 @@ bool Tracking::isImuPreintegrated()
 
 // Semantic Entities
 std::vector<MapPoint *>
-    Tracking::findPointsCloseToMarker(const Marker *currentMarker)
+    Tracking::findPointsCloseToMarker(const semantic::Marker *currentMarker)
 {
     // Get all map points
     std::vector<MapPoint *> allmapPoints = mpAtlas->GetAllMapPoints();
@@ -5374,4 +5376,5 @@ void Tracking::Release()
 }
 #endif
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

@@ -27,28 +27,30 @@
 
 #include "Map.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
 
 WallRecord captureWall(
-    Plane                                           *p_wall_in,
+    geometric::Plane                                           *p_wall_in,
     long unsigned int                                mapId_in,
-    const std::map<Plane *, std::vector<EntityRef>> &wallOwnersByPointer_in)
+    const std::map<geometric::Plane *, std::vector<EntityRef>> &wallOwnersByPointer_in)
 {
     WallRecord record;
     record.key       = makeKey(EntityKind::WALL, mapId_in, p_wall_in->getId());
     record.isLive    = !p_wall_in->isBad();
     record.planeType = p_wall_in->getPlaneType();
 
-    Map *p_declaredMap = p_wall_in->GetMap();
+    core::Map *p_declaredMap = p_wall_in->GetMap();
     if (p_declaredMap != nullptr)
     {
         record.declaredMapId = p_declaredMap->GetId();
     }
 
-    const PlaneGeometryMetadataSnapshot geometry =
+    const geometric::PlaneGeometryMetadataSnapshot geometry =
         p_wall_in->getGeometryMetadataSnapshot();
     record.equation_World            = geometry.equation_World;
     record.centroid_World_m          = geometry.centroid_World_m;
@@ -64,7 +66,7 @@ WallRecord captureWall(
     record.observationOrigin_World_m = p_wall_in->getObservationOrigin_World();
     record.twinRef                   = rawPlaneRef(p_wall_in->getTwinFace());
 
-    const std::map<Plane *, std::vector<EntityRef>>::const_iterator ownerIt =
+    const std::map<geometric::Plane *, std::vector<EntityRef>>::const_iterator ownerIt =
         wallOwnersByPointer_in.find(p_wall_in);
     if (ownerIt != wallOwnersByPointer_in.end())
     {
@@ -75,4 +77,5 @@ WallRecord captureWall(
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

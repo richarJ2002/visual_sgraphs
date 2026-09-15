@@ -33,7 +33,9 @@
 #include <cstddef>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -92,6 +94,7 @@ struct LegacyMapCompletenessResult
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_AXIOM_EVALUATOR_LEGACY_MAP_COMPLETENESS_RESULT_H

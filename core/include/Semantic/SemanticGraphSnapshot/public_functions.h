@@ -29,7 +29,9 @@
 
 #include "Semantic/SemanticGraphSnapshot/objects.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 /* Forward declaration only: captureSemanticGraphSnapshot() takes a
  * non-owning Atlas pointer purely to read from it. Nothing in this module
@@ -40,7 +42,7 @@ class Atlas;
 
 /* Forward declaration only: rawPlaneRef() takes a non-owning Plane pointer
  * purely to read from it into a pointer-free RawPlaneRef value. */
-class Plane;
+namespace geometric { class Plane; }
 
 namespace semantic
 {
@@ -112,9 +114,10 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in);
  *  (openPassageEvidence_/undefendedWalls_) into pointer-free value
  *  records at the semantic transaction boundary -- see P1.4/P1.7 of
  *  semantic-axiom-reliability-plan.md. */
-RawPlaneRef rawPlaneRef(Plane *p_plane_in);
+RawPlaneRef rawPlaneRef(geometric::Plane *p_plane_in);
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_GRAPH_SNAPSHOT_PUBLIC_FUNCTIONS_H

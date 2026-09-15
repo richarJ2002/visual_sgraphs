@@ -29,7 +29,9 @@
 
 #include <cstdint>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -77,6 +79,7 @@ enum class UnavailableReason : std::uint8_t
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_GRAPH_SNAPSHOT_UNAVAILABLE_REASON_H

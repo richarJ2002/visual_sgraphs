@@ -26,7 +26,9 @@
 #include <pangolin/pangolin.h>
 #include <mutex>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     MapDrawer::MapDrawer(Atlas *pAtlas, const string &strSettingPath, Settings *settings) : mpAtlas(pAtlas)
@@ -469,4 +471,5 @@ namespace ORB_SLAM3
         MOw.m[13] = Twc(1, 3);
         MOw.m[14] = Twc(2, 3);
     }
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs

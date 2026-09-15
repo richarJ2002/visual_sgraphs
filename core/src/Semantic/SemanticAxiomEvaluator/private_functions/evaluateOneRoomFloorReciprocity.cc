@@ -53,7 +53,9 @@
 
 #include <cstddef>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -347,4 +349,5 @@ void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

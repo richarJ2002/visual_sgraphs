@@ -19,12 +19,15 @@
 #include "Thirdparty/DBoW2/DBoW2/FORB.h"
 #include "Thirdparty/DBoW2/DBoW2/TemplatedVocabulary.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
   typedef DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB>
       ORBVocabulary;
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs
 
 #endif // ORBVOCABULARY_H

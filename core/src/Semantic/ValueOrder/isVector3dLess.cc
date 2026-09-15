@@ -28,7 +28,9 @@
 #include <cstdint>
 #include <tuple>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -50,4 +52,5 @@ bool isVector3dLess(const Eigen::Vector3d &lhs_in,
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

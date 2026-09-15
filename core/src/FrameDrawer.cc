@@ -28,7 +28,9 @@
 
 #include <mutex>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     FrameDrawer::FrameDrawer(Atlas *pAtlas) : both(false), mpAtlas(pAtlas)
@@ -436,4 +438,5 @@ namespace ORB_SLAM3
         mState = static_cast<int>(pTracker->mLastProcessedState);
     }
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs

@@ -18,7 +18,11 @@
 #include <boost/serialization/export.hpp>
 
 
-namespace ORB_SLAM3 {
+namespace vs_graphs
+{
+namespace core
+{
+namespace camera_models {
 
     long unsigned int GeometricCamera::nNextId=0;
 
@@ -160,4 +164,6 @@ namespace ORB_SLAM3 {
         }
         return is_same_camera;
     }
-}
+} // namespace camera_models
+} // namespace core
+} // namespace vs_graphs

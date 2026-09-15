@@ -32,7 +32,9 @@
 
 #include "Semantic/SemanticGraphSnapshot/objects/RawPlaneRef.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -76,6 +78,7 @@ struct OpenPassageHypothesisRecord
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_GRAPH_SNAPSHOT_OPEN_PASSAGE_HYPOTHESIS_RECORD_H

@@ -20,7 +20,11 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
 {
 
 Room::Room() = default;
@@ -228,14 +232,14 @@ void Room::setHasKnownLabel(bool value)
     hasKnownLabel = value;
 }
 
-std::vector<Plane *> Room::getWalls() const
+std::vector<geometric::Plane *> Room::getWalls() const
 {
     std::lock_guard<std::mutex> lock(mMutexWalls);
     return walls;
 }
 
 std::optional<Eigen::Vector3d>
-    Room::getWallNormalTowardRoom_World(const Plane *p_wall_in) const
+    Room::getWallNormalTowardRoom_World(const geometric::Plane *p_wall_in) const
 {
     /* Reject a missing wall association. */
     if (p_wall_in == nullptr)
@@ -294,7 +298,7 @@ std::optional<Eigen::Vector3d>
     return wallNormalTowardRoom_World;
 }
 
-void Room::setWalls(Plane *p_wall_in)
+void Room::setWalls(geometric::Plane *p_wall_in)
 {
     /* Confirm that input wall is valid */
     if (p_wall_in == nullptr)
@@ -311,7 +315,7 @@ void Room::setWalls(Plane *p_wall_in)
     const bool alreadyAssociated =
         std::any_of(walls.begin(),
                     walls.end(),
-                    [p_wall_in](const Plane *p_existingWall)
+                    [p_wall_in](const geometric::Plane *p_existingWall)
                     { return p_existingWall == p_wall_in; });
 
     if (!alreadyAssociated)
@@ -320,7 +324,7 @@ void Room::setWalls(Plane *p_wall_in)
     }
 }
 
-bool Room::replaceWall(Plane *p_retiredWall_in, Plane *p_retainedWall_in)
+bool Room::replaceWall(geometric::Plane *p_retiredWall_in, geometric::Plane *p_retainedWall_in)
 {
     if (p_retiredWall_in == nullptr || p_retainedWall_in == nullptr ||
         p_retiredWall_in == p_retainedWall_in)
@@ -331,12 +335,12 @@ bool Room::replaceWall(Plane *p_retiredWall_in, Plane *p_retainedWall_in)
     std::lock_guard<std::mutex> lock(mMutexWalls);
 
     bool                 replacedRetiredWall = false;
-    std::vector<Plane *> rebuiltWalls;
+    std::vector<geometric::Plane *> rebuiltWalls;
     rebuiltWalls.reserve(walls.size());
 
-    for (Plane *p_existingWall : walls)
+    for (geometric::Plane *p_existingWall : walls)
     {
-        Plane *p_candidateWall = p_existingWall;
+        geometric::Plane *p_candidateWall = p_existingWall;
 
         if (p_existingWall == p_retiredWall_in)
         {
@@ -363,7 +367,7 @@ bool Room::replaceWall(Plane *p_retiredWall_in, Plane *p_retainedWall_in)
     return replacedRetiredWall;
 }
 
-bool Room::removeWall(Plane *p_wall_in)
+bool Room::removeWall(geometric::Plane *p_wall_in)
 {
     if (p_wall_in == nullptr)
     {
@@ -392,7 +396,7 @@ std::size_t Room::removeInvalidWalls()
 
     walls.erase(std::remove_if(walls.begin(),
                                walls.end(),
-                               [](Plane *p_wall) {
+                               [](geometric::Plane *p_wall) {
                                    return p_wall == nullptr || p_wall->isBad();
                                }),
                 walls.end());
@@ -400,20 +404,20 @@ std::size_t Room::removeInvalidWalls()
     return walls.size();
 }
 
-Plane *Room::getGroundPlane() const
+geometric::Plane *Room::getGroundPlane() const
 {
     std::lock_guard<std::mutex> lock(mMutexWalls);
     return groundPlane;
 }
 
-void Room::setGroundPlane(Plane *p_groundPlane_in)
+void Room::setGroundPlane(geometric::Plane *p_groundPlane_in)
 {
     std::lock_guard<std::mutex> lock(mMutexWalls);
     groundPlane = p_groundPlane_in;
 }
 
-bool Room::replaceGroundPlane(Plane *p_retiredGround_in,
-                              Plane *p_retainedGround_in)
+bool Room::replaceGroundPlane(geometric::Plane *p_retiredGround_in,
+                              geometric::Plane *p_retainedGround_in)
 {
     if (p_retiredGround_in == nullptr || p_retainedGround_in == nullptr ||
         p_retiredGround_in == p_retainedGround_in)
@@ -444,13 +448,13 @@ void Room::setFloor(Floor *p_floor_in)
     floor = p_floor_in;
 }
 
-std::vector<ORB_SLAM3::Passage *> Room::getPassages() const
+std::vector<vs_graphs::core::semantic::Passage *> Room::getPassages() const
 {
     std::lock_guard<std::mutex> lock(mMutexMap);
     return doorways;
 }
 
-void Room::setDoorways(ORB_SLAM3::Passage *value)
+void Room::setDoorways(vs_graphs::core::semantic::Passage *value)
 {
     if (value == nullptr)
     {
@@ -462,7 +466,7 @@ void Room::setDoorways(ORB_SLAM3::Passage *value)
     const bool alreadyPresent =
         std::any_of(doorways.begin(),
                     doorways.end(),
-                    [value](ORB_SLAM3::Passage *existingPassage)
+                    [value](vs_graphs::core::semantic::Passage *existingPassage)
                     {
                         return existingPassage != nullptr &&
                                existingPassage->getId() == value->getId();
@@ -474,8 +478,8 @@ void Room::setDoorways(ORB_SLAM3::Passage *value)
     }
 }
 
-bool Room::replacePassageAssociation(ORB_SLAM3::Passage *p_retiredPassage_in,
-                                     ORB_SLAM3::Passage *p_retainedPassage_in)
+bool Room::replacePassageAssociation(vs_graphs::core::semantic::Passage *p_retiredPassage_in,
+                                     vs_graphs::core::semantic::Passage *p_retainedPassage_in)
 {
     if (p_retiredPassage_in == nullptr || p_retainedPassage_in == nullptr ||
         p_retiredPassage_in == p_retainedPassage_in)
@@ -486,12 +490,12 @@ bool Room::replacePassageAssociation(ORB_SLAM3::Passage *p_retiredPassage_in,
     std::lock_guard<std::mutex> lock(mMutexMap);
 
     bool                              replacedAssociation = false;
-    std::vector<ORB_SLAM3::Passage *> rebuiltPassages;
+    std::vector<vs_graphs::core::semantic::Passage *> rebuiltPassages;
     rebuiltPassages.reserve(doorways.size());
 
-    for (ORB_SLAM3::Passage *p_existingPassage : doorways)
+    for (vs_graphs::core::semantic::Passage *p_existingPassage : doorways)
     {
-        ORB_SLAM3::Passage *p_candidatePassage = p_existingPassage;
+        vs_graphs::core::semantic::Passage *p_candidatePassage = p_existingPassage;
 
         if (p_existingPassage == p_retiredPassage_in)
         {
@@ -524,7 +528,7 @@ void Room::clearPassages()
     doorways.clear();
 }
 
-bool Room::removePassageAssociation(ORB_SLAM3::Passage *p_removedPassage_in)
+bool Room::removePassageAssociation(vs_graphs::core::semantic::Passage *p_removedPassage_in)
 {
     if (p_removedPassage_in == nullptr)
     {
@@ -557,15 +561,17 @@ void Room::setCentroid(Eigen::Vector3d value)
     centroid = value;
 }
 
-Map *Room::getMap()
+core::Map *Room::getMap()
 {
     unique_lock<mutex> lock(mMutexMap);
     return mpMap;
 }
 
-void Room::setMap(Map *pMap)
+void Room::setMap(core::Map *pMap)
 {
     unique_lock<mutex> lock(mMutexMap);
     mpMap = pMap;
 }
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs

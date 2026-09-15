@@ -36,7 +36,11 @@
 #include "Converter.h"
 #include "GeometricTools.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace camera_models
 {
     class GeometricCamera
     {
@@ -102,6 +106,7 @@ namespace ORB_SLAM3
 
         unsigned int mnType;
     };
-}
-
+} // namespace camera_models
+} // namespace core
+} // namespace vs_graphs
 #endif // CAMERAMODELS_GEOMETRICCAMERA_H

@@ -42,7 +42,9 @@
 #include "AtlasCurrentMapStatus.h"
 #include "Map.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 std::vector<Map *> Atlas::GetCoherentMapView(
@@ -78,4 +80,5 @@ std::vector<Map *> Atlas::GetCoherentMapView(
     return activeMaps;
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

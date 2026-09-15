@@ -34,7 +34,9 @@
 
 #include "Semantic/SemanticReportCache/objects/SemanticReportCacheEntry.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -117,6 +119,7 @@ class SemanticReportCache
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_REPORT_CACHE_H

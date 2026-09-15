@@ -44,7 +44,9 @@
 #include <mutex>
 #include <unsupported/Eigen/MatrixFunctions>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace
 {
@@ -94,13 +96,13 @@ void Optimizer::GlobalBundleAdjustemnt(
     double                  markerImpact,
     const std::atomic_bool *pStopRequested_in)
 {
-    std::vector<ORB_SLAM3::Room *>     allRooms     = pMap->GetAllRooms();
-    std::vector<ORB_SLAM3::Floor *>    allFloors    = pMap->GetAllFloors();
-    std::vector<ORB_SLAM3::Plane *>    allPlanes    = pMap->GetAllPlanes();
-    std::vector<ORB_SLAM3::Marker *>   allMarkers   = pMap->GetAllMarkers();
-    std::vector<ORB_SLAM3::Passage *>  allPassages  = pMap->GetAllPassages();
-    std::vector<ORB_SLAM3::MapPoint *> allMapPoints = pMap->GetAllMapPoints();
-    std::vector<ORB_SLAM3::KeyFrame *> allKeyFrames = pMap->GetAllKeyFrames();
+    std::vector<vs_graphs::core::semantic::Room *>     allRooms     = pMap->GetAllRooms();
+    std::vector<vs_graphs::core::semantic::Floor *>    allFloors    = pMap->GetAllFloors();
+    std::vector<vs_graphs::core::geometric::Plane *>    allPlanes    = pMap->GetAllPlanes();
+    std::vector<vs_graphs::core::semantic::Marker *>   allMarkers   = pMap->GetAllMarkers();
+    std::vector<vs_graphs::core::semantic::Passage *>  allPassages  = pMap->GetAllPassages();
+    std::vector<vs_graphs::core::MapPoint *> allMapPoints = pMap->GetAllMapPoints();
+    std::vector<vs_graphs::core::KeyFrame *> allKeyFrames = pMap->GetAllKeyFrames();
 
     BundleAdjustment(allKeyFrames,
                      allMapPoints,
@@ -118,13 +120,13 @@ void Optimizer::GlobalBundleAdjustemnt(
 }
 
 void Optimizer::BundleAdjustment(
-    const std::vector<ORB_SLAM3::KeyFrame *> &vpKFs,
-    const std::vector<ORB_SLAM3::MapPoint *> &vpMP,
-    const std::vector<ORB_SLAM3::Marker *>   &allMarkersVec,
-    const std::vector<ORB_SLAM3::Plane *>    &allPlanesVec,
-    const std::vector<ORB_SLAM3::Passage *>  &allDoorwaysVec,
-    const std::vector<ORB_SLAM3::Room *>     &vpRooms,
-    const std::vector<ORB_SLAM3::Floor *>    &vpFloors,
+    const std::vector<vs_graphs::core::KeyFrame *> &vpKFs,
+    const std::vector<vs_graphs::core::MapPoint *> &vpMP,
+    const std::vector<vs_graphs::core::semantic::Marker *>   &allMarkersVec,
+    const std::vector<vs_graphs::core::geometric::Plane *>    &allPlanesVec,
+    const std::vector<vs_graphs::core::semantic::Passage *>  &allDoorwaysVec,
+    const std::vector<vs_graphs::core::semantic::Room *>     &vpRooms,
+    const std::vector<vs_graphs::core::semantic::Floor *>    &vpFloors,
     int                                       nIterations,
     bool                                     *pbStopFlag,
     const unsigned long                       nLoopKF,
@@ -133,7 +135,7 @@ void Optimizer::BundleAdjustment(
     const std::atomic_bool                   *pStopRequested_in)
 {
     // System parameters
-    ORB_SLAM3::SystemParams *sysParams = ORB_SLAM3::SystemParams::GetParams();
+    vs_graphs::core::types::SystemParams *sysParams = vs_graphs::core::types::SystemParams::GetParams();
 
     // Variables
     std::vector<bool> vbNotIncludedMP;
@@ -142,7 +144,7 @@ void Optimizer::BundleAdjustment(
     if (vpKFs.empty())
         return;
 
-    ORB_SLAM3::Map *pMap = vpKFs[0]->GetMap();
+    vs_graphs::core::Map *pMap = vpKFs[0]->GetMap();
 
     AtomicOptimizerStopBridge stopBridge(pStopRequested_in, pbStopFlag);
 
@@ -170,10 +172,10 @@ void Optimizer::BundleAdjustment(
 
     const int nExpectedSize = (vpKFs.size()) * vpMP.size();
 
-    vector<ORB_SLAM3::EdgeSE3ProjectXYZ *> vpEdgesMono;
+    vector<vs_graphs::core::EdgeSE3ProjectXYZ *> vpEdgesMono;
     vpEdgesMono.reserve(nExpectedSize);
 
-    vector<ORB_SLAM3::EdgeSE3ProjectXYZToBody *> vpEdgesBody;
+    vector<vs_graphs::core::EdgeSE3ProjectXYZToBody *> vpEdgesBody;
     vpEdgesBody.reserve(nExpectedSize);
 
     vector<KeyFrame *> vpEdgeKFMono;
@@ -269,8 +271,8 @@ void Optimizer::BundleAdjustment(
                 Eigen::Matrix<double, 2, 1> obs;
                 obs << kpUn.pt.x, kpUn.pt.y;
 
-                ORB_SLAM3::EdgeSE3ProjectXYZ *e =
-                    new ORB_SLAM3::EdgeSE3ProjectXYZ();
+                vs_graphs::core::EdgeSE3ProjectXYZ *e =
+                    new vs_graphs::core::EdgeSE3ProjectXYZ();
 
                 e->setVertex(0,
                              dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -352,8 +354,8 @@ void Optimizer::BundleAdjustment(
                     cv::KeyPoint kp = pKF->mvKeysRight[rightIndex];
                     obs << kp.pt.x, kp.pt.y;
 
-                    ORB_SLAM3::EdgeSE3ProjectXYZToBody *e =
-                        new ORB_SLAM3::EdgeSE3ProjectXYZToBody();
+                    vs_graphs::core::EdgeSE3ProjectXYZToBody *e =
+                        new vs_graphs::core::EdgeSE3ProjectXYZToBody();
 
                     e->setVertex(0,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -424,7 +426,7 @@ void Optimizer::BundleAdjustment(
     for (const auto &vpPlane : allPlanesVec)
     {
         // Skip undefined planes (if not wall for now)
-        if (vpPlane->getPlaneType() == Plane::planeVariant::UNDEFINED)
+        if (vpPlane->getPlaneType() == geometric::Plane::planeVariant::UNDEFINED)
             continue;
         // Adding a vertex for each plane
         g2o::VertexPlane *vPlane = new g2o::VertexPlane();
@@ -440,16 +442,16 @@ void Optimizer::BundleAdjustment(
         vpPlane->setOpIdG(opIdG);
 
         // Adding an edge between the plane and the keyframes
-        const map<KeyFrame *, ORB_SLAM3::Plane::Observation> observations =
+        const map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation> observations =
             vpPlane->getObservations();
-        for (map<KeyFrame *, ORB_SLAM3::Plane::Observation>::const_iterator
+        for (map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>::const_iterator
                  obsId  = observations.begin(),
                  obLast = observations.end();
              obsId != obLast;
              obsId++)
         {
             KeyFrame                     *pKFi = obsId->first;
-            ORB_SLAM3::Plane::Observation obs  = obsId->second;
+            vs_graphs::core::geometric::Plane::Observation obs  = obsId->second;
 
             if (pKFi->isBad())
             {
@@ -466,8 +468,8 @@ void Optimizer::BundleAdjustment(
             {
                 if (sysParams->optimization.plane_kf.enabled)
                 {
-                    ORB_SLAM3::EdgeVertexPlaneProjectSE3KF *e =
-                        new ORB_SLAM3::EdgeVertexPlaneProjectSE3KF();
+                    vs_graphs::core::EdgeVertexPlaneProjectSE3KF *e =
+                        new vs_graphs::core::EdgeVertexPlaneProjectSE3KF();
                     e->setVertex(0,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                      optimizer.vertex(pKFi->mnId)));
@@ -495,8 +497,8 @@ void Optimizer::BundleAdjustment(
                     if (clsCloudIdx != -1)
                     {
                         // add the plane-point constraint
-                        ORB_SLAM3::EdgeSE3KFPointToPlane *e =
-                            new ORB_SLAM3::EdgeSE3KFPointToPlane();
+                        vs_graphs::core::EdgeSE3KFPointToPlane *e =
+                            new vs_graphs::core::EdgeSE3KFPointToPlane();
                         e->setVertex(
                             0,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -528,8 +530,8 @@ void Optimizer::BundleAdjustment(
         // attachedMarkers)
         // {
         //     // Adding an edge between the Plane and the Marker
-        //     ORB_SLAM3::EdgeVertexPlaneProjectSE3M *e = new
-        //     ORB_SLAM3::EdgeVertexPlaneProjectSE3M(); e->setVertex(1,
+        //     vs_graphs::core::EdgeVertexPlaneProjectSE3M *e = new
+        //     vs_graphs::core::EdgeVertexPlaneProjectSE3M(); e->setVertex(1,
         //     dynamic_cast<g2o::OptimizableGraph::Vertex
         //     *>(optimizer.vertex(opIdG))); e->setVertex(0,
         //     dynamic_cast<g2o::OptimizableGraph::Vertex
@@ -551,7 +553,7 @@ void Optimizer::BundleAdjustment(
         try
         {
             // Variables
-            std::vector<ORB_SLAM3::Plane *> walls = pMapRoom->getWalls();
+            std::vector<vs_graphs::core::geometric::Plane *> walls = pMapRoom->getWalls();
 
             // No need to optimize if there are no walls
             if (walls.empty())
@@ -586,8 +588,8 @@ void Optimizer::BundleAdjustment(
             for (size_t i = 0; i < walls.size(); i++)
                 for (size_t j = i + 1; j < walls.size(); j++)
                 {
-                    ORB_SLAM3::Plane *wall1 = walls[i];
-                    ORB_SLAM3::Plane *wall2 = walls[j];
+                    vs_graphs::core::geometric::Plane *wall1 = walls[i];
+                    vs_graphs::core::geometric::Plane *wall2 = walls[j];
 
                     // If the same wall, skip
                     if (wall1->getId() == wall2->getId())
@@ -614,8 +616,8 @@ void Optimizer::BundleAdjustment(
                                 //           wall2->getId() << " of room " <<
                                 //           pMapRoom->getId() << std::endl;
 
-                                ORB_SLAM3::EdgeVertexPlaneParallelism *e =
-                                    new ORB_SLAM3::EdgeVertexPlaneParallelism();
+                                vs_graphs::core::EdgeVertexPlaneParallelism *e =
+                                    new vs_graphs::core::EdgeVertexPlaneParallelism();
                                 e->setVertex(
                                     0,
                                     dynamic_cast<
@@ -661,8 +663,8 @@ void Optimizer::BundleAdjustment(
                             //           wall2->getId() << " of room " <<
                             //           pMapRoom->getId() << std::endl;
 
-                            ORB_SLAM3::EdgeVertexPlanePerpendicularity *e =
-                                new ORB_SLAM3::
+                            vs_graphs::core::EdgeVertexPlanePerpendicularity *e =
+                                new vs_graphs::core::
                                     EdgeVertexPlanePerpendicularity();
                             e->setVertex(
                                 0,
@@ -710,7 +712,7 @@ void Optimizer::BundleAdjustment(
     //     {
     //         // Variables
     //         bool allRoomsExist = true;
-    //         std::vector<ORB_SLAM3::Room *> rooms = pMapFloor->getRooms();
+    //         std::vector<vs_graphs::core::semantic::Room *> rooms = pMapFloor->getRooms();
 
     //         // No need to optimize if there are no rooms
     //         if (rooms.empty())
@@ -750,8 +752,8 @@ void Optimizer::BundleAdjustment(
     //         if (optimizer.vertex(opIdG) && allRoomsExist &&
     //         floorRoomOpIdGs.size() >= 1)
     //         {
-    //             ORB_SLAM3::EdgeVertexNSE3RoomProjectSE3Floor *e = new
-    //             ORB_SLAM3::EdgeVertexNSE3RoomProjectSE3Floor();
+    //             vs_graphs::core::EdgeVertexNSE3RoomProjectSE3Floor *e = new
+    //             vs_graphs::core::EdgeVertexNSE3RoomProjectSE3Floor();
 
     //             // Resize edge to fit: 1 (floor vertex) + n (rooms)
     //             e->resize(1 + floorRoomOpIdGs.size());
@@ -829,7 +831,7 @@ void Optimizer::BundleAdjustment(
 
                 for (size_t i2 = 0, iend = vpEdgesMono.size(); i2 < iend; i2++)
                 {
-                    ORB_SLAM3::EdgeSE3ProjectXYZ *e   = vpEdgesMono[i2];
+                    vs_graphs::core::EdgeSE3ProjectXYZ *e   = vpEdgesMono[i2];
                     MapPoint                     *pMP = vpMapPointEdgeMono[i2];
                     KeyFrame *pKFedge = edgeSourceKeyFrame(vpEdgeKFMono, i2);
 
@@ -916,7 +918,7 @@ void Optimizer::BundleAdjustment(
     if (nLoopKF == pMap->GetOriginKF()->mnId)
     {
         // [GBA] Globally optimized markers
-        for (Marker *p_marker : allMarkersVec)
+        for (semantic::Marker *p_marker : allMarkersVec)
         {
             g2o::VertexSE3Expmap *p_markerVertex =
                 static_cast<g2o::VertexSE3Expmap *>(
@@ -965,7 +967,7 @@ void Optimizer::BundleAdjustment(
     // [GBA] Globally optimized rooms
     if (nLoopKF == pMap->GetOriginKF()->mnId)
     {
-        for (Room *p_room : vpRooms)
+        for (semantic::Room *p_room : vpRooms)
         {
             try
             {
@@ -1544,7 +1546,7 @@ void Optimizer::FullInertialBA(Map                    *pMap,
 
 int Optimizer::PoseOptimization(Frame *pFrame)
 {
-    SystemParams *sysParams = SystemParams::GetParams();
+    types::SystemParams *sysParams = types::SystemParams::GetParams();
 
     g2o::SparseOptimizer                    optimizer;
     g2o::BlockSolver_6_3::LinearSolverType *linearSolver;
@@ -1572,8 +1574,8 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     // Set MapPoint vertices
     const int N = pFrame->N;
 
-    vector<ORB_SLAM3::EdgeSE3ProjectXYZOnlyPose *>       vpEdgesMono;
-    vector<ORB_SLAM3::EdgeSE3ProjectXYZOnlyPoseToBody *> vpEdgesMono_FHR;
+    vector<vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *>       vpEdgesMono;
+    vector<vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody *> vpEdgesMono_FHR;
     vector<size_t> vnIndexEdgeMono, vnIndexEdgeRight;
     vpEdgesMono.reserve(N);
     vpEdgesMono_FHR.reserve(N);
@@ -1586,7 +1588,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     vnIndexEdgeStereo.reserve(N);
 
     // DEPTH-AIDED TRACKING: For RGB-D, add depth residuals
-    vector<ORB_SLAM3::EdgeSE3ProjectXYZDepth *> vpEdgesDepth;
+    vector<vs_graphs::core::EdgeSE3ProjectXYZDepth *> vpEdgesDepth;
     vector<size_t>                              vnIndexEdgeDepth;
     vpEdgesDepth.reserve(N);
     vnIndexEdgeDepth.reserve(N);
@@ -1616,8 +1618,8 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         const cv::KeyPoint         &kpUn = pFrame->mvKeysUn[i];
                         obs << kpUn.pt.x, kpUn.pt.y;
 
-                        ORB_SLAM3::EdgeSE3ProjectXYZOnlyPose *e =
-                            new ORB_SLAM3::EdgeSE3ProjectXYZOnlyPose();
+                        vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *e =
+                            new vs_graphs::core::EdgeSE3ProjectXYZOnlyPose();
 
                         e->setVertex(
                             0,
@@ -1698,8 +1700,8 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         Eigen::Matrix<double, 2, 1> obs;
                         obs << kpUn.pt.x, kpUn.pt.y;
 
-                        ORB_SLAM3::EdgeSE3ProjectXYZOnlyPose *e =
-                            new ORB_SLAM3::EdgeSE3ProjectXYZOnlyPose();
+                        vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *e =
+                            new vs_graphs::core::EdgeSE3ProjectXYZOnlyPose();
 
                         e->setVertex(
                             0,
@@ -1732,8 +1734,8 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
                         pFrame->mvbOutlier[i] = false;
 
-                        ORB_SLAM3::EdgeSE3ProjectXYZOnlyPoseToBody *e =
-                            new ORB_SLAM3::EdgeSE3ProjectXYZOnlyPoseToBody();
+                        vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody *e =
+                            new vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody();
 
                         e->setVertex(
                             0,
@@ -1785,8 +1787,8 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                 {
                     nInitialCorrespondences++;
                     
-                    ORB_SLAM3::EdgeSE3ProjectXYZDepth *e =
-                        new ORB_SLAM3::EdgeSE3ProjectXYZDepth();
+                    vs_graphs::core::EdgeSE3ProjectXYZDepth *e =
+                        new vs_graphs::core::EdgeSE3ProjectXYZDepth();
 
                     e->setVertex(
                         0,
@@ -1840,7 +1842,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
         KeyFrame *refKF = pFrame->mpReferenceKF;
         if (sysParams->refine_map_points.enabled && refKF && it == 2)
         {
-            vector<Plane *>               vpPlanes;
+            vector<geometric::Plane *>               vpPlanes;
             std::unordered_map<int, bool> planeCheck;
 
             // populate the vector of planes using the covisibility graph of the
@@ -1854,7 +1856,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                 {
                     if (!plane)
                         continue;
-                    if (plane->getPlaneType() != Plane::planeVariant::UNDEFINED)
+                    if (plane->getPlaneType() != geometric::Plane::planeVariant::UNDEFINED)
                     {
                         if (planeCheck.find(plane->getId()) == planeCheck.end())
                         {
@@ -1871,7 +1873,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
             Eigen::Vector3d   camCenter = framePose.inverse().translation();
             for (const auto &pPlane : vpPlanes)
             {
-                if (pPlane->getPlaneType() == Plane::planeVariant::UNDEFINED)
+                if (pPlane->getPlaneType() == geometric::Plane::planeVariant::UNDEFINED)
                     continue;
 
                 Eigen::Vector4d planeEq = pPlane->getGlobalEquation().coeffs();
@@ -1916,7 +1918,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
         nBad = 0;
         for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++)
         {
-            ORB_SLAM3::EdgeSE3ProjectXYZOnlyPose *e = vpEdgesMono[i];
+            vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *e = vpEdgesMono[i];
 
             const size_t idx = vnIndexEdgeMono[i];
             if (it == 2)
@@ -1950,7 +1952,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
         for (size_t i = 0, iend = vpEdgesMono_FHR.size(); i < iend; i++)
         {
-            ORB_SLAM3::EdgeSE3ProjectXYZOnlyPoseToBody *e = vpEdgesMono_FHR[i];
+            vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody *e = vpEdgesMono_FHR[i];
 
             const size_t idx = vnIndexEdgeRight[i];
             if (it == 2)
@@ -2019,7 +2021,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
         // DEPTH-AIDED TRACKING: Process depth edges
         for (size_t i = 0, iend = vpEdgesDepth.size(); i < iend; i++)
         {
-            ORB_SLAM3::EdgeSE3ProjectXYZDepth *e = vpEdgesDepth[i];
+            vs_graphs::core::EdgeSE3ProjectXYZDepth *e = vpEdgesDepth[i];
 
             const size_t idx = vnIndexEdgeDepth[i];
             if (it == 2)
@@ -2066,7 +2068,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     return nInitialCorrespondences - nBad;
 }
 
-void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
+void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                                       bool                *pbStopFlag,
                                       Map                 *pMap,
                                       int                 &countFixedKF,
@@ -2076,23 +2078,23 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
                                       double               markerImpact)
 {
     // System parameters
-    ORB_SLAM3::SystemParams *sysParams = ORB_SLAM3::SystemParams::GetParams();
+    vs_graphs::core::types::SystemParams *sysParams = vs_graphs::core::types::SystemParams::GetParams();
 
     // Variables
     countFixedKF = 0;
     num_OptKF    = 0;
     num_MPs      = 0;
     num_edges    = 0;
-    std::list<ORB_SLAM3::Room *>       localRoomList;
-    ORB_SLAM3::Map                    *pCurrentMap = pKF->GetMap();
-    std::list<ORB_SLAM3::Plane *>      localPlaneList;
-    std::list<ORB_SLAM3::Marker *>     localMarkerList;
-    std::list<ORB_SLAM3::Passage *>    localPassageList;
-    std::list<ORB_SLAM3::KeyFrame *>   localKeyFrameList;
-    std::list<ORB_SLAM3::MapPoint *>   localMapPointList;
-    std::vector<ORB_SLAM3::KeyFrame *> neighborKeyFrameVec;
-    std::vector<ORB_SLAM3::Room *>     allRooms  = pCurrentMap->GetAllRooms();
-    std::vector<ORB_SLAM3::Floor *>    allFloors = pCurrentMap->GetAllFloors();
+    std::list<vs_graphs::core::semantic::Room *>       localRoomList;
+    vs_graphs::core::Map                    *pCurrentMap = pKF->GetMap();
+    std::list<vs_graphs::core::geometric::Plane *>      localPlaneList;
+    std::list<vs_graphs::core::semantic::Marker *>     localMarkerList;
+    std::list<vs_graphs::core::semantic::Passage *>    localPassageList;
+    std::list<vs_graphs::core::KeyFrame *>   localKeyFrameList;
+    std::list<vs_graphs::core::MapPoint *>   localMapPointList;
+    std::vector<vs_graphs::core::KeyFrame *> neighborKeyFrameVec;
+    std::vector<vs_graphs::core::semantic::Room *>     allRooms  = pCurrentMap->GetAllRooms();
+    std::vector<vs_graphs::core::semantic::Floor *>    allFloors = pCurrentMap->GetAllFloors();
 
     // Unorderd maps to keep track of the local entities
     std::unordered_map<int, bool> mpLocalPlaneId;
@@ -2119,7 +2121,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     for (int idx = 0, idxEnd = neighborKeyFrameVec.size(); idx < idxEnd; idx++)
     {
         // Get the current KeyFrame's neighbors
-        ORB_SLAM3::KeyFrame *pKFi = neighborKeyFrameVec[idx];
+        vs_graphs::core::KeyFrame *pKFi = neighborKeyFrameVec[idx];
         // Mark the KeyFrame as a part of the current LBA
         pKFi->mnBALocalForKF = pKF->mnId;
         // If the KeyFrame is proper, add it to the list of local KeyFrames for
@@ -2132,20 +2134,20 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     }
 
     // [LBA] Loop through the local KeyFrames
-    for (std::list<ORB_SLAM3::KeyFrame *>::iterator
+    for (std::list<vs_graphs::core::KeyFrame *>::iterator
              lit  = localKeyFrameList.begin(),
              lend = localKeyFrameList.end();
          lit != lend;
          lit++)
     {
         // Variables
-        ORB_SLAM3::KeyFrame             *pKFi           = *lit;
-        std::vector<ORB_SLAM3::Plane *>  localPlanesVec = pKFi->GetMapPlanes();
-        std::vector<ORB_SLAM3::Marker *> localMarkersVec =
+        vs_graphs::core::KeyFrame             *pKFi           = *lit;
+        std::vector<vs_graphs::core::geometric::Plane *>  localPlanesVec = pKFi->GetMapPlanes();
+        std::vector<vs_graphs::core::semantic::Marker *> localMarkersVec =
             pKFi->GetMapMarkers();
-        std::vector<ORB_SLAM3::Passage *> localDoorwaysVec =
+        std::vector<vs_graphs::core::semantic::Passage *> localDoorwaysVec =
             pKFi->GetMapPassages();
-        std::vector<ORB_SLAM3::MapPoint *> localMapPointsVec =
+        std::vector<vs_graphs::core::MapPoint *> localMapPointsVec =
             pKFi->GetMapPointMatches();
 
         // If the KeyFrame is the initial KeyFrame of the map, mark that as a
@@ -2154,14 +2156,14 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
             countFixedKF = 1;
 
         // [LBA] Loop through all the MapPoints and prepare them for LBA
-        for (std::vector<ORB_SLAM3::MapPoint *>::iterator
+        for (std::vector<vs_graphs::core::MapPoint *>::iterator
                  vit  = localMapPointsVec.begin(),
                  vend = localMapPointsVec.end();
              vit != vend;
              vit++)
         {
             // Variables
-            ORB_SLAM3::MapPoint *pMP = *vit;
+            vs_graphs::core::MapPoint *pMP = *vit;
 
             // If the MapPoint is proper, add it to the list of local MapPoints
             // for LBA
@@ -2178,7 +2180,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
         }
 
         // [LBA] Loop through all the Markers and prepare them for LBA
-        for (std::vector<ORB_SLAM3::Marker *>::iterator
+        for (std::vector<vs_graphs::core::semantic::Marker *>::iterator
                  idx  = localMarkersVec.begin(),
                  vend = localMarkersVec.end();
              idx != vend;
@@ -2186,25 +2188,25 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
         {
             if (mpLocalMarkerId.find((*idx)->getId()) == mpLocalMarkerId.end())
             {
-                ORB_SLAM3::Marker *marker = *idx;
+                vs_graphs::core::semantic::Marker *marker = *idx;
                 localMarkerList.push_back(marker);
                 mpLocalMarkerId[marker->getId()] = true;
             }
         }
 
         // [LBA] Loop through all the Planes and prepare them for LBA
-        for (std::vector<ORB_SLAM3::Plane *>::iterator
+        for (std::vector<vs_graphs::core::geometric::Plane *>::iterator
                  idx  = localPlanesVec.begin(),
                  vend = localPlanesVec.end();
              idx != vend;
              idx++)
         {
-            ORB_SLAM3::Plane *plane = *idx;
+            vs_graphs::core::geometric::Plane *plane = *idx;
             // If the plane does not exist, skip it
             if (!plane)
                 continue;
             // If the plane is not known, do not add it to the local map
-            if (plane->getPlaneType() == Plane::planeVariant::UNDEFINED)
+            if (plane->getPlaneType() == geometric::Plane::planeVariant::UNDEFINED)
                 continue;
             // Otherwise, add the plane to the local map
             if (mpLocalPlaneId.find(plane->getId()) == mpLocalPlaneId.end())
@@ -2215,7 +2217,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
         }
 
         // [LBA] Loop through all the Doorways and prepare them for LBA
-        for (std::vector<ORB_SLAM3::Passage *>::iterator
+        for (std::vector<vs_graphs::core::semantic::Passage *>::iterator
                  idx  = localDoorwaysVec.begin(),
                  vend = localDoorwaysVec.end();
              idx != vend;
@@ -2224,7 +2226,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
             if (mpLocalDoorwayId.find((*idx)->getId()) ==
                 mpLocalDoorwayId.end())
             {
-                ORB_SLAM3::Passage *doorway = *idx;
+                vs_graphs::core::semantic::Passage *doorway = *idx;
                 localPassageList.push_back(doorway);
                 mpLocalDoorwayId[doorway->getId()] = true;
             }
@@ -2235,7 +2237,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     for (const auto &room : allRooms)
     {
         // Get the walls of the room
-        std::vector<ORB_SLAM3::Plane *> roomWalls = room->getWalls();
+        std::vector<vs_graphs::core::geometric::Plane *> roomWalls = room->getWalls();
         // Add the room to the local map if any of the walls are in the local
         // map
         for (const auto &wall : roomWalls)
@@ -2247,13 +2249,13 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     }
 
     // [LBA] Loop through all the local Rooms to add all their walls to LBA
-    std::list<ORB_SLAM3::Plane *> lRecentLocalMapPlanes;
-    for (std::list<ORB_SLAM3::Room *>::iterator idx  = localRoomList.begin(),
+    std::list<vs_graphs::core::geometric::Plane *> lRecentLocalMapPlanes;
+    for (std::list<vs_graphs::core::semantic::Room *>::iterator idx  = localRoomList.begin(),
                                                 vend = localRoomList.end();
          idx != vend;
          idx++)
     {
-        std::vector<ORB_SLAM3::Plane *> roomWalls = (*idx)->getWalls();
+        std::vector<vs_graphs::core::geometric::Plane *> roomWalls = (*idx)->getWalls();
         for (const auto &roomWall : roomWalls)
         {
             if (mpLocalPlaneId.find(roomWall->getId()) == mpLocalPlaneId.end())
@@ -2267,23 +2269,23 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
 
     // [LBA] Loop through the recently added planes, get all the KeyFrames and
     // add them
-    std::list<ORB_SLAM3::KeyFrame *> lRecentLocalMapKeyFrames;
-    for (std::list<ORB_SLAM3::Plane *>::iterator
+    std::list<vs_graphs::core::KeyFrame *> lRecentLocalMapKeyFrames;
+    for (std::list<vs_graphs::core::geometric::Plane *>::iterator
              idx  = lRecentLocalMapPlanes.begin(),
              vend = lRecentLocalMapPlanes.end();
          idx != vend;
          idx++)
     {
-        std::map<ORB_SLAM3::KeyFrame *, ORB_SLAM3::Plane::Observation>
+        std::map<vs_graphs::core::KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
             planeObservations = (*idx)->getObservations();
-        for (std::map<ORB_SLAM3::KeyFrame *,
-                      ORB_SLAM3::Plane::Observation>::const_iterator
+        for (std::map<vs_graphs::core::KeyFrame *,
+                      vs_graphs::core::geometric::Plane::Observation>::const_iterator
                  obsId  = planeObservations.begin(),
                  obLast = planeObservations.end();
              obsId != obLast;
              obsId++)
         {
-            ORB_SLAM3::KeyFrame *pKFi = obsId->first;
+            vs_graphs::core::KeyFrame *pKFi = obsId->first;
             if (!pKFi->isBad() && pKFi->GetMap() == pCurrentMap)
             {
                 if (mpLocalKeyFrameId.find(pKFi->mnId) ==
@@ -2300,19 +2302,19 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
 
     // [LBA] Loop through the recently added keyframes, get all the map points
     // and add them
-    for (std::list<ORB_SLAM3::KeyFrame *>::iterator
+    for (std::list<vs_graphs::core::KeyFrame *>::iterator
              idx  = lRecentLocalMapKeyFrames.begin(),
              vend = lRecentLocalMapKeyFrames.end();
          idx != vend;
          idx++)
     {
-        std::vector<ORB_SLAM3::MapPoint *> vpMPs = (*idx)->GetMapPointMatches();
-        for (std::vector<ORB_SLAM3::MapPoint *>::iterator vit  = vpMPs.begin(),
+        std::vector<vs_graphs::core::MapPoint *> vpMPs = (*idx)->GetMapPointMatches();
+        for (std::vector<vs_graphs::core::MapPoint *>::iterator vit  = vpMPs.begin(),
                                                           vend = vpMPs.end();
              vit != vend;
              vit++)
         {
-            ORB_SLAM3::MapPoint *pMP = *vit;
+            vs_graphs::core::MapPoint *pMP = *vit;
             if (pMP)
                 if (!pMP->isBad() && pMP->GetMap() == pCurrentMap)
                 {
@@ -2328,22 +2330,22 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
 
     // [LBA] Fixed Keyframes for MPs (Keyframes that see Local MapPoints but
     // that are not Local Keyframes)
-    std::list<ORB_SLAM3::KeyFrame *> lFixedCameras;
-    for (std::list<ORB_SLAM3::MapPoint *>::iterator
+    std::list<vs_graphs::core::KeyFrame *> lFixedCameras;
+    for (std::list<vs_graphs::core::MapPoint *>::iterator
              lit  = localMapPointList.begin(),
              lend = localMapPointList.end();
          lit != lend;
          lit++)
     {
-        std::map<ORB_SLAM3::KeyFrame *, std::tuple<int, int>> observations =
+        std::map<vs_graphs::core::KeyFrame *, std::tuple<int, int>> observations =
             (*lit)->GetObservations();
-        for (std::map<ORB_SLAM3::KeyFrame *, std::tuple<int, int>>::iterator
+        for (std::map<vs_graphs::core::KeyFrame *, std::tuple<int, int>>::iterator
                  mit  = observations.begin(),
                  mend = observations.end();
              mit != mend;
              mit++)
         {
-            ORB_SLAM3::KeyFrame *pKFi = mit->first;
+            vs_graphs::core::KeyFrame *pKFi = mit->first;
 
             if (pKFi->mnBALocalForKF != pKF->mnId &&
                 pKFi->mnBAFixedForKF != pKF->mnId)
@@ -2391,13 +2393,13 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     pCurrentMap->msFixedKFs.clear();
 
     // [LBA] Local KeyFrame vertices
-    for (std::list<ORB_SLAM3::KeyFrame *>::iterator
+    for (std::list<vs_graphs::core::KeyFrame *>::iterator
              lit  = localKeyFrameList.begin(),
              lend = localKeyFrameList.end();
          lit != lend;
          lit++)
     {
-        ORB_SLAM3::KeyFrame  *pKFi = *lit;
+        vs_graphs::core::KeyFrame  *pKFi = *lit;
         g2o::VertexSE3Expmap *vSE3 = new g2o::VertexSE3Expmap();
         Sophus::SE3<float>    Tcw  = pKFi->GetPose();
         vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
@@ -2412,7 +2414,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     num_OptKF = localKeyFrameList.size();
 
     // [LBA] Fixed KeyFrame vertices
-    for (std::list<ORB_SLAM3::KeyFrame *>::iterator lit = lFixedCameras.begin(),
+    for (std::list<vs_graphs::core::KeyFrame *>::iterator lit = lFixedCameras.begin(),
                                                     lend = lFixedCameras.end();
          lit != lend;
          lit++)
@@ -2435,10 +2437,10 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
         (localKeyFrameList.size() + lFixedCameras.size()) *
         localMapPointList.size();
 
-    vector<ORB_SLAM3::EdgeSE3ProjectXYZ *> vpEdgesMono;
+    vector<vs_graphs::core::EdgeSE3ProjectXYZ *> vpEdgesMono;
     vpEdgesMono.reserve(nExpectedSize);
 
-    vector<ORB_SLAM3::EdgeSE3ProjectXYZToBody *> vpEdgesBody;
+    vector<vs_graphs::core::EdgeSE3ProjectXYZToBody *> vpEdgesBody;
     vpEdgesBody.reserve(nExpectedSize);
 
     vector<KeyFrame *> vpEdgeKFMono;
@@ -2471,7 +2473,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     vector<KeyFrame *> vpEdgeKFPlane;
     vpEdgeKFPlane.reserve(nExpectedSizePlane);
 
-    vector<Plane *> vpPlaneEdgePlane;
+    vector<geometric::Plane *> vpPlaneEdgePlane;
     vpPlaneEdgePlane.reserve(nExpectedSizePlane);
 
     vector<EdgeSE3KFPointToPlane *> vpEdgesPlanePoint;
@@ -2480,7 +2482,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     vector<KeyFrame *> vpEdgeKFPlanePoint;
     vpEdgeKFPlanePoint.reserve(nExpectedSizePlane);
 
-    vector<Plane *> vpPlaneEdgePlanePoint;
+    vector<geometric::Plane *> vpPlaneEdgePlanePoint;
     vpPlaneEdgePlanePoint.reserve(nExpectedSizePlane);
 
     const float thHuber1D     = sqrt(3.841);
@@ -2497,13 +2499,13 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     int nEdges  = 0;
     int maxOpId = 0;
 
-    for (std::list<ORB_SLAM3::MapPoint *>::iterator
+    for (std::list<vs_graphs::core::MapPoint *>::iterator
              lit  = localMapPointList.begin(),
              lend = localMapPointList.end();
          lit != lend;
          lit++)
     {
-        ORB_SLAM3::MapPoint    *pMP    = *lit;
+        vs_graphs::core::MapPoint    *pMP    = *lit;
         g2o::VertexSBAPointXYZ *vPoint = new g2o::VertexSBAPointXYZ();
         vPoint->setEstimate(pMP->GetWorldPos().cast<double>());
         int id = pMP->mnId + maxKFid + 1;
@@ -2539,8 +2541,8 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
                     Eigen::Matrix<double, 2, 1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
 
-                    ORB_SLAM3::EdgeSE3ProjectXYZ *e =
-                        new ORB_SLAM3::EdgeSE3ProjectXYZ();
+                    vs_graphs::core::EdgeSE3ProjectXYZ *e =
+                        new vs_graphs::core::EdgeSE3ProjectXYZ();
 
                     e->setVertex(0,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -2627,8 +2629,8 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
                         cv::KeyPoint kp = pKFi->mvKeysRight[rightIndex];
                         obs << kp.pt.x, kp.pt.y;
 
-                        ORB_SLAM3::EdgeSE3ProjectXYZToBody *e =
-                            new ORB_SLAM3::EdgeSE3ProjectXYZToBody();
+                        vs_graphs::core::EdgeSE3ProjectXYZToBody *e =
+                            new vs_graphs::core::EdgeSE3ProjectXYZToBody();
 
                         if (optimizer.vertex(id) &&
                             optimizer.vertex(pKFi->mnId))
@@ -2674,13 +2676,13 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     num_edges = nEdges;
 
     // [LBA] Markers
-    for (list<Marker *>::iterator idx  = localMarkerList.begin(),
+    for (list<semantic::Marker *>::iterator idx  = localMarkerList.begin(),
                                   lend = localMarkerList.end();
          idx != lend;
          idx++)
     {
         // Adding a vertex for each marker
-        Marker               *pMapMarker = *idx;
+        semantic::Marker               *pMapMarker = *idx;
         g2o::VertexSE3Expmap *vMarker    = new g2o::VertexSE3Expmap();
         vMarker->setEstimate(g2o::SE3Quat(
             pMapMarker->getGlobalPose().unit_quaternion().cast<double>(),
@@ -2703,13 +2705,13 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     maxOpId += nMarkers;
 
     // [LBA] Planes
-    for (std::list<ORB_SLAM3::Plane *>::iterator idx  = localPlaneList.begin(),
+    for (std::list<vs_graphs::core::geometric::Plane *>::iterator idx  = localPlaneList.begin(),
                                                  lend = localPlaneList.end();
          idx != lend;
          idx++)
     {
         // Variables
-        ORB_SLAM3::Plane *pMapPlane = *idx;
+        vs_graphs::core::geometric::Plane *pMapPlane = *idx;
         g2o::VertexPlane *vPlane    = new g2o::VertexPlane();
 
         // Adding a vertex for each plane
@@ -2745,8 +2747,8 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
                 if (optimizer.vertex(opId) &&
                     optimizer.vertex(pMP->mnId + maxKFid + 1))
                 {
-                    ORB_SLAM3::EdgeVertexPlaneProjectPointXYZ *e =
-                        new ORB_SLAM3::EdgeVertexPlaneProjectPointXYZ();
+                    vs_graphs::core::EdgeVertexPlaneProjectPointXYZ *e =
+                        new vs_graphs::core::EdgeVertexPlaneProjectPointXYZ();
                     e->setVertex(
                         0,
                         dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -2768,16 +2770,16 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
         }
 
         // Adding an edge between the plane and the keyframes
-        const map<KeyFrame *, ORB_SLAM3::Plane::Observation> observations =
+        const map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation> observations =
             pMapPlane->getObservations();
-        for (map<KeyFrame *, ORB_SLAM3::Plane::Observation>::const_iterator
+        for (map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>::const_iterator
                  obsId  = observations.begin(),
                  obLast = observations.end();
              obsId != obLast;
              obsId++)
         {
             KeyFrame                     *pKFi = obsId->first;
-            ORB_SLAM3::Plane::Observation obs  = obsId->second;
+            vs_graphs::core::geometric::Plane::Observation obs  = obsId->second;
 
             if (pKFi->isBad())
             {
@@ -2800,8 +2802,8 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
             {
                 if (sysParams->optimization.plane_kf.enabled)
                 {
-                    ORB_SLAM3::EdgeVertexPlaneProjectSE3KF *e =
-                        new ORB_SLAM3::EdgeVertexPlaneProjectSE3KF();
+                    vs_graphs::core::EdgeVertexPlaneProjectSE3KF *e =
+                        new vs_graphs::core::EdgeVertexPlaneProjectSE3KF();
                     e->setVertex(0,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                      optimizer.vertex(pKFi->mnId)));
@@ -2834,8 +2836,8 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
                     if (clsCloudIdx != -1)
                     {
                         // Add the plane-point constraint
-                        ORB_SLAM3::EdgeSE3KFPointToPlane *e =
-                            new ORB_SLAM3::EdgeSE3KFPointToPlane();
+                        vs_graphs::core::EdgeSE3KFPointToPlane *e =
+                            new vs_graphs::core::EdgeSE3KFPointToPlane();
                         e->setVertex(
                             0,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -2869,7 +2871,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     maxOpId += nPlanes;
 
     // [LBA] Rooms
-    for (std::list<ORB_SLAM3::Room *>::iterator idx  = localRoomList.begin(),
+    for (std::list<vs_graphs::core::semantic::Room *>::iterator idx  = localRoomList.begin(),
                                                 lend = localRoomList.end();
          idx != lend;
          idx++)
@@ -2877,8 +2879,8 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
         try
         {
             // Variables
-            ORB_SLAM3::Room                *pMapRoom = *idx;
-            std::vector<ORB_SLAM3::Plane *> walls    = pMapRoom->getWalls();
+            vs_graphs::core::semantic::Room                *pMapRoom = *idx;
+            std::vector<vs_graphs::core::geometric::Plane *> walls    = pMapRoom->getWalls();
 
             // No need to optimize if there are no walls
             if (walls.empty())
@@ -2909,8 +2911,8 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
             for (size_t i = 0; i < walls.size(); i++)
                 for (size_t j = i + 1; j < walls.size(); j++)
                 {
-                    ORB_SLAM3::Plane *wall1 = walls[i];
-                    ORB_SLAM3::Plane *wall2 = walls[j];
+                    vs_graphs::core::geometric::Plane *wall1 = walls[i];
+                    vs_graphs::core::geometric::Plane *wall2 = walls[j];
 
                     // If the same wall, skip
                     if (wall1->getId() == wall2->getId())
@@ -2931,8 +2933,8 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
                                 optimizer.vertex(opId1) &&
                                 optimizer.vertex(opId2))
                             {
-                                ORB_SLAM3::EdgeVertexPlaneParallelism *e =
-                                    new ORB_SLAM3::EdgeVertexPlaneParallelism();
+                                vs_graphs::core::EdgeVertexPlaneParallelism *e =
+                                    new vs_graphs::core::EdgeVertexPlaneParallelism();
                                 e->setVertex(
                                     0,
                                     dynamic_cast<
@@ -2972,8 +2974,8 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
                         if (optimizer.vertex(opId) && optimizer.vertex(opId1) &&
                             optimizer.vertex(opId2))
                         {
-                            ORB_SLAM3::EdgeVertexPlanePerpendicularity *e =
-                                new ORB_SLAM3::
+                            vs_graphs::core::EdgeVertexPlanePerpendicularity *e =
+                                new vs_graphs::core::
                                     EdgeVertexPlanePerpendicularity();
                             e->setVertex(
                                 0,
@@ -3031,13 +3033,13 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     vToErase.reserve(vpEdgesMono.size() + vpEdgesBody.size() +
                      vpEdgesStereo.size());
 
-    vector<pair<KeyFrame *, Plane *>> vToErasePlane;
+    vector<pair<KeyFrame *, geometric::Plane *>> vToErasePlane;
     vToErasePlane.reserve(vpEdgesPlane.size() * 2);
 
     // Check inlier observations
     for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++)
     {
-        ORB_SLAM3::EdgeSE3ProjectXYZ *e   = vpEdgesMono[i];
+        vs_graphs::core::EdgeSE3ProjectXYZ *e   = vpEdgesMono[i];
         MapPoint                     *pMP = vpMapPointEdgeMono[i];
 
         if (pMP->isBad())
@@ -3052,7 +3054,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
 
     for (size_t i = 0, iend = vpEdgesBody.size(); i < iend; i++)
     {
-        ORB_SLAM3::EdgeSE3ProjectXYZToBody *e   = vpEdgesBody[i];
+        vs_graphs::core::EdgeSE3ProjectXYZToBody *e   = vpEdgesBody[i];
         MapPoint                           *pMP = vpMapPointEdgeBody[i];
 
         if (pMP->isBad())
@@ -3082,14 +3084,14 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
 
     for (size_t i = 0, iend = vpEdgesPlane.size(); i < iend; i++)
     {
-        ORB_SLAM3::EdgeVertexPlaneProjectSE3KF *e       = vpEdgesPlane[i];
-        Plane                                  *vpPlane = vpPlaneEdgePlane[i];
+        vs_graphs::core::EdgeVertexPlaneProjectSE3KF *e       = vpEdgesPlane[i];
+        geometric::Plane                                  *vpPlane = vpPlaneEdgePlane[i];
 
         if (e->chi2() > 7.815 || !e->isDistanceCorrect())
         {
 
             // if not already in ToErase, add it
-            std::pair<KeyFrame *, Plane *> pKFPlane =
+            std::pair<KeyFrame *, geometric::Plane *> pKFPlane =
                 make_pair(vpEdgeKFPlane[i], vpPlane);
             if (std::find(vToErasePlane.begin(),
                           vToErasePlane.end(),
@@ -3100,13 +3102,13 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
 
     for (size_t i = 0, iend = vpEdgesPlanePoint.size(); i < iend; i++)
     {
-        ORB_SLAM3::EdgeSE3KFPointToPlane *e       = vpEdgesPlanePoint[i];
-        Plane                            *vpPlane = vpPlaneEdgePlanePoint[i];
+        vs_graphs::core::EdgeSE3KFPointToPlane *e       = vpEdgesPlanePoint[i];
+        geometric::Plane                            *vpPlane = vpPlaneEdgePlanePoint[i];
 
         if (e->chi2() > 3.841 || !e->isDistanceCorrect())
         {
             // if not already in ToErase, add it
-            std::pair<KeyFrame *, Plane *> pKFPlane =
+            std::pair<KeyFrame *, geometric::Plane *> pKFPlane =
                 make_pair(vpEdgeKFPlanePoint[i], vpPlane);
             if (std::find(vToErasePlane.begin(),
                           vToErasePlane.end(),
@@ -3134,7 +3136,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
         for (size_t i = 0; i < vToErasePlane.size(); i++)
         {
             KeyFrame *pKFi   = vToErasePlane[i].first;
-            Plane    *pPlane = vToErasePlane[i].second;
+            geometric::Plane    *pPlane = vToErasePlane[i].second;
             pPlane->eraseObservation(pKFi);
             pKFi->RemoveMapPlane(pPlane);
         }
@@ -3190,14 +3192,14 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     }
 
     // [LBA] Locally optimized markers
-    for (list<Marker *>::iterator idx  = localMarkerList.begin(),
+    for (list<semantic::Marker *>::iterator idx  = localMarkerList.begin(),
                                   lend = localMarkerList.end();
          idx != lend;
          idx++)
     {
         try
         {
-            Marker               *pMapMarker = *idx;
+            semantic::Marker               *pMapMarker = *idx;
             g2o::VertexSE3Expmap *vMarker = static_cast<g2o::VertexSE3Expmap *>(
                 optimizer.vertex(pMapMarker->getOpId()));
             g2o::SE3Quat SE3quat = vMarker->estimate();
@@ -3215,14 +3217,14 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     }
 
     // [LBA] Locally optimized planes
-    for (std::list<ORB_SLAM3::Plane *>::iterator idx  = localPlaneList.begin(),
+    for (std::list<vs_graphs::core::geometric::Plane *>::iterator idx  = localPlaneList.begin(),
                                                  lend = localPlaneList.end();
          idx != lend;
          idx++)
     {
         try
         {
-            ORB_SLAM3::Plane *pMapPlane = *idx;
+            vs_graphs::core::geometric::Plane *pMapPlane = *idx;
             g2o::VertexPlane *vPlane    = static_cast<g2o::VertexPlane *>(
                 optimizer.vertex(pMapPlane->getOpId()));
             g2o::Plane3D planePlane = vPlane->estimate();
@@ -3239,13 +3241,13 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
 
     // [LBA] Locally optimized rooms
     // 🚧 Temporarily disabled: The reason is to avoid getting room centroid
-    // dragged into the wall equation centroid for (std::list<ORB_SLAM3::Room
+    // dragged into the wall equation centroid for (std::list<vs_graphs::core::semantic::Room
     // *>::iterator idx = localRoomList.begin(), lend = localRoomList.end(); idx
     // != lend; idx++)
     // {
     //     try
     //     {
-    //         ORB_SLAM3::Room *pMapRoom = *idx;
+    //         vs_graphs::core::semantic::Room *pMapRoom = *idx;
     //         g2o::VertexSE3Expmap *vrtxRoom = static_cast<g2o::VertexSE3Expmap
     //         *>(optimizer.vertex(pMapRoom->getOpId())); g2o::SE3Quat SE3quat =
     //         vrtxRoom->estimate();
@@ -3254,7 +3256,7 @@ void Optimizer::LocalBundleAdjustment(ORB_SLAM3::KeyFrame *pKF,
     //         // Locally Optimized Doorways
     //         // for (const auto doorway : pMapRoom->getPassages())
     //         // {
-    //         //     ORB_SLAM3::Passage *pMapDoorway = doorway;
+    //         //     vs_graphs::core::semantic::Passage *pMapDoorway = doorway;
     //         //     g2o::VertexSE3Expmap *vDoorway =
     //         static_cast<g2o::VertexSE3Expmap
     //         *>(optimizer.vertex(pMapDoorway->getOpId()));
@@ -3647,12 +3649,12 @@ void Optimizer::OptimizeEssentialGraph(
 }
 
 void Optimizer::OptimizeEssentialGraph(
-    ORB_SLAM3::KeyFrame                *pCurKF,
-    ORB_SLAM3::Map                     *p_sourceMap_inout,
-    std::vector<ORB_SLAM3::KeyFrame *> &vpFixedKFs,
-    std::vector<ORB_SLAM3::KeyFrame *> &vpFixedCorrectedKFs,
-    std::vector<ORB_SLAM3::KeyFrame *> &vpNonFixedKFs,
-    std::vector<ORB_SLAM3::MapPoint *> &vpNonCorrectedMPs,
+    vs_graphs::core::KeyFrame                *pCurKF,
+    vs_graphs::core::Map                     *p_sourceMap_inout,
+    std::vector<vs_graphs::core::KeyFrame *> &vpFixedKFs,
+    std::vector<vs_graphs::core::KeyFrame *> &vpFixedCorrectedKFs,
+    std::vector<vs_graphs::core::KeyFrame *> &vpNonFixedKFs,
+    std::vector<vs_graphs::core::MapPoint *> &vpNonCorrectedMPs,
     const g2o::Sim3                    &transform_mergeWorldToCurrentWorld_in)
 {
     // Variables
@@ -4180,7 +4182,7 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
     const Eigen::Vector3f t2w = pKF2->GetTranslation();
 
     // Set Sim3 vertex
-    ORB_SLAM3::VertexSim3Expmap *vSim3 = new ORB_SLAM3::VertexSim3Expmap();
+    vs_graphs::core::VertexSim3Expmap *vSim3 = new vs_graphs::core::VertexSim3Expmap();
     vSim3->_fix_scale                  = bFixScale;
     vSim3->setEstimate(g2oS12);
     vSim3->setId(0);
@@ -4192,8 +4194,8 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
     // Set MapPoint vertices
     const int                N            = vpMatches1.size();
     const vector<MapPoint *> vpMapPoints1 = pKF1->GetMapPointMatches();
-    vector<ORB_SLAM3::EdgeSim3ProjectXYZ *>        vpEdges12;
-    vector<ORB_SLAM3::EdgeInverseSim3ProjectXYZ *> vpEdges21;
+    vector<vs_graphs::core::EdgeSim3ProjectXYZ *>        vpEdges12;
+    vector<vs_graphs::core::EdgeInverseSim3ProjectXYZ *> vpEdges21;
     vector<size_t>                                 vnIndexEdge;
     vector<bool>                                   vbIsInKF2;
 
@@ -4296,8 +4298,8 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
         const cv::KeyPoint         &kpUn1 = pKF1->mvKeysUn[i];
         obs1 << kpUn1.pt.x, kpUn1.pt.y;
 
-        ORB_SLAM3::EdgeSim3ProjectXYZ *e12 =
-            new ORB_SLAM3::EdgeSim3ProjectXYZ();
+        vs_graphs::core::EdgeSim3ProjectXYZ *e12 =
+            new vs_graphs::core::EdgeSim3ProjectXYZ();
 
         e12->setVertex(0,
                        dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -4340,8 +4342,8 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
             nOutKF2++;
         }
 
-        ORB_SLAM3::EdgeInverseSim3ProjectXYZ *e21 =
-            new ORB_SLAM3::EdgeInverseSim3ProjectXYZ();
+        vs_graphs::core::EdgeInverseSim3ProjectXYZ *e21 =
+            new vs_graphs::core::EdgeInverseSim3ProjectXYZ();
 
         e21->setVertex(0,
                        dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -4374,8 +4376,8 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
     int nBadOutKF2 = 0;
     for (size_t i = 0; i < vpEdges12.size(); i++)
     {
-        ORB_SLAM3::EdgeSim3ProjectXYZ        *e12 = vpEdges12[i];
-        ORB_SLAM3::EdgeInverseSim3ProjectXYZ *e21 = vpEdges21[i];
+        vs_graphs::core::EdgeSim3ProjectXYZ        *e12 = vpEdges12[i];
+        vs_graphs::core::EdgeInverseSim3ProjectXYZ *e21 = vpEdges21[i];
         if (!e12 || !e21)
             continue;
 
@@ -4385,9 +4387,9 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
             vpMatches1[idx] = static_cast<MapPoint *>(nullptr);
             optimizer.removeEdge(e12);
             optimizer.removeEdge(e21);
-            vpEdges12[i] = static_cast<ORB_SLAM3::EdgeSim3ProjectXYZ *>(nullptr);
+            vpEdges12[i] = static_cast<vs_graphs::core::EdgeSim3ProjectXYZ *>(nullptr);
             vpEdges21[i] =
-                static_cast<ORB_SLAM3::EdgeInverseSim3ProjectXYZ *>(nullptr);
+                static_cast<vs_graphs::core::EdgeInverseSim3ProjectXYZ *>(nullptr);
             nBad++;
 
             if (!vbIsInKF2[i])
@@ -4419,8 +4421,8 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
     mAcumHessian = Eigen::MatrixXd::Zero(7, 7);
     for (size_t i = 0; i < vpEdges12.size(); i++)
     {
-        ORB_SLAM3::EdgeSim3ProjectXYZ        *e12 = vpEdges12[i];
-        ORB_SLAM3::EdgeInverseSim3ProjectXYZ *e21 = vpEdges21[i];
+        vs_graphs::core::EdgeSim3ProjectXYZ        *e12 = vpEdges12[i];
+        vs_graphs::core::EdgeInverseSim3ProjectXYZ *e21 = vpEdges21[i];
         if (!e12 || !e21)
             continue;
 
@@ -5849,7 +5851,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
     const int nExpectedSize =
         (vpAdjustKF.size() + vpFixedKF.size()) * vpMPs.size();
 
-    vector<ORB_SLAM3::EdgeSE3ProjectXYZ *> vpEdgesMono;
+    vector<vs_graphs::core::EdgeSE3ProjectXYZ *> vpEdgesMono;
     vpEdgesMono.reserve(nExpectedSize);
 
     vector<KeyFrame *> vpEdgeKFMono;
@@ -5912,8 +5914,8 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
                 Eigen::Matrix<double, 2, 1> obs;
                 obs << kpUn.pt.x, kpUn.pt.y;
 
-                ORB_SLAM3::EdgeSE3ProjectXYZ *e =
-                    new ORB_SLAM3::EdgeSE3ProjectXYZ();
+                vs_graphs::core::EdgeSE3ProjectXYZ *e =
+                    new vs_graphs::core::EdgeSE3ProjectXYZ();
 
                 e->setVertex(0,
                              dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -6001,7 +6003,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
         int badMonoMP = 0, badStereoMP = 0;
         for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++)
         {
-            ORB_SLAM3::EdgeSE3ProjectXYZ *e   = vpEdgesMono[i];
+            vs_graphs::core::EdgeSE3ProjectXYZ *e   = vpEdgesMono[i];
             MapPoint                     *pMP = vpMapPointEdgeMono[i];
 
             if (pMP->isBad())
@@ -6049,7 +6051,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
     int badMonoMP = 0, badStereoMP = 0;
     for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++)
     {
-        ORB_SLAM3::EdgeSE3ProjectXYZ *e   = vpEdgesMono[i];
+        vs_graphs::core::EdgeSE3ProjectXYZ *e   = vpEdgesMono[i];
         MapPoint                     *pMP = vpMapPointEdgeMono[i];
 
         if (pMP->isBad())
@@ -6155,7 +6157,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
 
         for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++)
         {
-            ORB_SLAM3::EdgeSE3ProjectXYZ *e       = vpEdgesMono[i];
+            vs_graphs::core::EdgeSE3ProjectXYZ *e       = vpEdgesMono[i];
             MapPoint                     *pMP     = vpMapPointEdgeMono[i];
             KeyFrame *pKFedge = edgeSourceKeyFrame(vpEdgeKFMono, i);
 
@@ -8058,4 +8060,5 @@ void Optimizer::OptimizeEssentialGraph4DoF(
     pMap->IncreaseChangeIndex();
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

@@ -29,7 +29,9 @@
 #include <cstddef>
 #include <optional>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -63,6 +65,7 @@ struct FindingEvidence
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_AXIOM_EVALUATOR_FINDING_EVIDENCE_H

@@ -25,7 +25,11 @@
 
 #include "Geometric/Plane.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace geometric
 {
 
 PlaneGeometryMetadataSnapshot Plane::getGeometryMetadataSnapshot(void) const
@@ -45,4 +49,6 @@ PlaneGeometryMetadataSnapshot Plane::getGeometryMetadataSnapshot(void) const
     return snapshot;
 }
 
-} // namespace ORB_SLAM3
+} // namespace geometric
+} // namespace core
+} // namespace vs_graphs

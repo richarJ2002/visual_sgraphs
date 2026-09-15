@@ -7,7 +7,11 @@
 #include <string>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
 {
 struct WallBounds
 {
@@ -69,6 +73,8 @@ struct RoomContextSnapshot
     bool                         wasPreviouslyVisited{false};
     int                          boundaryStatus{0};
 };
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
 
 #endif // ROOM_CONTEXT_SNAPSHOT_H

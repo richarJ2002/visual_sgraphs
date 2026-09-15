@@ -20,7 +20,9 @@
 
 #include "System.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 DBParser::DBParser() {}
 DBParser::~DBParser() {}
@@ -46,7 +48,7 @@ json DBParser::jsonParser(string jsonFilePath)
     }
 }
 
-std::vector<Room *> DBParser::getEnvRooms(json envData)
+std::vector<semantic::Room *> DBParser::getEnvRooms(json envData)
 {
     envRooms.clear();
 
@@ -56,7 +58,7 @@ std::vector<Room *> DBParser::getEnvRooms(json envData)
         for (const auto &envDatum : envData["rooms"].items())
         {
             // Initialization
-            Room *envRoom = new Room();
+            semantic::Room *envRoom = new semantic::Room();
 
             // Fill the room entity
             envRoom->setOpId(-1);
@@ -67,7 +69,7 @@ std::vector<Room *> DBParser::getEnvRooms(json envData)
 
             // Set the room variant (corridors are incomplete rooms, not a
             // distinct semantic type, so every env room is a plain ROOM)
-            envRoom->setRoomVariant(Room::ROOM);
+            envRoom->setRoomVariant(semantic::Room::ROOM);
 
             // Fill the vector
             envRooms.push_back(envRoom);
@@ -83,4 +85,5 @@ std::vector<Room *> DBParser::getEnvRooms(json envData)
 
     return envRooms;
 }
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

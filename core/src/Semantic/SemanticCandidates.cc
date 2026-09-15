@@ -8,7 +8,11 @@
 #include <string>
 #include <tuple>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
 {
 namespace
 {
@@ -808,4 +812,6 @@ std::vector<SemanticCandidate> SemanticCandidates::generate(
     return generateWithStatus(history_in, config_in, anchorRoomId_in)
         .candidates;
 }
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs

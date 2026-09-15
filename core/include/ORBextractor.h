@@ -20,7 +20,9 @@
 #include <list>
 #include <opencv2/opencv.hpp>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class ExtractorNode
@@ -121,6 +123,7 @@ namespace ORB_SLAM3
         int GetMinThFAST() const { return minThFAST; }
     };
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs
 
 #endif

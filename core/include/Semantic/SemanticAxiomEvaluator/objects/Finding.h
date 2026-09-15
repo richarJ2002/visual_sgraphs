@@ -38,7 +38,9 @@
 #include "Semantic/SemanticAxiomEvaluator/objects/FindingEvidence.h"
 #include "Semantic/SemanticAxiomEvaluator/objects/ReasonCode.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -91,6 +93,7 @@ struct Finding
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_AXIOM_EVALUATOR_FINDING_H

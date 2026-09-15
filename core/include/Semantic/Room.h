@@ -25,7 +25,11 @@
 
 #include <optional>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
 {
 struct RoomContextSnapshot;
 class Floor;
@@ -161,7 +165,7 @@ class Room
     /*!
      * @brief       The ground plane associated with the room.
      */
-    Plane *groundPlane{nullptr};
+    geometric::Plane *groundPlane{nullptr};
 
     /*! @brief Non-owning floor node in the semantic hierarchy. */
     Floor *floor{nullptr};
@@ -180,12 +184,12 @@ class Room
     /*!
      * @brief       The vector of detected walls of a room.
      */
-    std::vector<Plane *> walls;
+    std::vector<geometric::Plane *> walls;
 
     /*!
      * @brief       The vector of detected doorways of a room.
      */
-    std::vector<ORB_SLAM3::Passage *> doorways;
+    std::vector<vs_graphs::core::semantic::Passage *> doorways;
 
     /*!
      * @brief Current validation result for the finite horizontal wall loop.
@@ -434,12 +438,12 @@ class Room
     /*!
      * @brief       Adds a non-owning passage association to the room.
      */
-    void setDoorways(ORB_SLAM3::Passage *value);
+    void setDoorways(vs_graphs::core::semantic::Passage *value);
 
     /*!
      * @brief       Returns the passages associated with the room.
      */
-    std::vector<ORB_SLAM3::Passage *> getPassages() const;
+    std::vector<vs_graphs::core::semantic::Passage *> getPassages() const;
 
     /*!
      * @brief       Replaces a retired passage with its retained fused entity.
@@ -451,8 +455,8 @@ class Room
      *
      * @return      True when this room referenced the retired passage.
      */
-    bool replacePassageAssociation(ORB_SLAM3::Passage *p_retiredPassage_in,
-                                   ORB_SLAM3::Passage *p_retainedPassage_in);
+    bool replacePassageAssociation(vs_graphs::core::semantic::Passage *p_retiredPassage_in,
+                                   vs_graphs::core::semantic::Passage *p_retainedPassage_in);
 
     /*!
      * @brief Removes every passage association without deleting passages.
@@ -474,7 +478,7 @@ class Room
      *
      * @return      True when the association was present and removed.
      */
-    bool removePassageAssociation(ORB_SLAM3::Passage *p_removedPassage_in);
+    bool removePassageAssociation(vs_graphs::core::semantic::Passage *p_removedPassage_in);
 
     /*!
      * @brief       Adds a non-owning wall-plane association to this room.
@@ -487,7 +491,7 @@ class Room
      * @param[in]   p_wall_in
      *              Wall plane to associate with this room.
      */
-    void setWalls(ORB_SLAM3::Plane *p_wall_in);
+    void setWalls(vs_graphs::core::geometric::Plane *p_wall_in);
 
     /*!
      * @brief       Replaces a retired wall-plane association atomically.
@@ -503,8 +507,8 @@ class Room
      *
      * @return      True when this room referenced the retired wall.
      */
-    bool replaceWall(ORB_SLAM3::Plane *p_retiredWall_in,
-                     ORB_SLAM3::Plane *p_retainedWall_in);
+    bool replaceWall(vs_graphs::core::geometric::Plane *p_retiredWall_in,
+                     vs_graphs::core::geometric::Plane *p_retainedWall_in);
 
     /*!
      * @brief Removes one non-owning wall association.
@@ -514,12 +518,12 @@ class Room
      *
      * @return True when the wall was associated with this room.
      */
-    bool removeWall(ORB_SLAM3::Plane *p_wall_in);
+    bool removeWall(vs_graphs::core::geometric::Plane *p_wall_in);
 
     /*!
      * @brief       Returns the wall planes associated with the room.
      */
-    std::vector<ORB_SLAM3::Plane *> getWalls() const;
+    std::vector<vs_graphs::core::geometric::Plane *> getWalls() const;
 
     /*!
      * @brief       Returns a wall normal oriented toward this room's centroid.
@@ -541,7 +545,7 @@ class Room
      *              normal direction is returned.
      */
     std::optional<Eigen::Vector3d>
-        getWallNormalTowardRoom_World(const Plane *p_wall_in) const;
+        getWallNormalTowardRoom_World(const geometric::Plane *p_wall_in) const;
 
     /*!
      * @brief       Removes all wall associations without deleting the planes.
@@ -558,12 +562,12 @@ class Room
     /*!
      * @brief       Returns the non-owning ground-plane association.
      */
-    Plane *getGroundPlane() const;
+    geometric::Plane *getGroundPlane() const;
 
     /*!
      * @brief       Associates a non-owning ground plane with the room.
      */
-    void setGroundPlane(Plane *p_groundPlane_in);
+    void setGroundPlane(geometric::Plane *p_groundPlane_in);
 
     /*!
      * @brief       Replaces a retired ground-plane association.
@@ -576,8 +580,8 @@ class Room
      *
      * @return      True when this room referenced the retired ground plane.
      */
-    bool replaceGroundPlane(Plane *p_retiredGround_in,
-                            Plane *p_retainedGround_in);
+    bool replaceGroundPlane(geometric::Plane *p_retiredGround_in,
+                            geometric::Plane *p_retainedGround_in);
 
     /** Returns the non-owning floor node associated with this room. */
     Floor *getFloor() const;
@@ -633,6 +637,8 @@ class Room
      */
     mutable std::mutex mMutexBoundaryStatus;
 };
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
 
 #endif

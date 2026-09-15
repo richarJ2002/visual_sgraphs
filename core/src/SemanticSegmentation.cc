@@ -29,7 +29,9 @@
 #include <pcl/search/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 namespace
@@ -155,11 +157,11 @@ SemanticSegmentation::SemanticSegmentation(Atlas *pAtlas)
     mpAtlas = pAtlas;
 
     /* Get the system parameters */
-    sysParams = SystemParams::GetParams();
+    sysParams = types::SystemParams::GetParams();
 
     /* Set the booleans according to the mode of operation */
     mGeoRuns = !(sysParams->general.mode_of_operation ==
-                 SystemParams::general::ModeOfOperation::SEM);
+                 types::SystemParams::general::ModeOfOperation::SEM);
 }
 
 void SemanticSegmentation::Run()
@@ -812,7 +814,7 @@ void SemanticSegmentation::updatePlaneData(
                 pKF->GetPoseInverse().matrix().cast<float>());
 
             /* Get the semantic type of the observation */
-            ORB_SLAM3::Plane::planeVariant semanticType =
+            vs_graphs::core::geometric::Plane::planeVariant semanticType =
                 Utils::getPlaneTypeFromClassId(clsId);
 
             /*!
@@ -861,9 +863,9 @@ void SemanticSegmentation::updatePlaneData(
                      *              check is only applied when a matchPlaneId is
                      *              -1.
                      */
-                    if (semanticType == ORB_SLAM3::Plane::planeVariant::WALL)
+                    if (semanticType == vs_graphs::core::geometric::Plane::planeVariant::WALL)
                     {
-                        const SystemParams::sem_seg::WallCreation
+                        const types::SystemParams::sem_seg::WallCreation
                             &wallCreationParams =
                                 sysParams->sem_seg.wallCreation;
 
@@ -999,7 +1001,7 @@ void SemanticSegmentation::updatePlaneData(
                     }
 
                     /* Create a new mapped plane */
-                    ORB_SLAM3::Plane *newMapPlane =
+                    vs_graphs::core::geometric::Plane *newMapPlane =
                         GeoSemHelpers::createMapPlane(mpAtlas,
                                                       pKF,
                                                       detectedPlane,
@@ -1044,7 +1046,7 @@ void SemanticSegmentation::updatePlaneData(
                         *planeCloud,
                         pKF->GetPoseInverse().matrix().cast<float>());
 
-                    ORB_SLAM3::Plane *matchedPlane =
+                    vs_graphs::core::geometric::Plane *matchedPlane =
                         mpAtlas->GetPlaneById(matchedPlaneId);
 
                     if (matchedPlane != nullptr && !matchedPlane->isBad() &&
@@ -1073,10 +1075,10 @@ void SemanticSegmentation::updatePlaneSemantics(int    planeId,
                                                 double confidence)
 {
     // retrieve the plane from the map
-    Plane *matchedPlane = mpAtlas->GetPlaneById(planeId);
+    geometric::Plane *matchedPlane = mpAtlas->GetPlaneById(planeId);
 
     // plane type compatible with the Plane class
-    ORB_SLAM3::Plane::planeVariant planeType =
+    vs_graphs::core::geometric::Plane::planeVariant planeType =
         Utils::getPlaneTypeFromClassId(clsId);
 
     // cast a vote for the plane semantics
@@ -1107,4 +1109,5 @@ bool SemanticSegmentation::isFinished()
     return mbFinished;
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

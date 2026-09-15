@@ -27,7 +27,9 @@
 
 #include <utility>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -46,7 +48,7 @@ void evaluateOneWallTwin(const WallRecord            &wall_in,
          * violation and a known contradiction, not an ordinary absent
          * twin. */
         if (twin.mapId.has_value() || twin.wallKey.has_value() ||
-            twin.planeType != Plane::planeVariant::UNDEFINED)
+            twin.planeType != geometric::Plane::planeVariant::UNDEFINED)
         {
             findings_inout.push_back(
                 makeFinding(AxiomCode::AX_WALL_03,
@@ -62,7 +64,7 @@ void evaluateOneWallTwin(const WallRecord            &wall_in,
         return;
     }
 
-    if (twin.planeType != Plane::planeVariant::WALL)
+    if (twin.planeType != geometric::Plane::planeVariant::WALL)
     {
         findings_inout.push_back(makeFinding(AxiomCode::AX_WALL_03,
                                              AxiomResult::FAIL,
@@ -198,4 +200,5 @@ void evaluateOneWallTwin(const WallRecord            &wall_in,
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

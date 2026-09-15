@@ -29,7 +29,9 @@
 #include <pcl/common/point_tests.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace
 {
@@ -57,17 +59,17 @@ struct ObservationSideEvidence
 };
 
 ObservationSideEvidence getMedianObservationSide_World_m(
-    Plane                 *p_plane_in,
+    geometric::Plane                 *p_plane_in,
     const Eigen::Vector4d &planeEquation_World_in)
 {
     if (p_plane_in == nullptr)
     {
         return {};
     }
-    const Plane::ObservationSideSnapshot snapshot =
+    const geometric::Plane::ObservationSideSnapshot snapshot =
         p_plane_in->getObservationSideSnapshot(planeEquation_World_in);
     return {snapshot.medianSignedDistance_m,
-            snapshot.face == Plane::ObservationSideSnapshot::Face::AMBIGUOUS};
+            snapshot.face == geometric::Plane::ObservationSideSnapshot::Face::AMBIGUOUS};
 }
 
 /*!
@@ -149,7 +151,7 @@ ProjectedPlaneBounds projectPlaneBounds(
 bool crossesPassablePassageOpening(
     const Eigen::Vector3d &segmentStart_World_m_in,
     const Eigen::Vector3d &segmentEnd_World_m_in,
-    ORB_SLAM3::Passage    *p_passage_in,
+    vs_graphs::core::semantic::Passage    *p_passage_in,
     const Eigen::Vector3d &groundNormal_World_in,
     const double           openingMargin_m_in,
     const double           minimumSideDistance_m_in)
@@ -330,8 +332,8 @@ Eigen::Vector3d Utils::lineIntersectsPlane(const Eigen::Vector4d &plane,
     return lineStart + t * lineDirection;
 }
 
-bool Utils::arePlanesFacingEachOther(const ORB_SLAM3::Plane *plane1,
-                                     const ORB_SLAM3::Plane *plane2)
+bool Utils::arePlanesFacingEachOther(const vs_graphs::core::geometric::Plane *plane1,
+                                     const vs_graphs::core::geometric::Plane *plane2)
 {
     if (plane1 == nullptr || plane2 == nullptr)
     {
@@ -357,7 +359,7 @@ bool Utils::arePlanesFacingEachOther(const ORB_SLAM3::Plane *plane1,
         std::abs(equation1.head<3>().dot(equation2.head<3>()));
 
     const double minimumParallelAlignment =
-        std::abs(SystemParams::GetParams()->room_seg.plane_facing_dot_thresh);
+        std::abs(types::SystemParams::GetParams()->room_seg.plane_facing_dot_thresh);
 
     if (normalAlignment < minimumParallelAlignment)
     {
@@ -380,8 +382,8 @@ bool Utils::arePlanesFacingEachOther(const ORB_SLAM3::Plane *plane1,
     return perpendicularSeparation_m > 1e-3;
 }
 
-bool Utils::arePlanesApartEnough(const ORB_SLAM3::Plane *plane1,
-                                 const ORB_SLAM3::Plane *plane2,
+bool Utils::arePlanesApartEnough(const vs_graphs::core::geometric::Plane *plane1,
+                                 const vs_graphs::core::geometric::Plane *plane2,
                                  const double           &threshold)
 {
     if (plane1 == nullptr || plane2 == nullptr)
@@ -422,12 +424,12 @@ bool Utils::arePlanesApartEnough(const ORB_SLAM3::Plane *plane1,
     return perpendicularSeparation_m > threshold;
 }
 
-bool Utils::arePlanesPerpendicular(const ORB_SLAM3::Plane *plane1,
-                                   const ORB_SLAM3::Plane *plane2)
+bool Utils::arePlanesPerpendicular(const vs_graphs::core::geometric::Plane *plane1,
+                                   const vs_graphs::core::geometric::Plane *plane2)
 {
     // Get the threshold value
     double threshold =
-        SystemParams::GetParams()->room_seg.walls_perpendicularity_thresh *
+        types::SystemParams::GetParams()->room_seg.walls_perpendicularity_thresh *
         Utils::DEG_TO_RAD;
 
     // Extract and normalize plane normals
@@ -444,12 +446,12 @@ bool Utils::arePlanesPerpendicular(const ORB_SLAM3::Plane *plane1,
     return std::abs(angle - M_PI_2) < threshold;
 }
 
-bool Utils::arePlanesParallel(const ORB_SLAM3::Plane *plane1,
-                              const ORB_SLAM3::Plane *plane2)
+bool Utils::arePlanesParallel(const vs_graphs::core::geometric::Plane *plane1,
+                              const vs_graphs::core::geometric::Plane *plane2)
 {
     // Get the threshold value
     double threshold =
-        SystemParams::GetParams()->room_seg.walls_parallelism_thresh *
+        types::SystemParams::GetParams()->room_seg.walls_parallelism_thresh *
         Utils::DEG_TO_RAD;
 
     // Extract and normalize plane normals
@@ -466,22 +468,22 @@ bool Utils::arePlanesParallel(const ORB_SLAM3::Plane *plane1,
     return (angle < threshold) || (std::abs(angle - M_PI) < threshold);
 }
 
-std::vector<std::pair<ORB_SLAM3::Plane *, ORB_SLAM3::Plane *>>
-    Utils::getFacingPlanes(const std::vector<ORB_SLAM3::Plane *> &planes)
+std::vector<std::pair<vs_graphs::core::geometric::Plane *, vs_graphs::core::geometric::Plane *>>
+    Utils::getFacingPlanes(const std::vector<vs_graphs::core::geometric::Plane *> &planes)
 {
     // Variables
-    ORB_SLAM3::SystemParams *sysParams = ORB_SLAM3::SystemParams::GetParams();
-    std::vector<std::pair<ORB_SLAM3::Plane *, ORB_SLAM3::Plane *>> facingPlanes;
+    vs_graphs::core::types::SystemParams *sysParams = vs_graphs::core::types::SystemParams::GetParams();
+    std::vector<std::pair<vs_graphs::core::geometric::Plane *, vs_graphs::core::geometric::Plane *>> facingPlanes;
     double minValidSpace = sysParams->room_seg.min_wall_distance_thresh;
 
     // Loop through all the planes
     for (size_t idx1 = 0; idx1 < planes.size(); ++idx1)
     {
-        ORB_SLAM3::Plane *plane1 = planes[idx1];
+        vs_graphs::core::geometric::Plane *plane1 = planes[idx1];
         for (size_t idx2 = idx1 + 1; idx2 < planes.size(); ++idx2)
         {
             // Variables
-            ORB_SLAM3::Plane *plane2 = planes[idx2];
+            vs_graphs::core::geometric::Plane *plane2 = planes[idx2];
             // Check if the planes are facing each other
             bool isFacing = Utils::arePlanesFacingEachOther(plane1, plane2);
             if (isFacing)
@@ -572,7 +574,7 @@ typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDistanceFilter(
     // Variables
     double                        distance;
     const std::pair<float, float> thresholds =
-        SystemParams::GetParams()->pointcloud.distance_thresh;
+        types::SystemParams::GetParams()->pointcloud.distance_thresh;
     const float thresholdNear = thresholds.first;
     const float thresholdFar  = thresholds.second;
 
@@ -676,7 +678,7 @@ std::vector<std::pair<typename pcl::PointCloud<PointT>::Ptr, Eigen::Vector4d>>
     std::vector<
         std::pair<typename pcl::PointCloud<PointT>::Ptr, Eigen::Vector4d>>
                   extractedPlanes;
-    SystemParams *sysParams = SystemParams::GetParams();
+    types::SystemParams *sysParams = types::SystemParams::GetParams();
 
     /* Extract planes from point clouds */
     for (unsigned int i = 0;
@@ -793,34 +795,34 @@ template std::vector<
     Utils::ransacPlaneFitting<pcl::PointXYZRGBA, pcl::WeightedSACSegmentation>(
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
 
-ORB_SLAM3::Plane::planeVariant Utils::getPlaneTypeFromClassId(int clsId)
+vs_graphs::core::geometric::Plane::planeVariant Utils::getPlaneTypeFromClassId(int clsId)
 {
     switch (clsId)
     {
     case 0:
-        return ORB_SLAM3::Plane::planeVariant::GROUND;
+        return vs_graphs::core::geometric::Plane::planeVariant::GROUND;
     case 1:
-        return ORB_SLAM3::Plane::planeVariant::WALL;
+        return vs_graphs::core::geometric::Plane::planeVariant::WALL;
     case 2:
-        return ORB_SLAM3::Plane::planeVariant::DOOR;
+        return vs_graphs::core::geometric::Plane::planeVariant::DOOR;
     case 3:
-        return ORB_SLAM3::Plane::planeVariant::WINDOW;
+        return vs_graphs::core::geometric::Plane::planeVariant::WINDOW;
     default:
-        return ORB_SLAM3::Plane::planeVariant::UNDEFINED;
+        return vs_graphs::core::geometric::Plane::planeVariant::UNDEFINED;
     }
 }
 
-int Utils::getClassIdFromPlaneType(ORB_SLAM3::Plane::planeVariant planeType)
+int Utils::getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::planeVariant planeType)
 {
     switch (planeType)
     {
-    case ORB_SLAM3::Plane::planeVariant::GROUND:
+    case vs_graphs::core::geometric::Plane::planeVariant::GROUND:
         return 0;
-    case ORB_SLAM3::Plane::planeVariant::WALL:
+    case vs_graphs::core::geometric::Plane::planeVariant::WALL:
         return 1;
-    case ORB_SLAM3::Plane::planeVariant::DOOR:
+    case vs_graphs::core::geometric::Plane::planeVariant::DOOR:
         return 2;
-    case ORB_SLAM3::Plane::planeVariant::WINDOW:
+    case vs_graphs::core::geometric::Plane::planeVariant::WINDOW:
         return 3;
     default:
         return -1;
@@ -838,18 +840,18 @@ bool Utils::pointOnPlane(Eigen::Vector4d planeEquation, MapPoint *mapPoint)
                                       mapPoint->GetWorldPos().cast<double>());
 
     // Apply a threshold
-    if (pointPlaneDist < SystemParams::GetParams()->seg.plane_point_dist_thresh)
+    if (pointPlaneDist < types::SystemParams::GetParams()->seg.plane_point_dist_thresh)
         return true;
 
     return false;
 }
 
 int Utils::associatePlanes(
-    const vector<Plane *>                       &mappedPlanes,
+    const vector<geometric::Plane *>                       &mappedPlanes,
     g2o::Plane3D                                 givenPlane,
     pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr givenCloud,
     const Eigen::Matrix4d                       &kfPose,
-    const Plane::planeVariant                    obsPlaneType,
+    const geometric::Plane::planeVariant                    obsPlaneType,
     const float                                  threshold,
     const float                           maximumFiniteCloudDistance_m_in,
     const std::optional<Eigen::Vector3d> &observationOrigin_World_m_in)
@@ -867,7 +869,7 @@ int Utils::associatePlanes(
     }
 
     /* Extract the system parameters */
-    SystemParams *sysParams = SystemParams::GetParams();
+    types::SystemParams *sysParams = types::SystemParams::GetParams();
 
     /* Extract and normalize the observed plane equation */
     Eigen::Vector4d givenEquation   = givenPlane.coeffs();
@@ -927,7 +929,7 @@ int Utils::associatePlanes(
         static_cast<double>(sysParams->seg.plane_association.centroid_thresh));
 
     const bool useWallExtension =
-        obsPlaneType == Plane::planeVariant::WALL &&
+        obsPlaneType == geometric::Plane::planeVariant::WALL &&
         sysParams->sem_seg.reassociate.wallExtension.enabled;
 
     const double configuredFiniteCloudDistance_m =
@@ -959,7 +961,7 @@ int Utils::associatePlanes(
     double bestAssociationScore = std::numeric_limits<double>::max();
 
     /* Iterate through every mapped plane */
-    for (Plane *mappedPlane : mappedPlanes)
+    for (geometric::Plane *mappedPlane : mappedPlanes)
     {
         /* Skip invalid mapped planes */
         if (mappedPlane == nullptr || mappedPlane->isBad())
@@ -968,7 +970,7 @@ int Utils::associatePlanes(
         }
 
         /* Extract the mapped plane point cloud */
-        const Plane::GeometrySnapshot mappedGeometry =
+        const geometric::Plane::GeometrySnapshot mappedGeometry =
             mappedPlane->getGeometrySnapshot();
         const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr mappedCloud =
             mappedGeometry.supportCloud;
@@ -985,12 +987,12 @@ int Utils::associatePlanes(
          * A mapped UNDEFINED plane is allowed to match a semantically labelled
          * observation so that it can accumulate enough votes for confirmation.
          */
-        const Plane::planeVariant mappedPlaneType =
+        const geometric::Plane::planeVariant mappedPlaneType =
             mappedPlane->getExpectedPlaneType();
 
         const bool semanticTypesCompatible =
-            obsPlaneType == Plane::planeVariant::UNDEFINED ||
-            mappedPlaneType == Plane::planeVariant::UNDEFINED ||
+            obsPlaneType == geometric::Plane::planeVariant::UNDEFINED ||
+            mappedPlaneType == geometric::Plane::planeVariant::UNDEFINED ||
             mappedPlaneType == obsPlaneType;
 
         if (!semanticTypesCompatible)
@@ -1030,7 +1032,7 @@ int Utils::associatePlanes(
         }
 
         /* Keep observations from opposite sides as distinct wall faces. */
-        if (obsPlaneType == Plane::planeVariant::WALL &&
+        if (obsPlaneType == geometric::Plane::planeVariant::WALL &&
             observationOrigin_World_m_in.has_value() &&
             observationOrigin_World_m_in->allFinite())
         {
@@ -1251,7 +1253,7 @@ void Utils::clusterPlaneClouds(
     tree->setInputCloud(cloud);
     pcl::EuclideanClusterExtraction<pcl::PointXYZRGBA> ec;
     ec.setClusterTolerance(
-        SystemParams::GetParams()
+        types::SystemParams::GetParams()
             ->seg.plane_association.cluster_separation.tolerance);
     ec.setMinClusterSize(10);
     ec.setMaxClusterSize(2500000);
@@ -1267,7 +1269,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
         return;
     }
 
-    SystemParams *p_systemParams = SystemParams::GetParams();
+    types::SystemParams *p_systemParams = types::SystemParams::GetParams();
 
     bool mergedPlaneInPass = true;
 
@@ -1275,21 +1277,21 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
     {
         mergedPlaneInPass = false;
 
-        const std::vector<Plane *> mappedPlanes = p_atlas_in->GetAllPlanes();
+        const std::vector<geometric::Plane *> mappedPlanes = p_atlas_in->GetAllPlanes();
 
-        for (Plane *p_candidatePlane : mappedPlanes)
+        for (geometric::Plane *p_candidatePlane : mappedPlanes)
         {
             if (p_candidatePlane == nullptr || p_candidatePlane->isBad() ||
                 p_candidatePlane->getPlaneType() ==
-                    Plane::planeVariant::UNDEFINED)
+                    geometric::Plane::planeVariant::UNDEFINED)
             {
                 continue;
             }
 
-            std::vector<Plane *> compatiblePlanes;
+            std::vector<geometric::Plane *> compatiblePlanes;
             compatiblePlanes.reserve(mappedPlanes.size());
 
-            for (Plane *p_otherPlane : mappedPlanes)
+            for (geometric::Plane *p_otherPlane : mappedPlanes)
             {
                 if (p_otherPlane == nullptr ||
                     p_otherPlane == p_candidatePlane || p_otherPlane->isBad() ||
@@ -1306,11 +1308,11 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                  * rooms and require independent ownership.
                  */
                 if (p_candidatePlane->getPlaneType() ==
-                    Plane::planeVariant::WALL)
+                    geometric::Plane::planeVariant::WALL)
                 {
-                    const Plane::GeometrySnapshot candidateGeometry =
+                    const geometric::Plane::GeometrySnapshot candidateGeometry =
                         p_candidatePlane->getGeometrySnapshot();
-                    const Plane::GeometrySnapshot otherGeometry =
+                    const geometric::Plane::GeometrySnapshot otherGeometry =
                         p_otherPlane->getGeometrySnapshot();
                     Eigen::Vector4d candidateEquation_World =
                         candidateGeometry.equation_World;
@@ -1377,7 +1379,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             }
 
             const bool useWallExtensionDistance =
-                p_candidatePlane->getPlaneType() == Plane::planeVariant::WALL &&
+                p_candidatePlane->getPlaneType() == geometric::Plane::planeVariant::WALL &&
                 p_systemParams->sem_seg.reassociate.wallExtension.enabled;
 
             const float maximumFiniteCloudDistance_m =
@@ -1386,7 +1388,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                           .maximumInPlaneGap_m
                     : -1.0F;
 
-            const Plane::GeometrySnapshot candidateAssociationGeometry =
+            const geometric::Plane::GeometrySnapshot candidateAssociationGeometry =
                 p_candidatePlane->getGeometrySnapshot();
             const int matchedPlaneId = associatePlanes(
                 compatiblePlanes,
@@ -1405,7 +1407,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             const auto matchedPlaneIterator =
                 std::find_if(compatiblePlanes.begin(),
                              compatiblePlanes.end(),
-                             [matchedPlaneId](const Plane *p_plane) {
+                             [matchedPlaneId](const geometric::Plane *p_plane) {
                                  return p_plane != nullptr &&
                                         p_plane->getId() == matchedPlaneId;
                              });
@@ -1415,11 +1417,11 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 continue;
             }
 
-            Plane *p_matchedPlane = *matchedPlaneIterator;
+            geometric::Plane *p_matchedPlane = *matchedPlaneIterator;
 
-            const Plane::GeometrySnapshot candidateGeometry =
+            const geometric::Plane::GeometrySnapshot candidateGeometry =
                 p_candidatePlane->getGeometrySnapshot();
-            const Plane::GeometrySnapshot matchedGeometry =
+            const geometric::Plane::GeometrySnapshot matchedGeometry =
                 p_matchedPlane->getGeometrySnapshot();
             const auto candidateEvidence =
                 std::make_tuple(p_candidatePlane->getObservationCount(),
@@ -1435,15 +1437,15 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                                     : 0U,
                                 -p_matchedPlane->getId());
 
-            Plane *p_retainedPlane = candidateEvidence >= matchedEvidence
+            geometric::Plane *p_retainedPlane = candidateEvidence >= matchedEvidence
                                          ? p_candidatePlane
                                          : p_matchedPlane;
 
-            Plane *p_retiredPlane = p_retainedPlane == p_candidatePlane
+            geometric::Plane *p_retiredPlane = p_retainedPlane == p_candidatePlane
                                         ? p_matchedPlane
                                         : p_candidatePlane;
 
-            const Plane::GeometrySnapshot retiredGeometry =
+            const geometric::Plane::GeometrySnapshot retiredGeometry =
                 p_retiredPlane->getGeometrySnapshot();
             pcl::PointCloud<pcl::PointXYZRGBA>::Ptr retiredCloudCopy(
                 new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -1461,7 +1463,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 }
             }
 
-            const std::map<KeyFrame *, Plane::Observation> retiredObservations =
+            const std::map<KeyFrame *, geometric::Plane::Observation> retiredObservations =
                 p_retiredPlane->getObservations();
 
             for (const auto &[p_keyFrame, observation] : retiredObservations)
@@ -1475,10 +1477,10 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             }
 
             GeoSemHelpers::refitMappedPlaneFromCloud(p_retainedPlane);
-            const Plane::planeVariant retainedPlaneType =
+            const geometric::Plane::planeVariant retainedPlaneType =
                 p_retainedPlane->getPlaneType();
 
-            for (Room *p_room : p_atlas_in->GetAllRooms())
+            for (semantic::Room *p_room : p_atlas_in->GetAllRooms())
             {
                 if (p_room == nullptr || p_room->isBad())
                 {
@@ -1489,7 +1491,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 p_room->replaceGroundPlane(p_retiredPlane, p_retainedPlane);
             }
 
-            for (ORB_SLAM3::Passage *p_passage : p_atlas_in->GetAllPassages())
+            for (vs_graphs::core::semantic::Passage *p_passage : p_atlas_in->GetAllPassages())
             {
                 if (p_passage != nullptr)
                 {
@@ -1513,7 +1515,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             {
                 p_currentMap->EraseRoomWallPlane(p_retiredPlane);
 
-                if (retainedPlaneType == Plane::planeVariant::WALL)
+                if (retainedPlaneType == geometric::Plane::planeVariant::WALL)
                 {
                     p_currentMap->AddRoomWallPlane(p_retainedPlane);
                 }
@@ -1533,8 +1535,8 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 
             p_retiredPlane->SetMap(nullptr);
 
-            std::cout << "[SemanticMerge] Fused Plane#"
-                      << p_retiredPlane->getId() << " into Plane#"
+            std::cout << "[SemanticMerge] Fused geometric::Plane#"
+                      << p_retiredPlane->getId() << " into geometric::Plane#"
                       << p_retainedPlane->getId() << '.' << std::endl;
 
             mergedPlaneInPass = true;
@@ -1552,9 +1554,9 @@ void Utils::reAssociateRooms(Atlas *mpAtlas)
      *              a confirmed room or corridor to absorb redundant,
      *              single-wall provisional structural elements.
      */
-    const std::vector<ORB_SLAM3::Room *> allRooms = mpAtlas->GetAllRooms();
+    const std::vector<vs_graphs::core::semantic::Room *> allRooms = mpAtlas->GetAllRooms();
 
-    for (ORB_SLAM3::Room *room : allRooms)
+    for (vs_graphs::core::semantic::Room *room : allRooms)
     {
         /* Skip invalid structural elements */
         if (room == nullptr || room->isBad())
@@ -1567,7 +1569,7 @@ void Utils::reAssociateRooms(Atlas *mpAtlas)
          * structural elements.
          */
         const bool isConfirmedRoom =
-            room->getRoomVariant() == ORB_SLAM3::Room::roomVariant::ROOM;
+            room->getRoomVariant() == vs_graphs::core::semantic::Room::roomVariant::ROOM;
 
         if (!isConfirmedRoom)
         {
@@ -1577,9 +1579,9 @@ void Utils::reAssociateRooms(Atlas *mpAtlas)
         /* Require more than one valid wall before allowing consolidation */
         std::size_t validWallCount = 0;
 
-        const std::vector<ORB_SLAM3::Plane *> roomWalls = room->getWalls();
+        const std::vector<vs_graphs::core::geometric::Plane *> roomWalls = room->getWalls();
 
-        for (ORB_SLAM3::Plane *wall : roomWalls)
+        for (vs_graphs::core::geometric::Plane *wall : roomWalls)
         {
             if (wall != nullptr && !wall->isBad())
             {
@@ -1602,7 +1604,7 @@ void Utils::reAssociateRooms(Atlas *mpAtlas)
 
 void Utils::fuseDuplicateRoomsAfterMerge(
     Map                       *p_map_inout,
-    const std::vector<Room *> &importedRooms_in)
+    const std::vector<semantic::Room *> &importedRooms_in)
 {
     /* Reject an invalid lifecycle request. */
     if (p_map_inout == nullptr || importedRooms_in.empty())
@@ -1610,7 +1612,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
         return;
     }
 
-    const SystemParams *p_systemParameters = SystemParams::GetParams();
+    const types::SystemParams *p_systemParameters = types::SystemParams::GetParams();
 
     const double maximumRoomCentroidDistance_m =
         p_systemParameters != nullptr
@@ -1621,7 +1623,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
     constexpr double minimumRoomSideDistance_m = 0.20;
     constexpr double finiteWallBoundsMargin_m  = 0.30;
 
-    const std::unordered_set<Room *> importedRoomSet(importedRooms_in.begin(),
+    const std::unordered_set<semantic::Room *> importedRoomSet(importedRooms_in.begin(),
                                                      importedRooms_in.end());
 
     /*
@@ -1633,15 +1635,15 @@ void Utils::fuseDuplicateRoomsAfterMerge(
         [p_map_inout](const Eigen::Vector3d &firstCentroid_World_m_in,
                       const Eigen::Vector3d &secondCentroid_World_m_in)
     {
-        for (Plane *p_wall : p_map_inout->GetAllPlanes())
+        for (geometric::Plane *p_wall : p_map_inout->GetAllPlanes())
         {
             if (p_wall == nullptr || p_wall->isBad() ||
-                p_wall->getPlaneType() != Plane::planeVariant::WALL)
+                p_wall->getPlaneType() != geometric::Plane::planeVariant::WALL)
             {
                 continue;
             }
 
-            const Plane::GeometrySnapshot wallGeometry =
+            const geometric::Plane::GeometrySnapshot wallGeometry =
                 p_wall->getGeometrySnapshot();
             Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
 
@@ -1765,17 +1767,17 @@ void Utils::fuseDuplicateRoomsAfterMerge(
     };
 
     /* Evaluate each imported hypothesis against rooms that already existed. */
-    for (Room *p_importedRoom : importedRooms_in)
+    for (semantic::Room *p_importedRoom : importedRooms_in)
     {
         if (p_importedRoom == nullptr || p_importedRoom->isBad())
         {
             continue;
         }
 
-        const Room::roomVariant importedRoomType =
+        const semantic::Room::roomVariant importedRoomType =
             p_importedRoom->getRoomVariant();
 
-        if (importedRoomType == Room::roomVariant::UNDEFINED)
+        if (importedRoomType == semantic::Room::roomVariant::UNDEFINED)
         {
             continue;
         }
@@ -1788,12 +1790,12 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             continue;
         }
 
-        const std::vector<Plane *> importedWalls = p_importedRoom->getWalls();
+        const std::vector<geometric::Plane *> importedWalls = p_importedRoom->getWalls();
 
-        Room  *p_bestRetainedRoom     = nullptr;
+        semantic::Room  *p_bestRetainedRoom     = nullptr;
         double bestCentroidDistance_m = std::numeric_limits<double>::infinity();
 
-        for (Room *p_candidateRoom : p_map_inout->GetAllRooms())
+        for (semantic::Room *p_candidateRoom : p_map_inout->GetAllRooms())
         {
             if (p_candidateRoom == nullptr ||
                 p_candidateRoom == p_importedRoom || p_candidateRoom->isBad() ||
@@ -1848,13 +1850,13 @@ void Utils::fuseDuplicateRoomsAfterMerge(
                 continue;
             }
 
-            const std::vector<Plane *> candidateWalls =
+            const std::vector<geometric::Plane *> candidateWalls =
                 p_candidateRoom->getWalls();
 
             std::size_t sameSideSharedWallCount   = 0U;
             bool        hasOppositeSideSharedWall = false;
 
-            for (Plane *p_importedWall : importedWalls)
+            for (geometric::Plane *p_importedWall : importedWalls)
             {
                 if (p_importedWall == nullptr || p_importedWall->isBad())
                 {
@@ -1919,7 +1921,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             continue;
         }
 
-        const std::vector<Plane *> retainedWalls =
+        const std::vector<geometric::Plane *> retainedWalls =
             p_bestRetainedRoom->getWalls();
 
         /*! A wall can bound the retained (near) room only when no passable
@@ -1929,12 +1931,12 @@ void Utils::fuseDuplicateRoomsAfterMerge(
          * prospective). Copying such a wall into the retained room would both
          * corrupt the near boundary and hand the far room's evidence to the
          * near room, so the far-side consultation happens here. */
-        Plane *p_mergeGroundPlane = nullptr;
+        geometric::Plane *p_mergeGroundPlane = nullptr;
 
-        for (Plane *p_plane : p_map_inout->GetAllPlanes())
+        for (geometric::Plane *p_plane : p_map_inout->GetAllPlanes())
         {
             if (p_plane != nullptr && !p_plane->isBad() &&
-                p_plane->getPlaneType() == Plane::planeVariant::GROUND)
+                p_plane->getPlaneType() == geometric::Plane::planeVariant::GROUND)
             {
                 p_mergeGroundPlane = p_plane;
                 break;
@@ -1969,7 +1971,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
         const Eigen::Vector3d retainedCentroid_World_m =
             p_bestRetainedRoom->getCentroid();
 
-        const std::vector<Passage *> mergePassages =
+        const std::vector<semantic::Passage *> mergePassages =
             p_map_inout->GetAllPassages();
         const bool roomsAreSeparatedByPassage =
             std::any_of(mergePassages.begin(),
@@ -1978,7 +1980,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
                          &importedCentroid_World_m,
                          &mergeGroundNormal_World,
                          mergeOpeningMargin_m,
-                         mergeMinimumSideDistance_m](Passage *p_passage)
+                         mergeMinimumSideDistance_m](semantic::Passage *p_passage)
                         {
                             return crossesPassablePassageOpening(
                                 retainedCentroid_World_m,
@@ -1991,8 +1993,8 @@ void Utils::fuseDuplicateRoomsAfterMerge(
 
         if (roomsAreSeparatedByPassage)
         {
-            std::cout << "[SemanticMerge] Preserved Room#"
-                      << p_importedRoom->getId() << " and Room#"
+            std::cout << "[SemanticMerge] Preserved semantic::Room#"
+                      << p_importedRoom->getId() << " and semantic::Room#"
                       << p_bestRetainedRoom->getId()
                       << "; a passable passage separates their centroids."
                       << std::endl;
@@ -2001,17 +2003,17 @@ void Utils::fuseDuplicateRoomsAfterMerge(
 
         struct WallTransfer
         {
-            Plane   *p_wall;
-            Room    *p_targetRoom;
-            Passage *p_separatingPassage;
+            geometric::Plane   *p_wall;
+            semantic::Room    *p_targetRoom;
+            semantic::Passage *p_separatingPassage;
         };
 
         std::vector<WallTransfer> wallTransfers;
         wallTransfers.reserve(importedWalls.size());
-        std::vector<Room *> mapRooms = p_map_inout->GetAllRooms();
+        std::vector<semantic::Room *> mapRooms = p_map_inout->GetAllRooms();
         std::sort(mapRooms.begin(),
                   mapRooms.end(),
-                  [](const Room *p_first, const Room *p_second)
+                  [](const semantic::Room *p_first, const semantic::Room *p_second)
                   {
                       if (p_first == nullptr)
                       {
@@ -2024,7 +2026,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
                       return p_first->getId() < p_second->getId();
                   });
 
-        for (Plane *p_importedWall : importedWalls)
+        for (geometric::Plane *p_importedWall : importedWalls)
         {
             if (p_importedWall == nullptr || p_importedWall->isBad())
             {
@@ -2034,9 +2036,9 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             const Eigen::Vector3d importedWallCentroid_World_m =
                 p_importedWall->getCentroid().cast<double>();
 
-            ORB_SLAM3::Passage *p_separatingPassage = nullptr;
+            vs_graphs::core::semantic::Passage *p_separatingPassage = nullptr;
 
-            for (ORB_SLAM3::Passage *p_passage : mergePassages)
+            for (vs_graphs::core::semantic::Passage *p_passage : mergePassages)
             {
                 if (p_passage != nullptr &&
                     crossesPassablePassageOpening(retainedCentroid_World_m,
@@ -2051,23 +2053,23 @@ void Utils::fuseDuplicateRoomsAfterMerge(
                 }
             }
 
-            Room *p_targetRoom = p_bestRetainedRoom;
+            semantic::Room *p_targetRoom = p_bestRetainedRoom;
 
             /* Never introduce another owner when a distinct confirmed room
              * already owns this wall. The imported duplicate is retired below,
              * leaving that confirmed owner unchanged. */
-            for (Room *p_existingOwner : mapRooms)
+            for (semantic::Room *p_existingOwner : mapRooms)
             {
                 if (p_existingOwner == nullptr || p_existingOwner->isBad() ||
                     p_existingOwner == p_importedRoom ||
                     p_existingOwner == p_bestRetainedRoom ||
                     p_existingOwner->getRoomVariant() !=
-                        Room::roomVariant::ROOM)
+                        semantic::Room::roomVariant::ROOM)
                 {
                     continue;
                 }
 
-                const std::vector<Plane *> ownerWalls =
+                const std::vector<geometric::Plane *> ownerWalls =
                     p_existingOwner->getWalls();
                 if (std::find(ownerWalls.begin(),
                               ownerWalls.end(),
@@ -2081,7 +2083,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             if (p_separatingPassage != nullptr &&
                 p_targetRoom == p_bestRetainedRoom)
             {
-                ORB_SLAM3::Room *p_farSideRoom =
+                vs_graphs::core::semantic::Room *p_farSideRoom =
                     p_separatingPassage->getProspectiveRoom();
 
                 if (p_farSideRoom == nullptr || p_farSideRoom->isBad() ||
@@ -2107,7 +2109,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             if (transfer.p_targetRoom == nullptr)
             {
                 std::cout << "[SemanticMerge] Far-side Wall#"
-                          << transfer.p_wall->getId() << " at Passage#"
+                          << transfer.p_wall->getId() << " at semantic::Passage#"
                           << transfer.p_separatingPassage->getId()
                           << " has no prospective; left unbound." << std::endl;
                 continue;
@@ -2119,18 +2121,18 @@ void Utils::fuseDuplicateRoomsAfterMerge(
                 transfer.p_targetRoom != p_bestRetainedRoom)
             {
                 std::cout << "[SemanticMerge] Redirected far-side Wall#"
-                          << transfer.p_wall->getId() << " to stable Room#"
+                          << transfer.p_wall->getId() << " to stable semantic::Room#"
                           << transfer.p_targetRoom->getId() << "." << std::endl;
             }
         }
 
-        for (ORB_SLAM3::Passage *p_importedPassage :
+        for (vs_graphs::core::semantic::Passage *p_importedPassage :
              p_importedRoom->getPassages())
         {
             p_bestRetainedRoom->setDoorways(p_importedPassage);
         }
 
-        for (Passage *p_passage : p_map_inout->GetAllPassages())
+        for (semantic::Passage *p_passage : p_map_inout->GetAllPassages())
         {
             if (p_passage != nullptr)
             {
@@ -2175,7 +2177,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             p_bestRetainedRoom->setPreviouslyVisited(true);
         }
 
-        for (Floor *p_floor : p_map_inout->GetAllFloors())
+        for (semantic::Floor *p_floor : p_map_inout->GetAllFloors())
         {
             if (p_floor != nullptr)
             {
@@ -2189,8 +2191,8 @@ void Utils::fuseDuplicateRoomsAfterMerge(
         p_importedRoom->clearPassages();
         p_importedRoom->setBad();
 
-        std::cout << "[SemanticMerge] Fused duplicate Room#"
-                  << p_importedRoom->getId() << " into Room#"
+        std::cout << "[SemanticMerge] Fused duplicate semantic::Room#"
+                  << p_importedRoom->getId() << " into semantic::Room#"
                   << p_bestRetainedRoom->getId() << " (centroid distance "
                   << bestCentroidDistance_m << " m)." << std::endl;
     }
@@ -2210,12 +2212,12 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
         return;
     }
 
-    std::vector<Passage *>           passages = p_activeMap->GetAllPassages();
-    const std::vector<Room *>        activeRooms = p_activeMap->GetAllRooms();
-    const std::unordered_set<Room *> activeRoomSet(activeRooms.begin(),
+    std::vector<semantic::Passage *>           passages = p_activeMap->GetAllPassages();
+    const std::vector<semantic::Room *>        activeRooms = p_activeMap->GetAllRooms();
+    const std::unordered_set<semantic::Room *> activeRoomSet(activeRooms.begin(),
                                                    activeRooms.end());
 
-    const auto liveRoomHandle = [&activeRoomSet](Room *p_room) -> Room *
+    const auto liveRoomHandle = [&activeRoomSet](semantic::Room *p_room) -> semantic::Room *
     {
         return p_room != nullptr && !p_room->isBad() &&
                        activeRoomSet.count(p_room) > 0U
@@ -2225,7 +2227,7 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
 
     std::sort(passages.begin(),
               passages.end(),
-              [](const Passage *p_firstPassage, const Passage *p_secondPassage)
+              [](const semantic::Passage *p_firstPassage, const semantic::Passage *p_secondPassage)
               {
                   if (p_firstPassage == nullptr)
                   {
@@ -2240,8 +2242,8 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
                   return p_firstPassage->getId() < p_secondPassage->getId();
               });
 
-    const SystemParams::sem_seg::PassageDetection &passageParameters =
-        SystemParams::GetParams()->sem_seg.passageDetection;
+    const types::SystemParams::sem_seg::PassageDetection &passageParameters =
+        types::SystemParams::GetParams()->sem_seg.passageDetection;
 
     /*
      * Use the same geometrically constrained identity gate as online passage
@@ -2254,12 +2256,12 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
         static_cast<double>(passageParameters.duplicateNormalAlignment);
     constexpr double maximumSupportingPlaneSeparation_m = 0.30;
 
-    std::unordered_set<Passage *> retiredPassages;
+    std::unordered_set<semantic::Passage *> retiredPassages;
 
     for (std::size_t retainedIndex = 0U; retainedIndex < passages.size();
          retainedIndex++)
     {
-        Passage *p_retainedPassage = passages[retainedIndex];
+        semantic::Passage *p_retainedPassage = passages[retainedIndex];
 
         if (p_retainedPassage == nullptr ||
             retiredPassages.count(p_retainedPassage) > 0U)
@@ -2282,7 +2284,7 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
              candidateIndex < passages.size();
              candidateIndex++)
         {
-            Passage *p_candidatePassage = passages[candidateIndex];
+            semantic::Passage *p_candidatePassage = passages[candidateIndex];
 
             if (p_candidatePassage == nullptr ||
                 retiredPassages.count(p_candidatePassage) > 0U)
@@ -2334,18 +2336,18 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
                 continue;
             }
 
-            Room *p_retainedHandle =
+            semantic::Room *p_retainedHandle =
                 liveRoomHandle(p_retainedPassage->getProspectiveRoom());
-            Room *p_candidateHandle =
+            semantic::Room *p_candidateHandle =
                 liveRoomHandle(p_candidatePassage->getProspectiveRoom());
 
             p_retainedPassage->mergeKnownSideProvenance(
                 p_candidatePassage->getKnownSideProvenance());
-            const Passage::KnownSideProvenance knownSide =
+            const semantic::Passage::KnownSideProvenance knownSide =
                 p_retainedPassage->getKnownSideProvenance();
 
             const auto isProvenFarSide =
-                [&knownSide, &retainedCentroid_World_m](Room *p_room)
+                [&knownSide, &retainedCentroid_World_m](semantic::Room *p_room)
             {
                 return p_room != nullptr && knownSide.hasDirection() &&
                        knownSide.direction_World.dot(p_room->getCentroid() -
@@ -2353,7 +2355,7 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
                            -0.20;
             };
 
-            Room *p_survivingHandle = p_retainedHandle;
+            semantic::Room *p_survivingHandle = p_retainedHandle;
 
             if (p_survivingHandle == nullptr)
             {
@@ -2409,7 +2411,7 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
                     ? maximumTraversalCount
                     : retainedTraversalCount + candidateTraversalCount);
 
-            for (Plane *p_supportingWall :
+            for (geometric::Plane *p_supportingWall :
                  p_candidatePassage->getAssociateWalls())
             {
                 p_retainedPassage->addAssociateWall(p_supportingWall);
@@ -2422,7 +2424,7 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
                     p_candidatePassage->getAssociateDoor());
             }
 
-            for (Room *p_room : p_activeMap->GetAllRooms())
+            for (semantic::Room *p_room : p_activeMap->GetAllRooms())
             {
                 if (p_room != nullptr && !p_room->isBad())
                 {
@@ -2583,10 +2585,10 @@ void Utils::propagateSemanticPoseCorrections(
                    : fallbackTransform_oldWorldToNewWorld_in;
     };
 
-    std::map<Plane *, g2o::Sim3>       planeCorrections_oldWorldToNewWorld;
-    std::map<Plane *, Eigen::Vector3d> planeCentroids_OldWorld_m;
+    std::map<geometric::Plane *, g2o::Sim3>       planeCorrections_oldWorldToNewWorld;
+    std::map<geometric::Plane *, Eigen::Vector3d> planeCentroids_OldWorld_m;
 
-    for (Plane *p_plane : p_map_inout->GetAllPlanes())
+    for (geometric::Plane *p_plane : p_map_inout->GetAllPlanes())
     {
         if (p_plane == nullptr || p_plane->isBad())
         {
@@ -2643,9 +2645,9 @@ void Utils::propagateSemanticPoseCorrections(
             correction_oldWorldToNewWorld);
     }
 
-    std::map<Marker *, g2o::Sim3> markerCorrections_oldWorldToNewWorld;
+    std::map<semantic::Marker *, g2o::Sim3> markerCorrections_oldWorldToNewWorld;
 
-    for (Marker *p_marker : p_map_inout->GetAllMarkers())
+    for (semantic::Marker *p_marker : p_map_inout->GetAllMarkers())
     {
         if (p_marker == nullptr)
         {
@@ -2704,7 +2706,7 @@ void Utils::propagateSemanticPoseCorrections(
             markerCorrection_oldWorldToNewWorld);
     }
 
-    for (ORB_SLAM3::Passage *p_passage : p_map_inout->GetAllPassages())
+    for (vs_graphs::core::semantic::Passage *p_passage : p_map_inout->GetAllPassages())
     {
         if (p_passage == nullptr)
         {
@@ -2716,7 +2718,7 @@ void Utils::propagateSemanticPoseCorrections(
 
         const g2o::Sim3 *p_passageCorrection = nullptr;
 
-        if (Plane *p_doorPlane = p_passage->getAssociateDoor();
+        if (geometric::Plane *p_doorPlane = p_passage->getAssociateDoor();
             p_doorPlane != nullptr)
         {
             const auto correctionIterator =
@@ -2733,7 +2735,7 @@ void Utils::propagateSemanticPoseCorrections(
             double closestWallSquaredDistance_m2 =
                 std::numeric_limits<double>::infinity();
 
-            for (Plane *p_wall : p_passage->getAssociateWalls())
+            for (geometric::Plane *p_wall : p_passage->getAssociateWalls())
             {
                 const auto correctionIterator =
                     planeCorrections_oldWorldToNewWorld.find(p_wall);
@@ -2771,15 +2773,15 @@ void Utils::propagateSemanticPoseCorrections(
                 : selectCorrectionForPoint(passageCentroid_OldWorld_m));
     }
 
-    std::map<Room *, g2o::Sim3>       roomCorrections_oldWorldToNewWorld;
-    std::map<Room *, Eigen::Vector3d> roomCentroids_OldWorld_m;
-    std::set<Room *>                  correctedRooms;
-    std::vector<Room *>       rooms = p_map_inout->GetAllDetectedMapRooms();
-    const std::vector<Room *> markerRooms =
+    std::map<semantic::Room *, g2o::Sim3>       roomCorrections_oldWorldToNewWorld;
+    std::map<semantic::Room *, Eigen::Vector3d> roomCentroids_OldWorld_m;
+    std::set<semantic::Room *>                  correctedRooms;
+    std::vector<semantic::Room *>       rooms = p_map_inout->GetAllDetectedMapRooms();
+    const std::vector<semantic::Room *> markerRooms =
         p_map_inout->GetAllMarkerBasedMapRooms();
     rooms.insert(rooms.end(), markerRooms.begin(), markerRooms.end());
 
-    for (Room *p_room : rooms)
+    for (semantic::Room *p_room : rooms)
     {
         if (p_room == nullptr || p_room->isBad() ||
             !correctedRooms.insert(p_room).second)
@@ -2792,7 +2794,7 @@ void Utils::propagateSemanticPoseCorrections(
                                                   roomCentroid_OldWorld_m);
 
         const g2o::Sim3 *p_roomCorrection = nullptr;
-        Marker          *p_metaMarker     = p_room->getMetaMarker();
+        semantic::Marker          *p_metaMarker     = p_room->getMetaMarker();
 
         if (p_metaMarker != nullptr)
         {
@@ -2811,7 +2813,7 @@ void Utils::propagateSemanticPoseCorrections(
             double closestWallSquaredDistance_m2 =
                 std::numeric_limits<double>::infinity();
 
-            for (Plane *p_wall : p_room->getWalls())
+            for (geometric::Plane *p_wall : p_room->getWalls())
             {
                 const auto correctionIterator =
                     planeCorrections_oldWorldToNewWorld.find(p_wall);
@@ -2848,7 +2850,7 @@ void Utils::propagateSemanticPoseCorrections(
             roomCorrection_oldWorldToNewWorld);
     }
 
-    for (Floor *p_floor : p_map_inout->GetAllFloors())
+    for (semantic::Floor *p_floor : p_map_inout->GetAllFloors())
     {
         if (p_floor == nullptr)
         {
@@ -2861,7 +2863,7 @@ void Utils::propagateSemanticPoseCorrections(
         double           closestRoomSquaredDistance_m2 =
             std::numeric_limits<double>::infinity();
 
-        for (Room *p_room : p_floor->getRooms())
+        for (semantic::Room *p_room : p_floor->getRooms())
         {
             if (p_room == nullptr || p_room->isBad() ||
                 p_room->getMap() != p_map_inout)
@@ -2946,7 +2948,7 @@ void Utils::propagateSemanticPoseCorrections(
     p_map_inout->SetSkeletonEdges(skeletonEdges_OldWorld_m);
 }
 
-void Utils::consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
+void Utils::consolidateProvisionalRooms(vs_graphs::core::semantic::Room *selectedRoom,
                                         Atlas           *mpAtlas)
 {
     /* Confirm the selected room is valid */
@@ -2956,7 +2958,7 @@ void Utils::consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
     }
 
     /* Extract all walls assigned to the cluster-backed room */
-    const std::vector<ORB_SLAM3::Plane *> selectedWalls =
+    const std::vector<vs_graphs::core::geometric::Plane *> selectedWalls =
         selectedRoom->getWalls();
 
     /* Create a set containing the selected wall IDs */
@@ -2964,7 +2966,7 @@ void Utils::consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
     selectedWallIds.reserve(selectedWalls.size());
 
     /* Insert every valid selected wall ID into the set */
-    for (ORB_SLAM3::Plane *wall : selectedWalls)
+    for (vs_graphs::core::geometric::Plane *wall : selectedWalls)
     {
         if (wall != nullptr && !wall->isBad())
         {
@@ -2979,10 +2981,10 @@ void Utils::consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
     }
 
     /* Extract all rooms and provisional structural elements */
-    const std::vector<ORB_SLAM3::Room *> allRooms = mpAtlas->GetAllRooms();
+    const std::vector<vs_graphs::core::semantic::Room *> allRooms = mpAtlas->GetAllRooms();
 
     /* Iterate through every possible redundant structural element */
-    for (ORB_SLAM3::Room *candidateRoom : allRooms)
+    for (vs_graphs::core::semantic::Room *candidateRoom : allRooms)
     {
         /* Skip invalid rooms and the selected room itself */
         if (candidateRoom == nullptr || candidateRoom == selectedRoom ||
@@ -2991,12 +2993,12 @@ void Utils::consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
             continue;
         }
 
-        const std::vector<ORB_SLAM3::Passage *> activePassages =
+        const std::vector<vs_graphs::core::semantic::Passage *> activePassages =
             mpAtlas->GetAllPassages();
         const bool candidateIsLiveProspective = std::any_of(
             activePassages.begin(),
             activePassages.end(),
-            [candidateRoom](ORB_SLAM3::Passage *p_passage)
+            [candidateRoom](vs_graphs::core::semantic::Passage *p_passage)
             {
                 return p_passage != nullptr &&
                        p_passage->getProspectiveRoom() == candidateRoom;
@@ -3012,13 +3014,13 @@ void Utils::consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
          * Classified rooms and corridors must never be merged automatically.
          */
         if (candidateRoom->getRoomVariant() !=
-            ORB_SLAM3::Room::roomVariant::UNDEFINED)
+            vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
         {
             continue;
         }
 
         /* Extract the candidate room walls */
-        const std::vector<ORB_SLAM3::Plane *> candidateWalls =
+        const std::vector<vs_graphs::core::geometric::Plane *> candidateWalls =
             candidateRoom->getWalls();
 
         /*!
@@ -3027,10 +3029,10 @@ void Utils::consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
          * This prevents an emerging room on the opposite side of a shared wall
          * from being removed before it has enough evidence for classification.
          */
-        std::vector<ORB_SLAM3::Plane *> validCandidateWalls;
+        std::vector<vs_graphs::core::geometric::Plane *> validCandidateWalls;
         validCandidateWalls.reserve(candidateWalls.size());
 
-        for (ORB_SLAM3::Plane *candidateWall : candidateWalls)
+        for (vs_graphs::core::geometric::Plane *candidateWall : candidateWalls)
         {
             if (candidateWall != nullptr && !candidateWall->isBad())
             {
@@ -3045,7 +3047,7 @@ void Utils::consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
         }
 
         /* Extract the single wall represented by the provisional element */
-        ORB_SLAM3::Plane *candidateWall = validCandidateWalls.front();
+        vs_graphs::core::geometric::Plane *candidateWall = validCandidateWalls.front();
 
         /* The selected room must already contain the candidate wall */
         if (selectedWallIds.count(candidateWall->getId()) == 0)
@@ -3082,10 +3084,10 @@ void Utils::consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
         }
 
         /* Preserve passage relationships before invalidating the candidate */
-        const std::vector<ORB_SLAM3::Passage *> candidatePassages =
+        const std::vector<vs_graphs::core::semantic::Passage *> candidatePassages =
             candidateRoom->getPassages();
 
-        for (ORB_SLAM3::Passage *passage : candidatePassages)
+        for (vs_graphs::core::semantic::Passage *passage : candidatePassages)
         {
             /* Skip invalid passages */
             if (passage == nullptr)
@@ -3094,13 +3096,13 @@ void Utils::consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
             }
 
             /* Check whether the selected room already contains the passage */
-            const std::vector<ORB_SLAM3::Passage *> selectedPassages =
+            const std::vector<vs_graphs::core::semantic::Passage *> selectedPassages =
                 selectedRoom->getPassages();
 
             const bool alreadyPresent = std::any_of(
                 selectedPassages.begin(),
                 selectedPassages.end(),
-                [passage](ORB_SLAM3::Passage *existingPassage)
+                [passage](vs_graphs::core::semantic::Passage *existingPassage)
                 {
                     return existingPassage != nullptr &&
                            existingPassage->getId() == passage->getId();
@@ -3114,7 +3116,7 @@ void Utils::consolidateProvisionalRooms(ORB_SLAM3::Room *selectedRoom,
         }
 
         /* Preserve floor membership before retiring the provisional room. */
-        for (ORB_SLAM3::Floor *p_floor : mpAtlas->GetAllFloors())
+        for (vs_graphs::core::semantic::Floor *p_floor : mpAtlas->GetAllFloors())
         {
             if (p_floor != nullptr)
             {
@@ -3197,8 +3199,8 @@ Eigen::Isometry3d Utils::computeMapTransform_Horn(
 }
 
 std::size_t
-    Utils::matchWallsBetweenRooms(const Room                   *p_roomA_in,
-                                  const Room                   *p_roomB_in,
+    Utils::matchWallsBetweenRooms(const semantic::Room                   *p_roomA_in,
+                                  const semantic::Room                   *p_roomB_in,
                                   std::vector<Eigen::Vector3d> &normalsA_out,
                                   std::vector<Eigen::Vector3d> &centroidsA_out,
                                   std::vector<Eigen::Vector3d> &normalsB_out,
@@ -3211,12 +3213,12 @@ std::size_t
 
     constexpr double kWallCorrespondenceCosTheta = 0.85;
 
-    const auto collectValidWalls = [](const Room *p_room_in)
-        -> std::vector<std::pair<Plane *, Eigen::Vector3d>>
+    const auto collectValidWalls = [](const semantic::Room *p_room_in)
+        -> std::vector<std::pair<geometric::Plane *, Eigen::Vector3d>>
     {
-        std::vector<std::pair<Plane *, Eigen::Vector3d>> validWalls;
+        std::vector<std::pair<geometric::Plane *, Eigen::Vector3d>> validWalls;
 
-        for (Plane *p_wall : p_room_in->getWalls())
+        for (geometric::Plane *p_wall : p_room_in->getWalls())
         {
             if (p_wall == nullptr || p_wall->isBad())
             {
@@ -3236,17 +3238,17 @@ std::size_t
 
         std::sort(validWalls.begin(),
                   validWalls.end(),
-                  [](const std::pair<Plane *, Eigen::Vector3d> &first_in,
-                     const std::pair<Plane *, Eigen::Vector3d> &second_in) {
+                  [](const std::pair<geometric::Plane *, Eigen::Vector3d> &first_in,
+                     const std::pair<geometric::Plane *, Eigen::Vector3d> &second_in) {
                       return first_in.first->getId() < second_in.first->getId();
                   });
 
         return validWalls;
     };
 
-    const std::vector<std::pair<Plane *, Eigen::Vector3d>> validWallsA =
+    const std::vector<std::pair<geometric::Plane *, Eigen::Vector3d>> validWallsA =
         collectValidWalls(p_roomA_in);
-    const std::vector<std::pair<Plane *, Eigen::Vector3d>> validWallsB =
+    const std::vector<std::pair<geometric::Plane *, Eigen::Vector3d>> validWallsB =
         collectValidWalls(p_roomB_in);
 
     std::vector<bool> matchedA(validWallsA.size(), false);
@@ -3318,27 +3320,27 @@ bool Utils::collectCorrespondingWalls(
         return false;
     }
 
-    std::vector<Room *> roomsA = p_mapA_in->GetAllRooms();
-    std::vector<Room *> roomsB = p_mapB_in->GetAllRooms();
+    std::vector<semantic::Room *> roomsA = p_mapA_in->GetAllRooms();
+    std::vector<semantic::Room *> roomsB = p_mapB_in->GetAllRooms();
 
     std::sort(roomsA.begin(),
               roomsA.end(),
-              [](const Room *p_first, const Room *p_second)
+              [](const semantic::Room *p_first, const semantic::Room *p_second)
               { return p_first->getId() < p_second->getId(); });
 
     std::sort(roomsB.begin(),
               roomsB.end(),
-              [](const Room *p_first, const Room *p_second)
+              [](const semantic::Room *p_first, const semantic::Room *p_second)
               { return p_first->getId() < p_second->getId(); });
 
-    for (Room *p_roomB : roomsB)
+    for (semantic::Room *p_roomB : roomsB)
     {
         if (p_roomB == nullptr || p_roomB->isBad() || !p_roomB->hasRoomTag())
         {
             continue;
         }
 
-        for (Room *p_roomA : roomsA)
+        for (semantic::Room *p_roomA : roomsA)
         {
             if (p_roomA == nullptr || p_roomA->isBad())
             {
@@ -3375,4 +3377,5 @@ double Utils::calcSoftMin(vector<double> &values)
     Eigen::VectorXd             term = ((1.0 - confs.array()) / tau).exp();
     return ((term / term.sum()).array() * confs.array()).sum();
 }
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

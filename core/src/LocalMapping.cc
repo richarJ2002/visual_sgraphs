@@ -33,7 +33,9 @@
 #include <chrono>
 #include <mutex>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 LocalMapping::LocalMapping(System       *pSys,
@@ -212,7 +214,7 @@ void LocalMapping::Run()
                             num_OptKF_BA,
                             num_MPs_BA,
                             num_edges_BA,
-                            SystemParams::GetParams()->markers.impact);
+                            types::SystemParams::GetParams()->markers.impact);
                         b_doneLBA = true;
                     }
                 }
@@ -538,7 +540,7 @@ void LocalMapping::CreateNewMapPoints()
 
         KeyFrame *pKF2 = vpNeighKFs[i];
 
-        GeometricCamera *pCamera1 = mpCurrentKeyFrame->mpCamera,
+        camera_models::GeometricCamera *pCamera1 = mpCurrentKeyFrame->mpCamera,
                         *pCamera2 = pKF2->mpCamera;
 
         // Check first that baseline is not too short
@@ -1791,4 +1793,5 @@ KeyFrame *LocalMapping::GetCurrKF()
     return mpCurrentKeyFrame;
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

@@ -31,7 +31,9 @@
 
 #include <openssl/evp.h>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -63,4 +65,5 @@ std::string sha256HexDigest(const std::string &bytes_in)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

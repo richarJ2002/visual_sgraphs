@@ -40,14 +40,17 @@
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 #include "Tracking.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
 {
+namespace core
+{
+namespace types { class SystemParams; }
 
 class Tracking;
 class LocalMapping;
 class KeyFrameDatabase;
 class Map;
-enum class SemanticMergeDecision;
+namespace semantic { enum class SemanticMergeDecision; }
 
 /*!
  * @brief       Confirms both maps have observed floors with matching plane
@@ -639,7 +642,7 @@ class LoopClosing
     /*!
      * @brief      TODO
      */
-    SystemParams *sysParams;
+    types::SystemParams *sysParams;
 
     /* ---------------------------------------------------------------------- *
      * PROTECTED METHODS
@@ -844,7 +847,7 @@ class LoopClosing
      *              semantic evidence is incomplete and the candidate remains
      *              retryable, or REJECT when the attempt is invalid.
      */
-    SemanticMergeDecision MergeLocal(void);
+    semantic::SemanticMergeDecision MergeLocal(void);
 
     /*!
      * @brief       TODO
@@ -856,7 +859,7 @@ class LoopClosing
      *              semantic evidence is incomplete and the candidate remains
      *              retryable, or REJECT when the attempt is invalid.
      */
-    SemanticMergeDecision MergeLocalInertial(void);
+    semantic::SemanticMergeDecision MergeLocalInertial(void);
 
     /*!
      * @brief       TODO
@@ -889,6 +892,7 @@ class LoopClosing
 #endif
 };
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif

@@ -27,7 +27,9 @@
 
 #include "Map.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -43,7 +45,7 @@ EntityRef entityRefForRoom(Room *p_room_in)
     ref.isLive                    = !p_room_in->isBad();
     ref.livenessUnavailableReason = UnavailableReason::NONE;
 
-    Map *p_map = p_room_in->getMap();
+    core::Map *p_map = p_room_in->getMap();
     if (p_map == nullptr)
     {
         ref.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
@@ -55,4 +57,5 @@ EntityRef entityRefForRoom(Room *p_room_in)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

@@ -31,7 +31,9 @@
 #include "Semantic/SemanticAxiomEvaluator/EnumNames.h"
 #include "Semantic/SemanticDiagnostics/private_functions.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -219,4 +221,5 @@ SemanticDiagnosticUpdate
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

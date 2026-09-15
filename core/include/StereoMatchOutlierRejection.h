@@ -4,13 +4,15 @@
  *        Frame::ComputeStereoMatches(), isolated for direct unit testing.
  */
 
-#ifndef ORB_SLAM3_STEREO_MATCH_OUTLIER_REJECTION_H
-#define ORB_SLAM3_STEREO_MATCH_OUTLIER_REJECTION_H
+#ifndef VS_GRAPHS_CORE_STEREO_MATCH_OUTLIER_REJECTION_H
+#define VS_GRAPHS_CORE_STEREO_MATCH_OUTLIER_REJECTION_H
 
 #include <utility>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 /**
@@ -34,6 +36,7 @@ void rejectOutlierStereoMatches(std::vector<std::pair<int, int>> &vDistIdx,
                                 std::vector<float>                &mvuRight,
                                 std::vector<float>                &mvDepth);
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif

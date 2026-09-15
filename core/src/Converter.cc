@@ -22,7 +22,9 @@
 
 #include "Converter.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     std::vector<cv::Mat> Converter::toDescriptorVector(const cv::Mat &Descriptors)
@@ -316,4 +318,5 @@ namespace ORB_SLAM3
                              S.translation().cast<float>());
     }
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs

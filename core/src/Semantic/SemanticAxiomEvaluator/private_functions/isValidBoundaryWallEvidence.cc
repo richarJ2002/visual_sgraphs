@@ -57,7 +57,9 @@
 #include <algorithm>
 #include <cstddef>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -76,13 +78,13 @@ RoomBoundaryWallEvidenceStatus
          * violation and a known contradiction, not the ordinary "nothing
          * there" case. */
         if (wallRef_in.mapId.has_value() || wallRef_in.wallKey.has_value() ||
-            wallRef_in.planeType != Plane::planeVariant::UNDEFINED)
+            wallRef_in.planeType != geometric::Plane::planeVariant::UNDEFINED)
         {
             return RoomBoundaryWallEvidenceStatus::INVALID;
         }
         return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
     }
-    if (wallRef_in.planeType != Plane::planeVariant::WALL)
+    if (wallRef_in.planeType != geometric::Plane::planeVariant::WALL)
     {
         /* A real, mapped, live plane pointer exists but is the wrong type:
          * a known contradiction, not merely missing evidence. */
@@ -143,7 +145,7 @@ RoomBoundaryWallEvidenceStatus
     {
         return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
     }
-    if (!p_wall->isLive || p_wall->planeType != Plane::planeVariant::WALL)
+    if (!p_wall->isLive || p_wall->planeType != geometric::Plane::planeVariant::WALL)
     {
         return RoomBoundaryWallEvidenceStatus::INVALID;
     }
@@ -189,4 +191,5 @@ RoomBoundaryWallEvidenceStatus
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

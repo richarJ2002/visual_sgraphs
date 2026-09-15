@@ -25,7 +25,11 @@
 #include <cstddef>
 #include <optional>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
 {
 class Room;
 
@@ -49,10 +53,10 @@ class Floor
     int             opIdG;    // Floor's ID in the global optimizer
     std::string     name;     // The name devoted for each room (optional)
     Eigen::Vector3d centroid; // Floor's centroid in the global reference
-    std::vector<ORB_SLAM3::Room *> rooms; // Floor's rooms and corridors
+    std::vector<vs_graphs::core::semantic::Room *> rooms; // Floor's rooms and corridors
     std::optional<PlaneIdentity> planeIdentity;
 
-    void detachRoom(ORB_SLAM3::Room *p_room_in);
+    void detachRoom(vs_graphs::core::semantic::Room *p_room_in);
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -119,9 +123,9 @@ class Floor
     /** Selects the valid identity with most finite support, then observations. */
     static Floor *selectBestObservedFloor(const std::vector<Floor *> &floors_in);
 
-    void                           addRoom(ORB_SLAM3::Room *value);
-    std::vector<ORB_SLAM3::Room *> getRooms() const;
-    void setRooms(const std::vector<ORB_SLAM3::Room *> &value);
+    void                           addRoom(vs_graphs::core::semantic::Room *value);
+    std::vector<vs_graphs::core::semantic::Room *> getRooms() const;
+    void setRooms(const std::vector<vs_graphs::core::semantic::Room *> &value);
 
     /*!
      * @brief       Replaces a retired room association after consolidation.
@@ -134,18 +138,20 @@ class Floor
      *
      * @return      True when the retired room was present.
      */
-    bool replaceRoom(ORB_SLAM3::Room *p_retiredRoom_in,
-                     ORB_SLAM3::Room *p_retainedRoom_in);
+    bool replaceRoom(vs_graphs::core::semantic::Room *p_retiredRoom_in,
+                     vs_graphs::core::semantic::Room *p_retainedRoom_in);
 
-    ORB_SLAM3::Map *getMap();
-    void            setMap(ORB_SLAM3::Map *pMap);
+    vs_graphs::core::Map *getMap();
+    void            setMap(vs_graphs::core::Map *pMap);
 
   protected:
-    ORB_SLAM3::Map    *mpMap;
+    vs_graphs::core::Map    *mpMap;
     std::mutex         mMutexMap;
     mutable std::mutex mMutexRooms;
     mutable std::mutex mMutexGeometry;
 };
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
 
 #endif

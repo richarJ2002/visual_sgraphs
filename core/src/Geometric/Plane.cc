@@ -25,7 +25,11 @@
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace geometric
 {
 Plane::Plane(void)
 {
@@ -47,7 +51,7 @@ Plane::Plane(void)
 
     octree = boost::make_shared<
         pcl::octree::OctreePointCloudSearch<pcl::PointXYZRGBA>>(
-        SystemParams::GetParams()->refine_map_points.octree.resolution);
+        types::SystemParams::GetParams()->refine_map_points.octree.resolution);
 
     minPlaneU = std::numeric_limits<double>::max();
     maxPlaneU = std::numeric_limits<double>::lowest();
@@ -117,13 +121,13 @@ void Plane::setColor(void)
     }
 }
 
-std::set<MapPoint *> Plane::getMapPoints(void)
+std::set<core::MapPoint *> Plane::getMapPoints(void)
 {
     unique_lock<mutex> lock(mMutexFeatures);
     return mapPoints;
 }
 
-void Plane::setMapPoints(MapPoint *value)
+void Plane::setMapPoints(core::MapPoint *value)
 {
     unique_lock<mutex> lock(mMutexFeatures);
     mapPoints.insert(value);
@@ -600,7 +604,7 @@ bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &point)
     pointPCL.y = point(1);
     pointPCL.z = point(2);
 
-    SystemParams      *sysParams = SystemParams::GetParams();
+    types::SystemParams      *sysParams = types::SystemParams::GetParams();
     std::vector<int>   pointIdxRadiusSearch;
     std::vector<float> pointRadiusSquaredDistance;
 
@@ -670,7 +674,7 @@ void Plane::castWeightedVote(Plane::planeVariant semanticType,
     }
 
     // set the plane type if votes above a certain threshold
-    if (maxVotes >= SystemParams::GetParams()->sem_seg.min_votes)
+    if (maxVotes >= types::SystemParams::GetParams()->sem_seg.min_votes)
         planeType = maxType;
     else
         planeType = planeVariant::UNDEFINED;
@@ -903,7 +907,7 @@ void Plane::clearTwinFace(void)
     twinFace_ = nullptr;
 }
 
-std::map<KeyFrame *, Plane::Observation> Plane::getObservations(void) const
+std::map<core::KeyFrame *, Plane::Observation> Plane::getObservations(void) const
 {
     unique_lock<mutex> lock(mMutexFeatures);
     return observations;
@@ -915,7 +919,7 @@ std::size_t Plane::getObservationCount(void) const
     return observationCount;
 }
 
-void Plane::addObservation(KeyFrame          *p_keyFrame_in,
+void Plane::addObservation(core::KeyFrame          *p_keyFrame_in,
                            const Observation &observation_in)
 {
     /* Confirm the keyframe is valid */
@@ -946,7 +950,7 @@ void Plane::addObservation(KeyFrame          *p_keyFrame_in,
     }
 }
 
-void Plane::mergeObservation(KeyFrame          *p_keyFrame_in,
+void Plane::mergeObservation(core::KeyFrame          *p_keyFrame_in,
                              const Observation &observation_in)
 {
     if (p_keyFrame_in == nullptr || p_keyFrame_in->isBad())
@@ -1042,12 +1046,12 @@ void Plane::rebuildSemanticVotesWithoutLock(void)
             maxType  = semanticType;
         }
     }
-    planeType = maxVotes >= SystemParams::GetParams()->sem_seg.min_votes
+    planeType = maxVotes >= types::SystemParams::GetParams()->sem_seg.min_votes
                     ? maxType
                     : planeVariant::UNDEFINED;
 }
 
-void Plane::eraseObservation(KeyFrame *p_keyFrame_in)
+void Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
 {
     /* Confirm the keyframe is valid */
     if (p_keyFrame_in == nullptr)
@@ -1102,15 +1106,17 @@ void Plane::eraseObservation(KeyFrame *p_keyFrame_in)
     }
 }
 
-Map *Plane::GetMap(void)
+core::Map *Plane::GetMap(void)
 {
     unique_lock<mutex> lock(mMutexMap);
     return mpMap;
 }
 
-void Plane::SetMap(Map *pMap)
+void Plane::SetMap(core::Map *pMap)
 {
     unique_lock<mutex> lock(mMutexMap);
     mpMap = pMap;
 }
-} // namespace ORB_SLAM3
+} // namespace geometric
+} // namespace core
+} // namespace vs_graphs

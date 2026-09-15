@@ -53,20 +53,22 @@
 #include <set>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 class Map;
-class Room;
+namespace semantic { class Room; }
 class Frame;
-class Plane;
-class Floor;
+namespace geometric { class Plane; }
+namespace semantic { class Floor; }
 class Viewer;
-class Marker;
-class Pinhole;
-class Passage;
+namespace semantic { class Marker; }
+namespace camera_models { class Pinhole; }
+namespace semantic { class Passage; }
 class MapPoint;
 class KeyFrame;
-class KannalaBrandt8;
+namespace camera_models { class KannalaBrandt8; }
 class KeyFrameDatabase;
 
 /*!
@@ -101,8 +103,8 @@ class Atlas
     template <class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-        ar.template register_type<Pinhole>();
-        ar.template register_type<KannalaBrandt8>();
+        ar.template register_type<camera_models::Pinhole>();
+        ar.template register_type<camera_models::KannalaBrandt8>();
 
         // Save/load a set structure, the set structure is broken in
         // libboost 1.58 for ubuntu 16.04, a vector is serializated ar &
@@ -115,7 +117,7 @@ class Atlas
         ar &Frame::nNextId;
         ar &KeyFrame::nNextId;
         ar &MapPoint::nNextId;
-        ar &GeometricCamera::nNextId;
+        ar &camera_models::GeometricCamera::nNextId;
         ar & mnLastInitKFidMap;
     }
 
@@ -130,7 +132,7 @@ class Atlas
     {
         SnapshotCopyStatus status{
             SnapshotCopyStatus::UNAVAILABLE_LIVE_GENERATION};
-        std::vector<RoomContextSnapshot> snapshots;
+        std::vector<semantic::RoomContextSnapshot> snapshots;
     };
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -146,15 +148,15 @@ class Atlas
     void SetViewer(Viewer *pViewer);
 
     // Methods for adding new components in the current map
-    void AddMapFloor(Floor *floor);
-    void AddMapPlane(Plane *plane);
+    void AddMapFloor(semantic::Floor *floor);
+    void AddMapPlane(geometric::Plane *plane);
     void AddKeyFrame(KeyFrame *pKF);
     void AddMapPoint(MapPoint *pMP);
-    void AddMapMarker(Marker *marker);
-    void AddDetectedMapRoom(Room *room);
-    void AddCandidateMapRoom(Room *room);
-    void AddMapPassage(ORB_SLAM3::Passage *passage);
-    void AddRoomWallPlane(ORB_SLAM3::Plane *pPlane);
+    void AddMapMarker(semantic::Marker *marker);
+    void AddDetectedMapRoom(semantic::Room *room);
+    void AddCandidateMapRoom(semantic::Room *room);
+    void AddMapPassage(vs_graphs::core::semantic::Passage *passage);
+    void AddRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane);
 
     /** Reserves the next mission-stable room identity, beginning at zero. */
     int reserveRoomIdentity(void);
@@ -181,8 +183,8 @@ class Atlas
      */
     int getCurrentSemanticRoomIdentity(void) const;
 
-    std::vector<GeometricCamera *> GetAllCameras();
-    GeometricCamera               *AddCamera(GeometricCamera *pCam);
+    std::vector<camera_models::GeometricCamera *> GetAllCameras();
+    camera_models::GeometricCamera               *AddCamera(camera_models::GeometricCamera *pCam);
 
     /* All methods without Map pointer work on current map */
     void InformNewBigChange();
@@ -197,17 +199,17 @@ class Atlas
     std::vector<int> visitedPlanesMarkerIds;
 
     // Method for get data in current map
-    std::vector<Room *>               GetAllRooms();
-    std::vector<Floor *>              GetAllFloors();
-    std::vector<Marker *>             GetAllMarkers();
+    std::vector<semantic::Room *>               GetAllRooms();
+    std::vector<semantic::Floor *>              GetAllFloors();
+    std::vector<semantic::Marker *>             GetAllMarkers();
     std::vector<KeyFrame *>           GetAllKeyFrames();
     std::vector<MapPoint *>           GetAllMapPoints();
-    std::vector<Room *>               GetAllDetectedMapRooms();
-    std::vector<ORB_SLAM3::Plane *>   GetAllPlanes();
-    std::vector<Room *>               GetAllMarkerBasedMapRooms();
-    std::vector<Room *>               GetAllCandidateMapRooms();
+    std::vector<semantic::Room *>               GetAllDetectedMapRooms();
+    std::vector<vs_graphs::core::geometric::Plane *>   GetAllPlanes();
+    std::vector<semantic::Room *>               GetAllMarkerBasedMapRooms();
+    std::vector<semantic::Room *>               GetAllCandidateMapRooms();
     std::vector<MapPoint *>           GetReferenceMapPoints();
-    std::vector<ORB_SLAM3::Passage *> GetAllPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> GetAllPassages();
 
     /*!
      * @brief Get the cluster points of the map set by `voxblox_skeleton`
@@ -236,7 +238,7 @@ class Atlas
     void SetSkeletonClusterPoints(
         const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints);
 
-    Plane *GetBiggestGroundPlane();
+    geometric::Plane *GetBiggestGroundPlane();
 
     vector<Map *> GetAllMaps();
 
@@ -385,15 +387,15 @@ class Atlas
 
     /** Copies room history without exposing references beyond the lock scope.
      */
-    std::map<long unsigned int, std::vector<RoomContextSnapshot>>
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
         copyRoomContextHistory() const;
 
     /** Copies invariant context from a live map under the semantic transaction.
      */
-    std::vector<RoomContextSnapshot> copyRoomContextForMap(Map *p_map_in);
+    std::vector<semantic::RoomContextSnapshot> copyRoomContextForMap(Map *p_map_in);
 
     /** Copies the newest departed-map snapshot for one stable room identity. */
-    std::optional<RoomContextSnapshot>
+    std::optional<semantic::RoomContextSnapshot>
         copyLatestRoomContext(int roomId_in) const;
 
     /** Copies live entities only when the caller owns the semantic transaction.
@@ -414,7 +416,7 @@ class Atlas
     /*!
      * @brief Returns the vector of context snapshots stored for \p mapId.
      */
-    const std::vector<RoomContextSnapshot> &
+    const std::vector<semantic::RoomContextSnapshot> &
         getRoomContextForMap(long unsigned int mapId) const;
 
     /**
@@ -438,12 +440,12 @@ class Atlas
     map<long unsigned int, KeyFrame *> GetAtlasKeyframes();
 
     // Functions for getting the entities
-    Plane              *GetPlaneById(int planeId);
-    Floor              *GetFloorById(int floorId);
-    Marker             *GetMarkerById(int markerId);
+    geometric::Plane              *GetPlaneById(int planeId);
+    semantic::Floor              *GetFloorById(int floorId);
+    semantic::Marker             *GetMarkerById(int markerId);
     KeyFrame           *GetKeyFrameById(long unsigned int mnId);
-    ORB_SLAM3::Passage *GetPassageById(int passageId);
-    ORB_SLAM3::Plane   *GetRoomWallPlaneById(int planeId);
+    vs_graphs::core::semantic::Passage *GetPassageById(int passageId);
+    vs_graphs::core::geometric::Plane   *GetRoomWallPlaneById(int planeId);
 
     KeyFrameDatabase *GetKeyFrameDatabase();
     void              SetKeyFrameDababase(KeyFrameDatabase *pKFDB);
@@ -472,7 +474,7 @@ class Atlas
 
     Map *mpCurrentMap;
 
-    std::vector<GeometricCamera *> mvpCameras;
+    std::vector<camera_models::GeometricCamera *> mvpCameras;
 
     unsigned long int mnLastInitKFidMap;
 
@@ -506,7 +508,7 @@ class Atlas
     /*!
      * @brief Snapshots of departed maps' room geometry, keyed by Map::GetId().
      */
-    std::map<long unsigned int, std::vector<RoomContextSnapshot>>
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
         mRoomContextHistory;
 
     /*!
@@ -534,6 +536,7 @@ class Atlas
     bool newMapCreatedPending_{false};
 };
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif

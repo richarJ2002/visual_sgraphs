@@ -81,7 +81,9 @@
 #include <cstddef>
 #include <utility>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -100,7 +102,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
         return;
     }
 
-    if (wall_in.planeType != Plane::planeVariant::WALL)
+    if (wall_in.planeType != geometric::Plane::planeVariant::WALL)
     {
         findings_inout.push_back(
             makeFinding(AxiomCode::AX_WALL_01,
@@ -362,7 +364,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
             continue;
         }
         const bool wellFormed =
-            (ownedWallRef.planeType == Plane::planeVariant::WALL) &&
+            (ownedWallRef.planeType == geometric::Plane::planeVariant::WALL) &&
             ownedWallRef.isLive && ownedWallRef.wallKey.has_value() &&
             (*ownedWallRef.wallKey == wall_in.key);
         if (wellFormed)
@@ -447,4 +449,5 @@ void evaluateOneWall(const WallRecord            &wall_in,
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

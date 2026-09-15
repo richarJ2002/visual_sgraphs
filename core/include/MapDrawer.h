@@ -31,7 +31,9 @@
 
 #include <mutex>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class Settings;
@@ -75,6 +77,7 @@ namespace ORB_SLAM3
                                      {0.0f, 1.0f, 1.0f}};
     };
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs
 
 #endif // MAPDRAWER_H

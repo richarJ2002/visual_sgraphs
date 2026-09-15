@@ -62,7 +62,9 @@
 #include "Types/SystemParams.h"
 #include "Viewer.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 /*!
@@ -939,7 +941,7 @@ class System
                     const double             &timestamp,
                     const vector<IMU::Point> &vImuMeas = vector<IMU::Point>(),
                     string                    filename = "",
-                    const vector<Marker *>    markers  = vector<Marker *>{});
+                    const vector<semantic::Marker *>    markers  = vector<semantic::Marker *>{});
 
     /**
      * @brief       Process the given rgbd frame for tracking. The DepthMap must
@@ -975,7 +977,7 @@ class System
                   const double                                 &timestamp,
                   const vector<IMU::Point> &vImuMeas = vector<IMU::Point>(),
                   string                    filename = "",
-                  const vector<Marker *>    markers  = vector<Marker *>{});
+                  const vector<semantic::Marker *>    markers  = vector<semantic::Marker *>{});
 
     /**
      * @brief       Process the given stereo frame for tracking. Images must be
@@ -1004,7 +1006,7 @@ class System
         const double             &timestamp,
         const vector<IMU::Point> &vImuMeas = vector<IMU::Point>(),
         string                    filename = "",
-        const vector<Marker *>    markers  = vector<Marker *>{});
+        const vector<semantic::Marker *>    markers  = vector<semantic::Marker *>{});
 
     /*!
      * @brief       This stops local mapping thread (map building) and performs
@@ -1022,7 +1024,7 @@ class System
      *
      * @return      The current active map.
      */
-    ORB_SLAM3::Map *GetCurrentMap();
+    vs_graphs::core::Map *GetCurrentMap();
 
     /**
      * @brief       Get the Atlas owning every map in the system.
@@ -1034,7 +1036,7 @@ class System
      *
      * @return      Pointer to the Atlas, or nullptr before initialisation.
      */
-    ORB_SLAM3::Atlas *GetAtlas();
+    vs_graphs::core::Atlas *GetAtlas();
 
     /*!
      * @brief       Returns true if there have been a big map change (loop
@@ -1291,7 +1293,7 @@ class System
      * @return      Vector of pointers to Room objects. May be empty if no
      *              rooms have been created yet.
      */
-    std::vector<ORB_SLAM3::Room *> GetAllRooms();
+    std::vector<vs_graphs::core::semantic::Room *> GetAllRooms();
 
     /*!
      * @brief       Get all floors in the current map. Floors are semantic
@@ -1300,7 +1302,7 @@ class System
      * @return      Vector of pointers to Floor objects. May be empty if no
      *              floors have been created yet.
      */
-    std::vector<ORB_SLAM3::Floor *> GetAllFloors();
+    std::vector<vs_graphs::core::semantic::Floor *> GetAllFloors();
 
     /*!
      * @brief       Get all planes in the current map. Planes represent
@@ -1310,7 +1312,7 @@ class System
      * @return      Vector of pointers to Plane objects. May be empty if no
      *              planes have been detected yet.
      */
-    std::vector<ORB_SLAM3::Plane *> GetAllPlanes();
+    std::vector<vs_graphs::core::geometric::Plane *> GetAllPlanes();
 
     /*!
      * @brief       Get all doors in the current map. Doors are semantic
@@ -1319,7 +1321,7 @@ class System
      * @return      Vector of pointers to Door objects. May be empty if no
      *              doors have been detected yet.
      */
-    std::vector<ORB_SLAM3::Door *> GetAllDoors();
+    std::vector<vs_graphs::core::Door *> GetAllDoors();
 
     /*!
      * @brief       Get all markers (fiducial markers/AprilTags) in the current
@@ -1329,7 +1331,7 @@ class System
      * @return      Vector of pointers to Marker objects. May be empty if no
      *              markers have been detected yet.
      */
-    std::vector<ORB_SLAM3::Marker *> GetAllMarkers();
+    std::vector<vs_graphs::core::semantic::Marker *> GetAllMarkers();
 
     /*!
      * @brief       Get all passages in the current map. Passages connect rooms
@@ -1339,7 +1341,7 @@ class System
      * @return      Vector of pointers to Passage objects. May be empty if no
      *              passages have been detected yet.
      */
-    std::vector<ORB_SLAM3::Passage *> GetAllPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> GetAllPassages();
 
     /*!
      * @brief       Get all keyframes in the current map. Keyframes represent
@@ -1348,7 +1350,7 @@ class System
      * @return      Vector of pointers to KeyFrame objects. May be empty if
      *              no keyframes have been created yet.
      */
-    std::vector<ORB_SLAM3::KeyFrame *> GetAllKeyFrames();
+    std::vector<vs_graphs::core::KeyFrame *> GetAllKeyFrames();
 
     /*!
      * @brief       Get all map points in the current map. Map points are
@@ -1357,7 +1359,7 @@ class System
      * @return      Vector of pointers to MapPoint objects. May be empty if
      *              no map points have been created yet.
      */
-    std::vector<ORB_SLAM3::MapPoint *> GetAllMapPoints();
+    std::vector<vs_graphs::core::MapPoint *> GetAllMapPoints();
 
     /*!
      * @brief       Get only the map points that are currently being tracked.
@@ -1367,7 +1369,7 @@ class System
      * @return      Vector of pointers to MapPoint objects currently being
      *              tracked. May be empty if no points are being tracked.
      */
-    std::vector<ORB_SLAM3::MapPoint *> GetTrackedMapPoints();
+    std::vector<vs_graphs::core::MapPoint *> GetTrackedMapPoints();
 
     /*!
      * @brief       Get all keyframe poses in the current map. Each pose
@@ -1552,7 +1554,7 @@ class System
      * @brief       Update the GNN room candidates list
      */
     void setGNNRoomCandidates(
-        const std::vector<ORB_SLAM3::Room *> &gnnRoomCandidates);
+        const std::vector<vs_graphs::core::semantic::Room *> &gnnRoomCandidates);
 
 #ifdef REGISTER_TIMES
     void InsertRectTime(double &time);
@@ -1917,7 +1919,7 @@ class System
      * @brief       Vector of Room pointers from the environment. Maintained for
      *              quick access to room objects without traversing the Atlas.
      */
-    std::vector<ORB_SLAM3::Room *> envRooms;
+    std::vector<vs_graphs::core::semantic::Room *> envRooms;
 
     /*!
      * @brief       Settings object. Contains all configuration parameters for
@@ -1926,6 +1928,7 @@ class System
     Settings *settings_;
 };
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SYSTEM_H

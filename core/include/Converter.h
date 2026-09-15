@@ -32,7 +32,9 @@
 #include "Thirdparty/Sophus/sophus/geometry.hpp"
 #include "Thirdparty/Sophus/sophus/sim3.hpp"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class Converter
@@ -79,6 +81,7 @@ namespace ORB_SLAM3
         static Sophus::Sim3f toSophus(const g2o::Sim3 &S);
     };
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs
 
 #endif // CONVERTER_H

@@ -41,7 +41,9 @@
 #include "Semantic/SemanticGraphSnapshot/objects/EntityKind.h"
 #include "Semantic/SemanticGraphSnapshot/objects/UnavailableReason.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -113,6 +115,7 @@ std::string capabilityLevelName(CapabilityLevel level_in);
 std::string missingProofOwnerName(MissingProofOwner owner_in);
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_AXIOM_EVALUATOR_ENUM_NAMES_H

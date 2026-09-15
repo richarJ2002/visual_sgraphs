@@ -29,7 +29,9 @@
 
 #include <mutex>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 Viewer::Viewer(System       *pSystem,
@@ -573,4 +575,5 @@ void Viewer::Release()
     mbStopTrack = true;
 }*/
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

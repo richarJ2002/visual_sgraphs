@@ -25,7 +25,9 @@
 
 #include "Semantic/SemanticReportCache.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -37,4 +39,5 @@ bool SemanticReportCache::isAvailable() const
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

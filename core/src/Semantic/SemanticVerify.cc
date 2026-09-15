@@ -19,7 +19,11 @@
 #include <map>
 #include <set>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
 {
 namespace
 {
@@ -220,8 +224,8 @@ double symmetricSupportDistance(const VerifyWallObservation &wallA_in,
 
 SemanticVerifyConfig SemanticVerify::configFromSystemParams()
 {
-    const auto &loadedVerification = SystemParams::GetParams()->verification;
-    const auto &loadedFactor       = SystemParams::GetParams()->factor;
+    const auto &loadedVerification = types::SystemParams::GetParams()->verification;
+    const auto &loadedFactor       = types::SystemParams::GetParams()->factor;
 
     SemanticVerifyConfig config;
     config.maxNormalAngle_deg =
@@ -263,7 +267,7 @@ std::vector<VerifyWallObservation> SemanticVerify::collectWallObservations(
         return observations;
     }
 
-    for (Plane *p_wall : p_room_in->getWalls())
+    for (geometric::Plane *p_wall : p_room_in->getWalls())
     {
         if (observations.size() == config_in.maxWallsPerRoom)
         {
@@ -311,7 +315,7 @@ std::vector<VerifyWallObservation> SemanticVerify::collectWallObservations(
             continue;
         }
 
-        const Plane::GeometrySnapshot snapshot = p_wall->getGeometrySnapshot();
+        const geometric::Plane::GeometrySnapshot snapshot = p_wall->getGeometrySnapshot();
         if (snapshot.supportCloud && !snapshot.supportCloud->empty())
         {
             const std::size_t total  = snapshot.supportCloud->size();
@@ -822,8 +826,8 @@ SemanticVerifyResult
 
 bool SemanticVerify::runFloorGate(
     SemanticVerifyResult    &result_inout,
-    Map                     *p_survivingMap_in,
-    Map                     *p_absorbedMap_in,
+    core::Map                     *p_survivingMap_in,
+    core::Map                     *p_absorbedMap_in,
     const Eigen::Isometry3d &transform_absorbedToSurviving_in)
 {
     const g2o::Sim3 transform(transform_absorbedToSurviving_in.linear(),
@@ -1168,8 +1172,8 @@ bool transformAbsorbedPoint(const g2o::Sim3       &transform_in,
     return mapped_out.allFinite();
 }
 
-bool checkConsecutiveFloors(Map             *p_survivingMap_in,
-                            Map             *p_absorbedMap_in,
+bool checkConsecutiveFloors(core::Map             *p_survivingMap_in,
+                            core::Map             *p_absorbedMap_in,
                             const g2o::Sim3 &transform_in,
                             double           maximumOffset_m_in,
                             std::string     &decision_out)
@@ -1757,8 +1761,8 @@ SemanticMergeGateResult SemanticVerify::evaluateMergeAlignment(
 }
 
 SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
-    Map                        *p_survivingMap_in,
-    Map                        *p_absorbedMap_in,
+    core::Map                        *p_survivingMap_in,
+    core::Map                        *p_absorbedMap_in,
     const g2o::Sim3            &transform_absorbedToSurviving_in,
     const SemanticVerifyConfig &config_in)
 {
@@ -1815,21 +1819,21 @@ SemanticVerify::MapMergeConfig SemanticVerify::mapMergeConfigFromSystemParams()
 {
     MapMergeConfig config;
     config.passage_match_tolerance_m = static_cast<double>(
-        SystemParams::GetParams()->map_merge.passage_match_tolerance_m);
+        types::SystemParams::GetParams()->map_merge.passage_match_tolerance_m);
     config.wall_coplanar_angle_deg = static_cast<double>(
-        SystemParams::GetParams()->map_merge.wall_coplanar_angle_deg);
+        types::SystemParams::GetParams()->map_merge.wall_coplanar_angle_deg);
     config.wall_edge_overlap_m = static_cast<double>(
-        SystemParams::GetParams()->map_merge.wall_edge_overlap_m);
+        types::SystemParams::GetParams()->map_merge.wall_edge_overlap_m);
     config.floor_match_tolerance_m = static_cast<double>(
-        SystemParams::GetParams()->map_merge.floor_match_tolerance_m);
+        types::SystemParams::GetParams()->map_merge.floor_match_tolerance_m);
     config.room_centroid_tolerance_m = static_cast<double>(
-        SystemParams::GetParams()->map_merge.room_centroid_tolerance_m);
+        types::SystemParams::GetParams()->map_merge.room_centroid_tolerance_m);
     return config;
 }
 
 SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
-    Map                  *p_survivingMap_in,
-    Map                  *p_absorbedMap_in,
+    core::Map                  *p_survivingMap_in,
+    core::Map                  *p_absorbedMap_in,
     const g2o::Sim3      &transform_absorbedToSurviving_in,
     const MapMergeConfig &config_in)
 {
@@ -2064,4 +2068,6 @@ VerificationVerdict SemanticVerifyResult::toVerificationVerdict() const
     return verdict;
 }
 
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs

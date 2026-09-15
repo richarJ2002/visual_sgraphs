@@ -28,7 +28,9 @@
 #include "ImuTypes.h"
 #include <mutex>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 long unsigned int KeyFrame::nNextId = 0;
@@ -312,7 +314,7 @@ bool KeyFrame::isVelocitySet()
     return mbHasVelocity;
 }
 
-std::vector<Marker *> KeyFrame::getCurrentFrameMarkers() const
+std::vector<semantic::Marker *> KeyFrame::getCurrentFrameMarkers() const
 {
     return mCurrentFrameMarkers;
 }
@@ -485,13 +487,13 @@ void KeyFrame::AddMapPoint(MapPoint *pMP, const size_t &idx)
     mvpMapPoints[idx] = pMP;
 }
 
-void KeyFrame::AddMapMarker(Marker *marker)
+void KeyFrame::AddMapMarker(semantic::Marker *marker)
 {
     unique_lock<mutex> lock(mMutexFeatures);
     mvpMapMarkers.push_back(marker);
 }
 
-void KeyFrame::AddMapPlane(Plane *plane)
+void KeyFrame::AddMapPlane(geometric::Plane *plane)
 {
     if (plane == nullptr)
     {
@@ -507,7 +509,7 @@ void KeyFrame::AddMapPlane(Plane *plane)
     }
 }
 
-void KeyFrame::RemoveMapPlane(Plane *plane)
+void KeyFrame::RemoveMapPlane(geometric::Plane *plane)
 {
     unique_lock<mutex> lock(mMutexFeatures);
 
@@ -523,8 +525,8 @@ void KeyFrame::RemoveMapPlane(Plane *plane)
         mvpMapPlanes.end());
 }
 
-bool KeyFrame::ReplaceMapPlane(Plane *p_retiredPlane_in,
-                               Plane *p_retainedPlane_in)
+bool KeyFrame::ReplaceMapPlane(geometric::Plane *p_retiredPlane_in,
+                               geometric::Plane *p_retainedPlane_in)
 {
     if (p_retiredPlane_in == nullptr || p_retainedPlane_in == nullptr ||
         p_retiredPlane_in == p_retainedPlane_in)
@@ -535,12 +537,12 @@ bool KeyFrame::ReplaceMapPlane(Plane *p_retiredPlane_in,
     unique_lock<mutex> lock(mMutexFeatures);
 
     bool                 replacedRetiredPlane = false;
-    std::vector<Plane *> rebuiltPlanes;
+    std::vector<geometric::Plane *> rebuiltPlanes;
     rebuiltPlanes.reserve(mvpMapPlanes.size());
 
-    for (Plane *p_existingPlane : mvpMapPlanes)
+    for (geometric::Plane *p_existingPlane : mvpMapPlanes)
     {
-        Plane *p_candidatePlane = p_existingPlane;
+        geometric::Plane *p_candidatePlane = p_existingPlane;
 
         if (p_existingPlane == p_retiredPlane_in)
         {
@@ -567,7 +569,7 @@ bool KeyFrame::ReplaceMapPlane(Plane *p_retiredPlane_in,
     return replacedRetiredPlane;
 }
 
-void ORB_SLAM3::KeyFrame::AddMapPassage(ORB_SLAM3::Passage *p_passage_in)
+void vs_graphs::core::KeyFrame::AddMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
 {
     if (p_passage_in == nullptr)
     {
@@ -583,9 +585,9 @@ void ORB_SLAM3::KeyFrame::AddMapPassage(ORB_SLAM3::Passage *p_passage_in)
     }
 }
 
-bool ORB_SLAM3::KeyFrame::ReplaceMapPassage(
-    ORB_SLAM3::Passage *p_retiredPassage_in,
-    ORB_SLAM3::Passage *p_retainedPassage_in)
+bool vs_graphs::core::KeyFrame::ReplaceMapPassage(
+    vs_graphs::core::semantic::Passage *p_retiredPassage_in,
+    vs_graphs::core::semantic::Passage *p_retainedPassage_in)
 {
     if (p_retiredPassage_in == nullptr || p_retainedPassage_in == nullptr ||
         p_retiredPassage_in == p_retainedPassage_in)
@@ -596,12 +598,12 @@ bool ORB_SLAM3::KeyFrame::ReplaceMapPassage(
     unique_lock<mutex> lock(mMutexFeatures);
 
     bool                              replacedAssociation = false;
-    std::vector<ORB_SLAM3::Passage *> rebuiltPassages;
+    std::vector<vs_graphs::core::semantic::Passage *> rebuiltPassages;
     rebuiltPassages.reserve(mvpMapPassages.size());
 
-    for (ORB_SLAM3::Passage *p_existingPassage : mvpMapPassages)
+    for (vs_graphs::core::semantic::Passage *p_existingPassage : mvpMapPassages)
     {
-        ORB_SLAM3::Passage *p_candidatePassage = p_existingPassage;
+        vs_graphs::core::semantic::Passage *p_candidatePassage = p_existingPassage;
 
         if (p_existingPassage == p_retiredPassage_in)
         {
@@ -717,19 +719,19 @@ MapPoint *KeyFrame::GetMapPoint(const size_t &idx)
     return mvpMapPoints[idx];
 }
 
-vector<Marker *> KeyFrame::GetMapMarkers()
+vector<semantic::Marker *> KeyFrame::GetMapMarkers()
 {
     unique_lock<mutex> lock(mMutexFeatures);
     return mvpMapMarkers;
 }
 
-vector<Plane *> KeyFrame::GetMapPlanes()
+vector<geometric::Plane *> KeyFrame::GetMapPlanes()
 {
     unique_lock<mutex> lock(mMutexFeatures);
     return mvpMapPlanes;
 }
 
-std::vector<ORB_SLAM3::Passage *> ORB_SLAM3::KeyFrame::GetMapPassages()
+std::vector<vs_graphs::core::semantic::Passage *> vs_graphs::core::KeyFrame::GetMapPassages()
 {
     unique_lock<mutex> lock(mMutexFeatures);
     return mvpMapPassages;
@@ -748,24 +750,24 @@ void KeyFrame::UpdateConnections(bool upParent)
 
     // for all plane observations in the keyframe check in which other keyframes
     // are they seen increase counter for those keyframes
-    if (SystemParams::GetParams()->plane_based_covisibility.enabled)
+    if (types::SystemParams::GetParams()->plane_based_covisibility.enabled)
     {
         unsigned int scorePerPlane =
-            SystemParams::GetParams()->plane_based_covisibility.score_per_plane;
-        for (vector<Plane *>::iterator vit  = mvpMapPlanes.begin(),
+            types::SystemParams::GetParams()->plane_based_covisibility.score_per_plane;
+        for (vector<geometric::Plane *>::iterator vit  = mvpMapPlanes.begin(),
                                        vend = mvpMapPlanes.end();
              vit != vend;
              vit++)
         {
-            Plane *pPlane = *vit;
+            geometric::Plane *pPlane = *vit;
 
             if (!pPlane)
                 continue;
 
-            map<KeyFrame *, ORB_SLAM3::Plane::Observation> observations =
+            map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation> observations =
                 pPlane->getObservations();
 
-            for (map<KeyFrame *, ORB_SLAM3::Plane::Observation>::iterator
+            for (map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>::iterator
                      mit  = observations.begin(),
                      mend = observations.end();
                  mit != mend;
@@ -775,7 +777,7 @@ void KeyFrame::UpdateConnections(bool upParent)
                     mit->first->GetMap() != mpMap)
                     continue;
 
-                if (pPlane->getPlaneType() == Plane::planeVariant::UNDEFINED)
+                if (pPlane->getPlaneType() == geometric::Plane::planeVariant::UNDEFINED)
                     KFcounter[mit->first] += static_cast<int>(
                         scorePerPlane *
                         0.2); // undefined planes have less weight
@@ -1007,8 +1009,8 @@ void KeyFrame::SetBadFlag()
      * keyframe before LocalMapping is allowed to delete it; otherwise a later
      * merge, GBA, or observation insertion can dereference freed memory.
      */
-    const std::vector<Plane *> observedPlanes = GetMapPlanes();
-    for (Plane *p_plane : observedPlanes)
+    const std::vector<geometric::Plane *> observedPlanes = GetMapPlanes();
+    for (geometric::Plane *p_plane : observedPlanes)
     {
         if (p_plane != nullptr)
         {
@@ -1016,8 +1018,8 @@ void KeyFrame::SetBadFlag()
         }
     }
 
-    const std::vector<Marker *> observedMarkers = GetMapMarkers();
-    for (Marker *p_marker : observedMarkers)
+    const std::vector<semantic::Marker *> observedMarkers = GetMapMarkers();
+    for (semantic::Marker *p_marker : observedMarkers)
     {
         if (p_marker != nullptr)
         {
@@ -1305,7 +1307,7 @@ void KeyFrame::UpdateMap(Map *pMap)
 
 void KeyFrame::PreSave(set<KeyFrame *>        &spKF,
                        set<MapPoint *>        &spMP,
-                       set<GeometricCamera *> &spCam)
+                       set<camera_models::GeometricCamera *> &spCam)
 {
     // Save the id of each MapPoint in this KF, there can be null pointer in the
     // vector
@@ -1390,7 +1392,7 @@ void KeyFrame::PreSave(set<KeyFrame *>        &spKF,
 
 void KeyFrame::PostLoad(map<long unsigned int, KeyFrame *>   &mpKFid,
                         map<long unsigned int, MapPoint *>   &mpMPid,
-                        map<unsigned int, GeometricCamera *> &mpCamId)
+                        map<unsigned int, camera_models::GeometricCamera *> &mpCamId)
 {
     // Rebuild the empty variables
 
@@ -1653,4 +1655,5 @@ void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase *pKFDB)
     mpKeyFrameDB = pKFDB;
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

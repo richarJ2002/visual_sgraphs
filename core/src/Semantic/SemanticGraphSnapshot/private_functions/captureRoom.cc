@@ -29,7 +29,9 @@
 
 #include "Map.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -45,7 +47,7 @@ RoomRecord captureRoom(Room             *p_room_in,
     record.isDetectedMember    = isDetectedMember_in;
     record.isMarkerBasedMember = isMarkerBasedMember_in;
 
-    Map *p_declaredMap = p_room_in->getMap();
+    core::Map *p_declaredMap = p_room_in->getMap();
     if (p_declaredMap != nullptr)
     {
         record.declaredMapId = p_declaredMap->GetId();
@@ -57,7 +59,7 @@ RoomRecord captureRoom(Room             *p_room_in,
     record.boundaryCorners_World_m = p_room_in->getBoundaryCorners_World_m();
     record.observationGaps         = p_room_in->getObservationGaps();
 
-    for (Plane *p_wall : p_room_in->getWalls())
+    for (geometric::Plane *p_wall : p_room_in->getWalls())
     {
         appendWallRef(p_wall, record.wallRefs);
     }
@@ -82,4 +84,5 @@ RoomRecord captureRoom(Room             *p_room_in,
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

@@ -24,7 +24,9 @@
 
 #include "KeyFrame.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     Eigen::Matrix3f GeometricTools::ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2)
@@ -69,4 +71,5 @@ namespace ORB_SLAM3
         return true;
     }
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs

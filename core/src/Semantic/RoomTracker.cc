@@ -19,7 +19,11 @@
 #include <iostream>
 #include <sstream>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
 {
 namespace
 {
@@ -549,4 +553,6 @@ void RoomTracker::commit(RoomTrackingState           source,
     }
 }
 
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs

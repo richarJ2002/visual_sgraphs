@@ -26,7 +26,9 @@
 #ifndef SEMANTIC_AXIOM_EVALUATOR_TRANSITION_EVALUATION_CONTEXT_H
 #define SEMANTIC_AXIOM_EVALUATOR_TRANSITION_EVALUATION_CONTEXT_H
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -50,6 +52,7 @@ struct TransitionEvaluationContext
 {};
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_AXIOM_EVALUATOR_TRANSITION_EVALUATION_CONTEXT_H

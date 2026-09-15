@@ -39,7 +39,9 @@
 #include <pangolin/pangolin.h>
 #include <thread>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
@@ -203,7 +205,7 @@ System::System(const string         &strVocFile,
     }
 
     /* Load the system parameters */
-    SystemParams *sysParams = SystemParams::GetParams();
+    types::SystemParams *sysParams = types::SystemParams::GetParams();
     sysParams->SetParams(strSysParamsFile);
 
     /* Parse the environment database, if provided */
@@ -253,7 +255,7 @@ System::System(const string         &strVocFile,
                          strSequence);
 
     /* Set up thread to run the mpLocalMapper and call Run() method */
-    mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run, mpLocalMapper);
+    mptLocalMapping = new thread(&vs_graphs::core::LocalMapping::Run, mpLocalMapper);
 
     mpLocalMapper->mInitFr = initFr;
     if (settings_)
@@ -288,7 +290,7 @@ System::System(const string         &strVocFile,
                                    activeLC);
 
     /* Launch the loop closing thread */
-    mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
+    mptLoopClosing = new thread(&vs_graphs::core::LoopClosing::Run, mpLoopCloser);
 
     /* ---------------------------------------------------------------------- *
      * SEMANTIC SEGMENTATION THREAD
@@ -407,7 +409,7 @@ void System::parseJsonDatabase(string jsonFilePath)
         return;
     }
     // Creating an object of the database loader
-    ORB_SLAM3::DBParser parser;
+    vs_graphs::core::DBParser parser;
     // Load JSON file
     json                envData = parser.jsonParser(jsonFilePath);
     // Getting semantic entities
@@ -420,14 +422,14 @@ void System::addSegmentedImage(
     std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *tuple)
 {
     // Adding the segmented image to the buffer of the SemanticSegmentation
-    if (SystemParams::GetParams()->general.mode_of_operation ==
-        SystemParams::general::ModeOfOperation::GEO)
+    if (types::SystemParams::GetParams()->general.mode_of_operation ==
+        types::SystemParams::general::ModeOfOperation::GEO)
     {
         // just clear the pointcloud of the keyframe and return, as semantic
         // segmentation is not running. Still counts as "returned" -- the
         // keyframe's round trip through the pipeline is over either way, and
         // the lockstep backlog signal must not stall forever in GEO mode.
-        ORB_SLAM3::KeyFrame *pKF =
+        vs_graphs::core::KeyFrame *pKF =
             mpAtlas->GetKeyFrameById(std::get<0>(*tuple));
         if (pKF)
         {
@@ -479,7 +481,7 @@ void System::setSkeletonEdges(
 }
 
 void System::setGNNRoomCandidates(
-    const std::vector<ORB_SLAM3::Room *> &gnnRoomCandidates)
+    const std::vector<vs_graphs::core::semantic::Room *> &gnnRoomCandidates)
 {
     // [TODO] Add the GNN room candidates to the SemanticsManager
 }
@@ -489,7 +491,7 @@ Sophus::SE3f System::TrackStereo(const cv::Mat              &imLeft,
                                  const double               &timestamp,
                                  const vector<IMU::Point>   &vImuMeas,
                                  string                      filename,
-                                 const std::vector<Marker *> markers)
+                                 const std::vector<semantic::Marker *> markers)
 {
     if (mSensor != STEREO && mSensor != IMU_STEREO)
     {
@@ -598,7 +600,7 @@ Sophus::SE3f
                       const double                                 &timestamp,
                       const vector<IMU::Point>                     &vImuMeas,
                       string                                        filename,
-                      const std::vector<Marker *>                   markers)
+                      const std::vector<semantic::Marker *>                   markers)
 {
     // Check if the sensor is correctly set as RGB-D
     if (mSensor != RGBD && mSensor != IMU_RGBD)
@@ -745,7 +747,7 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat              &im,
                                     const double               &timestamp,
                                     const vector<IMU::Point>   &vImuMeas,
                                     string                      filename,
-                                    const std::vector<Marker *> markers)
+                                    const std::vector<semantic::Marker *> markers)
 {
     // Multi-thread to prevent race conditions
     {
@@ -904,8 +906,8 @@ System::MissionHealthSnapshot
     snapshot.lastReturnedKeyFrameId =
         mLastReturnedKeyFrameId.load(std::memory_order_relaxed);
 
-    if (SystemParams::GetParams()->general.mode_of_operation ==
-        SystemParams::general::ModeOfOperation::GEO)
+    if (types::SystemParams::GetParams()->general.mode_of_operation ==
+        types::SystemParams::general::ModeOfOperation::GEO)
     {
         snapshot.segmentationTerminalCount = snapshot.segmentationReturnedCount;
         snapshot.lastTerminalKeyFrameId    = snapshot.lastReturnedKeyFrameId;
@@ -973,13 +975,13 @@ System::MissionHealthSnapshot
 
         if (includeSemantics)
         {
-            for (Room *p_room : p_activeMap->GetAllRooms())
+            for (semantic::Room *p_room : p_activeMap->GetAllRooms())
             {
                 if (p_room == nullptr || p_room->isBad())
                 {
                     continue;
                 }
-                if (p_room->getRoomVariant() != Room::roomVariant::ROOM)
+                if (p_room->getRoomVariant() != semantic::Room::roomVariant::ROOM)
                 {
                     ++snapshot.unresolvedRoomCount;
                     continue;
@@ -988,7 +990,7 @@ System::MissionHealthSnapshot
                 ++snapshot.confirmedRoomCount;
                 RoomHealth room;
                 room.id = p_room->getId();
-                for (Passage *p_passage : p_room->getPassages())
+                for (semantic::Passage *p_passage : p_room->getPassages())
                 {
                     if (p_passage != nullptr)
                     {
@@ -999,7 +1001,7 @@ System::MissionHealthSnapshot
                 snapshot.rooms.push_back(std::move(room));
             }
 
-            for (Floor *p_floor : p_activeMap->GetAllFloors())
+            for (semantic::Floor *p_floor : p_activeMap->GetAllFloors())
             {
                 if (p_floor == nullptr)
                 {
@@ -1007,10 +1009,10 @@ System::MissionHealthSnapshot
                 }
                 FloorHealth floor;
                 floor.id = p_floor->getId();
-                for (Room *p_room : p_floor->getRooms())
+                for (semantic::Room *p_room : p_floor->getRooms())
                 {
                     if (p_room != nullptr && !p_room->isBad() &&
-                        p_room->getRoomVariant() == Room::roomVariant::ROOM)
+                        p_room->getRoomVariant() == semantic::Room::roomVariant::ROOM)
                     {
                         floor.roomIds.push_back(p_room->getId());
                         ++snapshot.floorRoomLinkCount;
@@ -1020,7 +1022,7 @@ System::MissionHealthSnapshot
                 snapshot.floors.push_back(std::move(floor));
             }
 
-            for (Passage *p_passage : p_activeMap->GetAllPassages())
+            for (semantic::Passage *p_passage : p_activeMap->GetAllPassages())
             {
                 if (p_passage == nullptr)
                 {
@@ -1042,13 +1044,13 @@ System::MissionHealthSnapshot
                 passage.secondaryTraversalCount =
                     p_passage->getTraversalFarToKnownCount();
                 passage.unknownCount = p_passage->getTraversalUnknownCount();
-                const Passage::KnownSideProvenance knownSide =
+                const semantic::Passage::KnownSideProvenance knownSide =
                     p_passage->getKnownSideProvenance();
                 if (knownSide.pRoom != nullptr)
                 {
                     passage.primaryRoomId = knownSide.pRoom->getId();
                 }
-                Room *p_farSideRoom = p_passage->getProspectiveRoom();
+                semantic::Room *p_farSideRoom = p_passage->getProspectiveRoom();
                 if (p_farSideRoom != nullptr)
                 {
                     passage.secondaryRoomId = p_farSideRoom->getId();
@@ -1239,7 +1241,7 @@ void System::SaveTrajectoryTUM(const string &filename)
 
     // For each frame we have a reference keyframe (lRit), the timestamp (lT)
     // and a flag which is true when tracking failed (lbL).
-    list<ORB_SLAM3::KeyFrame *>::iterator lRit =
+    list<vs_graphs::core::KeyFrame *>::iterator lRit =
         mpTracker->mlpReferences.begin();
     list<double>::iterator lT  = mpTracker->mlFrameTimes.begin();
     list<bool>::iterator   lbL = mpTracker->mlbLost.begin();
@@ -1371,7 +1373,7 @@ void System::SaveTrajectoryEuRoC(const string &filename)
 
     // For each frame we have a reference keyframe (lRit), the timestamp (lT)
     // and a flag which is true when tracking failed (lbL).
-    list<ORB_SLAM3::KeyFrame *>::iterator lRit =
+    list<vs_graphs::core::KeyFrame *>::iterator lRit =
         mpTracker->mlpReferences.begin();
     list<double>::iterator lT  = mpTracker->mlFrameTimes.begin();
     list<bool>::iterator   lbL = mpTracker->mlbLost.begin();
@@ -1464,7 +1466,7 @@ void System::SaveTrajectoryEuRoC(const string &filename, Map *pMap)
 
     // For each frame we have a reference keyframe (lRit), the timestamp (lT)
     // and a flag which is true when tracking failed (lbL).
-    list<ORB_SLAM3::KeyFrame *>::iterator lRit =
+    list<vs_graphs::core::KeyFrame *>::iterator lRit =
         mpTracker->mlpReferences.begin();
     list<double>::iterator lT  = mpTracker->mlFrameTimes.begin();
     list<bool>::iterator   lbL = mpTracker->mlbLost.begin();
@@ -1659,7 +1661,7 @@ void System::SaveTrajectoryKITTI(const string &filename)
 
     // For each frame we have a reference keyframe (lRit), the timestamp (lT)
     // and a flag which is true when tracking failed (lbL).
-    list<ORB_SLAM3::KeyFrame *>::iterator lRit =
+    list<vs_graphs::core::KeyFrame *>::iterator lRit =
         mpTracker->mlpReferences.begin();
     list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
     for (list<Sophus::SE3f>::iterator
@@ -1668,7 +1670,7 @@ void System::SaveTrajectoryKITTI(const string &filename)
          lit != lend;
          lit++, lRit++, lT++)
     {
-        ORB_SLAM3::KeyFrame *pKF = *lRit;
+        vs_graphs::core::KeyFrame *pKF = *lRit;
 
         Sophus::SE3f Trw;
 
@@ -2050,13 +2052,13 @@ string System::CalculateCheckSum(string filename, int type)
     return checksum;
 }
 
-ORB_SLAM3::Map *System::GetCurrentMap()
+vs_graphs::core::Map *System::GetCurrentMap()
 {
-    ORB_SLAM3::Map *pActiveMap = mpAtlas->GetCurrentMap();
+    vs_graphs::core::Map *pActiveMap = mpAtlas->GetCurrentMap();
     return pActiveMap;
 }
 
-ORB_SLAM3::Atlas *System::GetAtlas()
+vs_graphs::core::Atlas *System::GetAtlas()
 {
     return mpAtlas;
 }
@@ -2113,39 +2115,39 @@ Sophus::SE3f System::GetKeyFramePose(KeyFrame *pKF)
     return Twb;
 }
 
-vector<Marker *> System::GetAllMarkers()
+vector<semantic::Marker *> System::GetAllMarkers()
 {
     Map *pActiveMap = mpAtlas->GetCurrentMap();
     return pActiveMap->GetAllMarkers();
 }
 
-std::vector<ORB_SLAM3::Passage *> System::GetAllPassages()
+std::vector<vs_graphs::core::semantic::Passage *> System::GetAllPassages()
 {
     Map *pActiveMap = mpAtlas->GetCurrentMap();
     return pActiveMap->GetAllPassages();
 }
 
-vector<Plane *> System::GetAllPlanes()
+vector<geometric::Plane *> System::GetAllPlanes()
 {
     Map *pActiveMap = mpAtlas->GetCurrentMap();
     return pActiveMap->GetAllPlanes();
 }
 
-vector<Room *> System::GetAllRooms()
+vector<semantic::Room *> System::GetAllRooms()
 {
     Map *pActiveMap = mpAtlas->GetCurrentMap();
     return pActiveMap->GetAllRooms();
 }
 
-std::vector<ORB_SLAM3::Door *> System::GetAllDoors()
+std::vector<vs_graphs::core::Door *> System::GetAllDoors()
 {
-    ORB_SLAM3::Map *pActiveMap = mpAtlas->GetCurrentMap();
+    vs_graphs::core::Map *pActiveMap = mpAtlas->GetCurrentMap();
     return pActiveMap->GetAllDoors();
 }
 
-std::vector<ORB_SLAM3::Floor *> System::GetAllFloors()
+std::vector<vs_graphs::core::semantic::Floor *> System::GetAllFloors()
 {
-    ORB_SLAM3::Map *pActiveMap = mpAtlas->GetCurrentMap();
+    vs_graphs::core::Map *pActiveMap = mpAtlas->GetCurrentMap();
     return pActiveMap->GetAllFloors();
 }
 
@@ -2200,4 +2202,5 @@ bool System::SaveMapPointsAsPCD(const string &filename)
     }
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

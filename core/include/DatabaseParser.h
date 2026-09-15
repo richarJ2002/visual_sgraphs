@@ -24,7 +24,9 @@
 
 using json = nlohmann::json;
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
     /**
      * @brief This class functions to parse data extracted from JSON files.
@@ -32,7 +34,7 @@ namespace ORB_SLAM3
     class DBParser
     {
     private:
-        std::vector<Room *> envRooms; // Rooms available in the real environment
+        std::vector<semantic::Room *> envRooms; // Rooms available in the real environment
 
     public:
         DBParser();
@@ -49,8 +51,8 @@ namespace ORB_SLAM3
          * and returns a list of rooms.
          * @param envData the JSON file containing the rooms data
          */
-        std::vector<Room *> getEnvRooms(json envData);
+        std::vector<semantic::Room *> getEnvRooms(json envData);
     };
-}
-
+} // namespace core
+} // namespace vs_graphs
 #endif

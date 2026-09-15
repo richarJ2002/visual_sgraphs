@@ -49,7 +49,9 @@
 #include "Semantic/SemanticAxiomEvaluator/objects.h"
 #include "Semantic/SemanticGraphSnapshot/objects/SemanticGraphSnapshot.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -113,6 +115,7 @@ nlohmann::json serializeMapCompletenessResults(
     const std::vector<MapCompletenessResult> &results_in);
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_CANONICAL_SERIALIZATION_PUBLIC_FUNCTIONS_H

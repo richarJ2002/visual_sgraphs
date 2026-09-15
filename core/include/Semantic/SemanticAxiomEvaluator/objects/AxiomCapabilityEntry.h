@@ -31,7 +31,9 @@
 #include "Semantic/SemanticAxiomEvaluator/objects/CapabilityLevel.h"
 #include "Semantic/SemanticAxiomEvaluator/objects/MissingProofOwner.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -62,6 +64,7 @@ struct AxiomCapabilityEntry
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_AXIOM_EVALUATOR_AXIOM_CAPABILITY_ENTRY_H

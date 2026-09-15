@@ -33,7 +33,9 @@
 #include <mutex>
 #include <unordered_set>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class Tracking;
@@ -86,6 +88,7 @@ namespace ORB_SLAM3
         map<long unsigned int, cv::Point2f> mmMatchedInImage;
     };
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs
 
 #endif // FRAMEDRAWER_H

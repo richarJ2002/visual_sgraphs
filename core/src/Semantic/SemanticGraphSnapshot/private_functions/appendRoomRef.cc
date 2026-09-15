@@ -25,7 +25,9 @@
 
 #include "Semantic/SemanticGraphSnapshot/private_functions.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -40,4 +42,5 @@ void appendRoomRef(Room *p_room_in, std::vector<EntityRef> &refs_inout)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

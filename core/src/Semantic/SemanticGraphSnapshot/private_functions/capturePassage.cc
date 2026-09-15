@@ -29,7 +29,9 @@
 
 #include "Map.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -40,7 +42,7 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
     record.key = makeKey(EntityKind::PASSAGE, mapId_in, p_passage_in->getId());
     record.isLive = !p_passage_in->isBad();
 
-    Map *p_declaredMap = p_passage_in->getMap();
+    core::Map *p_declaredMap = p_passage_in->getMap();
     if (p_declaredMap != nullptr)
     {
         record.declaredMapId = p_declaredMap->GetId();
@@ -53,7 +55,7 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
     record.height_m         = p_passage_in->getHeight();
     record.passable         = p_passage_in->isPassable();
 
-    for (Plane *p_wall : p_passage_in->getAssociateWalls())
+    for (geometric::Plane *p_wall : p_passage_in->getAssociateWalls())
     {
         appendWallRef(p_wall, record.associateWallRefs);
     }
@@ -84,4 +86,5 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

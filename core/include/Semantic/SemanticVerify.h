@@ -18,10 +18,14 @@
 #include <string>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+class Map;
+namespace semantic
 {
 class Room;
-class Map;
 
 /** Pre-mutation decision for a proposed physical map merge. */
 enum class SemanticMergeDecision
@@ -282,6 +286,8 @@ class SemanticVerify
     static const char *mergeReasonName(SemanticMergeReason reason_in);
 };
 
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_VERIFY_H

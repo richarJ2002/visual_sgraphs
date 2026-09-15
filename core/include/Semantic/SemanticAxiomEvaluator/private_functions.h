@@ -38,7 +38,9 @@
 
 #include "Semantic/SemanticAxiomEvaluator/objects.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -480,7 +482,8 @@ MapCompletenessResult
                                        const MapSnapshot &mapSnapshot_in);
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions/findRecordByKey.tpp"
 

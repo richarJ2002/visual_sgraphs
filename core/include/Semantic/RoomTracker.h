@@ -22,7 +22,11 @@
 #include <string>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
 {
 /*!
  * @brief           Lifecycle states of the camera relative to the mapped rooms.
@@ -361,6 +365,8 @@ class RoomTracker
     bool wasTrackingLost_      = false;
 };
 
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
 
 #endif // ROOMTRACKER_H

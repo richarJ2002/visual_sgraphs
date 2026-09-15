@@ -33,7 +33,9 @@
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -149,4 +151,5 @@ void evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

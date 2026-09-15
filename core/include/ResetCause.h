@@ -3,12 +3,14 @@
  * @brief Declares stable internal reset/new-map attribution values.
  */
 
-#ifndef ORB_SLAM3_RESET_CAUSE_H
-#define ORB_SLAM3_RESET_CAUSE_H
+#ifndef VS_GRAPHS_CORE_RESET_CAUSE_H
+#define VS_GRAPHS_CORE_RESET_CAUSE_H
 
 #include <string>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 /**
@@ -81,6 +83,7 @@ enum class ResetAction
                                                  ResetAction action_in);
 void reportResetAttribution(ResetCause cause_in, ResetAction action_in);
 
-} /* namespace ORB_SLAM3 */
+} // namespace core
+} // namespace vs_graphs
 
-#endif /* ORB_SLAM3_RESET_CAUSE_H */
+#endif /* VS_GRAPHS_CORE_RESET_CAUSE_H */

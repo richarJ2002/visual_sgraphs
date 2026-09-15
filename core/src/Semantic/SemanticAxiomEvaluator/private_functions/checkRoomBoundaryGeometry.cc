@@ -38,7 +38,9 @@
 
 #include <Eigen/Geometry>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -138,4 +140,5 @@ RoomBoundaryGeometryStatus
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

@@ -37,7 +37,9 @@
 #include <mutex>
 #include <thread>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 /* Declared in LoopClosing.h: shared with WP13 Phase 4's SemanticVerify. */
@@ -47,15 +49,15 @@ bool verifyLoopMergeFloors(
     const g2o::Sim3 &transform_absorbedWorldToSurvivingWorld_in,
     std::string     &result_out)
 {
-    Floor *p_survivingFloor =
-        Floor::selectBestObservedFloor(p_survivingMap_in->GetAllFloors());
-    Floor *p_absorbedFloor =
-        Floor::selectBestObservedFloor(p_absorbedMap_in->GetAllFloors());
+    semantic::Floor *p_survivingFloor =
+        semantic::Floor::selectBestObservedFloor(p_survivingMap_in->GetAllFloors());
+    semantic::Floor *p_absorbedFloor =
+        semantic::Floor::selectBestObservedFloor(p_absorbedMap_in->GetAllFloors());
 
-    const std::optional<Floor::PlaneIdentity> survivingIdentity =
+    const std::optional<semantic::Floor::PlaneIdentity> survivingIdentity =
         p_survivingFloor != nullptr ? p_survivingFloor->getPlaneIdentity()
                                     : std::nullopt;
-    const std::optional<Floor::PlaneIdentity> absorbedIdentity =
+    const std::optional<semantic::Floor::PlaneIdentity> absorbedIdentity =
         p_absorbedFloor != nullptr ? p_absorbedFloor->getPlaneIdentity()
                                    : std::nullopt;
 
@@ -72,8 +74,8 @@ bool verifyLoopMergeFloors(
         return false;
     }
 
-    const std::optional<Floor::PlaneIdentity> transformedAbsorbedIdentity =
-        Floor::transformPlaneIdentity(
+    const std::optional<semantic::Floor::PlaneIdentity> transformedAbsorbedIdentity =
+        semantic::Floor::transformPlaneIdentity(
             *absorbedIdentity,
             transform_absorbedWorldToSurvivingWorld_in);
     double floorNormalAngle_deg = std::numeric_limits<double>::infinity();
@@ -81,10 +83,10 @@ bool verifyLoopMergeFloors(
 
     const bool floorsMatch =
         transformedAbsorbedIdentity.has_value() &&
-        Floor::planeIdentitiesMatch(*survivingIdentity,
+        semantic::Floor::planeIdentitiesMatch(*survivingIdentity,
                                     *transformedAbsorbedIdentity,
-                                    Floor::kMergeMaxPlaneNormalAngle_deg,
-                                    Floor::kMergeMaxPlaneOffset_m,
+                                    semantic::Floor::kMergeMaxPlaneNormalAngle_deg,
+                                    semantic::Floor::kMergeMaxPlaneOffset_m,
                                     floorNormalAngle_deg,
                                     floorOffset_m);
 
@@ -96,8 +98,8 @@ bool verifyLoopMergeFloors(
                   << p_absorbedMap_in->GetId()
                   << " floor planes mismatch (angle=" << floorNormalAngle_deg
                   << " deg, offset=" << floorOffset_m
-                  << " m; limits=" << Floor::kMergeMaxPlaneNormalAngle_deg
-                  << " deg/" << Floor::kMergeMaxPlaneOffset_m
+                  << " m; limits=" << semantic::Floor::kMergeMaxPlaneNormalAngle_deg
+                  << " deg/" << semantic::Floor::kMergeMaxPlaneOffset_m
                   << " m). result=REJECTED committed=0" << std::endl;
         return false;
     }
@@ -114,8 +116,8 @@ bool verifyLoopMergeFloors(
 namespace
 {
 
-void mergeFloorEvidenceAndRooms(Floor *p_retainedFloor_inout,
-                                Floor *p_duplicateFloor_in)
+void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
+                                semantic::Floor *p_duplicateFloor_in)
 {
     if (p_retainedFloor_inout == nullptr || p_duplicateFloor_in == nullptr ||
         p_retainedFloor_inout == p_duplicateFloor_in)
@@ -123,11 +125,11 @@ void mergeFloorEvidenceAndRooms(Floor *p_retainedFloor_inout,
         return;
     }
 
-    if (Floor::selectBestObservedFloor(
+    if (semantic::Floor::selectBestObservedFloor(
             {p_retainedFloor_inout, p_duplicateFloor_in}) ==
         p_duplicateFloor_in)
     {
-        const std::optional<Floor::PlaneIdentity> betterIdentity =
+        const std::optional<semantic::Floor::PlaneIdentity> betterIdentity =
             p_duplicateFloor_in->getPlaneIdentity();
         if (betterIdentity.has_value())
         {
@@ -144,7 +146,7 @@ void mergeFloorEvidenceAndRooms(Floor *p_retainedFloor_inout,
         }
     }
 
-    for (Room *p_room : p_duplicateFloor_in->getRooms())
+    for (semantic::Room *p_room : p_duplicateFloor_in->getRooms())
     {
         if (p_room != nullptr && !p_room->isBad())
         {
@@ -160,26 +162,26 @@ void collapseMergedFloors(Map *p_survivingMap_in)
         return;
     }
 
-    const std::vector<Floor *> allFloors = p_survivingMap_in->GetAllFloors();
+    const std::vector<semantic::Floor *> allFloors = p_survivingMap_in->GetAllFloors();
     if (allFloors.size() <= 1U)
     {
         return;
     }
 
-    Floor *p_keeperFloor = Floor::selectBestObservedFloor(allFloors);
+    semantic::Floor *p_keeperFloor = semantic::Floor::selectBestObservedFloor(allFloors);
     if (p_keeperFloor == nullptr)
     {
         return;
     }
 
-    for (Floor *p_duplicateFloor : allFloors)
+    for (semantic::Floor *p_duplicateFloor : allFloors)
     {
         if (p_duplicateFloor == nullptr || p_duplicateFloor == p_keeperFloor)
         {
             continue;
         }
 
-        for (Room *p_room : p_duplicateFloor->getRooms())
+        for (semantic::Room *p_room : p_duplicateFloor->getRooms())
         {
             if (p_room != nullptr && !p_room->isBad())
             {
@@ -188,14 +190,14 @@ void collapseMergedFloors(Map *p_survivingMap_in)
         }
 
         p_survivingMap_in->EraseMapFloor(p_duplicateFloor);
-        std::cout << "[LoopClosing] Fused duplicate Floor#"
-                  << p_duplicateFloor->getId() << " into Floor#"
+        std::cout << "[LoopClosing] Fused duplicate semantic::Floor#"
+                  << p_duplicateFloor->getId() << " into semantic::Floor#"
                   << p_keeperFloor->getId()
                   << " and retained the better-observed plane identity."
                   << std::endl;
     }
 
-    for (Room *p_room : p_survivingMap_in->GetAllDetectedMapRooms())
+    for (semantic::Room *p_room : p_survivingMap_in->GetAllDetectedMapRooms())
     {
         if (p_room != nullptr && !p_room->isBad())
         {
@@ -476,8 +478,8 @@ void LoopClosing::Run(void)
                 /* Merge if NewDetectCommonRegions() indicates so */
                 if (mbMergeDetected)
                 {
-                    SemanticMergeDecision mergeDecision =
-                        SemanticMergeDecision::REJECT;
+                    semantic::SemanticMergeDecision mergeDecision =
+                        semantic::SemanticMergeDecision::REJECT;
 
                     /* If required, confirm IMU is working */
                     if ((mpTracker->mSensor == System::IMU_MONOCULAR ||
@@ -629,7 +631,7 @@ void LoopClosing::Run(void)
                         SetMergeStatus(false);
 
 #ifdef REGISTER_TIMES
-                        if (mergeDecision == SemanticMergeDecision::ACCEPT)
+                        if (mergeDecision == semantic::SemanticMergeDecision::ACCEPT)
                         {
                             std::chrono::steady_clock::time_point
                                 time_EndMerge =
@@ -646,7 +648,7 @@ void LoopClosing::Run(void)
 #endif
                     }
 
-                    if (mergeDecision == SemanticMergeDecision::ACCEPT)
+                    if (mergeDecision == semantic::SemanticMergeDecision::ACCEPT)
                     {
                         std::cout
                             << "[LoopClosing] Map merge has been finished."
@@ -682,7 +684,7 @@ void LoopClosing::Run(void)
                             mbLoopDetected    = false;
                         }
                     }
-                    else if (mergeDecision == SemanticMergeDecision::DEFER)
+                    else if (mergeDecision == semantic::SemanticMergeDecision::DEFER)
                     {
                         /* Retain the matched keyframe and accumulated
                          * coincidences. The next keyframe can refine the same
@@ -2055,7 +2057,7 @@ void LoopClosing::CorrectLoop()
             ->mnId; // TODO old varible, it is not use in the new algorithm
 }
 
-SemanticMergeDecision LoopClosing::MergeLocal()
+semantic::SemanticMergeDecision LoopClosing::MergeLocal()
 {
     /* ---------------------------------------------------------------------- *
      * SECTION 1 - INITIALISATION
@@ -2073,14 +2075,14 @@ SemanticMergeDecision LoopClosing::MergeLocal()
     constexpr int kNumTemporalKFs = 25;
 
     /* Extract the system parameters */
-    sysParams = SystemParams::GetParams();
+    sysParams = types::SystemParams::GetParams();
 
     /* Reject stale place-recognition candidates before stopping other workers.
      */
     if (mpCurrentKF == nullptr || mpMergeMatchedKF == nullptr ||
         mpCurrentKF->isBad() || mpMergeMatchedKF->isBad())
     {
-        return SemanticMergeDecision::REJECT;
+        return semantic::SemanticMergeDecision::REJECT;
     }
 
     Map *pCurrentMap = mpCurrentKF->GetMap();
@@ -2091,7 +2093,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
         pMergeMap->IsBad() || !mpAtlas->isActiveMap(pCurrentMap) ||
         !mpAtlas->isActiveMap(pMergeMap))
     {
-        return SemanticMergeDecision::REJECT;
+        return semantic::SemanticMergeDecision::REJECT;
     }
 
     /* ---------------------------------------------------------------------- *
@@ -2147,7 +2149,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
     {
         semanticUpdateLock.unlock();
         mpLocalMapper->Release();
-        return SemanticMergeDecision::REJECT;
+        return semantic::SemanticMergeDecision::REJECT;
     }
 
     const Sophus::SE3d Twc = mpCurrentKF->GetPoseInverse().cast<double>();
@@ -2157,24 +2159,24 @@ SemanticMergeDecision LoopClosing::MergeLocal()
     const g2o::Sim3    g2oSwCurrentWMerge = g2oNonCorrectedSwc * mg2oMergeScw;
     const g2o::Sim3    g2oSwMergeWCurrent = g2oSwCurrentWMerge.inverse();
 
-    const SemanticMergeGateResult semanticMergeGate =
-        SemanticVerify::evaluateMapMergeGate(
+    const semantic::SemanticMergeGateResult semanticMergeGate =
+        semantic::SemanticVerify::evaluateMapMergeGate(
             pCurrentMap,
             pMergeMap,
             g2oSwCurrentWMerge,
-            SemanticVerify::configFromSystemParams());
+            semantic::SemanticVerify::configFromSystemParams());
     const std::string floorVerificationResult = semanticMergeGate.floorDecision;
     std::cout << "[SemanticMergeGate] surviving_map=" << pCurrentMap->GetId()
               << " absorbed_map=" << pMergeMap->GetId() << " decision="
-              << SemanticVerify::mergeDecisionName(semanticMergeGate.decision)
+              << semantic::SemanticVerify::mergeDecisionName(semanticMergeGate.decision)
               << " reason="
-              << SemanticVerify::mergeReasonName(semanticMergeGate.reason)
+              << semantic::SemanticVerify::mergeReasonName(semanticMergeGate.reason)
               << " shared_rooms=" << semanticMergeGate.sharedRoomCount
               << " aligned_rooms=" << semanticMergeGate.alignedRoomCount
               << " matched_walls=" << semanticMergeGate.matchedWallCount
               << " matched_passages=" << semanticMergeGate.matchedPassageCount
               << " committed=0" << std::endl;
-    if (semanticMergeGate.decision != SemanticMergeDecision::ACCEPT)
+    if (semanticMergeGate.decision != semantic::SemanticMergeDecision::ACCEPT)
     {
         semanticUpdateLock.unlock();
         mpLocalMapper->Release();
@@ -2888,7 +2890,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
      * ---------------------------------------------------------------------- */
 
     /* Copy all planes currently owned by the merge map */
-    std::vector<Plane *> vpCurrentMapPlanes = pMergeMap->GetAllPlanes();
+    std::vector<geometric::Plane *> vpCurrentMapPlanes = pMergeMap->GetAllPlanes();
 
     /* Copy all keyframes currently owned by the merge map */
     std::vector<KeyFrame *> vpCurrentMapKFs = pMergeMap->GetAllKeyFrames();
@@ -2907,22 +2909,22 @@ SemanticMergeDecision LoopClosing::MergeLocal()
     std::vector<MapPoint *> vpCurrentMapMPs = pMergeMap->GetAllMapPoints();
 
     /* Copy all markers currently owned by the merge map */
-    std::vector<Marker *> vpCurrentMapMarkers = pMergeMap->GetAllMarkers();
+    std::vector<semantic::Marker *> vpCurrentMapMarkers = pMergeMap->GetAllMarkers();
 
     /* Copy all passages currently owned by the merge map */
-    std::vector<ORB_SLAM3::Passage *> vpCurrentMapPassages =
+    std::vector<vs_graphs::core::semantic::Passage *> vpCurrentMapPassages =
         pMergeMap->GetAllPassages();
 
     /* Copy all detected rooms currently owned by the merge map */
-    std::vector<Room *> vpCurrentDetectedMapRooms =
+    std::vector<semantic::Room *> vpCurrentDetectedMapRooms =
         pMergeMap->GetAllDetectedMapRooms();
 
     /* Copy all marker-based rooms currently owned by the merge map */
-    std::vector<Room *> vpCurrentMarkerBasedMapRooms =
+    std::vector<semantic::Room *> vpCurrentMarkerBasedMapRooms =
         pMergeMap->GetAllMarkerBasedMapRooms();
 
     /* Copy all floors currently owned by the merge map */
-    std::vector<Floor *> vpCurrentMapFloors = pMergeMap->GetAllFloors();
+    std::vector<semantic::Floor *> vpCurrentMapFloors = pMergeMap->GetAllFloors();
 
     /* Stop local mapping before any remaining ownership is transferred. */
     mpLocalMapper->RequestStop();
@@ -3178,7 +3180,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
             semanticGeometryWasOptimized || semanticGeometryWasPropagated;
 
         int nextPlaneId = 0;
-        for (Plane *p_existingPlane : pCurrentMap->GetAllPlanes())
+        for (geometric::Plane *p_existingPlane : pCurrentMap->GetAllPlanes())
         {
             if (p_existingPlane != nullptr)
             {
@@ -3188,7 +3190,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
         }
 
         int nextMarkerId = 0;
-        for (Marker *p_existingMarker : pCurrentMap->GetAllMarkers())
+        for (semantic::Marker *p_existingMarker : pCurrentMap->GetAllMarkers())
         {
             if (p_existingMarker != nullptr)
             {
@@ -3233,7 +3235,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
          *
          * Geometry is preserved while map ownership is updated.
          * -------------------------------------------------------------- */
-        for (Plane *plane : vpCurrentMapPlanes)
+        for (geometric::Plane *plane : vpCurrentMapPlanes)
         {
             /* Skip invalid planes */
             if (plane == nullptr || plane->isBad())
@@ -3268,7 +3270,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
 
         // Loop over the Markers of the current map and move them to the new
         // map
-        for (Marker *pMarker : vpCurrentMapMarkers)
+        for (semantic::Marker *pMarker : vpCurrentMapMarkers)
         {
             if (!pMarker)
                 continue;
@@ -3288,7 +3290,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
          * Loop over the passages of the primary map and move them to the
          * secondary map.
          */
-        for (ORB_SLAM3::Passage *passage : vpCurrentMapPassages)
+        for (vs_graphs::core::semantic::Passage *passage : vpCurrentMapPassages)
         {
             /* Skip invalid rooms */
             if (passage == nullptr)
@@ -3305,8 +3307,8 @@ SemanticMergeDecision LoopClosing::MergeLocal()
                 passage->applyTransform(g2oSwCurrentWMerge);
             }
 
-            Passage *p_retainedPassage = nullptr;
-            for (Passage *p_existingPassage : pCurrentMap->GetAllPassages())
+            semantic::Passage *p_retainedPassage = nullptr;
+            for (semantic::Passage *p_existingPassage : pCurrentMap->GetAllPassages())
             {
                 if (p_existingPassage != nullptr &&
                     p_existingPassage->getId() == passage->getId())
@@ -3320,7 +3322,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
             if (p_retainedPassage != nullptr)
             {
                 p_retainedPassage->mergeFromDuplicate(passage);
-                for (Room *p_room : vpCurrentDetectedMapRooms)
+                for (semantic::Room *p_room : vpCurrentDetectedMapRooms)
                 {
                     if (p_room != nullptr)
                     {
@@ -3328,7 +3330,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
                                                           p_retainedPassage);
                     }
                 }
-                for (Room *p_room : vpCurrentMarkerBasedMapRooms)
+                for (semantic::Room *p_room : vpCurrentMarkerBasedMapRooms)
                 {
                     if (p_room != nullptr)
                     {
@@ -3348,7 +3350,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
          * Loop over the rooms of the primary map and move them to the
          * secondary map.
          */
-        for (ORB_SLAM3::Room *room : vpCurrentDetectedMapRooms)
+        for (vs_graphs::core::semantic::Room *room : vpCurrentDetectedMapRooms)
         {
             /* Skip invalid rooms */
             if (room == nullptr || room->isBad())
@@ -3377,7 +3379,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
 
         // Loop over the Marker-based Rooms of the current map and move them
         // to the new map
-        for (ORB_SLAM3::Room *pRoom : vpCurrentMarkerBasedMapRooms)
+        for (vs_graphs::core::semantic::Room *pRoom : vpCurrentMarkerBasedMapRooms)
         {
             if (!pRoom)
                 continue;
@@ -3392,7 +3394,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
             pMergeMap->EraseMarkerBasedMapRoom(pRoom);
         }
 
-        for (Floor *p_floor : vpCurrentMapFloors)
+        for (semantic::Floor *p_floor : vpCurrentMapFloors)
         {
             if (p_floor == nullptr)
             {
@@ -3404,8 +3406,8 @@ SemanticMergeDecision LoopClosing::MergeLocal()
                 p_floor->applyTransform(g2oSwCurrentWMerge);
             }
             pMergeMap->EraseMapFloor(p_floor);
-            Floor *p_retainedFloor = nullptr;
-            for (Floor *p_existingFloor : pCurrentMap->GetAllFloors())
+            semantic::Floor *p_retainedFloor = nullptr;
+            for (semantic::Floor *p_existingFloor : pCurrentMap->GetAllFloors())
             {
                 if (p_existingFloor != nullptr &&
                     p_existingFloor->getId() == p_floor->getId())
@@ -3436,14 +3438,14 @@ SemanticMergeDecision LoopClosing::MergeLocal()
         pCurrentMap->SetSkeletonEdges({});
 
         /* Rebuild imported room-wall index entries before fusion. */
-        for (Room *p_room : pCurrentMap->GetAllRooms())
+        for (semantic::Room *p_room : pCurrentMap->GetAllRooms())
         {
             if (p_room == nullptr || p_room->isBad())
             {
                 continue;
             }
 
-            for (Plane *p_wall : p_room->getWalls())
+            for (geometric::Plane *p_wall : p_room->getWalls())
             {
                 if (p_wall != nullptr && !p_wall->isBad())
                 {
@@ -3458,7 +3460,7 @@ SemanticMergeDecision LoopClosing::MergeLocal()
             Utils::reAssociateSemanticPlanes(mpAtlas);
         }
 
-        std::vector<Room *> importedRooms = vpCurrentDetectedMapRooms;
+        std::vector<semantic::Room *> importedRooms = vpCurrentDetectedMapRooms;
         importedRooms.insert(importedRooms.end(),
                              vpCurrentMarkerBasedMapRooms.begin(),
                              vpCurrentMarkerBasedMapRooms.end());
@@ -3524,16 +3526,16 @@ SemanticMergeDecision LoopClosing::MergeLocal()
         relaunchGlobalBundleAdjustment(pCurrentMap);
     }
 
-    return SemanticMergeDecision::ACCEPT;
+    return semantic::SemanticMergeDecision::ACCEPT;
 }
 
-SemanticMergeDecision LoopClosing::MergeLocalInertial()
+semantic::SemanticMergeDecision LoopClosing::MergeLocalInertial()
 {
     /* Reject stale place-recognition candidates before stopping workers */
     if (mpCurrentKF == nullptr || mpMergeMatchedKF == nullptr ||
         mpCurrentKF->isBad() || mpMergeMatchedKF->isBad())
     {
-        return SemanticMergeDecision::REJECT;
+        return semantic::SemanticMergeDecision::REJECT;
     }
 
     Map *pCurrentMap = mpCurrentKF->GetMap();
@@ -3544,7 +3546,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
         pMergeMap->IsBad() || !mpAtlas->isActiveMap(pCurrentMap) ||
         !mpAtlas->isActiveMap(pMergeMap))
     {
-        return SemanticMergeDecision::REJECT;
+        return semantic::SemanticMergeDecision::REJECT;
     }
 
     int numTemporalKFs = 11; // [TODO] Set by parameter
@@ -3585,27 +3587,27 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
     {
         semanticUpdateLock.unlock();
         mpLocalMapper->Release();
-        return SemanticMergeDecision::REJECT;
+        return semantic::SemanticMergeDecision::REJECT;
     }
 
-    const SemanticMergeGateResult semanticMergeGate =
-        SemanticVerify::evaluateMapMergeGate(
+    const semantic::SemanticMergeGateResult semanticMergeGate =
+        semantic::SemanticVerify::evaluateMapMergeGate(
             pCurrentMap,
             pMergeMap,
             mSold_new.inverse(),
-            SemanticVerify::configFromSystemParams());
+            semantic::SemanticVerify::configFromSystemParams());
     const std::string floorVerificationResult = semanticMergeGate.floorDecision;
     std::cout << "[SemanticMergeGate] surviving_map=" << pCurrentMap->GetId()
               << " absorbed_map=" << pMergeMap->GetId() << " decision="
-              << SemanticVerify::mergeDecisionName(semanticMergeGate.decision)
+              << semantic::SemanticVerify::mergeDecisionName(semanticMergeGate.decision)
               << " reason="
-              << SemanticVerify::mergeReasonName(semanticMergeGate.reason)
+              << semantic::SemanticVerify::mergeReasonName(semanticMergeGate.reason)
               << " shared_rooms=" << semanticMergeGate.sharedRoomCount
               << " aligned_rooms=" << semanticMergeGate.alignedRoomCount
               << " matched_walls=" << semanticMergeGate.matchedWallCount
               << " matched_passages=" << semanticMergeGate.matchedPassageCount
               << " committed=0" << std::endl;
-    if (semanticMergeGate.decision != SemanticMergeDecision::ACCEPT)
+    if (semanticMergeGate.decision != semantic::SemanticMergeDecision::ACCEPT)
     {
         semanticUpdateLock.unlock();
         mpLocalMapper->Release();
@@ -3664,7 +3666,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
     }
 
     /* Retain imported room identities for post-optimization reconciliation. */
-    std::vector<Room *> importedRooms;
+    std::vector<semantic::Room *> importedRooms;
 
     /* Load KFs and MPs from merge map */
     {
@@ -3678,15 +3680,15 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
 
         vector<KeyFrame *> vpMergeMapKFs     = pMergeMap->GetAllKeyFrames();
         vector<MapPoint *> vpMergeMapMPs     = pMergeMap->GetAllMapPoints();
-        vector<Plane *>    vpMergeMapPlanes  = pMergeMap->GetAllPlanes();
-        vector<Marker *>   vpMergeMapMarkers = pMergeMap->GetAllMarkers();
-        vector<ORB_SLAM3::Passage *> vpMergeMapPassages =
+        vector<geometric::Plane *>    vpMergeMapPlanes  = pMergeMap->GetAllPlanes();
+        vector<semantic::Marker *>   vpMergeMapMarkers = pMergeMap->GetAllMarkers();
+        vector<vs_graphs::core::semantic::Passage *> vpMergeMapPassages =
             pMergeMap->GetAllPassages();
-        vector<Room *> vpMergeMapDetectedRooms =
+        vector<semantic::Room *> vpMergeMapDetectedRooms =
             pMergeMap->GetAllDetectedMapRooms();
-        vector<Room *> vpMergeMapMarkerRooms =
+        vector<semantic::Room *> vpMergeMapMarkerRooms =
             pMergeMap->GetAllMarkerBasedMapRooms();
-        vector<Floor *> vpMergeMapFloors = pMergeMap->GetAllFloors();
+        vector<semantic::Floor *> vpMergeMapFloors = pMergeMap->GetAllFloors();
 
         importedRooms = vpMergeMapDetectedRooms;
         importedRooms.insert(importedRooms.end(),
@@ -3717,7 +3719,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
         }
 
         int nextPlaneId = 0;
-        for (Plane *p_existingPlane : pCurrentMap->GetAllPlanes())
+        for (geometric::Plane *p_existingPlane : pCurrentMap->GetAllPlanes())
         {
             if (p_existingPlane != nullptr)
             {
@@ -3726,7 +3728,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
             }
         }
 
-        for (Plane *p_plane : vpMergeMapPlanes)
+        for (geometric::Plane *p_plane : vpMergeMapPlanes)
         {
             if (p_plane == nullptr || p_plane->isBad())
             {
@@ -3740,7 +3742,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
         }
 
         int nextMarkerId = 0;
-        for (Marker *p_existingMarker : pCurrentMap->GetAllMarkers())
+        for (semantic::Marker *p_existingMarker : pCurrentMap->GetAllMarkers())
         {
             if (p_existingMarker != nullptr)
             {
@@ -3749,7 +3751,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
             }
         }
 
-        for (Marker *p_marker : vpMergeMapMarkers)
+        for (semantic::Marker *p_marker : vpMergeMapMarkers)
         {
             if (p_marker == nullptr)
             {
@@ -3762,15 +3764,15 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
             pMergeMap->EraseMapMarker(p_marker);
         }
 
-        for (ORB_SLAM3::Passage *p_passage : vpMergeMapPassages)
+        for (vs_graphs::core::semantic::Passage *p_passage : vpMergeMapPassages)
         {
             if (p_passage == nullptr)
             {
                 continue;
             }
 
-            Passage *p_retainedPassage = nullptr;
-            for (Passage *p_existingPassage : pCurrentMap->GetAllPassages())
+            semantic::Passage *p_retainedPassage = nullptr;
+            for (semantic::Passage *p_existingPassage : pCurrentMap->GetAllPassages())
             {
                 if (p_existingPassage != nullptr &&
                     p_existingPassage->getId() == p_passage->getId())
@@ -3784,7 +3786,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
             if (p_retainedPassage != nullptr)
             {
                 p_retainedPassage->mergeFromDuplicate(p_passage);
-                for (Room *p_room : vpMergeMapDetectedRooms)
+                for (semantic::Room *p_room : vpMergeMapDetectedRooms)
                 {
                     if (p_room != nullptr)
                     {
@@ -3792,7 +3794,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
                                                           p_retainedPassage);
                     }
                 }
-                for (Room *p_room : vpMergeMapMarkerRooms)
+                for (semantic::Room *p_room : vpMergeMapMarkerRooms)
                 {
                     if (p_room != nullptr)
                     {
@@ -3808,7 +3810,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
             pCurrentMap->AddMapPassage(p_passage);
         }
 
-        for (Room *p_room : vpMergeMapDetectedRooms)
+        for (semantic::Room *p_room : vpMergeMapDetectedRooms)
         {
             if (p_room == nullptr || p_room->isBad())
             {
@@ -3820,7 +3822,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
             pMergeMap->EraseDetectedMapRoom(p_room);
         }
 
-        for (Room *p_room : vpMergeMapMarkerRooms)
+        for (semantic::Room *p_room : vpMergeMapMarkerRooms)
         {
             if (p_room == nullptr || p_room->isBad())
             {
@@ -3832,7 +3834,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
             pMergeMap->EraseMarkerBasedMapRoom(p_room);
         }
 
-        for (Floor *p_floor : vpMergeMapFloors)
+        for (semantic::Floor *p_floor : vpMergeMapFloors)
         {
             if (p_floor == nullptr)
             {
@@ -3840,8 +3842,8 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
             }
 
             pMergeMap->EraseMapFloor(p_floor);
-            Floor *p_retainedFloor = nullptr;
-            for (Floor *p_existingFloor : pCurrentMap->GetAllFloors())
+            semantic::Floor *p_retainedFloor = nullptr;
+            for (semantic::Floor *p_existingFloor : pCurrentMap->GetAllFloors())
             {
                 if (p_existingFloor != nullptr &&
                     p_existingFloor->getId() == p_floor->getId())
@@ -3865,14 +3867,14 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
         pCurrentMap->SetSkeletonClusterPoints({});
         pCurrentMap->SetSkeletonEdges({});
 
-        for (Room *p_room : pCurrentMap->GetAllRooms())
+        for (semantic::Room *p_room : pCurrentMap->GetAllRooms())
         {
             if (p_room == nullptr || p_room->isBad())
             {
                 continue;
             }
 
-            for (Plane *p_wall : p_room->getWalls())
+            for (geometric::Plane *p_wall : p_room->getWalls())
             {
                 if (p_wall != nullptr && !p_wall->isBad())
                 {
@@ -4043,7 +4045,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
 
     /* Fuse semantic hypotheses only after the final inertial pose correction.
      */
-    if (SystemParams::GetParams()->sem_seg.reassociate.enabled)
+    if (types::SystemParams::GetParams()->sem_seg.reassociate.enabled)
     {
         Utils::reAssociateSemanticPlanes(mpAtlas);
     }
@@ -4052,7 +4054,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
      * geometry reassociation is disabled. */
     Utils::fuseDuplicateRoomsAfterMerge(pCurrentMap, importedRooms);
 
-    if (SystemParams::GetParams()->sem_seg.reassociate.enabled)
+    if (types::SystemParams::GetParams()->sem_seg.reassociate.enabled)
     {
         Utils::reAssociateRooms(mpAtlas);
         Utils::reAssociatePassages(mpAtlas);
@@ -4079,7 +4081,7 @@ SemanticMergeDecision LoopClosing::MergeLocalInertial()
         relaunchGlobalBundleAdjustment(pCurrentMap);
     }
 
-    return SemanticMergeDecision::ACCEPT;
+    return semantic::SemanticMergeDecision::ACCEPT;
 }
 
 void LoopClosing::CheckObservations(set<KeyFrame *> &spKFsMap1,
@@ -4574,7 +4576,7 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
                 identityTransform_WorldToWorld);
 
             /* Preserve plane variables which were optimized directly by GBA. */
-            for (Plane *p_plane : pActiveMap->GetAllPlanes())
+            for (geometric::Plane *p_plane : pActiveMap->GetAllPlanes())
             {
                 if (p_plane == nullptr || p_plane->isBad() ||
                     p_plane->mnBAGlobalForKF != nLoopKF)
@@ -4645,4 +4647,5 @@ bool LoopClosing::isFinished()
     return mbFinished;
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

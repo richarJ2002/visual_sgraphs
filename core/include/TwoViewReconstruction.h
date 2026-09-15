@@ -22,7 +22,9 @@
 
 #include <sophus/se3.hpp>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class TwoViewReconstruction
@@ -87,6 +89,7 @@ namespace ORB_SLAM3
         std::vector<std::vector<size_t>> mvSets;
     };
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs
 
 #endif // TwoViewReconstruction_H

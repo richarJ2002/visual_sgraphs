@@ -43,8 +43,8 @@
  * SUCH DAMAGE.                                                               *
  ******************************************************************************/
 
-#ifndef ORB_SLAM3_MLPNPSOLVER_H
-#define ORB_SLAM3_MLPNPSOLVER_H
+#ifndef VS_GRAPHS_CORE_MLPNPSOLVER_H
+#define VS_GRAPHS_CORE_MLPNPSOLVER_H
 
 #include "MapPoint.h"
 #include "Frame.h"
@@ -52,7 +52,9 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
     class MLPnPsolver
     {
@@ -243,9 +245,9 @@ namespace ORB_SLAM3
         // Max square error associated with scale level. Max error = th*th*sigma(level)*sigma(level)
         vector<float> mvMaxError;
 
-        GeometricCamera *mpCamera;
+        camera_models::GeometricCamera *mpCamera;
     };
 
-}
-
-#endif // ORB_SLAM3_MLPNPSOLVER_H
+} // namespace core
+} // namespace vs_graphs
+#endif // VS_GRAPHS_CORE_MLPNPSOLVER_H

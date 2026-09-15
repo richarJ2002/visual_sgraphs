@@ -37,7 +37,9 @@
 #include <boost/serialization/array.hpp>
 #include <boost/serialization/map.hpp>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class KeyFrame;
@@ -250,6 +252,7 @@ namespace ORB_SLAM3
         std::mutex mMutexMap;
     };
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs
 
 #endif // MAPPOINT_H

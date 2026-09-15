@@ -39,7 +39,9 @@
 #include "Semantic/SemanticDiagnostics/objects.h"
 #include "Semantic/SemanticReportCache/objects/SemanticReportCacheEntry.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -100,6 +102,7 @@ SemanticDiagnosticUpdate
                                   SemanticDiagnosticState        &state_in_out);
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_DIAGNOSTICS_PUBLIC_FUNCTIONS_H

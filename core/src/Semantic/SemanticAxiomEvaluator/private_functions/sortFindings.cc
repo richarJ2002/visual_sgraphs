@@ -27,7 +27,9 @@
 
 #include <algorithm>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -90,4 +92,5 @@ void sortFindings(std::vector<Finding> &findings_inout)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

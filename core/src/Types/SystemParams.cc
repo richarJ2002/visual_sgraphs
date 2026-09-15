@@ -23,7 +23,11 @@
 #include <cmath>
 #include <stdexcept>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace types
 {
 SystemParams *SystemParams::mSystemParams = nullptr;
 
@@ -631,4 +635,6 @@ void SystemParams::SetParams(const std::string &strConfigFile)
         exit(1);
     }
 }
-} // namespace ORB_SLAM3
+} // namespace types
+} // namespace core
+} // namespace vs_graphs

@@ -47,18 +47,20 @@
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/vector.hpp>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 class Map;
 class MapPoint;
 class Frame;
 class KeyFrameDatabase;
-class GeometricCamera;
+namespace camera_models { class GeometricCamera; }
 
-class Marker;
-class Plane;
-class Passage;
+namespace semantic { class Marker; }
+namespace geometric { class Plane; }
+namespace semantic { class Passage; }
 
 class KeyFrame
 {
@@ -269,14 +271,14 @@ class KeyFrame
     MapPoint               *GetMapPoint(const size_t &idx);
 
     // MapMarker observation functions
-    void                  AddMapMarker(Marker *marker);
-    std::vector<Marker *> GetMapMarkers();
+    void                  AddMapMarker(semantic::Marker *marker);
+    std::vector<semantic::Marker *> GetMapMarkers();
 
     // MapPlane observation functions
-    void AddMapPlane(Plane *plane);
-    std::vector<Plane *>
+    void AddMapPlane(geometric::Plane *plane);
+    std::vector<geometric::Plane *>
          GetMapPlanes(); // After getting planes, need to check for NULLs
-    void RemoveMapPlane(Plane *plane);
+    void RemoveMapPlane(geometric::Plane *plane);
 
     /*!
      * @brief       Replaces a retired mapped plane in this keyframe.
@@ -292,14 +294,14 @@ class KeyFrame
      *
      * @return      True when the retired plane was present.
      */
-    bool ReplaceMapPlane(Plane *p_retiredPlane_in, Plane *p_retainedPlane_in);
+    bool ReplaceMapPlane(geometric::Plane *p_retiredPlane_in, geometric::Plane *p_retainedPlane_in);
 
     /*!
      * @brief       Adds a mapped passage association.
      *
      * @param[in]   p_passage_in Passage observed by this keyframe.
      */
-    void AddMapPassage(ORB_SLAM3::Passage *p_passage_in);
+    void AddMapPassage(vs_graphs::core::semantic::Passage *p_passage_in);
 
     /*!
      * @brief       Replaces a retired passage association after fusion.
@@ -309,10 +311,10 @@ class KeyFrame
      *
      * @return      True when the retired passage was present.
      */
-    bool ReplaceMapPassage(ORB_SLAM3::Passage *p_retiredPassage_in,
-                           ORB_SLAM3::Passage *p_retainedPassage_in);
+    bool ReplaceMapPassage(vs_graphs::core::semantic::Passage *p_retiredPassage_in,
+                           vs_graphs::core::semantic::Passage *p_retainedPassage_in);
 
-    std::vector<ORB_SLAM3::Passage *> GetMapPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> GetMapPassages();
 
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x,
@@ -364,10 +366,10 @@ class KeyFrame
 
     void PreSave(set<KeyFrame *>        &spKF,
                  set<MapPoint *>        &spMP,
-                 set<GeometricCamera *> &spCam);
+                 set<camera_models::GeometricCamera *> &spCam);
     void PostLoad(map<long unsigned int, KeyFrame *>   &mpKFid,
                   map<long unsigned int, MapPoint *>   &mpMPid,
-                  map<unsigned int, GeometricCamera *> &mpCamId);
+                  map<unsigned int, camera_models::GeometricCamera *> &mpCamId);
 
     void SetORBVocabulary(ORBVocabulary *pORBVoc);
     void SetKeyFrameDatabase(KeyFrameDatabase *pKFDB);
@@ -522,13 +524,13 @@ class KeyFrame
     std::vector<MapPoint *> mvpMapPoints;
 
     // Markers available in each keyframe
-    std::vector<Marker *> mvpMapMarkers;
+    std::vector<semantic::Marker *> mvpMapMarkers;
 
     // Planes available in each keyframe
-    std::vector<Plane *> mvpMapPlanes;
+    std::vector<geometric::Plane *> mvpMapPlanes;
 
     // Doorways available in each keyframe
-    std::vector<ORB_SLAM3::Passage *> mvpMapPassages;
+    std::vector<vs_graphs::core::semantic::Passage *> mvpMapPassages;
 
     // For save relation without pointer, this is necessary for save/load
     // function
@@ -569,7 +571,7 @@ class KeyFrame
     float mHalfBaseline; // Only for visualization
 
     // Variables to be passed to GeometricSegmentation
-    std::vector<Marker *>   mCurrentFrameMarkers;
+    std::vector<semantic::Marker *>   mCurrentFrameMarkers;
     std::vector<MapPoint *> mCurrentFrameMapPoints;
 
     // point clouds
@@ -596,7 +598,7 @@ class KeyFrame
     std::mutex mMutexMap;
 
   public:
-    GeometricCamera *mpCamera, *mpCamera2;
+    camera_models::GeometricCamera *mpCamera, *mpCamera2;
 
     // Indexes of stereo observations correspondences
     std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
@@ -618,7 +620,7 @@ class KeyFrame
     Eigen::Matrix<float, 3, 3> GetRightRotation();
     Eigen::Vector3f            GetRightTranslation();
 
-    std::vector<Marker *>   getCurrentFrameMarkers() const;
+    std::vector<semantic::Marker *>   getCurrentFrameMarkers() const;
     std::vector<MapPoint *> getCurrentFrameMapPoints() const;
 
     // getters and setter for point clouds
@@ -649,6 +651,7 @@ class KeyFrame
     }
 };
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // KEYFRAME_H

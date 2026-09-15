@@ -20,7 +20,11 @@
 #include "GeometricCamera.h"
 #include "TwoViewReconstruction.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace camera_models
 {
     class Pinhole : public GeometricCamera
     {
@@ -93,6 +97,7 @@ namespace ORB_SLAM3
     private:
         TwoViewReconstruction *tvr;
     };
-}
-
+} // namespace camera_models
+} // namespace core
+} // namespace vs_graphs
 #endif

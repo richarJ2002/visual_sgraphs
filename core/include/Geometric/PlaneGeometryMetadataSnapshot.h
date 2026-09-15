@@ -31,7 +31,11 @@
 
 #include <Eigen/Core>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace geometric
 {
 /*!
  * @brief       Immutable copy of the cheap scalar plane-geometry fields,
@@ -80,6 +84,8 @@ struct PlaneGeometryMetadataSnapshot
     std::uint64_t successfulRefitGeneration{0U};
 };
 
-} // namespace ORB_SLAM3
+} // namespace geometric
+} // namespace core
+} // namespace vs_graphs
 
 #endif // PLANE_GEOMETRY_METADATA_SNAPSHOT_H

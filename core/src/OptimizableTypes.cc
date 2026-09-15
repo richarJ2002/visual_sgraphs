@@ -22,7 +22,9 @@
 
 #include "OptimizableTypes.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
     bool EdgeSE3ProjectXYZOnlyPose::read(std::istream &is)
     {
@@ -627,4 +629,5 @@ namespace ORB_SLAM3
                 os << " " << information()(i, j);
         return os.good();
     }
-}
+} // namespace core
+} // namespace vs_graphs

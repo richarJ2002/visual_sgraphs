@@ -25,7 +25,9 @@
 
 #include "Semantic/SemanticCanonicalSerialization/private_functions.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -94,4 +96,5 @@ bool isFindingLessTotalOrder(const Finding &lhs_in, const Finding &rhs_in)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

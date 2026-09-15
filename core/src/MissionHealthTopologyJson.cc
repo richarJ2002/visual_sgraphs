@@ -33,7 +33,9 @@
 #include "Semantic/SemanticAxiomEvaluator.h"
 #include "Semantic/SemanticAxiomEvaluator/EnumNames.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 namespace
@@ -201,4 +203,5 @@ nlohmann::json augmentMissionHealthTopologyJsonWithSemantics(
     return topologyJson_in;
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

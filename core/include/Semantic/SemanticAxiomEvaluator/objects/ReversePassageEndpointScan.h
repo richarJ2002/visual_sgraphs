@@ -33,7 +33,9 @@
 
 #include "Semantic/SemanticGraphSnapshot/objects/EntityKey.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -102,6 +104,7 @@ struct ReversePassageEndpointScan
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_AXIOM_EVALUATOR_REVERSE_PASSAGE_ENDPOINT_SCAN_H

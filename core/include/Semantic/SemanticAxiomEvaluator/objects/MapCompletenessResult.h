@@ -36,7 +36,9 @@
 #include "Semantic/SemanticAxiomEvaluator/objects/LegacyMapCompletenessResult.h"
 #include "Semantic/SemanticAxiomEvaluator/objects/ReasonCode.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -113,6 +115,7 @@ struct MapCompletenessResult
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_AXIOM_EVALUATOR_MAP_COMPLETENESS_RESULT_H

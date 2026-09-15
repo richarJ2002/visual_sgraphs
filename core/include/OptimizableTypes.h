@@ -20,8 +20,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef ORB_SLAM3_OPTIMIZABLETYPES_H
-#define ORB_SLAM3_OPTIMIZABLETYPES_H
+#ifndef VS_GRAPHS_CORE_OPTIMIZABLETYPES_H
+#define VS_GRAPHS_CORE_OPTIMIZABLETYPES_H
 
 #include "Thirdparty/g2o/g2o/core/base_unary_edge.h"
 #include "Thirdparty/g2o/g2o/core/base_multi_edge.h"
@@ -33,7 +33,9 @@
 #include <Thirdparty/g2o/g2o/types/vertex_plane.h>
 #include <Thirdparty/g2o/g2o/types/types_six_dof_expmap.h>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
     /**
      * The edge used to connect a MapPoint vertex (SBAPointXYZ) to a Camera vertex (SE3)
@@ -66,7 +68,7 @@ namespace ORB_SLAM3
         virtual void linearizeOplus();
 
         Eigen::Vector3d Xw;
-        GeometricCamera *pCamera;
+        camera_models::GeometricCamera *pCamera;
     };
 
     /**
@@ -105,7 +107,7 @@ namespace ORB_SLAM3
         virtual void linearizeOplus();
 
         Eigen::Vector3d Xw;
-        GeometricCamera *pCamera;
+        camera_models::GeometricCamera *pCamera;
     };
 
     /**
@@ -139,7 +141,7 @@ namespace ORB_SLAM3
         virtual void linearizeOplus();
 
         Eigen::Vector3d Xw;
-        GeometricCamera *pCamera;
+        camera_models::GeometricCamera *pCamera;
 
         g2o::SE3Quat mTrl;
     };
@@ -176,7 +178,7 @@ namespace ORB_SLAM3
 
         virtual void linearizeOplus();
 
-        GeometricCamera *pCamera;
+        camera_models::GeometricCamera *pCamera;
     };
 
     /**
@@ -211,7 +213,7 @@ namespace ORB_SLAM3
 
         virtual void linearizeOplus();
 
-        GeometricCamera *pCamera;
+        camera_models::GeometricCamera *pCamera;
         g2o::SE3Quat mTrl;
     };
 
@@ -243,12 +245,12 @@ namespace ORB_SLAM3
             setEstimate(s * estimate());
         }
 
-        GeometricCamera *pCamera1, *pCamera2;
+        camera_models::GeometricCamera *pCamera1, *pCamera2;
 
         bool _fix_scale;
     };
 
-    class EdgeSim3ProjectXYZ : public g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, ORB_SLAM3::VertexSim3Expmap>
+    class EdgeSim3ProjectXYZ : public g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, vs_graphs::core::VertexSim3Expmap>
     {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -258,7 +260,7 @@ namespace ORB_SLAM3
 
         void computeError()
         {
-            const ORB_SLAM3::VertexSim3Expmap *v1 = static_cast<const ORB_SLAM3::VertexSim3Expmap *>(_vertices[1]);
+            const vs_graphs::core::VertexSim3Expmap *v1 = static_cast<const vs_graphs::core::VertexSim3Expmap *>(_vertices[1]);
             const g2o::VertexSBAPointXYZ *v2 = static_cast<const g2o::VertexSBAPointXYZ *>(_vertices[0]);
 
             Eigen::Vector2d obs(_measurement);
@@ -276,7 +278,7 @@ namespace ORB_SLAM3
 
         void computeError()
         {
-            const ORB_SLAM3::VertexSim3Expmap *v1 = static_cast<const ORB_SLAM3::VertexSim3Expmap *>(_vertices[1]);
+            const vs_graphs::core::VertexSim3Expmap *v1 = static_cast<const vs_graphs::core::VertexSim3Expmap *>(_vertices[1]);
             const g2o::VertexSBAPointXYZ *v2 = static_cast<const g2o::VertexSBAPointXYZ *>(_vertices[0]);
 
             Eigen::Vector2d obs(_measurement);
@@ -902,6 +904,6 @@ namespace ORB_SLAM3
             _error[2] = d_pred - _measurement.d_B;
         }
     };
-}
-
+} // namespace core
+} // namespace vs_graphs
 #endif

@@ -25,12 +25,14 @@
 
 #include "Semantic/SemanticGraphSnapshot/private_functions.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
 
-void appendWallRef(Plane *p_wall_in, std::vector<RawPlaneRef> &refs_inout)
+void appendWallRef(geometric::Plane *p_wall_in, std::vector<RawPlaneRef> &refs_inout)
 {
     if (p_wall_in == nullptr)
     {
@@ -40,4 +42,5 @@ void appendWallRef(Plane *p_wall_in, std::vector<RawPlaneRef> &refs_inout)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

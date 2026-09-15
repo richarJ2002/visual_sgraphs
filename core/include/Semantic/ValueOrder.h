@@ -39,7 +39,9 @@
 #include "Semantic/SemanticGraphSnapshot/objects/EntityRef.h"
 #include "Semantic/SemanticGraphSnapshot/objects/RawPlaneRef.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -80,6 +82,7 @@ bool isEntityRefLess(const EntityRef &lhs_in, const EntityRef &rhs_in);
 bool isRawPlaneRefLess(const RawPlaneRef &lhs_in, const RawPlaneRef &rhs_in);
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_VALUE_ORDER_H

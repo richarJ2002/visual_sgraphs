@@ -21,7 +21,11 @@
 #include <cmath>
 #include <limits>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
 {
 
 Floor::Floor() :
@@ -280,13 +284,13 @@ Floor *Floor::selectBestObservedFloor(const std::vector<Floor *> &floors_in)
     return p_bestFloor;
 }
 
-std::vector<ORB_SLAM3::Room *> Floor::getRooms() const
+std::vector<vs_graphs::core::semantic::Room *> Floor::getRooms() const
 {
     std::lock_guard<std::mutex> lock(mMutexRooms);
     return rooms;
 }
 
-void Floor::addRoom(ORB_SLAM3::Room *value)
+void Floor::addRoom(vs_graphs::core::semantic::Room *value)
 {
     if (value == nullptr)
     {
@@ -313,7 +317,7 @@ void Floor::addRoom(ORB_SLAM3::Room *value)
     value->setFloor(this);
 }
 
-void Floor::setRooms(const std::vector<ORB_SLAM3::Room *> &value)
+void Floor::setRooms(const std::vector<vs_graphs::core::semantic::Room *> &value)
 {
     std::vector<Room *> newRooms;
     newRooms.reserve(value.size());
@@ -445,15 +449,17 @@ void Floor::detachRoom(Room *p_room_in)
     }
 }
 
-ORB_SLAM3::Map *Floor::getMap()
+vs_graphs::core::Map *Floor::getMap()
 {
     unique_lock<mutex> lock(mMutexMap);
     return mpMap;
 }
 
-void Floor::setMap(ORB_SLAM3::Map *pMap)
+void Floor::setMap(vs_graphs::core::Map *pMap)
 {
     unique_lock<mutex> lock(mMutexMap);
     mpMap = pMap;
 }
-} // namespace ORB_SLAM3
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs

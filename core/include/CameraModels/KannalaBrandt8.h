@@ -22,7 +22,11 @@
 
 #include "TwoViewReconstruction.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
+{
+namespace camera_models
 {
     class KannalaBrandt8 : public GeometricCamera
     {
@@ -111,6 +115,7 @@ namespace ORB_SLAM3
         void Triangulate(const cv::Point2f &p1, const cv::Point2f &p2, const Eigen::Matrix<float, 3, 4> &Tcw1,
                          const Eigen::Matrix<float, 3, 4> &Tcw2, Eigen::Vector3f &x3D);
     };
-}
-
+} // namespace camera_models
+} // namespace core
+} // namespace vs_graphs
 #endif // CAMERAMODELS_KANNALABRANDT8_H

@@ -38,7 +38,9 @@
 #include <include/CameraModels/Pinhole.h>
 #include <thread>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 long unsigned int Frame::nNextId               = 0;
@@ -169,10 +171,10 @@ Frame::Frame(const cv::Mat              &imColor,
              cv::Mat                    &distCoef,
              const float                &bf,
              const float                &thDepth,
-             GeometricCamera            *pCamera,
+             camera_models::GeometricCamera            *pCamera,
              Frame                      *pPrevF,
              const IMU::Calib           &ImuCalib,
-             const std::vector<Marker *> markers) :
+             const std::vector<semantic::Marker *> markers) :
     mpcpi(nullptr),
     mpORBvocabulary(voc),
     mpORBextractorLeft(extractorLeft),
@@ -318,12 +320,12 @@ Frame::Frame(const cv::Mat              &imColor,
              cv::Mat                    &distCoef,
              const float                &bf,
              const float                &thDepth,
-             GeometricCamera            *pCamera,
-             GeometricCamera            *pCamera2,
+             camera_models::GeometricCamera            *pCamera,
+             camera_models::GeometricCamera            *pCamera2,
              Sophus::SE3f               &Tlr,
              Frame                      *pPrevF,
              const IMU::Calib           &ImuCalib,
-             const std::vector<Marker *> markers) :
+             const std::vector<semantic::Marker *> markers) :
     mpcpi(nullptr),
     mpORBvocabulary(voc),
     mpORBextractorLeft(extractorLeft),
@@ -374,15 +376,15 @@ Frame::Frame(const cv::Mat              &imColor,
         this,
         0,
         imLeft,
-        static_cast<KannalaBrandt8 *>(mpCamera)->mvLappingArea[0],
-        static_cast<KannalaBrandt8 *>(mpCamera)->mvLappingArea[1]);
+        static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->mvLappingArea[0],
+        static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->mvLappingArea[1]);
     thread threadRight(
         &Frame::ExtractORB,
         this,
         1,
         imRight,
-        static_cast<KannalaBrandt8 *>(mpCamera2)->mvLappingArea[0],
-        static_cast<KannalaBrandt8 *>(mpCamera2)->mvLappingArea[1]);
+        static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->mvLappingArea[0],
+        static_cast<camera_models::KannalaBrandt8 *>(mpCamera2)->mvLappingArea[1]);
     threadLeft.join();
     threadRight.join();
 #ifdef REGISTER_TIMES
@@ -474,10 +476,10 @@ Frame::Frame(const cv::Mat                                &imColor,
              cv::Mat                                      &distCoef,
              const float                                  &bf,
              const float                                  &thDepth,
-             GeometricCamera                              *pCamera,
+             camera_models::GeometricCamera                              *pCamera,
              Frame                                        *pPrevF,
              const IMU::Calib                             &ImuCalib,
-             const std::vector<Marker *>                   markers) :
+             const std::vector<semantic::Marker *>                   markers) :
     mpcpi(nullptr),
     mpORBvocabulary(voc),
     mpORBextractorLeft(extractor),
@@ -600,20 +602,20 @@ Frame::Frame(const cv::Mat              &imColor,
              const double               &timeStamp,
              ORBextractor               *extractor,
              ORBVocabulary              *voc,
-             GeometricCamera            *pCamera,
+             camera_models::GeometricCamera            *pCamera,
              cv::Mat                    &distCoef,
              const float                &bf,
              const float                &thDepth,
              Frame                      *pPrevF,
              const IMU::Calib           &ImuCalib,
-             const std::vector<Marker *> markers) :
+             const std::vector<semantic::Marker *> markers) :
     mpcpi(nullptr),
     mpORBvocabulary(voc),
     mpORBextractorLeft(extractor),
     mpORBextractorRight(static_cast<ORBextractor *>(nullptr)),
     mTimeStamp(timeStamp),
-    mK(static_cast<Pinhole *>(pCamera)->toK()),
-    mK_(static_cast<Pinhole *>(pCamera)->toK_()),
+    mK(static_cast<camera_models::Pinhole *>(pCamera)->toK()),
+    mK_(static_cast<camera_models::Pinhole *>(pCamera)->toK_()),
     mDistCoef(distCoef.clone()),
     mbf(bf),
     mThDepth(thDepth),
@@ -694,10 +696,10 @@ Frame::Frame(const cv::Mat              &imColor,
         mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS) /
                                  static_cast<float>(mnMaxY - mnMinY);
 
-        fx    = static_cast<Pinhole *>(mpCamera)->toK().at<float>(0, 0);
-        fy    = static_cast<Pinhole *>(mpCamera)->toK().at<float>(1, 1);
-        cx    = static_cast<Pinhole *>(mpCamera)->toK().at<float>(0, 2);
-        cy    = static_cast<Pinhole *>(mpCamera)->toK().at<float>(1, 2);
+        fx    = static_cast<camera_models::Pinhole *>(mpCamera)->toK().at<float>(0, 0);
+        fy    = static_cast<camera_models::Pinhole *>(mpCamera)->toK().at<float>(1, 1);
+        cx    = static_cast<camera_models::Pinhole *>(mpCamera)->toK().at<float>(0, 2);
+        cy    = static_cast<camera_models::Pinhole *>(mpCamera)->toK().at<float>(1, 2);
         invfx = 1.0f / fx;
         invfy = 1.0f / fy;
 
@@ -1152,7 +1154,7 @@ void Frame::UndistortKeyPoints()
     mat = mat.reshape(2);
     cv::undistortPoints(mat,
                         mat,
-                        static_cast<Pinhole *>(mpCamera)->toK(),
+                        static_cast<camera_models::Pinhole *>(mpCamera)->toK(),
                         mDistCoef,
                         cv::Mat(),
                         mK);
@@ -1186,7 +1188,7 @@ void Frame::ComputeImageBounds(const cv::Mat &imLeft)
         mat = mat.reshape(2);
         cv::undistortPoints(mat,
                             mat,
-                            static_cast<Pinhole *>(mpCamera)->toK(),
+                            static_cast<camera_models::Pinhole *>(mpCamera)->toK(),
                             mDistCoef,
                             cv::Mat(),
                             mK);
@@ -1470,7 +1472,7 @@ void Frame::ComputeStereoFishEyeMatches()
                     mvLevelSigma2[mvKeysRight[(*it)[0].trainIdx + monoRight]
                                       .octave];
             float depth =
-                static_cast<KannalaBrandt8 *>(mpCamera)->TriangulateMatches(
+                static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->TriangulateMatches(
                     mpCamera2,
                     mvKeys[(*it)[0].queryIdx + monoLeft],
                     mvKeysRight[(*it)[0].trainIdx + monoRight],
@@ -1581,4 +1583,5 @@ Eigen::Vector3f Frame::UnprojectStereoFishEye(const int &i)
     return mRwc * mvStereo3Dpoints[i] + mOw;
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

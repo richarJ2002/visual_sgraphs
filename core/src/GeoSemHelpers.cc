@@ -25,10 +25,12 @@
 
 #include <Eigen/Eigenvalues>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
-bool GeoSemHelpers::refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane)
+bool GeoSemHelpers::refitMappedPlaneFromCloud(vs_graphs::core::geometric::Plane *plane)
 {
     /* Confirm the mapped plane is valid */
     if (plane == nullptr || plane->isBad())
@@ -38,7 +40,7 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane)
 
     /* Claim one immutable generation; fitting never observes concurrent growth.
      */
-    const std::optional<Plane::GeometrySnapshot> geometrySnapshot =
+    const std::optional<geometric::Plane::GeometrySnapshot> geometrySnapshot =
         plane->beginMapCloudRefit();
 
     /* Require sufficient points for a stable covariance estimate */
@@ -155,22 +157,22 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane)
                                         validPointCount);
 }
 
-ORB_SLAM3::Plane *GeoSemHelpers::createMapPlane(
+vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     Atlas                                        *mpAtlas,
-    ORB_SLAM3::KeyFrame                          *pKF,
+    vs_graphs::core::KeyFrame                          *pKF,
     const g2o::Plane3D                            estimatedPlane,
     const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
-    ORB_SLAM3::Plane::planeVariant                semanticType,
+    vs_graphs::core::geometric::Plane::planeVariant                semanticType,
     double                                        confidence)
 {
-    ORB_SLAM3::Map *p_currentMap = mpAtlas->GetCurrentMap();
+    vs_graphs::core::Map *p_currentMap = mpAtlas->GetCurrentMap();
 
     if (p_currentMap == nullptr)
     {
         return nullptr;
     }
 
-    ORB_SLAM3::Plane *newMapPlane = new ORB_SLAM3::Plane();
+    vs_graphs::core::geometric::Plane *newMapPlane = new vs_graphs::core::geometric::Plane();
     newMapPlane->setColor();
     newMapPlane->setLocalEquation(estimatedPlane);
     newMapPlane->SetMap(p_currentMap);
@@ -204,7 +206,7 @@ ORB_SLAM3::Plane *GeoSemHelpers::createMapPlane(
     pointPlaneConstraintMatrix.setZero();
 
     /* If plane optimization enabled */
-    if (SystemParams::GetParams()->optimization.plane_point.enabled)
+    if (types::SystemParams::GetParams()->optimization.plane_point.enabled)
     {
         /* Iterate through points in point cloud */
         for (auto &point : planeCloud->points)
@@ -225,7 +227,7 @@ ORB_SLAM3::Plane *GeoSemHelpers::createMapPlane(
      * ---------------------------------------------------------------------- */
 
     /* Init observation struct to store information about the plane */
-    ORB_SLAM3::Plane::Observation obs;
+    vs_graphs::core::geometric::Plane::Observation obs;
 
     /* Store the result of the plane constaint matrix */
     obs.pointPlaneConstraintMatrix = pointPlaneConstraintMatrix;
@@ -279,7 +281,7 @@ ORB_SLAM3::Plane *GeoSemHelpers::createMapPlane(
      * the observed finite plane cloud. These associations may later be used to
      * construct map-point-to-plane constraints during graph optimisation.
      */
-    if (SystemParams::GetParams()->optimization.plane_map_point.enabled)
+    if (types::SystemParams::GetParams()->optimization.plane_map_point.enabled)
     {
         /* Iterate through the orb points (expressed in global frame) */
         for (const auto &mapPoint : pKF->GetMapPoints())
@@ -304,18 +306,18 @@ ORB_SLAM3::Plane *GeoSemHelpers::createMapPlane(
 
 void GeoSemHelpers::updateMapPlane(
     Atlas                                  *mpAtlas,
-    ORB_SLAM3::KeyFrame                    *pKF,
+    vs_graphs::core::KeyFrame                    *pKF,
     const g2o::Plane3D                      estimatedPlane,
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
     int                                     planeId,
-    ORB_SLAM3::Plane::planeVariant          semanticType,
+    vs_graphs::core::geometric::Plane::planeVariant          semanticType,
     double                                  confidence)
 {
     // Find the matched plane among all planes of the map
-    ORB_SLAM3::Plane *currentPlane = mpAtlas->GetPlaneById(planeId);
+    vs_graphs::core::geometric::Plane *currentPlane = mpAtlas->GetPlaneById(planeId);
 
     // The observation of the plane
-    ORB_SLAM3::Plane::Observation obs;
+    vs_graphs::core::geometric::Plane::Observation obs;
 
     // the observation of the plane equation
     obs.localPlane = estimatedPlane;
@@ -323,7 +325,7 @@ void GeoSemHelpers::updateMapPlane(
     // the observation of the plane point cloud (measurement)
     Eigen::Matrix4d pointPlaneConstraintMatrix;
     pointPlaneConstraintMatrix.setZero();
-    if (SystemParams::GetParams()->optimization.plane_point.enabled)
+    if (types::SystemParams::GetParams()->optimization.plane_point.enabled)
     {
         for (auto &point : planeCloud->points)
         {
@@ -365,7 +367,7 @@ void GeoSemHelpers::updateMapPlane(
         refitMappedPlaneFromCloud(currentPlane);
     }
 
-    if (SystemParams::GetParams()->optimization.plane_map_point.enabled)
+    if (types::SystemParams::GetParams()->optimization.plane_map_point.enabled)
     {
         for (const auto &mapPoint : pKF->GetMapPoints())
             if (currentPlane->isPointinPlaneCloud(
@@ -376,7 +378,7 @@ void GeoSemHelpers::updateMapPlane(
 
 std::pair<bool, std::string> GeoSemHelpers::checkIfMarkerIsDoorway(
     const int                     &markerId,
-    std::vector<ORB_SLAM3::Room *> envRooms)
+    std::vector<vs_graphs::core::semantic::Room *> envRooms)
 {
     bool        isDoorway = true;
     std::string name      = "";
@@ -396,16 +398,16 @@ std::pair<bool, std::string> GeoSemHelpers::checkIfMarkerIsDoorway(
 
 void GeoSemHelpers::markerSemanticAnalysis(
     Atlas                         *mpAtlas,
-    ORB_SLAM3::KeyFrame           *pKF,
-    std::vector<ORB_SLAM3::Room *> envRooms)
+    vs_graphs::core::KeyFrame           *pKF,
+    std::vector<vs_graphs::core::semantic::Room *> envRooms)
 {
     // Get the markers from the current KeyFrame
-    std::vector<Marker *> mvpMapMarkers = pKF->getCurrentFrameMarkers();
+    std::vector<semantic::Marker *> mvpMapMarkers = pKF->getCurrentFrameMarkers();
 
-    for (Marker *mCurrentMarker : mvpMapMarkers)
+    for (semantic::Marker *mCurrentMarker : mvpMapMarkers)
     {
         // Variables
-        ORB_SLAM3::Marker *currentMapMarker;
+        vs_graphs::core::semantic::Marker *currentMapMarker;
 
         // Check the type of the marker
         std::pair<bool, std::string> result =
@@ -415,8 +417,8 @@ void GeoSemHelpers::markerSemanticAnalysis(
 
         // Change the marker type
         mCurrentMarker->setMarkerType(
-            markerIsDoorway ? ORB_SLAM3::Marker::markerVariant::ON_DOOR
-                            : ORB_SLAM3::Marker::markerVariant::ON_ROOM_CENTER);
+            markerIsDoorway ? vs_graphs::core::semantic::Marker::markerVariant::ON_DOOR
+                            : vs_graphs::core::semantic::Marker::markerVariant::ON_ROOM_CENTER);
 
         // If the marker is not in the map, add it
         if (!mCurrentMarker->isMarkerInGMap())
@@ -442,12 +444,12 @@ void GeoSemHelpers::markerSemanticAnalysis(
     }
 }
 
-ORB_SLAM3::Marker *
+vs_graphs::core::semantic::Marker *
     GeoSemHelpers::createMapMarker(Atlas                   *mpAtlas,
-                                   ORB_SLAM3::KeyFrame     *pKF,
-                                   const ORB_SLAM3::Marker *visitedMarker)
+                                   vs_graphs::core::KeyFrame     *pKF,
+                                   const vs_graphs::core::semantic::Marker *visitedMarker)
 {
-    ORB_SLAM3::Marker *newMapMarker = new ORB_SLAM3::Marker();
+    vs_graphs::core::semantic::Marker *newMapMarker = new vs_graphs::core::semantic::Marker();
 
     newMapMarker->setId(visitedMarker->getId());
     newMapMarker->setMap(mpAtlas->GetCurrentMap());
@@ -465,9 +467,9 @@ ORB_SLAM3::Marker *
     return newMapMarker;
 }
 
-void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
-                                     ORB_SLAM3::Plane *p_doorPlane_in,
-                                     ORB_SLAM3::Plane *p_wallPlane_in,
+void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
+                                     vs_graphs::core::geometric::Plane *p_doorPlane_in,
+                                     vs_graphs::core::geometric::Plane *p_wallPlane_in,
                                      bool              isOpenPassage_in,
                                      Eigen::Vector3d passageCentroid_World_m_in)
 {
@@ -514,7 +516,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
      */
     bool         wallHasConfirmedRoom = false;
     const size_t minObs =
-        SystemParams::GetParams()->room_seg.minimumWallObservationCount;
+        types::SystemParams::GetParams()->room_seg.minimumWallObservationCount;
     if (p_wallPlane_in->getObservationCount() >= minObs)
     {
         wallHasConfirmedRoom = true;
@@ -531,7 +533,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
     }
 
     /* Extract all passages */
-    const std::vector<ORB_SLAM3::Passage *> allPassages =
+    const std::vector<vs_graphs::core::semantic::Passage *> allPassages =
         p_atlas_inout->GetAllPassages();
 
     /* ---------------------------------------------------------------------- *
@@ -539,8 +541,8 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
      * ---------------------------------------------------------------------- */
 
     /* Extract the max door height and width */
-    double width  = SystemParams::GetParams()->sem_seg.max_door_width;
-    double height = SystemParams::GetParams()->sem_seg.max_door_height;
+    double width  = types::SystemParams::GetParams()->sem_seg.max_door_width;
+    double height = types::SystemParams::GetParams()->sem_seg.max_door_height;
 
     /* Initialize variables to define the passage */
     Eigen::Vector3d centroid;
@@ -581,7 +583,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
                 width = std::min(
                     measuredWidth,
                     static_cast<double>(
-                        SystemParams::GetParams()->sem_seg.max_door_width));
+                        types::SystemParams::GetParams()->sem_seg.max_door_width));
             }
 
             /* Clip the height dimension of the door */
@@ -590,7 +592,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
                 height = std::min(
                     measuredHeight,
                     static_cast<double>(
-                        SystemParams::GetParams()->sem_seg.max_door_height));
+                        types::SystemParams::GetParams()->sem_seg.max_door_height));
             }
         }
     }
@@ -644,7 +646,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
 
     /* Extract the duplicate distacne threshold */
     const double duplicateDistanceThreshold =
-        SystemParams::GetParams()->sem_seg.passage_centroid_distance_thresh;
+        types::SystemParams::GetParams()->sem_seg.passage_centroid_distance_thresh;
 
     /* Extract parameters from passage equation */
     Eigen::Vector4d candidateEquation = passageEquation.coeffs();
@@ -666,7 +668,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
         candidateEquation.head<3>() / candidateNormalNorm;
 
     /* Iterate through existing passages and see if any passage matches */
-    for (ORB_SLAM3::Passage *p_existingPassage : allPassages)
+    for (vs_graphs::core::semantic::Passage *p_existingPassage : allPassages)
     {
         /* Confirm that existing passage is valid*/
         if (p_existingPassage == nullptr)
@@ -768,7 +770,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
          *     that framed the passage; a downstream mid-plane pass pairs the
          *     two faces and recomputes a stable aperture plane.
          */
-        const std::vector<ORB_SLAM3::Plane *> existingSupportingWalls =
+        const std::vector<vs_graphs::core::geometric::Plane *> existingSupportingWalls =
             p_existingPassage->getAssociateWalls();
         const bool isKnownSupportingFace =
             std::find(existingSupportingWalls.begin(),
@@ -794,7 +796,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
             p_existingPassage->setAssociateDoor(p_doorPlane_in);
         }
 
-        std::cout << "[GeoSemHelper] Updated existing Passage#"
+        std::cout << "[GeoSemHelper] Updated existing semantic::Passage#"
                   << p_existingPassage->getId()
                   << ": centroid distance=" << centroidDistance
                   << " m, normal alignment=" << normalAlignment << ", state="
@@ -812,7 +814,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
     const int passageId = p_atlas_inout->reservePassageIdentity();
 
     /* Initialize passage object */
-    ORB_SLAM3::Passage *p_newMapPassage = new ORB_SLAM3::Passage();
+    vs_graphs::core::semantic::Passage *p_newMapPassage = new vs_graphs::core::semantic::Passage();
 
     /* Fill passage object */
     p_newMapPassage->setId(passageId);
@@ -832,7 +834,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
      * passage represent a doorway.
      */
     p_newMapPassage->setPassageType(
-        ORB_SLAM3::Passage::passageVariant::DOORWAY);
+        vs_graphs::core::semantic::Passage::passageVariant::DOORWAY);
 
     if (p_doorPlane_in != nullptr)
     {
@@ -848,7 +850,7 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
     infoStream << (isOpenPassage_in ? "open" : "blocked") << ", " << std::fixed
                << std::setprecision(2) << width << "x" << height << "m";
 
-    std::cout << "[GeoSemHelper] Creating Passage#" << passageId
+    std::cout << "[GeoSemHelper] Creating semantic::Passage#" << passageId
               << " associated with wall " << p_wallPlane_in->getId();
 
     if (p_doorPlane_in != nullptr)
@@ -866,8 +868,8 @@ void GeoSemHelpers::createMapPassage(ORB_SLAM3::Atlas *p_atlas_inout,
               << std::endl;
 }
 
-ORB_SLAM3::Room *
-    GeoSemHelpers::createBlankRoomCandidate(ORB_SLAM3::Atlas  *mpAtlas,
+vs_graphs::core::semantic::Room *
+    GeoSemHelpers::createBlankRoomCandidate(vs_graphs::core::Atlas  *mpAtlas,
                                             Eigen::Vector3d    centroid,
                                             std::optional<int> stableRoomId_in)
 {
@@ -881,12 +883,12 @@ ORB_SLAM3::Room *
     }
 
     /* Extract the existing rooms from the map */
-    const std::vector<ORB_SLAM3::Room *> existingRooms = mpAtlas->GetAllRooms();
+    const std::vector<vs_graphs::core::semantic::Room *> existingRooms = mpAtlas->GetAllRooms();
 
     /*!
      * Hard invariant, enforced at this single room-creation choke point
      * (this is the only call site in the codebase that ever constructs a
-     * new ORB_SLAM3::Room): a map may hold at most one more room than it
+     * new vs_graphs::core::semantic::Room): a map may hold at most one more room than it
      * has PASSABLE passages. A map's first room is either the mission's cold
      * bootstrap or the topology-only recovery proxy restored after tracking
      * loss; it needs no active-map passage yet -- that is the "+1". Every new
@@ -909,12 +911,12 @@ ORB_SLAM3::Room *
      * free-space-skeleton-crosses-wall observation, never a toggled
      * passable/blocked state alone.
      */
-    const std::vector<ORB_SLAM3::Passage *> currentMapPassages =
+    const std::vector<vs_graphs::core::semantic::Passage *> currentMapPassages =
         mpAtlas->GetAllPassages();
     const std::size_t passablePassageCount =
         std::count_if(currentMapPassages.begin(),
                       currentMapPassages.end(),
-                      [](ORB_SLAM3::Passage *p_passage)
+                      [](vs_graphs::core::semantic::Passage *p_passage)
                       {
                           return p_passage != nullptr && !p_passage->isBad() &&
                                  p_passage->isPassable();
@@ -942,7 +944,7 @@ ORB_SLAM3::Room *
     mpAtlas->observeRoomIdentity(roomId);
 
     /* Create new room */
-    ORB_SLAM3::Room *newRoom = new ORB_SLAM3::Room();
+    vs_graphs::core::semantic::Room *newRoom = new vs_graphs::core::semantic::Room();
 
     /*!
      * Fill the parameters of room. The caller is responsible for inserting it
@@ -956,7 +958,7 @@ ORB_SLAM3::Room *
 
     newRoom->setName("SE#" + std::to_string(roomId));
 
-    newRoom->setRoomVariant(ORB_SLAM3::Room::roomVariant::UNDEFINED);
+    newRoom->setRoomVariant(vs_graphs::core::semantic::Room::roomVariant::UNDEFINED);
 
     std::cout << "[GeoSemHelper] Created provisional SE#" << newRoom->getId()
               << " at " << newRoom->getCentroid().transpose() << "."
@@ -966,16 +968,16 @@ ORB_SLAM3::Room *
 }
 
 void GeoSemHelpers::associateGroundPlaneToRoom(Atlas           *mpAtlas,
-                                               ORB_SLAM3::Room *givenRoom)
+                                               vs_graphs::core::semantic::Room *givenRoom)
 {
-    std::vector<ORB_SLAM3::Plane *> allWalls = givenRoom->getWalls();
-    ORB_SLAM3::Plane               *associatedGroundPlane = nullptr;
+    std::vector<vs_graphs::core::geometric::Plane *> allWalls = givenRoom->getWalls();
+    vs_graphs::core::geometric::Plane               *associatedGroundPlane = nullptr;
     size_t                          maxInliers            = 0;
 
     // get the ground planes from the Atlas
-    std::vector<ORB_SLAM3::Plane *> groundPlanes;
+    std::vector<vs_graphs::core::geometric::Plane *> groundPlanes;
     for (const auto &plane : mpAtlas->GetAllPlanes())
-        if (plane->getPlaneType() == ORB_SLAM3::Plane::planeVariant::GROUND)
+        if (plane->getPlaneType() == vs_graphs::core::geometric::Plane::planeVariant::GROUND)
             groundPlanes.push_back(plane);
 
     if (groundPlanes.empty())
@@ -1009,12 +1011,12 @@ void GeoSemHelpers::associateGroundPlaneToRoom(Atlas           *mpAtlas,
 }
 
 size_t GeoSemHelpers::countGroundPlanePointsWithinWalls(
-    std::vector<ORB_SLAM3::Plane *> &roomWalls,
-    ORB_SLAM3::Plane                *groundPlane)
+    std::vector<vs_graphs::core::geometric::Plane *> &roomWalls,
+    vs_graphs::core::geometric::Plane                *groundPlane)
 {
     // [TODO] - verify the correctness of this function
     // the point cloud of the ground plane
-    const Plane::GeometrySnapshot groundGeometry =
+    const geometric::Plane::GeometrySnapshot groundGeometry =
         groundPlane->getGeometrySnapshot();
     pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr groundCloud =
         groundGeometry.supportCloud;
@@ -1057,10 +1059,10 @@ size_t GeoSemHelpers::countGroundPlanePointsWithinWalls(
     return count;
 }
 
-void GeoSemHelpers::createMapFloor(ORB_SLAM3::Atlas  *mpAtlas,
+void GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas  *mpAtlas,
                                    std::optional<int> stableFloorId_in)
 {
-    ORB_SLAM3::Map *p_currentMap = mpAtlas->GetCurrentMap();
+    vs_graphs::core::Map *p_currentMap = mpAtlas->GetCurrentMap();
 
     if (p_currentMap == nullptr)
     {
@@ -1069,7 +1071,7 @@ void GeoSemHelpers::createMapFloor(ORB_SLAM3::Atlas  *mpAtlas,
 
     // Create a new floor object
     Eigen::Vector3d   centroid    = Eigen::Vector3d::Zero();
-    ORB_SLAM3::Floor *newMapFloor = new ORB_SLAM3::Floor();
+    vs_graphs::core::semantic::Floor *newMapFloor = new vs_graphs::core::semantic::Floor();
 
     // Variables
     const int floorId = stableFloorId_in.has_value()
@@ -1083,12 +1085,13 @@ void GeoSemHelpers::createMapFloor(ORB_SLAM3::Atlas  *mpAtlas,
     newMapFloor->setId(floorId);
     newMapFloor->setCentroid(centroid);
     newMapFloor->setMap(p_currentMap);
-    newMapFloor->setName("Floor#" + std::to_string(floorId));
+    newMapFloor->setName("semantic::Floor#" + std::to_string(floorId));
 
     // Add the floor to the map
     mpAtlas->AddMapFloor(newMapFloor);
 
-    std::cout << "[GeoSemHelper] Creating Floor#" << newMapFloor->getId()
+    std::cout << "[GeoSemHelper] Creating semantic::Floor#" << newMapFloor->getId()
               << " ..." << std::endl;
 }
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

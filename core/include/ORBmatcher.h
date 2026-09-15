@@ -25,7 +25,9 @@
 #include "KeyFrame.h"
 #include "Frame.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class ORBmatcher
@@ -99,6 +101,7 @@ namespace ORB_SLAM3
         bool mbCheckOrientation;
     };
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs
 
 #endif // ORBMATCHER_H

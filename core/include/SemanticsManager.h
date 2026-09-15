@@ -41,7 +41,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 class Atlas;
 
@@ -103,7 +105,7 @@ class SemanticsManager
      *              not move those ids, it just records state transitions and
      *              guards.
      */
-    RoomTracker roomTracker_;
+    semantic::RoomTracker roomTracker_;
 
     /**
      * @brief Queued typed result from the future geometric verifier.
@@ -112,7 +114,7 @@ class SemanticsManager
      * publishes one result; the semantic thread consumes it once.  No room
      * geometry or identity is inferred when the flag is clear.
      */
-    VerificationVerdict verificationVerdict_{};
+    semantic::VerificationVerdict verificationVerdict_{};
     bool                verificationVerdictPending_ = false;
 
     /*!
@@ -168,14 +170,14 @@ class SemanticsManager
     /*!
      * @brief       Member which contains the system parameters.
      */
-    SystemParams *sysParams;
+    types::SystemParams *sysParams;
 
     /*!
      * @brief       Temporally tracked evidence for one open-passage hypothesis.
      */
     struct OpenPassageEvidence
     {
-        Plane          *p_supportingWall  = nullptr;
+        geometric::Plane          *p_supportingWall  = nullptr;
         Eigen::Vector3d centroid_World_m  = Eigen::Vector3d::Zero();
         std::size_t     confirmationCount = 0U;
         std::size_t     missedUpdateCount = 0U;
@@ -262,7 +264,7 @@ class SemanticsManager
 
     struct UndefendedWallState
     {
-        Plane       *p_wall           = nullptr;
+        geometric::Plane       *p_wall           = nullptr;
         unsigned int unresolvedCycles = 0U;
         std::size_t  cloudPointCount  = 0U;
         std::size_t  observationCount = 0U;
@@ -354,7 +356,7 @@ class SemanticsManager
      *
      * @return      The matching, non-bad ROOM-variant room, or nullptr.
      */
-    Room *findRoomByMapAndId(long unsigned int mapId_in, int roomId_in) const;
+    semantic::Room *findRoomByMapAndId(long unsigned int mapId_in, int roomId_in) const;
 
     /*!
      * @brief       WP1 Milestone 1: runs the Phase 4 geometric verifier on
@@ -370,7 +372,7 @@ class SemanticsManager
      *              This cycle's ranked SemanticCandidate list, best first.
      */
     void evaluateTopCandidateVerification(
-        const std::vector<SemanticCandidate> &candidates_in);
+        const std::vector<semantic::SemanticCandidate> &candidates_in);
 
     /*!
      * @brief       Enforces exclusive ownership of every mapped wall surface.
@@ -492,7 +494,7 @@ class SemanticsManager
      * @param[in] p_candidateWall_in Candidate finite wall hypothesis.
      * @return True when the candidate is already present or was admitted.
      */
-    bool admitWallToRoom(Room *p_room_inout, Plane *p_candidateWall_in);
+    bool admitWallToRoom(semantic::Room *p_room_inout, geometric::Plane *p_candidateWall_in);
 
     /*! @brief Outcome of enforcePassageApertureBackstop(). */
     enum class PassageSideEnforcementOutcome
@@ -536,9 +538,9 @@ class SemanticsManager
      *              resolved.
      */
     PassageSideEnforcementOutcome enforcePassageApertureBackstop(
-        Room                         *p_room_inout,
-        Plane                        *p_wall_in,
-        const std::vector<Passage *> &allPassages_in,
+        semantic::Room                         *p_room_inout,
+        geometric::Plane                        *p_wall_in,
+        const std::vector<semantic::Passage *> &allPassages_in,
         const Eigen::Vector3d        &groundNormal_World_in);
 
     /*!
@@ -576,7 +578,7 @@ class SemanticsManager
      *              stamped or either side is too close to the plane to
      *              resolve (fails open, does not reject).
      */
-    bool isWallFaceForeignToRoom(Room *p_room_in, Plane *p_wall_in);
+    bool isWallFaceForeignToRoom(semantic::Room *p_room_in, geometric::Plane *p_wall_in);
 
     /*!
      * @brief       Continuous invariant sweep: re-applies
@@ -637,7 +639,7 @@ class SemanticsManager
      *              Confirmed wall planes available in the current map.
      */
     void detectOpenPassagesFromSkeletonEdges(
-        const std::vector<ORB_SLAM3::Plane *> &wallPlanes);
+        const std::vector<vs_graphs::core::geometric::Plane *> &wallPlanes);
 
     /*!
      * @brief       Detects doors and doorways based on the detected planes and
@@ -646,13 +648,13 @@ class SemanticsManager
      * @param       pAtlas
      *              The Atlas containing the mapped environment
      */
-    void detectDoorsAndDoorways(ORB_SLAM3::Atlas *pAtlas);
+    void detectDoorsAndDoorways(vs_graphs::core::Atlas *pAtlas);
 
     /*!
      * @brief       Gets the latest detected room candidates from GNN-based room
      *              detection.
      */
-    std::vector<ORB_SLAM3::Room *> getLatestGNNRoomCandidates(void);
+    std::vector<vs_graphs::core::semantic::Room *> getLatestGNNRoomCandidates(void);
 
     /*!
      * @brief       Filters the wall planes to remove heavily tilted walls. Does
@@ -674,7 +676,7 @@ class SemanticsManager
      * @param       groundPlane
      *              The main ground plane that is the reference
      */
-    void filterGroundPlanes(Plane *groundPlane);
+    void filterGroundPlanes(geometric::Plane *groundPlane);
 
     /*!
      * @brief       Updates the passages in the map based on the detected doors
@@ -683,7 +685,7 @@ class SemanticsManager
      * @param       pAtlas
      *              The Atlas containing the mapped environment
      */
-    void updatePassages(ORB_SLAM3::Atlas *pAtlas);
+    void updatePassages(vs_graphs::core::Atlas *pAtlas);
 
     /*!
      * @brief       Merges passages whose estimated 2D footprints (width x
@@ -714,7 +716,7 @@ class SemanticsManager
      * @param[in]   pAtlas
      *              The Atlas containing the mapped environment.
      */
-    void updateTraversalEvidence(ORB_SLAM3::Atlas *pAtlas);
+    void updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas);
 
     /*!
      * @brief       Returns the id of the room currently occupied by the camera.
@@ -772,7 +774,7 @@ class SemanticsManager
      *              compute a height from -- must not be treated as 0.0,
      *              which is a valid real height).
      */
-    std::optional<float> computeGroundPlaneHeight(Plane *groundPlane);
+    std::optional<float> computeGroundPlaneHeight(geometric::Plane *groundPlane);
 
     /*!
      * @brief       Computes the transformation matrix from the ground plane to
@@ -783,7 +785,7 @@ class SemanticsManager
      *
      * @return      the transformation matrix
      */
-    Eigen::Matrix4f computePlaneToHorizontal(const Plane *plane);
+    Eigen::Matrix4f computePlaneToHorizontal(const geometric::Plane *plane);
 
     /*!
      * @brief       Checks for the existing of a room with particular walls
@@ -803,9 +805,9 @@ class SemanticsManager
      * @param[in]   excludedRoomIds_in
      *              Room IDs already matched to other clusters in this cycle.
      */
-    ORB_SLAM3::Room *associateRooms(
+    vs_graphs::core::semantic::Room *associateRooms(
         const Eigen::Vector3d                  clusterCentroid_World_in,
-        const std::vector<ORB_SLAM3::Plane *> &wallList_World_in,
+        const std::vector<vs_graphs::core::geometric::Plane *> &wallList_World_in,
         const std::vector<Eigen::Vector3d>    &freeSpaceCluster_World_m_in,
         const std::unordered_set<int>         &excludedRoomIds_in);
 
@@ -821,9 +823,9 @@ class SemanticsManager
      *              Current mapped wall surfaces used as merge vetoes.
      */
     void consolidateRoomsInFreeSpaceCluster(
-        ORB_SLAM3::Room                       *p_retainedRoom_inout,
+        vs_graphs::core::semantic::Room                       *p_retainedRoom_inout,
         const std::vector<Eigen::Vector3d>    &freeSpaceCluster_World_m_in,
-        const std::vector<ORB_SLAM3::Plane *> &wallList_World_in);
+        const std::vector<vs_graphs::core::geometric::Plane *> &wallList_World_in);
 
     /*!
      * @brief       Ensures every valid WALL plane belongs to at least one  room
@@ -896,7 +898,7 @@ class SemanticsManager
      * @param[in] verdict_in
      *        Value-only result produced by the future geometric verifier.
      */
-    void submitVerificationVerdict(const VerificationVerdict &verdict_in);
+    void submitVerificationVerdict(const semantic::VerificationVerdict &verdict_in);
 
 #ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
     /** Test-only deterministic drain of the production event seam. */
@@ -924,19 +926,19 @@ class SemanticsManager
     /** Test-only direct call into the WP1 Milestone 1 candidate-verification
      *  wiring, bypassing Run()'s full ROS/PCL/ORB3-dependent cycle. */
     void evaluateTopCandidateVerificationForTest(
-        const std::vector<SemanticCandidate> &candidates_in);
+        const std::vector<semantic::SemanticCandidate> &candidates_in);
 
     /** Test-only readout of evaluateWallAdmissionEvidence()'s admissible
      *  flag (the full WallAdmissionEvidence struct is file-local to
      *  SemanticsManager.cc's anonymous namespace). */
     bool evaluateWallAdmissionEvidenceAdmissibleForTest(
-        Plane                 *p_wall_in,
+        geometric::Plane                 *p_wall_in,
         const Eigen::Vector3d &groundNormal_World_in) const;
 
     /** Test-only direct call into the private admission gate (far-side
      *  backstop, evidence check, wrong-side observation check, boundary
      *  topology). */
-    bool admitWallToRoomForTest(Room *p_room_inout, Plane *p_candidateWall_in);
+    bool admitWallToRoomForTest(semantic::Room *p_room_inout, geometric::Plane *p_candidateWall_in);
 
     /** Test-only direct call into the private per-cycle passage-side sweep
      *  (prospective-placement exemption, wall-face ownership, aperture
@@ -950,7 +952,7 @@ class SemanticsManager
     /** Test-only direct call into the private empty-cloud-safe ground plane
      *  height computation (B1 regression coverage). */
     std::optional<float>
-        computeGroundPlaneHeightForTest(Plane *p_groundPlane_in);
+        computeGroundPlaneHeightForTest(geometric::Plane *p_groundPlane_in);
 
     /** Test-only direct call into the private wall-twin-face reconciliation
      *  pass. Callers inspect the result via Plane::getTwinFace(). */
@@ -997,6 +999,7 @@ class SemanticsManager
      */
     bool isFinished();
 };
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTICSEG_H

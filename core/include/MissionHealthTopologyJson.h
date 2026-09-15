@@ -34,7 +34,9 @@
 
 #include "Semantic/SemanticReportCache/objects/SemanticReportCacheEntry.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 /*!
@@ -65,6 +67,7 @@ nlohmann::json augmentMissionHealthTopologyJsonWithSemantics(
     const semantic::SemanticReportCacheEntry &entry_in,
     bool                                      cacheAvailable_in);
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // MISSION_HEALTH_TOPOLOGY_JSON_H

@@ -33,7 +33,9 @@
 
 #include <mutex>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     class System;
@@ -199,6 +201,6 @@ namespace ORB_SLAM3
         ofstream f_lm;
     };
 
-}
-
+} // namespace core
+} // namespace vs_graphs
 #endif

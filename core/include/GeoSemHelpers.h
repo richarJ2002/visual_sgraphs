@@ -27,7 +27,9 @@
 #include <optional>
 #include <sstream>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 class GeoSemHelpers
 {
@@ -55,13 +57,13 @@ class GeoSemHelpers
      * @param       confidence
      *              The confidence of the plane observation
      */
-    static ORB_SLAM3::Plane *
+    static vs_graphs::core::geometric::Plane *
         createMapPlane(Atlas               *mpAtlas,
-                       ORB_SLAM3::KeyFrame *pKF,
+                       vs_graphs::core::KeyFrame *pKF,
                        const g2o::Plane3D   estimatedPlane,
                        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
-                       ORB_SLAM3::Plane::planeVariant semanticType =
-                           ORB_SLAM3::Plane::planeVariant::UNDEFINED,
+                       vs_graphs::core::geometric::Plane::planeVariant semanticType =
+                           vs_graphs::core::geometric::Plane::planeVariant::UNDEFINED,
                        double confidence = 1.0);
 
     /*!
@@ -90,12 +92,12 @@ class GeoSemHelpers
      */
     static void
         updateMapPlane(Atlas                                  *mpAtlas,
-                       ORB_SLAM3::KeyFrame                    *pKF,
+                       vs_graphs::core::KeyFrame                    *pKF,
                        const g2o::Plane3D                      estimatedPlane,
                        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
                        int                                     planeId,
-                       ORB_SLAM3::Plane::planeVariant          semanticType =
-                           ORB_SLAM3::Plane::planeVariant::UNDEFINED,
+                       vs_graphs::core::geometric::Plane::planeVariant          semanticType =
+                           vs_graphs::core::geometric::Plane::planeVariant::UNDEFINED,
                        double confidence = 1.0);
 
     /*!
@@ -111,7 +113,7 @@ class GeoSemHelpers
      */
     static std::pair<bool, std::string>
         checkIfMarkerIsDoorway(const int                     &markerId,
-                               std::vector<ORB_SLAM3::Room *> envRooms);
+                               std::vector<vs_graphs::core::semantic::Room *> envRooms);
 
     /*!
      * @brief       Uses the detected markers to detect and map semantic
@@ -127,8 +129,8 @@ class GeoSemHelpers
      *              The list of rooms in the environment
      */
     static void markerSemanticAnalysis(Atlas                         *mpAtlas,
-                                       ORB_SLAM3::KeyFrame           *pKF,
-                                       std::vector<ORB_SLAM3::Room *> envRooms);
+                                       vs_graphs::core::KeyFrame           *pKF,
+                                       std::vector<vs_graphs::core::semantic::Room *> envRooms);
 
     /*!
      * @brief       Creates a new marker object to be added to the map
@@ -142,9 +144,9 @@ class GeoSemHelpers
      * @param       visitedMarker
      *              The address of the visited marker
      */
-    static Marker *createMapMarker(Atlas        *mpAtlas,
+    static semantic::Marker *createMapMarker(Atlas        *mpAtlas,
                                    KeyFrame     *pKF,
-                                   const Marker *visitedMarker);
+                                   const semantic::Marker *visitedMarker);
 
     /*!
      * @brief       Creates a new passage object to be added to the map
@@ -166,9 +168,9 @@ class GeoSemHelpers
      *              Open-passage centroid in the active map frame, in metres.
      */
     static void createMapPassage(
-        ORB_SLAM3::Atlas *p_atlas_inout,
-        ORB_SLAM3::Plane *p_doorPlane_in,
-        ORB_SLAM3::Plane *p_wallPlane_in,
+        vs_graphs::core::Atlas *p_atlas_inout,
+        vs_graphs::core::geometric::Plane *p_doorPlane_in,
+        vs_graphs::core::geometric::Plane *p_wallPlane_in,
         bool              isOpenPassage_in           = false,
         Eigen::Vector3d   passageCentroid_World_m_in = Eigen::Vector3d::Zero());
 
@@ -182,7 +184,7 @@ class GeoSemHelpers
      * @param       centroid
      *              The centroid of the room (optional)
      */
-    static ORB_SLAM3::Room *createBlankRoomCandidate(
+    static vs_graphs::core::semantic::Room *createBlankRoomCandidate(
         Atlas             *mpAtlas,
         Eigen::Vector3d    centroid        = Eigen::Vector3d::Zero(),
         std::optional<int> stableRoomId_in = std::nullopt);
@@ -198,7 +200,7 @@ class GeoSemHelpers
      *              The address of the detected room
      */
     static void associateGroundPlaneToRoom(Atlas           *mpAtlas,
-                                           ORB_SLAM3::Room *givenRoom);
+                                           vs_graphs::core::semantic::Room *givenRoom);
 
     /*!
      * @brief       Counts the number of points in the ground plane that are
@@ -211,8 +213,8 @@ class GeoSemHelpers
      *              The ground plane associated with the room
      */
     static size_t countGroundPlanePointsWithinWalls(
-        std::vector<ORB_SLAM3::Plane *> &roomWalls,
-        ORB_SLAM3::Plane                *groundPlane);
+        std::vector<vs_graphs::core::geometric::Plane *> &roomWalls,
+        vs_graphs::core::geometric::Plane                *groundPlane);
 
     /*!
      * @brief       Creates a new floor object to be added to the map
@@ -221,7 +223,7 @@ class GeoSemHelpers
      *              The current map in Atlas
      */
     static void
-        createMapFloor(ORB_SLAM3::Atlas  *mpAtlas,
+        createMapFloor(vs_graphs::core::Atlas  *mpAtlas,
                        std::optional<int> stableFloorId_in = std::nullopt);
 
     /*!
@@ -231,8 +233,9 @@ class GeoSemHelpers
      * @param[in]   plane
      *              Mapped plane which will be refitted.
      */
-    static bool refitMappedPlaneFromCloud(ORB_SLAM3::Plane *plane);
+    static bool refitMappedPlaneFromCloud(vs_graphs::core::geometric::Plane *plane);
 };
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // GEOSEMHELPERS_H

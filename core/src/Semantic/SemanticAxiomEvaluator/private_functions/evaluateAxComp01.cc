@@ -32,7 +32,9 @@
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -73,4 +75,5 @@ void evaluateAxComp01(const std::vector<MapCompletenessResult> &completeness_in,
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

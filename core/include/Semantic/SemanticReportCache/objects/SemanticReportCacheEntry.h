@@ -37,7 +37,9 @@
 #include "Semantic/SemanticAxiomEvaluator/objects/MapCompletenessResult.h"
 #include "Semantic/SemanticGraphSnapshot/objects/SemanticGraphSnapshot.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -127,6 +129,7 @@ struct SemanticReportCacheEntry
 };
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // SEMANTIC_REPORT_CACHE_ENTRY_H

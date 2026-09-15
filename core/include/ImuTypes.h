@@ -30,7 +30,9 @@
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/vector.hpp>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     namespace IMU
@@ -254,6 +256,7 @@ namespace ORB_SLAM3
 
     }
 
-} // namespace ORB_SLAM2
+} // namespace core
+} // namespace vs_graphs
 
 #endif // IMUTYPES_H

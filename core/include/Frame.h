@@ -51,7 +51,9 @@
 #include "Geometric/Plane.h"
 #include "Semantic/Marker.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 #define FRAME_GRID_ROWS 48
 #define FRAME_GRID_COLS 64
@@ -59,9 +61,9 @@ namespace ORB_SLAM3
 class MapPoint;
 class KeyFrame;
 class ConstraintPoseImu;
-class GeometricCamera;
+namespace camera_models { class GeometricCamera; }
 class ORBextractor;
-class Marker;
+namespace semantic { class Marker; }
 class Wall;
 
 class Frame
@@ -87,10 +89,10 @@ class Frame
           cv::Mat                    &distCoef,
           const float                &bf,
           const float                &thDepth,
-          GeometricCamera            *pCamera,
+          camera_models::GeometricCamera            *pCamera,
           Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
           const IMU::Calib           &ImuCalib = IMU::Calib(),
-          const std::vector<Marker *> markers  = std::vector<Marker *>{});
+          const std::vector<semantic::Marker *> markers  = std::vector<semantic::Marker *>{});
 
     // Constructor for stereo cameras (with or without IMU) #2
     Frame(const cv::Mat              &imColor,
@@ -104,12 +106,12 @@ class Frame
           cv::Mat                    &distCoef,
           const float                &bf,
           const float                &thDepth,
-          GeometricCamera            *pCamera,
-          GeometricCamera            *pCamera2,
+          camera_models::GeometricCamera            *pCamera,
+          camera_models::GeometricCamera            *pCamera2,
           Sophus::SE3f               &Tlr,
           Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
           const IMU::Calib           &ImuCalib = IMU::Calib(),
-          const std::vector<Marker *> markers  = std::vector<Marker *>{});
+          const std::vector<semantic::Marker *> markers  = std::vector<semantic::Marker *>{});
 
     // Constructor for RGB-D cameras (with or without IMU)
     Frame(const cv::Mat                                &imColor,
@@ -123,10 +125,10 @@ class Frame
           cv::Mat                                      &distCoef,
           const float                                  &bf,
           const float                                  &thDepth,
-          GeometricCamera                              *pCamera,
+          camera_models::GeometricCamera                              *pCamera,
           Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
           const IMU::Calib           &ImuCalib = IMU::Calib(),
-          const std::vector<Marker *> markers  = std::vector<Marker *>{});
+          const std::vector<semantic::Marker *> markers  = std::vector<semantic::Marker *>{});
 
     // Constructor for Monocular cameras (with or without IMU)
     Frame(const cv::Mat              &imColor,
@@ -134,13 +136,13 @@ class Frame
           const double               &timeStamp,
           ORBextractor               *extractor,
           ORBVocabulary              *voc,
-          GeometricCamera            *pCamera,
+          camera_models::GeometricCamera            *pCamera,
           cv::Mat                    &distCoef,
           const float                &bf,
           const float                &thDepth,
           Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
           const IMU::Calib           &ImuCalib = IMU::Calib(),
-          const std::vector<Marker *> markers  = std::vector<Marker *>{});
+          const std::vector<semantic::Marker *> markers  = std::vector<semantic::Marker *>{});
 
     /**
      * @brief Extract ORB features from the given grayscale image
@@ -338,7 +340,7 @@ class Frame
     std::vector<MapPoint *> mvpMapPoints;
 
     // List of Markers found in the frame
-    std::vector<Marker *> mvpMapMarkers;
+    std::vector<semantic::Marker *> mvpMapMarkers;
 
     // "Monocular" keypoints have a negative value.
     std::vector<float> mvuRight;
@@ -442,7 +444,7 @@ class Frame
     std::shared_ptr<std::mutex> p_imuMutex = std::make_shared<std::mutex>();
 
   public:
-    GeometricCamera *mpCamera, *mpCamera2;
+    camera_models::GeometricCamera *mpCamera, *mpCamera2;
 
     // Number of KeyPoints extracted in the left and right images
     int Nleft = -1, Nright = -1;
@@ -496,6 +498,7 @@ class Frame
     Sophus::SE3<double> T_test;
 };
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // FRAME_H

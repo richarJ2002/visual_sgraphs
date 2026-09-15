@@ -25,7 +25,9 @@
 
 using namespace std;
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
     const int ORBmatcher::TH_HIGH = 100;
@@ -1122,7 +1124,7 @@ namespace ORB_SLAM3
         Eigen::Matrix3f R12; // for fastest computation
         Eigen::Vector3f t12; // for fastest computation
 
-        GeometricCamera *pCamera1 = pKF1->mpCamera, *pCamera2 = pKF2->mpCamera;
+        camera_models::GeometricCamera *pCamera1 = pKF1->mpCamera, *pCamera2 = pKF2->mpCamera;
 
         if (!pKF1->mpCamera2 && !pKF2->mpCamera2)
         {
@@ -1351,7 +1353,7 @@ namespace ORB_SLAM3
 
     int ORBmatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const float th, const bool bRight)
     {
-        GeometricCamera *pCamera;
+        camera_models::GeometricCamera *pCamera;
         Sophus::SE3f Tcw;
         Eigen::Vector3f Ow;
 
@@ -2266,4 +2268,5 @@ namespace ORB_SLAM3
         return dist;
     }
 
-} // namespace ORB_SLAM
+} // namespace core
+} // namespace vs_graphs

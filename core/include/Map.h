@@ -40,15 +40,17 @@
 #include <unordered_map>
 #include <utility>
 
-namespace ORB_SLAM3
+namespace vs_graphs
 {
-class Room;
+namespace core
+{
+namespace semantic { class Room; }
 class Atlas;
-class Plane;
+namespace geometric { class Plane; }
 class Door;
-class Floor;
-class Marker;
-class Passage;
+namespace semantic { class Floor; }
+namespace semantic { class Marker; }
+namespace semantic { class Passage; }
 class MapPoint;
 class KeyFrame;
 class KeyFrameDatabase;
@@ -91,16 +93,16 @@ class Map
 
     void AddKeyFrame(KeyFrame *pKF);
     void AddMapPoint(MapPoint *pMP);
-    void AddMapPlane(Plane *pPlane);
-    void AddMapMarker(Marker *pMarker);
-    void AddDetectedMapRoom(Room *room);
-    void AddCandidateMapRoom(Room *room);
+    void AddMapPlane(geometric::Plane *pPlane);
+    void AddMapMarker(semantic::Marker *pMarker);
+    void AddDetectedMapRoom(semantic::Room *room);
+    void AddCandidateMapRoom(semantic::Room *room);
     /** Atomically moves a room from candidate to detected storage. */
-    void PromoteCandidateMapRoom(Room *room);
-    void AddMapFloor(ORB_SLAM3::Floor *pFloor);
-    void AddMapDoor(ORB_SLAM3::Door *pDoor);
-    void AddRoomWallPlane(ORB_SLAM3::Plane *pPlane);
-    void AddMapPassage(ORB_SLAM3::Passage *pPassage);
+    void PromoteCandidateMapRoom(semantic::Room *room);
+    void AddMapFloor(vs_graphs::core::semantic::Floor *pFloor);
+    void AddMapDoor(vs_graphs::core::Door *pDoor);
+    void AddRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane);
+    void AddMapPassage(vs_graphs::core::semantic::Passage *pPassage);
 
     /**
      * @brief Reserves a plane identifier that will not be reused by this map.
@@ -118,29 +120,29 @@ class Map
 
     void EraseMapPoint(MapPoint *pMP);
     void EraseKeyFrame(KeyFrame *pKF);
-    void EraseMapPlane(Plane *pPlane);
-    void EraseMapMarker(Marker *pMarker);
-    void EraseDetectedMapRoom(Room *pRoom);
-    void EraseMarkerBasedMapRoom(Room *pRoom);
-    void EraseRoomWallPlane(ORB_SLAM3::Plane *pPlane);
+    void EraseMapPlane(geometric::Plane *pPlane);
+    void EraseMapMarker(semantic::Marker *pMarker);
+    void EraseDetectedMapRoom(semantic::Room *pRoom);
+    void EraseMarkerBasedMapRoom(semantic::Room *pRoom);
+    void EraseRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane);
 
     /**
      * @brief Records the room this map started with (bootstrap entry room).
      *        Set once; non-owning, owned by this map.
      */
-    void setStartingRoom(ORB_SLAM3::Room *p_room_in);
+    void setStartingRoom(vs_graphs::core::semantic::Room *p_room_in);
 
     /** Returns the room this map started with, if any. */
-    ORB_SLAM3::Room *getStartingRoom();
+    vs_graphs::core::semantic::Room *getStartingRoom();
 
     /**
      * @brief Records the last current room at departure (reset/export).
      *        Set on map transitions; non-owning, owned by this map.
      */
-    void setFinalRoom(ORB_SLAM3::Room *p_room_in);
+    void setFinalRoom(vs_graphs::core::semantic::Room *p_room_in);
 
     /** Returns the last current room at departure, if any. */
-    ORB_SLAM3::Room *getFinalRoom();
+    vs_graphs::core::semantic::Room *getFinalRoom();
 
     /**
      * @brief Links the next map in the mission chain. Left null on
@@ -152,8 +154,8 @@ class Map
     /** Returns the next map in the mission chain, if any. */
     Map *getFollowingMap();
 
-    void EraseMapPassage(ORB_SLAM3::Passage *pPassage);
-    void EraseMapFloor(ORB_SLAM3::Floor *p_floor_in);
+    void EraseMapPassage(vs_graphs::core::semantic::Passage *pPassage);
+    void EraseMapFloor(vs_graphs::core::semantic::Floor *p_floor_in);
 
     /** Clears lookup-only state after every indexed entity was transferred. */
     void ClearTransferredEntityIndexes();
@@ -162,18 +164,18 @@ class Map
     int  GetLastBigChangeIdx();
     void SetReferenceMapPoints(const std::vector<MapPoint *> &vpMPs);
 
-    std::vector<Room *>               GetAllRooms();
-    std::vector<Plane *>              GetAllPlanes();
-    std::vector<Marker *>             GetAllMarkers();
+    std::vector<semantic::Room *>               GetAllRooms();
+    std::vector<geometric::Plane *>              GetAllPlanes();
+    std::vector<semantic::Marker *>             GetAllMarkers();
     std::vector<KeyFrame *>           GetAllKeyFrames();
     std::vector<MapPoint *>           GetAllMapPoints();
-    std::vector<Room *>               GetAllDetectedMapRooms();
-    std::vector<ORB_SLAM3::Door *>    GetAllDoors();
-    std::vector<ORB_SLAM3::Floor *>   GetAllFloors();
-    std::vector<Room *>               GetAllMarkerBasedMapRooms();
-    std::vector<Room *>               GetAllCandidateMapRooms();
+    std::vector<semantic::Room *>               GetAllDetectedMapRooms();
+    std::vector<vs_graphs::core::Door *>    GetAllDoors();
+    std::vector<vs_graphs::core::semantic::Floor *>   GetAllFloors();
+    std::vector<semantic::Room *>               GetAllMarkerBasedMapRooms();
+    std::vector<semantic::Room *>               GetAllCandidateMapRooms();
     std::vector<MapPoint *>           GetReferenceMapPoints();
-    std::vector<ORB_SLAM3::Passage *> GetAllPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> GetAllPassages();
 
     /**
      * @brief Get the cluster points of the map set by `voxblox_skeleton`
@@ -212,15 +214,15 @@ class Map
     void              SetInitKFid(long unsigned int initKFif);
 
     KeyFrame           *GetOriginKF();
-    Floor              *GetFloorById(int floorId);
+    semantic::Floor              *GetFloorById(int floorId);
     Door               *GetDoorById(int doorId);
-    Plane              *GetPlaneById(int planeId);
-    Marker             *GetMarkerById(int markerId);
+    geometric::Plane              *GetPlaneById(int planeId);
+    semantic::Marker             *GetMarkerById(int markerId);
     KeyFrame           *GetKeyFrameById(long unsigned int mnId);
-    ORB_SLAM3::Passage *GetPassageById(int passageId);
-    ORB_SLAM3::Plane   *GetRoomWallPlaneById(int planeId);
+    vs_graphs::core::semantic::Passage *GetPassageById(int passageId);
+    vs_graphs::core::geometric::Plane   *GetRoomWallPlaneById(int planeId);
 
-    Plane *GetBiggestGroundPlane();
+    geometric::Plane *GetBiggestGroundPlane();
 
     void SetStoredMap();
     void SetCurrentMap();
@@ -257,10 +259,10 @@ class Map
 
     unsigned int GetLowerKFID();
 
-    void PreSave(std::set<GeometricCamera *> &spCams);
+    void PreSave(std::set<camera_models::GeometricCamera *> &spCams);
     void PostLoad(KeyFrameDatabase                     *pKFDB,
                   ORBVocabulary                        *pORBVoc,
-                  map<unsigned int, GeometricCamera *> &mpCams);
+                  map<unsigned int, camera_models::GeometricCamera *> &mpCams);
 
     KeyFrame                 *mpFirstRegionKF;
     std::mutex                mMutexMapUpdate;
@@ -285,15 +287,15 @@ class Map
   protected:
     long unsigned int mnId;
 
-    std::set<Floor *>              mspFloors;
+    std::set<semantic::Floor *>              mspFloors;
     std::set<Door *>               mspDoors;
-    std::set<Plane *>              mspPlanes;
-    std::set<Marker *>             mspMarkers;
+    std::set<geometric::Plane *>              mspPlanes;
+    std::set<semantic::Marker *>             mspMarkers;
     std::set<MapPoint *>           mspMapPoints;
     std::set<KeyFrame *>           mspKeyFrames;
-    std::set<Room *>               mspDetectedRooms;
-    std::set<Room *>               mspMarkerBasedRooms;
-    std::set<ORB_SLAM3::Passage *> mspPassages;
+    std::set<semantic::Room *>               mspDetectedRooms;
+    std::set<semantic::Room *>               mspMarkerBasedRooms;
+    std::set<vs_graphs::core::semantic::Passage *> mspPassages;
 
     // Skeleton cluster points of the map set by `voxblox_skeleton`
     std::vector<std::vector<Eigen::Vector3d>> skeletonClusterPoints;
@@ -304,13 +306,13 @@ class Map
     std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> mSkeletonEdges;
 
     // Hashmaps and indices for fetching elements
-    std::unordered_map<int, Floor *>                  mFloorIndex;
+    std::unordered_map<int, semantic::Floor *>                  mFloorIndex;
     std::unordered_map<int, Door *>                   mDoorIndex;
-    std::unordered_map<int, Plane *>                  mPlaneIndex;
-    std::unordered_map<int, Marker *>                 mMarkerIndex;
+    std::unordered_map<int, geometric::Plane *>                  mPlaneIndex;
+    std::unordered_map<int, semantic::Marker *>                 mMarkerIndex;
     std::unordered_map<long unsigned int, KeyFrame *> mKFIndex;
-    std::unordered_map<int, ORB_SLAM3::Passage *>     mPassageIndex;
-    std::unordered_map<int, ORB_SLAM3::Plane *>       mRoomWallPlaneIndex;
+    std::unordered_map<int, vs_graphs::core::semantic::Passage *>     mPassageIndex;
+    std::unordered_map<int, vs_graphs::core::geometric::Plane *>       mRoomWallPlaneIndex;
 
     /* Monotonic semantic IDs remain unique after fusion creates index gaps. */
     int nextAvailablePlaneId{0};
@@ -326,8 +328,8 @@ class Map
 
     /* Mission-chain trace links. Rooms are owned by this map (shared
      * lifetime); the following map is Atlas-owned (see setters). */
-    ORB_SLAM3::Room *p_startingRoom{nullptr};
-    ORB_SLAM3::Room *p_finalRoom{nullptr};
+    vs_graphs::core::semantic::Room *p_startingRoom{nullptr};
+    vs_graphs::core::semantic::Room *p_finalRoom{nullptr};
     Map             *p_followingMap{nullptr};
 
     unsigned long int mnBackupKFlowerID;
@@ -367,6 +369,7 @@ class Map
     std::mutex mMutexMap;
 };
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif

@@ -28,7 +28,9 @@
 #include <algorithm>
 #include <utility>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -100,4 +102,5 @@ nlohmann::json serializeMapSnapshot(const MapSnapshot &value_in,
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

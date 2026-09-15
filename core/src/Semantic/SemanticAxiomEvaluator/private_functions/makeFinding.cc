@@ -29,7 +29,9 @@
 #include <string>
 #include <utility>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -77,4 +79,5 @@ Finding makeFinding(AxiomCode              axiomCode_in,
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
