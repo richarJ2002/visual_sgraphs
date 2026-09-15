@@ -19,7 +19,9 @@
 #include <mutex>
 #include <thread>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace
 {
@@ -76,7 +78,7 @@ TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
 {
     TestAtlas atlas(0);
 
-    Room priorRoom;
+    semantic::Room priorRoom;
     priorRoom.setId(42);
     priorRoom.setCentroid(Eigen::Vector3d::Zero());
     atlas.GetCurrentMap()->AddDetectedMapRoom(&priorRoom);
@@ -89,7 +91,7 @@ TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
     EXPECT_EQ(history.at(0U).front().wallNormals.size(), 0U);
     EXPECT_EQ(history.at(0U).front().wallBounds.size(), 0U);
 
-    Room newRoom;
+    semantic::Room newRoom;
     newRoom.setId(84);
     newRoom.setCentroid(Eigen::Vector3d::Zero());
     pNewMap->AddDetectedMapRoom(&newRoom);
@@ -137,4 +139,5 @@ TEST(AtlasLockOrder, EventAndHistoryCopiesAreSafeWithoutBorrowedEntities)
 }
 
 } // namespace
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

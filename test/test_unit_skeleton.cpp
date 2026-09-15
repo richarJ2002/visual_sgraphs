@@ -14,7 +14,7 @@
  *
  * Phase 0 unit-test skeleton (WP13 Section 19.1). Deterministic helpers only;
  * no Gazebo, no ROS, no multi-process harness. Three of the tests here
- * exercise RoomTracker pure helpers so the GTest baseline has content before
+ * exercise semantic::RoomTracker pure helpers so the GTest baseline has content before
  * the transition oracle tests (test_RoomTracker).
  */
 
@@ -25,7 +25,9 @@
 #include <cmath>
 #include <string>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 /*!
@@ -33,40 +35,40 @@ namespace ORB_SLAM3
  */
 TEST(RoomTrackerSkeleton, StateAndEventLiteralsAreStable)
 {
-    EXPECT_EQ(RoomTracker::stateToString(RoomTrackingState::UNKNOWN), "UNKNOWN");
-    EXPECT_EQ(RoomTracker::stateToString(RoomTrackingState::CONFIRMED_ROOM),
+    EXPECT_EQ(semantic::RoomTracker::stateToString(semantic::RoomTrackingState::UNKNOWN), "UNKNOWN");
+    EXPECT_EQ(semantic::RoomTracker::stateToString(semantic::RoomTrackingState::CONFIRMED_ROOM),
               "CONFIRMED_ROOM");
-    EXPECT_EQ(RoomTracker::stateToString(RoomTrackingState::CROSSING_PASSAGE),
+    EXPECT_EQ(semantic::RoomTracker::stateToString(semantic::RoomTrackingState::CROSSING_PASSAGE),
               "CROSSING_PASSAGE");
-    EXPECT_EQ(RoomTracker::stateToString(RoomTrackingState::LOST_WITHOUT_ROOM),
+    EXPECT_EQ(semantic::RoomTracker::stateToString(semantic::RoomTrackingState::LOST_WITHOUT_ROOM),
               "LOST_WITHOUT_ROOM");
-    EXPECT_EQ(RoomTracker::stateToString(RoomTrackingState::LOST_WITH_LAST_ROOM),
+    EXPECT_EQ(semantic::RoomTracker::stateToString(semantic::RoomTrackingState::LOST_WITH_LAST_ROOM),
               "LOST_WITH_LAST_ROOM");
     EXPECT_EQ(
-        RoomTracker::stateToString(RoomTrackingState::REACQUIRING_IN_NEW_MAP),
+        semantic::RoomTracker::stateToString(semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP),
         "REACQUIRING_IN_NEW_MAP");
 
-    EXPECT_EQ(RoomTracker::eventToString(RoomTrackingEvent::FIRST_ROOM_CONFIRMED),
+    EXPECT_EQ(semantic::RoomTracker::eventToString(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED),
               "FIRST_ROOM_CONFIRMED");
     EXPECT_EQ(
-        RoomTracker::eventToString(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
+        semantic::RoomTracker::eventToString(semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
         "PASSAGE_CROSSING_DETECTED");
-    EXPECT_EQ(RoomTracker::eventToString(RoomTrackingEvent::TRACKING_LOST),
+    EXPECT_EQ(semantic::RoomTracker::eventToString(semantic::RoomTrackingEvent::TRACKING_LOST),
               "TRACKING_LOST");
     EXPECT_EQ(
-        RoomTracker::eventToString(RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
+        semantic::RoomTracker::eventToString(semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
         "PASSAGE_TRAVERSAL_COMPLETE");
-    EXPECT_EQ(RoomTracker::eventToString(RoomTrackingEvent::ROOM_REACQUIRED),
+    EXPECT_EQ(semantic::RoomTracker::eventToString(semantic::RoomTrackingEvent::ROOM_REACQUIRED),
               "ROOM_REACQUIRED");
     EXPECT_EQ(
-        RoomTracker::eventToString(RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH),
+        semantic::RoomTracker::eventToString(semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH),
         "NEW_MAP_WITH_ROOM_MATCH");
     EXPECT_EQ(
-        RoomTracker::eventToString(RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM),
+        semantic::RoomTracker::eventToString(semantic::RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM),
         "VERIFIED_MATCH_TO_LAST_ROOM");
-    EXPECT_EQ(RoomTracker::eventToString(RoomTrackingEvent::LOST_TIMEOUT),
+    EXPECT_EQ(semantic::RoomTracker::eventToString(semantic::RoomTrackingEvent::LOST_TIMEOUT),
               "LOST_TIMEOUT");
-    EXPECT_EQ(RoomTracker::eventToString(RoomTrackingEvent::REACQUIRE_TIMEOUT),
+    EXPECT_EQ(semantic::RoomTracker::eventToString(semantic::RoomTrackingEvent::REACQUIRE_TIMEOUT),
               "REACQUIRE_TIMEOUT");
 }
 
@@ -76,41 +78,41 @@ TEST(RoomTrackerSkeleton, StateAndEventLiteralsAreStable)
 TEST(RoomTrackerSkeleton, ConfidenceFormula)
 {
     /* Perfect evidence yields full confidence. */
-    EXPECT_DOUBLE_EQ(RoomTracker::computeConfidence(1.0, 0.0, 0.0, 0.5), 1.0);
+    EXPECT_DOUBLE_EQ(semantic::RoomTracker::computeConfidence(1.0, 0.0, 0.0, 0.5), 1.0);
 
     /* angular_residual > 0 with sigma=0.25: exp(-0.4/0.25)=exp(-1.6). */
-    EXPECT_DOUBLE_EQ(RoomTracker::computeConfidence(1.0, 0.0, 0.4, 0.25),
+    EXPECT_DOUBLE_EQ(semantic::RoomTracker::computeConfidence(1.0, 0.0, 0.4, 0.25),
                      std::exp(-1.6));
 
     /* Poor conditioning scales the inlier ratio back. */
-    EXPECT_DOUBLE_EQ(RoomTracker::computeConfidence(0.8, 0.5, 0.0, 0.5), 0.4);
+    EXPECT_DOUBLE_EQ(semantic::RoomTracker::computeConfidence(0.8, 0.5, 0.0, 0.5), 0.4);
 
     /* Inputs are clamped to their domains. */
-    EXPECT_DOUBLE_EQ(RoomTracker::computeConfidence(2.0, -1.0, 0.0, 0.5), 1.0);
-    EXPECT_DOUBLE_EQ(RoomTracker::computeConfidence(0.0, 0.0, 100.0, 0.5),
+    EXPECT_DOUBLE_EQ(semantic::RoomTracker::computeConfidence(2.0, -1.0, 0.0, 0.5), 1.0);
+    EXPECT_DOUBLE_EQ(semantic::RoomTracker::computeConfidence(0.0, 0.0, 100.0, 0.5),
                      0.0);
 
     /* A non-positive sigma disables the residual term safely. */
-    EXPECT_DOUBLE_EQ(RoomTracker::computeConfidence(0.5, 0.0, 0.0, 0.0), 0.5);
-    EXPECT_DOUBLE_EQ(RoomTracker::computeConfidence(0.5, 0.0, 0.3, 0.0), 0.0);
+    EXPECT_DOUBLE_EQ(semantic::RoomTracker::computeConfidence(0.5, 0.0, 0.0, 0.0), 0.5);
+    EXPECT_DOUBLE_EQ(semantic::RoomTracker::computeConfidence(0.5, 0.0, 0.3, 0.0), 0.0);
 }
 
 /*!
- * @brief TransitionEvent serialises as one JSON object with all fields.
+ * @brief semantic::TransitionEvent serialises as one JSON object with all fields.
  */
 TEST(RoomTrackerSkeleton, EventSerialisationIsJSON)
 {
-    TransitionEvent event;
+    semantic::TransitionEvent event;
     event.timestamp_s      = 12.5;
-    event.sourceState      = RoomTrackingState::CONFIRMED_ROOM;
-    event.event            = RoomTrackingEvent::TRACKING_LOST;
-    event.targetState      = RoomTrackingState::LOST_WITH_LAST_ROOM;
+    event.sourceState      = semantic::RoomTrackingState::CONFIRMED_ROOM;
+    event.event            = semantic::RoomTrackingEvent::TRACKING_LOST;
+    event.targetState      = semantic::RoomTrackingState::LOST_WITH_LAST_ROOM;
     event.dwell_s          = 0.0;
     event.confidence       = 0.0;
     event.verificationPass = false;
     event.accepted         = true;
 
-    const std::string json = RoomTracker::eventToJSON(event);
+    const std::string json = semantic::RoomTracker::eventToJSON(event);
     EXPECT_NE(json.find("\"source\":\"CONFIRMED_ROOM\""), std::string::npos);
     EXPECT_NE(json.find("\"event\":\"TRACKING_LOST\""), std::string::npos);
     EXPECT_NE(json.find("\"target\":\"LOST_WITH_LAST_ROOM\""),
@@ -125,8 +127,8 @@ TEST(RoomTrackerSkeleton, EventSerialisationIsJSON)
  */
 TEST(RoomTrackerSkeleton, DefaultConfiguration)
 {
-    RoomTracker tracker;
-    const RoomTrackerConfig &config = tracker.getConfig();
+    semantic::RoomTracker tracker;
+    const semantic::RoomTrackerConfig &config = tracker.getConfig();
     EXPECT_DOUBLE_EQ(config.crossing_dwell_s, 2.0);
     EXPECT_DOUBLE_EQ(config.crossing_confidence, 0.7);
     EXPECT_DOUBLE_EQ(config.lost_timeout_s, 30.0);
@@ -136,4 +138,5 @@ TEST(RoomTrackerSkeleton, DefaultConfiguration)
     EXPECT_EQ(config.reacquire_min_planes, 3U);
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

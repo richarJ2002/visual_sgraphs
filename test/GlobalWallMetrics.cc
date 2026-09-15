@@ -15,7 +15,9 @@
 #include <set>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace test
 {
@@ -383,4 +385,5 @@ WallPrfResult computeGlobalWallMetrics(const nlohmann::json &truth_in,
 }
 
 } // namespace test
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

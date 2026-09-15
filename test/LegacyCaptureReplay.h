@@ -58,7 +58,9 @@
 #include "Semantic/SemanticAxiomEvaluator/objects/AxiomCode.h"
 #include "Semantic/SemanticAxiomEvaluator/objects/AxiomResult.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -236,6 +238,7 @@ LegacyReplayResult
     replayLegacyCaptures(const std::filesystem::path &corpusDir_in);
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs
 
 #endif // LEGACY_CAPTURE_REPLAY_H

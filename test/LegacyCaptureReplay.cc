@@ -35,7 +35,9 @@
 #include "Semantic/Sha256Digest.h"
 #include "Semantic/ValueOrder.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -535,4 +537,5 @@ LegacyReplayResult
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

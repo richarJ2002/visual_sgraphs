@@ -5,7 +5,7 @@
  *
  * Several existing test files (test_WallAdmission.cpp,
  * test_RoomContextPersist.cpp, test_room_tracker_integration.cpp) each
- * hand-rolled their own local copy of "build a wall Plane from a synthetic grid
+ * hand-rolled their own local copy of "build a wall geometric::Plane from a synthetic grid
  * cloud" / "build a KeyFrame at a world camera center" helpers. This header
  * canonicalizes those patterns so later semantic-axiom-plan phases (frame
  * equivariance, passage endpoints, wall ownership, non-convex boundaries) build
@@ -13,7 +13,7 @@
  * setters from scratch.
  *
  * Every builder here constructs plain, in-memory model objects
- * (Atlas/Map/Plane/Room/Passage/Floor/KeyFrame) with no ROS node, message, or
+ * (Atlas/Map/geometric::Plane/semantic::Room/semantic::Passage/semantic::Floor/KeyFrame) with no ROS node, message, or
  * Gazebo dependency, so these fixtures run in a bare GTest binary.
  */
 
@@ -37,7 +37,9 @@
 
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace test
 {
@@ -68,9 +70,9 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
                   int                    stepsPerSide_in = 20);
 
 /**
- * @brief   Constructs a wall Plane with a genuine, production-computed
+ * @brief   Constructs a wall geometric::Plane with a genuine, production-computed
  *          geometry snapshot: a flat grid cloud fed through the real
- *          Plane::updateSizeOfPlane() path (the same function wall-admission
+ *          geometric::Plane::updateSizeOfPlane() path (the same function wall-admission
  *          and ownership resolvers read from), rather than hand-setting
  *          finite-extent fields.
  *
@@ -79,11 +81,11 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
  * (Map::AddMapPlane), since some tests intentionally exercise unregistered
  * planes.
  *
- * @param   wall_inout          Plane to initialize; any prior state is
+ * @param   wall_inout          geometric::Plane to initialize; any prior state is
  *                               overwritten.
- * @param   id_in               Plane id.
+ * @param   id_in               geometric::Plane id.
  * @param   p_map_in            Owning map; non-owning, must outlive wall_inout.
- * @param   equation_World_in   Plane equation (nx, ny, nz, d), world frame.
+ * @param   equation_World_in   geometric::Plane equation (nx, ny, nz, d), world frame.
  * @param   axisU_World_in      In-plane grid axis U, world frame, unit length.
  * @param   axisV_World_in      In-plane grid axis V, world frame, unit length.
  * @param   halfU_m_in          Half-extent along axisU_World_in, meters.
@@ -91,7 +93,7 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
  * @param   centroid_World_m_in Grid/plane centroid, world frame, meters.
  */
 void makeWallPlane(
-    Plane                 &wall_inout,
+    geometric::Plane                 &wall_inout,
     int                    id_in,
     Map                   *p_map_in,
     const Eigen::Vector4d &equation_World_in,
@@ -102,14 +104,14 @@ void makeWallPlane(
     const Eigen::Vector3d &centroid_World_m_in = Eigen::Vector3d::Zero());
 
 /**
- * @brief   Constructs a ground Plane from a flat, horizontal grid cloud and
+ * @brief   Constructs a ground geometric::Plane from a flat, horizontal grid cloud and
  *          refits it through the real production path
  *          (GeoSemHelpers::refitMappedPlaneFromCloud), matching how a real
  *          ground plane is derived from segmentation evidence.
  *
- * @param   ground_inout      Plane to initialize; any prior state is
+ * @param   ground_inout      geometric::Plane to initialize; any prior state is
  *                             overwritten.
- * @param   id_in             Plane id.
+ * @param   id_in             geometric::Plane id.
  * @param   p_map_in          Owning map; non-owning, must outlive ground_inout.
  * @param   halfExtent_m_in   Half-extent of the square ground patch, meters.
  * @param   stepsPerSide_in   Grid points per side (>= 2).
@@ -117,39 +119,39 @@ void makeWallPlane(
  * @return  Whether the production refit accepted the synthetic cloud (mirrors
  *          GeoSemHelpers::refitMappedPlaneFromCloud's own return contract).
  */
-bool makeGroundPlane(Plane &ground_inout,
+bool makeGroundPlane(geometric::Plane &ground_inout,
                      int    id_in,
                      Map   *p_map_in,
                      double halfExtent_m_in = 0.75,
                      int    stepsPerSide_in = 5);
 
 /**
- * @brief   Constructs a minimal, valid Room bound to one wall face.
+ * @brief   Constructs a minimal, valid semantic::Room bound to one wall face.
  *
- * @param   room_inout          Room to initialize; any prior state is
+ * @param   room_inout          semantic::Room to initialize; any prior state is
  *                               overwritten.
- * @param   id_in               Room id.
+ * @param   id_in               semantic::Room id.
  * @param   p_map_in            Owning map; non-owning, must outlive room_inout.
  * @param   p_wall_in           Wall face to attach; may be null for a room
  *                               fixture that only needs a centroid.
- * @param   centroid_World_m_in Room centroid, world frame, meters.
- * @param   variant_in          Room semantic variant.
+ * @param   centroid_World_m_in semantic::Room centroid, world frame, meters.
+ * @param   variant_in          semantic::Room semantic variant.
  */
 void makeRoom(
-    Room                  &room_inout,
+    semantic::Room                  &room_inout,
     int                    id_in,
     Map                   *p_map_in,
-    Plane                 *p_wall_in,
+    geometric::Plane                 *p_wall_in,
     const Eigen::Vector3d &centroid_World_m_in = Eigen::Vector3d::Zero(),
-    Room::roomVariant      variant_in          = Room::roomVariant::ROOM);
+    semantic::Room::roomVariant      variant_in          = semantic::Room::roomVariant::ROOM);
 
 /**
- * @brief   Constructs a minimal Passage with one known-side room and,
+ * @brief   Constructs a minimal semantic::Passage with one known-side room and,
  *          optionally, a prospective or second confirmed far-side room.
  *
- * @param   passage_inout            Passage to initialize; any prior state is
+ * @param   passage_inout            semantic::Passage to initialize; any prior state is
  *                                    overwritten.
- * @param   id_in                    Passage id.
+ * @param   id_in                    semantic::Passage id.
  * @param   p_map_in                 Owning map; non-owning, must outlive
  *                                    passage_inout.
  * @param   equation_World_in        Aperture plane equation, world frame.
@@ -165,33 +167,33 @@ void makeRoom(
  * @param   width_m_in               Aperture width, meters.
  * @param   height_m_in              Aperture height, meters.
  */
-void makePassage(Passage               &passage_inout,
+void makePassage(semantic::Passage               &passage_inout,
                  int                    id_in,
                  Map                   *p_map_in,
                  const Eigen::Vector4d &equation_World_in,
                  const Eigen::Vector3d &centroid_World_m_in,
-                 Room                  *p_knownSideRoom_in,
+                 semantic::Room                  *p_knownSideRoom_in,
                  const Eigen::Vector3d &knownSideDirection_World_in,
-                 Room                  *p_farRoom_in = nullptr,
+                 semantic::Room                  *p_farRoom_in = nullptr,
                  bool                   passable_in  = true,
                  double                 width_m_in   = 1.0,
                  double                 height_m_in  = 2.0);
 
 /**
- * @brief   Constructs a minimal Floor owning the given rooms.
+ * @brief   Constructs a minimal semantic::Floor owning the given rooms.
  *
- * @param   floor_inout           Floor to initialize; any prior state is
+ * @param   floor_inout           semantic::Floor to initialize; any prior state is
  *                                 overwritten.
- * @param   id_in                 Floor id.
+ * @param   id_in                 semantic::Floor id.
  * @param   p_map_in              Owning map; non-owning, must outlive
  *                                 floor_inout.
  * @param   rooms_in              Rooms this floor owns; non-owning pointers.
- * @param   centroidZ_World_m_in  Floor plane height, world frame, meters.
+ * @param   centroidZ_World_m_in  semantic::Floor plane height, world frame, meters.
  */
-void makeFloor(Floor                     &floor_inout,
+void makeFloor(semantic::Floor                     &floor_inout,
                int                        id_in,
                Map                       *p_map_in,
-               const std::vector<Room *> &rooms_in,
+               const std::vector<semantic::Room *> &rooms_in,
                double                     centroidZ_World_m_in = 0.0);
 
 /**
@@ -234,4 +236,5 @@ g2o::Sim3 makeNonTrivialSim3(
     double                 scale_in               = 1.2);
 
 } // namespace test
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

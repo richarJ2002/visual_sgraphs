@@ -23,7 +23,7 @@
  *   - every other truth wall (whether its room matched or not) is a false
  *     negative.
  *
- * Room matching here reproduces the Python comparator's own algorithm
+ * semantic::Room matching here reproduces the Python comparator's own algorithm
  * exactly: build the full truth-by-generated centroid-distance matrix, solve
  * it with a minimum-total-cost one-to-one assignment (the same rectangular
  * linear-sum-assignment problem `scipy.optimize.linear_sum_assignment`
@@ -45,7 +45,9 @@
 
 #include <cstddef>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace test
 {
@@ -79,4 +81,5 @@ WallPrfResult computeGlobalWallMetrics(const nlohmann::json &truth_in,
                                        const nlohmann::json &generated_in);
 
 } // namespace test
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

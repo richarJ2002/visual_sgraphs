@@ -118,7 +118,7 @@ class ImageGrabber : public rclcpp::Node
     const bool                                    directGazeboFluCloud;
     double                             lastConsumedImuTimestamp_seconds{0.0};
     bool                               hasConsumedImuSample{false};
-    std::vector<ORB_SLAM3::IMU::Point> pendingImuMeasurements;
+    std::vector<vs_graphs::core::IMU::Point> pendingImuMeasurements;
     double                             pendingMaximumImuGap_seconds{0.0};
 
     void    SyncWithImu();
@@ -241,7 +241,7 @@ void ImageGrabber::SyncWithImu()
         sensor_msgs::msg::Image::ConstSharedPtr       p_rgbImageMessage;
         sensor_msgs::msg::Image::ConstSharedPtr       p_depthImageMessage;
         sensor_msgs::msg::PointCloud2::ConstSharedPtr p_pointCloudMessage;
-        std::vector<ORB_SLAM3::IMU::Point>            imuMeasurements;
+        std::vector<vs_graphs::core::IMU::Point>            imuMeasurements;
         Eigen::Vector3f angularVelocity_body_radPerSec =
             Eigen::Vector3f::Zero();
         double imageTimestamp_seconds     = 0.0;
@@ -369,7 +369,7 @@ void ImageGrabber::SyncWithImu()
             pendingMaximumImuGap_seconds = 0.0;
             hasConsumedImuSample         = false;
             p_slamSystem->RequestResetActiveMapWithCause(
-                ORB_SLAM3::ResetCause::IMU_DELIVERY_GAP);
+                vs_graphs::core::ResetCause::IMU_DELIVERY_GAP);
             continue;
         }
         if (imuMeasurements.empty())
@@ -422,7 +422,7 @@ void ImageGrabber::SyncWithImu()
             processingStage    = "marker association";
             auto nearestMarker = findNearestMarker(imageTimestamp_seconds);
             const double markerTimeDifference_seconds = nearestMarker.first;
-            std::vector<ORB_SLAM3::Marker *> matchedMarkers =
+            std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers =
                 std::move(nearestMarker.second);
 
             processingStage = "inertial RGB-D tracking";
@@ -567,7 +567,7 @@ int main(int argc, char **argv)
     frameSE = node->get_parameter("frame_structural_element").as_string();
     pubStaticTransform      = node->get_parameter("static_transform").as_bool();
     bool enablePangolin     = node->get_parameter("enable_pangolin").as_bool();
-    const auto verboseLevel = ORB_SLAM3::Verbose::StringToLevel(
+    const auto verboseLevel = vs_graphs::core::Verbose::StringToLevel(
         node->get_parameter("log_level").as_string());
 
     sgraphArchiveTestRunDir = node->get_parameter("test_run_dir").as_string();
@@ -602,8 +602,8 @@ int main(int argc, char **argv)
                                               maximumSensorBuffer_seconds,
                                               directGazeboFluCloud);
 
-    sensorType   = ORB_SLAM3::System::IMU_RGBD;
-    p_slamSystem = new ORB_SLAM3::System(vocFile,
+    sensorType   = vs_graphs::core::System::IMU_RGBD;
+    p_slamSystem = new vs_graphs::core::System(vocFile,
                                          settingsFile,
                                          sysParamsFile,
                                          sensorType,
@@ -790,7 +790,7 @@ void ImageGrabber::GrabRGBD(
         }
 
         p_slamSystem->RequestResetActiveMapWithCause(
-            ORB_SLAM3::ResetCause::SENSOR_PROCESSING_OVERLOAD);
+            vs_graphs::core::ResetCause::SENSOR_PROCESSING_OVERLOAD);
         discardInputUntilBufferDrained = false;
         hasAdmittedRgbdPacket          = false;
 

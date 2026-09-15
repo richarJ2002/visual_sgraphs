@@ -24,7 +24,9 @@
 #include "Semantic/SemanticGraphSnapshot.h"
 #include "SemanticFixtures.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -71,7 +73,7 @@ TEST(SemanticCanonicalSerialization, SnapshotTopologyOnlyOmitsGeometryFields)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -109,7 +111,7 @@ TEST(SemanticCanonicalSerialization,
      * only container order differs. */
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall1;
+    geometric::Plane wall1;
     test::makeWallPlane(wall1,
                         1,
                         p_map,
@@ -118,7 +120,7 @@ TEST(SemanticCanonicalSerialization,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    Plane wall2;
+    geometric::Plane wall2;
     test::makeWallPlane(wall2,
                         2,
                         p_map,
@@ -187,7 +189,7 @@ TEST(SemanticCanonicalSerialization,
      * whose Map ids would genuinely differ. */
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -257,7 +259,7 @@ TEST(SemanticCanonicalSerialization,
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -601,7 +603,7 @@ TEST(SemanticCanonicalSerialization, VisitedFlagDoesNotChangeDigests)
      * matching. */
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -637,4 +639,5 @@ TEST(SemanticCanonicalSerialization, VisitedFlagDoesNotChangeDigests)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

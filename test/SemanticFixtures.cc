@@ -11,7 +11,9 @@
 
 #include <algorithm>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace test
 {
@@ -51,7 +53,7 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
     return cloud;
 }
 
-void makeWallPlane(Plane                 &wall_inout,
+void makeWallPlane(geometric::Plane                 &wall_inout,
                    int                    id_in,
                    Map                   *p_map_in,
                    const Eigen::Vector4d &equation_World_in,
@@ -63,12 +65,12 @@ void makeWallPlane(Plane                 &wall_inout,
 {
     wall_inout.setId(id_in);
     wall_inout.SetMap(p_map_in);
-    wall_inout.setPlaneType(Plane::planeVariant::WALL);
+    wall_inout.setPlaneType(geometric::Plane::planeVariant::WALL);
     /* Wall-admission/ownership gates compare getPlaneType() against
      * getExpectedPlaneType(), which is derived from semanticVotes rather than
      * settable directly -- cast a vote so the two agree, matching what real
      * wall classification does over time. */
-    wall_inout.castWeightedVote(Plane::planeVariant::WALL, 1.0);
+    wall_inout.castWeightedVote(geometric::Plane::planeVariant::WALL, 1.0);
     wall_inout.setGlobalEquation(g2o::Plane3D(equation_World_in));
     wall_inout.setCentroid(centroid_World_m_in);
     wall_inout.setMapClouds(makeGridCloud(centroid_World_m_in,
@@ -79,7 +81,7 @@ void makeWallPlane(Plane                 &wall_inout,
     wall_inout.updateSizeOfPlane();
 }
 
-bool makeGroundPlane(Plane &ground_inout,
+bool makeGroundPlane(geometric::Plane &ground_inout,
                      int    id_in,
                      Map   *p_map_in,
                      double halfExtent_m_in,
@@ -87,7 +89,7 @@ bool makeGroundPlane(Plane &ground_inout,
 {
     ground_inout.setId(id_in);
     ground_inout.SetMap(p_map_in);
-    ground_inout.setPlaneType(Plane::planeVariant::GROUND);
+    ground_inout.setPlaneType(geometric::Plane::planeVariant::GROUND);
     ground_inout.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));
     ground_inout.setMapClouds(makeGridCloud(Eigen::Vector3d::Zero(),
@@ -99,12 +101,12 @@ bool makeGroundPlane(Plane &ground_inout,
     return GeoSemHelpers::refitMappedPlaneFromCloud(&ground_inout);
 }
 
-void makeRoom(Room                  &room_inout,
+void makeRoom(semantic::Room                  &room_inout,
               int                    id_in,
               Map                   *p_map_in,
-              Plane                 *p_wall_in,
+              geometric::Plane                 *p_wall_in,
               const Eigen::Vector3d &centroid_World_m_in,
-              Room::roomVariant      variant_in)
+              semantic::Room::roomVariant      variant_in)
 {
     room_inout.setId(id_in);
     room_inout.setMap(p_map_in);
@@ -116,14 +118,14 @@ void makeRoom(Room                  &room_inout,
     }
 }
 
-void makePassage(Passage               &passage_inout,
+void makePassage(semantic::Passage               &passage_inout,
                  int                    id_in,
                  Map                   *p_map_in,
                  const Eigen::Vector4d &equation_World_in,
                  const Eigen::Vector3d &centroid_World_m_in,
-                 Room                  *p_knownSideRoom_in,
+                 semantic::Room                  *p_knownSideRoom_in,
                  const Eigen::Vector3d &knownSideDirection_World_in,
-                 Room                  *p_farRoom_in,
+                 semantic::Room                  *p_farRoom_in,
                  bool                   passable_in,
                  double                 width_m_in,
                  double                 height_m_in)
@@ -146,10 +148,10 @@ void makePassage(Passage               &passage_inout,
     }
 }
 
-void makeFloor(Floor                     &floor_inout,
+void makeFloor(semantic::Floor                     &floor_inout,
                int                        id_in,
                Map                       *p_map_in,
-               const std::vector<Room *> &rooms_in,
+               const std::vector<semantic::Room *> &rooms_in,
                double                     centroidZ_World_m_in)
 {
     floor_inout.setId(id_in);
@@ -189,4 +191,5 @@ g2o::Sim3 makeNonTrivialSim3(double                 rotationAngle_rad_in,
 }
 
 } // namespace test
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

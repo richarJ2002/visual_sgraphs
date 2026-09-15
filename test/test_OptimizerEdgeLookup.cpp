@@ -10,7 +10,9 @@
 
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 TEST(OptimizerEdgeLookup, ReturnsThePointerAtAnInBoundsIndex)
@@ -51,4 +53,5 @@ TEST(OptimizerEdgeLookup, ReturnsNullptrForAnEmptyVector)
         nullptr);
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

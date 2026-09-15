@@ -1,6 +1,6 @@
 /**
  * WP13 Phase 4 focused tests: plane-gated geometric verification
- * (SemanticVerify) against synthetic two-room scenarios with a known
+ * (semantic::SemanticVerify) against synthetic two-room scenarios with a known
  * ground-truth SE(3) transform, plus the floor gate and the
  * EdgePlaneTransformSE3 residual.
  */
@@ -24,7 +24,9 @@
 #include <random>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace
 {
@@ -37,18 +39,18 @@ struct RawWall
     Eigen::Vector3d centroid;
 };
 
-/** Owns Plane objects for the lifetime of one synthetic room fixture and
- * associates them with a Room via the genuine Room::setWalls() API. */
+/** Owns geometric::Plane objects for the lifetime of one synthetic room fixture and
+ * associates them with a semantic::Room via the genuine semantic::Room::setWalls() API. */
 struct SyntheticRoom
 {
-    Room                                room;
-    std::vector<std::unique_ptr<Plane>> ownedWalls;
+    semantic::Room                                room;
+    std::vector<std::unique_ptr<geometric::Plane>> ownedWalls;
 
     void addWall(const RawWall &wall_in)
     {
-        auto wall = std::make_unique<Plane>();
+        auto wall = std::make_unique<geometric::Plane>();
         wall->setId(wall_in.id);
-        wall->setPlaneType(Plane::planeVariant::WALL);
+        wall->setPlaneType(geometric::Plane::planeVariant::WALL);
         wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(wall_in.normal.x(),
                                                              wall_in.normal.y(),
                                                              wall_in.normal.z(),
@@ -59,8 +61,8 @@ struct SyntheticRoom
     }
 };
 
-/** Transforms a raw plane equation the same way Plane::transformPlaneEquation
- * does (Plane.cc:410-467, scale fixed at 1): n' = R n; d' = d - n'^T t. */
+/** Transforms a raw plane equation the same way geometric::Plane::transformPlaneEquation
+ * does (geometric::Plane.cc:410-467, scale fixed at 1): n' = R n; d' = d - n'^T t. */
 RawWall transformWall(const RawWall         &source_in,
                       const Eigen::Matrix3d &rotation_in,
                       const Eigen::Vector3d &translation_in,
@@ -103,17 +105,17 @@ std::vector<RawWall> makeReferenceWalls()
     };
 }
 
-SemanticMergeRoomEvidence
+semantic::SemanticMergeRoomEvidence
     makeMergeEvidence(const int              roomId_in,
                       const int              farSideRoomId_in,
                       const Eigen::Vector3d &knownSideDirection_in)
 {
-    SemanticMergeRoomEvidence evidence;
+    semantic::SemanticMergeRoomEvidence evidence;
     evidence.context.roomId  = roomId_in;
     evidence.context.roomTag = "room_" + std::to_string(roomId_in);
     for (const RawWall &wall : makeReferenceWalls())
     {
-        VerifyWallObservation observation;
+        semantic::VerifyWallObservation observation;
         observation.wallId         = wall.id;
         observation.normal_World   = wall.normal;
         observation.d              = wall.d;
@@ -121,7 +123,7 @@ SemanticMergeRoomEvidence
         evidence.walls.push_back(observation);
     }
 
-    PassageContext passage;
+    semantic::PassageContext passage;
     passage.id                       = 7;
     passage.passable                 = true;
     passage.hasKnownSideRoom         = true;
@@ -181,18 +183,18 @@ TEST(GeometricVerify, AcceptsGroundTruthCorrelatedRooms)
     const std::unique_ptr<SyntheticRoom> roomB =
         buildRoom(2, wallsB, centroidB);
 
-    SemanticVerifyConfig                     config;
-    const std::vector<VerifyWallObservation> observationsA =
-        SemanticVerify::collectWallObservations(&roomA->room, config);
-    const std::vector<VerifyWallObservation> observationsB =
-        SemanticVerify::collectWallObservations(&roomB->room, config);
+    semantic::SemanticVerifyConfig                     config;
+    const std::vector<semantic::VerifyWallObservation> observationsA =
+        semantic::SemanticVerify::collectWallObservations(&roomA->room, config);
+    const std::vector<semantic::VerifyWallObservation> observationsB =
+        semantic::SemanticVerify::collectWallObservations(&roomB->room, config);
     ASSERT_EQ(observationsA.size(), 4U);
     ASSERT_EQ(observationsB.size(), 4U);
 
-    const SemanticVerifyResult result =
-        SemanticVerify::verify(observationsA, observationsB, config);
+    const semantic::SemanticVerifyResult result =
+        semantic::SemanticVerify::verify(observationsA, observationsB, config);
 
-    ASSERT_EQ(result.status, VerificationStatus::PASS);
+    ASSERT_EQ(result.status, semantic::VerificationStatus::PASS);
     EXPECT_TRUE(result.pass);
     EXPECT_GE(result.inliers.size(), 3U);
     EXPECT_LT(
@@ -232,18 +234,18 @@ TEST(GeometricVerify, RejectsRankDeficientCorrespondences)
     const std::unique_ptr<SyntheticRoom> roomB =
         buildRoom(2, wallsB, Eigen::Vector3d(2.0, 0.5, 0.5));
 
-    SemanticVerifyConfig                     config;
-    const std::vector<VerifyWallObservation> observationsA =
-        SemanticVerify::collectWallObservations(&roomA->room, config);
-    const std::vector<VerifyWallObservation> observationsB =
-        SemanticVerify::collectWallObservations(&roomB->room, config);
+    semantic::SemanticVerifyConfig                     config;
+    const std::vector<semantic::VerifyWallObservation> observationsA =
+        semantic::SemanticVerify::collectWallObservations(&roomA->room, config);
+    const std::vector<semantic::VerifyWallObservation> observationsB =
+        semantic::SemanticVerify::collectWallObservations(&roomB->room, config);
 
-    const SemanticVerifyResult result =
-        SemanticVerify::verify(observationsA, observationsB, config);
-    EXPECT_EQ(result.status, VerificationStatus::REJECTED);
+    const semantic::SemanticVerifyResult result =
+        semantic::SemanticVerify::verify(observationsA, observationsB, config);
+    EXPECT_EQ(result.status, semantic::VerificationStatus::REJECTED);
     EXPECT_FALSE(result.pass);
     /* Only 2 walls per side -- never reaches hypothesis search. */
-    EXPECT_EQ(result.rejectReason, VerifyRejectReason::TOO_FEW_WALLS);
+    EXPECT_EQ(result.rejectReason, semantic::VerifyRejectReason::TOO_FEW_WALLS);
 }
 
 TEST(GeometricVerify, CorrectHypothesisWinsOverOutlierCorrespondences)
@@ -281,19 +283,19 @@ TEST(GeometricVerify, CorrectHypothesisWinsOverOutlierCorrespondences)
     const std::unique_ptr<SyntheticRoom> roomB =
         buildRoom(2, wallsB, centroidB);
 
-    SemanticVerifyConfig config;
+    semantic::SemanticVerifyConfig config;
     config.minInlierRatio = 0.5; // 4 true inliers out of min(5,5)=5 walls
-    const std::vector<VerifyWallObservation> observationsA =
-        SemanticVerify::collectWallObservations(&roomA->room, config);
-    const std::vector<VerifyWallObservation> observationsB =
-        SemanticVerify::collectWallObservations(&roomB->room, config);
+    const std::vector<semantic::VerifyWallObservation> observationsA =
+        semantic::SemanticVerify::collectWallObservations(&roomA->room, config);
+    const std::vector<semantic::VerifyWallObservation> observationsB =
+        semantic::SemanticVerify::collectWallObservations(&roomB->room, config);
 
-    const SemanticVerifyResult result =
-        SemanticVerify::verify(observationsA, observationsB, config);
-    ASSERT_EQ(result.status, VerificationStatus::PASS);
-    EXPECT_EQ(result.rejectReason, VerifyRejectReason::NONE);
+    const semantic::SemanticVerifyResult result =
+        semantic::SemanticVerify::verify(observationsA, observationsB, config);
+    ASSERT_EQ(result.status, semantic::VerificationStatus::PASS);
+    EXPECT_EQ(result.rejectReason, semantic::VerifyRejectReason::NONE);
     EXPECT_EQ(result.inliers.size(), 4U);
-    for (const WallInlierPair &inlier : result.inliers)
+    for (const semantic::WallInlierPair &inlier : result.inliers)
     {
         EXPECT_NE(inlier.wallIdA, 50);
         EXPECT_NE(inlier.wallIdB, 150);
@@ -309,7 +311,7 @@ TEST(GeometricVerify, RejectsAmbiguousEquallyGoodHypotheses)
      * without discriminating evidence.
      *
      * The rejection reason this actually produces (confirmed once
-     * SemanticVerifyResult::rejectReason existed to check, previously
+     * semantic::SemanticVerifyResult::rejectReason existed to check, previously
      * unobservable since these diagnostic fields were only ever populated
      * on the PASS path) is NO_VALID_HYPOTHESIS, not
      * AMBIGUOUS_TOP_HYPOTHESES -- and for a more fundamental reason than
@@ -351,22 +353,22 @@ TEST(GeometricVerify, RejectsAmbiguousEquallyGoodHypotheses)
     const std::unique_ptr<SyntheticRoom> roomB =
         buildRoom(2, wallsA, Eigen::Vector3d(1.0, 1.0, 0.5));
 
-    SemanticVerifyConfig config;
+    semantic::SemanticVerifyConfig config;
     config.ambiguityMarginInliers = 1U;
-    const std::vector<VerifyWallObservation> observationsA =
-        SemanticVerify::collectWallObservations(&roomA->room, config);
-    const std::vector<VerifyWallObservation> observationsB =
-        SemanticVerify::collectWallObservations(&roomB->room, config);
+    const std::vector<semantic::VerifyWallObservation> observationsA =
+        semantic::SemanticVerify::collectWallObservations(&roomA->room, config);
+    const std::vector<semantic::VerifyWallObservation> observationsB =
+        semantic::SemanticVerify::collectWallObservations(&roomB->room, config);
 
-    const SemanticVerifyResult result =
-        SemanticVerify::verify(observationsA, observationsB, config);
-    EXPECT_EQ(result.status, VerificationStatus::REJECTED);
+    const semantic::SemanticVerifyResult result =
+        semantic::SemanticVerify::verify(observationsA, observationsB, config);
+    EXPECT_EQ(result.status, semantic::VerificationStatus::REJECTED);
     /* See the comment above: with only two independent wall directions and
      * exactly 4 walls, every 3-wall minimal sample necessarily contains one
      * full opposing (anti-parallel) pair, so no hypothesis is ever formed
      * at all -- confirmed via rejectReason, previously unobservable since
      * this field was only ever populated on the PASS path. */
-    EXPECT_EQ(result.rejectReason, VerifyRejectReason::NO_VALID_HYPOTHESIS);
+    EXPECT_EQ(result.rejectReason, semantic::VerifyRejectReason::NO_VALID_HYPOTHESIS);
 }
 
 TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
@@ -374,7 +376,7 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
     Map survivingMap;
     Map absorbedMap;
 
-    Floor survivingFloor;
+    semantic::Floor survivingFloor;
     survivingFloor.setId(1);
     ASSERT_TRUE(
         survivingFloor.setPlaneIdentity(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
@@ -382,7 +384,7 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
                                         5U));
     survivingMap.AddMapFloor(&survivingFloor);
 
-    Floor matchingAbsorbedFloor;
+    semantic::Floor matchingAbsorbedFloor;
     matchingAbsorbedFloor.setId(2);
     ASSERT_TRUE(matchingAbsorbedFloor.setPlaneIdentity(
         Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
@@ -391,8 +393,8 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
     absorbedMap.AddMapFloor(&matchingAbsorbedFloor);
 
     const Eigen::Isometry3d identity = Eigen::Isometry3d::Identity();
-    SemanticVerifyResult    acceptedResult;
-    EXPECT_TRUE(SemanticVerify::runFloorGate(acceptedResult,
+    semantic::SemanticVerifyResult    acceptedResult;
+    EXPECT_TRUE(semantic::SemanticVerify::runFloorGate(acceptedResult,
                                              &survivingMap,
                                              &absorbedMap,
                                              identity));
@@ -401,7 +403,7 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
     EXPECT_EQ(acceptedResult.floorGateResult, "ACCEPTED");
 
     Map   mismatchedMap;
-    Floor mismatchedFloor;
+    semantic::Floor mismatchedFloor;
     mismatchedFloor.setId(3);
     ASSERT_TRUE(
         mismatchedFloor.setPlaneIdentity(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0),
@@ -409,8 +411,8 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
                                          5U));
     mismatchedMap.AddMapFloor(&mismatchedFloor);
 
-    SemanticVerifyResult rejectedResult;
-    EXPECT_FALSE(SemanticVerify::runFloorGate(rejectedResult,
+    semantic::SemanticVerifyResult rejectedResult;
+    EXPECT_FALSE(semantic::SemanticVerify::runFloorGate(rejectedResult,
                                               &survivingMap,
                                               &mismatchedMap,
                                               identity));
@@ -421,18 +423,18 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
 
 TEST(GeometricVerify, SemanticMergeGateAcceptsAlignedStableHierarchy)
 {
-    const SemanticMergeRoomEvidence surviving =
+    const semantic::SemanticMergeRoomEvidence surviving =
         makeMergeEvidence(2, 3, Eigen::Vector3d::UnitX());
-    const SemanticMergeRoomEvidence absorbed =
+    const semantic::SemanticMergeRoomEvidence absorbed =
         makeMergeEvidence(2, 3, Eigen::Vector3d::UnitX());
 
-    const SemanticMergeGateResult result =
-        SemanticVerify::evaluateMergeAlignment({surviving},
+    const semantic::SemanticMergeGateResult result =
+        semantic::SemanticVerify::evaluateMergeAlignment({surviving},
                                                {absorbed},
                                                g2o::Sim3());
 
-    EXPECT_EQ(result.decision, SemanticMergeDecision::ACCEPT);
-    EXPECT_EQ(result.reason, SemanticMergeReason::ALIGNED);
+    EXPECT_EQ(result.decision, semantic::SemanticMergeDecision::ACCEPT);
+    EXPECT_EQ(result.reason, semantic::SemanticMergeReason::ALIGNED);
     EXPECT_EQ(result.sharedRoomCount, 1U);
     EXPECT_EQ(result.alignedRoomCount, 1U);
     EXPECT_EQ(result.matchedWallCount, 4U);
@@ -442,68 +444,68 @@ TEST(GeometricVerify, SemanticMergeGateAcceptsAlignedStableHierarchy)
 TEST(GeometricVerify,
      SemanticMergeGateRejectsIdenticalGeometryWithWrongPassagePredecessor)
 {
-    const SemanticMergeRoomEvidence currentRoom =
+    const semantic::SemanticMergeRoomEvidence currentRoom =
         makeMergeEvidence(2, 3, Eigen::Vector3d::UnitX());
-    SemanticMergeRoomEvidence incorrectlyMatchedPriorRoom =
+    semantic::SemanticMergeRoomEvidence incorrectlyMatchedPriorRoom =
         makeMergeEvidence(2, 0, Eigen::Vector3d::UnitX());
 
-    const SemanticMergeGateResult result =
-        SemanticVerify::evaluateMergeAlignment({currentRoom},
+    const semantic::SemanticMergeGateResult result =
+        semantic::SemanticVerify::evaluateMergeAlignment({currentRoom},
                                                {incorrectlyMatchedPriorRoom},
                                                g2o::Sim3());
 
-    EXPECT_EQ(result.decision, SemanticMergeDecision::REJECT);
+    EXPECT_EQ(result.decision, semantic::SemanticMergeDecision::REJECT);
     EXPECT_EQ(result.reason,
-              SemanticMergeReason::PASSAGE_ENDPOINT_CONTRADICTION);
+              semantic::SemanticMergeReason::PASSAGE_ENDPOINT_CONTRADICTION);
     EXPECT_EQ(result.matchedWallCount, 4U);
 }
 
 TEST(GeometricVerify, SemanticMergeGateDefersWhenPassageEvidenceIsMissing)
 {
-    const SemanticMergeRoomEvidence surviving =
+    const semantic::SemanticMergeRoomEvidence surviving =
         makeMergeEvidence(2, 3, Eigen::Vector3d::UnitX());
-    SemanticMergeRoomEvidence absorbed =
+    semantic::SemanticMergeRoomEvidence absorbed =
         makeMergeEvidence(2, 3, Eigen::Vector3d::UnitX());
     absorbed.context.passageContexts.clear();
 
-    const SemanticMergeGateResult result =
-        SemanticVerify::evaluateMergeAlignment({surviving},
+    const semantic::SemanticMergeGateResult result =
+        semantic::SemanticVerify::evaluateMergeAlignment({surviving},
                                                {absorbed},
                                                g2o::Sim3());
 
-    EXPECT_EQ(result.decision, SemanticMergeDecision::DEFER);
-    EXPECT_EQ(result.reason, SemanticMergeReason::PASSAGE_EVIDENCE_MISSING);
+    EXPECT_EQ(result.decision, semantic::SemanticMergeDecision::DEFER);
+    EXPECT_EQ(result.reason, semantic::SemanticMergeReason::PASSAGE_EVIDENCE_MISSING);
 }
 
 TEST(GeometricVerify, SemanticMergeGateRejectsOpposedPassageDirection)
 {
-    const SemanticMergeRoomEvidence surviving =
+    const semantic::SemanticMergeRoomEvidence surviving =
         makeMergeEvidence(2, 3, Eigen::Vector3d::UnitX());
-    const SemanticMergeRoomEvidence absorbed =
+    const semantic::SemanticMergeRoomEvidence absorbed =
         makeMergeEvidence(2, 3, -Eigen::Vector3d::UnitX());
 
-    const SemanticMergeGateResult result =
-        SemanticVerify::evaluateMergeAlignment({surviving},
+    const semantic::SemanticMergeGateResult result =
+        semantic::SemanticVerify::evaluateMergeAlignment({surviving},
                                                {absorbed},
                                                g2o::Sim3());
 
-    EXPECT_EQ(result.decision, SemanticMergeDecision::REJECT);
+    EXPECT_EQ(result.decision, semantic::SemanticMergeDecision::REJECT);
     EXPECT_EQ(result.reason,
-              SemanticMergeReason::PASSAGE_DIRECTION_CONTRADICTION);
+              semantic::SemanticMergeReason::PASSAGE_DIRECTION_CONTRADICTION);
 }
 
 TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
 {
     Map  map;
-    Room roomZero;
-    Room roomTwo;
+    semantic::Room roomZero;
+    semantic::Room roomTwo;
     roomZero.setId(0);
     roomZero.setRoomTag("room_0");
-    roomZero.setRoomVariant(Room::roomVariant::ROOM);
+    roomZero.setRoomVariant(semantic::Room::roomVariant::ROOM);
     roomZero.setCentroid(Eigen::Vector3d::Zero());
     roomTwo.setId(2);
     roomTwo.setRoomTag("room_2");
-    roomTwo.setRoomVariant(Room::roomVariant::ROOM);
+    roomTwo.setRoomVariant(semantic::Room::roomVariant::ROOM);
     roomTwo.setCentroid(Eigen::Vector3d::Zero());
     map.AddDetectedMapRoom(&roomZero);
     map.AddDetectedMapRoom(&roomTwo);
@@ -518,15 +520,15 @@ TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
 TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
 {
     Map  map;
-    Room retainedRoom;
-    Room importedRoom;
+    semantic::Room retainedRoom;
+    semantic::Room importedRoom;
     retainedRoom.setId(2);
     retainedRoom.setRoomTag("room_2");
-    retainedRoom.setRoomVariant(Room::roomVariant::ROOM);
+    retainedRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
     retainedRoom.setCentroid(Eigen::Vector3d::Zero());
     importedRoom.setId(2);
     importedRoom.setRoomTag("room_2");
-    importedRoom.setRoomVariant(Room::roomVariant::ROOM);
+    importedRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
     importedRoom.setCentroid(Eigen::Vector3d::Zero());
     map.AddDetectedMapRoom(&retainedRoom);
     map.AddDetectedMapRoom(&importedRoom);
@@ -545,15 +547,15 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
      * from a visited duplicate stays visited, and two unvisited rooms stay
      * unvisited. */
     Map  map;
-    Room retainedRoom;
-    Room importedRoom;
+    semantic::Room retainedRoom;
+    semantic::Room importedRoom;
     retainedRoom.setId(2);
     retainedRoom.setRoomTag("room_2");
-    retainedRoom.setRoomVariant(Room::roomVariant::ROOM);
+    retainedRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
     retainedRoom.setCentroid(Eigen::Vector3d::Zero());
     importedRoom.setId(2);
     importedRoom.setRoomTag("room_2");
-    importedRoom.setRoomVariant(Room::roomVariant::ROOM);
+    importedRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
     importedRoom.setCentroid(Eigen::Vector3d::Zero());
     importedRoom.setPreviouslyVisited(true);
     map.AddDetectedMapRoom(&retainedRoom);
@@ -564,15 +566,15 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
     EXPECT_TRUE(importedRoom.isBad());
     EXPECT_TRUE(retainedRoom.hasPreviouslyVisited());
 
-    Room retainedUnvisited;
-    Room importedUnvisited;
+    semantic::Room retainedUnvisited;
+    semantic::Room importedUnvisited;
     retainedUnvisited.setId(3);
     retainedUnvisited.setRoomTag("room_3");
-    retainedUnvisited.setRoomVariant(Room::roomVariant::ROOM);
+    retainedUnvisited.setRoomVariant(semantic::Room::roomVariant::ROOM);
     retainedUnvisited.setCentroid(Eigen::Vector3d::Zero());
     importedUnvisited.setId(3);
     importedUnvisited.setRoomTag("room_3");
-    importedUnvisited.setRoomVariant(Room::roomVariant::ROOM);
+    importedUnvisited.setRoomVariant(semantic::Room::roomVariant::ROOM);
     importedUnvisited.setCentroid(Eigen::Vector3d::Zero());
     map.AddDetectedMapRoom(&retainedUnvisited);
     map.AddDetectedMapRoom(&importedUnvisited);
@@ -618,20 +620,20 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
     const std::unique_ptr<SyntheticRoom> roomB =
         buildRoom(2, wallsB, centroidB);
 
-    SemanticVerifyConfig                     config;
-    const std::vector<VerifyWallObservation> observationsA =
-        SemanticVerify::collectWallObservations(&roomA->room, config);
-    const std::vector<VerifyWallObservation> observationsB =
-        SemanticVerify::collectWallObservations(&roomB->room, config);
+    semantic::SemanticVerifyConfig                     config;
+    const std::vector<semantic::VerifyWallObservation> observationsA =
+        semantic::SemanticVerify::collectWallObservations(&roomA->room, config);
+    const std::vector<semantic::VerifyWallObservation> observationsB =
+        semantic::SemanticVerify::collectWallObservations(&roomB->room, config);
 
-    SemanticVerifyResult result =
-        SemanticVerify::verify(observationsA, observationsB, config);
-    ASSERT_EQ(result.status, VerificationStatus::PASS);
+    semantic::SemanticVerifyResult result =
+        semantic::SemanticVerify::verify(observationsA, observationsB, config);
+    ASSERT_EQ(result.status, semantic::VerificationStatus::PASS);
     ASSERT_TRUE(result.pass);
 
     Map   survivingMap;
     Map   absorbedMap;
-    Floor survivingFloor;
+    semantic::Floor survivingFloor;
     survivingFloor.setId(1);
     ASSERT_TRUE(
         survivingFloor.setPlaneIdentity(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
@@ -639,7 +641,7 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
                                         5U));
     survivingMap.AddMapFloor(&survivingFloor);
 
-    Floor matchingAbsorbedFloor;
+    semantic::Floor matchingAbsorbedFloor;
     matchingAbsorbedFloor.setId(2);
     ASSERT_TRUE(matchingAbsorbedFloor.setPlaneIdentity(
         Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
@@ -647,7 +649,7 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
         5U));
     absorbedMap.AddMapFloor(&matchingAbsorbedFloor);
 
-    EXPECT_TRUE(SemanticVerify::runFloorGate(result,
+    EXPECT_TRUE(semantic::SemanticVerify::runFloorGate(result,
                                              &survivingMap,
                                              &absorbedMap,
                                              result.transform_AToB));
@@ -663,7 +665,7 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
     /* Same genuine geometric pass, but the floor gate rejects -- the
      * combined verdict must follow the floor gate down. */
     Map   mismatchedMap;
-    Floor mismatchedFloor;
+    semantic::Floor mismatchedFloor;
     mismatchedFloor.setId(3);
     ASSERT_TRUE(
         mismatchedFloor.setPlaneIdentity(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0),
@@ -671,8 +673,8 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
                                          5U));
     mismatchedMap.AddMapFloor(&mismatchedFloor);
 
-    SemanticVerifyResult mismatchedResult = result;
-    EXPECT_FALSE(SemanticVerify::runFloorGate(mismatchedResult,
+    semantic::SemanticVerifyResult mismatchedResult = result;
+    EXPECT_FALSE(semantic::SemanticVerify::runFloorGate(mismatchedResult,
                                               &survivingMap,
                                               &mismatchedMap,
                                               result.transform_AToB));
@@ -682,14 +684,14 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
 
 TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
 {
-    /* Previously, SemanticVerifyConfig's own default-member-initialisers
-     * happened to literally match SystemParams::verification/factor's
-     * defaults, but nothing ever read the loaded SystemParams values into a
-     * SemanticVerifyConfig -- an operator's system_params.yaml edit had zero
+    /* Previously, semantic::SemanticVerifyConfig's own default-member-initialisers
+     * happened to literally match types::SystemParams::verification/factor's
+     * defaults, but nothing ever read the loaded types::SystemParams values into a
+     * semantic::SemanticVerifyConfig -- an operator's system_params.yaml edit had zero
      * effect on the verifier. This exercises configFromSystemParams()
      * threading distinctive, non-default loaded values through, proving the
      * wiring actually exists now. */
-    SystemParams *params            = SystemParams::GetParams();
+    types::SystemParams *params            = types::SystemParams::GetParams();
     const auto    savedVerification = params->verification;
     const auto    savedFactor       = params->factor;
 
@@ -708,8 +710,8 @@ TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
     params->factor.huber_delta                       = 2.0F;
     params->factor.optimizer_iterations              = 7U;
 
-    const SemanticVerifyConfig config =
-        SemanticVerify::configFromSystemParams();
+    const semantic::SemanticVerifyConfig config =
+        semantic::SemanticVerify::configFromSystemParams();
 
     EXPECT_NEAR(config.maxNormalAngle_deg, 17.5, 1e-5);
     EXPECT_NEAR(config.maxOffset_m, 0.42, 1e-5);
@@ -732,7 +734,7 @@ TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
 
 TEST(GeometricVerify, SeededUncorrelatedRoomsProduceNoFalseAccepts)
 {
-    SemanticVerifyConfig                   config;
+    semantic::SemanticVerifyConfig                   config;
     std::mt19937                           generator(1401U);
     std::uniform_real_distribution<double> directionSpread(-4.0, 4.0);
     /* Offsets span a range representative of a real building's coordinate
@@ -777,14 +779,14 @@ TEST(GeometricVerify, SeededUncorrelatedRoomsProduceNoFalseAccepts)
         const std::unique_ptr<SyntheticRoom> roomB =
             buildRoom(2, wallsB, Eigen::Vector3d(0.0, 0.0, 0.0));
 
-        const std::vector<VerifyWallObservation> observationsA =
-            SemanticVerify::collectWallObservations(&roomA->room, config);
-        const std::vector<VerifyWallObservation> observationsB =
-            SemanticVerify::collectWallObservations(&roomB->room, config);
+        const std::vector<semantic::VerifyWallObservation> observationsA =
+            semantic::SemanticVerify::collectWallObservations(&roomA->room, config);
+        const std::vector<semantic::VerifyWallObservation> observationsB =
+            semantic::SemanticVerify::collectWallObservations(&roomB->room, config);
 
-        const SemanticVerifyResult result =
-            SemanticVerify::verify(observationsA, observationsB, config);
-        if (result.status == VerificationStatus::PASS)
+        const semantic::SemanticVerifyResult result =
+            semantic::SemanticVerify::verify(observationsA, observationsB, config);
+        if (result.status == semantic::VerificationStatus::PASS)
         {
             ++falseAccepts;
         }
@@ -868,4 +870,5 @@ TEST(GeometricVerify,
     EXPECT_NEAR(orientationResidualNorm, M_PI, 1e-6);
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

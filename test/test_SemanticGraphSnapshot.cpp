@@ -2,8 +2,8 @@
  * Semantic-axiom-reliability-plan.md Phase 1 (P1.1): focused, ROS/Gazebo-free
  * tests for the value-only SemanticGraphSnapshot capture contract. These
  * exercise the genuine production capture entry point
- * (ORB_SLAM3::semantic::captureSemanticGraphSnapshot()) against real
- * Atlas/Map/Room/Plane/Passage/Floor objects built through SemanticFixtures
+ * (vs_graphs::core::semantic::captureSemanticGraphSnapshot()) against real
+ * Atlas/Map/Room/geometric::Plane/Passage/Floor objects built through SemanticFixtures
  * and the model's own setters -- they do not reconstruct the expected
  * snapshot by hand, except where a test white-box-verifies one internal
  * helper directly (documented at each such case).
@@ -37,7 +37,9 @@
 #include "SemanticFixtures.h"
 #include "SemanticGraphSnapshotTestHelpers.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -53,7 +55,7 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
         Map  *p_map = atlas.GetCurrentMap();
         mapId       = p_map->GetId();
 
-        Plane wall;
+        geometric::Plane wall;
         test::makeWallPlane(wall,
                             1,
                             p_map,
@@ -82,7 +84,7 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
     ASSERT_EQ(p_mapSnapshot->walls.size(), 1U);
     EXPECT_EQ(p_mapSnapshot->rooms[0].centroid_World_m,
               Eigen::Vector3d(1.0, 0.0, 1.0));
-    EXPECT_EQ(p_mapSnapshot->walls[0].planeType, Plane::planeVariant::WALL);
+    EXPECT_EQ(p_mapSnapshot->walls[0].planeType, geometric::Plane::planeVariant::WALL);
     /* updateSizeOfPlane() (called by makeWallPlane()) populates the finite
      * U/V bounds; finiteSupportCount is populated only by the separate
      * beginMapCloudRefit()/completeMapCloudRefit() pipeline, which this
@@ -108,7 +110,7 @@ TEST(SemanticGraphSnapshot,
         Map  *p_map = atlas.GetCurrentMap();
         mapId       = p_map->GetId();
 
-        Plane wall;
+        geometric::Plane wall;
         test::makeWallPlane(wall,
                             1,
                             p_map,
@@ -178,7 +180,7 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
     Map *p_mapB = atlas.GetCurrentMap();
     ASSERT_NE(p_mapA->GetId(), p_mapB->GetId());
 
-    Plane wallA;
+    geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
                         p_mapA,
@@ -193,7 +195,7 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
     test::makeRoom(roomA, 1, p_mapA, &wallA);
     p_mapA->AddDetectedMapRoom(&roomA);
 
-    Plane wallB;
+    geometric::Plane wallB;
     test::makeWallPlane(wallB,
                         1,
                         p_mapB,
@@ -283,7 +285,7 @@ TEST(SemanticGraphSnapshot,
     p_mapA->AddDetectedMapRoom(&noMapRoom);
 
     /* Wall: enumerated from mapA, but declares mapB. */
-    Plane mismatchedWall;
+    geometric::Plane mismatchedWall;
     test::makeWallPlane(mismatchedWall,
                         3,
                         p_mapB,
@@ -297,8 +299,8 @@ TEST(SemanticGraphSnapshot,
 
     /* Wall: enumerated from mapA, declares no map at all. Map::AddMapPlane()
      * only requires a non-null pointer; the plane's own SetMap() is
-     * independent (confirmed by direct source read of Map.h/Plane.h). */
-    Plane noMapWall;
+     * independent (confirmed by direct source read of Map.h/geometric::Plane.h). */
+    geometric::Plane noMapWall;
     test::makeWallPlane(noMapWall,
                         6,
                         nullptr,
@@ -440,7 +442,7 @@ TEST(SemanticGraphSnapshot,
 }
 
 /* Minimum-proof item 5: null, unmapped, bad, missing-from-enumeration,
- * cross-map, and wrong Plane-type relationship targets retain truthful
+ * cross-map, and wrong geometric::Plane-type relationship targets retain truthful
  * key/reason/liveness/type evidence. */
 TEST(SemanticGraphSnapshot,
      RelationshipTargetsRetainTruthfulEvidenceAcrossEveryUnusualCase)
@@ -457,7 +459,7 @@ TEST(SemanticGraphSnapshot,
 
     /* Room whose ground plane is a real, but never map-registered
      * ("unmapped"), WALL-typed ("wrong type") plane. */
-    Plane unmappedWrongTypeGround;
+    geometric::Plane unmappedWrongTypeGround;
     test::makeWallPlane(unmappedWrongTypeGround,
                         2,
                         nullptr,
@@ -488,7 +490,7 @@ TEST(SemanticGraphSnapshot,
 
     /* Bad wall, referenced as another room's ground plane, to prove
      * liveness is captured truthfully even for a retired target. */
-    Plane badGroundPlane;
+    geometric::Plane badGroundPlane;
     test::makeGroundPlane(badGroundPlane, 8, p_mapA);
     p_mapA->AddMapPlane(&badGroundPlane);
     badGroundPlane.setBad();
@@ -524,7 +526,7 @@ TEST(SemanticGraphSnapshot,
               UnavailableReason::NONE);
     EXPECT_FALSE(p_unusualGroundRoom->groundPlaneRef.mapId.has_value());
     EXPECT_EQ(p_unusualGroundRoom->groundPlaneRef.planeType,
-              Plane::planeVariant::WALL);
+              geometric::Plane::planeVariant::WALL);
     EXPECT_TRUE(p_unusualGroundRoom->groundPlaneRef.isLive);
 
     /* Missing-from-enumeration: the key is still truthfully reported, even
@@ -578,8 +580,8 @@ TEST(SemanticGraphSnapshot, DefaultReferenceInvariantsAreValid)
 }
 
 /* Corrective-audit (2026-09-05) regression coverage: entityRefForWall() used
- * to label every referenced Plane as EntityKind::WALL without checking its
- * real Plane::planeVariant, fabricating a WallRecord identity for a
+ * to label every referenced geometric::Plane as EntityKind::WALL without checking its
+ * real geometric::Plane::planeVariant, fabricating a WallRecord identity for a
  * non-WALL target. Wall-shaped references (a wall's twin face, a Room's
  * owned walls, a Passage's associated walls) now always use RawPlaneRef, so
  * a wrong-type target retains its true planeType/isLive/mapId instead of a
@@ -591,14 +593,14 @@ TEST(SemanticGraphSnapshot,
     Map  *p_map = atlas.GetCurrentMap();
 
     /* A live GROUND-typed plane, never a WallRecord in this snapshot. */
-    Plane groundNotWall;
+    geometric::Plane groundNotWall;
     ASSERT_TRUE(test::makeGroundPlane(groundNotWall, 1, p_map));
     p_map->AddMapPlane(&groundNotWall);
 
     /* Case 1: a genuine wall whose twinFace_ is wrongly set to the
-     * GROUND-typed plane (Plane::setTwinFace() has no type check, so this
+     * GROUND-typed plane (geometric::Plane::setTwinFace() has no type check, so this
      * is a real reachable model state, not a fabricated test-only shape). */
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         2,
                         p_map,
@@ -643,14 +645,14 @@ TEST(SemanticGraphSnapshot,
     EXPECT_EQ(p_wallRecord->twinRef.reason, UnavailableReason::NONE);
     EXPECT_EQ(p_wallRecord->twinRef.planeId, 1);
     EXPECT_TRUE(p_wallRecord->twinRef.isLive);
-    EXPECT_EQ(p_wallRecord->twinRef.planeType, Plane::planeVariant::GROUND);
+    EXPECT_EQ(p_wallRecord->twinRef.planeType, geometric::Plane::planeVariant::GROUND);
     EXPECT_FALSE(p_wallRecord->twinRef.wallKey.has_value());
 
     const RoomRecord *p_roomRecord = findRoomRecord(*p_mapSnapshot, 3);
     ASSERT_NE(p_roomRecord, nullptr);
     ASSERT_EQ(p_roomRecord->wallRefs.size(), 1U);
     EXPECT_EQ(p_roomRecord->wallRefs[0].planeId, 1);
-    EXPECT_EQ(p_roomRecord->wallRefs[0].planeType, Plane::planeVariant::GROUND);
+    EXPECT_EQ(p_roomRecord->wallRefs[0].planeType, geometric::Plane::planeVariant::GROUND);
     EXPECT_FALSE(p_roomRecord->wallRefs[0].wallKey.has_value());
 
     const PassageRecord *p_passageRecord = findPassageRecord(*p_mapSnapshot, 4);
@@ -658,7 +660,7 @@ TEST(SemanticGraphSnapshot,
     ASSERT_EQ(p_passageRecord->associateWallRefs.size(), 1U);
     EXPECT_EQ(p_passageRecord->associateWallRefs[0].planeId, 1);
     EXPECT_EQ(p_passageRecord->associateWallRefs[0].planeType,
-              Plane::planeVariant::GROUND);
+              geometric::Plane::planeVariant::GROUND);
     EXPECT_FALSE(p_passageRecord->associateWallRefs[0].wallKey.has_value());
 }
 
@@ -815,7 +817,7 @@ TEST(SemanticGraphSnapshot,
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1026,7 +1028,7 @@ TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane sharedWall;
+    geometric::Plane sharedWall;
     test::makeWallPlane(sharedWall,
                         1,
                         p_map,
@@ -1086,7 +1088,7 @@ TEST(SemanticGraphSnapshot,
     atlas.CreateNewMap();
     Map *p_mapB = atlas.GetCurrentMap();
 
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_mapA,
@@ -1135,7 +1137,7 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane sharedWall;
+    geometric::Plane sharedWall;
     test::makeWallPlane(sharedWall,
                         1,
                         p_map,
@@ -1173,7 +1175,7 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
      * ownership pass (not Map::GetAllRooms()'s duplicating union) exists to
      * handle: the owner must appear exactly once in ownerRoomRefs, not
      * twice for the two collections it happens to be registered in. */
-    Plane doublyRegisteredOwnerWall;
+    geometric::Plane doublyRegisteredOwnerWall;
     test::makeWallPlane(doublyRegisteredOwnerWall,
                         5,
                         p_map,
@@ -1321,7 +1323,7 @@ TEST(
          * vector two entries to check std::is_sorted() over. */
         atlas.CreateNewMap();
 
-        std::vector<std::unique_ptr<Plane>>   walls;
+        std::vector<std::unique_ptr<geometric::Plane>>   walls;
         std::vector<std::unique_ptr<Passage>> passages;
         std::vector<std::unique_ptr<Floor>>   floors;
         for (int index = 0; index < 3; ++index)
@@ -1329,7 +1331,7 @@ TEST(
             const int entityId =
                 ascendingInsertionOrder_in ? index + 1 : 3 - index;
 
-            std::unique_ptr<Plane> p_wall = std::make_unique<Plane>();
+            std::unique_ptr<geometric::Plane> p_wall = std::make_unique<geometric::Plane>();
             test::makeWallPlane(
                 *p_wall,
                 entityId,
@@ -1421,10 +1423,10 @@ TEST(
         Atlas atlas(0);
         Map  *p_map = atlas.GetCurrentMap();
 
-        std::vector<std::unique_ptr<Plane>> walls;
+        std::vector<std::unique_ptr<geometric::Plane>> walls;
         for (int index = 0; index < 3; ++index)
         {
-            std::unique_ptr<Plane> p_wall = std::make_unique<Plane>();
+            std::unique_ptr<geometric::Plane> p_wall = std::make_unique<geometric::Plane>();
             test::makeWallPlane(
                 *p_wall,
                 index + 1,
@@ -1458,7 +1460,7 @@ TEST(
             owningRooms.push_back(std::move(p_room));
         }
 
-        std::unique_ptr<Plane> p_sharedWall = std::make_unique<Plane>();
+        std::unique_ptr<geometric::Plane> p_sharedWall = std::make_unique<geometric::Plane>();
         test::makeWallPlane(*p_sharedWall,
                             4,
                             p_map,
@@ -1581,7 +1583,7 @@ TEST(SemanticGraphSnapshot,
     EXPECT_EQ(snapshot.maps[0].rooms.size(), 1U);
 }
 
-/* Minimum-proof item 10: the cheap Plane accessor agrees with the scalar
+/* Minimum-proof item 10: the cheap geometric::Plane accessor agrees with the scalar
  * fields in the full geometry snapshot while returning no cloud payload. */
 TEST(SemanticGraphSnapshot,
      CheapPlaneAccessorAgreesWithFullGeometrySnapshotScalars)
@@ -1589,7 +1591,7 @@ TEST(SemanticGraphSnapshot,
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1601,8 +1603,8 @@ TEST(SemanticGraphSnapshot,
                         Eigen::Vector3d(0.0, 2.0, 0.0));
     p_map->AddMapPlane(&wall);
 
-    const Plane::GeometrySnapshot fullSnapshot = wall.getGeometrySnapshot();
-    const PlaneGeometryMetadataSnapshot metadata =
+    const geometric::Plane::GeometrySnapshot fullSnapshot = wall.getGeometrySnapshot();
+    const geometric::PlaneGeometryMetadataSnapshot metadata =
         wall.getGeometryMetadataSnapshot();
 
     EXPECT_EQ(metadata.equation_World, fullSnapshot.equation_World);
@@ -1627,7 +1629,7 @@ TEST(SemanticGraphSnapshot,
     const WallRecord *p_wallRecord = findWallRecord(*p_mapSnapshot, 1);
     ASSERT_NE(p_wallRecord, nullptr);
 
-    /* Every one of the 10 PlaneGeometryMetadataSnapshot fields, not just a
+    /* Every one of the 10 geometric::PlaneGeometryMetadataSnapshot fields, not just a
      * convenient subset -- a field-swap bug touching any single one of
      * these (e.g. minPlaneV_m/maxPlaneV_m, observationCount, or
      * successfulRefitGeneration) must fail this test. */
@@ -1737,4 +1739,5 @@ TEST(SemanticGraphSnapshot, FloatTotalOrderHandlesNaNInfinityAndSignedZero)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

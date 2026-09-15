@@ -16,7 +16,7 @@ namespace
 using vs_graphs::sparse::classifySparseMarker;
 using vs_graphs::sparse::SparseMarkerVerdict;
 
-/* Type codes mirror visualization_msgs/msg/Marker.msg (LINE_LIST=5,
+/* Type codes mirror visualization_msgs/msg/semantic::Marker.msg (LINE_LIST=5,
  * CUBE_LIST=6); the header under test deliberately avoids the ROS include. */
 constexpr int TEST_CUBE_LIST_TYPE  = 6;
 constexpr int TEST_LINE_LIST_TYPE  = 5;

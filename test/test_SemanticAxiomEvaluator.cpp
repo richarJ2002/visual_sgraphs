@@ -4,7 +4,7 @@
  * SemanticAxiomEvaluator module (evaluateState(), evaluateTransition(),
  * evaluateMapCompleteness(), axiomCapabilityTable()).
  *
- * Every test builds real Atlas/Map/Room/Plane/Passage/Floor objects through
+ * Every test builds real Atlas/Map/Room/geometric::Plane/Passage/Floor objects through
  * SemanticFixtures and the model's own setters, captures a genuine
  * SemanticGraphSnapshot via the production captureSemanticGraphSnapshot()
  * entry point (never hand-constructing a snapshot), then evaluates it
@@ -34,7 +34,9 @@
 #include "SemanticFixtures.h"
 #include "SemanticGraphSnapshotTestHelpers.h"
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -255,7 +257,7 @@ TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
 
     /* Wall 1: zero owners -> UNKNOWN. Wall 2: two owners -> FAIL. Wall 3:
      * one valid owner -> PASS. AX-WALL-01's aggregate must be FAIL. */
-    Plane wallUnknown;
+    geometric::Plane wallUnknown;
     test::makeWallPlane(wallUnknown,
                         1,
                         p_map,
@@ -266,7 +268,7 @@ TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
                         1.0);
     p_map->AddMapPlane(&wallUnknown);
 
-    Plane wallMultiOwner;
+    geometric::Plane wallMultiOwner;
     test::makeWallPlane(wallMultiOwner,
                         2,
                         p_map,
@@ -277,7 +279,7 @@ TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
                         1.0);
     p_map->AddMapPlane(&wallMultiOwner);
 
-    Plane wallValid;
+    geometric::Plane wallValid;
     test::makeWallPlane(wallValid,
                         3,
                         p_map,
@@ -380,7 +382,7 @@ TEST(SemanticAxiomEvaluator,
     Map  *p_map = atlas.GetCurrentMap();
 
     /* PASS: a genuinely valid, single-owner wall. */
-    Plane passWall;
+    geometric::Plane passWall;
     test::makeWallPlane(passWall,
                         1,
                         p_map,
@@ -395,7 +397,7 @@ TEST(SemanticAxiomEvaluator,
     p_map->AddDetectedMapRoom(&passRoom);
 
     /* UNKNOWN: a wall with zero owners -- commitment unverifiable. */
-    Plane unknownWall;
+    geometric::Plane unknownWall;
     test::makeWallPlane(unknownWall,
                         2,
                         p_map,
@@ -408,7 +410,7 @@ TEST(SemanticAxiomEvaluator,
     p_map->AddMapPlane(&unknownWall);
 
     /* FAIL: a wall with two owners. */
-    Plane failWall;
+    geometric::Plane failWall;
     test::makeWallPlane(failWall,
                         3,
                         p_map,
@@ -472,7 +474,7 @@ TEST(SemanticAxiomEvaluator,
      * inputs and only container/vector order differs. */
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -515,7 +517,7 @@ TEST(SemanticAxiomEvaluator, FindingsAreSortedById)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -541,7 +543,7 @@ TEST(SemanticAxiomEvaluator, EvaluateStateIsIdempotentAndDoesNotMutateInput)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -587,7 +589,7 @@ TEST(SemanticAxiomEvaluator,
     Atlas atlasBefore(0);
     Atlas atlasAfter(0);
     Map  *p_mapAfter = atlasAfter.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_mapAfter,
@@ -641,7 +643,7 @@ TEST(SemanticAxiomEvaluator, OwnerlessWallIsUnknown)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -666,7 +668,7 @@ TEST(SemanticAxiomEvaluator, SingleValidSameMapOwnerIsPass)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -694,7 +696,7 @@ TEST(SemanticAxiomEvaluator, MultipleOwnersIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -727,7 +729,7 @@ TEST(SemanticAxiomEvaluator, BadOwnerIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -760,7 +762,7 @@ TEST(SemanticAxiomEvaluator, CrossMapOwnerIsFail)
     Map *p_mapB = atlas.GetCurrentMap();
     ASSERT_NE(p_mapA->GetId(), p_mapB->GetId());
 
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_mapA,
@@ -795,7 +797,7 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongVariantIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -835,7 +837,7 @@ TEST(SemanticAxiomEvaluator, WallOwnerDeclaredMapMismatchIsFail)
     Map *p_mapB = atlas.GetCurrentMap();
     ASSERT_NE(p_mapA->GetId(), p_mapB->GetId());
 
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_mapA,
@@ -869,7 +871,7 @@ TEST(SemanticAxiomEvaluator, WallOwnerDuplicateIdentityIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -911,7 +913,7 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordUnavailableIsUnknown)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -954,7 +956,7 @@ TEST(SemanticAxiomEvaluator, WallOwnerNotReciprocalIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -999,7 +1001,7 @@ TEST(SemanticAxiomEvaluator, WallDuplicateIdentityIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1035,7 +1037,7 @@ TEST(SemanticAxiomEvaluator, WallDeclaredMapMismatchIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1072,7 +1074,7 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordNotLiveIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1101,14 +1103,14 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordNotLiveIsFail)
 }
 
 /* Manufactured via direct snapshot mutation -- captureSemanticGraphSnapshot()
- * never enumerates a non-WALL-typed Plane into MapSnapshot::walls at all
+ * never enumerates a non-WALL-typed geometric::Plane into MapSnapshot::walls at all
  * (see its own filter), so WallRecord::key.kind is always EntityKind::WALL
  * through the production capture path; validated as data anyway. */
 TEST(SemanticAxiomEvaluator, WallWrongKeyKindIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1141,7 +1143,7 @@ TEST(SemanticAxiomEvaluator, WallWrongPlaneTypeIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1157,7 +1159,7 @@ TEST(SemanticAxiomEvaluator, WallWrongPlaneTypeIsFail)
 
     SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
     ASSERT_EQ(snapshot.maps.front().walls.size(), 1U);
-    snapshot.maps.front().walls.front().planeType = Plane::planeVariant::DOOR;
+    snapshot.maps.front().walls.front().planeType = geometric::Plane::planeVariant::DOOR;
 
     const AxiomEvaluationReport report = evaluateState(snapshot);
     const Finding              *p_finding =
@@ -1175,7 +1177,7 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongKeyKindIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1212,7 +1214,7 @@ TEST(SemanticAxiomEvaluator, WallDeclaredMapUnavailableCapsAggregateAtUnknown)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1257,7 +1259,7 @@ TEST(SemanticAxiomEvaluator, WallReciprocalMalformedOnlyIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1275,7 +1277,7 @@ TEST(SemanticAxiomEvaluator, WallReciprocalMalformedOnlyIsFail)
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     RoomRecord &roomRecord = snapshot.maps.front().rooms.front();
     ASSERT_EQ(roomRecord.wallRefs.size(), 1U);
-    roomRecord.wallRefs.front().planeType = Plane::planeVariant::DOOR;
+    roomRecord.wallRefs.front().planeType = geometric::Plane::planeVariant::DOOR;
 
     const AxiomEvaluationReport report    = evaluateState(snapshot);
     const Finding              *p_finding = findFindingWithReason(
@@ -1289,12 +1291,12 @@ TEST(SemanticAxiomEvaluator, WallReciprocalMalformedOnlyIsFail)
 /* The owner room's wallRefs contains two independent, well-formed
  * reciprocal entries for the same wall: which is "the" reciprocal link is
  * ambiguous. Manufactured via direct snapshot mutation -- Room::setWalls()
- * only ever admits one Plane pointer per call. */
+ * only ever admits one geometric::Plane pointer per call. */
 TEST(SemanticAxiomEvaluator, WallReciprocalDuplicateIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1330,7 +1332,7 @@ TEST(SemanticAxiomEvaluator, WallReciprocalValidPlusMalformedIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1369,7 +1371,7 @@ TEST(SemanticAxiomEvaluator, NullTwinIsPass)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1394,7 +1396,7 @@ TEST(SemanticAxiomEvaluator, SelfTwinIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1420,7 +1422,7 @@ TEST(SemanticAxiomEvaluator, AsymmetricTwinIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wallA;
+    geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
                         p_map,
@@ -1429,7 +1431,7 @@ TEST(SemanticAxiomEvaluator, AsymmetricTwinIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    Plane wallB;
+    geometric::Plane wallB;
     test::makeWallPlane(wallB,
                         2,
                         p_map,
@@ -1457,7 +1459,7 @@ TEST(SemanticAxiomEvaluator, BadTwinIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wallA;
+    geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
                         p_map,
@@ -1466,7 +1468,7 @@ TEST(SemanticAxiomEvaluator, BadTwinIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    Plane wallB;
+    geometric::Plane wallB;
     test::makeWallPlane(wallB,
                         2,
                         p_map,
@@ -1497,7 +1499,7 @@ TEST(SemanticAxiomEvaluator, CrossMapTwinIsFail)
     atlas.CreateNewMap();
     Map *p_mapB = atlas.GetCurrentMap();
 
-    Plane wallA;
+    geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
                         p_mapA,
@@ -1506,7 +1508,7 @@ TEST(SemanticAxiomEvaluator, CrossMapTwinIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    Plane wallB;
+    geometric::Plane wallB;
     test::makeWallPlane(wallB,
                         2,
                         p_mapB,
@@ -1534,7 +1536,7 @@ TEST(SemanticAxiomEvaluator, WrongTypeTwinIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -1543,7 +1545,7 @@ TEST(SemanticAxiomEvaluator, WrongTypeTwinIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    Plane groundNotWall;
+    geometric::Plane groundNotWall;
     ASSERT_TRUE(test::makeGroundPlane(groundNotWall, 2, p_map));
     wall.setTwinFace(&groundNotWall);
     p_map->AddMapPlane(&wall);
@@ -1563,7 +1565,7 @@ TEST(SemanticAxiomEvaluator, SharedOwnerTwinIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wallA;
+    geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
                         p_map,
@@ -1572,7 +1574,7 @@ TEST(SemanticAxiomEvaluator, SharedOwnerTwinIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    Plane wallB;
+    geometric::Plane wallB;
     test::makeWallPlane(wallB,
                         2,
                         p_map,
@@ -1605,7 +1607,7 @@ TEST(SemanticAxiomEvaluator, StructurallyValidTwinIsUnknown)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wallA;
+    geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
                         p_map,
@@ -1614,7 +1616,7 @@ TEST(SemanticAxiomEvaluator, StructurallyValidTwinIsUnknown)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    Plane wallB;
+    geometric::Plane wallB;
     test::makeWallPlane(wallB,
                         2,
                         p_map,
@@ -3147,7 +3149,7 @@ TEST(SemanticAxiomEvaluator, CompleteWithTooFewCornersIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -3201,7 +3203,7 @@ TEST(SemanticAxiomEvaluator, CompleteSelfIntersectingIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -3235,7 +3237,7 @@ TEST(SemanticAxiomEvaluator, CompleteWithObservationGapsIsUnknown)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -3276,7 +3278,7 @@ TEST(SemanticAxiomEvaluator, CompleteWithVerifiedWallEvidenceIsUnknown)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -3311,7 +3313,7 @@ TEST(SemanticAxiomEvaluator, NonFiniteCornerIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -3346,7 +3348,7 @@ TEST(SemanticAxiomEvaluator, InfiniteCornerIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -3385,7 +3387,7 @@ TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -3447,7 +3449,7 @@ TEST(SemanticAxiomEvaluator,
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -3479,7 +3481,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_NE(p_roomRecord, nullptr);
     ASSERT_EQ(p_roomRecord->wallRefs.size(), 1U);
     RawPlaneRef wrongTypeRef = p_roomRecord->wallRefs.front();
-    wrongTypeRef.planeType   = Plane::planeVariant::DOOR;
+    wrongTypeRef.planeType   = geometric::Plane::planeVariant::DOOR;
     wrongTypeRef.planeId     = 999;
     wrongTypeRef.wallKey.reset();
     p_roomRecord->wallRefs.push_back(wrongTypeRef);
@@ -3501,7 +3503,7 @@ TEST(SemanticAxiomEvaluator,
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -3563,7 +3565,7 @@ TEST(SemanticAxiomEvaluator, NonemptyAllUnavailableWallEvidenceIsUnknownNotFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -4212,7 +4214,7 @@ TEST(SemanticAxiomEvaluator, CompletenessRoomCreationProvenanceUnavailable)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -4421,7 +4423,7 @@ TEST(SemanticAxiomEvaluator,
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane wallA;
+    geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
                         p_map,
@@ -4431,7 +4433,7 @@ TEST(SemanticAxiomEvaluator,
                         1.0,
                         1.0);
     p_map->AddMapPlane(&wallA);
-    Plane wallB;
+    geometric::Plane wallB;
     test::makeWallPlane(wallB,
                         2,
                         p_map,
@@ -4579,7 +4581,7 @@ TEST(SemanticAxiomEvaluator,
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane wallA;
+    geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
                         p_map,
@@ -4589,7 +4591,7 @@ TEST(SemanticAxiomEvaluator,
                         1.0,
                         1.0);
     p_map->AddMapPlane(&wallA);
-    Plane wallB;
+    geometric::Plane wallB;
     test::makeWallPlane(wallB,
                         2,
                         p_map,
@@ -4652,7 +4654,7 @@ TEST(SemanticAxiomEvaluator, HardFailureInOneMapDoesNotContaminateAnotherMap)
     Map *p_mapB = atlas.GetCurrentMap();
     ASSERT_NE(p_mapA->GetId(), p_mapB->GetId());
 
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_mapA,
@@ -4929,7 +4931,7 @@ TEST(SemanticAxiomEvaluator, OwnerLivenessUnavailableDoesNotMaskCrossMapOwner)
     atlas.CreateNewMap();
     Map *p_mapB = atlas.GetCurrentMap();
 
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_mapA,
@@ -4975,7 +4977,7 @@ TEST(SemanticAxiomEvaluator,
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -5008,7 +5010,7 @@ TEST(SemanticAxiomEvaluator, ContradictoryReciprocalWithNonNoneReasonIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -5045,7 +5047,7 @@ TEST(SemanticAxiomEvaluator, OwnerDeclaredMapUnavailableCapsAtUnknownNotFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -5108,7 +5110,7 @@ TEST(SemanticAxiomEvaluator,
     contradictory.mapId     = p_map->GetId();
     contradictory.planeId   = 5;
     contradictory.isLive    = false;
-    contradictory.planeType = Plane::planeVariant::GROUND;
+    contradictory.planeType = geometric::Plane::planeVariant::GROUND;
     roomRecord.wallRefs.push_back(contradictory);
 
     const AxiomEvaluationReport report = evaluateState(snapshot);
@@ -5128,7 +5130,7 @@ TEST(SemanticAxiomEvaluator,
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -5166,7 +5168,7 @@ TEST(SemanticAxiomEvaluator, WallTwinReasonInconsistentIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -5182,7 +5184,7 @@ TEST(SemanticAxiomEvaluator, WallTwinReasonInconsistentIsFail)
     ASSERT_EQ(wallRecord.twinRef.reason, UnavailableReason::NULL_REFERENCE);
     wallRecord.twinRef.mapId     = wallRecord.key.mapId;
     wallRecord.twinRef.planeId   = wallRecord.key.entityId;
-    wallRecord.twinRef.planeType = Plane::planeVariant::WALL;
+    wallRecord.twinRef.planeType = geometric::Plane::planeVariant::WALL;
     wallRecord.twinRef.isLive    = false;
     wallRecord.twinRef.wallKey   = wallRecord.key;
 
@@ -5236,7 +5238,7 @@ TEST(SemanticAxiomEvaluator, WallOwnerSplitAcrossDuplicateContainingMapIsFail)
 {
     Atlas atlas(0);
     Map  *p_mapA = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_mapA,
@@ -5310,7 +5312,7 @@ TEST(SemanticAxiomEvaluator,
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -5354,7 +5356,7 @@ TEST(SemanticAxiomEvaluator, ReciprocalWallKeyRawIdentityMismatchIsFail)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -5440,7 +5442,7 @@ TEST(SemanticAxiomEvaluator,
     atlas.CreateNewMap();
     Map *p_mapB = atlas.GetCurrentMap();
 
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_mapA,
@@ -5504,7 +5506,7 @@ TEST(SemanticAxiomEvaluator,
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
-    Plane wall;
+    geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
                         p_map,
@@ -5550,4 +5552,5 @@ TEST(SemanticAxiomEvaluator,
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

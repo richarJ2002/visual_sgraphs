@@ -13,7 +13,9 @@
 
 #include <gtest/gtest.h>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 TEST(MissionHealthTopologyJson, CacheUnavailableOnlyAddsSchemaAndAvailability)
@@ -150,7 +152,7 @@ TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
         result["semanticMapCompleteness"][0]["reasons"];
     ASSERT_EQ(reasonsJson.size(), 2U);
     /* WALL_OWNERSHIP_MULTIPLE_OWNERS (4) sorts before WALL_OWNERSHIP_OWNER_
-     * BAD (5) by underlying ReasonCode value, regardless of the input
+     * BAD (5) by underlying semantic::ReasonCode value, regardless of the input
      * vector's own order. */
     EXPECT_EQ(reasonsJson[0], "WALL_OWNERSHIP_MULTIPLE_OWNERS");
     EXPECT_EQ(reasonsJson[1], "WALL_OWNERSHIP_OWNER_BAD");
@@ -161,7 +163,7 @@ TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
     EXPECT_EQ(entityKeysJson[1]["entityId"], 2);
 
     /* P1.8: sorted axiom capability table with readable CapabilityLevel/
-     * MissingProofOwner names, present regardless of any evaluated
+     * semantic::MissingProofOwner names, present regardless of any evaluated
      * snapshot (it is a fixed property of this evaluator's implementation,
      * not of entry_in). */
     ASSERT_TRUE(result.contains("semanticAxiomCapabilities"));
@@ -177,10 +179,10 @@ TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
         EXPECT_NE(row["missingProofOwner"].get<std::string>().rfind("UNKNOWN_"),
                   0U);
     }
-    /* Sorted by the underlying AxiomCode enum value, not by name string
+    /* Sorted by the underlying semantic::AxiomCode enum value, not by name string
      * (e.g. "AX_WALL_01" == 1 sorts long before "AX_TXN_01" == 13, even
      * though "AX_TXN_01" < "AX_WALL_01" lexicographically) -- matches the
-     * fixed declaration order in AxiomCode.h. */
+     * fixed declaration order in semantic::AxiomCode.h. */
     static const std::vector<std::string> kExpectedOrder = {"AX_FRAME_01",
                                                             "AX_WALL_01",
                                                             "AX_WALL_02",
@@ -206,7 +208,7 @@ TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
 }
 
 /* P1.8 red-first regression: reasons/relevantEntityKeys must serialize
- * sorted regardless of MapCompletenessResult's own field order. */
+ * sorted regardless of semantic::MapCompletenessResult's own field order. */
 TEST(MissionHealthTopologyJson,
      CompletenessReasonsAndEntityKeysAreSortedRegardlessOfInputOrder)
 {
@@ -238,4 +240,5 @@ TEST(MissionHealthTopologyJson,
     EXPECT_EQ(entityKeysJson[1]["entityId"], 9);
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

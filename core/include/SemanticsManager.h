@@ -905,14 +905,14 @@ class SemanticsManager
     void processRoomTrackerPendingForTest(double now_s);
 
     /** Test-only readout of the production-owned tracker history. */
-    const std::vector<TransitionEvent> &
+    const std::vector<semantic::TransitionEvent> &
         getRoomTrackerEventHistoryForTest() const;
 
     /** Test-only readout of the crossing and both-sides pending flags. */
     std::pair<bool, bool> getRoomTrackerPendingForTest() const;
 
     /** Test-only readout of the production-owned tracker state. */
-    RoomTrackingState getRoomTrackerStateForTest() const;
+    semantic::RoomTrackingState getRoomTrackerStateForTest() const;
 
     /** Returns true only when the genuine pending-event mutex was acquired. */
     bool tryLockRoomTrackerPendingMutexForTest() const;

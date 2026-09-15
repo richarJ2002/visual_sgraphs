@@ -547,16 +547,16 @@ TEST(RgbdObservabilityTest, FormatsStableCumulativeSchema)
 
 TEST(ResetCauseTest, FormatsStableCauseAndAction)
 {
-    using ORB_SLAM3::ResetAction;
-    using ORB_SLAM3::ResetCause;
+    using vs_graphs::core::ResetAction;
+    using vs_graphs::core::ResetCause;
 
-    EXPECT_STREQ(ORB_SLAM3::resetCauseToString(
+    EXPECT_STREQ(vs_graphs::core::resetCauseToString(
                      ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP),
                  "visual_tracking_lost_small_map");
     EXPECT_STREQ(
-        ORB_SLAM3::resetActionToString(ResetAction::RESET_ACTIVE_MAP_REQUEST),
+        vs_graphs::core::resetActionToString(ResetAction::RESET_ACTIVE_MAP_REQUEST),
         "reset_active_map_request");
-    EXPECT_EQ(ORB_SLAM3::formatResetAttribution(
+    EXPECT_EQ(vs_graphs::core::formatResetAttribution(
                   ResetCause::VISUAL_TRACKING_LOST_NEW_MAP,
                   ResetAction::CREATE_MAP_EXECUTION),
               "VSG_RESET_ATTRIBUTION cause=visual_tracking_lost_new_map "
@@ -565,8 +565,8 @@ TEST(ResetCauseTest, FormatsStableCauseAndAction)
 
 TEST(ResetCauseTest, RetainsSingleCauseAndMarksUnlikeCoalescedRequests)
 {
-    using ORB_SLAM3::ResetCause;
-    using ORB_SLAM3::ResetCauseRetention;
+    using vs_graphs::core::ResetCause;
+    using vs_graphs::core::ResetCauseRetention;
 
     ResetCauseRetention retention;
     EXPECT_FALSE(retention.hasRetainedCause());
@@ -585,23 +585,23 @@ TEST(ResetCauseTest, RetainsSingleCauseAndMarksUnlikeCoalescedRequests)
 
 TEST(ResetCauseTest, RetainsCausesPerOwnerWithoutOwnerLayoutChanges)
 {
-    using ORB_SLAM3::ResetCause;
+    using vs_graphs::core::ResetCause;
 
     const int firstOwner  = 1;
     const int secondOwner = 2;
-    ORB_SLAM3::retainResetCause(&firstOwner, ResetCause::VIEWER_REQUEST);
-    ORB_SLAM3::retainResetCause(&secondOwner, ResetCause::IMU_DELIVERY_GAP);
+    vs_graphs::core::retainResetCause(&firstOwner, ResetCause::VIEWER_REQUEST);
+    vs_graphs::core::retainResetCause(&secondOwner, ResetCause::IMU_DELIVERY_GAP);
 
-    EXPECT_EQ(ORB_SLAM3::consumeResetCause(&firstOwner),
+    EXPECT_EQ(vs_graphs::core::consumeResetCause(&firstOwner),
               ResetCause::VIEWER_REQUEST);
-    EXPECT_EQ(ORB_SLAM3::consumeResetCause(&secondOwner),
+    EXPECT_EQ(vs_graphs::core::consumeResetCause(&secondOwner),
               ResetCause::IMU_DELIVERY_GAP);
-    EXPECT_EQ(ORB_SLAM3::consumeResetCause(&firstOwner),
+    EXPECT_EQ(vs_graphs::core::consumeResetCause(&firstOwner),
               ResetCause::UNATTRIBUTED_PUBLIC_REQUEST);
 
-    ORB_SLAM3::retainResetCause(&firstOwner, ResetCause::VIEWER_REQUEST);
-    ORB_SLAM3::clearResetCause(&firstOwner);
-    EXPECT_EQ(ORB_SLAM3::consumeResetCause(&firstOwner),
+    vs_graphs::core::retainResetCause(&firstOwner, ResetCause::VIEWER_REQUEST);
+    vs_graphs::core::clearResetCause(&firstOwner);
+    EXPECT_EQ(vs_graphs::core::consumeResetCause(&firstOwner),
               ResetCause::UNATTRIBUTED_PUBLIC_REQUEST);
 }
 } /* namespace */

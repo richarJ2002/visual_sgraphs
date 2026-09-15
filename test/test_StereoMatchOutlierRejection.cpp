@@ -11,7 +11,9 @@
 #include <utility>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 TEST(StereoMatchOutlierRejection, NoOpsOnAnEmptyMatchList)
@@ -47,4 +49,5 @@ TEST(StereoMatchOutlierRejection, RejectsMatchesFarAboveTheMedianDistance)
     EXPECT_EQ(mvuRight[3], 5.0f);
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

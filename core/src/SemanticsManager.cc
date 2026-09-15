@@ -4707,7 +4707,7 @@ std::pair<bool, bool> SemanticsManager::getRoomTrackerPendingForTest() const
     return {crossingEventPending_, crossingBothSidesPending_};
 }
 
-RoomTrackingState SemanticsManager::getRoomTrackerStateForTest() const
+semantic::RoomTrackingState SemanticsManager::getRoomTrackerStateForTest() const
 {
     return roomTracker_.getState();
 }

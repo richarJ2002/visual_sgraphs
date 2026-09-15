@@ -1,11 +1,11 @@
 /**
  * WP13 Phase 2 focused tests: persistence of the last-confirmed room context
- * (RoomContextSnapshot, WallBounds, PassageContext) across the real
+ * (semantic::RoomContextSnapshot, WallBounds, semantic::PassageContext) across the real
  * Atlas::CreateNewMap() tracking-loss/new-map lifecycle boundary.
  *
  * These tests exercise the genuine production exporter
  * (Atlas::exportRoomContextFromCurrentMap(), invoked internally from
- * Atlas::createNewMapWhileAtlasLocked()) and the genuine Room/Plane/Passage
+ * Atlas::createNewMapWhileAtlasLocked()) and the genuine semantic::Room/geometric::Plane/semantic::Passage
  * getters it reads from -- they do not reconstruct the expected snapshot by
  * hand.
  */
@@ -27,19 +27,21 @@
 #include <thread>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace
 {
 
-/** Builds a wall Plane with genuine, production-computed U/V bounds by
- * feeding a synthetic point cloud through the real Plane::updateSizeOfPlane()
- * path (the same function Plane::getGeometrySnapshot() reads from). */
-void makeRefitWallPlane(Plane &wall_inout, int id_in, Map *p_map_in)
+/** Builds a wall geometric::Plane with genuine, production-computed U/V bounds by
+ * feeding a synthetic point cloud through the real geometric::Plane::updateSizeOfPlane()
+ * path (the same function geometric::Plane::getGeometrySnapshot() reads from). */
+void makeRefitWallPlane(geometric::Plane &wall_inout, int id_in, Map *p_map_in)
 {
     wall_inout.setId(id_in);
     wall_inout.SetMap(p_map_in);
-    wall_inout.setPlaneType(Plane::planeVariant::WALL);
+    wall_inout.setPlaneType(geometric::Plane::planeVariant::WALL);
     wall_inout.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
     wall_inout.setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0));
@@ -91,17 +93,17 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane wall;
+    geometric::Plane wall;
     makeRefitWallPlane(wall, 1, p_map);
     p_map->AddMapPlane(&wall);
 
-    Room room;
+    semantic::Room room;
     room.setId(7);
     room.setMap(p_map);
     room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
     room.setWalls(&wall);
-    room.setRoomVariant(Room::roomVariant::ROOM);
-    room.setBoundaryStatus(Room::BoundaryStatus::INCOMPLETE);
+    room.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    room.setBoundaryStatus(semantic::Room::BoundaryStatus::INCOMPLETE);
     p_map->AddDetectedMapRoom(&room);
 
     const long unsigned int mapId = p_map->GetId();
@@ -111,15 +113,15 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
     ASSERT_EQ(history.count(mapId), 1U);
     ASSERT_EQ(history.at(mapId).size(), 1U);
 
-    const RoomContextSnapshot &snap = history.at(mapId).front();
+    const semantic::RoomContextSnapshot &snap = history.at(mapId).front();
     EXPECT_EQ(snap.roomId, 7);
-    /* Room never given a Floor here: the exporter must not invent one. */
+    /* semantic::Room never given a semantic::Floor here: the exporter must not invent one. */
     EXPECT_EQ(snap.floorId, -1);
     EXPECT_TRUE(snap.centroid.isApprox(Eigen::Vector3d(1.0, 1.0, 1.0)));
     EXPECT_EQ(snap.roomTag, "room_7");
     EXPECT_TRUE(snap.wasConfirmedRoom);
     EXPECT_EQ(snap.boundaryStatus,
-              static_cast<int>(Room::BoundaryStatus::INCOMPLETE));
+              static_cast<int>(semantic::Room::BoundaryStatus::INCOMPLETE));
     EXPECT_GT(snap.timestamp, 0.0);
     ASSERT_EQ(snap.wallNormals.size(), 1U);
     ASSERT_EQ(snap.wallCentroids.size(), 1U);
@@ -129,30 +131,30 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
     EXPECT_DOUBLE_EQ(snap.wallDistances.front(),
                      wall.getGlobalEquation().distance());
 
-    /* The room-tag side effect on the live Room mirrors the exported field
-     * (verifies the exporter uses the same production Room::setRoomTag()
+    /* The room-tag side effect on the live semantic::Room mirrors the exported field
+     * (verifies the exporter uses the same production semantic::Room::setRoomTag()
      * path it always has). */
     EXPECT_EQ(room.getRoomTag(), "room_7");
 }
 
 TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
 {
-    /* A room is always floor-scoped (Room::getFloor()); the "last confirmed
+    /* A room is always floor-scoped (semantic::Room::getFloor()); the "last confirmed
      * room" context this snapshot exists to carry across a tracking-loss
      * boundary must carry that floor along too rather than dropping it. */
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane wall;
+    geometric::Plane wall;
     makeRefitWallPlane(wall, 1, p_map);
     p_map->AddMapPlane(&wall);
 
-    Floor floor;
+    semantic::Floor floor;
     floor.setId(42);
     floor.setMap(p_map);
     p_map->AddMapFloor(&floor);
 
-    Room room;
+    semantic::Room room;
     room.setId(8);
     room.setMap(p_map);
     room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
@@ -165,7 +167,7 @@ TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
 
     const auto history = atlas.copyRoomContextHistory();
     ASSERT_EQ(history.count(mapId), 1U);
-    const RoomContextSnapshot &snap = history.at(mapId).front();
+    const semantic::RoomContextSnapshot &snap = history.at(mapId).front();
     EXPECT_EQ(snap.roomId, 8);
     EXPECT_EQ(snap.floorId, 42);
 }
@@ -175,25 +177,25 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane refitWall;
+    geometric::Plane refitWall;
     makeRefitWallPlane(refitWall, 1, p_map);
     p_map->AddMapPlane(&refitWall);
 
-    Plane unrefitWall; // Never assigned a cloud: bounds stay at the
+    geometric::Plane unrefitWall; // Never assigned a cloud: bounds stay at the
                        // sentinel min>max default, so valid() is false.
     unrefitWall.setId(2);
     unrefitWall.SetMap(p_map);
-    unrefitWall.setPlaneType(Plane::planeVariant::WALL);
+    unrefitWall.setPlaneType(geometric::Plane::planeVariant::WALL);
     unrefitWall.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(0.0, 1.0, 0.0, 0.0)));
     p_map->AddMapPlane(&unrefitWall);
 
-    Plane badWall;
+    geometric::Plane badWall;
     makeRefitWallPlane(badWall, 3, p_map);
     badWall.setBad();
     p_map->AddMapPlane(&badWall);
 
-    Room room;
+    semantic::Room room;
     room.setId(9);
     room.setMap(p_map);
     room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
@@ -207,7 +209,7 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
 
     const auto history = atlas.copyRoomContextHistory();
     ASSERT_EQ(history.count(mapId), 1U);
-    const RoomContextSnapshot &snap = history.at(mapId).front();
+    const semantic::RoomContextSnapshot &snap = history.at(mapId).front();
 
     /* Exactly one WallBounds record per wallNormals entry, same order. */
     ASSERT_EQ(snap.wallBounds.size(), snap.wallNormals.size());
@@ -228,23 +230,23 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Room knownRoom;
+    semantic::Room knownRoom;
     knownRoom.setId(20);
     knownRoom.setMap(p_map);
     p_map->AddDetectedMapRoom(&knownRoom);
 
-    Room farRoom;
+    semantic::Room farRoom;
     farRoom.setId(21);
     farRoom.setMap(p_map);
     p_map->AddDetectedMapRoom(&farRoom);
 
-    Plane associatedWall;
+    geometric::Plane associatedWall;
     makeRefitWallPlane(associatedWall, 30, p_map);
     p_map->AddMapPlane(&associatedWall);
 
-    /* Passage A: fully specified -- valid aperture, known far-side room,
+    /* semantic::Passage A: fully specified -- valid aperture, known far-side room,
      * known-side direction, mixed traversal evidence, one associated wall. */
-    Passage fullPassage;
+    semantic::Passage fullPassage;
     fullPassage.setId(40);
     fullPassage.setMap(p_map);
     fullPassage.setPassable(true);
@@ -258,18 +260,18 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     fullPassage.setProspectiveRoom(&farRoom);
     fullPassage.addAssociateWall(&associatedWall);
     fullPassage.addTraversalObservation(
-        Passage::TraversalDirection::KNOWN_TO_FAR);
+        semantic::Passage::TraversalDirection::KNOWN_TO_FAR);
     fullPassage.addTraversalObservation(
-        Passage::TraversalDirection::KNOWN_TO_FAR);
+        semantic::Passage::TraversalDirection::KNOWN_TO_FAR);
     fullPassage.addTraversalObservation(
-        Passage::TraversalDirection::FAR_TO_KNOWN);
-    fullPassage.addTraversalObservation(Passage::TraversalDirection::UNKNOWN);
+        semantic::Passage::TraversalDirection::FAR_TO_KNOWN);
+    fullPassage.addTraversalObservation(semantic::Passage::TraversalDirection::UNKNOWN);
     p_map->AddMapPassage(&fullPassage);
     knownRoom.setDoorways(&fullPassage);
 
-    /* Passage B: no far-side room resolved yet, invalid (negative) aperture,
+    /* semantic::Passage B: no far-side room resolved yet, invalid (negative) aperture,
      * no known-side direction, no traversal evidence. */
-    Passage sparsePassage;
+    semantic::Passage sparsePassage;
     sparsePassage.setId(41);
     sparsePassage.setMap(p_map);
     sparsePassage.setPassable(false);
@@ -281,8 +283,8 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     p_map->AddMapPassage(&sparsePassage);
     knownRoom.setDoorways(&sparsePassage);
 
-    /* Passage C: non-finite (NaN) height and default (missing) width. */
-    Passage nonFinitePassage;
+    /* semantic::Passage C: non-finite (NaN) height and default (missing) width. */
+    semantic::Passage nonFinitePassage;
     nonFinitePassage.setId(42);
     nonFinitePassage.setMap(p_map);
     nonFinitePassage.setHeight(std::numeric_limits<double>::quiet_NaN());
@@ -296,9 +298,9 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     const auto history = atlas.copyRoomContextHistory();
     ASSERT_EQ(history.count(mapId), 1U);
 
-    const std::vector<RoomContextSnapshot> &snapshots   = history.at(mapId);
-    const RoomContextSnapshot              *p_knownSnap = nullptr;
-    for (const RoomContextSnapshot &candidate : snapshots)
+    const std::vector<semantic::RoomContextSnapshot> &snapshots   = history.at(mapId);
+    const semantic::RoomContextSnapshot              *p_knownSnap = nullptr;
+    for (const semantic::RoomContextSnapshot &candidate : snapshots)
     {
         if (candidate.roomId == 20)
         {
@@ -307,12 +309,12 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     }
     ASSERT_NE(p_knownSnap, nullptr);
 
-    /* Index alignment: one PassageContext per passageCentroids element. */
+    /* Index alignment: one semantic::PassageContext per passageCentroids element. */
     ASSERT_EQ(p_knownSnap->passageContexts.size(),
               p_knownSnap->passageCentroids.size());
     ASSERT_EQ(p_knownSnap->passageContexts.size(), 3U);
 
-    const PassageContext &full = p_knownSnap->passageContexts[0];
+    const semantic::PassageContext &full = p_knownSnap->passageContexts[0];
     EXPECT_EQ(full.id, 40);
     EXPECT_TRUE(full.passable);
     EXPECT_TRUE(full.hasFarSideRoom);
@@ -331,7 +333,7 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     EXPECT_EQ(full.associatedWallCount, 1U);
     EXPECT_TRUE(full.hasBidirectionalTraversalEvidence);
 
-    const PassageContext &sparse = p_knownSnap->passageContexts[1];
+    const semantic::PassageContext &sparse = p_knownSnap->passageContexts[1];
     EXPECT_EQ(sparse.id, 41);
     EXPECT_FALSE(sparse.passable);
     EXPECT_FALSE(sparse.hasFarSideRoom); // absence, not a sentinel ID
@@ -344,7 +346,7 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     EXPECT_EQ(sparse.traversalUnknownCount, 0U);
     EXPECT_FALSE(sparse.hasBidirectionalTraversalEvidence);
 
-    const PassageContext &nonFinite = p_knownSnap->passageContexts[2];
+    const semantic::PassageContext &nonFinite = p_knownSnap->passageContexts[2];
     EXPECT_EQ(nonFinite.id, 42);
     EXPECT_FALSE(nonFinite.apertureValid); // NaN height, default width
     EXPECT_FALSE(nonFinite.hasFarSideRoom);
@@ -355,18 +357,18 @@ TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane badWall;
+    geometric::Plane badWall;
     badWall.setId(1);
     badWall.SetMap(p_map);
     badWall.setBad();
     p_map->AddMapPlane(&badWall);
 
-    Passage defaultPassage;
+    semantic::Passage defaultPassage;
     defaultPassage.setId(50);
     defaultPassage.setMap(p_map);
     p_map->AddMapPassage(&defaultPassage);
 
-    Room room;
+    semantic::Room room;
     room.setId(30);
     room.setMap(p_map);
     room.setWalls(&badWall);
@@ -378,7 +380,7 @@ TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
 
     const auto history = atlas.copyRoomContextHistory();
     ASSERT_EQ(history.count(mapId), 1U);
-    const RoomContextSnapshot &snap = history.at(mapId).front();
+    const semantic::RoomContextSnapshot &snap = history.at(mapId).front();
     ASSERT_EQ(snap.wallBounds.size(), 1U);
     EXPECT_FALSE(snap.wallBounds.front().valid);
     ASSERT_EQ(snap.passageContexts.size(), 1U);
@@ -406,14 +408,14 @@ TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
     Atlas atlas(0);
     Map  *p_oldMap = atlas.GetCurrentMap();
 
-    Room visitedRoom;
+    semantic::Room visitedRoom;
     visitedRoom.setId(5);
     visitedRoom.setMap(p_oldMap);
     visitedRoom.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
     visitedRoom.setPreviouslyVisited(true);
     p_oldMap->AddDetectedMapRoom(&visitedRoom);
 
-    Room freshRoom;
+    semantic::Room freshRoom;
     freshRoom.setId(6);
     freshRoom.setMap(p_oldMap);
     freshRoom.setCentroid(Eigen::Vector3d(2.0, 2.0, 2.0));
@@ -450,11 +452,11 @@ TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
     Atlas atlas(0);
     Map  *p_oldMap = atlas.GetCurrentMap();
 
-    Plane wall;
+    geometric::Plane wall;
     makeRefitWallPlane(wall, 1, p_oldMap);
     p_oldMap->AddMapPlane(&wall);
 
-    Room room;
+    semantic::Room room;
     room.setId(5);
     room.setMap(p_oldMap);
     room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
@@ -491,11 +493,11 @@ TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
         Atlas atlas(0);
         Map  *p_oldMap = atlas.GetCurrentMap();
 
-        Plane wall;
+        geometric::Plane wall;
         makeRefitWallPlane(wall, 1, p_oldMap);
         p_oldMap->AddMapPlane(&wall);
 
-        Room room;
+        semantic::Room room;
         room.setId(static_cast<int>(iteration));
         room.setMap(p_oldMap);
         room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
@@ -527,8 +529,8 @@ TEST(RoomContextPersist,
 
     /* Keep every historical room/wall alive for the whole test; Atlas retains
      * stored (retired-current) maps but the test owns the entities. */
-    std::vector<std::unique_ptr<Plane>> walls;
-    std::vector<std::unique_ptr<Room>>  rooms;
+    std::vector<std::unique_ptr<geometric::Plane>> walls;
+    std::vector<std::unique_ptr<semantic::Room>>  rooms;
 
     std::atomic<bool> readerComplete{false};
     std::thread       reader(
@@ -539,7 +541,7 @@ TEST(RoomContextPersist,
                 const auto history = atlas.copyRoomContextHistory();
                 for (const auto &entry : history)
                 {
-                    for (const RoomContextSnapshot &snap : entry.second)
+                    for (const semantic::RoomContextSnapshot &snap : entry.second)
                     {
                         /* Corruption characterization: index-alignment
                          * invariants must hold on every observed copy. */
@@ -564,11 +566,11 @@ TEST(RoomContextPersist,
     {
         Map *p_map = atlas.GetCurrentMap();
 
-        auto p_wall = std::make_unique<Plane>();
+        auto p_wall = std::make_unique<geometric::Plane>();
         makeRefitWallPlane(*p_wall, static_cast<int>(iteration) + 1, p_map);
         p_map->AddMapPlane(p_wall.get());
 
-        auto p_room = std::make_unique<Room>();
+        auto p_room = std::make_unique<semantic::Room>();
         p_room->setId(static_cast<int>(iteration));
         p_room->setMap(p_map);
         p_room->setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
@@ -585,4 +587,5 @@ TEST(RoomContextPersist,
     EXPECT_TRUE(readerComplete.load(std::memory_order_acquire));
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

@@ -109,9 +109,9 @@ int main(int argc, char **argv)
     // Create SLAM system. It initializes all system threads and gets ready to
     // process frames.
     ImageGrabber igb;
-    sensorType = ORB_SLAM3::System::MONOCULAR;
+    sensorType = vs_graphs::core::System::MONOCULAR;
 
-    p_slamSystem = new ORB_SLAM3::System(voc_file,
+    p_slamSystem = new vs_graphs::core::System(voc_file,
                                          settings_file,
                                          sys_params_file,
                                          sensorType,
@@ -172,10 +172,10 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr &msg)
 
     // Find the marker with the minimum time difference compared to the current
     // frame
-    std::pair<double, std::vector<ORB_SLAM3::Marker *>> result =
+    std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>> result =
         findNearestMarker(cv_ptr->header.stamp.toSec());
     double                           minMarkerTimeDiff = result.first;
-    std::vector<ORB_SLAM3::Marker *> matchedMarkers    = result.second;
+    std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers    = result.second;
 
     // Tracking process sends markers found in this frame for tracking and
     // clears the buffer

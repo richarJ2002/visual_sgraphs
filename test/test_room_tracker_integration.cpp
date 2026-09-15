@@ -22,14 +22,16 @@
 #include <utility>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace
 {
-VerificationVerdict passVerdict()
+semantic::VerificationVerdict passVerdict()
 {
-    VerificationVerdict verdict;
-    verdict.status      = VerificationStatus::PASS;
+    semantic::VerificationVerdict verdict;
+    verdict.status      = semantic::VerificationStatus::PASS;
     verdict.pass        = true;
     verdict.inlierCount = 3U;
     verdict.inlierRatio = 1.0;
@@ -37,20 +39,20 @@ VerificationVerdict passVerdict()
     return verdict;
 }
 
-VerificationVerdict rejectedVerdict()
+semantic::VerificationVerdict rejectedVerdict()
 {
-    VerificationVerdict verdict;
-    verdict.status = VerificationStatus::REJECTED;
+    semantic::VerificationVerdict verdict;
+    verdict.status = semantic::VerificationStatus::REJECTED;
     return verdict;
 }
 
-std::size_t countAcceptedEvents(const std::vector<TransitionEvent> &history_in,
-                                RoomTrackingEvent                   event_in)
+std::size_t countAcceptedEvents(const std::vector<semantic::TransitionEvent> &history_in,
+                                semantic::RoomTrackingEvent                   event_in)
 {
     return static_cast<std::size_t>(std::count_if(
         history_in.begin(),
         history_in.end(),
-        [event_in](const TransitionEvent &record_in)
+        [event_in](const semantic::TransitionEvent &record_in)
         { return record_in.accepted && record_in.event == event_in; }));
 }
 
@@ -72,7 +74,7 @@ class ProductionCrossingScene
 
         groundPlane.setId(0);
         groundPlane.SetMap(p_map);
-        groundPlane.setPlaneType(Plane::planeVariant::GROUND);
+        groundPlane.setPlaneType(geometric::Plane::planeVariant::GROUND);
         groundPlane.setGlobalEquation(
             g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr groundCloud(
@@ -95,20 +97,20 @@ class ProductionCrossingScene
 
         knownWall.setId(1);
         knownWall.SetMap(p_map);
-        knownWall.setPlaneType(Plane::planeVariant::WALL);
+        knownWall.setPlaneType(geometric::Plane::planeVariant::WALL);
         farWall.setId(2);
         farWall.SetMap(p_map);
-        farWall.setPlaneType(Plane::planeVariant::WALL);
+        farWall.setPlaneType(geometric::Plane::planeVariant::WALL);
         p_map->AddMapPlane(&knownWall);
         p_map->AddMapPlane(&farWall);
 
         knownRoom.setId(10);
         knownRoom.setMap(p_map);
-        knownRoom.setRoomVariant(Room::roomVariant::ROOM);
+        knownRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
         knownRoom.setWalls(&knownWall);
         farRoom.setId(11);
         farRoom.setMap(p_map);
-        farRoom.setRoomVariant(Room::roomVariant::ROOM);
+        farRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
         farRoom.setWalls(&farWall);
         p_map->AddDetectedMapRoom(&knownRoom);
         p_map->AddDetectedMapRoom(&farRoom);
@@ -192,12 +194,12 @@ class ProductionCrossingScene
     Atlas                                  atlas;
     Map                                   *p_map;
     SemanticsManager                       manager;
-    Plane                                  groundPlane;
-    Plane                                  knownWall;
-    Plane                                  farWall;
-    Room                                   knownRoom;
-    Room                                   farRoom;
-    Passage                                passage;
+    geometric::Plane                                  groundPlane;
+    geometric::Plane                                  knownWall;
+    geometric::Plane                                  farWall;
+    semantic::Room                                   knownRoom;
+    semantic::Room                                   farRoom;
+    semantic::Passage                                passage;
     KeyFrame                               knownSideKeyFrame;
     KeyFrame                               farSideKeyFrame;
     KeyFrame                               returnSideKeyFrame;
@@ -294,10 +296,10 @@ TEST(RoomTrackerProductionIntegration, LossIsOneEventPerRecoveredEpisode)
     secondLoss.join();
     manager.processRoomTrackerPendingForTest(1.0);
 
-    const std::vector<TransitionEvent> &history =
+    const std::vector<semantic::TransitionEvent> &history =
         manager.getRoomTrackerEventHistoryForTest();
     ASSERT_EQ(history.size(), 2U);
-    EXPECT_EQ(history.back().event, RoomTrackingEvent::TRACKING_LOST);
+    EXPECT_EQ(history.back().event, semantic::RoomTrackingEvent::TRACKING_LOST);
     EXPECT_EQ(manager.getLastKnownRoomId(), -1);
 
     manager.onTrackingRecovered();
@@ -335,13 +337,13 @@ TEST(RoomTrackerProductionIntegration,
     manager.processRoomTrackerPendingForTest(4.0);
     ASSERT_EQ(manager.getRoomTrackerEventHistoryForTest().size(), 3U);
     EXPECT_EQ(manager.getRoomTrackerEventHistoryForTest().back().event,
-              RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH);
+              semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH);
 
     manager.submitVerificationVerdict(passVerdict());
     manager.processRoomTrackerPendingForTest(5.0);
     ASSERT_EQ(manager.getRoomTrackerEventHistoryForTest().size(), 4U);
     EXPECT_EQ(manager.getRoomTrackerEventHistoryForTest().back().event,
-              RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM);
+              semantic::RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM);
 }
 
 TEST(RoomTrackerProductionIntegration, AtlasMapEventIsConsumedExactlyOnce)
@@ -378,8 +380,8 @@ TEST(RoomTrackerProductionIntegration,
     ProductionCrossingScene scene(100U);
     ASSERT_TRUE(scene.hasValidGroundPlane());
     const std::vector<Map *>   mapsBefore       = scene.atlas.GetAllMaps();
-    const std::vector<Plane *> knownWallsBefore = scene.knownRoom.getWalls();
-    const std::vector<Plane *> farWallsBefore   = scene.farRoom.getWalls();
+    const std::vector<geometric::Plane *> knownWallsBefore = scene.knownRoom.getWalls();
+    const std::vector<geometric::Plane *> farWallsBefore   = scene.farRoom.getWalls();
 
     scene.confirmFirstRoom(0.0);
     scene.produceTraversalEvidence();
@@ -394,7 +396,7 @@ TEST(RoomTrackerProductionIntegration,
     scene.manager.processRoomTrackerPendingForTest(3.0);
 
     ASSERT_EQ(scene.manager.getRoomTrackerStateForTest(),
-              RoomTrackingState::CROSSING_PASSAGE);
+              semantic::RoomTrackingState::CROSSING_PASSAGE);
     EXPECT_EQ(scene.passage.getTraversalKnownToFarCount(), 1U);
     EXPECT_EQ(scene.passage.getTraversalFarToKnownCount(), 1U);
     EXPECT_EQ(scene.passage.getTraversalObservationCount(), 2U);
@@ -410,15 +412,15 @@ TEST(RoomTrackerProductionIntegration,
     scene.manager.processRoomTrackerPendingForTest(6.0);
 
     ASSERT_EQ(scene.manager.getRoomTrackerStateForTest(),
-              RoomTrackingState::CONFIRMED_ROOM);
-    const std::vector<TransitionEvent> &history =
+              semantic::RoomTrackingState::CONFIRMED_ROOM);
+    const std::vector<semantic::TransitionEvent> &history =
         scene.manager.getRoomTrackerEventHistoryForTest();
     EXPECT_EQ(countAcceptedEvents(history,
-                                  RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
+                                  semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
               1U);
     EXPECT_EQ(
         countAcceptedEvents(history,
-                            RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
+                            semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
         1U);
     const std::size_t historySizeAfterTraversal = history.size();
     const std::size_t observationsAfterTraversal =
@@ -434,11 +436,11 @@ TEST(RoomTrackerProductionIntegration,
               observationsAfterTraversal);
     EXPECT_EQ(
         countAcceptedEvents(scene.manager.getRoomTrackerEventHistoryForTest(),
-                            RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
+                            semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
         1U);
     EXPECT_EQ(
         countAcceptedEvents(scene.manager.getRoomTrackerEventHistoryForTest(),
-                            RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
+                            semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
         1U);
 
     EXPECT_FALSE(scene.knownRoom.hasRoomTag());
@@ -475,10 +477,10 @@ TEST(RoomTrackerProductionIntegration,
               std::make_pair(false, false));
 
     /* One crossing cycle cannot satisfy dwell. A consumer-only cycle supplies
-     * zero confidence and resets the production RoomTracker dwell. */
+     * zero confidence and resets the production semantic::RoomTracker dwell. */
     scene.manager.processRoomTrackerPendingForTest(105.0);
     EXPECT_EQ(scene.manager.getRoomTrackerStateForTest(),
-              RoomTrackingState::CONFIRMED_ROOM);
+              semantic::RoomTrackingState::CONFIRMED_ROOM);
 
     scene.addReturnCrossing();
     for (unsigned int producerUpdate = 0U; producerUpdate < 4U;
@@ -488,14 +490,14 @@ TEST(RoomTrackerProductionIntegration,
     }
     scene.manager.processRoomTrackerPendingForTest(106.0);
     EXPECT_EQ(scene.manager.getRoomTrackerStateForTest(),
-              RoomTrackingState::CONFIRMED_ROOM);
+              semantic::RoomTrackingState::CONFIRMED_ROOM);
     EXPECT_EQ(scene.passage.getTraversalObservationCount(), 2U);
 
     scene.addAlternatingCrossing(203U, true);
     scene.produceTraversalEvidence();
     scene.manager.processRoomTrackerPendingForTest(108.0);
     ASSERT_EQ(scene.manager.getRoomTrackerStateForTest(),
-              RoomTrackingState::CROSSING_PASSAGE);
+              semantic::RoomTrackingState::CROSSING_PASSAGE);
 
     scene.addAlternatingCrossing(204U, false);
     scene.produceTraversalEvidence();
@@ -506,7 +508,7 @@ TEST(RoomTrackerProductionIntegration,
      * dwell even though the real passage retains both-side evidence. */
     scene.manager.processRoomTrackerPendingForTest(111.0);
     EXPECT_EQ(scene.manager.getRoomTrackerStateForTest(),
-              RoomTrackingState::CROSSING_PASSAGE);
+              semantic::RoomTrackingState::CROSSING_PASSAGE);
 
     scene.addAlternatingCrossing(205U, true);
     scene.produceTraversalEvidence();
@@ -515,15 +517,15 @@ TEST(RoomTrackerProductionIntegration,
     scene.manager.submitVerificationVerdict(passVerdict());
     scene.manager.processRoomTrackerPendingForTest(114.0);
     ASSERT_EQ(scene.manager.getRoomTrackerStateForTest(),
-              RoomTrackingState::CONFIRMED_ROOM);
-    const std::vector<TransitionEvent> &history =
+              semantic::RoomTrackingState::CONFIRMED_ROOM);
+    const std::vector<semantic::TransitionEvent> &history =
         scene.manager.getRoomTrackerEventHistoryForTest();
     EXPECT_EQ(countAcceptedEvents(history,
-                                  RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
+                                  semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
               1U);
     EXPECT_EQ(
         countAcceptedEvents(history,
-                            RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
+                            semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
         1U);
     EXPECT_EQ(scene.passage.getTraversalObservationCount(), 5U);
 }
@@ -552,7 +554,7 @@ TEST(RoomTrackerProductionIntegration,
             ++observedMutexContentions;
         }
         if (scene.manager.getRoomTrackerStateForTest() ==
-            RoomTrackingState::CROSSING_PASSAGE)
+            semantic::RoomTrackingState::CROSSING_PASSAGE)
         {
             ++acceptedCrossingHandoffs;
         }
@@ -568,20 +570,20 @@ TEST(RoomTrackerProductionIntegration,
         scene.manager.submitVerificationVerdict(passVerdict());
         scene.manager.processRoomTrackerPendingForTest(10.0);
         if (scene.manager.getRoomTrackerStateForTest() ==
-            RoomTrackingState::CONFIRMED_ROOM)
+            semantic::RoomTrackingState::CONFIRMED_ROOM)
         {
             ++acceptedBothSidesHandoffs;
         }
 
-        const std::vector<TransitionEvent> &history =
+        const std::vector<semantic::TransitionEvent> &history =
             scene.manager.getRoomTrackerEventHistoryForTest();
         EXPECT_EQ(
             countAcceptedEvents(history,
-                                RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
+                                semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
             1U);
         EXPECT_EQ(
             countAcceptedEvents(history,
-                                RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
+                                semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
             1U);
         EXPECT_EQ(scene.passage.getTraversalObservationCount(), 3U);
     }
@@ -603,10 +605,10 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
     SemanticsManager manager(&atlas);
 
     /* Ground plane: traversal evidence needs a valid ground normal. */
-    Plane groundPlane;
+    geometric::Plane groundPlane;
     groundPlane.setId(0);
     groundPlane.SetMap(p_map);
-    groundPlane.setPlaneType(Plane::planeVariant::GROUND);
+    groundPlane.setPlaneType(geometric::Plane::planeVariant::GROUND);
     groundPlane.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr groundCloud(
@@ -627,23 +629,23 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
     p_map->AddMapPlane(&groundPlane);
 
     /* Known room: entered earlier, so already visited. */
-    Room knownRoom;
+    semantic::Room knownRoom;
     knownRoom.setId(10);
     knownRoom.setMap(p_map);
-    knownRoom.setRoomVariant(Room::roomVariant::ROOM);
+    knownRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
     knownRoom.setCentroid(Eigen::Vector3d(-1.0, 0.0, 1.0));
     knownRoom.setPreviouslyVisited(true);
     p_map->AddDetectedMapRoom(&knownRoom);
 
     /* Prospective far-side room: observed but never entered. */
-    Room farRoom;
+    semantic::Room farRoom;
     farRoom.setId(11);
     farRoom.setMap(p_map);
-    farRoom.setRoomVariant(Room::roomVariant::UNDEFINED);
+    farRoom.setRoomVariant(semantic::Room::roomVariant::UNDEFINED);
     farRoom.setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0));
     p_map->AddDetectedMapRoom(&farRoom);
 
-    Passage passage;
+    semantic::Passage passage;
     passage.setId(20);
     passage.setMap(p_map);
     passage.setPassable(true);
@@ -686,10 +688,10 @@ TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    Room room;
+    semantic::Room room;
     room.setId(3);
     room.setMap(p_map);
-    room.setRoomVariant(Room::roomVariant::ROOM);
+    room.setRoomVariant(semantic::Room::roomVariant::ROOM);
     room.setCentroid(Eigen::Vector3d(0.0, 0.0, 1.0));
     p_map->AddDetectedMapRoom(&room);
 
@@ -702,4 +704,5 @@ TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
     EXPECT_FALSE(room.hasPreviouslyVisited());
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

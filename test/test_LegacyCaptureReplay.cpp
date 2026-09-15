@@ -40,7 +40,9 @@
 #error "VS_GRAPHS_WORKSPACE_ROOT must be defined by CMakeLists.txt"
 #endif
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace semantic
 {
@@ -281,4 +283,5 @@ TEST(LegacyCaptureReplay, ReplaysTheReal147FileAcceptanceCorpus)
 }
 
 } // namespace semantic
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

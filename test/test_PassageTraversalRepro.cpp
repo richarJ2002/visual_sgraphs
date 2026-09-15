@@ -2,12 +2,12 @@
  * @file test_PassageTraversalRepro.cpp
  * @brief Regression test: reproduce the silent-passage-traversal miss.
  *
- * The gate run 20260911-105315 showed UAV crossing Passage#1 around
+ * The gate run 20260911-105315 showed UAV crossing semantic::Passage#1 around
  * t ≈ 7056-7065 sim seconds with traversal counters staying zero.
  *
  * This test builds a minimal synthetic scenario with exactly 3 keyframes
  * and a passage whose geometry is derived from the gate run's sgraph
- * output (Passage#1: centroid ≈ (-0.21,-0.75,5.72), width ≈ 1.135, height 2.0).
+ * output (semantic::Passage#1: centroid ≈ (-0.21,-0.75,5.72), width ≈ 1.135, height 2.0).
  * It calls updateTraversalEvidence() and asserts that
  * passage.getTraversalKnownToFarCount() > 0.
  *
@@ -39,13 +39,15 @@
 #include <utility>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace test
 {
 
 // --------------------------------------------------------------------------
-// Passage geometry (derived from gate run 20260911-105315__gate_verification):
+// semantic::Passage geometry (derived from gate run 20260911-105315__gate_verification):
 //   centroid: (-0.21, -0.75, 5.72) m
 //   width:  1.135355933026258 m
 //   height: 2.0 m
@@ -59,7 +61,7 @@ static const double PASSAGE_HEIGHT     = 2.0;
 
 // Aperture plane equation: passage normal along +X axis (known side at -X,
 // far side at +X). This matches the sgraph wall-normal orientation observed
-// for the wall adjacent to Passage#1.
+// for the wall adjacent to semantic::Passage#1.
 static const double PASSAGE_APERTURE_A = 1.0;
 static const double PASSAGE_APERTURE_B = 0.0;
 static const double PASSAGE_APERTURE_C = 0.0;
@@ -106,10 +108,10 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     EXPECT_NE(p_map, nullptr);
 
     // Ground plane
-    Plane groundPlane;
+    geometric::Plane groundPlane;
     groundPlane.setId(0);
     groundPlane.SetMap(p_map);
-    groundPlane.setPlaneType(Plane::planeVariant::GROUND);
+    groundPlane.setPlaneType(geometric::Plane::planeVariant::GROUND);
     groundPlane.setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(GROUND_NORMAL_X,
                                                                GROUND_NORMAL_Y,
                                                                GROUND_NORMAL_Z,
@@ -136,23 +138,23 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     p_map->AddMapPlane(&groundPlane);
 
     // Known-side room
-    Room knownRoom;
+    semantic::Room knownRoom;
     knownRoom.setId(10);
     knownRoom.setMap(p_map);
-    knownRoom.setRoomVariant(Room::roomVariant::ROOM);
+    knownRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
     knownRoom.setCentroid(Eigen::Vector3d(-1.0, -0.5, 5.5));
     p_map->AddDetectedMapRoom(&knownRoom);
 
     // Far-side room (prospective)
-    Room farRoom;
+    semantic::Room farRoom;
     farRoom.setId(11);
     farRoom.setMap(p_map);
-    farRoom.setRoomVariant(Room::roomVariant::UNDEFINED);
+    farRoom.setRoomVariant(semantic::Room::roomVariant::UNDEFINED);
     farRoom.setCentroid(Eigen::Vector3d(1.0, -1.0, 6.0));
     p_map->AddDetectedMapRoom(&farRoom);
 
-    // Passage#1 with geometry from the gate run
-    Passage passage;
+    // semantic::Passage#1 with geometry from the gate run
+    semantic::Passage passage;
     passage.setId(20);
     passage.setMap(p_map);
     passage.setPassable(true);
@@ -226,4 +228,5 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
 }
 
 } // namespace test
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

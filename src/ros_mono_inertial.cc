@@ -61,7 +61,7 @@ class ImageGrabber
   private:
     // Marker detection
     double                           minMarkerTimeDiff;
-    std::vector<ORB_SLAM3::Marker *> matchedMarkers;
+    std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers;
 };
 
 int main(int argc, char **argv)
@@ -136,9 +136,9 @@ int main(int argc, char **argv)
     // process frames.
     ImuGrabber   imugb;
     ImageGrabber igb(&imugb);
-    sensorType = ORB_SLAM3::System::IMU_MONOCULAR;
+    sensorType = vs_graphs::core::System::IMU_MONOCULAR;
 
-    p_slamSystem = new ORB_SLAM3::System(voc_file,
+    p_slamSystem = new vs_graphs::core::System(voc_file,
                                          settings_file,
                                          sys_params_file,
                                          sensorType,
@@ -212,7 +212,7 @@ cv::Mat ImageGrabber::GetImage(const sensor_msgs::ImageConstPtr &img_msg)
 
     // Find the marker with the minimum time difference compared to the current
     // frame
-    std::pair<double, std::vector<ORB_SLAM3::Marker *>> result =
+    std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>> result =
         findNearestMarker(cv_ptr->header.stamp.toSec());
     minMarkerTimeDiff = result.first;
     matchedMarkers    = result.second;
@@ -247,7 +247,7 @@ void ImageGrabber::SyncWithImu()
             img0Buf.pop();
             this->mBufMutex.unlock();
 
-            vector<ORB_SLAM3::IMU::Point> vImuMeas;
+            vector<vs_graphs::core::IMU::Point> vImuMeas;
             Eigen::Vector3f               Wbb;
             mpImuGb->mBufMutex.lock();
             if (!mpImuGb->imuBuf.empty())
@@ -266,7 +266,7 @@ void ImageGrabber::SyncWithImu()
                         mpImuGb->imuBuf.front()->angular_velocity.x,
                         mpImuGb->imuBuf.front()->angular_velocity.y,
                         mpImuGb->imuBuf.front()->angular_velocity.z);
-                    vImuMeas.push_back(ORB_SLAM3::IMU::Point(acc, gyr, t));
+                    vImuMeas.push_back(vs_graphs::core::IMU::Point(acc, gyr, t));
                     Wbb << mpImuGb->imuBuf.front()->angular_velocity.x,
                         mpImuGb->imuBuf.front()->angular_velocity.y,
                         mpImuGb->imuBuf.front()->angular_velocity.z;

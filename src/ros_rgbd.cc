@@ -225,7 +225,7 @@ int main(int argc, char **argv)
     frameSE = node->get_parameter("frame_structural_element").as_string();
     pubStaticTransform      = node->get_parameter("static_transform").as_bool();
     bool enablePangolin     = node->get_parameter("enable_pangolin").as_bool();
-    const auto verboseLevel = ORB_SLAM3::Verbose::StringToLevel(
+    const auto verboseLevel = vs_graphs::core::Verbose::StringToLevel(
         node->get_parameter("log_level").as_string());
 
     sgraphArchiveTestRunDir = node->get_parameter("test_run_dir").as_string();
@@ -243,13 +243,13 @@ int main(int argc, char **argv)
     auto igb = std::make_shared<ImageGrabber>(useSimTime, directGazeboFluCloud);
 
     /* Declare system type */
-    sensorType = ORB_SLAM3::System::RGBD;
+    sensorType = vs_graphs::core::System::RGBD;
 
     /* ---------------------------------------------------------------------- *
      * VSGRAPH SLAM SYSTEM INIT
      * ---------------------------------------------------------------------- */
 
-    p_slamSystem = new ORB_SLAM3::System(vocFile,
+    p_slamSystem = new vs_graphs::core::System(vocFile,
                                          settingsFile,
                                          sysParamsFile,
                                          sensorType,
@@ -533,7 +533,7 @@ void ImageGrabber::ProcessRgbdPackets()
             std::chrono::steady_clock::now();
         auto         nearestMarker = findNearestMarker(rgbTimestamp_seconds);
         const double markerTimeDifference_seconds = nearestMarker.first;
-        std::vector<ORB_SLAM3::Marker *> matchedMarkers =
+        std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers =
             std::move(nearestMarker.second);
         rgbdObservability.recordMarkerAssociation(
             markerAssociationStart,

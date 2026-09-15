@@ -22,7 +22,9 @@
 #error "VS_GRAPHS_WORKSPACE_ROOT must be defined by CMakeLists.txt"
 #endif
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace test
 {
@@ -159,7 +161,7 @@ TEST(GlobalWallMetrics, EmptyGraphsReportZeroRatherThanDivideByZero)
  * room1<->room101 and room2<->room102; only then does the 3 m gate reject
  * room2<->room102 (8.0 m), leaving room1<->room101 as the sole accepted pair.
  *
- * Room 1 and generated room 101 share the same wall plane (matched); room
+ * semantic::Room 1 and generated room 101 share the same wall plane (matched); room
  * 2's wall is orthogonal to it. So the two methods disagree not just on
  * which rooms pair, but on the resulting global wall match count: 1
  * (correct, room1<->room101) versus 0 (greedy's wrong room2<->room101,
@@ -442,4 +444,5 @@ TEST(GlobalWallMetrics, WallOffsetGateBoundaryIsInclusiveAtExactly035Meters)
  */
 
 } // namespace test
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

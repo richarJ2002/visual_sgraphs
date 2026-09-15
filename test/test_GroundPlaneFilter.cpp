@@ -5,9 +5,9 @@
  *
  * Before the fix, an empty support cloud made numPoint (= yVals.size() / 2)
  * equal to 0, and yVals[numPoint - 1] underflowed to yVals[SIZE_MAX] -- an
- * out-of-bounds read. A freshly constructed Plane (never given points via
+ * out-of-bounds read. A freshly constructed geometric::Plane (never given points via
  * setMapClouds/replaceMapClouds) is already in exactly this state, since
- * Plane's constructor allocates a valid but empty point cloud rather than a
+ * geometric::Plane's constructor allocates a valid but empty point cloud rather than a
  * null one.
  */
 
@@ -20,7 +20,9 @@
 
 #include <optional>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 
 TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
@@ -29,10 +31,10 @@ TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    /* A freshly constructed Plane has a valid but empty support cloud --
+    /* A freshly constructed geometric::Plane has a valid but empty support cloud --
      * exactly the state a plane can be in before its first successful
      * refit, or right after replaceMapClouds() clears it. */
-    Plane groundPlane;
+    geometric::Plane groundPlane;
     groundPlane.setId(1);
     groundPlane.SetMap(p_map);
 
@@ -49,7 +51,7 @@ TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    Plane groundPlane;
+    geometric::Plane groundPlane;
     groundPlane.setId(1);
     groundPlane.SetMap(p_map);
 
@@ -73,7 +75,7 @@ TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    Plane groundPlane;
+    geometric::Plane groundPlane;
     groundPlane.setId(1);
     groundPlane.SetMap(p_map);
 
@@ -94,4 +96,5 @@ TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
     EXPECT_TRUE(height.has_value());
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

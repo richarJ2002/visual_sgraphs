@@ -2,7 +2,7 @@
  * @file test_FloorFlatness.cpp
  * @brief Phase 2(ii) coverage: SemanticsManager::reconcileRoomGroundPlanes()
  *        re-points a room whose own ground plane disagrees with the
- *        just-refreshed canonical Floor identity.
+ *        just-refreshed canonical semantic::Floor identity.
  */
 
 #include "Atlas.h"
@@ -15,24 +15,26 @@
 
 #include <memory>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace
 {
 
-/** Builds a GROUND Plane at height y = height_m_in with a genuine,
+/** Builds a GROUND geometric::Plane at height y = height_m_in with a genuine,
  * production-refit geometry snapshot (Map::GetBiggestGroundPlane() and
- * Floor::selectBestObservedFloor() both require cloudGeneration ==
+ * semantic::Floor::selectBestObservedFloor() both require cloudGeneration ==
  * successfulRefitGeneration and a finite support count, which only
- * Plane::completeMapCloudRefit() sets). */
-std::unique_ptr<Plane>
+ * geometric::Plane::completeMapCloudRefit() sets). */
+std::unique_ptr<geometric::Plane>
     makeRefitGroundPlane(int id_in, Map *p_map_in, double height_m_in,
                         std::size_t pointCount_in)
 {
-    auto ground = std::make_unique<Plane>();
+    auto ground = std::make_unique<geometric::Plane>();
     ground->setId(id_in);
     ground->SetMap(p_map_in);
-    ground->setPlaneType(Plane::planeVariant::GROUND);
+    ground->setPlaneType(geometric::Plane::planeVariant::GROUND);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -64,24 +66,24 @@ TEST(FloorFlatness, RepointsALessObservedRoomGroundPlaneToTheCanonicalOne)
     SemanticsManager manager(&atlas);
 
     /* Canonical, strongly observed ground plane at y=0. */
-    std::unique_ptr<Plane> canonicalGround =
+    std::unique_ptr<geometric::Plane> canonicalGround =
         makeRefitGroundPlane(1, p_map, 0.0, 500U);
     atlas.AddMapPlane(canonicalGround.get());
 
     /* A weaker, disagreeing ground plane 0.5 m above -- well beyond
-     * Floor::kMergeMaxPlaneOffset_m (0.35 m). */
-    std::unique_ptr<Plane> roomGround =
+     * semantic::Floor::kMergeMaxPlaneOffset_m (0.35 m). */
+    std::unique_ptr<geometric::Plane> roomGround =
         makeRefitGroundPlane(2, p_map, 0.5, 20U);
     atlas.AddMapPlane(roomGround.get());
 
-    std::unique_ptr<Room> room = std::make_unique<Room>();
+    std::unique_ptr<semantic::Room> room = std::make_unique<semantic::Room>();
     room->setId(1);
     room->setMap(p_map);
-    room->setRoomVariant(Room::roomVariant::ROOM);
+    room->setRoomVariant(semantic::Room::roomVariant::ROOM);
     room->setGroundPlane(roomGround.get());
     atlas.AddDetectedMapRoom(room.get());
 
-    /* Establish the canonical Floor identity first, as Run() does. */
+    /* Establish the canonical semantic::Floor identity first, as Run() does. */
     manager.getUpdatedFloorsForTest();
     manager.reconcileRoomGroundPlanesForTest();
 
@@ -94,19 +96,19 @@ TEST(FloorFlatness, LeavesAnAgreeingRoomGroundPlaneUntouched)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    std::unique_ptr<Plane> canonicalGround =
+    std::unique_ptr<geometric::Plane> canonicalGround =
         makeRefitGroundPlane(1, p_map, 0.0, 500U);
     atlas.AddMapPlane(canonicalGround.get());
 
     /* Within tolerance: 0.05 m offset, well under 0.35 m. */
-    std::unique_ptr<Plane> roomGround =
+    std::unique_ptr<geometric::Plane> roomGround =
         makeRefitGroundPlane(2, p_map, 0.05, 20U);
     atlas.AddMapPlane(roomGround.get());
 
-    std::unique_ptr<Room> room = std::make_unique<Room>();
+    std::unique_ptr<semantic::Room> room = std::make_unique<semantic::Room>();
     room->setId(1);
     room->setMap(p_map);
-    room->setRoomVariant(Room::roomVariant::ROOM);
+    room->setRoomVariant(semantic::Room::roomVariant::ROOM);
     room->setGroundPlane(roomGround.get());
     atlas.AddDetectedMapRoom(room.get());
 
@@ -116,4 +118,5 @@ TEST(FloorFlatness, LeavesAnAgreeingRoomGroundPlaneUntouched)
     EXPECT_EQ(room->getGroundPlane(), roomGround.get());
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

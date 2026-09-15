@@ -19,7 +19,7 @@
  *     on the wrong side" reported live. The fix orients the wall equation
  *     toward the room's own centroid, then rejects when the keyframes that
  *     actually observed the wall have a confident sign-consensus on the
- *     FAR side (Plane::getObservationSideSnapshot(), previously read-only
+ *     FAR side (geometric::Plane::getObservationSideSnapshot(), previously read-only
  *     diagnostic logging, now also a gate).
  *
  * Both fixes are exercised through SemanticsManager's private production
@@ -43,20 +43,22 @@
 #include <memory>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace
 {
 
-/** Builds a wall Plane with a genuine, production-computed geometry
+/** Builds a wall geometric::Plane with a genuine, production-computed geometry
  * snapshot: a flat rectangular grid of points, spanning [-halfU, halfU]
  * along axisU_World and [-halfV, halfV] along axisV_World, offset from the
  * plane's own centroid, all exactly on-plane. Mirrors
  * test_RoomContextPersist.cpp's makeRefitWallPlane pattern (feed a
- * synthetic cloud through the real Plane::updateSizeOfPlane() path, the
- * same function evaluateWallAdmissionEvidence's Plane::getGeometrySnapshot()
+ * synthetic cloud through the real geometric::Plane::updateSizeOfPlane() path, the
+ * same function evaluateWallAdmissionEvidence's geometric::Plane::getGeometrySnapshot()
  * call reads from). */
-void makeWallWithGridCloud(Plane                 &wall_inout,
+void makeWallWithGridCloud(geometric::Plane                 &wall_inout,
                            int                     id_in,
                            Map                    *p_map_in,
                            const Eigen::Vector4d  &equation_World_in,
@@ -67,12 +69,12 @@ void makeWallWithGridCloud(Plane                 &wall_inout,
 {
     wall_inout.setId(id_in);
     wall_inout.SetMap(p_map_in);
-    wall_inout.setPlaneType(Plane::planeVariant::WALL);
+    wall_inout.setPlaneType(geometric::Plane::planeVariant::WALL);
     /* evaluateWallAdmissionEvidence's wallDominatesSemantics gate compares
      * getPlaneType() against getExpectedPlaneType(), which is derived from
      * semanticVotes rather than settable directly -- cast a vote so the two
      * agree, matching what real wall classification does over time. */
-    wall_inout.castWeightedVote(Plane::planeVariant::WALL, 1.0);
+    wall_inout.castWeightedVote(geometric::Plane::planeVariant::WALL, 1.0);
     wall_inout.setGlobalEquation(g2o::Plane3D(equation_World_in));
     wall_inout.setCentroid(Eigen::Vector3d::Zero());
 
@@ -121,7 +123,7 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostWhenGroundAligned)
      * post's true width (0.08 m, well under the 0.30 m minimum) runs along
      * world Y, its true height (2.2 m) along world Z -- a physically
      * ordinary vertical door-frame post. */
-    Plane wall;
+    geometric::Plane wall;
     makeWallWithGridCloud(wall,
                           1,
                           p_map,
@@ -145,7 +147,7 @@ TEST(WallAdmission, AdmitsPhysicallyAdequateWallWhenGroundAligned)
     /* Same orientation as above, but an ordinary wall-sized panel: 2 m wide,
      * 2.2 m tall -- comfortably above minimumMajorExtent_m (0.80),
      * minimumMinorExtent_m (0.30) and minimumArea_m2 (0.40). */
-    Plane wall;
+    geometric::Plane wall;
     makeWallWithGridCloud(wall,
                           1,
                           p_map,
@@ -179,7 +181,7 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostOnObliqueWall)
         groundNormal_World.cross(normal_World).normalized();
     const Eigen::Vector3d vertical_World(0.0, 0.0, 1.0);
 
-    Plane wall;
+    geometric::Plane wall;
     makeWallWithGridCloud(
         wall,
         1,
@@ -208,7 +210,7 @@ TEST(WallAdmission, EvidenceGateStillAdmitsGenerouslySizedWallWithoutGroundPlane
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    Plane wall;
+    geometric::Plane wall;
     makeWallWithGridCloud(wall,
                           1,
                           p_map,
@@ -248,9 +250,9 @@ std::unique_ptr<KeyFrame> makeKeyFrameAt(const Eigen::Vector3d &cameraCenter_Wor
     return keyFrame;
 }
 
-Plane::Observation makeMinimalObservation()
+geometric::Plane::Observation makeMinimalObservation()
 {
-    Plane::Observation observation;
+    geometric::Plane::Observation observation;
     observation.pointPlaneConstraintMatrix = Eigen::Matrix4d::Zero();
     observation.confidence                 = 1.0;
     return observation;
@@ -259,9 +261,9 @@ Plane::Observation makeMinimalObservation()
 /** A wide, admissible wall (passes evaluateWallAdmissionEvidence
  * unconditionally) at x=0, normal along +X, so the admission decision in
  * these tests turns entirely on the wrong-side gate. */
-std::unique_ptr<Plane> makeAdmissibleWallAtOrigin(int id_in, Map *p_map_in)
+std::unique_ptr<geometric::Plane> makeAdmissibleWallAtOrigin(int id_in, Map *p_map_in)
 {
-    auto wall = std::make_unique<Plane>();
+    auto wall = std::make_unique<geometric::Plane>();
     makeWallWithGridCloud(*wall,
                           id_in,
                           p_map_in,
@@ -281,7 +283,7 @@ TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    std::unique_ptr<Plane> wall = makeAdmissibleWallAtOrigin(1, p_map);
+    std::unique_ptr<geometric::Plane> wall = makeAdmissibleWallAtOrigin(1, p_map);
 
     /* Four keyframes, all confidently on the +X side (x=1.0, well past the
      * 0.10 m reliable-side-distance floor). isWallFaceForeignToRoom() reads
@@ -297,10 +299,10 @@ TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
         wall->addObservation(keyFrames.back().get(), makeMinimalObservation());
     }
 
-    Room room;
+    semantic::Room room;
     room.setId(1);
     room.setMap(p_map);
-    /* Room centroid on the -X side: opposite the keyframes that actually
+    /* semantic::Room centroid on the -X side: opposite the keyframes that actually
      * observed this wall. */
     room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0));
 
@@ -315,7 +317,7 @@ TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    std::unique_ptr<Plane> wall = makeAdmissibleWallAtOrigin(1, p_map);
+    std::unique_ptr<geometric::Plane> wall = makeAdmissibleWallAtOrigin(1, p_map);
 
     /* Same four keyframes' side as the room this time. */
     wall->setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0));
@@ -327,7 +329,7 @@ TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
         wall->addObservation(keyFrames.back().get(), makeMinimalObservation());
     }
 
-    Room room;
+    semantic::Room room;
     room.setId(1);
     room.setMap(p_map);
     room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0));
@@ -346,9 +348,9 @@ TEST(WallAdmission, AdmitsWallWithNoObservationEvidenceRatherThanRejectingBlind)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    std::unique_ptr<Plane> wall = makeAdmissibleWallAtOrigin(1, p_map);
+    std::unique_ptr<geometric::Plane> wall = makeAdmissibleWallAtOrigin(1, p_map);
 
-    Room room;
+    semantic::Room room;
     room.setId(1);
     room.setMap(p_map);
     room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0));
@@ -369,9 +371,9 @@ TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    /* Passage at x=0, generous aperture, with a stable prospective room on
+    /* semantic::Passage at x=0, generous aperture, with a stable prospective room on
      * the far (+x) side. */
-    Passage passage;
+    semantic::Passage passage;
     passage.setId(1);
     passage.setMap(p_map);
     passage.setGlobalEquation(
@@ -387,7 +389,7 @@ TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
      * point the wrong way as the right one. */
     passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0));
 
-    Room prospective;
+    semantic::Room prospective;
     prospective.setId(2);
     prospective.setMap(p_map);
     prospective.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
@@ -396,12 +398,12 @@ TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
     atlas.AddMapPassage(&passage);
 
     /* Candidate wall unambiguously on the far side of the passage. */
-    Plane wall;
+    geometric::Plane wall;
     wall.setId(3);
     wall.SetMap(p_map);
     wall.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
 
-    Room room;
+    semantic::Room room;
     room.setId(4);
     room.setMap(p_map);
     /* Degenerate case: essentially sitting on the passage plane itself,
@@ -429,7 +431,7 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    Passage passage;
+    semantic::Passage passage;
     passage.setId(1);
     passage.setMap(p_map);
     passage.setGlobalEquation(
@@ -439,7 +441,7 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
     passage.setHeight(2.0);
     passage.setPassable(true);
 
-    Room prospective;
+    semantic::Room prospective;
     prospective.setId(2);
     prospective.setMap(p_map);
     prospective.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
@@ -447,12 +449,12 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
 
     atlas.AddMapPassage(&passage);
 
-    Plane wall;
+    geometric::Plane wall;
     wall.setId(3);
     wall.SetMap(p_map);
     wall.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
 
-    Room room;
+    semantic::Room room;
     room.setId(4);
     room.setMap(p_map);
     room.setCentroid(Eigen::Vector3d(0.0005, 0.0, 0.0));
@@ -472,15 +474,15 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
 namespace
 {
 
-/** Builds a GROUND Plane at z=0 with a genuine, production-refit geometry
+/** Builds a GROUND geometric::Plane at z=0 with a genuine, production-refit geometry
  * snapshot (Map::GetBiggestGroundPlane() requires cloudGeneration ==
  * successfulRefitGeneration and a finite support count). */
-std::unique_ptr<Plane> makeRefitGroundPlaneAtOrigin(int id_in, Map *p_map_in)
+std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int id_in, Map *p_map_in)
 {
-    auto ground = std::make_unique<Plane>();
+    auto ground = std::make_unique<geometric::Plane>();
     ground->setId(id_in);
     ground->SetMap(p_map_in);
-    ground->setPlaneType(Plane::planeVariant::GROUND);
+    ground->setPlaneType(geometric::Plane::planeVariant::GROUND);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -503,18 +505,18 @@ std::unique_ptr<Plane> makeRefitGroundPlaneAtOrigin(int id_in, Map *p_map_in)
     return ground;
 }
 
-/** Builds a long, admissible WALL Plane whose horizontal (in-plane) span
+/** Builds a long, admissible WALL geometric::Plane whose horizontal (in-plane) span
  * runs along axisAlong_World_in through the origin, at a given normal
  * direction, wide enough to produce a decisive interior crossing. */
-std::unique_ptr<Plane> makeLongWallThroughOrigin(
+std::unique_ptr<geometric::Plane> makeLongWallThroughOrigin(
     int id_in, Map *p_map_in, const Eigen::Vector3d &normal_World_in,
     const Eigen::Vector3d &axisAlong_World_in)
 {
-    auto wall = std::make_unique<Plane>();
+    auto wall = std::make_unique<geometric::Plane>();
     wall->setId(id_in);
     wall->SetMap(p_map_in);
-    wall->setPlaneType(Plane::planeVariant::WALL);
-    wall->castWeightedVote(Plane::planeVariant::WALL, 1.0);
+    wall->setPlaneType(geometric::Plane::planeVariant::WALL);
+    wall->castWeightedVote(geometric::Plane::planeVariant::WALL, 1.0);
     wall->setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(normal_World_in.x(),
                                      normal_World_in.y(),
@@ -556,14 +558,14 @@ TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    std::unique_ptr<Plane> ground = makeRefitGroundPlaneAtOrigin(1, p_map);
+    std::unique_ptr<geometric::Plane> ground = makeRefitGroundPlaneAtOrigin(1, p_map);
     atlas.AddMapPlane(ground.get());
 
     /* Wall X: normal +Y, runs along world X through the origin -- owned by
-     * Room A. */
-    std::unique_ptr<Plane> wallX = makeLongWallThroughOrigin(
+     * semantic::Room A. */
+    std::unique_ptr<geometric::Plane> wallX = makeLongWallThroughOrigin(
         2, p_map, Eigen::Vector3d(0.0, 1.0, 0.0), Eigen::Vector3d(1.0, 0.0, 0.0));
-    Room roomA;
+    semantic::Room roomA;
     roomA.setId(1);
     roomA.setMap(p_map);
     roomA.setWalls(wallX.get());
@@ -571,10 +573,10 @@ TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
 
     /* Wall Y: normal +X, runs along world Y through the origin -- crosses
      * Wall X decisively at the origin, well inside both walls' interiors. */
-    std::unique_ptr<Plane> wallY = makeLongWallThroughOrigin(
+    std::unique_ptr<geometric::Plane> wallY = makeLongWallThroughOrigin(
         3, p_map, Eigen::Vector3d(1.0, 0.0, 0.0), Eigen::Vector3d(0.0, 1.0, 0.0));
 
-    Room roomB;
+    semantic::Room roomB;
     roomB.setId(2);
     roomB.setMap(p_map);
 
@@ -589,7 +591,7 @@ TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
 /* ---------------------------------------------------------------------- *
  * Far-side wall churn: the per-cycle passage-side sweep must not evict a
  * wall from the prospective room the aperture backstop routed it to.
- * Live-observed: Wall#1 removed from Room#2, redirected back and
+ * Live-observed: Wall#1 removed from semantic::Room#2, redirected back and
  * re-admitted every cycle (42 admissions, stable owner). The wall's
  * observation origin sits on the near side while a deep far-side room's
  * centroid sits beyond the wall plane, so the bare face check always
@@ -602,8 +604,8 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    /* Passage at x=0, generous aperture, known near side -X. */
-    Passage passage;
+    /* semantic::Passage at x=0, generous aperture, known near side -X. */
+    semantic::Passage passage;
     passage.setId(1);
     passage.setMap(p_map);
     passage.setGlobalEquation(
@@ -616,10 +618,10 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
 
     /* Prospective far-side room whose centroid lies beyond the wall plane,
      * as a deep room's free-space centroid naturally does. */
-    Room prospective;
+    semantic::Room prospective;
     prospective.setId(2);
     prospective.setMap(p_map);
-    prospective.setRoomVariant(Room::roomVariant::UNDEFINED);
+    prospective.setRoomVariant(semantic::Room::roomVariant::UNDEFINED);
     prospective.setCentroid(Eigen::Vector3d(3.0, 0.0, 0.0));
     passage.setProspectiveRoom(&prospective);
 
@@ -627,7 +629,7 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
     atlas.AddDetectedMapRoom(&prospective);
 
     /* Far-side wall at x=1.5, first observed from the near side. */
-    Plane wall;
+    geometric::Plane wall;
     wall.setId(3);
     wall.SetMap(p_map);
     wall.setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -1.5)));
@@ -652,7 +654,7 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
 
-    Passage passage;
+    semantic::Passage passage;
     passage.setId(1);
     passage.setMap(p_map);
     passage.setGlobalEquation(
@@ -662,17 +664,17 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
     passage.setHeight(2.0);
     passage.setPassable(true);
 
-    Room prospective;
+    semantic::Room prospective;
     prospective.setId(2);
     prospective.setMap(p_map);
-    prospective.setRoomVariant(Room::roomVariant::UNDEFINED);
+    prospective.setRoomVariant(semantic::Room::roomVariant::UNDEFINED);
     prospective.setCentroid(Eigen::Vector3d(3.0, 0.0, 0.0));
     passage.setProspectiveRoom(&prospective);
 
     atlas.AddMapPassage(&passage);
     atlas.AddDetectedMapRoom(&prospective);
 
-    Plane wall;
+    geometric::Plane wall;
     wall.setId(3);
     wall.SetMap(p_map);
     wall.setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -1.5)));
@@ -692,7 +694,7 @@ TEST(WallAdmission, BoundsTrimStrayOutliersButKeepTheGridSurface)
     Map  *p_map = atlas.GetCurrentMap();
 
     /* 3.0 m x 2.0 m grid wall on the x=0 plane: 400 support points. */
-    Plane wall;
+    geometric::Plane wall;
     makeWallWithGridCloud(wall,
                           1,
                           p_map,
@@ -732,7 +734,7 @@ TEST(WallAdmission, BoundsTrimStrayOutliersButKeepTheGridSurface)
     wall.setMapClouds(cloud);
     wall.updateSizeOfPlane();
 
-    const Plane::GeometrySnapshot geometry = wall.getGeometrySnapshot();
+    const geometric::Plane::GeometrySnapshot geometry = wall.getGeometrySnapshot();
     /* Grid step is ~0.16 m in U and ~0.11 m in V: trimmed bounds must sit
      * within a couple of steps of the true +-1.5/+-1.0 m surface. */
     EXPECT_GT(geometry.minPlaneU_m, -1.9);
@@ -745,4 +747,5 @@ TEST(WallAdmission, BoundsTrimStrayOutliersButKeepTheGridSurface)
     EXPECT_LT(geometry.maxPlaneV_m, 1.3);
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

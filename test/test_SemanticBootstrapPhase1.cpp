@@ -18,19 +18,21 @@
 #include <limits>
 #include <memory>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace
 {
-std::unique_ptr<Plane> makeAdmissibleWall(const int    id_in,
+std::unique_ptr<geometric::Plane> makeAdmissibleWall(const int    id_in,
                                           Map         *p_map_in,
                                           const double x_m_in = 0.0)
 {
-    std::unique_ptr<Plane> p_wall = std::make_unique<Plane>();
+    std::unique_ptr<geometric::Plane> p_wall = std::make_unique<geometric::Plane>();
     p_wall->setId(id_in);
     p_wall->SetMap(p_map_in);
-    p_wall->setPlaneType(Plane::planeVariant::WALL);
-    p_wall->castWeightedVote(Plane::planeVariant::WALL, 1.0);
+    p_wall->setPlaneType(geometric::Plane::planeVariant::WALL);
+    p_wall->castWeightedVote(geometric::Plane::planeVariant::WALL, 1.0);
     p_wall->setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -x_m_in)));
     p_wall->setCentroid(Eigen::Vector3d(x_m_in, 0.0, 1.0));
@@ -53,12 +55,12 @@ std::unique_ptr<Plane> makeAdmissibleWall(const int    id_in,
     return p_wall;
 }
 
-Room *bootstrap(SemanticsManager &manager_inout, Atlas &atlas_inout)
+semantic::Room *bootstrap(SemanticsManager &manager_inout, Atlas &atlas_inout)
 {
     EXPECT_GE(manager_inout.ensureActiveMapBootstrapHierarchyForTest(
                   Eigen::Vector3d(0.0, 0.0, 1.0)),
               0);
-    const std::vector<Room *> rooms =
+    const std::vector<semantic::Room *> rooms =
         atlas_inout.GetCurrentMap()->GetAllRooms();
     EXPECT_EQ(rooms.size(), 1U);
     return rooms.empty() ? nullptr : rooms.front();
@@ -69,7 +71,7 @@ TEST(SemanticBootstrapPhase1, BootstrapInitializationIsIdempotent)
 {
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    Room            *p_firstRoom = bootstrap(manager, atlas);
+    semantic::Room            *p_firstRoom = bootstrap(manager, atlas);
     ASSERT_NE(p_firstRoom, nullptr);
 
     manager.ensureActiveMapBootstrapHierarchyForTest(
@@ -79,10 +81,10 @@ TEST(SemanticBootstrapPhase1, BootstrapInitializationIsIdempotent)
     EXPECT_EQ(atlas.GetCurrentMap()->GetAllRooms().front(), p_firstRoom);
     EXPECT_EQ(atlas.GetCurrentMap()->GetAllFloors().size(), 1U);
     EXPECT_EQ(p_firstRoom->getId(), 0);
-    EXPECT_EQ(p_firstRoom->getName(), "Room#0");
+    EXPECT_EQ(p_firstRoom->getName(), "semantic::Room#0");
     EXPECT_EQ(atlas.GetCurrentMap()->GetAllFloors().front()->getId(), 0);
     EXPECT_EQ(atlas.GetCurrentMap()->GetAllFloors().front()->getName(),
-              "Floor#0");
+              "semantic::Floor#0");
 }
 
 TEST(SemanticBootstrapPhase1,
@@ -91,21 +93,21 @@ TEST(SemanticBootstrapPhase1,
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
     Map             *p_departedMap  = atlas.GetCurrentMap();
-    Room            *p_departedRoom = bootstrap(manager, atlas);
+    semantic::Room            *p_departedRoom = bootstrap(manager, atlas);
     ASSERT_NE(p_departedRoom, nullptr);
 
-    std::unique_ptr<Plane> p_historicalWall =
+    std::unique_ptr<geometric::Plane> p_historicalWall =
         makeAdmissibleWall(4, p_departedMap);
     atlas.AddMapPlane(p_historicalWall.get());
     p_departedRoom->setWalls(p_historicalWall.get());
 
-    Passage departedPassage;
+    semantic::Passage departedPassage;
     departedPassage.setId(atlas.reservePassageIdentity());
     departedPassage.setMap(p_departedMap);
     departedPassage.setPassable(true);
     departedPassage.setKnownSideRoom(p_departedRoom);
     departedPassage.addTraversalObservation(
-        Passage::TraversalDirection::KNOWN_TO_FAR);
+        semantic::Passage::TraversalDirection::KNOWN_TO_FAR);
     atlas.AddMapPassage(&departedPassage);
     p_departedRoom->setDoorways(&departedPassage);
 
@@ -118,11 +120,11 @@ TEST(SemanticBootstrapPhase1,
                   recoveredCameraPosition_World_m),
               0);
 
-    const std::vector<Room *> recoveredRooms = p_recoveryMap->GetAllRooms();
+    const std::vector<semantic::Room *> recoveredRooms = p_recoveryMap->GetAllRooms();
     ASSERT_EQ(recoveredRooms.size(), 1U);
-    Room *p_recoveredRoom = recoveredRooms.front();
+    semantic::Room *p_recoveredRoom = recoveredRooms.front();
     EXPECT_EQ(p_recoveredRoom->getId(), 0);
-    EXPECT_EQ(p_recoveredRoom->getName(), "Room#0");
+    EXPECT_EQ(p_recoveredRoom->getName(), "semantic::Room#0");
     EXPECT_TRUE(p_recoveredRoom->isRecoveryProxy());
     EXPECT_TRUE(p_recoveredRoom->getCentroid().isApprox(
         recoveredCameraPosition_World_m));
@@ -134,7 +136,7 @@ TEST(SemanticBootstrapPhase1,
     ASSERT_EQ(p_recoveredRoom->getFloor()->getRooms().size(), 1U);
     EXPECT_EQ(p_recoveredRoom->getFloor()->getRooms().front(), p_recoveredRoom);
 
-    const std::vector<Passage *> recoveredPassages =
+    const std::vector<semantic::Passage *> recoveredPassages =
         p_recoveryMap->GetAllPassages();
     ASSERT_EQ(recoveredPassages.size(), 1U);
     EXPECT_EQ(recoveredPassages.front()->getId(), departedPassage.getId());
@@ -151,14 +153,14 @@ TEST(SemanticBootstrapPhase1,
 {
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    Room            *p_roomZero = bootstrap(manager, atlas);
+    semantic::Room            *p_roomZero = bootstrap(manager, atlas);
     ASSERT_NE(p_roomZero, nullptr);
 
-    Room roomOne;
+    semantic::Room roomOne;
     roomOne.setId(1);
     roomOne.setMap(atlas.GetCurrentMap());
-    roomOne.setRoomVariant(Room::roomVariant::ROOM);
-    roomOne.setName("Room#1");
+    roomOne.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    roomOne.setName("semantic::Room#1");
     roomOne.setCentroid(Eigen::Vector3d(4.0, 0.0, 1.0));
     atlas.AddDetectedMapRoom(&roomOne);
     manager.setCurrentRoomIdForTest(roomOne.getId());
@@ -172,7 +174,7 @@ TEST(SemanticBootstrapPhase1,
         100U,
         4U));
 
-    Floor *p_previousMapFloor = roomOne.getFloor();
+    semantic::Floor *p_previousMapFloor = roomOne.getFloor();
     for (int resetIndex = 0; resetIndex < 2; ++resetIndex)
     {
         atlas.CreateNewMap();
@@ -186,7 +188,7 @@ TEST(SemanticBootstrapPhase1,
                 std::numeric_limits<double>::quiet_NaN()));
         manager.getUpdatedFloorsForTest();
 
-        const std::vector<Floor *> earlyFloors = p_recoveryMap->GetAllFloors();
+        const std::vector<semantic::Floor *> earlyFloors = p_recoveryMap->GetAllFloors();
         ASSERT_EQ(earlyFloors.size(), 1U);
         EXPECT_EQ(earlyFloors.front()->getId(), 0);
         EXPECT_NE(earlyFloors.front(), p_previousMapFloor);
@@ -200,9 +202,9 @@ TEST(SemanticBootstrapPhase1,
                       recoveredCameraPosition_World_m),
                   0);
 
-        const std::vector<Room *> recoveredRooms = p_recoveryMap->GetAllRooms();
+        const std::vector<semantic::Room *> recoveredRooms = p_recoveryMap->GetAllRooms();
         ASSERT_EQ(recoveredRooms.size(), 1U);
-        Room *p_recoveredRoom = recoveredRooms.front();
+        semantic::Room *p_recoveredRoom = recoveredRooms.front();
         EXPECT_EQ(p_recoveredRoom->getId(), 1);
         ASSERT_NE(p_recoveredRoom->getFloor(), nullptr);
         EXPECT_EQ(p_recoveredRoom->getFloor()->getId(), 0);
@@ -216,7 +218,7 @@ TEST(SemanticBootstrapPhase1,
 {
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    Room            *p_roomZero = bootstrap(manager, atlas);
+    semantic::Room            *p_roomZero = bootstrap(manager, atlas);
     ASSERT_NE(p_roomZero, nullptr);
     ASSERT_EQ(p_roomZero->getId(), 0);
 
@@ -227,13 +229,13 @@ TEST(SemanticBootstrapPhase1,
     EXPECT_TRUE(atlas.GetCurrentMap()->GetAllFloors().empty());
 
     /* No keyframes exist after the clear, so no usable camera pose. Recovery
-     * must still recreate Room#0/Floor#0 from the snapshot centroid. */
+     * must still recreate semantic::Room#0/semantic::Floor#0 from the snapshot centroid. */
     EXPECT_EQ(manager.ensureActiveMapBootstrapHierarchyForTest(
                   Eigen::Vector3d::Constant(
                       std::numeric_limits<double>::quiet_NaN())),
               1);
 
-    const std::vector<Room *> recoveredRooms =
+    const std::vector<semantic::Room *> recoveredRooms =
         atlas.GetCurrentMap()->GetAllRooms();
     ASSERT_EQ(recoveredRooms.size(), 1U);
     EXPECT_EQ(recoveredRooms.front()->getId(), 0);
@@ -247,18 +249,18 @@ TEST(SemanticBootstrapPhase1, BootstrapIgnoresSpuriousRoomWhenRecoveryPending)
 {
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    Room            *p_roomZero = bootstrap(manager, atlas);
+    semantic::Room            *p_roomZero = bootstrap(manager, atlas);
     ASSERT_NE(p_roomZero, nullptr);
 
     atlas.clearMap();
 
     /* Spurious free-space SE# classified as ROOM during the reset transient
      * (live failure 20260910-222334 cycles 135-138: SE#4 hijacked current). */
-    Room spuriousRoom;
+    semantic::Room spuriousRoom;
     spuriousRoom.setId(99);
     spuriousRoom.setMap(atlas.GetCurrentMap());
-    spuriousRoom.setRoomVariant(Room::roomVariant::ROOM);
-    spuriousRoom.setName("Room#99");
+    spuriousRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    spuriousRoom.setName("semantic::Room#99");
     spuriousRoom.setCentroid(Eigen::Vector3d(5.0, 5.0, 1.0));
     atlas.AddDetectedMapRoom(&spuriousRoom);
 
@@ -266,7 +268,7 @@ TEST(SemanticBootstrapPhase1, BootstrapIgnoresSpuriousRoomWhenRecoveryPending)
                   Eigen::Vector3d(1.0, 0.0, 1.0)),
               1);
 
-    /* Recovery identity wins: current returns to Room#0, not the spurious
+    /* Recovery identity wins: current returns to semantic::Room#0, not the spurious
      * lowest-ID fallback. Duplicate fusion owns the spurious room later. */
     EXPECT_EQ(manager.getCurrentRoomId(), 0);
     EXPECT_EQ(atlas.getCurrentSemanticRoomIdentity(), 0);
@@ -277,10 +279,10 @@ TEST(SemanticBootstrapPhase1,
 {
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    Room            *p_roomZero = bootstrap(manager, atlas);
+    semantic::Room            *p_roomZero = bootstrap(manager, atlas);
     ASSERT_NE(p_roomZero, nullptr);
 
-    Passage passage;
+    semantic::Passage passage;
     passage.setId(atlas.reservePassageIdentity());
     passage.setMap(atlas.GetCurrentMap());
     passage.setPassable(true);
@@ -292,7 +294,7 @@ TEST(SemanticBootstrapPhase1,
     manager.ensureActiveMapBootstrapHierarchyForTest(
         Eigen::Vector3d(1.0, 0.0, 1.0));
 
-    std::unique_ptr<Room> p_roomOne(GeoSemHelpers::createBlankRoomCandidate(
+    std::unique_ptr<semantic::Room> p_roomOne(GeoSemHelpers::createBlankRoomCandidate(
         &atlas,
         Eigen::Vector3d(2.0, 0.0, 1.0)));
     ASSERT_NE(p_roomOne, nullptr);
@@ -302,16 +304,16 @@ TEST(SemanticBootstrapPhase1,
 TEST(SemanticBootstrapPhase1,
      SameIdentityObservedPassageReplacesRecoveryProxyGeometry)
 {
-    Passage canonicalPassage;
+    semantic::Passage canonicalPassage;
     canonicalPassage.setId(4);
     canonicalPassage.setRecoveryProxy(true);
     canonicalPassage.setPassable(true);
 
-    Passage observedPassage;
+    semantic::Passage observedPassage;
     observedPassage.setId(4);
     observedPassage.setRecoveryProxy(false);
     observedPassage.setPassable(false);
-    observedPassage.setPassageType(Passage::passageVariant::DOORWAY);
+    observedPassage.setPassageType(semantic::Passage::passageVariant::DOORWAY);
     observedPassage.setCentroid(Eigen::Vector3d(3.0, 2.0, 1.0));
     observedPassage.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -3.0)));
@@ -324,7 +326,7 @@ TEST(SemanticBootstrapPhase1,
     EXPECT_FALSE(canonicalPassage.isRecoveryProxy());
     EXPECT_FALSE(canonicalPassage.isPassable());
     EXPECT_EQ(canonicalPassage.getPassageType(),
-              Passage::passageVariant::DOORWAY);
+              semantic::Passage::passageVariant::DOORWAY);
     EXPECT_TRUE(canonicalPassage.getCentroid().isApprox(
         Eigen::Vector3d(3.0, 2.0, 1.0)));
     EXPECT_TRUE(canonicalPassage.getGlobalEquation().coeffs().isApprox(
@@ -339,24 +341,24 @@ TEST(SemanticBootstrapPhase1,
 TEST(SemanticBootstrapPhase1,
      SameIdentityPassageMergePreservesUniqueTopologyAndMaximumCounters)
 {
-    Passage canonicalPassage;
+    semantic::Passage canonicalPassage;
     canonicalPassage.setId(5);
     canonicalPassage.setRecoveryProxy(true);
     canonicalPassage.addTraversalObservation(
-        Passage::TraversalDirection::KNOWN_TO_FAR);
+        semantic::Passage::TraversalDirection::KNOWN_TO_FAR);
 
-    Passage duplicatePassage;
+    semantic::Passage duplicatePassage;
     duplicatePassage.setId(5);
     duplicatePassage.addTraversalObservation(
-        Passage::TraversalDirection::KNOWN_TO_FAR);
+        semantic::Passage::TraversalDirection::KNOWN_TO_FAR);
     duplicatePassage.addTraversalObservation(
-        Passage::TraversalDirection::KNOWN_TO_FAR);
+        semantic::Passage::TraversalDirection::KNOWN_TO_FAR);
     duplicatePassage.addTraversalObservation(
-        Passage::TraversalDirection::FAR_TO_KNOWN);
+        semantic::Passage::TraversalDirection::FAR_TO_KNOWN);
     ASSERT_TRUE(
         duplicatePassage.setKnownSideDirection(Eigen::Vector3d::UnitY()));
 
-    Plane supportingWall;
+    geometric::Plane supportingWall;
     duplicatePassage.addAssociateWall(&supportingWall);
     duplicatePassage.addAssociateWall(&supportingWall);
 
@@ -376,10 +378,10 @@ TEST(SemanticBootstrapPhase1, RoomAndFloorOwnershipIsReciprocal)
 {
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    Room            *p_room = bootstrap(manager, atlas);
+    semantic::Room            *p_room = bootstrap(manager, atlas);
     ASSERT_NE(p_room, nullptr);
     ASSERT_EQ(atlas.GetCurrentMap()->GetAllFloors().size(), 1U);
-    Floor *p_floor = atlas.GetCurrentMap()->GetAllFloors().front();
+    semantic::Floor *p_floor = atlas.GetCurrentMap()->GetAllFloors().front();
     EXPECT_EQ(p_room->getFloor(), p_floor);
     ASSERT_EQ(p_floor->getRooms().size(), 1U);
     EXPECT_EQ(p_floor->getRooms().front(), p_room);
@@ -389,7 +391,7 @@ TEST(SemanticBootstrapPhase1, BootstrapSeedsCurrentRoom)
 {
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    Room            *p_room = bootstrap(manager, atlas);
+    semantic::Room            *p_room = bootstrap(manager, atlas);
     ASSERT_NE(p_room, nullptr);
     EXPECT_EQ(manager.getCurrentRoomId(), p_room->getId());
 }
@@ -398,14 +400,14 @@ TEST(SemanticBootstrapPhase1, IdempotentBootstrapPreservesTraversedCurrentRoom)
 {
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    Room            *p_roomZero = bootstrap(manager, atlas);
+    semantic::Room            *p_roomZero = bootstrap(manager, atlas);
     ASSERT_NE(p_roomZero, nullptr);
 
-    Room roomOne;
+    semantic::Room roomOne;
     roomOne.setId(1);
     roomOne.setMap(atlas.GetCurrentMap());
-    roomOne.setRoomVariant(Room::roomVariant::ROOM);
-    roomOne.setName("Room#1");
+    roomOne.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    roomOne.setName("semantic::Room#1");
     roomOne.setCentroid(Eigen::Vector3d(4.0, 0.0, 1.0));
     atlas.AddDetectedMapRoom(&roomOne);
 
@@ -418,7 +420,7 @@ TEST(SemanticBootstrapPhase1, IdempotentBootstrapPreservesTraversedCurrentRoom)
     ASSERT_NE(roomOne.getFloor(), nullptr);
     EXPECT_EQ(roomOne.getFloor()->getId(), 0);
 
-    std::unique_ptr<Plane> p_wall =
+    std::unique_ptr<geometric::Plane> p_wall =
         makeAdmissibleWall(7, atlas.GetCurrentMap(), 5.0);
     atlas.AddMapPlane(p_wall.get());
     manager.associateAllWallsToRoomsForTest();
@@ -432,9 +434,9 @@ TEST(SemanticBootstrapPhase1, OrdinaryAdmissibleWallBelongsToCurrentRoom)
     Atlas            atlas(0);
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
-    Room            *p_room = bootstrap(manager, atlas);
+    semantic::Room            *p_room = bootstrap(manager, atlas);
     ASSERT_NE(p_room, nullptr);
-    std::unique_ptr<Plane> p_wall = makeAdmissibleWall(1, p_map);
+    std::unique_ptr<geometric::Plane> p_wall = makeAdmissibleWall(1, p_map);
     atlas.AddMapPlane(p_wall.get());
 
     manager.associateAllWallsToRoomsForTest();
@@ -449,18 +451,18 @@ TEST(SemanticBootstrapPhase1, PassageFarSideRoutingPrecedesCurrentRoomFallback)
     Atlas            atlas(0);
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
-    Room            *p_nearRoom = bootstrap(manager, atlas);
+    semantic::Room            *p_nearRoom = bootstrap(manager, atlas);
     ASSERT_NE(p_nearRoom, nullptr);
     p_nearRoom->setCentroid(Eigen::Vector3d(-1.0, 0.0, 1.0));
 
-    Room farRoom;
+    semantic::Room farRoom;
     farRoom.setId(2);
     farRoom.setMap(p_map);
     farRoom.setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0));
-    farRoom.setRoomVariant(Room::roomVariant::UNDEFINED);
+    farRoom.setRoomVariant(semantic::Room::roomVariant::UNDEFINED);
     atlas.AddCandidateMapRoom(&farRoom);
 
-    Passage passage;
+    semantic::Passage passage;
     passage.setId(1);
     passage.setMap(p_map);
     passage.setPassable(true);
@@ -472,7 +474,7 @@ TEST(SemanticBootstrapPhase1, PassageFarSideRoutingPrecedesCurrentRoomFallback)
     passage.setProspectiveRoom(&farRoom);
     atlas.AddMapPassage(&passage);
 
-    std::unique_ptr<Plane> p_wall = makeAdmissibleWall(3, p_map, 2.0);
+    std::unique_ptr<geometric::Plane> p_wall = makeAdmissibleWall(3, p_map, 2.0);
     atlas.AddMapPlane(p_wall.get());
     manager.associateAllWallsToRoomsForTest();
 
@@ -487,14 +489,14 @@ TEST(SemanticBootstrapPhase1,
     Atlas            atlas(0);
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
-    Room            *p_room = bootstrap(manager, atlas);
+    semantic::Room            *p_room = bootstrap(manager, atlas);
     ASSERT_NE(p_room, nullptr);
 
-    std::unique_ptr<Plane> p_wall = makeAdmissibleWall(11, p_map, 0.0);
+    std::unique_ptr<geometric::Plane> p_wall = makeAdmissibleWall(11, p_map, 0.0);
     atlas.AddMapPlane(p_wall.get());
     p_room->setWalls(p_wall.get());
 
-    Passage passage;
+    semantic::Passage passage;
     passage.setId(atlas.reservePassageIdentity());
     passage.setMap(p_map);
     passage.setPassable(true);
@@ -524,14 +526,14 @@ TEST(SemanticBootstrapPhase1,
     Atlas            atlas(0);
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
-    Room            *p_room = bootstrap(manager, atlas);
+    semantic::Room            *p_room = bootstrap(manager, atlas);
     ASSERT_NE(p_room, nullptr);
 
     /* The room owns exactly one wall at x=0 -- deliberately NOT the
      * passage's supporting wall -- and sits clearly on the negative side
      * of the passage plane, so it would win that side by centroid distance
      * alone without the proximity-association guard. */
-    std::unique_ptr<Plane> p_roomWall = makeAdmissibleWall(11, p_map, 0.0);
+    std::unique_ptr<geometric::Plane> p_roomWall = makeAdmissibleWall(11, p_map, 0.0);
     atlas.AddMapPlane(p_roomWall.get());
     p_room->setWalls(p_roomWall.get());
     p_room->setCentroid(Eigen::Vector3d(-2.0, 0.0, 1.0));
@@ -539,10 +541,10 @@ TEST(SemanticBootstrapPhase1,
 
     /* A different but nearby parallel wall (0.5 m away, inside the
      * supporting-plane gate) supports the passage. */
-    std::unique_ptr<Plane> p_supportWall = makeAdmissibleWall(12, p_map, 0.5);
+    std::unique_ptr<geometric::Plane> p_supportWall = makeAdmissibleWall(12, p_map, 0.5);
     atlas.AddMapPlane(p_supportWall.get());
 
-    Passage passage;
+    semantic::Passage passage;
     passage.setId(atlas.reservePassageIdentity());
     passage.setMap(p_map);
     passage.setPassable(true);
@@ -567,7 +569,7 @@ TEST(SemanticBootstrapPhase1, PendingWallHasFiveCycleGraceAndGrowthReset)
     Atlas                  atlas(0);
     Map                   *p_map = atlas.GetCurrentMap();
     SemanticsManager       manager(&atlas);
-    std::unique_ptr<Plane> p_wall = makeAdmissibleWall(1, p_map);
+    std::unique_ptr<geometric::Plane> p_wall = makeAdmissibleWall(1, p_map);
     atlas.AddMapPlane(p_wall.get());
     manager.associateAllWallsToRoomsForTest();
 
@@ -596,15 +598,15 @@ TEST(SemanticBootstrapPhase1, OwnedAndPassageWallsCannotRetireUndefended)
     Atlas            atlas(0);
     Map             *p_map = atlas.GetCurrentMap();
     SemanticsManager manager(&atlas);
-    Room            *p_room = bootstrap(manager, atlas);
+    semantic::Room            *p_room = bootstrap(manager, atlas);
     ASSERT_NE(p_room, nullptr);
-    std::unique_ptr<Plane> p_ownedWall   = makeAdmissibleWall(1, p_map);
-    std::unique_ptr<Plane> p_passageWall = makeAdmissibleWall(2, p_map, 3.0);
+    std::unique_ptr<geometric::Plane> p_ownedWall   = makeAdmissibleWall(1, p_map);
+    std::unique_ptr<geometric::Plane> p_passageWall = makeAdmissibleWall(2, p_map, 3.0);
     atlas.AddMapPlane(p_ownedWall.get());
     atlas.AddMapPlane(p_passageWall.get());
     p_room->setWalls(p_ownedWall.get());
 
-    Passage passage;
+    semantic::Passage passage;
     passage.setId(1);
     passage.setMap(p_map);
     passage.setPassable(true);
@@ -621,7 +623,7 @@ TEST(SemanticBootstrapPhase1, OwnedAndPassageWallsCannotRetireUndefended)
 
 TEST(SemanticBootstrapPhase1, NewRoomIsUnvisitedByDefault)
 {
-    Room room;
+    semantic::Room room;
     EXPECT_FALSE(room.hasPreviouslyVisited());
 }
 
@@ -629,7 +631,7 @@ TEST(SemanticBootstrapPhase1, BootstrapRoomIsVisitedAtBirth)
 {
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    Room            *p_room = bootstrap(manager, atlas);
+    semantic::Room            *p_room = bootstrap(manager, atlas);
     ASSERT_NE(p_room, nullptr);
     /* The UAV starts inside the bootstrap room: presence evidences entry. */
     EXPECT_TRUE(p_room->hasPreviouslyVisited());
@@ -639,7 +641,7 @@ TEST(SemanticBootstrapPhase1, ResetRestoresVisitedFlag)
 {
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    Room            *p_roomZero = bootstrap(manager, atlas);
+    semantic::Room            *p_roomZero = bootstrap(manager, atlas);
     ASSERT_NE(p_roomZero, nullptr);
     ASSERT_TRUE(p_roomZero->hasPreviouslyVisited());
 
@@ -650,7 +652,7 @@ TEST(SemanticBootstrapPhase1, ResetRestoresVisitedFlag)
                       std::numeric_limits<double>::quiet_NaN())),
               1);
 
-    const std::vector<Room *> recoveredRooms =
+    const std::vector<semantic::Room *> recoveredRooms =
         atlas.GetCurrentMap()->GetAllRooms();
     ASSERT_EQ(recoveredRooms.size(), 1U);
     EXPECT_EQ(recoveredRooms.front()->getId(), 0);
@@ -666,10 +668,10 @@ TEST(SemanticBootstrapPhase1, ResetRestoresPassageIdentityWithoutGeometry)
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
     Map             *p_departedMap  = atlas.GetCurrentMap();
-    Room            *p_departedRoom = bootstrap(manager, atlas);
+    semantic::Room            *p_departedRoom = bootstrap(manager, atlas);
     ASSERT_NE(p_departedRoom, nullptr);
 
-    Passage departedPassage;
+    semantic::Passage departedPassage;
     departedPassage.setId(atlas.reservePassageIdentity());
     departedPassage.setMap(p_departedMap);
     departedPassage.setPassable(true);
@@ -680,7 +682,7 @@ TEST(SemanticBootstrapPhase1, ResetRestoresPassageIdentityWithoutGeometry)
     departedPassage.setHeight(2.0);
     departedPassage.setKnownSideRoom(p_departedRoom);
     departedPassage.addTraversalObservation(
-        Passage::TraversalDirection::KNOWN_TO_FAR);
+        semantic::Passage::TraversalDirection::KNOWN_TO_FAR);
     atlas.AddMapPassage(&departedPassage);
     p_departedRoom->setDoorways(&departedPassage);
 
@@ -692,7 +694,7 @@ TEST(SemanticBootstrapPhase1, ResetRestoresPassageIdentityWithoutGeometry)
                   Eigen::Vector3d(8.0, 2.0, 1.0)),
               0);
 
-    const std::vector<Passage *> recoveredPassages =
+    const std::vector<semantic::Passage *> recoveredPassages =
         p_recoveryMap->GetAllPassages();
     ASSERT_EQ(recoveredPassages.size(), 1U);
     EXPECT_EQ(recoveredPassages.front()->getId(), departedPassage.getId());
@@ -712,7 +714,7 @@ TEST(SemanticBootstrapPhase1, MapChainLinksStartingFinalAndFollowingRooms)
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
     Map             *p_mapZero  = atlas.GetCurrentMap();
-    Room            *p_roomZero = bootstrap(manager, atlas);
+    semantic::Room            *p_roomZero = bootstrap(manager, atlas);
     ASSERT_NE(p_roomZero, nullptr);
     EXPECT_EQ(p_mapZero->getStartingRoom(), p_roomZero);
     EXPECT_EQ(p_mapZero->getFollowingMap(), nullptr);
@@ -726,7 +728,7 @@ TEST(SemanticBootstrapPhase1, MapChainLinksStartingFinalAndFollowingRooms)
     EXPECT_GE(manager.ensureActiveMapBootstrapHierarchyForTest(
                   Eigen::Vector3d(8.0, 2.0, 1.0)),
               0);
-    const std::vector<Room *> recoveredRooms = p_mapOne->GetAllRooms();
+    const std::vector<semantic::Room *> recoveredRooms = p_mapOne->GetAllRooms();
     ASSERT_EQ(recoveredRooms.size(), 1U);
     EXPECT_EQ(p_mapOne->getStartingRoom(), recoveredRooms.front());
 
@@ -742,14 +744,14 @@ TEST(SemanticBootstrapPhase1, ZeroPoseKeyFrameFallsBackToSnapshotCentroid)
      * is used instead. */
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    Room            *p_roomZero = bootstrap(manager, atlas);
+    semantic::Room            *p_roomZero = bootstrap(manager, atlas);
     ASSERT_NE(p_roomZero, nullptr);
 
-    Room roomTwo;
+    semantic::Room roomTwo;
     roomTwo.setId(2);
     roomTwo.setMap(atlas.GetCurrentMap());
-    roomTwo.setRoomVariant(Room::roomVariant::ROOM);
-    roomTwo.setName("Room#2");
+    roomTwo.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    roomTwo.setName("semantic::Room#2");
     roomTwo.setCentroid(Eigen::Vector3d(2.0, 3.0, 4.0));
     atlas.AddDetectedMapRoom(&roomTwo);
     manager.setCurrentRoomIdForTest(2);
@@ -767,7 +769,7 @@ TEST(SemanticBootstrapPhase1, ZeroPoseKeyFrameFallsBackToSnapshotCentroid)
                       std::numeric_limits<double>::quiet_NaN())),
               1);
 
-    const std::vector<Room *> recoveredRooms =
+    const std::vector<semantic::Room *> recoveredRooms =
         atlas.GetCurrentMap()->GetAllRooms();
     ASSERT_EQ(recoveredRooms.size(), 1U);
     EXPECT_EQ(recoveredRooms.front()->getId(), 2);
@@ -775,4 +777,5 @@ TEST(SemanticBootstrapPhase1, ZeroPoseKeyFrameFallsBackToSnapshotCentroid)
         Eigen::Vector3d(2.0, 3.0, 4.0)));
     EXPECT_FALSE(recoveredRooms.front()->getCentroid().isZero());
 }
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

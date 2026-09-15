@@ -37,7 +37,11 @@
 #include <utility>
 #include <vector>
 
-using namespace ORB_SLAM3;
+using namespace vs_graphs::core;
+using namespace vs_graphs::core::semantic;
+using namespace vs_graphs::core::geometric;
+using namespace vs_graphs::core::types;
+using namespace vs_graphs::core::camera_models;
 using namespace std;
 
 // ----------------------------------------------------------------------------

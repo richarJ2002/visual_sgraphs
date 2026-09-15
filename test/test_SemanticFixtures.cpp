@@ -13,7 +13,9 @@
 
 #include <algorithm>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace test
 {
@@ -46,7 +48,7 @@ TEST(SemanticFixtures, MakeWallPlaneProducesAdmissibleGeometry)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane wall;
+    geometric::Plane wall;
     makeWallPlane(wall,
                   7,
                   p_map,
@@ -58,7 +60,7 @@ TEST(SemanticFixtures, MakeWallPlaneProducesAdmissibleGeometry)
                   Eigen::Vector3d(2.0, 0.0, 1.0));
 
     EXPECT_EQ(wall.getId(), 7);
-    EXPECT_EQ(wall.getPlaneType(), Plane::planeVariant::WALL);
+    EXPECT_EQ(wall.getPlaneType(), geometric::Plane::planeVariant::WALL);
     EXPECT_TRUE(wall.getCentroid().isApprox(Eigen::Vector3d(2.0, 0.0, 1.0)));
     EXPECT_GT(wall.getMapClouds()->size(), 0U);
     /* The equation's normal survives normalization; only its sign is
@@ -74,11 +76,11 @@ TEST(SemanticFixtures, MakeGroundPlaneRefitsSuccessfully)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane      ground;
+    geometric::Plane      ground;
     const bool refitOk = makeGroundPlane(ground, 1, p_map);
 
     EXPECT_TRUE(refitOk);
-    EXPECT_EQ(ground.getPlaneType(), Plane::planeVariant::GROUND);
+    EXPECT_EQ(ground.getPlaneType(), geometric::Plane::planeVariant::GROUND);
 }
 
 TEST(SemanticFixtures, MakeRoomAttachesWallAndCentroid)
@@ -86,7 +88,7 @@ TEST(SemanticFixtures, MakeRoomAttachesWallAndCentroid)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Plane wall;
+    geometric::Plane wall;
     makeWallPlane(wall,
                   1,
                   p_map,
@@ -96,11 +98,11 @@ TEST(SemanticFixtures, MakeRoomAttachesWallAndCentroid)
                   1.0,
                   1.0);
 
-    Room room;
+    semantic::Room room;
     makeRoom(room, 5, p_map, &wall, Eigen::Vector3d(3.0, 4.0, 0.0));
 
     EXPECT_EQ(room.getId(), 5);
-    EXPECT_EQ(room.getRoomVariant(), Room::roomVariant::ROOM);
+    EXPECT_EQ(room.getRoomVariant(), semantic::Room::roomVariant::ROOM);
     EXPECT_TRUE(room.getCentroid().isApprox(Eigen::Vector3d(3.0, 4.0, 0.0)));
     const auto walls = room.getWalls();
     ASSERT_EQ(walls.size(), 1U);
@@ -112,12 +114,12 @@ TEST(SemanticFixtures, MakePassageWiresKnownAndFarSide)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Room knownRoom;
+    semantic::Room knownRoom;
     makeRoom(knownRoom, 1, p_map, nullptr, Eigen::Vector3d(-1.0, 0.0, 0.0));
-    Room farRoom;
+    semantic::Room farRoom;
     makeRoom(farRoom, 2, p_map, nullptr, Eigen::Vector3d(1.0, 0.0, 0.0));
 
-    Passage passage;
+    semantic::Passage passage;
     makePassage(passage,
                 9,
                 p_map,
@@ -141,12 +143,12 @@ TEST(SemanticFixtures, MakeFloorOwnsGivenRooms)
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
 
-    Room roomA;
+    semantic::Room roomA;
     makeRoom(roomA, 1, p_map, nullptr);
-    Room roomB;
+    semantic::Room roomB;
     makeRoom(roomB, 2, p_map, nullptr);
 
-    Floor floor;
+    semantic::Floor floor;
     makeFloor(floor, 3, p_map, {&roomA, &roomB}, 0.0);
 
     const auto rooms = floor.getRooms();
@@ -202,4 +204,5 @@ TEST(SemanticFixtures, NonTrivialSim3IsDeterministic)
 
 } // namespace
 } // namespace test
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

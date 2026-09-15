@@ -1,9 +1,9 @@
 /**
  * WP1 Milestone 1 focused test: proves SemanticsManager::Run()'s new
  * candidate-verification wiring (evaluateTopCandidateVerification) actually
- * drives real Atlas/Map/Room/Plane/Floor objects through
- * SemanticCandidates -> SemanticVerify -> submitVerificationVerdict ->
- * RoomTracker, not just the individual phases in isolation (already covered
+ * drives real Atlas/Map/semantic::Room/geometric::Plane/semantic::Floor objects through
+ * semantic::SemanticCandidates -> semantic::SemanticVerify -> submitVerificationVerdict ->
+ * semantic::RoomTracker, not just the individual phases in isolation (already covered
  * by test_CandidateGen.cpp / test_GeometricVerify.cpp).
  */
 
@@ -21,7 +21,9 @@
 #include <memory>
 #include <vector>
 
-namespace ORB_SLAM3
+namespace vs_graphs
+{
+namespace core
 {
 namespace
 {
@@ -50,7 +52,7 @@ std::vector<RawWall> makeReferenceWalls()
     };
 }
 
-/** Transforms a raw plane equation the same way Plane::transformPlaneEquation
+/** Transforms a raw plane equation the same way geometric::Plane::transformPlaneEquation
  * does (scale fixed at 1): n' = R n; d' = d - n'^T t. */
 RawWall transformWall(const RawWall         &source_in,
                       const Eigen::Matrix3d &rotation_in,
@@ -65,22 +67,22 @@ RawWall transformWall(const RawWall         &source_in,
     return transformed;
 }
 
-/** Owns every Plane/Floor object one synthetic room needs, and wires them
- * into a real Room via the genuine setter API so the production wiring's
+/** Owns every geometric::Plane/semantic::Floor object one synthetic room needs, and wires them
+ * into a real semantic::Room via the genuine setter API so the production wiring's
  * Atlas/Map lookups (SemanticsManager::findRoomByMapAndId,
- * SemanticVerify::collectWallObservations, the floor gate) see exactly what
+ * semantic::SemanticVerify::collectWallObservations, the floor gate) see exactly what
  * a live map would produce. */
 struct SyntheticRoomFixture
 {
-    Room                                 room;
-    Floor                                floor;
-    std::vector<std::unique_ptr<Plane>> ownedWalls;
+    semantic::Room                                 room;
+    semantic::Floor                                floor;
+    std::vector<std::unique_ptr<geometric::Plane>> ownedWalls;
 
     void addWall(const RawWall &wall_in)
     {
-        auto wall = std::make_unique<Plane>();
+        auto wall = std::make_unique<geometric::Plane>();
         wall->setId(wall_in.id);
-        wall->setPlaneType(Plane::planeVariant::WALL);
+        wall->setPlaneType(geometric::Plane::planeVariant::WALL);
         wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(wall_in.normal.x(),
                                                              wall_in.normal.y(),
                                                              wall_in.normal.z(),
@@ -102,13 +104,13 @@ std::unique_ptr<SyntheticRoomFixture>
     auto fixture = std::make_unique<SyntheticRoomFixture>();
     fixture->room.setId(roomId_in);
     fixture->room.setMap(p_map_in);
-    fixture->room.setRoomVariant(Room::roomVariant::ROOM);
+    fixture->room.setRoomVariant(semantic::Room::roomVariant::ROOM);
     fixture->room.setCentroid(centroid_in);
     for (const RawWall &wall : walls_in)
     {
         fixture->addWall(wall);
     }
-    for (const std::unique_ptr<Plane> &p_wall : fixture->ownedWalls)
+    for (const std::unique_ptr<geometric::Plane> &p_wall : fixture->ownedWalls)
     {
         p_map_in->AddMapPlane(p_wall.get());
     }
@@ -125,12 +127,12 @@ std::unique_ptr<SyntheticRoomFixture>
     return fixture;
 }
 
-SemanticCandidate makeCandidate(Map *p_mapA_in,
-                                Room *p_roomA_in,
+semantic::SemanticCandidate makeCandidate(Map *p_mapA_in,
+                                semantic::Room *p_roomA_in,
                                 Map  *p_mapB_in,
-                                Room *p_roomB_in)
+                                semantic::Room *p_roomB_in)
 {
-    SemanticCandidate candidate;
+    semantic::SemanticCandidate candidate;
     candidate.mapAId                    = p_mapA_in->GetId();
     candidate.roomAId                   = p_roomA_in->getId();
     candidate.mapBId                    = p_mapB_in->GetId();
@@ -183,26 +185,26 @@ TEST(VerificationWiringIntegration,
     std::unique_ptr<SyntheticRoomFixture> roomB = buildRoom(
         p_mapB, 20, wallsB, centroidB, floorEquationB_World, 200);
 
-    const std::vector<SemanticCandidate> candidates = {
+    const std::vector<semantic::SemanticCandidate> candidates = {
         makeCandidate(p_mapA, &roomA->room, p_mapB, &roomB->room)};
 
     SemanticsManager manager(&atlas);
-    ASSERT_EQ(manager.getRoomTrackerStateForTest(), RoomTrackingState::UNKNOWN);
+    ASSERT_EQ(manager.getRoomTrackerStateForTest(), semantic::RoomTrackingState::UNKNOWN);
 
     manager.evaluateTopCandidateVerificationForTest(candidates);
-    /* submitVerificationVerdict() only queues the result; RoomTracker
+    /* submitVerificationVerdict() only queues the result; semantic::RoomTracker
      * consumes it on the next drained cycle -- confirm the queue, not an
      * instantaneous transition. */
-    EXPECT_EQ(manager.getRoomTrackerStateForTest(), RoomTrackingState::UNKNOWN);
+    EXPECT_EQ(manager.getRoomTrackerStateForTest(), semantic::RoomTrackingState::UNKNOWN);
 
     manager.processRoomTrackerPendingForTest(1.0);
 
     EXPECT_EQ(manager.getRoomTrackerStateForTest(),
-              RoomTrackingState::CONFIRMED_ROOM);
-    const std::vector<TransitionEvent> &history =
+              semantic::RoomTrackingState::CONFIRMED_ROOM);
+    const std::vector<semantic::TransitionEvent> &history =
         manager.getRoomTrackerEventHistoryForTest();
     ASSERT_FALSE(history.empty());
-    EXPECT_EQ(history.back().event, RoomTrackingEvent::FIRST_ROOM_CONFIRMED);
+    EXPECT_EQ(history.back().event, semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED);
     EXPECT_TRUE(history.back().accepted);
     EXPECT_TRUE(history.back().verificationPass);
 }
@@ -216,7 +218,7 @@ TEST(VerificationWiringIntegration,
     Map *p_mapB = atlas.GetCurrentMap();
 
     const std::vector<RawWall> wallsA = makeReferenceWalls();
-    /* SemanticVerify::verify() rejects outright below 3 walls per side
+    /* semantic::SemanticVerify::verify() rejects outright below 3 walls per side
      * ("minimal sample: 3 planes ... for full SE(3)"). */
     const std::vector<RawWall> wallsBTooFew = {wallsA[0], wallsA[1]};
 
@@ -235,14 +237,14 @@ TEST(VerificationWiringIntegration,
                  Eigen::Vector4d(0.0, 0.0, 1.0, -0.4),
                  201);
 
-    const std::vector<SemanticCandidate> candidates = {
+    const std::vector<semantic::SemanticCandidate> candidates = {
         makeCandidate(p_mapA, &roomA->room, p_mapB, &roomB->room)};
 
     SemanticsManager manager(&atlas);
     manager.evaluateTopCandidateVerificationForTest(candidates);
     manager.processRoomTrackerPendingForTest(1.0);
 
-    EXPECT_EQ(manager.getRoomTrackerStateForTest(), RoomTrackingState::UNKNOWN);
+    EXPECT_EQ(manager.getRoomTrackerStateForTest(), semantic::RoomTrackingState::UNKNOWN);
     EXPECT_TRUE(manager.getRoomTrackerEventHistoryForTest().empty());
 }
 
@@ -252,7 +254,7 @@ TEST(VerificationWiringIntegration, EmptyCandidateListIsANoOp)
     SemanticsManager  manager(&atlas);
     manager.evaluateTopCandidateVerificationForTest({});
     manager.processRoomTrackerPendingForTest(1.0);
-    EXPECT_EQ(manager.getRoomTrackerStateForTest(), RoomTrackingState::UNKNOWN);
+    EXPECT_EQ(manager.getRoomTrackerStateForTest(), semantic::RoomTrackingState::UNKNOWN);
     EXPECT_TRUE(manager.getRoomTrackerEventHistoryForTest().empty());
 }
 
@@ -265,7 +267,7 @@ TEST(VerificationWiringIntegration, GenuineTiedLeaderIsSkipped)
      * reading candidates[0].ambiguous, which is always true) this would
      * either wrongly skip every candidate ever, or wrongly attempt a room
      * lookup here; either way the tracker must stay UNKNOWN with no crash. */
-    SemanticCandidate first;
+    semantic::SemanticCandidate first;
     first.mapAId                    = 1U;
     first.roomAId                   = 1;
     first.mapBId                    = 2U;
@@ -273,7 +275,7 @@ TEST(VerificationWiringIntegration, GenuineTiedLeaderIsSkipped)
     first.minimumEvidenceSatisfied = true;
     first.ambiguous                = true;
 
-    SemanticCandidate second               = first;
+    semantic::SemanticCandidate second               = first;
     second.roomBId                          = 3;
     second.ambiguous                        = true;
 
@@ -281,8 +283,9 @@ TEST(VerificationWiringIntegration, GenuineTiedLeaderIsSkipped)
     SemanticsManager manager(&atlas);
     manager.evaluateTopCandidateVerificationForTest({first, second});
     manager.processRoomTrackerPendingForTest(1.0);
-    EXPECT_EQ(manager.getRoomTrackerStateForTest(), RoomTrackingState::UNKNOWN);
+    EXPECT_EQ(manager.getRoomTrackerStateForTest(), semantic::RoomTrackingState::UNKNOWN);
     EXPECT_TRUE(manager.getRoomTrackerEventHistoryForTest().empty());
 }
 
-} // namespace ORB_SLAM3
+} // namespace core
+} // namespace vs_graphs

@@ -20,7 +20,7 @@
  * @file            legacy_capture_replay_main.cc
  *
  * @brief           Command-line entry point for
- *                  ORB_SLAM3::semantic::replayLegacyCaptures() (semantic-
+ *                  vs_graphs::core::semantic::replayLegacyCaptures() (semantic-
  *                  axiom-reliability-plan.md P1.9): usage
  *                  `legacy_capture_replay <corpus_dir> <output_report.json>`.
  *                  Writes the bounded LegacyReplayResult::report to \p
@@ -46,8 +46,8 @@ int main(int argc, char *argv[])
     const std::filesystem::path corpusDir(argv[1]);
     const std::filesystem::path outputPath(argv[2]);
 
-    const ORB_SLAM3::semantic::LegacyReplayResult result =
-        ORB_SLAM3::semantic::replayLegacyCaptures(corpusDir);
+    const vs_graphs::core::semantic::LegacyReplayResult result =
+        vs_graphs::core::semantic::replayLegacyCaptures(corpusDir);
 
     std::ofstream outputFile(outputPath);
     if (!outputFile.is_open())
