@@ -33,7 +33,7 @@ Marker::Marker() :
     localPose(Sophus::SE3f()),
     globalPose(Sophus::SE3f()),
     markerType(markerVariant::UNKNOWN),
-    mpMap(nullptr)
+    p_map(nullptr)
 {}
 Marker::~Marker() {}
 
@@ -179,13 +179,13 @@ void Marker::eraseObservation(core::KeyFrame *p_keyFrame_in)
 core::Map *Marker::getMap()
 {
     unique_lock<mutex> lock(mMutexMap);
-    return mpMap;
+    return p_map;
 }
 
-void Marker::setMap(core::Map *pMap)
+void Marker::setMap(core::Map *p_map_in)
 {
     unique_lock<mutex> lock(mMutexMap);
-    mpMap = pMap;
+    p_map = p_map_in;
 }
 } // namespace semantic
 } // namespace core

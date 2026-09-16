@@ -292,12 +292,12 @@ class Passage
     std::vector<vs_graphs::core::geometric::Plane *> getAssociateWalls() const;
 
     vs_graphs::core::Map *getMap();
-    void            setMap(vs_graphs::core::Map *pMap);
+    void                  setMap(vs_graphs::core::Map *p_map_in);
 
   protected:
-    vs_graphs::core::Map    *mpMap;
-    std::mutex         mMutexMap;
-    mutable std::mutex mMutexType, mMutexGeometry;
+    vs_graphs::core::Map *p_map{nullptr};
+    std::mutex            mMutexMap;
+    mutable std::mutex    mMutexType, mMutexGeometry;
 };
 
 } // namespace semantic

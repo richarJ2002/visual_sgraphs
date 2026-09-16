@@ -142,13 +142,13 @@ class Floor
                      vs_graphs::core::semantic::Room *p_retainedRoom_in);
 
     vs_graphs::core::Map *getMap();
-    void            setMap(vs_graphs::core::Map *pMap);
+    void                  setMap(vs_graphs::core::Map *p_map_in);
 
   protected:
-    vs_graphs::core::Map    *mpMap;
-    std::mutex         mMutexMap;
-    mutable std::mutex mMutexRooms;
-    mutable std::mutex mMutexGeometry;
+    vs_graphs::core::Map *p_map{nullptr};
+    std::mutex            mMutexMap;
+    mutable std::mutex    mMutexRooms;
+    mutable std::mutex    mMutexGeometry;
 };
 } // namespace semantic
 } // namespace core

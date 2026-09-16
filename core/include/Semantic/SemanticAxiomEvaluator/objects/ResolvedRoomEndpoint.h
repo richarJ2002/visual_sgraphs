@@ -97,7 +97,7 @@ struct ResolvedRoomEndpoint
     bool isLive{false};
 
     /*! @brief True when the found RoomRecord's variant ==
-     *  Room::roomVariant::ROOM (as opposed to UNDEFINED, a prospective
+     *  Room::RoomVariant::ROOM (as opposed to UNDEFINED, a prospective
      *  handle not yet promoted); meaningful only when isFoundInSnapshot. */
     bool isConfirmedRoomVariant{false};
 

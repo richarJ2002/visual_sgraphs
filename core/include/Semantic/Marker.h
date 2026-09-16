@@ -118,10 +118,10 @@ class Marker
     std::map<KeyFrame *, Sophus::SE3f> getObservations() const;
 
     Map *getMap();
-    void setMap(Map *pMap);
+    void setMap(Map *p_map_in);
 
   protected:
-    Map               *mpMap;
+    Map               *p_map{nullptr};
     std::mutex         mMutexMap;
     mutable std::mutex mMutexGeometry;
     mutable std::mutex mMutexState;

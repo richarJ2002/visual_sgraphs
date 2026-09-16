@@ -34,7 +34,7 @@ Floor::Floor() :
     opIdG(-1),
     name(""),
     centroid(Eigen::Vector3d::Zero()),
-    mpMap(nullptr)
+    p_map(nullptr)
 {}
 Floor::~Floor() {}
 
@@ -452,13 +452,13 @@ void Floor::detachRoom(Room *p_room_in)
 vs_graphs::core::Map *Floor::getMap()
 {
     unique_lock<mutex> lock(mMutexMap);
-    return mpMap;
+    return p_map;
 }
 
-void Floor::setMap(vs_graphs::core::Map *pMap)
+void Floor::setMap(vs_graphs::core::Map *p_map_in)
 {
     unique_lock<mutex> lock(mMutexMap);
-    mpMap = pMap;
+    p_map = p_map_in;
 }
 } // namespace semantic
 } // namespace core

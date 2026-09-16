@@ -42,7 +42,7 @@ Passage::Passage() :
     traversalKnownToFarCount(0U),
     traversalFarToKnownCount(0U),
     traversalUnknownCount(0U),
-    mpMap(nullptr)
+    p_map(nullptr)
 {}
 
 Passage::~Passage() {}
@@ -445,13 +445,13 @@ bool Passage::replacePlaneAssociation(geometric::Plane *p_retiredPlane_in,
 vs_graphs::core::Map *Passage::getMap()
 {
     unique_lock<mutex> lock(mMutexMap);
-    return mpMap;
+    return p_map;
 }
 
-void Passage::setMap(vs_graphs::core::Map *pMap)
+void Passage::setMap(vs_graphs::core::Map *p_map_in)
 {
     unique_lock<mutex> lock(mMutexMap);
-    mpMap = pMap;
+    p_map = p_map_in;
 }
 
 vs_graphs::core::semantic::Room *Passage::getProspectiveRoom() const
