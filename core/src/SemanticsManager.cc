@@ -1824,7 +1824,7 @@ SemanticsManager::ActiveMapBootstrapResult
                 p_recoveryPassage->setMap(p_activeMap);
                 p_recoveryPassage->setPassable(passageContext.passable);
                 p_recoveryPassage->setPassageType(
-                    semantic::Passage::passageVariant::DOORWAY);
+                    semantic::Passage::PassageVariant::DOORWAY);
                 p_recoveryPassage->setRecoveryProxy(true);
                 for (std::size_t observationIndex = 0U;
                      observationIndex < passageContext.traversalKnownToFarCount;

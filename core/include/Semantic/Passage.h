@@ -19,6 +19,7 @@
 #ifndef PASSAGE_H
 #define PASSAGE_H
 
+#include <cstdint>
 #include <deque>
 #include <optional>
 
@@ -66,7 +67,11 @@ class Passage
         }
     };
 
-    enum passageVariant
+    /*!
+     * @brief        Enumerator which defines the semantic variants a
+     *               passage can take.
+     */
+    enum class PassageVariant : std::int8_t
     {
         UNDEFINED = -1,
         DOORWAY   = 0
@@ -80,7 +85,7 @@ class Passage
     double                          height;
     bool                            passable;
     Eigen::Vector3d                 centroid;
-    passageVariant                  passageType;
+    PassageVariant                  passageType;
     g2o::Plane3D                    globalEquation;
     vs_graphs::core::geometric::Plane               *associateDoor;
     std::vector<vs_graphs::core::geometric::Plane *> associateWalls;
@@ -195,8 +200,8 @@ class Passage
     double getHeight() const;
     void   setHeight(double value);
 
-    passageVariant getPassageType();
-    void           setPassageType(passageVariant newType);
+    PassageVariant getPassageType();
+    void           setPassageType(PassageVariant newType);
 
     Eigen::Vector3d getCentroid() const;
     void            setCentroid(const Eigen::Vector3d &value);

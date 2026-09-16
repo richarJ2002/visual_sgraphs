@@ -313,7 +313,7 @@ TEST(SemanticBootstrapPhase1,
     observedPassage.setId(4);
     observedPassage.setRecoveryProxy(false);
     observedPassage.setPassable(false);
-    observedPassage.setPassageType(semantic::Passage::passageVariant::DOORWAY);
+    observedPassage.setPassageType(semantic::Passage::PassageVariant::DOORWAY);
     observedPassage.setCentroid(Eigen::Vector3d(3.0, 2.0, 1.0));
     observedPassage.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -3.0)));
@@ -326,7 +326,7 @@ TEST(SemanticBootstrapPhase1,
     EXPECT_FALSE(canonicalPassage.isRecoveryProxy());
     EXPECT_FALSE(canonicalPassage.isPassable());
     EXPECT_EQ(canonicalPassage.getPassageType(),
-              semantic::Passage::passageVariant::DOORWAY);
+              semantic::Passage::PassageVariant::DOORWAY);
     EXPECT_TRUE(canonicalPassage.getCentroid().isApprox(
         Eigen::Vector3d(3.0, 2.0, 1.0)));
     EXPECT_TRUE(canonicalPassage.getGlobalEquation().coeffs().isApprox(

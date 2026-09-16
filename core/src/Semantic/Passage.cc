@@ -36,7 +36,7 @@ Passage::Passage() :
     height(0.0),
     passable(false),
     centroid(Eigen::Vector3d::Zero()),
-    passageType(Passage::passageVariant::UNDEFINED),
+    passageType(Passage::PassageVariant::UNDEFINED),
     associateDoor(nullptr),
     prospectiveRoom(nullptr),
     traversalKnownToFarCount(0U),
@@ -316,13 +316,13 @@ void Passage::setHeight(double value)
     height = value;
 }
 
-Passage::passageVariant Passage::getPassageType()
+Passage::PassageVariant Passage::getPassageType()
 {
     unique_lock<mutex> lock(mMutexType);
     return passageType;
 }
 
-void Passage::setPassageType(Passage::passageVariant newType)
+void Passage::setPassageType(Passage::PassageVariant newType)
 {
     unique_lock<mutex> lock(mMutexType);
     passageType = newType;
@@ -564,7 +564,7 @@ bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
 
     bool           duplicateIsRecoveryProxy = false;
     bool           duplicateIsPassable      = false;
-    passageVariant duplicatePassageType     = passageVariant::UNDEFINED;
+    PassageVariant duplicatePassageType     = PassageVariant::UNDEFINED;
     std::size_t    duplicateKnownToFarCount = 0U;
     std::size_t    duplicateFarToKnownCount = 0U;
     std::size_t    duplicateUnknownCount    = 0U;
@@ -686,7 +686,7 @@ bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
             passageType   = duplicatePassageType;
             recoveryProxy = false;
         }
-        else if (passageType == passageVariant::UNDEFINED)
+        else if (passageType == PassageVariant::UNDEFINED)
         {
             passageType = duplicatePassageType;
         }

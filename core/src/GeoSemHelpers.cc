@@ -842,7 +842,7 @@ void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
      * passage represent a doorway.
      */
     p_newMapPassage->setPassageType(
-        vs_graphs::core::semantic::Passage::passageVariant::DOORWAY);
+        vs_graphs::core::semantic::Passage::PassageVariant::DOORWAY);
 
     if (p_doorPlane_in != nullptr)
     {

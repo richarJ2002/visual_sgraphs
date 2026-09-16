@@ -45,7 +45,7 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Value-only copy of one passage (Passage::passageVariant ==
+ * @brief       Value-only copy of one passage (Passage::PassageVariant ==
  *              DOORWAY today; the enum leaves room for future variants).
  */
 struct PassageRecord
@@ -65,7 +65,7 @@ struct PassageRecord
     std::optional<long unsigned int> declaredMapId;
 
     /*! @brief Passage::getPassageType() at capture time. */
-    Passage::passageVariant passageType{Passage::passageVariant::UNDEFINED};
+    Passage::PassageVariant passageType{Passage::PassageVariant::UNDEFINED};
 
     /*! @brief Passage::getGlobalEquation() at capture time. */
     Eigen::Vector4d equation_World{Eigen::Vector4d::Zero()};
