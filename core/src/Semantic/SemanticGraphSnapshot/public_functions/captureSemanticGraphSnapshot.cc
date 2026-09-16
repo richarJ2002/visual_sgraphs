@@ -177,7 +177,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
         for (geometric::Plane *p_plane : p_map->GetAllPlanes())
         {
             if (p_plane == nullptr ||
-                p_plane->getPlaneType() != geometric::Plane::planeVariant::WALL)
+                p_plane->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
             {
                 continue;
             }

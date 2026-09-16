@@ -38,7 +38,7 @@ namespace semantic
  * @brief       Discriminates which kind of graph entity an EntityKey names.
  *
  *              A "wall" has no dedicated model class in this codebase: it is
- *              a Geometric/Plane.h object whose accepted Plane::planeVariant
+ *              a Geometric/Plane.h object whose accepted Plane::PlaneVariant
  *              is WALL. DOOR/GROUND/WINDOW/UNDEFINED planes are out of scope
  *              for this foundation slice and are never represented as
  *              EntityKind::WALL records (see RawPlaneRef.h for how a

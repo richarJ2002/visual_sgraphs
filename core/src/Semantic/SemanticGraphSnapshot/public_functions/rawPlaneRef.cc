@@ -52,7 +52,7 @@ RawPlaneRef rawPlaneRef(geometric::Plane *p_plane_in)
     if (p_map != nullptr)
     {
         ref.mapId = p_map->GetId();
-        if (ref.planeType == geometric::Plane::planeVariant::WALL)
+        if (ref.planeType == geometric::Plane::PlaneVariant::WALL)
         {
             ref.wallKey =
                 makeKey(EntityKind::WALL, p_map->GetId(), p_plane_in->getId());

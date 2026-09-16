@@ -41,7 +41,7 @@ void makeRefitWallPlane(geometric::Plane &wall_inout, int id_in, Map *p_map_in)
 {
     wall_inout.setId(id_in);
     wall_inout.SetMap(p_map_in);
-    wall_inout.setPlaneType(geometric::Plane::planeVariant::WALL);
+    wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL);
     wall_inout.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
     wall_inout.setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0));
@@ -185,7 +185,7 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
                        // sentinel min>max default, so valid() is false.
     unrefitWall.setId(2);
     unrefitWall.SetMap(p_map);
-    unrefitWall.setPlaneType(geometric::Plane::planeVariant::WALL);
+    unrefitWall.setPlaneType(geometric::Plane::PlaneVariant::WALL);
     unrefitWall.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(0.0, 1.0, 0.0, 0.0)));
     p_map->AddMapPlane(&unrefitWall);

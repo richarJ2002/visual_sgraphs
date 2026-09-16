@@ -62,8 +62,8 @@ class GeoSemHelpers
                        vs_graphs::core::KeyFrame *pKF,
                        const g2o::Plane3D   estimatedPlane,
                        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
-                       vs_graphs::core::geometric::Plane::planeVariant semanticType =
-                           vs_graphs::core::geometric::Plane::planeVariant::UNDEFINED,
+                       vs_graphs::core::geometric::Plane::PlaneVariant semanticType =
+                           vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED,
                        double confidence = 1.0);
 
     /*!
@@ -96,8 +96,8 @@ class GeoSemHelpers
                        const g2o::Plane3D                      estimatedPlane,
                        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
                        int                                     planeId,
-                       vs_graphs::core::geometric::Plane::planeVariant          semanticType =
-                           vs_graphs::core::geometric::Plane::planeVariant::UNDEFINED,
+                       vs_graphs::core::geometric::Plane::PlaneVariant          semanticType =
+                           vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED,
                        double confidence = 1.0);
 
     /*!

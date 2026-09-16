@@ -354,7 +354,7 @@ class Utils
                         g2o::Plane3D                            observedPlane_in,
                         pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
                         const Eigen::Matrix4d                   &keyframePose_in,
-                        const geometric::Plane::planeVariant                observedPlaneType_in,
+                        const geometric::Plane::PlaneVariant                observedPlaneType_in,
                         const float                              threshold_in,
                         const float maximumFiniteCloudDistance_m_in = -1.0F,
                         const std::optional<Eigen::Vector3d>
@@ -465,7 +465,7 @@ class Utils
                                             Atlas           *p_atlas_inout);
 
     /*!
-     * @brief        Gets the planeVariant type from the class id.
+     * @brief        Gets the PlaneVariant type from the class id.
      *
      * @param[in]    classId_in
      *               Class id.
@@ -473,18 +473,18 @@ class Utils
      * @return       Ground, wall, door or window type for ids 0 to 3;
      *               UNDEFINED otherwise.
      */
-    static vs_graphs::core::geometric::Plane::planeVariant getPlaneTypeFromClassId(int classId_in);
+    static vs_graphs::core::geometric::Plane::PlaneVariant getPlaneTypeFromClassId(int classId_in);
 
     /*!
-     * @brief        Gets the class id from the planeVariant type.
+     * @brief        Gets the class id from the PlaneVariant type.
      *
      * @param[in]    planeType_in
-     *               planeVariant type.
+     *               PlaneVariant type.
      *
      * @return       Class id 0 to 3 for known types; -1 otherwise.
      */
     static int
-        getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::planeVariant planeType_in);
+        getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::PlaneVariant planeType_in);
 
     /*!
      * @brief        Computes the rigid transform mapping map A into map B

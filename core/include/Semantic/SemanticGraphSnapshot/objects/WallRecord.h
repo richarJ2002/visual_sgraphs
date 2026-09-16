@@ -47,7 +47,7 @@ namespace semantic
 {
 /*!
  * @brief       Value-only copy of one wall face: a Geometric/Plane.h object
- *              whose accepted Plane::planeVariant is WALL.
+ *              whose accepted Plane::PlaneVariant is WALL.
  */
 struct WallRecord
 {
@@ -69,7 +69,7 @@ struct WallRecord
     /*! @brief Plane::getPlaneType() at capture time; always WALL for a
      *  record captured through this snapshot's wall-enumeration path,
      *  retained explicitly rather than assumed. */
-    geometric::Plane::planeVariant planeType{geometric::Plane::planeVariant::WALL};
+    geometric::Plane::PlaneVariant planeType{geometric::Plane::PlaneVariant::WALL};
 
     /*! @brief PlaneGeometryMetadataSnapshot::equation_World. */
     Eigen::Vector4d equation_World{Eigen::Vector4d::Zero()};

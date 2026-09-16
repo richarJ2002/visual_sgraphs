@@ -75,7 +75,7 @@ bool hasSeparatingFiniteWall(const std::vector<geometric::Plane *> &wallList_Wor
     for (geometric::Plane *p_wall : wallList_World_in)
     {
         if (p_wall == nullptr || p_wall->isBad() ||
-            p_wall->getPlaneType() != geometric::Plane::planeVariant::WALL)
+            p_wall->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
         {
             continue;
         }
@@ -427,8 +427,8 @@ WallAdmissionEvidence
             p_systemParams_in->roomSeg.minimumWallObservationCount,
             1U);
     const bool wallDominatesSemantics =
-        p_wall_in->getPlaneType() == geometric::Plane::planeVariant::WALL &&
-        p_wall_in->getExpectedPlaneType() == geometric::Plane::planeVariant::WALL;
+        p_wall_in->getPlaneType() == geometric::Plane::PlaneVariant::WALL &&
+        p_wall_in->getExpectedPlaneType() == geometric::Plane::PlaneVariant::WALL;
 
     evidence.admissible =
         wallDominatesSemantics && evidence.adequateFiniteFit &&
@@ -2272,7 +2272,7 @@ void SemanticsManager::Run(void)
         for (geometric::Plane *p_plane : pipelinePlanes)
         {
             if (p_plane == nullptr || p_plane->isBad() ||
-                p_plane->getPlaneType() != geometric::Plane::planeVariant::WALL)
+                p_plane->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
             {
                 continue;
             }
@@ -2471,7 +2471,7 @@ void SemanticsManager::filterWallPlanes(void)
     {
         /* Skip planes which are not classed as walls */
         if (plane->getExpectedPlaneType() ==
-            vs_graphs::core::geometric::Plane::planeVariant::WALL)
+            vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
         {
             /*!
              * Wall validation based on the mPlanePoseMat only works if the
@@ -2525,7 +2525,7 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *groundPlane)
     {
         /* Skip planes not classed as ground, or are the main ground plane */
         if (plane->getExpectedPlaneType() !=
-                vs_graphs::core::geometric::Plane::planeVariant::GROUND ||
+                vs_graphs::core::geometric::Plane::PlaneVariant::GROUND ||
             plane->getId() == groundPlaneId)
         {
             continue;
@@ -3644,14 +3644,14 @@ void SemanticsManager::detectDoorsAndDoorways(vs_graphs::core::Atlas *pAtlas)
         }
 
         /* Store confirmed wall planes */
-        if (plane->getPlaneType() == vs_graphs::core::geometric::Plane::planeVariant::WALL)
+        if (plane->getPlaneType() == vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
         {
             wallPlanes.push_back(plane);
             continue;
         }
 
         /* Store confirmed door planes */
-        if (plane->getPlaneType() == vs_graphs::core::geometric::Plane::planeVariant::DOOR)
+        if (plane->getPlaneType() == vs_graphs::core::geometric::Plane::PlaneVariant::DOOR)
         {
             doorPlanes.push_back(plane);
         }
@@ -7941,19 +7941,19 @@ void SemanticsManager::associateAllWallsToRooms(void)
     Map                           *p_activeMap   = mpAtlas->GetCurrentMap();
     semantic::Room                          *p_currentRoom = nullptr;
     const int                      currentRoomId = getCurrentRoomId();
-    const auto planeClassName = [](const geometric::Plane::planeVariant variant_in)
+    const auto planeClassName = [](const geometric::Plane::PlaneVariant variant_in)
     {
         switch (variant_in)
         {
-        case geometric::Plane::planeVariant::WALL:
+        case geometric::Plane::PlaneVariant::WALL:
             return "WALL";
-        case geometric::Plane::planeVariant::GROUND:
+        case geometric::Plane::PlaneVariant::GROUND:
             return "GROUND";
-        case geometric::Plane::planeVariant::DOOR:
+        case geometric::Plane::PlaneVariant::DOOR:
             return "DOOR";
-        case geometric::Plane::planeVariant::WINDOW:
+        case geometric::Plane::PlaneVariant::WINDOW:
             return "WINDOW";
-        case geometric::Plane::planeVariant::UNDEFINED:
+        case geometric::Plane::PlaneVariant::UNDEFINED:
         default:
             return "UNDEFINED";
         }
@@ -8025,9 +8025,9 @@ void SemanticsManager::associateAllWallsToRooms(void)
         if (!admissionEvidence.admissible)
         {
             const std::string reason =
-                wall->getPlaneType() != geometric::Plane::planeVariant::WALL ||
+                wall->getPlaneType() != geometric::Plane::PlaneVariant::WALL ||
                         wall->getExpectedPlaneType() !=
-                            geometric::Plane::planeVariant::WALL
+                            geometric::Plane::PlaneVariant::WALL
                     ? "CLASS_NOT_WALL"
                 : !admissionEvidence.adequateFiniteFit
                     ? "INADEQUATE_FINITE_FIT"
@@ -8198,7 +8198,7 @@ void SemanticsManager::suppressUndefendedWalls(void)
         mappedWallIds.insert(wallId);
 
         if (p_wall->isBad() ||
-            p_wall->getPlaneType() != geometric::Plane::planeVariant::WALL)
+            p_wall->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
         {
             undefendedWalls_.erase(wallId);
             continue;
@@ -8807,7 +8807,7 @@ void SemanticsManager::reconcileWallFacePairs(void)
     for (geometric::Plane *p_plane : mpAtlas->GetAllPlanes())
     {
         if (p_plane != nullptr && !p_plane->isBad() &&
-            p_plane->getPlaneType() == geometric::Plane::planeVariant::WALL)
+            p_plane->getPlaneType() == geometric::Plane::PlaneVariant::WALL)
         {
             wallPlanes.push_back(p_plane);
         }

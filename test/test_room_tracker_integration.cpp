@@ -74,7 +74,7 @@ class ProductionCrossingScene
 
         groundPlane.setId(0);
         groundPlane.SetMap(p_map);
-        groundPlane.setPlaneType(geometric::Plane::planeVariant::GROUND);
+        groundPlane.setPlaneType(geometric::Plane::PlaneVariant::GROUND);
         groundPlane.setGlobalEquation(
             g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr groundCloud(
@@ -97,10 +97,10 @@ class ProductionCrossingScene
 
         knownWall.setId(1);
         knownWall.SetMap(p_map);
-        knownWall.setPlaneType(geometric::Plane::planeVariant::WALL);
+        knownWall.setPlaneType(geometric::Plane::PlaneVariant::WALL);
         farWall.setId(2);
         farWall.SetMap(p_map);
-        farWall.setPlaneType(geometric::Plane::planeVariant::WALL);
+        farWall.setPlaneType(geometric::Plane::PlaneVariant::WALL);
         p_map->AddMapPlane(&knownWall);
         p_map->AddMapPlane(&farWall);
 
@@ -608,7 +608,7 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
     geometric::Plane groundPlane;
     groundPlane.setId(0);
     groundPlane.SetMap(p_map);
-    groundPlane.setPlaneType(geometric::Plane::planeVariant::GROUND);
+    groundPlane.setPlaneType(geometric::Plane::PlaneVariant::GROUND);
     groundPlane.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr groundCloud(

@@ -65,12 +65,12 @@ void makeWallPlane(geometric::Plane                 &wall_inout,
 {
     wall_inout.setId(id_in);
     wall_inout.SetMap(p_map_in);
-    wall_inout.setPlaneType(geometric::Plane::planeVariant::WALL);
+    wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL);
     /* Wall-admission/ownership gates compare getPlaneType() against
      * getExpectedPlaneType(), which is derived from semanticVotes rather than
      * settable directly -- cast a vote so the two agree, matching what real
      * wall classification does over time. */
-    wall_inout.castWeightedVote(geometric::Plane::planeVariant::WALL, 1.0);
+    wall_inout.castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
     wall_inout.setGlobalEquation(g2o::Plane3D(equation_World_in));
     wall_inout.setCentroid(centroid_World_m_in);
     wall_inout.setMapClouds(makeGridCloud(centroid_World_m_in,
@@ -89,7 +89,7 @@ bool makeGroundPlane(geometric::Plane &ground_inout,
 {
     ground_inout.setId(id_in);
     ground_inout.SetMap(p_map_in);
-    ground_inout.setPlaneType(geometric::Plane::planeVariant::GROUND);
+    ground_inout.setPlaneType(geometric::Plane::PlaneVariant::GROUND);
     ground_inout.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));
     ground_inout.setMapClouds(makeGridCloud(Eigen::Vector3d::Zero(),

@@ -131,7 +131,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         Plane *wallA = new Plane();
         wallA->setId(wallIdBase_in);
         wallA->SetMap(p_map);
-        wallA->setPlaneType(Plane::planeVariant::WALL);
+        wallA->setPlaneType(Plane::PlaneVariant::WALL);
         wallA->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_A_NORMAL_X,
                                                               WALL_A_NORMAL_Y,
                                                               WALL_A_NORMAL_Z,
@@ -144,7 +144,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         Plane *wallB = new Plane();
         wallB->setId(wallIdBase_in + 1);
         wallB->SetMap(p_map);
-        wallB->setPlaneType(Plane::planeVariant::WALL);
+        wallB->setPlaneType(Plane::PlaneVariant::WALL);
         wallB->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_B_NORMAL_X,
                                                               WALL_B_NORMAL_Y,
                                                               WALL_B_NORMAL_Z,
@@ -157,7 +157,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         Plane *wallC = new Plane();
         wallC->setId(wallIdBase_in + 2);
         wallC->SetMap(p_map);
-        wallC->setPlaneType(Plane::planeVariant::WALL);
+        wallC->setPlaneType(Plane::PlaneVariant::WALL);
         wallC->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_C_NORMAL_X,
                                                               WALL_C_NORMAL_Y,
                                                               WALL_C_NORMAL_Z,
@@ -742,7 +742,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
         Plane *wall4 = new Plane();
         wall4->setId(4);
         wall4->SetMap(p_map1);
-        wall4->setPlaneType(Plane::planeVariant::WALL);
+        wall4->setPlaneType(Plane::PlaneVariant::WALL);
         wall4->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_D_NORMAL_X,
                                                               WALL_D_NORMAL_Y,
                                                               WALL_D_NORMAL_Z,

@@ -661,7 +661,7 @@ geometric::Plane *Map::GetBiggestGroundPlane()
     for (geometric::Plane *pPlane : GetAllPlanes())
     {
         if (pPlane == nullptr || pPlane->isBad() ||
-            pPlane->getPlaneType() != geometric::Plane::planeVariant::GROUND)
+            pPlane->getPlaneType() != geometric::Plane::PlaneVariant::GROUND)
         {
             continue;
         }

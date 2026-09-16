@@ -104,7 +104,7 @@ namespace semantic
  */
 SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in);
 
-/*! @brief Builds a RawPlaneRef to \p p_plane_in, of any Plane::planeVariant;
+/*! @brief Builds a RawPlaneRef to \p p_plane_in, of any Plane::PlaneVariant;
  *  reason is UnavailableReason::NULL_REFERENCE when \p p_plane_in is
  *  nullptr and UnavailableReason::NONE otherwise (mapId remains
  *  independently absent when the plane itself has none, and wallKey

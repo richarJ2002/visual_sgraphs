@@ -817,34 +817,34 @@ template std::vector<
     Utils::ransacPlaneFitting<pcl::PointXYZRGBA, pcl::WeightedSACSegmentation>(
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
 
-vs_graphs::core::geometric::Plane::planeVariant Utils::getPlaneTypeFromClassId(int classId_in)
+vs_graphs::core::geometric::Plane::PlaneVariant Utils::getPlaneTypeFromClassId(int classId_in)
 {
     switch (classId_in)
     {
     case 0:
-        return vs_graphs::core::geometric::Plane::planeVariant::GROUND;
+        return vs_graphs::core::geometric::Plane::PlaneVariant::GROUND;
     case 1:
-        return vs_graphs::core::geometric::Plane::planeVariant::WALL;
+        return vs_graphs::core::geometric::Plane::PlaneVariant::WALL;
     case 2:
-        return vs_graphs::core::geometric::Plane::planeVariant::DOOR;
+        return vs_graphs::core::geometric::Plane::PlaneVariant::DOOR;
     case 3:
-        return vs_graphs::core::geometric::Plane::planeVariant::WINDOW;
+        return vs_graphs::core::geometric::Plane::PlaneVariant::WINDOW;
     default:
-        return vs_graphs::core::geometric::Plane::planeVariant::UNDEFINED;
+        return vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED;
     }
 }
 
-int Utils::getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::planeVariant planeType_in)
+int Utils::getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::PlaneVariant planeType_in)
 {
     switch (planeType_in)
     {
-    case vs_graphs::core::geometric::Plane::planeVariant::GROUND:
+    case vs_graphs::core::geometric::Plane::PlaneVariant::GROUND:
         return 0;
-    case vs_graphs::core::geometric::Plane::planeVariant::WALL:
+    case vs_graphs::core::geometric::Plane::PlaneVariant::WALL:
         return 1;
-    case vs_graphs::core::geometric::Plane::planeVariant::DOOR:
+    case vs_graphs::core::geometric::Plane::PlaneVariant::DOOR:
         return 2;
-    case vs_graphs::core::geometric::Plane::planeVariant::WINDOW:
+    case vs_graphs::core::geometric::Plane::PlaneVariant::WINDOW:
         return 3;
     default:
         return -1;
@@ -873,7 +873,7 @@ int Utils::associatePlanes(
     g2o::Plane3D                                 observedPlane_in,
     pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
     const Eigen::Matrix4d                       &keyframePose_in,
-    const geometric::Plane::planeVariant                    observedPlaneType_in,
+    const geometric::Plane::PlaneVariant                    observedPlaneType_in,
     const float                                  threshold_in,
     const float                           maximumFiniteCloudDistance_m_in,
     const std::optional<Eigen::Vector3d> &observationOrigin_World_m_in)
@@ -951,7 +951,7 @@ int Utils::associatePlanes(
         static_cast<double>(sysParams->seg.planeAssociation.centroidThresh));
 
     const bool useWallExtension =
-        observedPlaneType_in == geometric::Plane::planeVariant::WALL &&
+        observedPlaneType_in == geometric::Plane::PlaneVariant::WALL &&
         sysParams->semSeg.reassociate.wallExtension.enabled;
 
     const double configuredFiniteCloudDistance_m =
@@ -1009,12 +1009,12 @@ int Utils::associatePlanes(
          * A mapped UNDEFINED plane is allowed to match a semantically labelled
          * observation so that it can accumulate enough votes for confirmation.
          */
-        const geometric::Plane::planeVariant mappedPlaneType =
+        const geometric::Plane::PlaneVariant mappedPlaneType =
             mappedPlane->getExpectedPlaneType();
 
         const bool semanticTypesCompatible =
-            observedPlaneType_in == geometric::Plane::planeVariant::UNDEFINED ||
-            mappedPlaneType == geometric::Plane::planeVariant::UNDEFINED ||
+            observedPlaneType_in == geometric::Plane::PlaneVariant::UNDEFINED ||
+            mappedPlaneType == geometric::Plane::PlaneVariant::UNDEFINED ||
             mappedPlaneType == observedPlaneType_in;
 
         if (!semanticTypesCompatible)
@@ -1054,7 +1054,7 @@ int Utils::associatePlanes(
         }
 
         /* Keep observations from opposite sides as distinct wall faces. */
-        if (observedPlaneType_in == geometric::Plane::planeVariant::WALL &&
+        if (observedPlaneType_in == geometric::Plane::PlaneVariant::WALL &&
             observationOrigin_World_m_in.has_value() &&
             observationOrigin_World_m_in->allFinite())
         {
@@ -1305,7 +1305,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
         {
             if (p_candidatePlane == nullptr || p_candidatePlane->isBad() ||
                 p_candidatePlane->getPlaneType() ==
-                    geometric::Plane::planeVariant::UNDEFINED)
+                    geometric::Plane::PlaneVariant::UNDEFINED)
             {
                 continue;
             }
@@ -1330,7 +1330,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
                  * rooms and require independent ownership.
                  */
                 if (p_candidatePlane->getPlaneType() ==
-                    geometric::Plane::planeVariant::WALL)
+                    geometric::Plane::PlaneVariant::WALL)
                 {
                     const geometric::Plane::GeometrySnapshot candidateGeometry =
                         p_candidatePlane->getGeometrySnapshot();
@@ -1401,7 +1401,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
             }
 
             const bool useWallExtensionDistance =
-                p_candidatePlane->getPlaneType() == geometric::Plane::planeVariant::WALL &&
+                p_candidatePlane->getPlaneType() == geometric::Plane::PlaneVariant::WALL &&
                 p_systemParams->semSeg.reassociate.wallExtension.enabled;
 
             const float maximumFiniteCloudDistance_m =
@@ -1499,7 +1499,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
             }
 
             GeoSemHelpers::refitMappedPlaneFromCloud(p_retainedPlane);
-            const geometric::Plane::planeVariant retainedPlaneType =
+            const geometric::Plane::PlaneVariant retainedPlaneType =
                 p_retainedPlane->getPlaneType();
 
             for (semantic::Room *p_room : p_atlas_inout->GetAllRooms())
@@ -1537,7 +1537,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
             {
                 p_currentMap->EraseRoomWallPlane(p_retiredPlane);
 
-                if (retainedPlaneType == geometric::Plane::planeVariant::WALL)
+                if (retainedPlaneType == geometric::Plane::PlaneVariant::WALL)
                 {
                     p_currentMap->AddRoomWallPlane(p_retainedPlane);
                 }
@@ -1660,7 +1660,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
         for (geometric::Plane *p_wall : p_map_inout->GetAllPlanes())
         {
             if (p_wall == nullptr || p_wall->isBad() ||
-                p_wall->getPlaneType() != geometric::Plane::planeVariant::WALL)
+                p_wall->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
             {
                 continue;
             }
@@ -1958,7 +1958,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
         for (geometric::Plane *p_plane : p_map_inout->GetAllPlanes())
         {
             if (p_plane != nullptr && !p_plane->isBad() &&
-                p_plane->getPlaneType() == geometric::Plane::planeVariant::GROUND)
+                p_plane->getPlaneType() == geometric::Plane::PlaneVariant::GROUND)
             {
                 p_mergeGroundPlane = p_plane;
                 break;

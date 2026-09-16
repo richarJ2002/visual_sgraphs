@@ -426,7 +426,7 @@ void Optimizer::BundleAdjustment(
     for (const auto &vpPlane : allPlanesVec)
     {
         // Skip undefined planes (if not wall for now)
-        if (vpPlane->getPlaneType() == geometric::Plane::planeVariant::UNDEFINED)
+        if (vpPlane->getPlaneType() == geometric::Plane::PlaneVariant::UNDEFINED)
             continue;
         // Adding a vertex for each plane
         g2o::VertexPlane *vPlane = new g2o::VertexPlane();
@@ -1856,7 +1856,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                 {
                     if (!plane)
                         continue;
-                    if (plane->getPlaneType() != geometric::Plane::planeVariant::UNDEFINED)
+                    if (plane->getPlaneType() != geometric::Plane::PlaneVariant::UNDEFINED)
                     {
                         if (planeCheck.find(plane->getId()) == planeCheck.end())
                         {
@@ -1873,7 +1873,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
             Eigen::Vector3d   camCenter = framePose.inverse().translation();
             for (const auto &pPlane : vpPlanes)
             {
-                if (pPlane->getPlaneType() == geometric::Plane::planeVariant::UNDEFINED)
+                if (pPlane->getPlaneType() == geometric::Plane::PlaneVariant::UNDEFINED)
                     continue;
 
                 Eigen::Vector4d planeEq = pPlane->getGlobalEquation().coeffs();
@@ -2206,7 +2206,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
             if (!plane)
                 continue;
             // If the plane is not known, do not add it to the local map
-            if (plane->getPlaneType() == geometric::Plane::planeVariant::UNDEFINED)
+            if (plane->getPlaneType() == geometric::Plane::PlaneVariant::UNDEFINED)
                 continue;
             // Otherwise, add the plane to the local map
             if (mpLocalPlaneId.find(plane->getId()) == mpLocalPlaneId.end())

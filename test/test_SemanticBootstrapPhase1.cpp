@@ -31,8 +31,8 @@ std::unique_ptr<geometric::Plane> makeAdmissibleWall(const int    id_in,
     std::unique_ptr<geometric::Plane> p_wall = std::make_unique<geometric::Plane>();
     p_wall->setId(id_in);
     p_wall->SetMap(p_map_in);
-    p_wall->setPlaneType(geometric::Plane::planeVariant::WALL);
-    p_wall->castWeightedVote(geometric::Plane::planeVariant::WALL, 1.0);
+    p_wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
+    p_wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
     p_wall->setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -x_m_in)));
     p_wall->setCentroid(Eigen::Vector3d(x_m_in, 0.0, 1.0));

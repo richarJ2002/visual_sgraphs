@@ -50,7 +50,7 @@ struct SyntheticRoom
     {
         auto wall = std::make_unique<geometric::Plane>();
         wall->setId(wall_in.id);
-        wall->setPlaneType(geometric::Plane::planeVariant::WALL);
+        wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
         wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(wall_in.normal.x(),
                                                              wall_in.normal.y(),
                                                              wall_in.normal.z(),

@@ -38,7 +38,7 @@ Plane::Plane(void)
     opIdG = -1;
 
     mbBad     = false;
-    planeType = Plane::planeVariant::UNDEFINED;
+    planeType = Plane::PlaneVariant::UNDEFINED;
 
     centroid.setZero();
 
@@ -622,19 +622,19 @@ bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &point)
     return false;
 }
 
-Plane::planeVariant Plane::getPlaneType(void)
+Plane::PlaneVariant Plane::getPlaneType(void)
 {
     unique_lock<mutex> lock(mMutexType);
     return planeType;
 }
 
-Plane::planeVariant Plane::getExpectedPlaneType(void)
+Plane::PlaneVariant Plane::getExpectedPlaneType(void)
 {
     unique_lock<mutex> lock(mMutexType);
 
     // get the maximum vote
     double       maxVotes = 0;
-    planeVariant maxType  = planeVariant::UNDEFINED;
+    PlaneVariant maxType  = PlaneVariant::UNDEFINED;
     for (const auto &vote : semanticVotes)
     {
         if (vote.second > maxVotes)
@@ -646,12 +646,12 @@ Plane::planeVariant Plane::getExpectedPlaneType(void)
     return maxType;
 }
 
-void Plane::castWeightedVote(Plane::planeVariant semanticType,
+void Plane::castWeightedVote(Plane::PlaneVariant semanticType,
                              double              voteWeight)
 {
     unique_lock<mutex> lock(mMutexType);
 
-    if (semanticType == planeVariant::UNDEFINED)
+    if (semanticType == PlaneVariant::UNDEFINED)
         return;
 
     // check if semantic type is already in the semanticVotes map
@@ -663,7 +663,7 @@ void Plane::castWeightedVote(Plane::planeVariant semanticType,
     // update based on new vote rankings
     // find the semantic type with the maximum votes
     double       maxVotes = 0;
-    planeVariant maxType  = planeVariant::UNDEFINED;
+    PlaneVariant maxType  = PlaneVariant::UNDEFINED;
     for (const auto &vote : semanticVotes)
     {
         if (vote.second > maxVotes)
@@ -677,10 +677,10 @@ void Plane::castWeightedVote(Plane::planeVariant semanticType,
     if (maxVotes >= types::SystemParams::getParams()->semSeg.minVotes)
         planeType = maxType;
     else
-        planeType = planeVariant::UNDEFINED;
+        planeType = PlaneVariant::UNDEFINED;
 }
 
-void Plane::setPlaneType(planeVariant newType)
+void Plane::setPlaneType(PlaneVariant newType)
 {
     unique_lock<mutex> lock(mMutexType);
     planeType = newType;
@@ -691,7 +691,7 @@ void Plane::resetPlaneSemantics(void)
     unique_lock<mutex> lock(mMutexType);
 
     semanticVotes.clear();
-    planeType = planeVariant::UNDEFINED;
+    planeType = PlaneVariant::UNDEFINED;
 }
 
 g2o::Plane3D Plane::getLocalEquation(void) const
@@ -961,9 +961,9 @@ void Plane::mergeObservation(core::KeyFrame          *p_keyFrame_in,
     std::scoped_lock lock(mMutexFeatures, mMutexType);
     auto evidenceFromObservation = [](const Observation &observation)
     {
-        std::map<planeVariant, double> evidence = observation.semanticEvidence;
+        std::map<PlaneVariant, double> evidence = observation.semanticEvidence;
         if (evidence.empty() &&
-            observation.semanticType != planeVariant::UNDEFINED &&
+            observation.semanticType != PlaneVariant::UNDEFINED &&
             std::isfinite(observation.confidence))
         {
             evidence[observation.semanticType] += observation.confidence;
@@ -991,7 +991,7 @@ void Plane::mergeObservation(core::KeyFrame          *p_keyFrame_in,
         retainedObservation.pointPlaneConstraintMatrix +=
             observation_in.pointPlaneConstraintMatrix;
 
-        std::map<planeVariant, double> combinedEvidence =
+        std::map<PlaneVariant, double> combinedEvidence =
             evidenceFromObservation(retainedObservation);
         for (const auto &[semanticType, weight] :
              evidenceFromObservation(observation_in))
@@ -1022,14 +1022,14 @@ void Plane::rebuildSemanticVotesWithoutLock(void)
             for (const auto &[semanticType, weight] :
                  observation.semanticEvidence)
             {
-                if (semanticType != planeVariant::UNDEFINED &&
+                if (semanticType != PlaneVariant::UNDEFINED &&
                     std::isfinite(weight))
                 {
                     semanticVotes[semanticType] += weight;
                 }
             }
         }
-        else if (observation.semanticType != planeVariant::UNDEFINED &&
+        else if (observation.semanticType != PlaneVariant::UNDEFINED &&
                  std::isfinite(observation.confidence))
         {
             semanticVotes[observation.semanticType] += observation.confidence;
@@ -1037,7 +1037,7 @@ void Plane::rebuildSemanticVotesWithoutLock(void)
     }
 
     double       maxVotes = 0.0;
-    planeVariant maxType  = planeVariant::UNDEFINED;
+    PlaneVariant maxType  = PlaneVariant::UNDEFINED;
     for (const auto &[semanticType, votes] : semanticVotes)
     {
         if (votes > maxVotes)
@@ -1048,7 +1048,7 @@ void Plane::rebuildSemanticVotesWithoutLock(void)
     }
     planeType = maxVotes >= types::SystemParams::getParams()->semSeg.minVotes
                     ? maxType
-                    : planeVariant::UNDEFINED;
+                    : PlaneVariant::UNDEFINED;
 }
 
 void Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)

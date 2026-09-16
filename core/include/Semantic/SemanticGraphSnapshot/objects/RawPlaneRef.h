@@ -41,13 +41,13 @@ namespace semantic
 {
 /*!
  * @brief       Raw identity of a referenced Plane, used both for a plane
- *              whose accepted Plane::planeVariant is not WALL by design
+ *              whose accepted Plane::PlaneVariant is not WALL by design
  *              (e.g. the DOOR plane a Passage names, or the GROUND plane a
  *              Room names) and, via wallKey below, for every wall-shaped
  *              reference (a Plane a caller expected to be WALL-typed: a
  *              wall's twin face, a Room's owned walls, a Passage's
  *              associated walls) instead of a WALL-kind EntityKey built
- *              without checking the actual Plane::planeVariant.
+ *              without checking the actual Plane::PlaneVariant.
  *
  *              Invariant: reason == UnavailableReason::NONE exactly when the
  *              underlying Plane pointer was non-null at capture time, in
@@ -80,10 +80,10 @@ struct RawPlaneRef
      *  when reason == UnavailableReason::NONE. */
     bool isLive{true};
 
-    /*! @brief The referenced plane's accepted Plane::planeVariant at
+    /*! @brief The referenced plane's accepted Plane::PlaneVariant at
      *  capture time; meaningful only when reason ==
      *  UnavailableReason::NONE. */
-    geometric::Plane::planeVariant planeType{geometric::Plane::planeVariant::UNDEFINED};
+    geometric::Plane::PlaneVariant planeType{geometric::Plane::PlaneVariant::UNDEFINED};
 
     /*! @brief UnavailableReason::NONE when a plane was actually referenced;
      *  UnavailableReason::NULL_REFERENCE (the default) when the underlying
@@ -92,7 +92,7 @@ struct RawPlaneRef
     UnavailableReason reason{UnavailableReason::NULL_REFERENCE};
 
     /*! @brief Present only when reason == UnavailableReason::NONE,
-     *  planeType == Plane::planeVariant::WALL, and mapId has a value: the
+     *  planeType == Plane::PlaneVariant::WALL, and mapId has a value: the
      *  key of the full WallRecord this same snapshot also captures for this
      *  plane. Absent whenever planeType is not WALL (the wrong-type target
      *  is still retained above via planeId/isLive/planeType/mapId, never

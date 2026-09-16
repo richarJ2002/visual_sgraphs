@@ -82,7 +82,7 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
     ASSERT_EQ(p_mapSnapshot->walls.size(), 1U);
     EXPECT_EQ(p_mapSnapshot->rooms[0].centroid_World_m,
               Eigen::Vector3d(1.0, 0.0, 1.0));
-    EXPECT_EQ(p_mapSnapshot->walls[0].planeType, geometric::Plane::planeVariant::WALL);
+    EXPECT_EQ(p_mapSnapshot->walls[0].planeType, geometric::Plane::PlaneVariant::WALL);
     /* updateSizeOfPlane() (called by makeWallPlane()) populates the finite
      * U/V bounds; finiteSupportCount is populated only by the separate
      * beginMapCloudRefit()/completeMapCloudRefit() pipeline, which this
@@ -524,7 +524,7 @@ TEST(SemanticGraphSnapshot,
               UnavailableReason::NONE);
     EXPECT_FALSE(p_unusualGroundRoom->groundPlaneRef.mapId.has_value());
     EXPECT_EQ(p_unusualGroundRoom->groundPlaneRef.planeType,
-              geometric::Plane::planeVariant::WALL);
+              geometric::Plane::PlaneVariant::WALL);
     EXPECT_TRUE(p_unusualGroundRoom->groundPlaneRef.isLive);
 
     /* Missing-from-enumeration: the key is still truthfully reported, even
@@ -578,7 +578,7 @@ TEST(SemanticGraphSnapshot, DefaultReferenceInvariantsAreValid)
 
 /* Regression coverage: entityRefForWall() used
  * to label every referenced geometric::Plane as EntityKind::WALL without checking its
- * real geometric::Plane::planeVariant, fabricating a WallRecord identity for a
+ * real geometric::Plane::PlaneVariant, fabricating a WallRecord identity for a
  * non-WALL target. Wall-shaped references (a wall's twin face, a Room's
  * owned walls, a Passage's associated walls) always use RawPlaneRef, so
  * a wrong-type target retains its true planeType/isLive/mapId instead of a
@@ -642,14 +642,14 @@ TEST(SemanticGraphSnapshot,
     EXPECT_EQ(p_wallRecord->twinRef.reason, UnavailableReason::NONE);
     EXPECT_EQ(p_wallRecord->twinRef.planeId, 1);
     EXPECT_TRUE(p_wallRecord->twinRef.isLive);
-    EXPECT_EQ(p_wallRecord->twinRef.planeType, geometric::Plane::planeVariant::GROUND);
+    EXPECT_EQ(p_wallRecord->twinRef.planeType, geometric::Plane::PlaneVariant::GROUND);
     EXPECT_FALSE(p_wallRecord->twinRef.wallKey.has_value());
 
     const RoomRecord *p_roomRecord = findRoomRecord(*p_mapSnapshot, 3);
     ASSERT_NE(p_roomRecord, nullptr);
     ASSERT_EQ(p_roomRecord->wallRefs.size(), 1U);
     EXPECT_EQ(p_roomRecord->wallRefs[0].planeId, 1);
-    EXPECT_EQ(p_roomRecord->wallRefs[0].planeType, geometric::Plane::planeVariant::GROUND);
+    EXPECT_EQ(p_roomRecord->wallRefs[0].planeType, geometric::Plane::PlaneVariant::GROUND);
     EXPECT_FALSE(p_roomRecord->wallRefs[0].wallKey.has_value());
 
     const PassageRecord *p_passageRecord = findPassageRecord(*p_mapSnapshot, 4);
@@ -657,7 +657,7 @@ TEST(SemanticGraphSnapshot,
     ASSERT_EQ(p_passageRecord->associateWallRefs.size(), 1U);
     EXPECT_EQ(p_passageRecord->associateWallRefs[0].planeId, 1);
     EXPECT_EQ(p_passageRecord->associateWallRefs[0].planeType,
-              geometric::Plane::planeVariant::GROUND);
+              geometric::Plane::PlaneVariant::GROUND);
     EXPECT_FALSE(p_passageRecord->associateWallRefs[0].wallKey.has_value());
 }
 

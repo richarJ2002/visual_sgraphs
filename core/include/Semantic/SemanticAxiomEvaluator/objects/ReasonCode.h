@@ -501,7 +501,7 @@ enum class ReasonCode : std::uint8_t
     /* AX-WALL-01 */
     /*! @brief The wall's own key.kind is not EntityKind::WALL. */
     WALL_OWNERSHIP_WALL_WRONG_KEY_KIND = 106U,
-    /*! @brief The wall's own planeType is not Plane::planeVariant::WALL. */
+    /*! @brief The wall's own planeType is not Plane::PlaneVariant::WALL. */
     WALL_OWNERSHIP_WALL_WRONG_PLANE_TYPE = 107U,
     /*! @brief The single owner reference's own key.kind is not
      *  EntityKind::ROOM. */

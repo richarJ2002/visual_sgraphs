@@ -777,7 +777,7 @@ void KeyFrame::UpdateConnections(bool upParent)
                     mit->first->GetMap() != mpMap)
                     continue;
 
-                if (pPlane->getPlaneType() == geometric::Plane::planeVariant::UNDEFINED)
+                if (pPlane->getPlaneType() == geometric::Plane::PlaneVariant::UNDEFINED)
                     KFcounter[mit->first] += static_cast<int>(
                         scorePerPlane *
                         0.2); // undefined planes have less weight

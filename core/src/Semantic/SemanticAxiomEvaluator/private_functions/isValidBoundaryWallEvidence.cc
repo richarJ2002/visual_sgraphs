@@ -78,13 +78,13 @@ RoomBoundaryWallEvidenceStatus
          * violation and a known contradiction, not the ordinary "nothing
          * there" case. */
         if (wallRef_in.mapId.has_value() || wallRef_in.wallKey.has_value() ||
-            wallRef_in.planeType != geometric::Plane::planeVariant::UNDEFINED)
+            wallRef_in.planeType != geometric::Plane::PlaneVariant::UNDEFINED)
         {
             return RoomBoundaryWallEvidenceStatus::INVALID;
         }
         return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
     }
-    if (wallRef_in.planeType != geometric::Plane::planeVariant::WALL)
+    if (wallRef_in.planeType != geometric::Plane::PlaneVariant::WALL)
     {
         /* A real, mapped, live plane pointer exists but is the wrong type:
          * a known contradiction, not merely missing evidence. */
@@ -145,7 +145,7 @@ RoomBoundaryWallEvidenceStatus
     {
         return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
     }
-    if (!p_wall->isLive || p_wall->planeType != geometric::Plane::planeVariant::WALL)
+    if (!p_wall->isLive || p_wall->planeType != geometric::Plane::PlaneVariant::WALL)
     {
         return RoomBoundaryWallEvidenceStatus::INVALID;
     }

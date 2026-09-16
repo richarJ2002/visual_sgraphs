@@ -35,7 +35,7 @@ std::unique_ptr<geometric::Plane>
     auto ground = std::make_unique<geometric::Plane>();
     ground->setId(id_in);
     ground->SetMap(p_map_in);
-    ground->setPlaneType(geometric::Plane::planeVariant::GROUND);
+    ground->setPlaneType(geometric::Plane::PlaneVariant::GROUND);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);

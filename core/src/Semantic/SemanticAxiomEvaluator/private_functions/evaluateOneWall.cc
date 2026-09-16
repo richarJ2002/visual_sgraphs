@@ -99,7 +99,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
         return;
     }
 
-    if (wall_in.planeType != geometric::Plane::planeVariant::WALL)
+    if (wall_in.planeType != geometric::Plane::PlaneVariant::WALL)
     {
         findings_inout.push_back(
             makeFinding(AxiomCode::AX_WALL_01,
@@ -361,7 +361,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
             continue;
         }
         const bool wellFormed =
-            (ownedWallRef.planeType == geometric::Plane::planeVariant::WALL) &&
+            (ownedWallRef.planeType == geometric::Plane::PlaneVariant::WALL) &&
             ownedWallRef.isLive && ownedWallRef.wallKey.has_value() &&
             (*ownedWallRef.wallKey == wall_in.key);
         if (wellFormed)

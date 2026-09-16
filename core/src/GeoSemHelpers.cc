@@ -168,7 +168,7 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     vs_graphs::core::KeyFrame                          *pKF,
     const g2o::Plane3D                            estimatedPlane,
     const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
-    vs_graphs::core::geometric::Plane::planeVariant                semanticType,
+    vs_graphs::core::geometric::Plane::PlaneVariant                semanticType,
     double                                        confidence)
 {
     vs_graphs::core::Map *p_currentMap = mpAtlas->GetCurrentMap();
@@ -316,7 +316,7 @@ void GeoSemHelpers::updateMapPlane(
     const g2o::Plane3D                      estimatedPlane,
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
     int                                     planeId,
-    vs_graphs::core::geometric::Plane::planeVariant          semanticType,
+    vs_graphs::core::geometric::Plane::PlaneVariant          semanticType,
     double                                  confidence)
 {
     // Find the matched plane among all planes of the map
@@ -985,7 +985,7 @@ void GeoSemHelpers::associateGroundPlaneToRoom(Atlas           *mpAtlas,
     // get the ground planes from the Atlas
     std::vector<vs_graphs::core::geometric::Plane *> groundPlanes;
     for (const auto &plane : mpAtlas->GetAllPlanes())
-        if (plane->getPlaneType() == vs_graphs::core::geometric::Plane::planeVariant::GROUND)
+        if (plane->getPlaneType() == vs_graphs::core::geometric::Plane::PlaneVariant::GROUND)
             groundPlanes.push_back(plane);
 
     if (groundPlanes.empty())

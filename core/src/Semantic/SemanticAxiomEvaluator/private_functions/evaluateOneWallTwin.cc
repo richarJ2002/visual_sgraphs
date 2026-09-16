@@ -48,7 +48,7 @@ void evaluateOneWallTwin(const WallRecord            &wall_in,
          * violation and a known contradiction, not an ordinary absent
          * twin. */
         if (twin.mapId.has_value() || twin.wallKey.has_value() ||
-            twin.planeType != geometric::Plane::planeVariant::UNDEFINED)
+            twin.planeType != geometric::Plane::PlaneVariant::UNDEFINED)
         {
             findings_inout.push_back(
                 makeFinding(AxiomCode::AX_WALL_03,
@@ -64,7 +64,7 @@ void evaluateOneWallTwin(const WallRecord            &wall_in,
         return;
     }
 
-    if (twin.planeType != geometric::Plane::planeVariant::WALL)
+    if (twin.planeType != geometric::Plane::PlaneVariant::WALL)
     {
         findings_inout.push_back(makeFinding(AxiomCode::AX_WALL_03,
                                              AxiomResult::FAIL,

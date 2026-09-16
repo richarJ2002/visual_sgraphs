@@ -69,12 +69,12 @@ void makeWallWithGridCloud(geometric::Plane                 &wall_inout,
 {
     wall_inout.setId(id_in);
     wall_inout.SetMap(p_map_in);
-    wall_inout.setPlaneType(geometric::Plane::planeVariant::WALL);
+    wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL);
     /* evaluateWallAdmissionEvidence's wallDominatesSemantics gate compares
      * getPlaneType() against getExpectedPlaneType(), which is derived from
      * semanticVotes rather than settable directly -- cast a vote so the two
      * agree, matching what real wall classification does over time. */
-    wall_inout.castWeightedVote(geometric::Plane::planeVariant::WALL, 1.0);
+    wall_inout.castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
     wall_inout.setGlobalEquation(g2o::Plane3D(equation_World_in));
     wall_inout.setCentroid(Eigen::Vector3d::Zero());
 
@@ -482,7 +482,7 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int id_in, Map *p
     auto ground = std::make_unique<geometric::Plane>();
     ground->setId(id_in);
     ground->SetMap(p_map_in);
-    ground->setPlaneType(geometric::Plane::planeVariant::GROUND);
+    ground->setPlaneType(geometric::Plane::PlaneVariant::GROUND);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -515,8 +515,8 @@ std::unique_ptr<geometric::Plane> makeLongWallThroughOrigin(
     auto wall = std::make_unique<geometric::Plane>();
     wall->setId(id_in);
     wall->SetMap(p_map_in);
-    wall->setPlaneType(geometric::Plane::planeVariant::WALL);
-    wall->castWeightedVote(geometric::Plane::planeVariant::WALL, 1.0);
+    wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
+    wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
     wall->setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(normal_World_in.x(),
                                      normal_World_in.y(),

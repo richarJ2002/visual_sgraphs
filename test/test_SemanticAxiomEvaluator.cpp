@@ -1160,7 +1160,7 @@ TEST(SemanticAxiomEvaluator, WallWrongPlaneTypeIsFail)
 
     SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
     ASSERT_EQ(snapshot.maps.front().walls.size(), 1U);
-    snapshot.maps.front().walls.front().planeType = geometric::Plane::planeVariant::DOOR;
+    snapshot.maps.front().walls.front().planeType = geometric::Plane::PlaneVariant::DOOR;
 
     const AxiomEvaluationReport report = evaluateState(snapshot);
     const Finding              *p_finding =
@@ -1278,7 +1278,7 @@ TEST(SemanticAxiomEvaluator, WallReciprocalMalformedOnlyIsFail)
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     RoomRecord &roomRecord = snapshot.maps.front().rooms.front();
     ASSERT_EQ(roomRecord.wallRefs.size(), 1U);
-    roomRecord.wallRefs.front().planeType = geometric::Plane::planeVariant::DOOR;
+    roomRecord.wallRefs.front().planeType = geometric::Plane::PlaneVariant::DOOR;
 
     const AxiomEvaluationReport report    = evaluateState(snapshot);
     const Finding              *p_finding = findFindingWithReason(
@@ -3481,7 +3481,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_NE(p_roomRecord, nullptr);
     ASSERT_EQ(p_roomRecord->wallRefs.size(), 1U);
     RawPlaneRef wrongTypeRef = p_roomRecord->wallRefs.front();
-    wrongTypeRef.planeType   = geometric::Plane::planeVariant::DOOR;
+    wrongTypeRef.planeType   = geometric::Plane::PlaneVariant::DOOR;
     wrongTypeRef.planeId     = 999;
     wrongTypeRef.wallKey.reset();
     p_roomRecord->wallRefs.push_back(wrongTypeRef);
@@ -5108,7 +5108,7 @@ TEST(SemanticAxiomEvaluator,
     contradictory.mapId     = p_map->GetId();
     contradictory.planeId   = 5;
     contradictory.isLive    = false;
-    contradictory.planeType = geometric::Plane::planeVariant::GROUND;
+    contradictory.planeType = geometric::Plane::PlaneVariant::GROUND;
     roomRecord.wallRefs.push_back(contradictory);
 
     const AxiomEvaluationReport report = evaluateState(snapshot);
@@ -5182,7 +5182,7 @@ TEST(SemanticAxiomEvaluator, WallTwinReasonInconsistentIsFail)
     ASSERT_EQ(wallRecord.twinRef.reason, UnavailableReason::NULL_REFERENCE);
     wallRecord.twinRef.mapId     = wallRecord.key.mapId;
     wallRecord.twinRef.planeId   = wallRecord.key.entityId;
-    wallRecord.twinRef.planeType = geometric::Plane::planeVariant::WALL;
+    wallRecord.twinRef.planeType = geometric::Plane::PlaneVariant::WALL;
     wallRecord.twinRef.isLive    = false;
     wallRecord.twinRef.wallKey   = wallRecord.key;
 

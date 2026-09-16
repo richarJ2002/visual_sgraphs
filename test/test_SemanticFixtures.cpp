@@ -60,7 +60,7 @@ TEST(SemanticFixtures, MakeWallPlaneProducesAdmissibleGeometry)
                   Eigen::Vector3d(2.0, 0.0, 1.0));
 
     EXPECT_EQ(wall.getId(), 7);
-    EXPECT_EQ(wall.getPlaneType(), geometric::Plane::planeVariant::WALL);
+    EXPECT_EQ(wall.getPlaneType(), geometric::Plane::PlaneVariant::WALL);
     EXPECT_TRUE(wall.getCentroid().isApprox(Eigen::Vector3d(2.0, 0.0, 1.0)));
     EXPECT_GT(wall.getMapClouds()->size(), 0U);
     /* The equation's normal survives normalization; only its sign is
@@ -80,7 +80,7 @@ TEST(SemanticFixtures, MakeGroundPlaneRefitsSuccessfully)
     const bool refitOk = makeGroundPlane(ground, 1, p_map);
 
     EXPECT_TRUE(refitOk);
-    EXPECT_EQ(ground.getPlaneType(), geometric::Plane::planeVariant::GROUND);
+    EXPECT_EQ(ground.getPlaneType(), geometric::Plane::PlaneVariant::GROUND);
 }
 
 TEST(SemanticFixtures, MakeRoomAttachesWallAndCentroid)

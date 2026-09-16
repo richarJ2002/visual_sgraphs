@@ -48,7 +48,7 @@ namespace geometric
 class Plane
 {
   public:
-    enum planeVariant
+    enum class PlaneVariant : std::int8_t
     {
         /*!
          * @brief       Plane has not yet received a semantic classification.
@@ -120,10 +120,10 @@ class Plane
          * @brief       Semantic classification assigned to this plane
          * observation.
          */
-        planeVariant semanticType = UNDEFINED;
+        PlaneVariant semanticType = PlaneVariant::UNDEFINED;
 
         /*! @brief Semantic evidence retained when observations are fused. */
-        std::map<planeVariant, double> semanticEvidence;
+        std::map<PlaneVariant, double> semanticEvidence;
     };
 
     /** Immutable copy of one generation of finite plane geometry. */
@@ -247,7 +247,7 @@ class Plane
     /*!
      * @brief       The plane's semantic type (e.g., wall, ground, etc.)s
      */
-    planeVariant planeType;
+    PlaneVariant planeType;
 
     /*!
      * @brief       The centroid of the plane
@@ -307,7 +307,7 @@ class Plane
     /*!
      * @brief       The votes for the semantic type of the plane
      */
-    std::map<planeVariant, double> semanticVotes;
+    std::map<PlaneVariant, double> semanticVotes;
 
     /*!
      * @brief       Plane's observations in keyFrames
@@ -448,17 +448,17 @@ class Plane
     /*!
      * @brief       Returns the accepted semantic classification.
      */
-    planeVariant getPlaneType(void);
+    PlaneVariant getPlaneType(void);
 
     /*!
      * @brief       Returns the leading classification from weighted votes.
      */
-    planeVariant getExpectedPlaneType(void);
+    PlaneVariant getExpectedPlaneType(void);
 
     /*!
      * @brief       Sets the accepted semantic classification.
      */
-    void setPlaneType(planeVariant newType);
+    void setPlaneType(PlaneVariant newType);
 
     /*!
      * @brief       Associates a non-owning map point with the plane.
@@ -636,7 +636,7 @@ class Plane
     /*!
      * @brief       Adds weighted evidence for a semantic classification.
      */
-    void castWeightedVote(planeVariant semanticType, double voteWeight);
+    void castWeightedVote(PlaneVariant semanticType, double voteWeight);
 
     /*!
      * @brief       Clears semantic votes and restores undefined semantics.

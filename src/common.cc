@@ -2269,7 +2269,7 @@ void publishAllMappedWalls(std::vector<vs_graphs::core::geometric::Plane *> wall
     for (const auto &wall : wallsList_in)
     {
         if (!wall ||
-            wall->getPlaneType() != vs_graphs::core::geometric::Plane::planeVariant::WALL)
+            wall->getPlaneType() != vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
             continue;
 
         /* Init variable of the lenfth of the wall */
@@ -2948,7 +2948,7 @@ void maybeArchiveSGraph(
                         continue;
                     }
                     if (p_wall->getPlaneType() !=
-                        vs_graphs::core::geometric::Plane::planeVariant::WALL)
+                        vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
                     {
                         continue;
                     }
@@ -3946,7 +3946,7 @@ void publishPlanes(
     {
         if (p_mappedPlane == nullptr || p_mappedPlane->isBad() ||
             p_mappedPlane->getPlaneType() !=
-                vs_graphs::core::geometric::Plane::planeVariant::GROUND)
+                vs_graphs::core::geometric::Plane::PlaneVariant::GROUND)
         {
             continue;
         }
@@ -4006,11 +4006,11 @@ void publishPlanes(
         }
 
         /* Extract the semantic plane type once */
-        const vs_graphs::core::geometric::Plane::planeVariant planeType =
+        const vs_graphs::core::geometric::Plane::PlaneVariant planeType =
             mappedPlane->getPlaneType();
 
         /* Skip planes that have not received a semantic type */
-        if (planeType == vs_graphs::core::geometric::Plane::planeVariant::UNDEFINED)
+        if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED)
         {
             continue;
         }
@@ -4057,7 +4057,7 @@ void publishPlanes(
 
         bool validWallDimensions = false;
 
-        if (planeType == vs_graphs::core::geometric::Plane::planeVariant::WALL &&
+        if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL &&
             groundNormal_BC.norm() >= normalVectorTolerance)
         {
             Eigen::Vector3d wallWidthAxis_BC =
@@ -4206,15 +4206,15 @@ void publishPlanes(
         planeLabelText << '\n' << "N " << finiteSupportPointCount;
 
         const char *semanticClass = "OTHER";
-        if (planeType == vs_graphs::core::geometric::Plane::planeVariant::WALL)
+        if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
         {
             semanticClass = "WALL";
         }
-        else if (planeType == vs_graphs::core::geometric::Plane::planeVariant::GROUND)
+        else if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::GROUND)
         {
             semanticClass = "GROUND";
         }
-        else if (planeType == vs_graphs::core::geometric::Plane::planeVariant::DOOR)
+        else if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::DOOR)
         {
             semanticClass = "DOOR";
         }
@@ -4222,7 +4222,7 @@ void publishPlanes(
         {
             const auto ownerIt = owningRoomIdsByPlane.find(mappedPlane);
             planeLabelText << '\n' << "class=" << semanticClass;
-            if (planeType == vs_graphs::core::geometric::Plane::planeVariant::WALL)
+            if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
             {
                 planeLabelText << " lifecycle="
                                << (ownerIt == owningRoomIdsByPlane.end() ||
@@ -4235,7 +4235,7 @@ void publishPlanes(
                 ownerIt->second.empty())
             {
                 planeLabelText
-                    << (planeType == vs_graphs::core::geometric::Plane::planeVariant::WALL
+                    << (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL
                             ? "PENDING"
                             : "NONE");
             }

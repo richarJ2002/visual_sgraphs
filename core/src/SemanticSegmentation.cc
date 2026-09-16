@@ -823,7 +823,7 @@ void SemanticSegmentation::updatePlaneData(
                 pKF->GetPoseInverse().matrix().cast<float>());
 
             /* Get the semantic type of the observation */
-            vs_graphs::core::geometric::Plane::planeVariant semanticType =
+            vs_graphs::core::geometric::Plane::PlaneVariant semanticType =
                 Utils::getPlaneTypeFromClassId(clsId);
 
             /*!
@@ -872,7 +872,7 @@ void SemanticSegmentation::updatePlaneData(
                      *              check is only applied when a matchPlaneId is
                      *              -1.
                      */
-                    if (semanticType == vs_graphs::core::geometric::Plane::planeVariant::WALL)
+                    if (semanticType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
                     {
                         const types::SystemParams::SemSeg::WallCreation
                             &wallCreationParams =
@@ -1087,7 +1087,7 @@ void SemanticSegmentation::updatePlaneSemantics(int    planeId,
     geometric::Plane *matchedPlane = mpAtlas->GetPlaneById(planeId);
 
     // plane type compatible with the Plane class
-    vs_graphs::core::geometric::Plane::planeVariant planeType =
+    vs_graphs::core::geometric::Plane::PlaneVariant planeType =
         Utils::getPlaneTypeFromClassId(clsId);
 
     // cast a vote for the plane semantics

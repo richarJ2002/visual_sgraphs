@@ -81,7 +81,7 @@ EntityRef entityRefForPassage(Passage *p_passage_in);
  *  sole representation used for every wall-shaped reference (see
  *  appendWallRef()), replacing the removed entityRefForWall(), which
  *  mislabeled every referenced Plane as EntityKind::WALL without checking
- *  its actual planeVariant. */
+ *  its actual PlaneVariant. */
 
 /*! @brief Appends a RawPlaneRef for \p p_wall_in to \p refs_inout when
  *  non-null (regardless of map/liveness/type -- see RoomRecord::wallRefs);
