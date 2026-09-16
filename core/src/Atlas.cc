@@ -520,13 +520,13 @@ void Atlas::AddMapMarker(semantic::Marker *marker)
 
 void Atlas::AddMapPlane(vs_graphs::core::geometric::Plane *plane)
 {
-    vs_graphs::core::Map *pMapMP = plane->GetMap();
+    vs_graphs::core::Map *pMapMP = plane->getMap();
     pMapMP->AddMapPlane(plane);
 }
 
 void Atlas::AddRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane)
 {
-    vs_graphs::core::Map *pMapMP = pPlane->GetMap();
+    vs_graphs::core::Map *pMapMP = pPlane->getMap();
     pMapMP->AddRoomWallPlane(pPlane);
 }
 
@@ -1192,7 +1192,7 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
 
     for (geometric::Plane *p_plane : importedPlanes)
     {
-        if (p_plane == nullptr || !ownerIsTransferable(p_plane->GetMap()))
+        if (p_plane == nullptr || !ownerIsTransferable(p_plane->getMap()))
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source plane "
                          "has inconsistent ownership."
@@ -1308,7 +1308,7 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
         for (const auto &[p_plane, assignedId] : planeIdAssignments)
         {
             p_plane->setId(assignedId);
-            p_plane->SetMap(p_currentMap_in);
+            p_plane->setMap(p_currentMap_in);
             p_currentMap_in->AddMapPlane(p_plane);
             p_otherMap_in->EraseRoomWallPlane(p_plane);
             p_otherMap_in->EraseMapPlane(p_plane);

@@ -110,7 +110,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     // Ground plane
     geometric::Plane groundPlane;
     groundPlane.setId(0);
-    groundPlane.SetMap(p_map);
+    groundPlane.setMap(p_map);
     groundPlane.setPlaneType(geometric::Plane::PlaneVariant::GROUND);
     groundPlane.setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(GROUND_NORMAL_X,
                                                                GROUND_NORMAL_Y,

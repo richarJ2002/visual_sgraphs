@@ -30,7 +30,7 @@ std::unique_ptr<geometric::Plane> makeAdmissibleWall(const int    id_in,
 {
     std::unique_ptr<geometric::Plane> p_wall = std::make_unique<geometric::Plane>();
     p_wall->setId(id_in);
-    p_wall->SetMap(p_map_in);
+    p_wall->setMap(p_map_in);
     p_wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
     p_wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
     p_wall->setGlobalEquation(

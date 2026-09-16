@@ -8411,7 +8411,7 @@ void SemanticsManager::suppressUndefendedWalls(void)
         p_currentMap->EraseRoomWallPlane(p_wall);
         p_currentMap->EraseMapPlane(p_wall);
         p_wall->refKeyFrame = nullptr;
-        p_wall->SetMap(nullptr);
+        p_wall->setMap(nullptr);
         undefendedWalls_.erase(wallId);
 
         if (loggedRetiredWallIds_.insert(wallId).second)

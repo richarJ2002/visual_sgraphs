@@ -42,7 +42,7 @@ Plane::Plane(void)
 
     centroid.setZero();
 
-    mpMap = nullptr;
+    p_map = nullptr;
 
     refKeyFrame     = nullptr;
     mnBAGlobalForKF = 0;
@@ -1106,16 +1106,16 @@ void Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
     }
 }
 
-core::Map *Plane::GetMap(void)
+core::Map *Plane::getMap(void)
 {
     unique_lock<mutex> lock(mMutexMap);
-    return mpMap;
+    return p_map;
 }
 
-void Plane::SetMap(core::Map *pMap)
+void Plane::setMap(core::Map *p_map_in)
 {
     unique_lock<mutex> lock(mMutexMap);
-    mpMap = pMap;
+    p_map = p_map_in;
 }
 } // namespace geometric
 } // namespace core

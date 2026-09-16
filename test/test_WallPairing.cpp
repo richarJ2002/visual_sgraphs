@@ -41,7 +41,7 @@ std::unique_ptr<geometric::Plane> makeWallFace(int                     id_in,
 {
     auto wall = std::make_unique<geometric::Plane>();
     wall->setId(id_in);
-    wall->SetMap(p_map_in);
+    wall->setMap(p_map_in);
     wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
 
     const Eigen::Vector4d equation(

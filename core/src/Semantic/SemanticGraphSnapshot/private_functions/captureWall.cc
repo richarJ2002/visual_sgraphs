@@ -44,7 +44,7 @@ WallRecord captureWall(
     record.isLive    = !p_wall_in->isBad();
     record.planeType = p_wall_in->getPlaneType();
 
-    core::Map *p_declaredMap = p_wall_in->GetMap();
+    core::Map *p_declaredMap = p_wall_in->getMap();
     if (p_declaredMap != nullptr)
     {
         record.declaredMapId = p_declaredMap->GetId();

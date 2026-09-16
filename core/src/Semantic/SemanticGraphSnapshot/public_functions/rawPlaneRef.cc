@@ -48,7 +48,7 @@ RawPlaneRef rawPlaneRef(geometric::Plane *p_plane_in)
     ref.planeId   = p_plane_in->getId();
     ref.isLive    = !p_plane_in->isBad();
     ref.planeType = p_plane_in->getPlaneType();
-    core::Map *p_map    = p_plane_in->GetMap();
+    core::Map *p_map    = p_plane_in->getMap();
     if (p_map != nullptr)
     {
         ref.mapId = p_map->GetId();

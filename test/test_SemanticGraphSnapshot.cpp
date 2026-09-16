@@ -296,7 +296,7 @@ TEST(SemanticGraphSnapshot,
     p_mapA->AddMapPlane(&mismatchedWall);
 
     /* Wall: enumerated from mapA, declares no map at all. Map::AddMapPlane()
-     * only requires a non-null pointer; the plane's own SetMap() is
+     * only requires a non-null pointer; the plane's own setMap() is
      * independent (confirmed by direct source read of Map.h/geometric::Plane.h). */
     geometric::Plane noMapWall;
     test::makeWallPlane(noMapWall,

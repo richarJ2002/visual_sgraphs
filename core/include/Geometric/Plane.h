@@ -650,18 +650,18 @@ class Plane
     /*!
      * @brief       Returns the map that owns this plane.
      */
-    Map *GetMap(void);
+    Map *getMap(void);
 
     /*!
      * @brief       Assigns this plane to a map.
      */
-    void SetMap(Map *pMap);
+    void setMap(Map *p_map_in);
 
   protected:
     /*!
      * @brief       Non-owning pointer to the map that owns this plane.
      */
-    Map *mpMap;
+    Map *p_map{nullptr};
 
     /*!
      * @brief       Protects the owning-map pointer and semantic type.

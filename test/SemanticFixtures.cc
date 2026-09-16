@@ -64,7 +64,7 @@ void makeWallPlane(geometric::Plane                 &wall_inout,
                    const Eigen::Vector3d &centroid_World_m_in)
 {
     wall_inout.setId(id_in);
-    wall_inout.SetMap(p_map_in);
+    wall_inout.setMap(p_map_in);
     wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL);
     /* Wall-admission/ownership gates compare getPlaneType() against
      * getExpectedPlaneType(), which is derived from semanticVotes rather than
@@ -88,7 +88,7 @@ bool makeGroundPlane(geometric::Plane &ground_inout,
                      int    stepsPerSide_in)
 {
     ground_inout.setId(id_in);
-    ground_inout.SetMap(p_map_in);
+    ground_inout.setMap(p_map_in);
     ground_inout.setPlaneType(geometric::Plane::PlaneVariant::GROUND);
     ground_inout.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));

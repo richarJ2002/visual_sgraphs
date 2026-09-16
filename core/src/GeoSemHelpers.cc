@@ -181,7 +181,7 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     vs_graphs::core::geometric::Plane *newMapPlane = new vs_graphs::core::geometric::Plane();
     newMapPlane->setColor();
     newMapPlane->setLocalEquation(estimatedPlane);
-    newMapPlane->SetMap(p_currentMap);
+    newMapPlane->setMap(p_currentMap);
     newMapPlane->setId(p_currentMap->reservePlaneId());
     newMapPlane->refKeyFrame = pKF;
 

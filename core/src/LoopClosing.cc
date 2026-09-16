@@ -3253,7 +3253,7 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocal()
             }
 
             /* Update the map the plane belongs to */
-            plane->SetMap(pCurrentMap);
+            plane->setMap(pCurrentMap);
 
             /*!
              * Take index size of planes in new map to find an id to add to
@@ -3735,7 +3735,7 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocalInertial()
                 continue;
             }
 
-            p_plane->SetMap(pCurrentMap);
+            p_plane->setMap(pCurrentMap);
             p_plane->setId(nextPlaneId++);
             pCurrentMap->AddMapPlane(p_plane);
             pMergeMap->EraseMapPlane(p_plane);

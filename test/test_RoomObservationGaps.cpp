@@ -33,7 +33,7 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int id_in, Map *p
 {
     auto ground = std::make_unique<geometric::Plane>();
     ground->setId(id_in);
-    ground->SetMap(p_map_in);
+    ground->setMap(p_map_in);
     ground->setPlaneType(geometric::Plane::PlaneVariant::GROUND);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
@@ -71,7 +71,7 @@ std::unique_ptr<geometric::Plane> makeWallSegmentPlane(int                     i
 {
     auto wall = std::make_unique<geometric::Plane>();
     wall->setId(id_in);
-    wall->SetMap(p_map_in);
+    wall->setMap(p_map_in);
     wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
     wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
 

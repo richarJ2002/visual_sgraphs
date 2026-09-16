@@ -36,7 +36,7 @@ TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
      * refit, or right after replaceMapClouds() clears it. */
     geometric::Plane groundPlane;
     groundPlane.setId(1);
-    groundPlane.SetMap(p_map);
+    groundPlane.setMap(p_map);
 
     const std::optional<float> height =
         manager.computeGroundPlaneHeightForTest(&groundPlane);
@@ -53,7 +53,7 @@ TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
 
     geometric::Plane groundPlane;
     groundPlane.setId(1);
-    groundPlane.SetMap(p_map);
+    groundPlane.setMap(p_map);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -77,7 +77,7 @@ TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
 
     geometric::Plane groundPlane;
     groundPlane.setId(1);
-    groundPlane.SetMap(p_map);
+    groundPlane.setMap(p_map);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);

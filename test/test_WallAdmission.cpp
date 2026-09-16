@@ -68,7 +68,7 @@ void makeWallWithGridCloud(geometric::Plane                 &wall_inout,
                            double                  halfV_m_in)
 {
     wall_inout.setId(id_in);
-    wall_inout.SetMap(p_map_in);
+    wall_inout.setMap(p_map_in);
     wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL);
     /* evaluateWallAdmissionEvidence's wallDominatesSemantics gate compares
      * getPlaneType() against getExpectedPlaneType(), which is derived from
@@ -400,7 +400,7 @@ TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
     /* Candidate wall unambiguously on the far side of the passage. */
     geometric::Plane wall;
     wall.setId(3);
-    wall.SetMap(p_map);
+    wall.setMap(p_map);
     wall.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
 
     semantic::Room room;
@@ -451,7 +451,7 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
 
     geometric::Plane wall;
     wall.setId(3);
-    wall.SetMap(p_map);
+    wall.setMap(p_map);
     wall.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
 
     semantic::Room room;
@@ -481,7 +481,7 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int id_in, Map *p
 {
     auto ground = std::make_unique<geometric::Plane>();
     ground->setId(id_in);
-    ground->SetMap(p_map_in);
+    ground->setMap(p_map_in);
     ground->setPlaneType(geometric::Plane::PlaneVariant::GROUND);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
@@ -514,7 +514,7 @@ std::unique_ptr<geometric::Plane> makeLongWallThroughOrigin(
 {
     auto wall = std::make_unique<geometric::Plane>();
     wall->setId(id_in);
-    wall->SetMap(p_map_in);
+    wall->setMap(p_map_in);
     wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
     wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
     wall->setGlobalEquation(
@@ -631,7 +631,7 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
     /* Far-side wall at x=1.5, first observed from the near side. */
     geometric::Plane wall;
     wall.setId(3);
-    wall.SetMap(p_map);
+    wall.setMap(p_map);
     wall.setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -1.5)));
     wall.setCentroid(Eigen::Vector3d(1.5, 0.0, 0.0));
     wall.setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0));
@@ -676,7 +676,7 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
 
     geometric::Plane wall;
     wall.setId(3);
-    wall.SetMap(p_map);
+    wall.setMap(p_map);
     wall.setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -1.5)));
     wall.setCentroid(Eigen::Vector3d(1.5, 0.0, 0.0));
     wall.setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0));

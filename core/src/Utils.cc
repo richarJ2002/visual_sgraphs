@@ -1555,7 +1555,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
                 p_currentMap->EraseMapPlane(p_retiredPlane);
             }
 
-            p_retiredPlane->SetMap(nullptr);
+            p_retiredPlane->setMap(nullptr);
 
             std::cout << "[SemanticMerge] Fused geometric::Plane#"
                       << p_retiredPlane->getId() << " into geometric::Plane#"

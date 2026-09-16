@@ -40,7 +40,7 @@ namespace
 void makeRefitWallPlane(geometric::Plane &wall_inout, int id_in, Map *p_map_in)
 {
     wall_inout.setId(id_in);
-    wall_inout.SetMap(p_map_in);
+    wall_inout.setMap(p_map_in);
     wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL);
     wall_inout.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
@@ -184,7 +184,7 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
     geometric::Plane unrefitWall; // Never assigned a cloud: bounds stay at the
                        // sentinel min>max default, so valid() is false.
     unrefitWall.setId(2);
-    unrefitWall.SetMap(p_map);
+    unrefitWall.setMap(p_map);
     unrefitWall.setPlaneType(geometric::Plane::PlaneVariant::WALL);
     unrefitWall.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(0.0, 1.0, 0.0, 0.0)));
@@ -359,7 +359,7 @@ TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
 
     geometric::Plane badWall;
     badWall.setId(1);
-    badWall.SetMap(p_map);
+    badWall.setMap(p_map);
     badWall.setBad();
     p_map->AddMapPlane(&badWall);
 

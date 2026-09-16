@@ -73,7 +73,7 @@ class ProductionCrossingScene
         static_cast<void>(atlas.consumeNewMapCreatedEvent());
 
         groundPlane.setId(0);
-        groundPlane.SetMap(p_map);
+        groundPlane.setMap(p_map);
         groundPlane.setPlaneType(geometric::Plane::PlaneVariant::GROUND);
         groundPlane.setGlobalEquation(
             g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));
@@ -96,10 +96,10 @@ class ProductionCrossingScene
         p_map->AddMapPlane(&groundPlane);
 
         knownWall.setId(1);
-        knownWall.SetMap(p_map);
+        knownWall.setMap(p_map);
         knownWall.setPlaneType(geometric::Plane::PlaneVariant::WALL);
         farWall.setId(2);
-        farWall.SetMap(p_map);
+        farWall.setMap(p_map);
         farWall.setPlaneType(geometric::Plane::PlaneVariant::WALL);
         p_map->AddMapPlane(&knownWall);
         p_map->AddMapPlane(&farWall);
@@ -607,7 +607,7 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
     /* Ground plane: traversal evidence needs a valid ground normal. */
     geometric::Plane groundPlane;
     groundPlane.setId(0);
-    groundPlane.SetMap(p_map);
+    groundPlane.setMap(p_map);
     groundPlane.setPlaneType(geometric::Plane::PlaneVariant::GROUND);
     groundPlane.setGlobalEquation(
         g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));

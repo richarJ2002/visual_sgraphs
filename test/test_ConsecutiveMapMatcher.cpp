@@ -130,7 +130,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         // Wall A: x = 1
         Plane *wallA = new Plane();
         wallA->setId(wallIdBase_in);
-        wallA->SetMap(p_map);
+        wallA->setMap(p_map);
         wallA->setPlaneType(Plane::PlaneVariant::WALL);
         wallA->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_A_NORMAL_X,
                                                               WALL_A_NORMAL_Y,
@@ -143,7 +143,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         // Wall B: y = 1
         Plane *wallB = new Plane();
         wallB->setId(wallIdBase_in + 1);
-        wallB->SetMap(p_map);
+        wallB->setMap(p_map);
         wallB->setPlaneType(Plane::PlaneVariant::WALL);
         wallB->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_B_NORMAL_X,
                                                               WALL_B_NORMAL_Y,
@@ -156,7 +156,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         // Wall C: x = -1 face (normal +X after toward-room orientation)
         Plane *wallC = new Plane();
         wallC->setId(wallIdBase_in + 2);
-        wallC->SetMap(p_map);
+        wallC->setMap(p_map);
         wallC->setPlaneType(Plane::PlaneVariant::WALL);
         wallC->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_C_NORMAL_X,
                                                               WALL_C_NORMAL_Y,
@@ -741,7 +741,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
     {
         Plane *wall4 = new Plane();
         wall4->setId(4);
-        wall4->SetMap(p_map1);
+        wall4->setMap(p_map1);
         wall4->setPlaneType(Plane::PlaneVariant::WALL);
         wall4->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_D_NORMAL_X,
                                                               WALL_D_NORMAL_Y,
