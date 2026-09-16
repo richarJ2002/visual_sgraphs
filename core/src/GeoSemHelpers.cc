@@ -423,8 +423,10 @@ void GeoSemHelpers::markerSemanticAnalysis(
 
         // Change the marker type
         mCurrentMarker->setMarkerType(
-            markerIsDoorway ? vs_graphs::core::semantic::Marker::markerVariant::ON_DOOR
-                            : vs_graphs::core::semantic::Marker::markerVariant::ON_ROOM_CENTER);
+            markerIsDoorway
+                ? vs_graphs::core::semantic::Marker::MarkerVariant::ON_DOOR
+                : vs_graphs::core::semantic::Marker::MarkerVariant::
+                      ON_ROOM_CENTER);
 
         // If the marker is not in the map, add it
         if (!mCurrentMarker->isMarkerInGMap())

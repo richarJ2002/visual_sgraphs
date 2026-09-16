@@ -32,7 +32,7 @@ Marker::Marker() :
     markerInGMap(false),
     localPose(Sophus::SE3f()),
     globalPose(Sophus::SE3f()),
-    markerType(markerVariant::UNKNOWN),
+    markerType(MarkerVariant::UNKNOWN),
     p_map(nullptr)
 {}
 Marker::~Marker() {}
@@ -99,13 +99,13 @@ void Marker::setTime(double value)
     time = value;
 }
 
-Marker::markerVariant Marker::getMarkerType() const
+Marker::MarkerVariant Marker::getMarkerType() const
 {
     std::lock_guard<std::mutex> lock(mMutexState);
     return markerType;
 }
 
-void Marker::setMarkerType(Marker::markerVariant newType)
+void Marker::setMarkerType(Marker::MarkerVariant newType)
 {
     std::lock_guard<std::mutex> lock(mMutexState);
     markerType = newType;

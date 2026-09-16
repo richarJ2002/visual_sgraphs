@@ -19,6 +19,8 @@
 #ifndef MARKER_H
 #define MARKER_H
 
+#include <cstdint>
+
 #include "KeyFrame.h"
 #include "Map.h"
 
@@ -34,7 +36,11 @@ namespace semantic
 class Marker
 {
   public:
-    enum markerVariant
+    /*!
+     * @brief        Enumerator which defines the semantic types a marker
+     *               can be labeled with.
+     */
+    enum class MarkerVariant : std::int8_t
     {
         UNKNOWN        = -1,
         ON_DOOR        = 0,
@@ -52,7 +58,7 @@ class Marker
         localPose; // Marker's pose (position and orientation) in the Local Map
     Sophus::SE3f  globalPose; // Marker's pose (position and orientation) in the
                               // Global Map
-    markerVariant markerType; // The semantic object the marker is labeled with
+    MarkerVariant markerType; // The semantic object the marker is labeled with
                               // (e.g., wall, etc.)
     std::map<KeyFrame *, Sophus::SE3f>
         observations; // Marker's observations in KeyFrames
@@ -81,8 +87,8 @@ class Marker
     double getTime() const;
     void   setTime(double value);
 
-    markerVariant getMarkerType() const;
-    void          setMarkerType(markerVariant newType);
+    MarkerVariant getMarkerType() const;
+    void          setMarkerType(MarkerVariant newType);
 
     bool isMarkerInGMap() const;
     void setMarkerInGMap(bool value);
