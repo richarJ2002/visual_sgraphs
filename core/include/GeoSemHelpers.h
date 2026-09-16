@@ -58,7 +58,7 @@ class GeoSemHelpers
      *              The confidence of the plane observation
      */
     static vs_graphs::core::geometric::Plane *
-        createMapPlane(Atlas               *mpAtlas,
+        createMapPlane(Atlas               *p_atlas_inout,
                        vs_graphs::core::KeyFrame *pKF,
                        const g2o::Plane3D   estimatedPlane,
                        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
@@ -69,7 +69,7 @@ class GeoSemHelpers
     /*!
      * @brief       Updates the map plane
      *
-     * @param       mpAtlas
+     * @param[in] p_atlas_in
      *              The current map in Atlas
      *
      * @param       pKF
@@ -91,7 +91,7 @@ class GeoSemHelpers
      *              The confidence of the plane observation
      */
     static void
-        updateMapPlane(Atlas                                  *mpAtlas,
+        updateMapPlane(Atlas                                  *p_atlas_in,
                        vs_graphs::core::KeyFrame                    *pKF,
                        const g2o::Plane3D                      estimatedPlane,
                        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
@@ -119,7 +119,7 @@ class GeoSemHelpers
      * @brief       Uses the detected markers to detect and map semantic
      *              objects, e.g., planes and doors
      *
-     * @param       mpAtlas
+     * @param[in,out] p_atlas_inout
      *              The current map in Atlas
      *
      * @param       pKF
@@ -128,14 +128,14 @@ class GeoSemHelpers
      * @param       envRooms
      *              The list of rooms in the environment
      */
-    static void markerSemanticAnalysis(Atlas                         *mpAtlas,
+    static void markerSemanticAnalysis(Atlas                         *p_atlas_inout,
                                        vs_graphs::core::KeyFrame           *pKF,
                                        std::vector<vs_graphs::core::semantic::Room *> envRooms);
 
     /*!
      * @brief       Creates a new marker object to be added to the map
      *
-     * @param       mpAtlas
+     * @param[in,out] p_atlas_inout
      *              The current map in Atlas
      *
      * @param       pKF
@@ -144,14 +144,14 @@ class GeoSemHelpers
      * @param       visitedMarker
      *              The address of the visited marker
      */
-    static semantic::Marker *createMapMarker(Atlas        *mpAtlas,
+    static semantic::Marker *createMapMarker(Atlas        *p_atlas_inout,
                                    KeyFrame     *pKF,
                                    const semantic::Marker *visitedMarker);
 
     /*!
      * @brief       Creates a new passage object to be added to the map
      *
-     * @param       mpAtlas
+     * @param[in,out] p_atlas_inout
      *              The current map in Atlas
      *
      * @param[in]   p_doorPlane_in
@@ -178,14 +178,14 @@ class GeoSemHelpers
      * @brief       Creates a blank room object (undefined variant) to be added
      *              to the map
      *
-     * @param       mpAtlas
+     * @param[in,out] p_atlas_inout
      *              The current map in Atlas
      *
      * @param       centroid
      *              The centroid of the room (optional)
      */
     static vs_graphs::core::semantic::Room *createBlankRoomCandidate(
-        Atlas             *mpAtlas,
+        Atlas             *p_atlas_inout,
         Eigen::Vector3d    centroid        = Eigen::Vector3d::Zero(),
         std::optional<int> stableRoomId_in = std::nullopt);
 
@@ -193,13 +193,13 @@ class GeoSemHelpers
      * @brief       Chooses a ground plane from the Atlas to be associated with
      *              the room
      *
-     * @param       mpAtlas
+     * @param[in] p_atlas_in
      *              The current map in Atlas
      *
      * @param       givenRoom
      *              The address of the detected room
      */
-    static void associateGroundPlaneToRoom(Atlas           *mpAtlas,
+    static void associateGroundPlaneToRoom(Atlas           *p_atlas_in,
                                            vs_graphs::core::semantic::Room *givenRoom);
 
     /*!
@@ -219,11 +219,11 @@ class GeoSemHelpers
     /*!
      * @brief       Creates a new floor object to be added to the map
      *
-     * @param       mpAtlas
+     * @param[in,out] p_atlas_inout
      *              The current map in Atlas
      */
     static void
-        createMapFloor(vs_graphs::core::Atlas  *mpAtlas,
+        createMapFloor(vs_graphs::core::Atlas  *p_atlas_inout,
                        std::optional<int> stableFloorId_in = std::nullopt);
 
     /*!
