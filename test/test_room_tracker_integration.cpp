@@ -1,5 +1,5 @@
 /**
- * Focused production seam tests for WP13 Phase 1 event delivery.
+ * Focused production seam tests for event delivery.
  */
 
 #include "Atlas.h"
@@ -106,11 +106,11 @@ class ProductionCrossingScene
 
         knownRoom.setId(10);
         knownRoom.setMap(p_map);
-        knownRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
+        knownRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
         knownRoom.setWalls(&knownWall);
         farRoom.setId(11);
         farRoom.setMap(p_map);
-        farRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
+        farRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
         farRoom.setWalls(&farWall);
         p_map->AddDetectedMapRoom(&knownRoom);
         p_map->AddDetectedMapRoom(&farRoom);
@@ -632,7 +632,7 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
     semantic::Room knownRoom;
     knownRoom.setId(10);
     knownRoom.setMap(p_map);
-    knownRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    knownRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     knownRoom.setCentroid(Eigen::Vector3d(-1.0, 0.0, 1.0));
     knownRoom.setPreviouslyVisited(true);
     p_map->AddDetectedMapRoom(&knownRoom);
@@ -641,7 +641,7 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
     semantic::Room farRoom;
     farRoom.setId(11);
     farRoom.setMap(p_map);
-    farRoom.setRoomVariant(semantic::Room::roomVariant::UNDEFINED);
+    farRoom.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED);
     farRoom.setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0));
     p_map->AddDetectedMapRoom(&farRoom);
 
@@ -691,7 +691,7 @@ TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
     semantic::Room room;
     room.setId(3);
     room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room.setCentroid(Eigen::Vector3d(0.0, 0.0, 1.0));
     p_map->AddDetectedMapRoom(&room);
 

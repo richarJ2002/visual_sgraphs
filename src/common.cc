@@ -723,11 +723,11 @@ void appendFloorMarkers(
                 continue;
             }
 
-            const vs_graphs::core::semantic::Room::roomVariant roomType =
+            const vs_graphs::core::semantic::Room::RoomVariant roomType =
                 associatedRoom->getRoomVariant();
 
             const bool isConfirmedRoom =
-                roomType == vs_graphs::core::semantic::Room::roomVariant::ROOM;
+                roomType == vs_graphs::core::semantic::Room::RoomVariant::ROOM;
 
             if (!isConfirmedRoom)
             {
@@ -1202,7 +1202,7 @@ void appendRoomMarkers(
     {
         if (p_room_in == nullptr || p_room_in->isBad() ||
             p_room_in->getRoomVariant() !=
-                vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+                vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
         {
             return false;
         }
@@ -1227,7 +1227,7 @@ void appendRoomMarkers(
             if (p_otherRoom == nullptr || p_otherRoom == p_room_in ||
                 p_otherRoom->isBad() ||
                 p_otherRoom->getRoomVariant() !=
-                    vs_graphs::core::semantic::Room::roomVariant::ROOM)
+                    vs_graphs::core::semantic::Room::RoomVariant::ROOM)
             {
                 continue;
             }
@@ -1372,11 +1372,11 @@ void appendRoomMarkers(
 
         const int roomMarkerId = static_cast<int>(mappedRoom->getId());
 
-        const vs_graphs::core::semantic::Room::roomVariant roomType =
+        const vs_graphs::core::semantic::Room::RoomVariant roomType =
             mappedRoom->getRoomVariant();
 
         const bool isConfirmedRoom =
-            roomType == vs_graphs::core::semantic::Room::roomVariant::ROOM;
+            roomType == vs_graphs::core::semantic::Room::RoomVariant::ROOM;
 
         /* Remove bad structural elements from RViz. Provisional rooms stay
          * hidden unless a live passage hypothesizes them. */
@@ -6156,7 +6156,7 @@ static void getMissionHealthService(
 
     if (request_in->include_topology)
     {
-        /* P1.8 (semantic-axiom-reliability-plan.md): extend the existing
+        /* Extend the existing
          * schema-1 topology object to schema 2 with copied-cache evaluator
          * additions, without changing GetMissionHealth.srv or duplicating
          * this method's own schema-1 collection above. */

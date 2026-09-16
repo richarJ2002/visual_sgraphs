@@ -1,5 +1,5 @@
 /**
- * WP13 Phase 4 focused tests: plane-gated geometric verification
+ * Focused tests: plane-gated geometric verification
  * (semantic::SemanticVerify) against synthetic two-room scenarios with a known
  * ground-truth SE(3) transform, plus the floor gate and the
  * EdgePlaneTransformSE3 residual.
@@ -209,7 +209,7 @@ TEST(GeometricVerify, AcceptsGroundTruthCorrelatedRooms)
 TEST(GeometricVerify, RejectsRankDeficientCorrespondences)
 {
     /* Two parallel wall correspondences only: rotation about the shared
-     * normal axis is unobservable (Section 11.3). */
+     * normal axis is unobservable. */
     const std::vector<RawWall> wallsA = {
         {1,
          Eigen::Vector3d(1.0, 0.0, 0.0),
@@ -501,11 +501,11 @@ TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
     semantic::Room roomTwo;
     roomZero.setId(0);
     roomZero.setRoomTag("room_0");
-    roomZero.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    roomZero.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     roomZero.setCentroid(Eigen::Vector3d::Zero());
     roomTwo.setId(2);
     roomTwo.setRoomTag("room_2");
-    roomTwo.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    roomTwo.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     roomTwo.setCentroid(Eigen::Vector3d::Zero());
     map.AddDetectedMapRoom(&roomZero);
     map.AddDetectedMapRoom(&roomTwo);
@@ -524,11 +524,11 @@ TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
     semantic::Room importedRoom;
     retainedRoom.setId(2);
     retainedRoom.setRoomTag("room_2");
-    retainedRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    retainedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     retainedRoom.setCentroid(Eigen::Vector3d::Zero());
     importedRoom.setId(2);
     importedRoom.setRoomTag("room_2");
-    importedRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    importedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     importedRoom.setCentroid(Eigen::Vector3d::Zero());
     map.AddDetectedMapRoom(&retainedRoom);
     map.AddDetectedMapRoom(&importedRoom);
@@ -551,11 +551,11 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
     semantic::Room importedRoom;
     retainedRoom.setId(2);
     retainedRoom.setRoomTag("room_2");
-    retainedRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    retainedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     retainedRoom.setCentroid(Eigen::Vector3d::Zero());
     importedRoom.setId(2);
     importedRoom.setRoomTag("room_2");
-    importedRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    importedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     importedRoom.setCentroid(Eigen::Vector3d::Zero());
     importedRoom.setPreviouslyVisited(true);
     map.AddDetectedMapRoom(&retainedRoom);
@@ -570,11 +570,11 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
     semantic::Room importedUnvisited;
     retainedUnvisited.setId(3);
     retainedUnvisited.setRoomTag("room_3");
-    retainedUnvisited.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    retainedUnvisited.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     retainedUnvisited.setCentroid(Eigen::Vector3d::Zero());
     importedUnvisited.setId(3);
     importedUnvisited.setRoomTag("room_3");
-    importedUnvisited.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    importedUnvisited.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     importedUnvisited.setCentroid(Eigen::Vector3d::Zero());
     map.AddDetectedMapRoom(&retainedUnvisited);
     map.AddDetectedMapRoom(&importedUnvisited);
@@ -685,7 +685,7 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
 TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
 {
     /* Previously, semantic::SemanticVerifyConfig's own default-member-initialisers
-     * happened to literally match types::SystemParams::verification/factor's
+     * happened to literally match types::SystemParams::Verification/Factor's
      * defaults, but nothing ever read the loaded types::SystemParams values into a
      * semantic::SemanticVerifyConfig -- an operator's system_params.yaml edit had zero
      * effect on the verifier. This exercises configFromSystemParams()

@@ -48,6 +48,12 @@
  *
  */
 
+/*!
+ * @file         ORBextractor.cc
+ *
+ * @brief        Implements ORB extraction declared in ORBextractor.h.
+ */
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d/features2d.hpp>
@@ -478,7 +484,7 @@ namespace core
         }
     }
 
-    void ExtractorNode::DivideNode(ExtractorNode &node1_out, ExtractorNode &node2_out, ExtractorNode &node3_out, ExtractorNode &node4_out)
+    void ExtractorNode::divideNode(ExtractorNode &node1_out, ExtractorNode &node2_out, ExtractorNode &node3_out, ExtractorNode &node4_out)
     {
         const int halfX = ceil(static_cast<float>(topRight.x - topLeft.x) / 2);
         const int halfY = ceil(static_cast<float>(bottomRight.y - topLeft.y) / 2);
@@ -637,7 +643,7 @@ namespace core
                 {
                     // If more than one point, subdivide
                     ExtractorNode node1_out, node2_out, node3_out, node4_out;
-                    nodeIterator->DivideNode(node1_out, node2_out, node3_out, node4_out);
+                    nodeIterator->divideNode(node1_out, node2_out, node3_out, node4_out);
 
                     // Add childs if they contain points
                     if (node1_out.keys.size() > 0)
@@ -707,7 +713,7 @@ namespace core
                     for (int j = vPrevSizeAndPointerToNode.size() - 1; j >= 0; j--)
                     {
                         ExtractorNode node1_out, node2_out, node3_out, node4_out;
-                        vPrevSizeAndPointerToNode[j].second->DivideNode(node1_out, node2_out, node3_out, node4_out);
+                        vPrevSizeAndPointerToNode[j].second->divideNode(node1_out, node2_out, node3_out, node4_out);
 
                         // Add childs if they contain points
                         if (node1_out.keys.size() > 0)

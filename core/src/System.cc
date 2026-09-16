@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file         System.cc
+ *
+ * @brief        Implements System declared in System.h.
+ */
+
 #include "System.h"
 #include "Converter.h"
 #include "ResetCause.h"
@@ -423,7 +429,7 @@ void System::addSegmentedImage(
 {
     // Adding the segmented image to the buffer of the SemanticSegmentation
     if (types::SystemParams::getParams()->general.modeOfOperation ==
-        types::SystemParams::general::ModeOfOperation::GEO)
+        types::SystemParams::General::ModeOfOperation::GEO)
     {
         // just clear the pointcloud of the keyframe and return, as semantic
         // segmentation is not running. Still counts as "returned" -- the
@@ -714,7 +720,7 @@ Sophus::SE3f
         }
     }
 
-    /* Detect map restart for room-context carryover (WP1).
+    /* Detect map restart for room-context carryover.
      * The SemanticsManager::Run() thread performs the actual room
      * matching once rooms exist in the new map; we only log here. */
     {
@@ -907,7 +913,7 @@ System::MissionHealthSnapshot
         mLastReturnedKeyFrameId.load(std::memory_order_relaxed);
 
     if (types::SystemParams::getParams()->general.modeOfOperation ==
-        types::SystemParams::general::ModeOfOperation::GEO)
+        types::SystemParams::General::ModeOfOperation::GEO)
     {
         snapshot.segmentationTerminalCount = snapshot.segmentationReturnedCount;
         snapshot.lastTerminalKeyFrameId    = snapshot.lastReturnedKeyFrameId;
@@ -981,7 +987,7 @@ System::MissionHealthSnapshot
                 {
                     continue;
                 }
-                if (p_room->getRoomVariant() != semantic::Room::roomVariant::ROOM)
+                if (p_room->getRoomVariant() != semantic::Room::RoomVariant::ROOM)
                 {
                     ++snapshot.unresolvedRoomCount;
                     continue;
@@ -1012,7 +1018,7 @@ System::MissionHealthSnapshot
                 for (semantic::Room *p_room : p_floor->getRooms())
                 {
                     if (p_room != nullptr && !p_room->isBad() &&
-                        p_room->getRoomVariant() == semantic::Room::roomVariant::ROOM)
+                        p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM)
                     {
                         floor.roomIds.push_back(p_room->getId());
                         ++snapshot.floorRoomLinkCount;

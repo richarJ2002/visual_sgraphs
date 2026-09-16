@@ -24,13 +24,11 @@
  *                  evaluateOneRoomCreationProvenance.cc (CPP_CODING_STANDARD.md
  *                  Section 5.4: one ordinary function per .cc).
  *
- *                  Checkpoint-A residual repair: previously pushed one
- *                  blanket, non-per-room Finding with empty involvedKeys
- *                  regardless of how many rooms existed; now appends one
- *                  Finding per live, confirmed room via the leaf
- *                  computeConservativeMapCompleteness() also calls, so the
- *                  two paths cannot drift apart (mirroring AX-PASS-01's own
- *                  evaluateOnePassageProvenance() split).
+ *                  Appends one Finding per live, confirmed room via the
+ *                  leaf computeConservativeMapCompleteness() also calls,
+ *                  so the two paths cannot drift apart (mirroring
+ *                  AX-PASS-01's own evaluateOnePassageProvenance()
+ *                  split).
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
@@ -49,7 +47,7 @@ void evaluateAxRoom01(const SemanticGraphSnapshot &snapshot_in,
     {
         for (const RoomRecord &room : mapSnapshot.rooms)
         {
-            if (!room.isLive || room.variant != Room::roomVariant::ROOM)
+            if (!room.isLive || room.variant != Room::RoomVariant::ROOM)
             {
                 continue;
             }

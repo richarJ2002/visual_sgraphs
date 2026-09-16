@@ -17,41 +17,43 @@
  */
 
 /*!
- * @file            computeConservativeMapCompleteness.cc
+ * @file         computeConservativeMapCompleteness.cc
  *
- * @brief           Implements computeConservativeMapCompleteness(), declared
- *                  in private_functions.h.
+ * @brief        Implements computeConservativeMapCompleteness(),
+ *               declared in private_functions.h.
  *
- *                  2026-09-07 proof-correctness repair: replaces the
- *                  pre-repair hand-written subset (room/prospective counts, a
- *                  passage-endpoint-only re-derivation, and a wall-ownership
- *                  duplicate of AX-WALL-01's own logic) with direct reuse of
- *                  the same map-scoped, per-entity leaf evaluators
- *                  evaluateAxWall01.cc/evaluateAxWall03.cc/
- *                  evaluateAxBound01.cc/evaluateAxFloor01.cc/
- *                  evaluateAxPass02.cc already call --
- *                  evaluateOneWall()/evaluateOneWallTwin()/
- *                  evaluateOneRoomBoundary()/evaluateOneRoomFloorReciprocity()/
- *                  evaluateOnePassageCardinality() -- so the two paths cannot
- *                  drift apart. This function still never calls
- *                  evaluateState() or evaluateMapCompleteness() itself,
- *                  avoiding the circular dependency evaluateAxComp01.cc's own
- *                  Doxygen documents (evaluateState() calls
- *                  evaluateMapCompleteness() to build its AX-COMP-01
- *                  Finding); calling the leaf per-entity functions directly
- *                  is not a call back into that orchestrator.
+ *               Replaces the
+ *               pre-repair hand-written subset (room/prospective
+ *               counts, a passage-endpoint-only re-derivation, and
+ *               a wall-ownership duplicate of AX-WALL-01's own
+ *               logic) with direct reuse of the same map-scoped,
+ *               per-entity leaf evaluators
+ *               evaluateAxWall01.cc/evaluateAxWall03.cc/
+ *               evaluateAxBound01.cc/evaluateAxFloor01.cc/
+ *               evaluateAxPass02.cc already call --
+ *               evaluateOneWall()/evaluateOneWallTwin()/
+ *               evaluateOneRoomBoundary()/
+ *               evaluateOneRoomFloorReciprocity()/
+ *               evaluateOnePassageCardinality() -- so the two paths
+ *               cannot drift apart. This function still never calls
+ *               evaluateState() or evaluateMapCompleteness() itself,
+ *               avoiding the circular dependency
+ *               evaluateAxComp01.cc's own Doxygen documents
+ *               (evaluateState() calls evaluateMapCompleteness() to
+ *               build its AX-COMP-01 Finding); calling the leaf
+ *               per-entity functions directly is not a call back
+ *               into that orchestrator.
  *
- *                  Because AX-BOUND-01 and AX-PASS-02 can now only report
- *                  FAIL or UNKNOWN in this slice (their capability level is
- *                  PARTIAL/DEFERRED pending Phase 6/Phase 3 respectively --
- *                  see axiomCapabilityTable()), any map with at least one
- *                  live passage or one confirmed COMPLETE-status room is
- *                  capped at UNKNOWN here too, never PASS. This is the
- *                  honest, schema-limited consequence this slice's own
- *                  instructions require, not a defect: "If the accepted
- *                  schema makes full positive proof impossible until Phase
- *                  3/5/6, that is an honest result, not a reason to
- *                  fabricate a PASS."
+ *               Because AX-BOUND-01 and AX-PASS-02 can now only
+ *               report FAIL or UNKNOWN (their capability level is
+ *               PARTIAL/DEFERRED -- see
+ *               computeAxiomCapabilityTable()), any map with at
+ *               least one live passage or one confirmed
+ *               COMPLETE-status room is capped at UNKNOWN here too,
+ *               never PASS. This is the honest, schema-limited
+ *               consequence, not a defect: "If the accepted schema
+ *               makes full positive proof impossible, that is an
+ *               honest result, not a reason to fabricate a PASS."
  *
  *                  Rules, in the order checked (any FAIL-class condition
  *                  found anywhere makes the whole map FAIL; otherwise any
@@ -71,40 +73,40 @@
  *                  - any confirmed room whose evaluateOneRoomFloorReciprocity()
  *                    reports FAIL -> FAIL (COMPLETENESS_HARD_CONTRADICTION);
  *                  - otherwise, any live passage (cardinality proof is
- *                    permanently UNKNOWN pending Phase 3), any UNKNOWN wall/
- *                    twin/floor/boundary finding above -> UNKNOWN; and
+ *                    permanently UNKNOWN pending authoritative endpoint
+ *                    slots), any UNKNOWN wall/twin/floor/boundary finding
+ *                    above -> UNKNOWN; and
  *                  - otherwise PASS.
  *
- *                  2026-09-07 residual proof-closure repair additions
- *                  (required repair #7): a map-local duplicate same-key
- *                  room, wall, passage, or floor record is now an
- *                  unconditional FAIL (COMPLETENESS_DUPLICATE_IDENTITY);
- *                  every live passage's AX-PASS-03
- * (evaluateOnePassageSlotState()) and AX-PASS-04
- * (evaluateOnePassageMapAndFloor()) FAIL findings now also drive
- * COMPLETENESS_PASSAGE_ENDPOINTS_ INVALID, not only AX-PASS-02 cardinality;
- * every live passage's AX-FLOOR-01 endpoint-floor-identity
- *                  (evaluateOnePassageFloorIdentity()) finding now
- *                  contributes to the same floor FAIL/UNKNOWN aggregation as
- *                  the room-floor branch; and any confirmed room now also
+ *                  A map-local duplicate same-key room, wall, passage,
+ *                  or floor record is an unconditional FAIL
+ *                  (COMPLETENESS_DUPLICATE_IDENTITY); every live
+ *                  passage's AX-PASS-03 (evaluateOnePassageSlotState())
+ *                  and AX-PASS-04 (evaluateOnePassageMapAndFloor()) FAIL
+ *                  findings also drive COMPLETENESS_PASSAGE_ENDPOINTS_
+ *                  INVALID, not only AX-PASS-02 cardinality; every live
+ *                  passage's AX-FLOOR-01 endpoint-floor-identity
+ *                  (evaluateOnePassageFloorIdentity()) finding
+ *                  contributes to the same floor FAIL/UNKNOWN aggregation
+ *                  as the room-floor branch; and any confirmed room also
  *                  contributes COMPLETENESS_ROOM_CREATION_PROVENANCE_
  *                  UNAVAILABLE (RoomRecord::creationProvenanceReason is
- *                  always NOT_TRACKED_BY_CURRENT_SCHEMA pending Phase 3).
+ *                  always NOT_TRACKED_BY_CURRENT_SCHEMA).
  *
- *                  2026-09-07 second proof-closure repair additions: a
- *                  duplicate MapSnapshot::mapId sharing this map's own id is
- *                  now an unconditional FAIL (COMPLETENESS_DUPLICATE_MAP_
- *                  IDENTITY); every live passage's AX-PASS-01 provenance now
- *                  reuses evaluateOnePassageProvenance() (the same leaf
- *                  evaluateAxPass01() calls) instead of a hand-written
- *                  passable() check, and its FAIL also drives
+ *                  A duplicate MapSnapshot::mapId sharing this map's own
+ *                  id is an unconditional FAIL (COMPLETENESS_DUPLICATE_
+ *                  MAP_IDENTITY); every live passage's AX-PASS-01
+ *                  provenance reuses evaluateOnePassageProvenance() (the
+ *                  same leaf evaluateAxPass01() calls) instead of a
+ *                  hand-written passable() check, and its FAIL also drives
  *                  COMPLETENESS_PASSAGE_ENDPOINTS_INVALID; and every live
- *                  room's malformed (unkeyed) passageRefs entries, found via
- *                  evaluateRoomMalformedPassageReferences() (the same leaf
- *                  evaluateAxPass02() calls), now drive a dedicated
- *                  COMPLETENESS_ROOM_HAS_MALFORMED_PASSAGE_REFERENCE FAIL.
+ *                  room's malformed (unkeyed) passageRefs entries, found
+ *                  via evaluateRoomMalformedPassageReferences() (the same
+ *                  leaf evaluateAxPass02() calls), drive a dedicated
+ *                  COMPLETENESS_ROOM_HAS_MALFORMED_PASSAGE_REFERENCE
+ *                  FAIL.
  *
- *                  Checkpoint-A residual repair: every confirmed room's
+ *                  Every confirmed room's
  *                  room-creation-provenance UNKNOWN now reuses the identical
  *                  AX-ROOM-01 leaf evaluateOneRoomCreationProvenance() (the
  *                  same leaf evaluateAxRoom01() calls), replacing a
@@ -141,7 +143,7 @@ MapCompletenessResult
         {
             continue;
         }
-        if (room.variant == Room::roomVariant::ROOM)
+        if (room.variant == Room::RoomVariant::ROOM)
         {
             result.confirmedRoomCount++;
             if (room.boundaryStatus == Room::BoundaryStatus::COMPLETE)
@@ -173,16 +175,16 @@ MapCompletenessResult
 
     if (countMapSnapshotsWithId(snapshot_in, mapSnapshot_in.mapId) > 1U)
     {
-        /* 2026-09-07 second proof-closure repair: which MapSnapshot is
+        /* Which MapSnapshot is
          * authoritative for this map is itself ambiguous, so no
          * first-matching-map lookup performed anywhere below (or by any
          * shared leaf this function calls) can be trusted for this map. */
         failReasons.push_back(ReasonCode::COMPLETENESS_DUPLICATE_MAP_IDENTITY);
     }
 
-    /* Map-local duplicate identity ambiguity (required repair #6/#7): a
-     * duplicate same-key room, wall, passage, or floor record must never
-     * let any first-match proof elsewhere in this map be trusted. */
+    /* Map-local duplicate identity ambiguity: a duplicate same-key room,
+     * wall, passage, or floor record must never let any first-match proof
+     * elsewhere in this map be trusted. */
     std::vector<EntityKey> duplicateIdentityKeys;
     for (const RoomRecord &room : mapSnapshot_in.rooms)
     {
@@ -223,7 +225,7 @@ MapCompletenessResult
     std::vector<Finding> boundaryFindings;
     for (const RoomRecord &room : mapSnapshot_in.rooms)
     {
-        if (!room.isLive || room.variant != Room::roomVariant::ROOM)
+        if (!room.isLive || room.variant != Room::RoomVariant::ROOM)
         {
             continue;
         }
@@ -252,7 +254,7 @@ MapCompletenessResult
             continue;
         }
         result.livePassageCount++;
-        /* 2026-09-07 second proof-closure repair: reuses the identical
+        /* Reuses the identical
          * AX-PASS-01 leaf evaluateAxPass01() calls, rather than a
          * hand-written passable() check, so both paths flow through the
          * same shared logic. */
@@ -266,10 +268,9 @@ MapCompletenessResult
     const bool anyPassageProvenanceFail =
         anyFindingIs(passageProvenanceFindings, AxiomResult::FAIL);
 
-    /* AX-PASS-03 (slot state) and AX-PASS-04 (map/floor agreement): required
-     * repair #7 -- conservative completeness must consume the same leaf
-     * checks as state evaluation for these axioms too, not only AX-PASS-02
-     * cardinality. */
+    /* AX-PASS-03 (slot state) and AX-PASS-04 (map/floor agreement):
+     * conservative completeness must consume the same leaf checks as state
+     * evaluation for these axioms too, not only AX-PASS-02 cardinality. */
     std::vector<Finding> passageSlotFindings;
     std::vector<Finding> passageMapFloorFindings;
     for (const PassageRecord &passage : mapSnapshot_in.passages)
@@ -346,7 +347,7 @@ MapCompletenessResult
     std::vector<Finding> floorFindings;
     for (const RoomRecord &room : mapSnapshot_in.rooms)
     {
-        if (!room.isLive || room.variant != Room::roomVariant::ROOM)
+        if (!room.isLive || room.variant != Room::RoomVariant::ROOM)
         {
             continue;
         }
@@ -420,11 +421,11 @@ MapCompletenessResult
         std::vector<Finding> roomProvenanceFindings;
         for (const RoomRecord &room : mapSnapshot_in.rooms)
         {
-            if (!room.isLive || room.variant != Room::roomVariant::ROOM)
+            if (!room.isLive || room.variant != Room::RoomVariant::ROOM)
             {
                 continue;
             }
-            /* Checkpoint-A residual repair: reuses the identical AX-ROOM-01
+            /* Reuses the identical AX-ROOM-01
              * leaf evaluateAxRoom01() calls, rather than a hand-written
              * per-room loop, so both paths flow through the same shared
              * logic (mirroring the AX-PASS-01 provenance reuse above). */

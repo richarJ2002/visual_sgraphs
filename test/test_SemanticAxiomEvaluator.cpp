@@ -1,8 +1,7 @@
 /**
- * Semantic-axiom-reliability-plan.md Phase 1 (P1.2/P1.3/P1.5/P1.6,
- * evaluator-foundation slice): focused, ROS/Gazebo-free tests for the pure
- * SemanticAxiomEvaluator module (evaluateState(), evaluateTransition(),
- * evaluateMapCompleteness(), axiomCapabilityTable()).
+ * Focused, ROS/Gazebo-free tests for the pure SemanticAxiomEvaluator module
+ * (evaluateState(), evaluateTransition(), evaluateMapCompleteness(),
+ * computeAxiomCapabilityTable()).
  *
  * Every test builds real Atlas/Map/Room/geometric::Plane/Passage/Floor objects through
  * SemanticFixtures and the model's own setters, captures a genuine
@@ -134,7 +133,8 @@ TEST(SemanticAxiomEvaluator, AggregateReportContainsExactlyOneEntryPerAxiomCode)
 TEST(SemanticAxiomEvaluator,
      AxiomCapabilityTableHasSixteenEntriesSortedByCodeWithKnownAssignments)
 {
-    const std::vector<AxiomCapabilityEntry> table = axiomCapabilityTable();
+    const std::vector<AxiomCapabilityEntry> table =
+        computeAxiomCapabilityTable();
     ASSERT_EQ(table.size(), 16U);
     for (std::size_t index = 1U; index < table.size(); ++index)
     {
@@ -175,20 +175,21 @@ TEST(SemanticAxiomEvaluator,
     EXPECT_EQ(p_merge01->owner, MissingProofOwner::PHASE_8);
 }
 
-/* Every DEFERRED axiom code (per axiomCapabilityTable()) reports exactly one
- * placeholder Finding, always UNKNOWN, on an otherwise-empty snapshot. */
+/* Every DEFERRED axiom code (per computeAxiomCapabilityTable()) reports
+ * exactly one placeholder Finding, always UNKNOWN, on an otherwise-empty
+ * snapshot. */
 TEST(SemanticAxiomEvaluator, DeferredAxiomsAlwaysReportExactlyOneUnknownFinding)
 {
     Atlas                 atlas(0);
     AxiomEvaluationReport report =
         evaluateState(captureSemanticGraphSnapshot(&atlas));
 
-    /* AX_ROOM_01 is deliberately excluded: since the Checkpoint-A residual
-     * repair it is a genuine per-room leaf (evaluateOneRoomCreationProvenance()
-     * via evaluateAxRoom01()), like AX-WALL-01/03, AX-BOUND-01, and
-     * AX-PASS-01/02/03/04 -- vacuously zero findings (and a PASS-default
-     * aggregate) on this empty-Atlas fixture, not a context-free placeholder.
-     * See RoomCreationProvenanceIsPerRoomAndVacuousWithNoRooms below. */
+    /* AX_ROOM_01 is deliberately excluded: it is a genuine per-room leaf
+     * (evaluateOneRoomCreationProvenance() via evaluateAxRoom01()), like
+     * AX-WALL-01/03, AX-BOUND-01, and AX-PASS-01/02/03/04 -- vacuously zero
+     * findings (and a PASS-default aggregate) on this empty-Atlas fixture,
+     * not a context-free placeholder. See
+     * RoomCreationProvenanceIsPerRoomAndVacuousWithNoRooms below. */
     const AxiomCode deferredCodes[] = {AxiomCode::AX_FRAME_01,
                                        AxiomCode::AX_WALL_02,
                                        AxiomCode::AX_ROOM_02,
@@ -214,7 +215,7 @@ TEST(SemanticAxiomEvaluator, DeferredAxiomsAlwaysReportExactlyOneUnknownFinding)
     EXPECT_EQ(p_roomAggregate->result, AxiomResult::PASS);
 }
 
-/* Checkpoint-A residual repair: evaluateAxRoom01()/
+/* evaluateAxRoom01()/
  * computeConservativeMapCompleteness() must share one per-room
  * room-creation-provenance leaf (evaluateOneRoomCreationProvenance()), not a
  * blanket, non-per-room placeholder Finding. */
@@ -310,10 +311,10 @@ TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
     EXPECT_EQ(p_wall01->result, AxiomResult::FAIL);
 }
 
-/* Required repair #8: prove FAIL > UNKNOWN > PASS combining all three
- * results for one SINGLE entity/axiom (not merely three different
- * entities), by exercising aggregateFindings() directly with three
- * findings that share the same axiomCode and the same involvedKeys. */
+/* Prove FAIL > UNKNOWN > PASS combining all three results for one SINGLE
+ * entity/axiom (not merely three different entities), by exercising
+ * aggregateFindings() directly with three findings that share the same
+ * axiomCode and the same involvedKeys. */
 TEST(SemanticAxiomEvaluator, SameEntityPrecedenceFailBeatsUnknownBeatsPass)
 {
     const EntityKey        oneWallKey{EntityKind::WALL, 1UL, 1};
@@ -367,7 +368,7 @@ TEST(SemanticAxiomEvaluator, SameEntityPrecedenceFailBeatsUnknownBeatsPass)
     EXPECT_EQ(p_wall01WithoutFail->result, AxiomResult::UNKNOWN);
 }
 
-/* 2026-09-07 second proof-closure repair: SameEntityPrecedenceFailBeatsUnknown
+/* SameEntityPrecedenceFailBeatsUnknown
  * BeatsPass above proves FAIL > UNKNOWN > PASS only via aggregateFindings()
  * called directly on hand-built findings. This test instead exercises the
  * same precedence through the real evaluateState() orchestrator over three
@@ -813,7 +814,7 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongVariantIsFail)
                    p_map,
                    &wall,
                    Eigen::Vector3d::Zero(),
-                   Room::roomVariant::UNDEFINED);
+                   Room::RoomVariant::UNDEFINED);
     p_map->AddDetectedMapRoom(&room);
 
     const AxiomEvaluationReport report =
@@ -1741,8 +1742,8 @@ TEST(SemanticAxiomEvaluator, ZeroConfirmedEndpointsIsFail)
     EXPECT_EQ(p_finding->result, AxiomResult::FAIL);
 }
 
-/* Renamed from TwoConfirmedReciprocalEndpointsIsPass (2026-09-07
- * proof-correctness repair): PassageRecord::endpointSlotReason is always
+/* Renamed from TwoConfirmedReciprocalEndpointsIsPass:
+ * PassageRecord::endpointSlotReason is always
  * NOT_TRACKED_BY_CURRENT_SCHEMA, so two apparently valid, reciprocal legacy
  * pointers with no observable contradiction remain aggregate UNKNOWN, never
  * PASS -- see evaluateOnePassageCardinality.cc's own Doxygen. */
@@ -1806,8 +1807,8 @@ TEST(SemanticAxiomEvaluator, TwoConfirmedReciprocalEndpointsIsUnknown)
     EXPECT_EQ(p_pass03Aggregate->result, AxiomResult::UNKNOWN);
 }
 
-/* Renamed from OneConfirmedEndpointOtherEmptyIsPass (2026-09-07
- * proof-correctness repair): see TwoConfirmedReciprocalEndpointsIsUnknown. */
+/* Renamed from OneConfirmedEndpointOtherEmptyIsPass: see
+ * TwoConfirmedReciprocalEndpointsIsUnknown. */
 TEST(SemanticAxiomEvaluator, OneConfirmedEndpointOtherEmptyIsUnknown)
 {
     Atlas atlas(0);
@@ -1883,12 +1884,12 @@ TEST(SemanticAxiomEvaluator, ThirdReverseOnlyConfirmedEndpointIsFail)
     EXPECT_EQ(p_finding->result, AxiomResult::FAIL);
 }
 
-/* 2026-09-07 residual proof-closure repair: a reverse-only room that is
- * itself RETIRED must now be ignored outright -- "current-state axioms use
- * live committed records... retired reverse-room history alone must not
- * poison a live passage." The original BadReverseOnlyEndpointIsFail
- * encoded the wrong current-state contract by asserting FAIL for exactly
- * this case; renamed and re-targeted to prove the corrected behavior. */
+/* A reverse-only room that is itself RETIRED must be ignored outright --
+ * "current-state axioms use live committed records... retired reverse-room
+ * history alone must not poison a live passage." The original
+ * BadReverseOnlyEndpointIsFail encoded the wrong current-state contract by
+ * asserting FAIL for exactly this case; renamed and re-targeted to prove
+ * the corrected behavior. */
 TEST(SemanticAxiomEvaluator, RetiredReverseOnlyRoomDoesNotPoisonLivePassage)
 {
     Atlas atlas(0);
@@ -2015,7 +2016,7 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveReverseOnlyRoomAnomalyIsExamined)
                    p_mapB,
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0),
-                   Room::roomVariant::UNDEFINED);
+                   Room::RoomVariant::UNDEFINED);
     p_mapB->AddDetectedMapRoom(&prospectiveReverseOnly);
 
     Passage passage;
@@ -2338,7 +2339,7 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDeclaredMapMismatchIsFail)
  * genuinely unproven liveness must be UNKNOWN, not the same as a known-bad
  * (isLive == false) endpoint, and must not be silently treated as
  * "no confirmed endpoint." Retargeted at a local id no RoomRecord in this
- * snapshot actually has (the same residual-limitation technique
+ * snapshot actually has (the same unlocatable-target technique
  * WallOwnerRecordUnavailableIsUnknown uses): resolveRoomEndpoint()
  * corroborates isLive from a *found* RoomRecord's own (always-populated)
  * isLive field, so a found room's liveness can never be genuinely
@@ -2472,7 +2473,7 @@ TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
                    p_map,
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0),
-                   Room::roomVariant::UNDEFINED);
+                   Room::RoomVariant::UNDEFINED);
     p_map->AddDetectedMapRoom(&prospectiveRoom);
 
     Passage passage;
@@ -2574,9 +2575,9 @@ TEST(SemanticAxiomEvaluator, CrossMapReverseOnlyEndpointIsFail)
  * EntityKey.h) -- so the real passage's own cardinality remains its
  * ordinary one-real-endpoint UNKNOWN, while a separate, room-scoped
  * malformed-reference Finding (naming only the room, never the passage)
- * reports the evidence instead. Retargeted from the pre-2026-09-07-second-
- * repair UnresolvableReverseEndpointIsFail, which encoded exactly the
- * bare-local-id-attribution defect this repair closes. */
+ * reports the evidence instead. Retargeted from
+ * UnresolvableReverseEndpointIsFail, which encoded exactly the
+ * bare-local-id-attribution defect described above. */
 TEST(SemanticAxiomEvaluator,
      UnkeyedReverseReferenceIsRoomScopedNotPassageAttributed)
 {
@@ -2736,7 +2737,7 @@ TEST(SemanticAxiomEvaluator, NonReciprocalEndpointIsFail)
     EXPECT_EQ(p_finding->result, AxiomResult::FAIL);
 }
 
-/* Regression for a residual-review finding: resolveRoomEndpoint() must
+/* Regression coverage: resolveRoomEndpoint() must
  * treat a referenced room's liveness (EntityRef::isLive, populated
  * directly from the pointer's own isBad() independent of enumeration) as
  * trustworthy even when this snapshot cannot locate that room's own
@@ -2793,7 +2794,7 @@ TEST(SemanticAxiomEvaluator, KnownSideNotConfirmedIsFail)
                    p_map,
                    nullptr,
                    Eigen::Vector3d(0.0, -1.0, 1.0),
-                   Room::roomVariant::UNDEFINED);
+                   Room::RoomVariant::UNDEFINED);
     p_map->AddDetectedMapRoom(&unpromoted);
 
     Passage passage;
@@ -2817,7 +2818,7 @@ TEST(SemanticAxiomEvaluator, KnownSideNotConfirmedIsFail)
     EXPECT_EQ(p_finding->result, AxiomResult::FAIL);
 }
 
-/* Checkpoint-A residual repair: EntityRef documents key.has_value() <=>
+/* EntityRef documents key.has_value() <=>
  * reason == NONE as an invariant, but snapshot records are adversarial value
  * inputs (see
  * resolveRoomEndpoint.cc/isKnownInvalidPassageEndpointReference.cc). A keyed
@@ -2926,7 +2927,7 @@ TEST(SemanticAxiomEvaluator, CrossMapPassageEndpointIsFail)
     ASSERT_NE(p_floorFinding, nullptr);
     EXPECT_EQ(p_floorFinding->result, AxiomResult::FAIL);
 
-    /* Checkpoint-A residual repair: AX-PASS-03 (slot state) and AX-FLOOR-01's
+    /* AX-PASS-03 (slot state) and AX-FLOOR-01's
      * passage branch (endpoint floor identity) must fail on the identical
      * real-cross-map endpoint too, not only AX-PASS-02/04. */
     const Finding *p_slotFinding =
@@ -2992,7 +2993,7 @@ TEST(SemanticAxiomEvaluator, CrossFloorPassageIsFail)
     EXPECT_EQ(p_floorAxiomFinding->result, AxiomResult::FAIL);
 }
 
-/* 2026-09-07 residual proof-closure repair: the AX-PASS-04 aggregate must
+/* The AX-PASS-04 aggregate must
  * remain UNKNOWN even when the map/floor clause itself genuinely agrees,
  * since PassageRecord::endpointSlotReason is always
  * NOT_TRACKED_BY_CURRENT_SCHEMA -- renamed from the original
@@ -3087,7 +3088,7 @@ TEST(SemanticAxiomEvaluator, MissingFloorEvidenceOnPassageIsUnknown)
     known.setDoorways(&passage);
     far.setDoorways(&passage);
 
-    /* Checkpoint-A residual repair (checkpoint 10): both endpoint rooms'
+    /* Both endpoint rooms'
      * own canonical evaluateOneRoomFloorReciprocity() result is itself
      * UNKNOWN (ROOM_FLOOR_UNLINKED, neither room has a floor at all), which
      * now dominates before the floorKey-missing EVIDENCE_UNAVAILABLE
@@ -3267,13 +3268,12 @@ TEST(SemanticAxiomEvaluator, CompleteWithObservationGapsIsUnknown)
     EXPECT_EQ(p_finding->result, AxiomResult::UNKNOWN);
 }
 
-/* Renamed from CompleteStructurallyValidIsPass (2026-09-07
- * proof-correctness repair): full edge-to-wall geometric correspondence is
- * Phase 6's planar-arrangement algorithm, not implemented in this slice, so
- * even a simple, valid polygon with genuinely live/reciprocal/same-map wall
- * evidence is UNKNOWN, never PASS -- see evaluateOneRoomBoundary.cc's own
- * Doxygen. ROOM_BOUNDARY_STRUCTURALLY_VALID/PASS is never emitted by
- * production code in this slice; it is retained for Phase 6. */
+/* Renamed from CompleteStructurallyValidIsPass: full edge-to-wall
+ * geometric correspondence is not implemented here, so even a simple, valid
+ * polygon with genuinely live/reciprocal/same-map wall evidence is UNKNOWN,
+ * never PASS -- see evaluateOneRoomBoundary.cc's own Doxygen. ROOM_BOUNDARY_STRUCTURALLY_
+ * VALID/PASS is never emitted by production code here; it is retained for
+ * a future extension implementing full geometric correspondence. */
 TEST(SemanticAxiomEvaluator, CompleteWithVerifiedWallEvidenceIsUnknown)
 {
     Atlas atlas(0);
@@ -3381,8 +3381,8 @@ TEST(SemanticAxiomEvaluator, InfiniteCornerIsFail)
 /* A live room's only wall reference is itself retired: a retired wall alone
  * does not poison current-state wall/completeness output (AX-WALL-01 skips
  * it), but a live room still referencing it is a distinct, observable
- * contradiction AX-BOUND-01 must catch through its own wall-evidence check
- * -- required repair #2. */
+ * contradiction AX-BOUND-01 must catch through its own wall-evidence
+ * check. */
 TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
 {
     Atlas atlas(0);
@@ -3410,8 +3410,8 @@ TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
     const AxiomEvaluationReport report =
         evaluateState(captureSemanticGraphSnapshot(&atlas));
 
-    /* The retired wall itself is skipped by AX-WALL-01 (required repair #2)
-     * -- no Finding at all names it. */
+    /* The retired wall itself is skipped by AX-WALL-01 -- no Finding at
+     * all names it. */
     for (const Finding &finding : report.findings)
     {
         if (finding.axiomCode == AxiomCode::AX_WALL_01)
@@ -3424,7 +3424,7 @@ TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
         }
     }
 
-    /* 2026-09-07 residual proof-closure repair: a retired wall's evidence is
+    /* A retired wall's evidence is
      * now typed INVALID (a known contradiction), not merely absent, so this
      * asserts ROOM_BOUNDARY_INVALID_WALL_EVIDENCE rather than
      * ROOM_BOUNDARY_NO_WALL_EVIDENCE -- renamed from
@@ -3862,7 +3862,7 @@ TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapUnavailableCapsAtUnknown)
     EXPECT_EQ(p_unknownFinding->result, AxiomResult::UNKNOWN);
 }
 
-/* Checkpoint-A residual repair: the uniquely resolved floor's own
+/* The uniquely resolved floor's own
  * declaredMapId being unavailable must cap room-floor proof at UNKNOWN too,
  * mirroring the room's own missing-declared-map cap above. */
 TEST(SemanticAxiomEvaluator, RoomFloorFloorDeclaredMapUnavailableCapsAtUnknown)
@@ -3933,7 +3933,7 @@ TEST(SemanticAxiomEvaluator,
     snapshot.maps.front().floors.push_back(duplicateFloor);
 
     const AxiomEvaluationReport report = evaluateState(snapshot);
-    /* 2026-09-07 second proof-closure repair: evaluatePassageFloorAgreement()
+    /* evaluatePassageFloorAgreement()
      * now consults each real endpoint room's own canonical
      * evaluateOneRoomFloorReciprocity() result first; a duplicate floor key
      * makes namedFloorMatchCount > 1 for both endpoint rooms there,
@@ -3995,7 +3995,7 @@ TEST(SemanticAxiomEvaluator,
     snapshot.maps.front().floors.front().roomRefs.pop_back();
 
     const AxiomEvaluationReport report = evaluateState(snapshot);
-    /* 2026-09-07 second proof-closure repair: the endpoint room missing
+    /* The endpoint room missing
      * reverse membership now fails its own canonical
      * evaluateOneRoomFloorReciprocity() check (ROOM_FLOOR_NON_RECIPROCAL)
      * first, which evaluatePassageFloorAgreement() propagates as a
@@ -4130,7 +4130,7 @@ TEST(SemanticAxiomEvaluator, RoomClaimedByMultipleFloorsIsFail)
 }
 
 /* ------------------------------------------------------------------------
- * Map-completeness truth table (P1.3), legacy reproduction and divergence
+ * Map-completeness truth table, legacy reproduction and divergence
  * ---------------------------------------------------------------------- */
 
 TEST(SemanticAxiomEvaluator, ZeroConfirmedRoomsMakesMapIncomplete)
@@ -4166,7 +4166,7 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveRoomMakesMapIncomplete)
                    p_map,
                    nullptr,
                    Eigen::Vector3d::Zero(),
-                   Room::roomVariant::UNDEFINED);
+                   Room::RoomVariant::UNDEFINED);
     p_map->AddDetectedMapRoom(&prospective);
 
     const std::vector<MapCompletenessResult> results =
@@ -4257,7 +4257,7 @@ TEST(SemanticAxiomEvaluator, CompletenessPassageSlotStateFailureIsFail)
                    p_map,
                    nullptr,
                    Eigen::Vector3d(0.0, -1.0, 1.0),
-                   Room::roomVariant::UNDEFINED);
+                   Room::RoomVariant::UNDEFINED);
     p_map->AddDetectedMapRoom(&unpromoted);
 
     Passage passage;
@@ -4407,18 +4407,18 @@ TEST(SemanticAxiomEvaluator, CompletenessRoomHasMalformedPassageReferenceIsFail)
         results.front().reasons.end());
 }
 
-/* Renamed from FullyValidMapIsCompletePass (2026-09-07 proof-correctness
- * repair): this is the strongest map this schema can currently construct --
- * two reciprocal COMPLETE rooms, a passage with two live confirmed
- * reciprocal same-floor endpoints, no contradiction anywhere -- and it is
- * still only UNKNOWN, never PASS: passage endpoint slot proof
- * (PassageRecord::endpointSlotReason) and full boundary edge-to-wall support
- * (Phase 6) are both permanently unavailable in this schema. "No PASS
+/* Renamed from FullyValidMapIsCompletePass: this is the strongest map this
+ * schema can currently construct -- two reciprocal COMPLETE rooms, a
+ * passage with two live confirmed reciprocal same-floor endpoints, no
+ * contradiction anywhere -- and it is still only UNKNOWN, never PASS:
+ * passage endpoint slot proof (PassageRecord::endpointSlotReason) and full
+ * boundary edge-to-wall support are both permanently unavailable in this
+ * schema. "No PASS
  * fixture until every required positive proof represented by the current
  * schema is actually present" -- this is the honest schema-limited ceiling,
  * not a defect. */
 TEST(SemanticAxiomEvaluator,
-     LegacyCompleteButConservativeUnknownPendingPhase3And6Diverges)
+     LegacyCompleteButConservativeUnknownSchemaLimitedDiverges)
 {
     Atlas atlas(0);
     Map  *p_map = atlas.GetCurrentMap();
@@ -4707,13 +4707,11 @@ TEST(SemanticAxiomEvaluator, HardFailureInOneMapDoesNotContaminateAnotherMap)
 }
 
 /* ------------------------------------------------------------------------
- * P1.R10 second-round residual repair (post-independent-audit adversarial
- * regression tests). Each mirrors a specific counterexample constructed by
- * the independent reviewer against the source bodies as they stood before
- * this round's fixes.
+ * Adversarial regression tests. Each mirrors a specific counterexample
+ * against an earlier source revision.
  * ---------------------------------------------------------------------- */
 
-/* Checkpoint 11a: a duplicate MapSnapshot::mapId splitting a room and its
+/* A duplicate MapSnapshot::mapId splitting a room and its floor across two
  * floor across two MapSnapshot entries must never null-dereference through
  * evaluateState(), and must never grant positive (PASS) proof either. */
 TEST(SemanticAxiomEvaluator,
@@ -5301,12 +5299,12 @@ TEST(SemanticAxiomEvaluator, WallOwnerSplitAcrossDuplicateContainingMapIsFail)
 }
 
 /* ------------------------------------------------------------------------
- * P1.R10 second re-audit: three residual/regression fixes.
+ * Reference-liveness versus record-contradiction ordering.
  * ---------------------------------------------------------------------- */
 
-/* Checkpoint 5 (residual): reference-level liveness genuinely unavailable
- * must not mask a record-level contradiction (here, the resolved owner
- * RoomRecord is itself retired). */
+/* Reference-level liveness genuinely unavailable must not mask a
+ * record-level contradiction (here, the resolved owner RoomRecord is itself
+ * retired). */
 TEST(SemanticAxiomEvaluator,
      OwnerRecordNotLiveDominatesReferenceLivenessUnavailable)
 {
@@ -5348,7 +5346,7 @@ TEST(SemanticAxiomEvaluator,
               nullptr);
 }
 
-/* Checkpoint 6 (residual): a reciprocal RawPlaneRef whose own wallKey names
+/* A reciprocal RawPlaneRef whose own wallKey names
  * this wall but whose own raw mapId contradicts that same wallKey is an
  * internal inconsistency the relevance gate must still catch, not silently
  * treat as an unrelated reference. */
@@ -5429,8 +5427,8 @@ TEST(SemanticAxiomEvaluator,
               nullptr);
 }
 
-/* P1.R10 third re-audit: the owner-record declaredMapId mismatch FAIL check
- * is itself record-level and must be checked before the reference-liveness-
+/* The owner-record declaredMapId mismatch FAIL check is itself
+ * record-level and must be checked before the reference-liveness-
  * unavailable UNKNOWN, not after it -- otherwise a wall whose owner
  * reference liveness is merely unproven but whose resolved owner record
  * provably declares a different map is masked behind an UNKNOWN. */
@@ -5496,11 +5494,10 @@ TEST(SemanticAxiomEvaluator,
               nullptr);
 }
 
-/* P1.R10 fourth re-audit: the reciprocal-scan FAILs depend only on
- * p_owner->wallRefs and wall_in.key (both already resolved), never on
- * owner.isLive, so a non-reciprocal owner must FAIL even when the owner
- * reference's own liveness is genuinely unproven -- not be masked behind
- * that UNKNOWN. */
+/* The reciprocal-scan FAILs depend only on p_owner->wallRefs and
+ * wall_in.key (both already resolved), never on owner.isLive, so a
+ * non-reciprocal owner must FAIL even when the owner reference's own
+ * liveness is genuinely unproven -- not be masked behind that UNKNOWN. */
 TEST(SemanticAxiomEvaluator,
      OwnerNotReciprocalDominatesReferenceLivenessUnavailable)
 {

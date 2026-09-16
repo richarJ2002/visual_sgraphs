@@ -18,7 +18,13 @@
  *
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
+
+/*!
+ * @file         Config.cc
+ *
+ * @brief        Implements the configuration file parser.
+ */
 
 #include "Config.h"
 
@@ -27,6 +33,7 @@ namespace vs_graphs
 namespace core
 {
 
+/* Stub: the path is accepted without loading any configuration. */
 bool ConfigParser::parseConfigFile(const std::string &configFilePath_in)
 {
     (void)configFilePath_in;

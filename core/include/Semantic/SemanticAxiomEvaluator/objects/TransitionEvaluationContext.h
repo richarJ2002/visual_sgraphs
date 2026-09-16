@@ -17,10 +17,11 @@
  */
 
 /*!
- * @file            TransitionEvaluationContext.h
+ * @file         TransitionEvaluationContext.h
  *
- * @brief           Declares the (currently empty) context parameter of
- *                  evaluateTransition(), reserved for later phases.
+ * @brief        Declares the (currently empty) context parameter
+ *               of evaluateTransition(), reserved for future
+ *               transition-specific facts.
  */
 
 #ifndef SEMANTIC_AXIOM_EVALUATOR_TRANSITION_EVALUATION_CONTEXT_H
@@ -33,20 +34,21 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Context for evaluateTransition(), reserved for the dynamic
- *              frame/transaction/merge checks Phase 2/7/8 add.
+ * @brief        Context for evaluateTransition(), reserved for
+ *               future dynamic frame/transaction/merge checks.
  *
- *              This foundation slice's evaluateTransition() does not yet
- *              implement AX-FRAME-01/AX-TXN-01/AX-MERGE-01 detection logic
- *              (each reports a fixed UNKNOWN placeholder regardless of
- *              \p before_in/\p after_in), so this type intentionally
- *              carries no fields yet. A later phase that adds real
- *              transition detection extends this type with whatever
- *              deterministic, snapshot-external facts that detection
- *              genuinely needs (e.g. which Sim3 transform, if any, was
- *              applied) -- never with a live pointer, a lock, a ROS type,
- *              or a wall-clock value, matching every other type in this
- *              module.
+ *               evaluateTransition() does not yet implement
+ *               AX-FRAME-01/AX-TXN-01/AX-MERGE-01 detection logic
+ *               (each reports a fixed UNKNOWN placeholder
+ *               regardless of \p before_in/\p after_in), so this
+ *               type intentionally carries no fields yet. A future
+ *               extension that adds real transition detection
+ *               extends this type with whatever deterministic,
+ *               snapshot-external facts that detection genuinely
+ *               needs (e.g. which Sim3 transform, if any, was
+ *               applied) -- never with a live pointer, a lock, a
+ *               ROS type, or a wall-clock value, matching every
+ *               other type in this module.
  */
 struct TransitionEvaluationContext
 {};

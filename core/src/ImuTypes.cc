@@ -11,7 +11,13 @@
  * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details: https://www.gnu.org/licenses/
-*/
+ */
+
+/*!
+ * @file         ImuTypes.cc
+ *
+ * @brief        Implements IMU types declared in ImuTypes.h.
+ */
 
 #include "ImuTypes.h"
 #include "Converter.h"
@@ -171,7 +177,7 @@ namespace core
         void Preintegrated::Reintegrate()
         {
             std::unique_lock<std::mutex> lock(mMutex);
-            const std::vector<integrable> aux = mvMeasurements;
+            const std::vector<Integrable> aux = mvMeasurements;
             Initialize(bu);
             for (size_t i = 0; i < aux.size(); i++)
                 IntegrateNewMeasurement(aux[i].a, aux[i].w, aux[i].t);
@@ -179,7 +185,7 @@ namespace core
 
         void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration, const Eigen::Vector3f &angVel, const float &dt)
         {
-            mvMeasurements.push_back(integrable(acceleration, angVel, dt));
+            mvMeasurements.push_back(Integrable(acceleration, angVel, dt));
 
             // Position is updated firstly, as it depends on previously computed velocity and rotation.
             // Velocity is updated secondly, as it depends on previously computed rotation.
@@ -251,8 +257,8 @@ namespace core
             bav.bay = bu.bay;
             bav.baz = bu.baz;
 
-            const std::vector<integrable> aux1 = pPrev->mvMeasurements;
-            const std::vector<integrable> aux2 = mvMeasurements;
+            const std::vector<Integrable> aux1 = pPrev->mvMeasurements;
+            const std::vector<Integrable> aux2 = mvMeasurements;
 
             Initialize(bav);
             for (size_t i = 0; i < aux1.size(); i++)

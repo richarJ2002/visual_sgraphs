@@ -72,8 +72,7 @@ struct ReversePassageEndpointScan
 
     /*! @brief Live rooms with a passageRefs entry whose key shares this
      *  passage's own map and entity id but a different EntityKind: a
-     *  wrong-kind key masquerading as a reference to this passage.
-     *  2026-09-07 residual proof-closure repair. */
+     *  wrong-kind key masquerading as a reference to this passage. */
     std::vector<EntityKey> wrongKindReverseRoomKeys;
 
     /*! @brief Live, same-map rooms whose own passageRefs names this
@@ -81,16 +80,14 @@ struct ReversePassageEndpointScan
      *  prospective, or liveness-unavailable alike): relationship
      *  multiplicity a single key-deduplication pass must not silently
      *  erase, regardless of which of those three clean categories the
-     *  duplicated entries fall into. 2026-09-07 residual proof-closure
-     *  repair; generalized beyond ROOM-variant-only counting in the
-     *  2026-09-07 second proof-closure repair. */
+     *  duplicated entries fall into. */
     std::vector<EntityKey> duplicateReferenceRoomKeys;
 
     /*! @brief Live, same-map, non-ROOM-variant (prospective) rooms that
      *  cleanly and trustworthily list the passage back: represented here
      *  rather than silently discarded, even though a prospective handle is
      *  never a "real"/confirmed cardinality endpoint (see
-     *  isRealPassageEndpoint()). 2026-09-07 second proof-closure repair. */
+     *  isRealPassageEndpoint()). */
     std::vector<EntityKey> prospectiveReverseRoomKeys;
 
     /*! @brief Live, same-map rooms whose passageRefs entry names the
@@ -99,7 +96,7 @@ struct ReversePassageEndpointScan
      *  all (genuinely unproven liveness, distinct from an explicit
      *  isLive == false in badReverseRoomKeys): "missing liveness is
      *  unavailable, not live" -- never silently counted as a confirmed
-     *  reciprocal endpoint. 2026-09-07 second proof-closure repair. */
+     *  reciprocal endpoint. */
     std::vector<EntityKey> livenessUnavailableReverseRoomKeys;
 };
 

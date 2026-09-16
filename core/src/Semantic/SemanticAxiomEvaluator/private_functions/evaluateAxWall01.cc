@@ -24,12 +24,12 @@
  *                  evaluateOneWall.cc (CPP_CODING_STANDARD.md Section 5.4:
  *                  one ordinary function per .cc).
  *
- *                  2026-09-07 proof-correctness repair: retired
- *                  (non-live) WallRecords are skipped -- the contract
- *                  applies to live committed walls; a live room still
- *                  referencing a retired wall is a distinct, observable
- *                  contradiction caught by AX-BOUND-01's own wall-evidence
- *                  check, not by re-evaluating the dead wall here.
+ *                  Retired (non-live) WallRecords are skipped -- the
+ *                  contract applies to live committed walls; a live room
+ *                  still referencing a retired wall is a distinct,
+ *                  observable contradiction caught by AX-BOUND-01's own
+ *                  wall-evidence check, not by re-evaluating the dead wall
+ *                  here.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

@@ -22,13 +22,12 @@
  * @brief           Implements checkRoomBoundaryGeometry(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 proof-correctness repair: every corner is
- *                  explicitly checked for finiteness before any
- *                  comparison-based degenerate/self-intersection logic
- *                  runs. A NaN operand makes every `<`/`<=`/`>=` comparison
- *                  false, so the pre-repair implementation could let a
- *                  non-finite corner silently reach VALID -- see the
- *                  `NonFiniteCornerIsFail`-class tests this repair adds.
+ *                  Every corner is explicitly checked for finiteness
+ *                  before any comparison-based degenerate/
+ *                  self-intersection logic runs. A NaN operand makes every
+ *                  `<`/`<=`/`>=` comparison false, so without that check a
+ *                  non-finite corner could silently reach VALID -- see the
+ *                  `NonFiniteCornerIsFail`-class tests.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

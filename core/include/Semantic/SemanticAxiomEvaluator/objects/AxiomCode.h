@@ -17,11 +17,10 @@
  */
 
 /*!
- * @file            AxiomCode.h
+ * @file         AxiomCode.h
  *
- * @brief           Declares the stable string-backed identity of each
- *                  canonical semantic axiom from
- *                  semantic-axiom-reliability-plan.md Section 5.
+ * @brief        Declares the stable string-backed identity of each
+ *               canonical semantic axiom.
  */
 
 #ifndef SEMANTIC_AXIOM_EVALUATOR_AXIOM_CODE_H
@@ -36,11 +35,11 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       One of the sixteen canonical axiom codes from the plan's
- *              Section 5 catalogue. Declaration order here has no semantic
- *              meaning; every consumer that needs a stable presentation
- *              order (the capability table, the aggregate report) sorts
- *              explicitly rather than relying on enumerator order.
+ * @brief        One of the sixteen canonical axiom codes. Declaration
+ *               order here has no semantic meaning; every consumer
+ *               that needs a stable presentation order (the
+ *               capability table, the aggregate report) sorts
+ *               explicitly rather than relying on enumerator order.
  */
 enum class AxiomCode : std::uint8_t
 {

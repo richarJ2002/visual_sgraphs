@@ -51,8 +51,8 @@ namespace semantic
  *              documented behaviour), so a Room pointer present in both
  *              collections is counted twice here as well, exactly as the
  *              live legacy code counts it twice -- see
- *              RoomRecord::isDetectedMember/isMarkerBasedMember, which this
- *              slice's P1.1 snapshot schema added specifically to make that
+ *              RoomRecord::isDetectedMember/isMarkerBasedMember, which the
+ *              snapshot schema added specifically to make that
  *              reproduction possible without a live Atlas/Map pointer. This
  *              type is evidence for auditing/comparison only; it is not
  *              itself the legacy code path and does not replace it.

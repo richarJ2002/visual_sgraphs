@@ -1,7 +1,7 @@
 /**
  * @file test_SemanticFixtures.cpp
  * @brief Self-test for the deterministic semantic-fixture builders
- *        (semantic-axiom-reliability-plan.md, P0.4). Each case exercises one
+ *. Each case exercises one
  *        builder and asserts the object it produced is what later
  *        semantic-axiom-plan phases will assume: correctly wired, and
  *        deterministic across repeated construction.
@@ -102,7 +102,7 @@ TEST(SemanticFixtures, MakeRoomAttachesWallAndCentroid)
     makeRoom(room, 5, p_map, &wall, Eigen::Vector3d(3.0, 4.0, 0.0));
 
     EXPECT_EQ(room.getId(), 5);
-    EXPECT_EQ(room.getRoomVariant(), semantic::Room::roomVariant::ROOM);
+    EXPECT_EQ(room.getRoomVariant(), semantic::Room::RoomVariant::ROOM);
     EXPECT_TRUE(room.getCentroid().isApprox(Eigen::Vector3d(3.0, 4.0, 0.0)));
     const auto walls = room.getWalls();
     ASSERT_EQ(walls.size(), 1U);

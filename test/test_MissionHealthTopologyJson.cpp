@@ -1,6 +1,6 @@
 /**
- * Semantic-axiom-reliability-plan.md Phase 1 (P1.8): focused, ROS/Gazebo-
- * free tests for augmentMissionHealthTopologyJsonWithSemantics(), the pure
+ * Focused, ROS/Gazebo-free tests for
+ * augmentMissionHealthTopologyJsonWithSemantics(), the pure
  * function extending /vs_graphs/get_mission_health's schema-1 topology_json
  * to schema 2.
  */
@@ -162,7 +162,7 @@ TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
     EXPECT_EQ(entityKeysJson[0]["entityId"], 1);
     EXPECT_EQ(entityKeysJson[1]["entityId"], 2);
 
-    /* P1.8: sorted axiom capability table with readable CapabilityLevel/
+    /* Sorted axiom capability table with readable CapabilityLevel/
      * semantic::MissingProofOwner names, present regardless of any evaluated
      * snapshot (it is a fixed property of this evaluator's implementation,
      * not of entry_in). */
@@ -207,7 +207,7 @@ TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
     }
 }
 
-/* P1.8 red-first regression: reasons/relevantEntityKeys must serialize
+/* Red-first regression: reasons/relevantEntityKeys must serialize
  * sorted regardless of semantic::MapCompletenessResult's own field order. */
 TEST(MissionHealthTopologyJson,
      CompletenessReasonsAndEntityKeysAreSortedRegardlessOfInputOrder)

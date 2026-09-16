@@ -49,9 +49,8 @@ struct RotationFit
 
 /** Horn-style SVD rotation fit on signed normal correspondences (same
  * closed-form pattern as Utils::computeMapTransform_Horn's covariance/SVD
- * step, applied to plane normals per Section 9.3/11.1 instead of point
- * positions -- Horn's function itself is not called; it is point-based and
- * the plan reserves it as a Phase 0 legacy-characterization target only). */
+ * step, applied to plane normals instead of point positions -- Horn's
+ * function itself is not called; it is point-based and unsuitable here). */
 RotationFit
     fitRotationFromNormals(const std::vector<Eigen::Vector3d> &normalsA_in,
                            const std::vector<Eigen::Vector3d> &normalsB_in)
@@ -97,8 +96,8 @@ struct TranslationFit
     double          conditionNumber{std::numeric_limits<double>::infinity()};
 };
 
-/** Solves N_B t = b (Section 9.3 "Translation from offsets") via SVD, and
- * reports rank(N_B)/cond(N_B) for the observability gates of Section 11.2. */
+/** Solves N_B t = b (translation from offsets) via SVD, and reports
+ * rank(N_B)/cond(N_B) for the observability gates. */
 TranslationFit fitTranslation(const Eigen::Matrix3d              &rotation_in,
                               const std::vector<Eigen::Vector3d> &normalsA_in,
                               const std::vector<double>          &offsetsA_in,
@@ -128,7 +127,7 @@ TranslationFit fitTranslation(const Eigen::Matrix3d              &rotation_in,
         /* n_B^T t = sigma*d_A - d_B; sigma is always +1 here because both
          * sides are independently canonicalised via
          * Room::getWallNormalTowardRoom_World before this function ever
-         * sees them (Section 9.3's sign search is therefore a no-op). */
+         * sees them (sign search is therefore a no-op). */
         b(static_cast<Eigen::Index>(index)) =
             offsetsA_in[index] - offsetsB_in[index];
     }
@@ -188,7 +187,7 @@ const VerifyWallObservation *
     return it == walls_in.end() ? nullptr : &(*it);
 }
 
-/** Symmetric point-to-plane support-cloud distance (Section 9.3 inlier
+/** Symmetric point-to-plane support-cloud distance (inlier
  * classification): sampled points from wall A, transformed by the
  * hypothesis, checked against wall B's plane; and the reverse. Returns the
  * larger (worse) of the two mean distances; 0.0 (vacuously passing) when
@@ -353,7 +352,7 @@ SemanticVerifyResult
     SemanticVerifyResult result;
     result.candidateWallPairCount = wallsA_in.size() * wallsB_in.size();
 
-    /* Section 9.3: "minimal sample: 3 planes ... for full SE(3)". Fewer than
+    /* Minimal sample: 3 planes for full SE(3). Fewer than
      * 3 walls on either side can never form a full-rank hypothesis. */
     if (wallsA_in.size() < 3U || wallsB_in.size() < 3U)
     {
@@ -365,9 +364,8 @@ SemanticVerifyResult
     /* Full cross-product candidate set. No pre-filtering by raw normal
      * similarity here: the two rooms are in different, as-yet-unrelated map
      * frames, so a candidate pair's normals cannot be compared directly
-     * before a hypothesis rotation exists (see the correspondence-safety
-     * finding in the WP13 Phase 4 plan). Robustness to wrong candidate pairs
-     * comes from the 3-subset hypothesis + inlier-count step below. */
+     * before a hypothesis rotation exists. Robustness to wrong candidate
+     * pairs comes from the 3-subset hypothesis + inlier-count step below. */
     std::vector<CandidatePair> candidatePairs;
     candidatePairs.reserve(wallsA_in.size() * wallsB_in.size());
     for (std::size_t indexA = 0U; indexA < wallsA_in.size(); ++indexA)
@@ -515,7 +513,7 @@ SemanticVerifyResult
                     {
                         continue;
                     }
-                    /* Explicit |cos(theta)| gate (Section 19.5), distinct
+                    /* Explicit |cos(theta)| gate, distinct
                      * from the angle gate above. */
                     if (std::abs(std::cos(normalAngle_rad)) <=
                         config_in.minAbsCosNormalAngle)
@@ -667,7 +665,7 @@ SemanticVerifyResult
 
     const Hypothesis &seed = best[0];
 
-    /* Nonlinear refinement (Section 17): one EdgePlaneTransformSE3 unary
+    /* Nonlinear refinement: one EdgePlaneTransformSE3 unary
      * factor per accepted inlier wall pair, Huber-robustified. */
     g2o::SparseOptimizer                 optimizer;
     g2o::BlockSolverX::LinearSolverType *linearSolver =
@@ -729,13 +727,13 @@ SemanticVerifyResult
         refinedEstimate.rotation().toRotationMatrix();
     const Eigen::Vector3d refinedTranslation = refinedEstimate.translation();
 
-    /* Section 17.5 observability re-check on the refined transform: full
+    /* Observability re-check on the refined transform: full
      * translational rank via N_B over the inlier set (as above), full
      * rotational rank via >=2 nonparallel inlier normal directions in the
-     * surviving (B) frame (Section 11.3's stated equivalence). The complete
-     * 6x6 Hessian SVD inspection Section 17.5 also describes is not
-     * extracted from g2o's internal solver state here -- this is a
-     * documented simplification, not a silent one. */
+     * surviving (B) frame (the stated equivalence). A complete
+     * 6x6 Hessian SVD inspection is not extracted from g2o's internal
+     * solver state here -- this is a documented simplification, not a
+     * silent one. */
     std::vector<Eigen::Vector3d> inlierRotatedNormalsA;
     std::vector<double>          inlierOffsetsA;
     std::vector<Eigen::Vector3d> inlierNormalsB;
@@ -1793,7 +1791,7 @@ SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
     for (Room *p_room : p_survivingMap_in->GetAllRooms())
     {
         if (p_room != nullptr && !p_room->isBad() &&
-            p_room->getRoomVariant() == Room::roomVariant::ROOM)
+            p_room->getRoomVariant() == Room::RoomVariant::ROOM)
         {
             survivingRooms.push_back(copyMergeRoomEvidence(p_room, config_in));
         }
@@ -1802,7 +1800,7 @@ SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
     for (Room *p_room : p_absorbedMap_in->GetAllRooms())
     {
         if (p_room != nullptr && !p_room->isBad() &&
-            p_room->getRoomVariant() == Room::roomVariant::ROOM)
+            p_room->getRoomVariant() == Room::RoomVariant::ROOM)
         {
             absorbedRooms.push_back(copyMergeRoomEvidence(p_room, config_in));
         }
@@ -1869,7 +1867,7 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     for (Room *p_room : p_survivingMap_in->GetAllRooms())
     {
         if (p_room != nullptr && !p_room->isBad() &&
-            p_room->getRoomVariant() == Room::roomVariant::ROOM)
+            p_room->getRoomVariant() == Room::RoomVariant::ROOM)
         {
             survivingRooms.push_back(
                 copyMergeRoomEvidence(p_room, verifyConfig));
@@ -1879,7 +1877,7 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     for (Room *p_room : p_absorbedMap_in->GetAllRooms())
     {
         if (p_room != nullptr && !p_room->isBad() &&
-            p_room->getRoomVariant() == Room::roomVariant::ROOM)
+            p_room->getRoomVariant() == Room::RoomVariant::ROOM)
         {
             absorbedRooms.push_back(
                 copyMergeRoomEvidence(p_room, verifyConfig));

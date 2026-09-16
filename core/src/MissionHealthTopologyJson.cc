@@ -69,12 +69,12 @@ nlohmann::json finiteAwareDoubleToJson(double value_in)
     return value_in;
 }
 
-/* Sorted, readable-name projection of axiomCapabilityTable(): fixed and
- * snapshot-independent, so it never needs entry_in. */
+/* Sorted, readable-name projection of computeAxiomCapabilityTable(): fixed
+ * and snapshot-independent, so it never needs entry_in. */
 nlohmann::json axiomCapabilitiesToJson()
 {
     std::vector<semantic::AxiomCapabilityEntry> table =
-        semantic::axiomCapabilityTable();
+        semantic::computeAxiomCapabilityTable();
     std::sort(table.begin(),
               table.end(),
               [](const semantic::AxiomCapabilityEntry &lhs_in,

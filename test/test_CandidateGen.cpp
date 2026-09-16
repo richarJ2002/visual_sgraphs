@@ -407,7 +407,7 @@ TEST(CandidateGen, RuntimeBudgetNeverChangesDeterministicBytes)
     EXPECT_FALSE(right.front().cues.runtimeBudgetExceeded);
 }
 
-/* Section 19.4 required test (a): rooms with no passages still score wall
+/* Required test (a): rooms with no passages still score wall
  * cues; topology/aperture are absent, not trivially "available". */
 TEST(CandidateGen, WallOnlyRoomsScoreWallCuesWithTopologyAndApertureAbsent)
 {
@@ -424,7 +424,7 @@ TEST(CandidateGen, WallOnlyRoomsScoreWallCuesWithTopologyAndApertureAbsent)
     EXPECT_DOUBLE_EQ(candidates.front().cues.weightDenominator, 2.0);
 }
 
-/* Section 19.4 required test (b): a wall with invalid bounds omits only its
+/* Required test (b): a wall with invalid bounds omits only its
  * extent element while its (still finite) normal keeps contributing angle
  * evidence. */
 TEST(CandidateGen, PartiallyMissingBoundsOmitsExtentButRetainsAngleEvidence)
@@ -469,7 +469,7 @@ TEST(CandidateGen, PartiallyMissingBoundsOmitsExtentButRetainsAngleEvidence)
     EXPECT_DOUBLE_EQ(diffCandidates.front().cues.extentDistance, 0.0);
 }
 
-/* Section 19.4 required test (c): unequal signature counts exercise the
+/* Required test (c): unequal signature counts exercise the
  * padded mean-L1 rule. */
 TEST(CandidateGen, UnequalSignatureCountsExercisePadding)
 {
@@ -503,7 +503,7 @@ TEST(CandidateGen, UnequalSignatureCountsExercisePadding)
                      candidates.front().cues.angleDistance);
 }
 
-/* Section 19.4 required test (d): a zero/invalid median disables both the
+/* Required test (d): a zero/invalid median disables both the
  * extent and aperture families without rejecting the room outright. */
 TEST(CandidateGen, InvalidMedianDisablesExtentAndApertureCues)
 {
@@ -529,7 +529,7 @@ TEST(CandidateGen, InvalidMedianDisablesExtentAndApertureCues)
     EXPECT_DOUBLE_EQ(withTopology.front().cues.weightDenominator, 1.0);
 }
 
-/* Section 19.4 required test (f): only candidates within the configured
+/* Required test (f): only candidates within the configured
  * ambiguity margin of the best distance are marked ambiguous. */
 TEST(CandidateGen, AmbiguityMarginMarksOnlyCandidatesWithinMargin)
 {
@@ -552,7 +552,7 @@ TEST(CandidateGen, AmbiguityMarginMarksOnlyCandidatesWithinMargin)
     EXPECT_FALSE(candidates[2].ambiguous);
 }
 
-/* Section 19.4 required test (j): a bounded global fallback finds the true
+/* Required test (j): a bounded global fallback finds the true
  * pair when the adjacency-prioritised tier admits nothing, without relaxing
  * minimum evidence for the anchor's own disqualifying pairs. */
 TEST(CandidateGen, FallbackFindsTruePairWhenAnchorHasNoUsableEvidence)
@@ -573,7 +573,7 @@ TEST(CandidateGen, FallbackFindsTruePairWhenAnchorHasNoUsableEvidence)
     EXPECT_NEAR(candidates.front().distance, 0.0, 1.0e-12);
 }
 
-/* Section 19.4 required test (k): equal-distance candidates are ordered by
+/* Required test (k): equal-distance candidates are ordered by
  * the (mapAId,roomAId,mapBId,roomBId) tie-break, never by distance alone. */
 TEST(CandidateGen, TieBreaksByMapAndRoomIdWhenDistancesAreEqual)
 {
@@ -602,7 +602,7 @@ TEST(CandidateGen, TieBreaksByMapAndRoomIdWhenDistancesAreEqual)
     EXPECT_EQ(candidates[1].roomBId, 20);
 }
 
-/* Section 19.4 point 2(c)/3: apertures are compared as (width,height) pairs
+/* Apertures are compared as (width,height) pairs
  * via pairwise Manhattan error, not flattened into one sorted scalar list --
  * flattening would make a width/height swap indistinguishable (both rooms
  * would sort to the identical multiset {1,2}), scoring distance 0. */
@@ -632,7 +632,7 @@ TEST(CandidateGen, RejectsZeroTopoRefinementIters)
         semantic::SemanticCandidateConfigRejectionReason::TOPO_REFINEMENT_ITERS_ZERO);
 }
 
-/* Section 19.4 required test (m): semantic::SemanticCandidates.cc links only against
+/* Required test (m): semantic::SemanticCandidates.cc links only against
  * itself in this target (see CMakeLists.txt's test_CandidateGen target,
  * which lists no Utils.cc/Optimizer.cc sources) -- the frame-dependent
  * matchWallsBetweenRooms()/collectCorrespondingWalls() are not declared to

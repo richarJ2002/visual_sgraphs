@@ -110,7 +110,7 @@ bool isValidWallBounds(const WallBounds &bounds_in)
 }
 
 /** Counts walls whose SAME index has both a valid finite unit-able normal and
- * valid bounds (Section 9.2: "walls with valid normals and bounds"). */
+ * valid bounds ("walls with valid normals and bounds"). */
 std::size_t validWallEvidenceCount(const RoomContextSnapshot &snapshot_in)
 {
     const std::size_t pairedCount =
@@ -129,7 +129,7 @@ std::size_t validWallEvidenceCount(const RoomContextSnapshot &snapshot_in)
 }
 
 /** Fraction of wallBounds entries that are invalid; 0.0 when there are no
- * walls to be missing from (Section 9.2's ">50% missing bounds" guard). */
+ * walls to be missing from (">50% missing bounds" guard). */
 double missingBoundsFraction(const RoomContextSnapshot &snapshot_in)
 {
     if (snapshot_in.wallBounds.empty())
@@ -210,8 +210,7 @@ std::vector<double> extentSignature(const RoomContextSnapshot &snapshot_in,
 
 /** One (width,height) aperture pair, normalised by the room's valid median
  * extent. Kept paired (not flattened) so lexicographic sort and pairwise
- * Manhattan distance compare a passage's own width against its own height,
- * per Section 19.4 point 2(c)/3. */
+ * Manhattan distance compare a passage's own width against its own height. */
 std::vector<std::pair<double, double>>
     apertureSignature(const RoomContextSnapshot &snapshot_in,
                       const double               median_in,
@@ -281,7 +280,7 @@ std::vector<std::string>
                       const unsigned int         refinementIters_in)
 {
     const std::size_t passageCount = snapshot_in.passageContexts.size();
-    /* Section 9.2: "absent passages omit the topology... cue" -- a trivial
+    /* "Absent passages omit the topology cue" -- a trivial
      * single-node (room-only) graph is not usable topology evidence. */
     if (passageCount == 0U || passageCount >= cap_in)
     {
@@ -569,8 +568,8 @@ SemanticCandidateGeneration SemanticCandidates::generateWithStatus(
                            mapIt->second[std::get<2>(reference)]);
     }
 
-    /* Section 9.2: "adjacency-prioritised (rooms sharing a passage with the
-     * last-confirmed room are enumerated first)". The anchor and its
+    /* Adjacency-prioritised enumeration (rooms sharing a passage with the
+     * last-confirmed room are enumerated first). The anchor and its
      * same-map passage-neighbours are necessarily all in one map (a Passage
      * only resolves a far-side room within its own live map), so priority
      * membership is used to admit a PAIR (one side qualifying is enough),
@@ -642,11 +641,11 @@ SemanticCandidateGeneration SemanticCandidates::generateWithStatus(
                               config_in.topologyNodesCap,
                               config_in.topoRefinementIters);
 
-        /* Section 9.2: "at least 2 walls with valid normals and bounds, or
-         * 1 wall + 1 passage." The "with valid normals and bounds" qualifier
-         * grammatically attaches only to the 2-wall branch; a lone wall in
-         * the mixed branch needs only a valid normal (its own bounds, if
-         * invalid, simply omit that wall's extent element per the missing-
+        /* Minimum evidence: "at least 2 walls with valid normals and bounds,
+         * or 1 wall + 1 passage." The "with valid normals and bounds"
+         * qualifier grammatically attaches only to the 2-wall branch; a lone
+         * wall in the mixed branch needs only a valid normal (its own bounds,
+         * if invalid, simply omit that wall's extent element per the missing-
          * data rule -- it does not disqualify the room). */
         const bool leftWallEvidence  = validWallEvidenceCount(left) >= 2U;
         const bool rightWallEvidence = validWallEvidenceCount(right) >= 2U;
@@ -756,7 +755,7 @@ SemanticCandidateGeneration SemanticCandidates::generateWithStatus(
         return candidates;
     };
 
-    /* Section 9.2: try the adjacency-prioritised tier first (bounded by
+    /* Try the adjacency-prioritised tier first (bounded by
      * candidate_pair_cap); a bounded global fallback (bounded separately by
      * global_fallback_cap) runs only when that tier admits zero candidates
      * passing minimum evidence. With no anchor (priorityRoomIds empty), this

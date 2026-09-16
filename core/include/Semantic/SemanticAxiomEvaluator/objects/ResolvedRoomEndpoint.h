@@ -89,7 +89,7 @@ struct ResolvedRoomEndpoint
      *  formed or whether this snapshot can enumerate the target in any
      *  captured map -- see EntityRef.h). Meaningful whenever
      *  referencePresent or referenceUnresolvable and isLiveAvailable.
-     *  P1.R10 second re-audit fix: no longer filled or overridden from the
+     *  No longer filled or overridden from the
      *  found RoomRecord's own isLive when isFoundInSnapshot -- a genuinely
      *  unavailable reference-level liveness must never be manufactured from
      *  the target record; isFoundInSnapshot instead only ever populates
@@ -109,8 +109,8 @@ struct ResolvedRoomEndpoint
     /*! @brief True when referencePresent and more than one distinct
      *  RoomRecord in the referenced key's own map shares that exact key:
      *  which room actually forms this endpoint is ambiguous, so it can
-     *  never supply positive proof. Meaningful only when referencePresent.
-     *  2026-09-07 residual proof-closure repair. */
+     *  never supply positive proof. Meaningful only when
+     *  referencePresent. */
     bool isDuplicateIdentity{false};
 
     /*! @brief True when referencePresent and \c isLive is genuinely
@@ -119,21 +119,19 @@ struct ResolvedRoomEndpoint
      *  \c isLive keeps its own default (false) in this case, so every
      *  caller must check this flag before treating \c isLive as a known
      *  fact: a keyed endpoint with missing liveness is unavailable proof,
-     *  not a bad endpoint merely because \c isLive defaults to false.
-     *  2026-09-07 second proof-closure repair. */
+     *  not a bad endpoint merely because \c isLive defaults to false. */
     bool isLiveAvailable{false};
 
     /*! @brief True when referencePresent and the referenced key's own
      *  EntityKind is not EntityKind::ROOM: a wrong-kind key masquerading as
-     *  a room reference. Meaningful only when referencePresent. 2026-09-07
-     *  second proof-closure repair. */
+     *  a room reference. Meaningful only when referencePresent. */
     bool isWrongKind{false};
 
     /*! @brief True when isFoundInSnapshot and the located RoomRecord's own
      *  declaredMapId disagrees with the map it was actually found in (its
      *  key's mapId): a record/declaration contradiction distinct from the
      *  reference itself being cross-map. Meaningful only when
-     *  isFoundInSnapshot. 2026-09-07 second proof-closure repair. */
+     *  isFoundInSnapshot. */
     bool isTargetDeclaredMapMismatch{false};
 
     /*! @brief True when referencePresent (the source EntityRef::key had a
@@ -143,15 +141,14 @@ struct ResolvedRoomEndpoint
      *  records are adversarial value inputs and this invariant is not
      *  assumed to hold; a reference violating it is treated as a known
      *  contradiction, not an ordinary valid keyed reference. Meaningful
-     *  only when referencePresent. Checkpoint-A residual repair. */
+     *  only when referencePresent. */
     bool isReasonInconsistent{false};
 
     /*! @brief True when referencePresent and more than one MapSnapshot in
      *  the evaluated snapshot shares the referenced key's own mapId: which
      *  MapSnapshot is actually authoritative for that map id is itself
      *  ambiguous, so no first-match lookup may supply positive proof.
-     *  Meaningful only when referencePresent. Checkpoint-A residual
-     *  repair. */
+     *  Meaningful only when referencePresent. */
     bool isContainingMapAmbiguous{false};
 };
 

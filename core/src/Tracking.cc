@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file         Tracking.cc
+ *
+ * @brief        Implements Tracking declared in Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include "Converter.h"
@@ -708,7 +714,7 @@ void Tracking::newParameterLoader(Settings *settings)
         mpCamera2 = settings->camera2();
         mpCamera2 = mpAtlas->AddCamera(mpCamera2);
 
-        mTlr = settings->Tlr();
+        mTlr = settings->getLeftToRightTransform();
 
         mpFrameDrawer->both = true;
     }
@@ -716,7 +722,7 @@ void Tracking::newParameterLoader(Settings *settings)
     if (mSensor == System::STEREO || mSensor == System::RGBD ||
         mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
     {
-        mbf      = settings->bf();
+        mbf      = settings->getBaselineFocal();
         mThDepth = settings->b() * settings->thDepth();
     }
 
@@ -730,14 +736,14 @@ void Tracking::newParameterLoader(Settings *settings)
     }
 
     mMinFrames = 0;
-    mMaxFrames = settings->fps();
-    mbRGB      = settings->rgb();
+    mMaxFrames = settings->getFramesPerSecond();
+    mbRGB      = settings->isRgbEnabled();
 
     // ORB parameters
     int   nFeatures    = settings->nFeatures();
     int   nLevels      = settings->nLevels();
     int   fIniThFAST   = settings->initThFAST();
-    int   fMinThFAST   = settings->minThFAST();
+    int   fMinThFAST   = settings->getMinimumFastThreshold();
     float fScaleFactor = settings->scaleFactor();
 
     mpORBextractorLeft = new ORBextractor(nFeatures,
@@ -3309,7 +3315,7 @@ void Tracking::MonocularInitialization()
         vector<bool>
             vbTriangulated; // Triangulated Correspondences (mvIniMatches)
 
-        if (mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,
+        if (mpCamera->reconstructWithTwoViews(mInitialFrame.mvKeysUn,
                                               mCurrentFrame.mvKeysUn,
                                               mvIniMatches,
                                               Tcw,
@@ -3565,7 +3571,7 @@ bool Tracking::TrackReferenceKeyFrame()
     vector<MapPoint *> vpMapPointMatches;
 
     int nmatches =
-        matcher.SearchByBoW(mpReferenceKF, mCurrentFrame, vpMapPointMatches);
+        matcher.searchByBoW(mpReferenceKF, mCurrentFrame, vpMapPointMatches);
 
     if (nmatches < 8)
     {
@@ -3729,7 +3735,7 @@ bool Tracking::TrackWithMotionModel()
     else
         th = 15;
 
-    int nmatches = matcher.SearchByProjection(
+    int nmatches = matcher.searchByProjection(
         mCurrentFrame,
         mLastFrame,
         th,
@@ -3756,7 +3762,7 @@ bool Tracking::TrackWithMotionModel()
              mCurrentFrame.mvpMapPoints.end(),
              static_cast<MapPoint *>(nullptr));
 
-        nmatches = matcher.SearchByProjection(
+        nmatches = matcher.searchByProjection(
             mCurrentFrame,
             mLastFrame,
             expandedTh,
@@ -4414,7 +4420,7 @@ void Tracking::SearchLocalPoints()
         }
         else
         {
-            matcher.SearchByProjection(mCurrentFrame,
+            matcher.searchByProjection(mCurrentFrame,
                                        mvpLocalMapPoints,
                                        th,
                                        mpLocalMapper->mbFarPoints,
@@ -4719,7 +4725,7 @@ bool Tracking::Relocalization()
         else
         {
             int nmatches =
-                matcher.SearchByBoW(pKF, mCurrentFrame, vvpMapPointMatches[i]);
+                matcher.searchByBoW(pKF, mCurrentFrame, vvpMapPointMatches[i]);
             if (nmatches < 15)
             {
                 vbDiscarded[i] = true;
@@ -4868,7 +4874,7 @@ bool Tracking::Relocalization()
                 if (nGood < 50)
                 {
                     int nadditional =
-                        matcher2.SearchByProjection(mCurrentFrame,
+                        matcher2.searchByProjection(mCurrentFrame,
                                                     vpCandidateKFs[i],
                                                     sFound,
                                                     10,
@@ -4889,7 +4895,7 @@ bool Tracking::Relocalization()
                                     sFound.insert(
                                         mCurrentFrame.mvpMapPoints[ip]);
                             nadditional =
-                                matcher2.SearchByProjection(mCurrentFrame,
+                                matcher2.searchByProjection(mCurrentFrame,
                                                             vpCandidateKFs[i],
                                                             sFound,
                                                             3,

@@ -22,9 +22,8 @@
  * @brief           Implements isRealPassageEndpoint(), declared in
  *                  private_functions.h.
  *
- *                  Consolidates what was, before the 2026-09-07
- *                  proof-correctness repair, four independent copies of the
- *                  identical `isFoundInSnapshot && isLive &&
+ *                  Consolidates what was previously four independent
+ *                  copies of the identical `isFoundInSnapshot && isLive &&
  *                  isConfirmedRoomVariant` predicate scattered across
  *                  evaluateAxPass02.cc, evaluateAxPass04.cc,
  *                  evaluatePassageFloorAgreement.cc, and

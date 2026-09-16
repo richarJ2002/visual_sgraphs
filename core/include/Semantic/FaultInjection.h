@@ -12,9 +12,9 @@
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details: https://www.gnu.org/licenses/
  *
- * WP-03.8 skeleton (WP-00.8.3 design
+ * Test-only failure-hook skeleton (design:
  * `src/visual_sgraphs/docs/design/fault_injection_api.md`). Test-only
- * failure hooks for WP-04 strict-status conversion. This TU ships only in
+ * failure hooks for strict-status conversion. This TU ships only in
  * the `test_FaultInjection` target; it is never linked into the production
  * library, and no production signature is changed.
  *

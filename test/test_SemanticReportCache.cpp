@@ -1,6 +1,6 @@
 /**
- * Semantic-axiom-reliability-plan.md Phase 1 (P1.4): focused, ROS/Gazebo-
- * free tests for the copied-value SemanticReportCache contract.
+ * Focused, ROS/Gazebo-free tests for the copied-value SemanticReportCache
+ * contract.
  */
 
 #include "Semantic/SemanticReportCache.h"

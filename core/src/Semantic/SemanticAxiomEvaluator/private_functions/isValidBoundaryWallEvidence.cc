@@ -22,34 +22,34 @@
  * @brief           Implements isValidBoundaryWallEvidence(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 proof-correctness repair: AX-BOUND-01 no
- *                  longer treats any nonempty RoomRecord::wallRefs as
- *                  boundary support. Each entry must be present, WALL-typed,
- *                  live, in the room's own map, resolve to exactly one
- *                  WallRecord (no duplicate-identity ambiguity), and that
- *                  WallRecord's own ownerRoomRefs must resolve back to this
- *                  room (reciprocal ownership) -- otherwise it is not
+ *                  AX-BOUND-01 does not treat any nonempty
+ *                  RoomRecord::wallRefs as boundary support. Each entry
+ *                  must be present, WALL-typed, live, in the room's own
+ *                  map, resolve to exactly one WallRecord (no
+ *                  duplicate-identity ambiguity), and that WallRecord's
+ *                  own ownerRoomRefs must resolve back to this room
+ *                  (reciprocal ownership) -- otherwise it is not
  *                  trustworthy boundary evidence.
  *
- *                  2026-09-07 residual proof-closure repair: replaces the
- *                  lossy boolean return with a typed
- *                  RoomBoundaryWallEvidenceStatus so evaluateOneRoomBoundary()
- *                  can distinguish a proven contradiction (INVALID -- wrong
- *                  type, retired, cross-map, ambiguous identity, or
- *                  non-reciprocal) from an ordinary evidence gap
- *                  (UNAVAILABLE -- no reference attempted, no map, or the
- *                  target WallRecord is not locatable). A known INVALID
- *                  reference must never be silently indistinguishable from
- *                  merely unavailable evidence.
+ *                  A typed RoomBoundaryWallEvidenceStatus return lets
+ *                  evaluateOneRoomBoundary() distinguish a proven
+ *                  contradiction (INVALID -- wrong type, retired,
+ *                  cross-map, ambiguous identity, or non-reciprocal) from
+ *                  an ordinary evidence gap (UNAVAILABLE -- no reference
+ *                  attempted, no map, or the target WallRecord is not
+ *                  locatable). A known INVALID reference must never be
+ *                  silently indistinguishable from merely unavailable
+ *                  evidence.
  *
- *                  2026-09-07 second proof-closure repair: additionally
- *                  validates the raw reference's own wallKey/mapId/planeId
- *                  field consistency and wallKey.kind; the resolved
- *                  WallRecord's own planeType and declared-map consistency;
- *                  and reuses evaluateOneWall() itself (rather than a second,
- *                  weaker reciprocal-ownership check) for the final
- *                  ownership-chain proof, so this function and AX-WALL-01
- *                  can never define "a valid wall" differently.
+ *                  The raw reference's own wallKey/mapId/planeId field
+ *                  consistency and wallKey.kind are additionally
+ *                  validated, as are the resolved WallRecord's own
+ *                  planeType and declared-map consistency; and
+ *                  evaluateOneWall() itself is reused (rather than a
+ *                  second, weaker reciprocal-ownership check) for the
+ *                  final ownership-chain proof, so this function and
+ *                  AX-WALL-01 can never define "a valid wall"
+ *                  differently.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
@@ -71,7 +71,7 @@ RoomBoundaryWallEvidenceStatus
 {
     if (wallRef_in.reason != UnavailableReason::NONE)
     {
-        /* Checkpoint-A residual repair (checkpoint 7): RawPlaneRef documents
+        /* RawPlaneRef documents
          * reason == NONE exactly when the underlying plane pointer was
          * non-null; a "reason claims absent" value that nonetheless carries
          * populated data (mapId/wallKey/a real planeType) is an invariant
@@ -124,7 +124,7 @@ RoomBoundaryWallEvidenceStatus
     }
     if (countMapSnapshotsWithId(snapshot_in, wallRef_in.wallKey->mapId) > 1U)
     {
-        /* Checkpoint-A residual repair: which MapSnapshot actually holds
+        /* Which MapSnapshot actually holds
          * this wall is itself ambiguous when its own containing map id is
          * duplicated -- no first-match lookup below may supply positive
          * proof. */
@@ -162,7 +162,7 @@ RoomBoundaryWallEvidenceStatus
      * it. */
     std::vector<Finding> wallOwnershipScratch;
     evaluateOneWall(*p_wall, snapshot_in, wallOwnershipScratch);
-    /* Checkpoint-A residual repair (checkpoint 7): the aggregate AX-WALL-01
+    /* The aggregate AX-WALL-01
      * result for this wall must be a clean PASS -- a PASS finding
      * accompanied by an UNKNOWN (e.g. the wall's or owner's own declared map
      * being genuinely absent) is not full positive proof and must not be

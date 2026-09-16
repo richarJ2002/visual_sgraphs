@@ -1,6 +1,6 @@
 /**
- * Semantic-axiom-reliability-plan.md Phase 1 (P1.1): focused, ROS/Gazebo-free
- * tests for the value-only SemanticGraphSnapshot capture contract. These
+ * Focused, ROS/Gazebo-free tests for the value-only SemanticGraphSnapshot
+ * capture contract. These
  * exercise the genuine production capture entry point
  * (vs_graphs::core::semantic::captureSemanticGraphSnapshot()) against real
  * Atlas/Map/Room/geometric::Plane/Passage/Floor objects built through SemanticFixtures
@@ -8,9 +8,7 @@
  * snapshot by hand, except where a test white-box-verifies one internal
  * helper directly (documented at each such case).
  *
- * Each TEST below is annotated with the minimum-proof item from
- * claude-resume-phase1-snapshot-repair-prompt.md or the 2026-09-06 residual
- * audit's MUST-CLOSE list that it satisfies.
+ * Each TEST below is annotated with the minimum-proof item it satisfies.
  */
 
 #include "Semantic/SemanticGraphSnapshot.h"
@@ -94,12 +92,12 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
     EXPECT_EQ(p_mapSnapshot->walls[0].finiteSupportCount, 0U);
 }
 
-/* MUST-CLOSE 6 "value lifetime after source objects are destroyed": extend
+/* "value lifetime after source objects are destroyed": extend
  * lifetime coverage beyond the whole-snapshot scope-exit case above to the
  * EntityRef/RawPlaneRef sub-values inside relationship collections
  * specifically (RoomRecord::wallRefs/passageRefs, WallRecord::ownerRoomRefs,
- * FloorRecord::roomRefs), which are the types this residual repair changed
- * from bare EntityKey. */
+ * FloorRecord::roomRefs), which hold EntityRef/RawPlaneRef sub-values
+ * rather than bare EntityKey. */
 TEST(SemanticGraphSnapshot,
      RelationshipSubValuesRemainValidAfterFixtureModelObjectsLeaveScope)
 {
@@ -262,8 +260,8 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
 }
 
 /* Minimum-proof item 3, extended to full 4-kind x {mismatch, null} coverage
- * (MUST-CLOSE 6 "both null declared-map and containing/declared-map
- * mismatch for every kind"): containing-map versus declared-map mismatch
+ * ("both null declared-map and containing/declared-map mismatch for
+ * every kind"): containing-map versus declared-map mismatch
  * and null declared map are preserved explicitly for every entity kind. */
 TEST(SemanticGraphSnapshot,
      ContainingMapVersusDeclaredMapIsPreservedForEveryEntityKind)
@@ -530,9 +528,9 @@ TEST(SemanticGraphSnapshot,
     EXPECT_TRUE(p_unusualGroundRoom->groundPlaneRef.isLive);
 
     /* Missing-from-enumeration: the key is still truthfully reported, even
-     * though no RoomRecord for it exists in the snapshot -- and, since the
-     * residual repair, so is its liveness (captured directly from the
-     * pointer, not by joining against the snapshot's own record vectors). */
+     * though no RoomRecord for it exists in the snapshot -- and so is its
+     * liveness (captured directly from the pointer, not by joining against
+     * the snapshot's own record vectors). */
     const PassageRecord *p_passageRecord = findPassageRecord(*p_snapshotA, 10);
     ASSERT_NE(p_passageRecord, nullptr);
     ASSERT_TRUE(p_passageRecord->knownSideRoomRef.key.has_value());
@@ -557,9 +555,8 @@ TEST(SemanticGraphSnapshot,
     EXPECT_FALSE(p_badGroundOwnerRoom->groundPlaneRef.isLive);
 }
 
-/* Minimum-proof item 6, extended for the tri-state EntityRef liveness
- * introduced by the 2026-09-06 residual repair: default reference
- * invariants are valid, and unknown liveness is never encoded as true. */
+/* Tri-state EntityRef liveness: default reference invariants are valid,
+ * and unknown liveness is never encoded as true. */
 TEST(SemanticGraphSnapshot, DefaultReferenceInvariantsAreValid)
 {
     const EntityRef defaultEntityRef;
@@ -579,11 +576,11 @@ TEST(SemanticGraphSnapshot, DefaultReferenceInvariantsAreValid)
     EXPECT_FALSE(defaultRawPlaneRef.wallKey.has_value());
 }
 
-/* Corrective-audit (2026-09-05) regression coverage: entityRefForWall() used
+/* Regression coverage: entityRefForWall() used
  * to label every referenced geometric::Plane as EntityKind::WALL without checking its
  * real geometric::Plane::planeVariant, fabricating a WallRecord identity for a
  * non-WALL target. Wall-shaped references (a wall's twin face, a Room's
- * owned walls, a Passage's associated walls) now always use RawPlaneRef, so
+ * owned walls, a Passage's associated walls) always use RawPlaneRef, so
  * a wrong-type target retains its true planeType/isLive/mapId instead of a
  * fabricated WALL key. */
 TEST(SemanticGraphSnapshot,
@@ -664,12 +661,12 @@ TEST(SemanticGraphSnapshot,
     EXPECT_FALSE(p_passageRecord->associateWallRefs[0].wallKey.has_value());
 }
 
-/* Corrective-audit (2026-09-05) regression coverage, extended 2026-09-06 for
- * tri-state liveness: entityRefForRoom()/entityRefForFloor() used to discard
- * the target's own local id (and, for Room, liveness) the moment it had no
- * declared map. The residual repair further requires that Floor's liveness,
- * which the model cannot expose at all (Floor has no isBad()), is reported
- * as explicitly unknown -- never fabricated as true. */
+/* Regression coverage for tri-state liveness:
+ * entityRefForRoom()/entityRefForFloor() used to discard the target's own
+ * local id (and, for Room, liveness) the moment it had no declared map.
+ * Floor's liveness, which the model cannot expose at all (Floor has no
+ * isBad()), is reported as explicitly unknown -- never fabricated as
+ * true. */
 TEST(SemanticGraphSnapshot,
      UnmappedNonNullRoomAndFloorReferencesRetainLocalIdentityAndLiveness)
 {
@@ -725,18 +722,17 @@ TEST(SemanticGraphSnapshot,
     ASSERT_TRUE(p_roomRecord->floorRef.localId.has_value());
     EXPECT_EQ(*p_roomRecord->floorRef.localId, 7);
     /* Floor has no isBad(): liveness must be explicitly unknown, never
-     * fabricated as true (the exact defect the residual audit found). */
+     * fabricated as true. */
     EXPECT_FALSE(p_roomRecord->floorRef.isLive.has_value());
     EXPECT_EQ(p_roomRecord->floorRef.livenessUnavailableReason,
               UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA);
 }
 
-/* Corrective-audit (2026-09-05) regression coverage, extended 2026-09-06:
- * captureSemanticGraphSnapshot() used to call Atlas::GetCurrentMap(), which
- * creates a new map as a side effect whenever mpCurrentMap is null --
- * reachable in production via Atlas::clearAtlas(). Capture must never
- * mutate an Atlas in that state, and must report the coherent-view status
- * truthfully for it. */
+/* Regression coverage: captureSemanticGraphSnapshot() used to call
+ * Atlas::GetCurrentMap(), which creates a new map as a side effect whenever
+ * mpCurrentMap is null -- reachable in production via Atlas::clearAtlas().
+ * Capture must never mutate an Atlas in that state, and must report the
+ * coherent-view status truthfully for it. */
 TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
 {
     Atlas atlas(0);
@@ -757,7 +753,7 @@ TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
     EXPECT_EQ(atlas.GetAllMaps().size(), 0U);
 }
 
-/* MUST-CLOSE 4: Atlas::SetMapBad(currentMap) erases the map from the active
+/* Atlas::SetMapBad(currentMap) erases the map from the active
  * set and marks it bad without clearing Atlas::mpCurrentMap; a later
  * Atlas::ChangeMap() call is what eventually installs a replacement. Between
  * those two events, the snapshot must truthfully report the current map as
@@ -786,7 +782,7 @@ TEST(SemanticGraphSnapshot,
     EXPECT_TRUE(snapshot.maps.empty());
 }
 
-/* MUST-CLOSE 4/6 coherence counterpart: an ordinary current map (no
+/* Coherence counterpart: an ordinary current map (no
  * SetMapBad() call) is reported as active and appears in maps. */
 TEST(SemanticGraphSnapshot, CurrentMapStatusIsActiveForAnOrdinaryCurrentMap)
 {
@@ -806,7 +802,7 @@ TEST(SemanticGraphSnapshot, CurrentMapStatusIsActiveForAnOrdinaryCurrentMap)
     EXPECT_TRUE(p_mapSnapshot->isCurrentMap);
 }
 
-/* MUST-CLOSE 2: the schema's still-missing-in-the-foundation-slice fields
+/* The schema's still-missing-in-the-foundation-slice fields
  * (quarantine/history, manager-private open-passage and unresolved-wall
  * hypotheses, and per-wall quarantine/observation-ray evidence) report
  * their documented unavailable reason by default, never a fabricated
@@ -850,15 +846,13 @@ TEST(SemanticGraphSnapshot,
               UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA);
 }
 
-/* Corrective-audit (2026-09-05) regression coverage, upgraded 2026-09-06
- * from a reproducibility-only check to a genuine value-based determinism
- * proof: distinct source objects captured with a colliding EntityKey (same
- * kind, mapId, and local id) must both be retained, never deduplicated, and
- * the pair's relative order must be a function of their captured VALUES
- * (via isValueLessForCollisionTiebreak()), not of insertion/pointer order --
- * proven here by capturing the identical pair through two atlases built
- * with reversed Room-construction order and asserting both captures agree
- * on the same value-determined order. */
+/* Value-based determinism: distinct source objects captured with a
+ * colliding EntityKey (same kind, mapId, and local id) must both be
+ * retained, never deduplicated, and the pair's relative order must be a
+ * function of their captured VALUES (via isValueLessForCollisionTiebreak()),
+ * not of insertion/pointer order -- proven here by capturing the identical
+ * pair through two atlases built with reversed Room-construction order and
+ * asserting both captures agree on the same value-determined order. */
 TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
 {
     auto buildAndCapture = [](bool constructLowerCentroidFirst_in)
@@ -914,7 +908,7 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
     }
 }
 
-/* MUST-CLOSE 3/6, white-box: the same value-based collision determinism as
+/* White-box: the same value-based collision determinism as
  * the Room case above, for Wall, Passage, and Floor, proven directly against
  * the actual production sortByKey<RecordT>() template rather than through
  * Map's insertion API. Map::AddMapPlane()/AddMapPassage()/AddMapFloor() each
@@ -929,12 +923,11 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
  * (AddDetectedMapRoom()/AddCandidateMapRoom() insert into a plain
  * std::set<Room *> with no id bookkeeping at all), a genuine same-map
  * EntityKey collision for Wall/Passage/Floor is therefore not reachable
- * through the production insertion path -- so, per this residual repair's
- * own instruction ("Add a deterministic failing test by sorting/capturing
- * logically identical colliding records supplied in opposite orders and
- * comparing every resulting value"), the collision is supplied directly to
- * sortByKey<RecordT>(), the same template captureSemanticGraphSnapshot()
- * uses for every one of these four record types. */
+ * through the production insertion path -- so the collision is supplied
+ * directly to sortByKey<RecordT>() (the same template
+ * captureSemanticGraphSnapshot() uses for every one of these four record
+ * types), sorting/capturing logically identical colliding records supplied
+ * in opposite orders and comparing every resulting value. */
 TEST(SemanticGraphSnapshot,
      CollidingWallRecordsAreBothRetainedAndDeterministicallyOrdered)
 {
@@ -1018,7 +1011,7 @@ TEST(SemanticGraphSnapshot,
     }
 }
 
-/* MUST-CLOSE 6 "duplicate relationship references": two distinct rooms
+/* "duplicate relationship references": two distinct rooms
  * sharing a colliding EntityKey both own the same wall. The wall's
  * ownerRoomRefs must retain both -- not deduplicate them merely because
  * they carry the same key -- since they are genuinely different source
@@ -1072,14 +1065,13 @@ TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
     EXPECT_TRUE(*p_wallRecord->ownerRoomRefs[1].isLive);
 }
 
-/* Schema/reference/concurrency reviewer's non-blocking observation on the
- * 2026-09-06 residual repair: WallRecord::ownerRoomRefs' key must come from
- * the containing map used to enumerate the owning room (matching that
- * room's own RoomRecord::key), never from the room's own possibly-different
- * declared map -- captureSemanticGraphSnapshot.cc's wall-ownership
- * inversion pass builds this key from its own per-map loop variable, not
- * from entityRefForRoom()'s declared-map semantics, specifically to keep
- * this fact true even for a mismatched room. */
+/* WallRecord::ownerRoomRefs' key must come from the containing map used to
+ * enumerate the owning room (matching that room's own RoomRecord::key),
+ * never from the room's own possibly-different declared map --
+ * captureSemanticGraphSnapshot.cc's wall-ownership inversion pass builds
+ * this key from its own per-map loop variable, not from
+ * entityRefForRoom()'s declared-map semantics, specifically to keep this
+ * fact true even for a mismatched room. */
 TEST(SemanticGraphSnapshot,
      OwnerRoomRefIsKeyedByContainingMapEvenWhenRoomDeclaresADifferentMap)
 {
@@ -1302,7 +1294,7 @@ TEST(
     EXPECT_EQ(p_map->GetAllDetectedMapRooms().size(), 1U);
 }
 
-/* MUST-CLOSE 6 "ordering of maps and every record/relationship collection":
+/* "ordering of maps and every record/relationship collection":
  * extends coverage beyond rooms (above) to walls, passages, floors, and the
  * top-level maps vector, each for permuted insertion order. A genuine map-
  * id collision is not exercised: Atlas::Map::nNextId is a monotonically
@@ -1406,7 +1398,7 @@ TEST(
     }
 }
 
-/* MUST-CLOSE 6 "ordering of ... every record/relationship collection",
+/* "ordering of ... every record/relationship collection",
  * closing a gap the final C++17/determinism reviewer found: the tests above
  * prove permuted-insertion-order determinism for the top-level per-map
  * record vectors, but not yet for a *relationship* collection built from
@@ -1657,7 +1649,7 @@ TEST(SemanticGraphSnapshot, NullAtlasReturnsEmptyDefaultSnapshot)
     EXPECT_TRUE(snapshot.maps.empty());
 }
 
-/* MUST-CLOSE 1 "helper-level null/drop test": appendWallRef()/
+/* "helper-level null/drop test": appendWallRef()/
  * appendRoomRef()/appendPassageRef() must never dereference a null pointer
  * and must append nothing for one. Room::setWalls(), Passage::
  * addAssociateWall(), Floor::addRoom(), and Floor::setRooms() all reject a
@@ -1681,7 +1673,7 @@ TEST(SemanticGraphSnapshot, AppendHelpersDropNullPointersWithoutAppending)
     EXPECT_TRUE(passageRefs.empty());
 }
 
-/* MUST-CLOSE 3 "finite, NaN, infinity and signed-zero ordering": white-box
+/* "finite, NaN, infinity and signed-zero ordering": white-box
  * test of doubleTotalOrderKey()/isDoubleLess() directly, since these are the
  * primitives every other determinism guarantee in this module is built on. */
 TEST(SemanticGraphSnapshot, FloatTotalOrderHandlesNaNInfinityAndSignedZero)

@@ -36,9 +36,9 @@
  *                  full aperture/skeleton provenance remains unverifiable
  *                  either way.
  *
- *                  2026-09-07 second proof-closure repair: the per-passage
- *                  logic is extracted into evaluateOnePassageProvenance()
- *                  so computeConservativeMapCompleteness() can share the
+ *                  The per-passage logic lives in
+ *                  evaluateOnePassageProvenance() so
+ *                  computeConservativeMapCompleteness() can share the
  *                  identical leaf rather than re-deriving its own
  *                  passable() check.
  */

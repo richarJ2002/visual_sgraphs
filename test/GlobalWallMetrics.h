@@ -11,7 +11,7 @@
  * matching generated room (or a hallucinated generated room with no matching
  * truth room) therefore drops every one of that room's walls out of the wall
  * precision/recall denominator entirely, instead of counting them as
- * false negatives/positives (semantic-axiom-reliability-plan.md gap G17).
+ * false negatives/positives.
  *
  * This adapter reproduces the same room- and wall-matching gates (so a
  * generated wall counts as matched under exactly the same rule the

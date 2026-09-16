@@ -678,7 +678,7 @@ class System
         /*!
          * @brief       Identifier of the last known room, saved before a
          * potential room change or reset. Used for carryover of room context
-         *              across map restarts (see WP1 room-context carryover).
+         *              across map restarts.
          *
          * @frame       N/A
          * @unit        N/A
@@ -1885,7 +1885,7 @@ class System
 
     /*!
      * @brief       Map ID of the most recently processed frame, used to detect
-     *              map restarts for room-context carryover (WP1).
+     *              map restarts for room-context carryover.
      */
     long unsigned int mLastProcessedMapId{0};
 

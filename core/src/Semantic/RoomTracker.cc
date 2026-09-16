@@ -224,9 +224,9 @@ RoomTrackingState RoomTracker::step(double                      now_s,
 
     if (newlyTrackingLost)
     {
-        /* Section 18.2 rows 3 and 5 (unconditional); events with no row for
-         * the source state (e.g. unrecognised loss from UNKNOWN) are rejected
-         * by the oracle. */
+        /* Transition-table rows 3 and 5 (unconditional); events with no row
+         * for the source state (e.g. unrecognised loss from UNKNOWN) are
+         * rejected by the oracle. */
         applyEvent(RoomTrackingEvent::TRACKING_LOST,
                    effectiveNow,
                    crossing,
@@ -240,7 +240,7 @@ RoomTrackingState RoomTracker::step(double                      now_s,
         {
             if (tracking.newMapCreated && verification.isPass())
             {
-                /* Section 18.2 row 7 (guarded). */
+                /* Transition-table row 7 (guarded). */
                 applyEvent(RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
                            effectiveNow,
                            crossing,
@@ -249,7 +249,7 @@ RoomTrackingState RoomTracker::step(double                      now_s,
             else if (effectiveNow - lastEnterStateTime_s_ >=
                      config_.lost_timeout_s)
             {
-                /* Section 18.2 row 8 (unconditional). */
+                /* Transition-table row 8 (unconditional). */
                 applyEvent(RoomTrackingEvent::LOST_TIMEOUT,
                            effectiveNow,
                            crossing,
@@ -261,7 +261,7 @@ RoomTrackingState RoomTracker::step(double                      now_s,
         {
             if (verification.isPass())
             {
-                /* Section 18.2 row 9 (guarded). */
+                /* Transition-table row 9 (guarded). */
                 applyEvent(RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
                            effectiveNow,
                            crossing,
@@ -270,7 +270,7 @@ RoomTrackingState RoomTracker::step(double                      now_s,
             else if (effectiveNow - lastEnterStateTime_s_ >=
                      config_.reacquire_timeout_s)
             {
-                /* Section 18.2 row 10 (unconditional). */
+                /* Transition-table row 10 (unconditional). */
                 applyEvent(RoomTrackingEvent::REACQUIRE_TIMEOUT,
                            effectiveNow,
                            crossing,
@@ -280,7 +280,7 @@ RoomTrackingState RoomTracker::step(double                      now_s,
                      effectiveNow - reacquireLastRetryTime_s_ >=
                          config_.reacquire_retry_interval_s)
             {
-                /* Section 18.5 retry backoff: after the configured number of
+                /* Retry backoff: after the configured number of
                  * failed attempts the reacquire is retired. */
                 ++reacquireRetryCount_;
                 reacquireLastRetryTime_s_ = effectiveNow;
@@ -296,7 +296,7 @@ RoomTrackingState RoomTracker::step(double                      now_s,
         }
         case RoomTrackingState::UNKNOWN:
         {
-            /* Section 18.2 row 1 (guarded). */
+            /* Transition-table row 1 (guarded). */
             if (verification.isPass())
             {
                 applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
@@ -308,7 +308,7 @@ RoomTrackingState RoomTracker::step(double                      now_s,
         }
         case RoomTrackingState::CONFIRMED_ROOM:
         {
-            /* Section 18.2 row 2 (guarded). The Section 18.3 dwell timer
+            /* Transition-table row 2 (guarded). The dwell timer
              * starts on first guard satisfaction and resets on any failure. */
             const bool guardSatisfied =
                 crossing.passageDetected && crossing.passable &&
@@ -329,7 +329,7 @@ RoomTrackingState RoomTracker::step(double                      now_s,
         }
         case RoomTrackingState::CROSSING_PASSAGE:
         {
-            /* Section 18.2 row 4 (guarded). Both-sides evidence is
+            /* Transition-table row 4 (guarded). Both-sides evidence is
              * cumulative; the dwell timer runs once the traversal facts and
              * the verification verdict both hold. */
             hasObservedBothSides_ =
@@ -351,7 +351,7 @@ RoomTrackingState RoomTracker::step(double                      now_s,
         }
         case RoomTrackingState::LOST_WITHOUT_ROOM:
         {
-            /* Section 18.2 row 6 (guarded). */
+            /* Transition-table row 6 (guarded). */
             if (verification.isPass())
             {
                 applyEvent(RoomTrackingEvent::ROOM_REACQUIRED,
@@ -385,7 +385,7 @@ bool RoomTracker::applyRow(RoomTrackingState           source,
                            const TraversalGuardValues &crossing,
                            const VerificationVerdict  &verification)
 {
-    /* Section 18.2 transition table, guarded rows first. */
+    /* Transition table, guarded rows first. */
     if (source == RoomTrackingState::UNKNOWN &&
         event == RoomTrackingEvent::FIRST_ROOM_CONFIRMED)
     {

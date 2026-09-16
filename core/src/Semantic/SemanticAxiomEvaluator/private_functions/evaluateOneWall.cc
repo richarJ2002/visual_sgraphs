@@ -17,63 +17,60 @@
  */
 
 /*!
- * @file            evaluateOneWall.cc
+ * @file         evaluateOneWall.cc
  *
- * @brief           Implements evaluateOneWall(), declared in
- *                  private_functions.h.
+ * @brief        Implements evaluateOneWall(), declared in
+ *               private_functions.h.
  *
- *                  2026-09-07 proof-correctness repair: a single owner
- *                  reference is no longer accepted merely for being keyed,
- *                  same-map, and not explicitly bad. Full positive proof now
- *                  additionally requires: owner liveness explicitly
- *                  available (not merely absent-and-assumed-fine); a unique
- *                  matching live RoomRecord (no duplicate same-key
- *                  ambiguity); that RoomRecord's own variant is ROOM (a
- *                  prospective handle cannot own a committed wall); that
- *                  RoomRecord's own declaredMapId agreeing with the wall's
- *                  containing map; and that RoomRecord's own wallRefs
- *                  resolving back to this wall (reciprocity). Missing
- *                  liveness or a genuinely unenumerable owner record is
- *                  UNKNOWN; every other new check is a proven contradiction
- *                  (FAIL).
+ *               A single owner reference is not accepted merely for
+ *               being keyed, same-map, and not explicitly bad. Full
+ *               positive proof additionally requires: owner liveness
+ *               explicitly available (not merely absent-and-assumed-fine);
+ *               a unique matching live RoomRecord (no duplicate same-key
+ *               ambiguity); that RoomRecord's own variant is ROOM (a
+ *               prospective handle cannot own a committed wall); that
+ *               RoomRecord's own declaredMapId agreeing with the wall's
+ *               containing map; and that RoomRecord's own wallRefs
+ *               resolving back to this wall (reciprocity). Missing
+ *               liveness or a genuinely unenumerable owner record is
+ *               UNKNOWN; every other check is a proven contradiction
+ *               (FAIL).
  *
- *                  2026-09-07 residual proof-closure repair: completes the
- *                  wall-record -> owner-ref -> live room-record ->
- *                  reciprocal wall-ref chain. Adds: this WallRecord's own
- *                  duplicate-identity check (which wall this evaluation is
- *                  even about must itself be unambiguous); the wall's own
- *                  declaredMapId consistency with its containing map; the
- *                  resolved owner RoomRecord's own isLive (independent of
- *                  the owning reference's own captured liveness, catching a
- *                  record/reference disagreement no earlier check
- *                  observes); and the reciprocal wallRefs entry's own
- *                  isLive (not merely its wallKey identity). The owner
- *                  key's kind is always EntityKind::ROOM by construction
- *                  (WallRecord::ownerRoomRefs is built exclusively from
- *                  captureSemanticGraphSnapshot.cc's wallOwnersByPointer
- *                  inversion pass, which always assigns
- *                  makeKey(EntityKind::ROOM, ...)), the same structural
- *                  exclusion scanReversePassageEndpoints.cc documents for
- *                  RoomRecord::passageRefs -- validated as data anyway
- *                  below (see the 2026-09-07 second proof-closure repair
- *                  paragraph), since public snapshot records are
- *                  deliberately mutable adversarial inputs.
+ *               The wall-record -> owner-ref -> live room-record ->
+ *               reciprocal wall-ref chain is fully covered: this
+ *               WallRecord's own duplicate-identity check (which wall this
+ *               evaluation is even about must itself be unambiguous); the
+ *               wall's own declaredMapId consistency with its containing
+ *               map; the resolved owner RoomRecord's own isLive
+ *               (independent of the owning reference's own captured
+ *               liveness, catching a record/reference disagreement no
+ *               earlier check observes); and the reciprocal wallRefs
+ *               entry's own isLive (not merely its wallKey identity). The
+ *               owner key's kind is always EntityKind::ROOM by
+ *               construction (WallRecord::ownerRoomRefs is built
+ *               exclusively from captureSemanticGraphSnapshot.cc's
+ *               wallOwnersByPointer inversion pass, which always assigns
+ *               makeKey(EntityKind::ROOM, ...)), the same structural
+ *               exclusion scanReversePassageEndpoints.cc documents for
+ *               RoomRecord::passageRefs -- validated as data anyway below
+ *               (see the wall/owner key-kind checks), since public
+ *               snapshot records are deliberately mutable adversarial
+ *               inputs.
  *
- *                  2026-09-07 second proof-closure repair: adds this wall's
- *                  own key.kind == WALL and planeType == WALL checks; the
- *                  owner reference's own key.kind == ROOM check; caps
- *                  positive proof at UNKNOWN (rather than PASS) when the
- *                  wall's own declaredMapId is genuinely absent, checked
- *                  only after every other clause is affirmatively
- *                  satisfied; and replaces the first-equal-wallKey
- *                  reciprocal scan with a full scan of every wallRefs entry
- *                  sharing this wall's own raw mapId/planeId identity --
- *                  any such entry that is not simultaneously WALL-typed,
- *                  live, and wallKey-consistent is a known contradiction
- *                  (WALL_OWNERSHIP_RECIPROCAL_CONTRADICTORY) even beside an
- *                  otherwise well-formed entry, and more than one
- *                  well-formed entry is itself ambiguous
- *                  (WALL_OWNERSHIP_RECIPROCAL_DUPLICATE).
+ *               This wall's own key.kind == WALL and planeType == WALL
+ *               checks; the owner reference's own key.kind == ROOM check; caps
+ *               positive proof at UNKNOWN (rather than PASS) when the
+ *               wall's own declaredMapId is genuinely absent, checked
+ *               only after every other clause is affirmatively
+ *               satisfied; and replaces the first-equal-wallKey
+ *               reciprocal scan with a full scan of every wallRefs entry
+ *               sharing this wall's own raw mapId/planeId identity --
+ *               any such entry that is not simultaneously WALL-typed,
+ *               live, and wallKey-consistent is a known contradiction
+ *               (WALL_OWNERSHIP_RECIPROCAL_CONTRADICTORY) even beside an
+ *               otherwise well-formed entry, and more than one
+ *               well-formed entry is itself ambiguous
+ *               (WALL_OWNERSHIP_RECIPROCAL_DUPLICATE).
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
@@ -189,7 +186,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
 
     if (owner.reason != UnavailableReason::NONE)
     {
-        /* Checkpoint-A residual repair: EntityRef documents
+        /* EntityRef documents
          * key.has_value() <=> reason == NONE as an invariant; a keyed
          * owner reference whose own reason is not NONE is a known
          * contradiction, not an ordinary valid reference. */
@@ -223,7 +220,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
 
     if (countMapSnapshotsWithId(snapshot_in, owner.key->mapId) > 1U)
     {
-        /* Checkpoint-A residual repair: which MapSnapshot actually holds
+        /* Which MapSnapshot actually holds
          * the owner room is itself ambiguous when its own containing map id
          * is duplicated -- no first-match RoomRecord lookup below may
          * supply positive proof. */
@@ -275,7 +272,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
         return;
     }
 
-    if (p_owner->variant != Room::roomVariant::ROOM)
+    if (p_owner->variant != Room::RoomVariant::ROOM)
     {
         findings_inout.push_back(
             makeFinding(AxiomCode::AX_WALL_01,
@@ -295,22 +292,22 @@ void evaluateOneWall(const WallRecord            &wall_in,
                         {wall_in.key, *owner.key}));
         return;
     }
-    /* Checkpoint-A residual repair (D1): a genuinely absent
+    /* A genuinely absent
      * p_owner->declaredMapId is missing evidence, not a proven mismatch --
      * the UNKNOWN cap for it is deferred to after the PASS below (see
      * wall_in.declaredMapId's own analogous cap), preserving FAIL >
      * UNKNOWN precedence against the reciprocal checks still to come. */
 
-    /* P1.R10 fourth re-audit fix: the source EntityRef's own liveness being
+    /* The source EntityRef's own liveness being
      * genuinely unproven is deferred to a cap appended after the terminal
      * PASS below (see wall_in.declaredMapId's own analogous cap), not an
      * early UNKNOWN return here. The reciprocal-scan FAILs immediately below
      * depend only on p_owner->wallRefs (already resolved above) and
      * wall_in.key -- never on owner.isLive -- so an early return here would
-     * mask them too, one step further than the P1.R10 third re-audit fix
-     * (declaredMapId mismatch) already closed for the checks above it. */
+     * mask them too, one step further than the declared-map-mismatch
+     * check ordering already established for the checks above it. */
 
-    /* 2026-09-07 second proof-closure repair: every wallRefs entry that
+    /* Every wallRefs entry that
      * shares this wall's own raw mapId/planeId identity is inspected, not
      * only the first equal-wallKey entry -- a well-formed reciprocal
      * reference has reason == NONE (implied by wallKey.has_value(), see
@@ -324,7 +321,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
     bool        anyContradictoryReciprocal = false;
     for (const RawPlaneRef &ownedWallRef : p_owner->wallRefs)
     {
-        /* P1.R10 second re-audit fix: relevance is no longer keyed on raw
+        /* Relevance is no longer keyed on raw
          * mapId/planeId alone -- an entry whose own wallKey already names
          * this exact wall is about this wall too, even when its raw
          * mapId/planeId field has been adversarially mutated to disagree
@@ -345,7 +342,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
         }
         if (ownedWallRef.reason != UnavailableReason::NONE)
         {
-            /* Checkpoint-A residual repair (checkpoint 6): this entry's own
+            /* This entry's own
              * mapId/planeId match this wall, but its own reason claims
              * "absent" (RawPlaneRef::reason != NONE) -- an invariant
              * violation and a known contradiction, not an ordinary unrelated
@@ -422,7 +419,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
     }
     if (!p_owner->declaredMapId.has_value())
     {
-        /* Checkpoint-A residual repair (D1): the owner room's own declared
+        /* The owner room's own declared
          * map is genuinely absent evidence, not a contradiction -- cap
          * positive ownership proof at UNKNOWN rather than PASS, mirroring
          * the wall's own missing-declared-map cap immediately above. */
@@ -434,7 +431,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
     }
     if (!owner.isLive.has_value())
     {
-        /* P1.R10 fourth re-audit fix: every other clause -- including every
+        /* Every other clause -- including every
          * record-level FAIL and the full reciprocal-scan FAIL set above --
          * is affirmatively satisfied, but the source reference's own
          * liveness was never itself proven either way: cap positive

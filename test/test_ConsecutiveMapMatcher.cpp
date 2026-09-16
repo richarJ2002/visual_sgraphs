@@ -123,7 +123,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         Room *room = new Room();
         room->setId(roomId_in);
         room->setMap(p_map);
-        room->setRoomVariant(Room::roomVariant::ROOM);
+        room->setRoomVariant(Room::RoomVariant::ROOM);
         room->setCentroid(centroid);
         room->setRoomTag(tag);
 
@@ -320,14 +320,14 @@ TEST_F(ConsecutiveMapMatcherTest, TC2_aliasing)
     Room *r0_1 = new Room();
     r0_1->setId(12);
     r0_1->setMap(p_map0);
-    r0_1->setRoomVariant(Room::roomVariant::ROOM);
+    r0_1->setRoomVariant(Room::RoomVariant::ROOM);
     r0_1->setCentroid(ROOM_12_CENTROID);
     r0_1->setRoomTag("room_12");
     p_map0->AddDetectedMapRoom(r0_1);
     Room *r1_1 = new Room();
     r1_1->setId(6);
     r1_1->setMap(p_map1);
-    r1_1->setRoomVariant(Room::roomVariant::ROOM);
+    r1_1->setRoomVariant(Room::RoomVariant::ROOM);
     r1_1->setCentroid(ROOM_6_CENTROID);
     r1_1->setRoomTag("room_6");
     p_map1->AddDetectedMapRoom(r1_1);
@@ -369,7 +369,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC3_singleAnchor)
     Room *r0_2 = new Room();
     r0_2->setId(101);
     r0_2->setMap(p_map0);
-    r0_2->setRoomVariant(Room::roomVariant::ROOM);
+    r0_2->setRoomVariant(Room::RoomVariant::ROOM);
     r0_2->setCentroid(ROOM2_CENTROID);
     p_map0->AddDetectedMapRoom(r0_2);
     Room *r1_1 = addRoomWithWallsAndPassage(p_map1,
@@ -396,13 +396,13 @@ TEST_F(ConsecutiveMapMatcherTest, TC4_emptyNewMap)
     Room *bootstrap = new Room();
     bootstrap->setId(0);
     bootstrap->setMap(p_map0);
-    bootstrap->setRoomVariant(Room::roomVariant::ROOM);
+    bootstrap->setRoomVariant(Room::RoomVariant::ROOM);
     bootstrap->setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0));
     p_map0->AddDetectedMapRoom(bootstrap);
     Room *bootstrap1 = new Room();
     bootstrap1->setId(1);
     bootstrap1->setMap(p_map1);
-    bootstrap1->setRoomVariant(Room::roomVariant::ROOM);
+    bootstrap1->setRoomVariant(Room::RoomVariant::ROOM);
     bootstrap1->setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0));
     p_map1->AddDetectedMapRoom(bootstrap1);
     setSeedRooms(p_map0, p_map1, bootstrap, bootstrap1);
@@ -572,7 +572,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC7_passageEndpointContradiction)
     Room *r0_3 = new Room();
     r0_3->setId(3);
     r0_3->setMap(p_map0);
-    r0_3->setRoomVariant(Room::roomVariant::ROOM);
+    r0_3->setRoomVariant(Room::RoomVariant::ROOM);
     r0_3->setCentroid(Eigen::Vector3d(7.0, 0.0, 1.0));
     r0_3->setRoomTag("room_3");
     p_map0->AddDetectedMapRoom(r0_3);
@@ -699,7 +699,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
     Room *r0_2 = new Room();
     r0_2->setId(101);
     r0_2->setMap(p_map0);
-    r0_2->setRoomVariant(Room::roomVariant::ROOM);
+    r0_2->setRoomVariant(Room::RoomVariant::ROOM);
     r0_2->setCentroid(ROOM2_CENTROID);
     p_map0->AddDetectedMapRoom(r0_2);
     Room *r1_1 = addRoomWithWallsAndPassage(p_map1,

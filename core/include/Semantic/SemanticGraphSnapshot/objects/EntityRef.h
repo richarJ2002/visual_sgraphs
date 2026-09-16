@@ -45,9 +45,8 @@ namespace semantic
  *              plausibly point either at nothing (an ordinary, expected state
  *              for most of these fields) or at an object this snapshot could
  *              not safely key (a non-null but unmapped referenced object).
- *              Also used, since the 2026-09-06 residual repair, as the
- *              element type of every one-to-many Room/Passage/Floor
- *              relationship collection (RoomRecord::passageRefs,
+ *              Also used as the element type of every one-to-many
+ *              Room/Passage/Floor relationship collection (RoomRecord::passageRefs,
  *              FloorRecord::roomRefs, WallRecord::ownerRoomRefs), replacing a
  *              bare std::vector<EntityKey> so a keyed-but-bad or
  *              keyed-but-missing-from-enumeration collection member no

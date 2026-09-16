@@ -22,12 +22,11 @@
  * @brief           Implements roomListsPassageBack(), declared in
  *                  private_functions.h.
  *
- *                  Consolidates what was, before the 2026-09-07
- *                  proof-correctness repair, two independent copies of this
- *                  function in evaluateAxPass02.cc and
+ *                  Consolidates what was previously two independent
+ *                  copies of this function in evaluateAxPass02.cc and
  *                  computeConservativeMapCompleteness.cc.
  *
- *                  Checkpoint-A residual repair (checkpoint 4): a matching
+ *                  A matching
  *                  passageRefs entry no longer proves reciprocity merely by
  *                  key equality. It must also carry reason == NONE (an
  *                  EntityRef invariant violation is a known contradiction,
@@ -77,7 +76,7 @@ bool roomListsPassageBack(const SemanticGraphSnapshot &snapshot_in,
         if (countRoomRecordsWithKey(snapshot_in, roomKey_in) > 1U)
         {
             /* Ambiguous identity can never supply positive reciprocity
-             * proof -- 2026-09-07 residual proof-closure repair. */
+             * proof. */
             return false;
         }
         const RoomRecord *p_room =

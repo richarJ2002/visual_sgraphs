@@ -59,7 +59,7 @@ enum class PassageFloorAgreement : std::uint8_t
      *  floor does not reciprocally list one or both endpoint rooms in its
      *  own roomRefs: identity/reciprocity ambiguity, distinct from a plain
      *  missing floor link (EVIDENCE_UNAVAILABLE) or a genuine cross-floor
-     *  disagreement (DISAGREE). 2026-09-07 residual proof-closure repair. */
+     *  disagreement (DISAGREE). */
     AMBIGUOUS = 4U,
 
     /*! @brief At least one real endpoint room's own canonical
@@ -67,8 +67,7 @@ enum class PassageFloorAgreement : std::uint8_t
      *  contradiction (wrong kind, cross-map, duplicate identity, duplicate
      *  or missing reverse membership, or a second claiming floor) that must
      *  dominate any floorKey-equality comparison rather than let equal
-     *  dangling keys or one malformed reverse member become AGREE.
-     *  2026-09-07 second proof-closure repair. */
+     *  dangling keys or one malformed reverse member become AGREE. */
     ENDPOINT_ROOM_FLOOR_INVALID = 5U,
 
     /*! @brief At least one real endpoint room's own canonical
@@ -77,8 +76,7 @@ enum class PassageFloorAgreement : std::uint8_t
      *  proof is itself unavailable, so this passage's floor agreement
      *  cannot be positively proved either, even though it is also not a
      *  proven contradiction. Distinct from ENDPOINT_ROOM_FLOOR_INVALID
-     *  (FAIL dominates) and EVIDENCE_UNAVAILABLE (no floor link at all).
-     *  Checkpoint-A residual repair. */
+     *  (FAIL dominates) and EVIDENCE_UNAVAILABLE (no floor link at all). */
     ENDPOINT_ROOM_FLOOR_UNVERIFIED = 6U
 };
 

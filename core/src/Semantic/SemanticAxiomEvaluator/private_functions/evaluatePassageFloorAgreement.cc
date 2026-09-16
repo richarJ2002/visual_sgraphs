@@ -22,7 +22,7 @@
  * @brief           Implements evaluatePassageFloorAgreement(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 proof-correctness repair: an equal floorKey on
+ *                  An equal floorKey on
  *                  both sides is no longer sufficient for AGREE. Both
  *                  endpoints' floor keys are additionally resolved against
  *                  \p snapshot_in's own FloorRecord collections; an equal
@@ -35,34 +35,30 @@
  *                  is AX-FLOOR-01's own room-floor check, not re-verified
  *                  here.
  *
- *                  2026-09-07 residual proof-closure repair: an equal
+ *                  An equal
  *                  floorKey naming more than one distinct FloorRecord in the
  *                  same map, or a resolved FloorRecord whose own roomRefs
  *                  does not reciprocally list one or both endpoint rooms, is
- *                  now AMBIGUOUS -- a known identity/reciprocity
- *                  contradiction, distinct from a plain missing floor link
+ *                  AMBIGUOUS -- a known identity/reciprocity contradiction,
+ *                  distinct from a plain missing floor link
  *                  (EVIDENCE_UNAVAILABLE). "Equal floor keys alone are
  *                  insufficient: the floor identity must be unique and
  *                  consistent, and the floor must reciprocally list each
  *                  endpoint room."
  *
- *                  2026-09-07 second proof-closure repair: each real
- *                  endpoint room's own canonical
- *                  evaluateOneRoomFloorReciprocity() result is now consulted
+ *                  Each real endpoint room's own canonical
+ *                  evaluateOneRoomFloorReciprocity() result is consulted
  *                  first; a FAIL there (wrong kind, cross-map, duplicate
  *                  identity, duplicate or missing reverse membership, or a
  *                  second claiming floor) yields ENDPOINT_ROOM_FLOOR_INVALID
  *                  before any floorKey-equality comparison is attempted, so
  *                  equal dangling keys or one malformed reverse member on
- *                  either endpoint can no longer become AGREE.
+ *                  either endpoint cannot become AGREE.
  *
- *                  Checkpoint-A residual repair: the former
- *                  hasFailingRoomFloorReciprocity() helper (already its own
- *                  translation unit) is replaced by
- *                  canonicalRoomFloorResultFor(), which returns the full
+ *                  canonicalRoomFloorResultFor() returns the full
  *                  aggregate AxiomResult instead of a lossy bool, so a
- *                  canonical UNKNOWN (not only FAIL) is now propagated via
- *                  the new ENDPOINT_ROOM_FLOOR_UNVERIFIED outcome.
+ *                  canonical UNKNOWN (not only FAIL) is propagated via
+ *                  the ENDPOINT_ROOM_FLOOR_UNVERIFIED outcome.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
@@ -98,7 +94,7 @@ PassageFloorAgreement
     if (knownSideRoomFloorResult == AxiomResult::UNKNOWN ||
         prospectiveRoomFloorResult == AxiomResult::UNKNOWN)
     {
-        /* Checkpoint-A residual repair (checkpoint 10): a real endpoint
+        /* A real endpoint
          * room's own canonical room-floor proof is itself unavailable (no
          * FAIL, but not a clean PASS either) -- this passage's floor
          * agreement cannot be positively proved either, even though it is
@@ -124,7 +120,7 @@ PassageFloorAgreement
     }
     if (countMapSnapshotsWithId(snapshot_in, knownSide_in.floorKey->mapId) > 1U)
     {
-        /* Checkpoint-A residual repair: which MapSnapshot actually holds
+        /* Which MapSnapshot actually holds
          * this floor is itself ambiguous when its own containing map id is
          * duplicated. */
         return PassageFloorAgreement::AMBIGUOUS;

@@ -22,13 +22,13 @@
  * @brief           Implements countRoomRecordsWithKey(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 second proof-closure repair: sums matches
- *                  across every MapSnapshot whose own mapId equals
- *                  key_in.mapId, rather than returning after the first such
- *                  map -- a duplicate MapSnapshot::mapId (adversarial-only;
- *                  unreachable through production capture, see
- *                  captureSemanticGraphSnapshot.cc) must not let a
- *                  same-key room in the second map escape detection.
+ *                  Sums matches across every MapSnapshot whose own
+ *                  mapId equals key_in.mapId, rather than returning after
+ *                  the first such map -- a duplicate MapSnapshot::mapId
+ *                  (adversarial-only; unreachable through production
+ *                  capture, see captureSemanticGraphSnapshot.cc) must not
+ *                  let a same-key room in the second map escape
+ *                  detection.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

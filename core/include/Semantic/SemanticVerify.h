@@ -1,10 +1,15 @@
-/** Declares the deterministic, plane-gated geometric verifier (WP13 Phase 4).
+/*!
+ * @brief        Declares the deterministic, plane-gated geometric
+ *               verifier.
  *
- *  Consumes a Phase 3 SemanticCandidate's two rooms (already resolved by the
- *  caller to per-wall observations via verified Room/Plane getters) and
- *  either produces a verified inter-map SE(3) transform with an inlier wall
- *  set, or rejects. This is verification only: it mutates nothing, assigns
- *  no room tag, and triggers no map merge. */
+ *               Consumes a SemanticCandidate's two rooms (already
+ *               resolved by the caller to per-wall observations via
+ *               verified Room/Plane getters) and either produces a
+ *               verified inter-map SE(3) transform with an inlier
+ *               wall set, or rejects. This is verification only: it
+ *               mutates nothing, assigns no room tag, and triggers
+ *               no map merge.
+ */
 #ifndef SEMANTIC_VERIFY_H
 #define SEMANTIC_VERIFY_H
 
@@ -88,8 +93,10 @@ struct SemanticVerifyConfig
     std::size_t  maxWallsPerRoom{16U};
     std::size_t  maxHypotheses{2000U};
     std::size_t  maxSupportSamplePerWall{64U};
-    /** Section 19.5's explicit |cos(theta)| gate, distinct from
-     * maxNormalAngle_deg. */
+    /*!
+     * @brief        Explicit |cos(theta)| gate, distinct from
+     *               maxNormalAngle_deg.
+     */
     double       minAbsCosNormalAngle{0.85};
     double       sigmaTheta_rad{0.05};
     double       sigmaOffset_m{0.05};
@@ -176,17 +183,21 @@ struct SemanticVerifyResult
     std::string
         floorGateResult; // "ACCEPTED"/"REJECTED"/"DEFERRED"/"" (not run)
 
-    /** Converts to the Phase 1 RoomTracker verdict type this phase exists to
-     * eventually feed (SemanticsManager::submitVerificationVerdict()'s
-     * consumer). Wiring that call site is out of Phase 4's scope. */
+    /*!
+     * @brief        Converts to the RoomTracker verdict type this
+     *               verifier exists to eventually feed
+     *               (SemanticsManager::submitVerificationVerdict()'s
+     *               consumer). Wiring that call site is out of scope
+     *               here.
+     */
     VerificationVerdict toVerificationVerdict() const;
 };
 
 class SemanticVerify
 {
   public:
-    /** Builds a SemanticVerifyConfig from the loaded SystemParams::verification
-     * / factor YAML fields (SystemParams::getParams() must already have been
+    /** Builds a SemanticVerifyConfig from the loaded SystemParams::Verification
+     * / Factor YAML fields (SystemParams::getParams() must already have been
      * populated via SystemParams::setParams()). This is the only place those
      * fields are read into a SemanticVerifyConfig: SemanticVerifyConfig's
      * own default-member-initialisers are literal fallbacks for callers that

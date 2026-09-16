@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file         MapPoint.cc
+ *
+ * @brief        Implements MapPoint declared in MapPoint.h.
+ */
+
 #include "MapPoint.h"
 #include "ORBmatcher.h"
 
@@ -496,8 +502,9 @@ void MapPoint::ComputeDistinctiveDescriptors()
         Distances[i][i] = 0;
         for (size_t j = i + 1; j < N; j++)
         {
-            int distij      = ORBmatcher::DescriptorDistance(vDescriptors[i],
-                                                        vDescriptors[j]);
+            int distij      =
+                ORBmatcher::computeDescriptorDistance(vDescriptors[i],
+                                                      vDescriptors[j]);
             Distances[i][j] = distij;
             Distances[j][i] = distij;
         }

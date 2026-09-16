@@ -44,12 +44,18 @@ namespace core
 {
 namespace semantic
 {
-/*! @brief Section 5's fixed "Class" column value for \p axiomCode_in. */
+/*!
+ * @brief        Fixed "Class" column value for \p axiomCode_in.
+ */
 AxiomClass axiomClassFor(AxiomCode axiomCode_in);
 
-/*! @brief Constructs one AxiomCapabilityEntry row, deriving \c classification
- *  from \p axiomCode_in via axiomClassFor() so it can never drift from
- *  Section 5's own "Class" column. Used only by axiomCapabilityTable(). */
+/*!
+ * @brief        Constructs one AxiomCapabilityEntry row, deriving
+ *               \c classification from \p axiomCode_in via
+ *               axiomClassFor() so it can never drift from the
+ *               "Class" column. Used only by
+ *               computeAxiomCapabilityTable().
+ */
 AxiomCapabilityEntry makeAxiomCapabilityEntry(AxiomCode         axiomCode_in,
                                               CapabilityLevel   capability_in,
                                               MissingProofOwner owner_in);
@@ -74,10 +80,13 @@ Finding makeFinding(AxiomCode              axiomCode_in,
  *  produces -- see makeFinding.cc. */
 void sortFindings(std::vector<Finding> &findings_inout);
 
-/*! @brief Groups \p findings_in by AxiomCode and applies FAIL > UNKNOWN >
- *  PASS precedence to produce exactly sixteen AggregateAxiomResult entries,
- *  sorted by AxiomCode, one per Section-5 code regardless of how many (if
- *  any) findings contributed. */
+/*!
+ * @brief        Groups \p findings_in by AxiomCode and applies FAIL >
+ *               UNKNOWN > PASS precedence to produce exactly sixteen
+ *               AggregateAxiomResult entries, sorted by AxiomCode,
+ *               one per axiom code regardless of how many (if any)
+ *               findings contributed.
+ */
 std::vector<AggregateAxiomResult>
     aggregateFindings(const std::vector<Finding> &findings_in);
 
@@ -119,8 +128,8 @@ bool isRealPassageEndpoint(const ResolvedRoomEndpoint &endpoint_in);
  *  in cardinality's own checks -- an endpoint that is merely absent, or
  *  whose liveness is genuinely unavailable rather than known false, is not
  *  "known invalid" by this predicate (see resolveRoomEndpoint.cc's
- *  isLiveAvailable Doxygen). 2026-09-07 second proof-closure repair;
- *  isReasonInconsistent added by the Checkpoint-A residual repair. */
+ *  isLiveAvailable Doxygen); isReasonInconsistent covers the key/reason
+ *  invariant violation listed above. */
 bool isKnownInvalidPassageEndpointReference(
     const ResolvedRoomEndpoint &endpoint_in);
 
@@ -140,28 +149,26 @@ std::size_t countRoomRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
 /*! @brief Counts how many FloorRecord entries across every MapSnapshot in
  *  \p snapshot_in whose own mapId equals \p key_in.mapId share the exact
  *  key \p key_in; 0 when no such map is present. Used to detect
- *  duplicate-identity ambiguity. 2026-09-07 second proof-closure repair:
- *  now snapshot-wide (like countRoomRecordsWithKey/countWallRecordsWithKey)
- *  rather than scoped to one caller-chosen MapSnapshot, so a duplicate
- *  MapSnapshot::mapId cannot hide a same-key floor duplicated across the
- *  two map snapshots. */
+ *  duplicate-identity ambiguity. Snapshot-wide (like
+ *  countRoomRecordsWithKey/countWallRecordsWithKey) rather than scoped
+ *  to one caller-chosen MapSnapshot, so a duplicate MapSnapshot::mapId
+ *  cannot hide a same-key floor duplicated across the two map
+ *  snapshots. */
 std::size_t countFloorRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
                                      const EntityKey             &key_in);
 
 /*! @brief Counts how many WallRecord entries across every MapSnapshot in
  *  \p snapshot_in whose own mapId equals \p key_in.mapId share the exact
  *  key \p key_in; 0 when no such map is present. Used to detect
- *  duplicate-identity ambiguity. 2026-09-07 residual proof-closure repair;
- *  made snapshot-wide (summed across every matching-mapId MapSnapshot,
- *  not only the first) by the 2026-09-07 second proof-closure repair. */
+ *  duplicate-identity ambiguity; summed snapshot-wide across every
+ *  matching-mapId MapSnapshot, not only the first. */
 std::size_t countWallRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
                                     const EntityKey             &key_in);
 
 /*! @brief Counts how many PassageRecord entries across every MapSnapshot in
  *  \p snapshot_in whose own mapId equals \p key_in.mapId share the exact
  *  key \p key_in; 0 when no such map is present. Used to detect
- *  duplicate-identity ambiguity. 2026-09-07 residual proof-closure repair;
- *  made snapshot-wide by the 2026-09-07 second proof-closure repair (see
+ *  duplicate-identity ambiguity; snapshot-wide (see
  *  countFloorRecordsWithKey's own Doxygen). */
 std::size_t countPassageRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
                                        const EntityKey             &key_in);
@@ -169,8 +176,7 @@ std::size_t countPassageRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
 /*! @brief Counts how many MapSnapshot entries in \p snapshot_in.maps share
  *  the exact mapId \p mapId_in: a duplicate-map-identity preflight so no
  *  first-matching-map lookup anywhere in this module can silently prefer
- *  one of two ambiguous MapSnapshot entries over the other. 2026-09-07
- *  second proof-closure repair. */
+ *  one of two ambiguous MapSnapshot entries over the other. */
 std::size_t countMapSnapshotsWithId(const SemanticGraphSnapshot &snapshot_in,
                                     long unsigned int            mapId_in);
 
@@ -211,9 +217,8 @@ void evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
  *  the one \p room_in.floorRef names) for duplicate identity, duplicate
  *  reverse membership, and another floor also claiming \p room_in.
  *  \p snapshot_in is used only for the snapshot-wide
- *  countFloorRecordsWithKey() duplicate-identity check (2026-09-07 second
- *  proof-closure repair: that helper is now snapshot-wide, see its own
- *  Doxygen). */
+ *  countFloorRecordsWithKey() duplicate-identity check (that helper is
+ *  snapshot-wide, see its own Doxygen). */
 void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
                                      const SemanticGraphSnapshot &snapshot_in,
                                      const MapSnapshot    &mapSnapshot_in,
@@ -231,7 +236,7 @@ void evaluateOnePassageFloorIdentity(const PassageRecord         &passage_in,
  *  (isFoundInSnapshot && isLive && isConfirmedRoomVariant) endpoint; PASS is
  *  returned (vacuously, "no known problem") when the room cannot itself be
  *  located, matching the conservative default elsewhere in this module.
- *  Checkpoint-A residual repair: replaces the lossy
+ *  Replaces the lossy
  *  hasFailingRoomFloorReciprocity() bool (FAIL-or-not) so
  *  evaluatePassageFloorAgreement() can also propagate a canonical UNKNOWN,
  *  not only FAIL. */
@@ -294,9 +299,9 @@ RoomBoundaryGeometryStatus
  *  map, uniquely resolved to one WallRecord in \p snapshot_in, and
  *  reciprocally owned by \p room_in; INVALID for a proven contradiction
  *  (wrong type, retired, cross-map, ambiguous identity, non-reciprocal);
- *  UNAVAILABLE for an ordinary evidence gap. 2026-09-07 residual
- *  proof-closure repair: replaces a lossy boolean so a known contradiction
- *  is never indistinguishable from merely unavailable evidence. */
+ *  UNAVAILABLE for an ordinary evidence gap. A typed status (rather than
+ *  a lossy boolean) so a known contradiction is never indistinguishable
+ *  from merely unavailable evidence. */
 RoomBoundaryWallEvidenceStatus
     isValidBoundaryWallEvidence(const RawPlaneRef           &wallRef_in,
                                 const RoomRecord            &room_in,
@@ -320,9 +325,11 @@ void appendKeysFromFindings(const std::vector<Finding> &findings_in,
                             AxiomResult                 result_in,
                             std::vector<EntityKey>     &relevantKeys_inout);
 
-/*! @brief Appends AX-FRAME-01's fixed UNKNOWN placeholder Finding: a single
- *  static snapshot cannot prove frame equivariance -- see
- *  evaluateTransition(). Owned by Phase 2. */
+/*!
+ * @brief        Appends AX-FRAME-01's fixed UNKNOWN placeholder
+ *               Finding: a single static snapshot cannot prove frame
+ *               equivariance -- see evaluateTransition().
+ */
 void evaluateAxFrame01(const SemanticGraphSnapshot &snapshot_in,
                        std::vector<Finding>        &findings_inout);
 
@@ -338,9 +345,11 @@ void evaluateOneWall(const WallRecord            &wall_in,
 void evaluateAxWall01(const SemanticGraphSnapshot &snapshot_in,
                       std::vector<Finding>        &findings_inout);
 
-/*! @brief Appends AX-WALL-02's fixed UNKNOWN placeholder Finding: no
- *  current schema field records observation-ray/aperture-crossing
- *  evidence. Owned by Phase 4. */
+/*!
+ * @brief        Appends AX-WALL-02's fixed UNKNOWN placeholder
+ *               Finding: no current schema field records
+ *               observation-ray/aperture-crossing evidence.
+ */
 void evaluateAxWall02(const SemanticGraphSnapshot &snapshot_in,
                       std::vector<Finding>        &findings_inout);
 
@@ -365,9 +374,9 @@ void evaluateAxWall03(const SemanticGraphSnapshot &snapshot_in,
  *  skeleton provenance: PASSAGE_PROVENANCE_NOT_PASSABLE/FAIL when not
  *  passable, otherwise PASSAGE_PROVENANCE_FULL_CHAIN_UNVERIFIABLE/UNKNOWN.
  *  Shared by evaluateAxPass01() and computeConservativeMapCompleteness() so
- *  completeness consumes the identical leaf rather than re-deriving its own
- *  passable() check. 2026-09-07 second proof-closure repair (extracted from
- *  evaluateAxPass01.cc). */
+ *  completeness consumes the identical leaf (extracted from
+ *  evaluateAxPass01.cc) rather than re-deriving its own passable()
+ *  check. */
 void evaluateOnePassageProvenance(const PassageRecord  &passage_in,
                                   std::vector<Finding> &findings_inout);
 
@@ -382,8 +391,7 @@ void evaluateAxPass01(const SemanticGraphSnapshot &snapshot_in,
  *  to the room alone. Never attributes such a malformed reference to a
  *  specific PassageRecord merely because a bare local id happens to equal
  *  that passage's own entityId -- local ids are unique only within one map
- *  and are not by themselves a map-qualified identity (see EntityKey.h).
- *  2026-09-07 second proof-closure repair. */
+ *  and are not by themselves a map-qualified identity (see EntityKey.h). */
 void evaluateRoomMalformedPassageReferences(
     const MapSnapshot    &mapSnapshot_in,
     std::vector<Finding> &findings_inout);
@@ -400,26 +408,34 @@ void evaluateAxPass03(const SemanticGraphSnapshot &snapshot_in,
 void evaluateAxPass04(const SemanticGraphSnapshot &snapshot_in,
                       std::vector<Finding>        &findings_inout);
 
-/*! @brief Appends one AX-ROOM-01 Finding for \p room_in: always UNKNOWN/
- *  ROOM_CREATION_PROVENANCE_UNAVAILABLE in this slice, since
- *  RoomRecord::creationProvenanceReason is always
- *  NOT_TRACKED_BY_CURRENT_SCHEMA (owned by Phase 3). Shared by
- *  evaluateAxRoom01() and computeConservativeMapCompleteness() so
- *  completeness consumes the identical leaf rather than re-deriving its own
- *  per-room loop, mirroring evaluateOnePassageProvenance(). Checkpoint-A
- *  residual repair. */
+/*!
+ * @brief        Appends one AX-ROOM-01 Finding for \p room_in: always
+ *               UNKNOWN/ROOM_CREATION_PROVENANCE_UNAVAILABLE, since
+ *               RoomRecord::creationProvenanceReason is always
+ *               NOT_TRACKED_BY_CURRENT_SCHEMA. Shared by
+ *               evaluateAxRoom01() and
+ *               computeConservativeMapCompleteness() so completeness
+ *               consumes the identical leaf rather than re-deriving
+ *               its own per-room loop, mirroring
+ *               evaluateOnePassageProvenance().
+ */
 void evaluateOneRoomCreationProvenance(const RoomRecord     &room_in,
                                        std::vector<Finding> &findings_inout);
 
-/*! @brief Appends one AX-ROOM-01 Finding per live, confirmed (ROOM-variant)
- *  RoomRecord in every map of \p snapshot_in, via
- *  evaluateOneRoomCreationProvenance(). Owned by Phase 3. */
+/*!
+ * @brief        Appends one AX-ROOM-01 Finding per live, confirmed
+ *               (ROOM-variant) RoomRecord in every map of
+ *               \p snapshot_in, via
+ *               evaluateOneRoomCreationProvenance().
+ */
 void evaluateAxRoom01(const SemanticGraphSnapshot &snapshot_in,
                       std::vector<Finding>        &findings_inout);
 
-/*! @brief Appends AX-ROOM-02's fixed UNKNOWN placeholder Finding: no
- *  current schema field records independent far-side promotion evidence.
- *  Owned by Phase 3. */
+/*!
+ * @brief        Appends AX-ROOM-02's fixed UNKNOWN placeholder
+ *               Finding: no current schema field records independent
+ *               far-side promotion evidence.
+ */
 void evaluateAxRoom02(const SemanticGraphSnapshot &snapshot_in,
                       std::vector<Finding>        &findings_inout);
 
@@ -434,16 +450,21 @@ void evaluateAxBound01(const SemanticGraphSnapshot &snapshot_in,
 void evaluateAxFloor01(const SemanticGraphSnapshot &snapshot_in,
                        std::vector<Finding>        &findings_inout);
 
-/*! @brief Appends AX-LIFE-01's fixed UNKNOWN placeholder Finding: no
- *  current schema field records quarantine provenance, and detecting
- *  silent erasure additionally requires transition history. Owned by
- *  Phase 4/5. */
+/*!
+ * @brief        Appends AX-LIFE-01's fixed UNKNOWN placeholder
+ *               Finding: no current schema field records quarantine
+ *               provenance, and detecting silent erasure
+ *               additionally requires transition history.
+ */
 void evaluateAxLife01(const SemanticGraphSnapshot &snapshot_in,
                       std::vector<Finding>        &findings_inout);
 
-/*! @brief Appends AX-TXN-01's fixed UNKNOWN placeholder Finding: a single
- *  static snapshot cannot prove transaction determinism/idempotence -- see
- *  evaluateTransition(). Owned by Phase 7. */
+/*!
+ * @brief        Appends AX-TXN-01's fixed UNKNOWN placeholder
+ *               Finding: a single static snapshot cannot prove
+ *               transaction determinism/idempotence -- see
+ *               evaluateTransition().
+ */
 void evaluateAxTxn01(const SemanticGraphSnapshot &snapshot_in,
                      std::vector<Finding>        &findings_inout);
 
@@ -452,9 +473,11 @@ void evaluateAxTxn01(const SemanticGraphSnapshot &snapshot_in,
 void evaluateAxComp01(const std::vector<MapCompletenessResult> &completeness_in,
                       std::vector<Finding>                     &findings_inout);
 
-/*! @brief Appends AX-MERGE-01's fixed UNKNOWN placeholder Finding: no
- *  map-merge preservation/postcondition logic is implemented in this
- *  slice. Owned by Phase 8. */
+/*!
+ * @brief        Appends AX-MERGE-01's fixed UNKNOWN placeholder
+ *               Finding: no map-merge preservation/postcondition
+ *               logic is implemented.
+ */
 void evaluateAxMerge01(const SemanticGraphSnapshot &snapshot_in,
                        std::vector<Finding>        &findings_inout);
 

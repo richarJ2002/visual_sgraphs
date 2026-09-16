@@ -106,7 +106,7 @@ void makeRoom(semantic::Room                  &room_inout,
               Map                   *p_map_in,
               geometric::Plane                 *p_wall_in,
               const Eigen::Vector3d &centroid_World_m_in,
-              semantic::Room::roomVariant      variant_in)
+              semantic::Room::RoomVariant      variant_in)
 {
     room_inout.setId(id_in);
     room_inout.setMap(p_map_in);

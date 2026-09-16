@@ -40,49 +40,56 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Pure, snapshot-only evaluation of every axiom code that a
- *              single static SemanticGraphSnapshot can prove anything
- *              about.
+ * @brief        Pure, snapshot-only evaluation of every axiom code that
+ *               a single static SemanticGraphSnapshot can prove
+ *               anything about.
  *
- *              Never mutates \p snapshot_in or any model object, acquires a
- *              lock, calls ROS, logs, reads a clock, or depends on
- *              unordered iteration order -- every output field is a
- *              deterministic function of \p snapshot_in's own already-
- *              sorted content. AX-FRAME-01, AX-TXN-01, and AX-MERGE-01
- *              (Section 5's dynamic-behaviour axioms) each contribute
- *              exactly one UNKNOWN placeholder Finding here, since a single
- *              snapshot cannot prove them -- see evaluateTransition().
+ *               Never mutates \p snapshot_in or any model object,
+ *               acquires a lock, calls ROS, logs, reads a clock, or
+ *               depends on unordered iteration order -- every output
+ *               field is a deterministic function of \p snapshot_in's
+ *               own already-sorted content. AX-FRAME-01, AX-TXN-01, and
+ *               AX-MERGE-01 (the dynamic-behaviour axioms) each
+ *               contribute exactly one UNKNOWN placeholder Finding
+ *               here, since a single snapshot cannot prove them -- see
+ *               evaluateTransition().
  *
- * @param[in]   snapshot_in     Snapshot to evaluate.
+ * @param[in]    snapshot_in
+ *               Snapshot to evaluate.
  *
- * @return      Complete report: every raw Finding, sorted, plus exactly one
- *              aggregate per Section-5 axiom code.
+ * @return       Complete report: every raw Finding, sorted, plus
+ *               exactly one aggregate per axiom code.
  */
 AxiomEvaluationReport evaluateState(const SemanticGraphSnapshot &snapshot_in);
 
 /*!
- * @brief       Pure evaluation of the dynamic, before/after axioms
- *              (AX-FRAME-01, AX-TXN-01, AX-MERGE-01) across one semantic
- *              transition, plus every snapshot-evaluable axiom re-run
- *              against \p after_in.
+ * @brief        Pure evaluation of the dynamic, before/after axioms
+ *               (AX-FRAME-01, AX-TXN-01, AX-MERGE-01) across one
+ *               semantic transition, plus every snapshot-evaluable
+ *               axiom re-run against \p after_in.
  *
- *              This foundation slice (P1.2) declares this interface for
- *              later phases but does not yet implement real frame-
- *              equivariance, transaction-idempotence, or merge-preservation
- *              detection: each of the three dynamic axioms reports a fixed
- *              UNKNOWN placeholder regardless of \p before_in, \p after_in,
- *              or \p context_in, owned by Phase 2/7/8 respectively (see
- *              axiomCapabilityTable()). Every other axiom code's entries are
- *              exactly evaluateState(after_in)'s own findings/aggregates,
- *              since a static axiom's meaning does not depend on the prior
- *              snapshot. Never mutates either snapshot.
+ *               This interface does not yet implement real
+ *               frame-equivariance, transaction-idempotence, or
+ *               merge-preservation detection: each of the three
+ *               dynamic axioms reports a fixed UNKNOWN placeholder
+ *               regardless of \p before_in, \p after_in, or
+ *               \p context_in (see computeAxiomCapabilityTable()).
+ *               Every other axiom code's entries are exactly
+ *               evaluateState(after_in)'s own findings/aggregates,
+ *               since a static axiom's meaning does not depend on the
+ *               prior snapshot. Never mutates either snapshot.
  *
- * @param[in]   before_in   Snapshot immediately before the transition.
- * @param[in]   after_in    Snapshot immediately after the transition.
- * @param[in]   context_in  Reserved for later-phase transition-specific
- *                          facts; carries no fields in this slice.
+ * @param[in]    before_in
+ *               Snapshot immediately before the transition.
  *
- * @return      Complete report combining the above.
+ * @param[in]    after_in
+ *               Snapshot immediately after the transition.
+ *
+ * @param[in]    context_in
+ *               Reserved transition-specific facts; carries no
+ *               fields yet.
+ *
+ * @return       Complete report combining the above.
  */
 AxiomEvaluationReport
     evaluateTransition(const SemanticGraphSnapshot       &before_in,
@@ -90,36 +97,40 @@ AxiomEvaluationReport
                        const TransitionEvaluationContext &context_in);
 
 /*!
- * @brief       Computes the shadow conservative-completeness result for
- *              every map in \p snapshot_in, paired with an exact
- *              reproduction of the current legacy (SemanticsManager::Run())
- *              completeness calculation for the same map.
+ * @brief        Computes the shadow conservative-completeness result
+ *               for every map in \p snapshot_in, paired with an exact
+ *               reproduction of the current legacy
+ *               (SemanticsManager::Run()) completeness calculation
+ *               for the same map.
  *
- *              This is a shadow/comparison calculation only (P1.3): it does
- *              not change SemanticsManager's own logging-only calculation
- *              or any runtime consumer of it. Never mutates \p snapshot_in.
+ *               This is a shadow/comparison calculation only: it does
+ *               not change SemanticsManager's own logging-only
+ *               calculation or any runtime consumer of it. Never
+ *               mutates \p snapshot_in.
  *
- * @param[in]   snapshot_in     Snapshot to compute completeness for.
+ * @param[in]    snapshot_in
+ *               Snapshot to compute completeness for.
  *
- * @return      One MapCompletenessResult per entry of \p snapshot_in.maps,
- *              sorted by mapId (matching \p snapshot_in.maps's own already-
- *              sorted order).
+ * @return       One MapCompletenessResult per entry of
+ *               \p snapshot_in.maps, sorted by mapId (matching
+ *               \p snapshot_in.maps's own already-sorted order).
  */
 std::vector<MapCompletenessResult>
     evaluateMapCompleteness(const SemanticGraphSnapshot &snapshot_in);
 
 /*!
- * @brief       Returns the fixed, snapshot-independent capability/ownership
- *              table for all sixteen Section-5 axiom codes.
+ * @brief        Returns the fixed, snapshot-independent
+ *               capability/ownership table for all sixteen axiom
+ *               codes.
  *
- *              A pure function of no input: the table describes this
- *              evaluator's current implementation against the current
- *              SemanticGraphSnapshot schema, not any one evaluated
- *              snapshot.
+ *               A pure function of no input: the table describes
+ *               this evaluator's current implementation against the
+ *               current SemanticGraphSnapshot schema, not any one
+ *               evaluated snapshot.
  *
- * @return      Exactly sixteen entries, sorted by AxiomCode.
+ * @return       Exactly sixteen entries, sorted by AxiomCode.
  */
-std::vector<AxiomCapabilityEntry> axiomCapabilityTable();
+std::vector<AxiomCapabilityEntry> computeAxiomCapabilityTable();
 
 } // namespace semantic
 } // namespace core

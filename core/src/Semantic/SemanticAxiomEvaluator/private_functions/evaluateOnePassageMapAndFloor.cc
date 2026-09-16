@@ -22,11 +22,11 @@
  * @brief           Implements evaluateOnePassageMapAndFloor(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 residual proof-closure repair: the terminal
- *                  success path now also appends a typed
- *                  PASSAGE_FLOOR_ENDPOINT_PROOF_UNVERIFIED UNKNOWN alongside
- *                  the clause-level PASSAGE_FLOOR_AGREEMENT_VALID PASS, so
- *                  the AX-PASS-04 aggregate can never become PASS while
+ *                  The terminal success path also appends a typed
+ *                  PASSAGE_FLOOR_ENDPOINT_PROOF_UNVERIFIED UNKNOWN
+ *                  alongside the clause-level
+ *                  PASSAGE_FLOOR_AGREEMENT_VALID PASS, so the AX-PASS-04
+ *                  aggregate can never become PASS while
  *                  PassageRecord::endpointSlotReason remains
  *                  NOT_TRACKED_BY_CURRENT_SCHEMA.
  */
@@ -71,8 +71,7 @@ void evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
         /* A provably invalid forward reference (wrong kind, unresolvable,
          * duplicate identity, cross-map, declared-map mismatch, or
          * known-bad liveness) must dominate this clause too, not only
-         * AX-PASS-02's own cardinality check -- 2026-09-07 second
-         * proof-closure repair. */
+         * AX-PASS-02's own cardinality check. */
         findings_inout.push_back(
             makeFinding(AxiomCode::AX_PASS_04,
                         AxiomResult::FAIL,
@@ -84,7 +83,7 @@ void evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
     if ((knownSide.referencePresent && knownSide.isCrossMap) ||
         (prospective.referencePresent && prospective.isCrossMap))
     {
-        /* Checkpoint-A residual repair: no longer gated on
+        /* No longer gated on
          * isRealPassageEndpoint -- mirrors AX-PASS-02's own
          * unconditional-on-referencePresent cross-map check, since an
          * unenumerated or unconfirmed cross-map reference is just as much a

@@ -122,7 +122,7 @@ TEST(RoomObservationGaps, ReportsAFullCircleGapForARoomWithNoWalls)
     semantic::Room room;
     room.setId(1);
     room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
     atlas.AddDetectedMapRoom(&room);
 
@@ -156,7 +156,7 @@ TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
     semantic::Room room;
     room.setId(1);
     room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
     room.setWalls(northWall.get());
     atlas.AddDetectedMapRoom(&room);
@@ -199,7 +199,7 @@ TEST(RoomObservationGaps, ReportsNoGapsForARoomWithACompleteBoundary)
     semantic::Room room;
     room.setId(1);
     room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
     room.setWalls(north.get());
     room.setWalls(south.get());

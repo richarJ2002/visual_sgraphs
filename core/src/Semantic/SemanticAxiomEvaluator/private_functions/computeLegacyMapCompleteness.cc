@@ -17,51 +17,51 @@
  */
 
 /*!
- * @file            computeLegacyMapCompleteness.cc
+ * @file         computeLegacyMapCompleteness.cc
  *
- * @brief           Implements computeLegacyMapCompleteness(), declared in
- *                  private_functions.h.
+ * @brief        Implements computeLegacyMapCompleteness(), declared in
+ *               private_functions.h.
  *
- *                  Reproduces core/src/SemanticsManager.cc's "MAP
- *                  COMPLETENESS" block field-for-field:
- *                  - confirmedRoomCount/completeRoomCount/incompleteRoomIds
- *                    iterate Map::GetAllRooms()'s own documented behaviour
- *                    (Map::GetAllDetectedMapRooms() concatenated with
- *                    Map::GetAllMarkerBasedMapRooms(), so a room present in
- *                    both is visited twice), skipping any entry that is
- *                    null, bad, or not RoomRecord::variant == ROOM -- here
- *                    reproduced as a per-room multiplicity
- *                    (isDetectedMember + isMarkerBasedMember) applied to
- *                    every count/list this room contributes to, since
- *                    RoomRecord already deduplicates each Room pointer to
- *                    one record;
- *                  - passageCount/fullyLinkedPassageCount/danglingPassageIds
- *                    iterate live passages, requiring both the known-side
- *                    and prospective room to be non-null, live, and
- *                    RoomRecord::variant == ROOM, with no map check at all
- *                    (reproduced via resolveRoomEndpoint() against the
- *                    whole snapshot, ignoring its isCrossMap output exactly
- *                    as the live code ignores map membership here); and
- *                  - mapFullyModeled combines both exactly as the legacy
- *                    boolean expression does.
+ *               Reproduces core/src/SemanticsManager.cc's "MAP
+ *               COMPLETENESS" block field-for-field:
+ *               - confirmedRoomCount/completeRoomCount/incompleteRoomIds
+ *                 iterate Map::GetAllRooms()'s own documented behaviour
+ *                 (Map::GetAllDetectedMapRooms() concatenated with
+ *                 Map::GetAllMarkerBasedMapRooms(), so a room present in
+ *                 both is visited twice), skipping any entry that is
+ *                 null, bad, or not RoomRecord::variant == ROOM -- here
+ *                 reproduced as a per-room multiplicity
+ *                 (isDetectedMember + isMarkerBasedMember) applied to
+ *                 every count/list this room contributes to, since
+ *                 RoomRecord already deduplicates each Room pointer to
+ *                 one record;
+ *               - passageCount/fullyLinkedPassageCount/danglingPassageIds
+ *                 iterate live passages, requiring both the known-side
+ *                 and prospective room to be non-null, live, and
+ *                 RoomRecord::variant == ROOM, with no map check at all
+ *                 (reproduced via resolveRoomEndpoint() against the
+ *                 whole snapshot, ignoring its isCrossMap output exactly
+ *                 as the live code ignores map membership here); and
+ *               - mapFullyModeled combines both exactly as the legacy
+ *                 boolean expression does.
  *
- *                  Known residual gap in the "exact reproduction" claim:
- *                  the live legacy code dereferences a passage's known-
- *                  side/prospective Room pointer directly, so it needs no
- *                  enumeration at all to read isBad()/getRoomVariant().
- *                  resolveRoomEndpoint() cannot do the same for variant
- *                  (RoomRecord::variant has no EntityRef-level counterpart
- *                  -- see its own Doxygen), so a room that is live,
- *                  ROOM-variant, and genuinely referenced, but that this
- *                  snapshot cannot locate in any captured map's RoomRecord
- *                  collection (isFoundInSnapshot == false), is reproduced
- *                  here as not-real even though live legacy code would
- *                  count it. This requires the referenced room to exist
- *                  without being enumerated in any live map's Detected/
- *                  MarkerBased collection at all, which is not expected in
- *                  ordinary operation; closing it fully would require
- *                  adding variant to EntityRef, a P1.1 schema change out
- *                  of scope for this slice.
+ *               Known residual gap in the "exact reproduction" claim:
+ *               the live legacy code dereferences a passage's known-
+ *               side/prospective Room pointer directly, so it needs no
+ *               enumeration at all to read isBad()/getRoomVariant().
+ *               resolveRoomEndpoint() cannot do the same for variant
+ *               (RoomRecord::variant has no EntityRef-level counterpart
+ *               -- see its own Doxygen), so a room that is live,
+ *               ROOM-variant, and genuinely referenced, but that this
+ *               snapshot cannot locate in any captured map's RoomRecord
+ *               collection (isFoundInSnapshot == false), is reproduced
+ *               here as not-real even though live legacy code would
+ *               count it. This requires the referenced room to exist
+ *               without being enumerated in any live map's Detected/
+ *               MarkerBased collection at all, which is not expected in
+ *               ordinary operation; closing it fully would require adding
+ *               variant to EntityRef, a schema change out of scope for this
+ *               function.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
@@ -84,7 +84,7 @@ LegacyMapCompletenessResult
         const std::size_t multiplicity = (room.isDetectedMember ? 1U : 0U) +
                                          (room.isMarkerBasedMember ? 1U : 0U);
         if (multiplicity == 0U || !room.isLive ||
-            room.variant != Room::roomVariant::ROOM)
+            room.variant != Room::RoomVariant::ROOM)
         {
             continue;
         }

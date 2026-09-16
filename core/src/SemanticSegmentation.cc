@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file         SemanticSegmentation.cc
+ *
+ * @brief        Implements segmentation in SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 #include <algorithm>
@@ -37,7 +43,8 @@ namespace core
 namespace
 {
 /*!
- * @brief Describes the strongest spatially connected part of a wall cloud.
+ * @brief        Describes the strongest spatially connected part of a wall
+ *               cloud.
  */
 struct WallComponentSupport
 {
@@ -50,18 +57,20 @@ struct WallComponentSupport
 };
 
 /*!
- * @brief Finds the largest Euclidean component of a proposed wall plane.
+ * @brief        Finds the largest Euclidean component of a proposed wall
+ *               plane.
  *
- *        The returned indices refer to the input cloud, allowing the same
- *        support to be selected in both camera and map frames. Invalid depth
- *        samples are excluded before building the search tree.
+ *               The returned indices refer to the input cloud, allowing
+ *               the same support to be selected in both camera and map
+ *               frames. Invalid depth samples are excluded before
+ *               building the search tree.
  *
- * @param[in] p_wallCloud_in
- *            Proposed wall support cloud.
- * @param[in] clusterTolerance_m_in
- *            Maximum Euclidean neighbour separation in metres.
+ * @param[in]    p_wallCloud_in
+ *               Proposed wall support cloud.
+ * @param[in]    clusterTolerance_m_in
+ *               Maximum Euclidean neighbour separation in metres.
  *
- * @return Largest connected component and its support statistics.
+ * @return       Largest connected component and its support statistics.
  */
 WallComponentSupport findLargestWallComponent(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_wallCloud_in,
@@ -161,7 +170,7 @@ SemanticSegmentation::SemanticSegmentation(Atlas *pAtlas)
 
     /* Set the booleans according to the mode of operation */
     mGeoRuns = !(sysParams->general.modeOfOperation ==
-                 types::SystemParams::general::ModeOfOperation::SEM);
+                 types::SystemParams::General::ModeOfOperation::SEM);
 }
 
 void SemanticSegmentation::Run()
@@ -865,7 +874,7 @@ void SemanticSegmentation::updatePlaneData(
                      */
                     if (semanticType == vs_graphs::core::geometric::Plane::planeVariant::WALL)
                     {
-                        const types::SystemParams::semSeg::WallCreation
+                        const types::SystemParams::SemSeg::WallCreation
                             &wallCreationParams =
                                 sysParams->semSeg.wallCreation;
 

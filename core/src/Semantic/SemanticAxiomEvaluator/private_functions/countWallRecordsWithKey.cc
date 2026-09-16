@@ -22,11 +22,10 @@
  * @brief           Implements countWallRecordsWithKey(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 second proof-closure repair: sums matches
- *                  across every MapSnapshot whose own mapId equals
- *                  key_in.mapId, rather than returning after the first such
- *                  map (see countRoomRecordsWithKey.cc's identical
- *                  rationale).
+ *                  Sums matches across every MapSnapshot whose own
+ *                  mapId equals key_in.mapId, rather than returning after
+ *                  the first such map (see countRoomRecordsWithKey.cc's
+ *                  identical rationale).
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

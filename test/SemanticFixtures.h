@@ -1,7 +1,7 @@
 /**
  * @file SemanticFixtures.h
  * @brief Deterministic, ROS/Gazebo-free builders for semantic-axiom test
- *        fixtures (semantic-axiom-reliability-plan.md, P0.4).
+ *        fixtures.
  *
  * Several existing test files (test_WallAdmission.cpp,
  * test_RoomContextPersist.cpp, test_room_tracker_integration.cpp) each
@@ -143,7 +143,7 @@ void makeRoom(
     Map                   *p_map_in,
     geometric::Plane                 *p_wall_in,
     const Eigen::Vector3d &centroid_World_m_in = Eigen::Vector3d::Zero(),
-    semantic::Room::roomVariant      variant_in          = semantic::Room::roomVariant::ROOM);
+    semantic::Room::RoomVariant      variant_in          = semantic::Room::RoomVariant::ROOM);
 
 /**
  * @brief   Constructs a minimal semantic::Passage with one known-side room and,

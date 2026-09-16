@@ -112,8 +112,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in);
  *  and mapped). Public (not private_functions.h) because SemanticsManager
  *  also needs it to convert its own manager-private Plane* evidence
  *  (openPassageEvidence_/undefendedWalls_) into pointer-free value
- *  records at the semantic transaction boundary -- see P1.4/P1.7 of
- *  semantic-axiom-reliability-plan.md. */
+ *  records at the semantic transaction boundary. */
 RawPlaneRef rawPlaneRef(geometric::Plane *p_plane_in);
 
 } // namespace semantic

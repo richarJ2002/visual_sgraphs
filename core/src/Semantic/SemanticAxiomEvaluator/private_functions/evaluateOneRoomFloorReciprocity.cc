@@ -22,20 +22,18 @@
  * @brief           Implements evaluateOneRoomFloorReciprocity(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 proof-correctness repair: scans every
- *                  FloorRecord in the room's own map -- not only the one
- *                  RoomRecord::floorRef names -- to detect duplicate
- *                  same-key floor identity, duplicate reverse membership
- *                  within the named floor, and a second, distinct floor
- *                  also listing this room. "Wrong kind" is not a separate
- *                  case: FloorRecord::roomRefs entries are always built via
- *                  entityRefForRoom() (ROOM-kind by construction), so a
- *                  wrong-kind key structurally cannot equal room_in.key --
- *                  the same argument scanReversePassageEndpoints.cc makes
- *                  for passageRefs.
+ *                  Scans every FloorRecord in the room's own map --
+ *                  not only the one RoomRecord::floorRef names -- to detect
+ *                  duplicate same-key floor identity, duplicate reverse
+ *                  membership within the named floor, and a second,
+ *                  distinct floor also listing this room. "Wrong kind" is
+ *                  not a separate case: FloorRecord::roomRefs entries are
+ *                  always built via entityRefForRoom() (ROOM-kind by
+ *                  construction), so a wrong-kind key structurally cannot
+ *                  equal room_in.key -- the same argument
+ *                  scanReversePassageEndpoints.cc makes for passageRefs.
  *
- *                  2026-09-07 residual proof-closure repair: no longer
- *                  returns early with an UNKNOWN "no floor yet" verdict
+ *                  No early UNKNOWN "no floor yet" verdict is returned
  *                  before checking whether some other floor in the map
  *                  reverse-claims this room anyway -- a floor's own
  *                  roomRefs naming a room with no reciprocal forward
@@ -90,7 +88,7 @@ void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
 
     if (countMapSnapshotsWithId(snapshot_in, room_in.key.mapId) > 1U)
     {
-        /* Checkpoint-A residual repair: which MapSnapshot actually holds
+        /* Which MapSnapshot actually holds
          * this room's floor is itself ambiguous when its own containing map
          * id is duplicated -- no first-match FloorRecord lookup below may
          * supply positive proof, and this is also the root cause of a real
@@ -195,11 +193,11 @@ void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
         findRecordByKey(mapSnapshot_in.floors, *room_in.floorRef.key);
     if (p_floor == nullptr)
     {
-        /* Checkpoint-A crash fix: countFloorRecordsWithKey() is
-         * snapshot-wide, so namedFloorMatchCount == 1U above only proves a
-         * match exists somewhere in the snapshot, not that it is
-         * enumerated in this room's own mapSnapshot_in -- defense in depth
-         * alongside the duplicate-containing-map preflight above. */
+        /* countFloorRecordsWithKey() is snapshot-wide, so
+         * namedFloorMatchCount == 1U above only proves a match exists
+         * somewhere in the snapshot, not that it is enumerated in this
+         * room's own mapSnapshot_in -- defense in depth alongside the
+         * duplicate-containing-map preflight above. */
         findings_inout.push_back(makeFinding(AxiomCode::AX_FLOOR_01,
                                              AxiomResult::UNKNOWN,
                                              ReasonCode::ROOM_FLOOR_UNLINKED,
@@ -255,9 +253,8 @@ void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
                         involvedKeys));
         return;
     }
-    /* P1.R10 second re-audit regression fix: multiplicity must count every
-     * otherwise-clean match (confirmed-live or liveness-unavailable alike),
-     * not only confirmed-live ones -- a clean-live member plus a
+    /* Multiplicity must count every otherwise-clean match
+     * (confirmed-live or liveness-unavailable alike), not only confirmed-live ones -- a clean-live member plus a
      * liveness-unavailable duplicate is still ambiguous multiplicity, not a
      * clean single reciprocal member (mirrors
      * scanReversePassageEndpoints.cc's own cleanMatchCountThisRoom, which
@@ -335,7 +332,7 @@ void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
     }
     if (!p_floor->declaredMapId.has_value())
     {
-        /* Checkpoint-A residual repair: the uniquely resolved floor's own
+        /* The uniquely resolved floor's own
          * declaredMapId could not be verified either way either -- cap
          * this room's positive proof at UNKNOWN rather than PASS,
          * mirroring the room's own missing-declared-map cap immediately

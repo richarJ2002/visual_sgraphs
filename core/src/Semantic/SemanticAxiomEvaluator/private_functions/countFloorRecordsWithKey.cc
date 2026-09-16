@@ -22,8 +22,7 @@
  * @brief           Implements countFloorRecordsWithKey(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 second proof-closure repair: made
- *                  snapshot-wide (like countRoomRecordsWithKey() and
+ *                  Snapshot-wide (like countRoomRecordsWithKey() and
  *                  countWallRecordsWithKey()), summing across every
  *                  MapSnapshot whose own mapId equals key_in.mapId, rather
  *                  than being scoped to one caller-chosen MapSnapshot -- a

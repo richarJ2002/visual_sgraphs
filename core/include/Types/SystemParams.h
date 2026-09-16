@@ -21,11 +21,12 @@
  *
  * @brief           Declares the SystemParams YAML-backed calibration store.
  *
- *  @note           WP-01C naming applied: lowerCamelCase members (`p_`
- *                  prefix for the singleton pointer), `getParams`/
- *                  `setParams` accessors, scoped enums with fixed values
- *                  and underlying types. YAML key string literals are
- *                  frozen (ros_freeze.csv) and unchanged.
+ *  @note           Naming convention applied: lowerCamelCase members
+ *                  (`p_` prefix for the singleton pointer),
+ *                  `getParams`/`setParams` accessors, scoped enums
+ *                  with fixed values and underlying types. YAML key
+ *                  string literals are frozen (ros_freeze.csv) and
+ *                  unchanged.
  */
 
 #include <cstdint>
@@ -65,7 +66,7 @@ class SystemParams
     };
 
     // Structs for different modules
-    struct general
+    struct General
     {
         // enum for mode of operation
         enum class ModeOfOperation : std::uint8_t
@@ -78,17 +79,17 @@ class SystemParams
         std::string     envDatabase      = "";
     } general;
 
-    struct markers
+    struct Markers
     {
         float impact = 0.1f;
     } markers;
 
-    struct pointcloud
+    struct Pointcloud
     {
         std::pair<float, float> distanceThresh = std::make_pair(0.2f, 10.0f);
     } pointcloud;
 
-    struct optimization
+    struct Optimization
     {
         bool       marginalizePlanes = false;
         Constraint planeMapPoint;
@@ -96,11 +97,11 @@ class SystemParams
         Constraint planePoint;
     } optimization;
 
-    struct refineMapPoints
+    struct RefineMapPoints
     {
         bool  enabled                 = false;
         float maxDistanceForDelete = 0.5f;
-        struct octree
+        struct Octree
         {
             float        resolution    = 0.1f;
             float        searchRadius = 0.5f;
@@ -108,19 +109,19 @@ class SystemParams
         } octree;
     } refineMapPoints;
 
-    struct planeBasedCovisibility
+    struct PlaneBasedCovisibility
     {
         bool         enabled         = true;
         unsigned int maxKeyframes   = 75;
         unsigned int scorePerPlane = 60;
     } planeBasedCovisibility;
 
-    struct seg
+    struct Seg
     {
         unsigned int pointcloudsThresh      = 200;
         float        planePointDistThresh = 0.2f;
 
-        struct planeAssociation
+        struct PlaneAssociation
         {
             /*!
              *@brief        Maximum angular difference between associated planes
@@ -140,7 +141,7 @@ class SystemParams
              */
             float centroidThresh = 2.5f;
 
-            struct clusterSeparation
+            struct ClusterSeparation
             {
                 /*!
                  * @brief       Enables finite point-cloud compatibility
@@ -159,7 +160,7 @@ class SystemParams
 
         } planeAssociation;
 
-        struct ransac
+        struct Ransac
         {
             unsigned int maxPlanes      = 2;
             float        distanceThresh = 0.04f;
@@ -167,16 +168,16 @@ class SystemParams
         } ransac;
     } seg;
 
-    struct geoSeg
+    struct GeoSeg
     {
-        struct pointcloud
+        struct Pointcloud
         {
             Downsample     downsample;
             OutlierRemoval outlierRemoval;
         } pointcloud;
     } geoSeg;
 
-    struct semSeg
+    struct SemSeg
     {
         float minVotes          = 1.0f;
         float probThresh        = 0.5f;
@@ -245,7 +246,7 @@ class SystemParams
             unsigned int minimumHorizontalFlankPointCount = 12U;
         } passageDetection;
 
-        struct pointcloud
+        struct Pointcloud
         {
             Downsample     downsample;
             OutlierRemoval outlierRemoval;
@@ -303,7 +304,7 @@ class SystemParams
             float minimumOverlapRatio = 0.30f;
         } wallPairing;
 
-        struct reassociate
+        struct Reassociate
         {
             bool  enabled            = false;
             float associationThresh = 0.2f;
@@ -324,7 +325,7 @@ class SystemParams
         } reassociate;
     } semSeg;
 
-    struct roomSeg
+    struct RoomSeg
     {
         enum class Method : std::uint8_t
         {
@@ -396,11 +397,12 @@ class SystemParams
     } roomSeg;
 
     /*!
-     * @brief Room-tracking state machine configuration (WP13 Section 18.4).
+     * @brief        Room-tracking state machine configuration.
      *
-     *        All values are calibration-dependent initial values.
+     *               All values are calibration-dependent initial
+     *               values.
      */
-    struct roomTracking
+    struct RoomTracking
     {
         /*! Minimum continuous dwell in the crossing guard before the
          *  CONFIRMED_ROOM <-> CROSSING_PASSAGE transitions commit (seconds).
@@ -422,7 +424,7 @@ class SystemParams
         unsigned int reacquireMinPlanes = 3U;
     } roomTracking;
 
-    struct candidateGen
+    struct CandidateGen
     {
         unsigned int topK                    = 10U;
         unsigned int candidatePairCap       = 1000U;
@@ -442,10 +444,9 @@ class SystemParams
         unsigned int topoRefinementIters    = 3U;
     } candidateGen;
 
-    /** WP13 Phase 4 (Section 9.3): plane-gated geometric verification gates.
-     * Initial values are the plan's own explicit figures; all
-     * calibration-dependent. */
-    struct verification
+    /** Plane-gated geometric verification gates. Initial values are
+     * explicit figures; all calibration-dependent. */
+    struct Verification
     {
         float        maxNormalAngle_deg        = 10.0F;
         float        maxOffset_m                = 0.35F;
@@ -456,16 +457,16 @@ class SystemParams
         unsigned int maxWallsPerRoom          = 16U;
         unsigned int maxHypotheses              = 2000U;
         unsigned int maxSupportSamplePerWall = 64U;
-        /** Section 19.5's explicit |cos(theta)| gate, distinct from
+        /** Explicit |cos(theta)| gate, distinct from
          * maxNormalAngle_deg above. */
         float        minAbsCosNormalAngle = 0.85F;
     } verification;
 
-    /** WP13 Phase 4 (Section 17.4): EdgePlaneTransformSE3 factor noise model
-     * and robust threshold. No plan-given initial values beyond the Huber
-     * constant; the sigma defaults below are conservative literal choices,
+    /** EdgePlaneTransformSE3 factor noise model and robust threshold.
+     * No given initial values beyond the Huber constant; the sigma
+     * defaults below are conservative literal choices,
      * calibration-dependent like the rest of this section. */
-    struct factor
+    struct Factor
     {
         float        sigmaTheta_rad      = 0.05F;
         float        sigmaOffset_m       = 0.05F;
@@ -474,12 +475,12 @@ class SystemParams
     } factor;
 
     /*!
-     * @brief Map-merge and axiom configuration thresholds.
+     * @brief        Map-merge and axiom configuration thresholds.
      *
-     *      Currently wired as YAML params; merge/axiom logic adopts them in
-     *      later work packages.
+     *               Currently wired as YAML params; merge/axiom
+     *               logic adopts them as it is connected.
      */
-    struct mapMerge
+    struct MapMerge
     {
         /*! @brief Fixed spherical tolerance for passage association across maps
          * (metres). */

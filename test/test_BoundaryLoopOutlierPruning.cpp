@@ -183,7 +183,7 @@ TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
     semantic::Room room;
     room.setId(1);
     room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
     room.setWalls(walls.north.get());
     room.setWalls(walls.south.get());
@@ -228,7 +228,7 @@ TEST(BoundaryLoopOutlierPruning, KeepsAnOutlierExplainedByAPassage)
     semantic::Room room;
     room.setId(1);
     room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
     room.setWalls(walls.north.get());
     room.setWalls(walls.south.get());

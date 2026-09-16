@@ -145,28 +145,36 @@ struct WallRecord
      *  instead of losing it. */
     std::vector<EntityRef> ownerRoomRefs;
 
-    /*! @brief Always NOT_TRACKED_BY_CURRENT_SCHEMA in this slice: no
-     *  current Room/Wall/Passage field records semantic quarantine state
-     *  (confirmed by direct source read -- Plane.h/Room.h have no
-     *  quarantine-flag member). This plan's Section 6.2 names
-     *  SemanticsManager, holding Atlas::acquireSemanticUpdateLock(), as the
-     *  eventual single writer of semantic quarantine state once
-     *  `P4.9` (Section "Phase 4") replaces suppressUndefendedWalls()'s
-     *  semantic deletion with typed quarantine; that phase is the owner of
-     *  resolving this to an actual value. */
+/*!
+ * @brief        Always NOT_TRACKED_BY_CURRENT_SCHEMA: no current
+ *               Room/Wall/Passage field records semantic quarantine
+ *               state (confirmed by direct source read --
+ *               Plane.h/Room.h have no quarantine-flag member).
+ *               SemanticsManager (holding
+ *               Atlas::acquireSemanticUpdateLock()) would be the
+ *               single writer of semantic quarantine state; a
+ *               future extension that replaces
+ *               suppressUndefendedWalls()'s semantic deletion with
+ *               typed quarantine is the owner of resolving this to
+ *               an actual value.
+ */
     UnavailableReason quarantineReason{
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA};
 
-    /*! @brief Always NOT_TRACKED_BY_CURRENT_SCHEMA in this slice: distinct
-     *  from observationSideConsensusReason above (the derived per-keyframe
-     *  side *consensus*), this covers the underlying individual
-     *  observation-ray samples and their traversal order that would
-     *  justify it. Plane::Observation (Plane.h) retains only an aggregated
-     *  point-plane constraint matrix and per-generation counts, never an
-     *  individual ray sample or its order (confirmed by direct source
-     *  read). `P4.1`/`P4.3` of this plan add bounded per-observation ray
-     *  sampling and ray-parameter ordering; that phase owns resolving this
-     *  to an actual value. */
+/*!
+ * @brief        Always NOT_TRACKED_BY_CURRENT_SCHEMA: distinct from
+ *               observationSideConsensusReason above (the derived
+ *               per-keyframe side *consensus*), this covers the
+ *               underlying individual observation-ray samples and
+ *               their traversal order that would justify it.
+ *               Plane::Observation (Plane.h) retains only an
+ *               aggregated point-plane constraint matrix and
+ *               per-generation counts, never an individual ray
+ *               sample or its order (confirmed by direct source
+ *               read). A future extension that adds bounded
+ *               per-observation ray sampling and ray-parameter
+ *               ordering owns resolving this to an actual value.
+ */
     UnavailableReason observationRayEvidenceReason{
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA};
 };

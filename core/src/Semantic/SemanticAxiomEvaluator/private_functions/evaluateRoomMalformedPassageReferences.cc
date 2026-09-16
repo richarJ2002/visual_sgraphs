@@ -22,18 +22,14 @@
  * @brief           Implements evaluateRoomMalformedPassageReferences(),
  *                  declared in private_functions.h.
  *
- *                  2026-09-07 second proof-closure repair: replaces the
- *                  retired per-passage bare-local-id attribution that used
- *                  to live inside scanReversePassageEndpoints.cc/
- *                  evaluateOnePassageCardinality.cc. A room's own
- *                  passageRefs entry with a local id but no key is genuine
- *                  evidence that *some* Passage object this room references
- *                  is malformed, but never proof of *which* passage --
- *                  local ids are unique only within one map (EntityKey.h)
- *                  and are not themselves a map-qualified identity. This
- *                  function therefore runs once per map (not once per
- *                  evaluated passage) and reports the evidence scoped to
- *                  the room alone.
+ *                  A room's own passageRefs entry with a local id but no
+ *                  key is genuine evidence that *some* Passage object this
+ *                  room references is malformed, but never proof of *which*
+ *                  passage -- local ids are unique only within one map
+ *                  (EntityKey.h) and are not themselves a map-qualified
+ *                  identity. This function therefore runs once per map (not
+ *                  once per evaluated passage) and reports the evidence
+ *                  scoped to the room alone.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

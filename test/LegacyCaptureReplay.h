@@ -160,9 +160,9 @@ struct LegacyFileReplayResult
     std::string fullGeometryDigest;
 
     /*! @brief Exactly one entry per current AxiomCode (from
-     *  axiomCapabilityTable(), so this list tracks the evaluator's own
-     *  catalogue rather than a separately hardcoded count). Empty for a
-     *  malformed file. */
+     *  computeAxiomCapabilityTable(), so this list tracks the evaluator's
+     *  own catalogue rather than a separately hardcoded count). Empty for
+     *  a malformed file. */
     std::vector<LegacyAxiomResultRecord> axiomResults;
 };
 

@@ -1,6 +1,6 @@
 /**
  * Focused tests for two wall-admission fixes reported directly against a
- * live sim run (office_clean), landed alongside WP1 Milestone 2:
+ * live sim run (office_clean):
  *
  *  1. evaluateWallAdmissionEvidence()'s height/width gate used to build its
  *     in-plane bounding-box axes from Eigen's Vector3d::unitOrthogonal(),
@@ -466,7 +466,7 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
 }
 
 /* ---------------------------------------------------------------------- *
- * Phase 2(iii): cross-room wall-intersection rejection -- a candidate wall
+ * Cross-room wall-intersection rejection -- a candidate wall
  * whose finite segment decisively crosses another room's already-admitted
  * wall must be rejected, without perturbing the foreign room's wall.
  * ---------------------------------------------------------------------- */
@@ -621,7 +621,7 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
     semantic::Room prospective;
     prospective.setId(2);
     prospective.setMap(p_map);
-    prospective.setRoomVariant(semantic::Room::roomVariant::UNDEFINED);
+    prospective.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED);
     prospective.setCentroid(Eigen::Vector3d(3.0, 0.0, 0.0));
     passage.setProspectiveRoom(&prospective);
 
@@ -667,7 +667,7 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
     semantic::Room prospective;
     prospective.setId(2);
     prospective.setMap(p_map);
-    prospective.setRoomVariant(semantic::Room::roomVariant::UNDEFINED);
+    prospective.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED);
     prospective.setCentroid(Eigen::Vector3d(3.0, 0.0, 0.0));
     passage.setProspectiveRoom(&prospective);
 

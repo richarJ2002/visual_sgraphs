@@ -1,8 +1,9 @@
 /**
  * @file test_WallPairing.cpp
- * @brief Phase 1 coverage: SemanticsManager::reconcileWallFacePairs() links
- *        the two opposite-facing geometric::Plane hypotheses of one physical wall
- *        (axiom (e)), and unlinks a pair that stops being plausible.
+ * @brief Wall-pairing coverage: SemanticsManager::reconcileWallFacePairs()
+ *        links the two opposite-facing geometric::Plane hypotheses of one
+ *        physical wall (axiom (e)), and unlinks a pair that stops being
+ *        plausible.
  */
 
 #include "Atlas.h"

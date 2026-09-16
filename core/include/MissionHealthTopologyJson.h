@@ -23,7 +23,7 @@
  *                   the pure function extending
  *                   /vs_graphs/get_mission_health's existing schema-1
  *                   topology_json to schema 2 with copied-cache evaluator
- *                   additions (semantic-axiom-reliability-plan.md P1.8).
+ *                   additions.
  *                   Pure and ROS-free so it is directly unit-testable.
  */
 

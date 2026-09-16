@@ -22,10 +22,9 @@
  * @brief           Implements evaluateOnePassageCardinality(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 proof-correctness repair: adds an exhaustive
- *                  reverse-endpoint scan (scanReversePassageEndpoints()) on
- *                  top of the pre-repair forward-only checks, and replaces
- *                  the pre-repair terminal PASS with UNKNOWN
+ *                  An exhaustive reverse-endpoint scan
+ *                  (scanReversePassageEndpoints()) complements the
+ *                  forward-only checks, and the terminal result is UNKNOWN
  *                  (PASSAGE_CARDINALITY_ENDPOINT_SLOT_UNVERIFIED): see
  *                  PassageRecord::endpointSlotReason, always
  *                  NOT_TRACKED_BY_CURRENT_SCHEMA -- no authoritative
@@ -36,16 +35,15 @@
  *                  (forward or reverse) still dominates that UNKNOWN
  *                  result via FAIL > UNKNOWN precedence.
  *
- *                  2026-09-07 residual proof-closure repair: forward
- *                  endpoint resolution now rejects an ambiguous
- *                  duplicate-identity match; the reverse scan's new
- *                  wrong-kind and duplicated-reference anomalies are
- *                  checked; and the terminal cardinality rule now computes
- *                  the union of every real (forward or reverse) endpoint
- *                  key before applying the maximum-two-endpoint rule, so a
- *                  reverse-only room that merely fills an otherwise-empty
- *                  forward slot is no longer misreported as a third
- *                  endpoint -- only a union exceeding two distinct keys is.
+ *                  Forward endpoint resolution rejects an ambiguous
+ *                  duplicate-identity match; the reverse scan's wrong-kind
+ *                  and duplicated-reference anomalies are checked; and the
+ *                  terminal cardinality rule computes the union of every
+ *                  real (forward or reverse) endpoint key before applying
+ *                  the maximum-two-endpoint rule, so a reverse-only room
+ *                  that merely fills an otherwise-empty forward slot is
+ *                  not misreported as a third endpoint -- only a union
+ *                  exceeding two distinct keys is.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
@@ -106,7 +104,7 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
 
     if (knownSide.isReasonInconsistent || prospective.isReasonInconsistent)
     {
-        /* Checkpoint-A residual repair: a keyed forward reference whose own
+        /* A keyed forward reference whose own
          * EntityRef::reason is not NONE violates EntityRef's documented
          * invariant and must never flow through as an ordinary valid
          * reference. */
@@ -121,7 +119,7 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
     if (knownSide.isContainingMapAmbiguous ||
         prospective.isContainingMapAmbiguous)
     {
-        /* Checkpoint-A residual repair: a duplicate MapSnapshot::mapId for
+        /* A duplicate MapSnapshot::mapId for
          * the referenced map means no first-match lookup can supply
          * positive proof for this endpoint. */
         findings_inout.push_back(makeFinding(
@@ -136,8 +134,7 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
      * with genuinely unproven liveness is not a bad endpoint merely because
      * ResolvedRoomEndpoint::isLive defaults to false; see
      * resolveRoomEndpoint.cc's Doxygen and the dedicated
-     * liveness-unavailable check below (2026-09-07 second proof-closure
-     * repair). */
+     * liveness-unavailable check below. */
     const bool knownSideBad = knownSide.referencePresent &&
                               knownSide.isLiveAvailable && !knownSide.isLive;
     const bool prospectiveBad = prospective.referencePresent &&
@@ -274,8 +271,7 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
          * contradiction, but its own liveness is genuinely unproven: this
          * passage's cardinality cannot be certified either way. Checked
          * after every reverse-scan FAIL above so an independently known
-         * contradiction still dominates (FAIL > UNKNOWN). 2026-09-07
-         * second proof-closure repair. */
+         * contradiction still dominates (FAIL > UNKNOWN). */
         findings_inout.push_back(makeFinding(
             AxiomCode::AX_PASS_02,
             AxiomResult::UNKNOWN,
@@ -290,7 +286,7 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
          * "missing liveness is unavailable, not live": this reverse
          * reference must not be silently counted as a confirmed endpoint,
          * but neither may it be treated as a proven third-endpoint
-         * contradiction. 2026-09-07 second proof-closure repair. */
+         * contradiction. */
         std::vector<EntityKey> anomalyKeys = involvedKeys;
         anomalyKeys.insert(
             anomalyKeys.end(),

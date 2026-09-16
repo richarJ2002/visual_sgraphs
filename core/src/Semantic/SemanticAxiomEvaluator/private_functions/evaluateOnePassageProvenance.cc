@@ -22,10 +22,9 @@
  * @brief           Implements evaluateOnePassageProvenance(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 second proof-closure repair: extracted from
- *                  evaluateAxPass01.cc so evaluateAxPass01() and
- *                  computeConservativeMapCompleteness() share the identical
- *                  AX-PASS-01 leaf rather than the completeness path
+ *                  Shared AX-PASS-01 leaf used by evaluateAxPass01() and
+ *                  computeConservativeMapCompleteness() so both consume
+ *                  the identical leaf rather than the completeness path
  *                  re-deriving its own hand-written passable() check.
  */
 

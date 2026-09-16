@@ -77,7 +77,7 @@ struct RoomRecord
     std::optional<long unsigned int> declaredMapId;
 
     /*! @brief Room::getRoomVariant() at capture time. */
-    Room::roomVariant variant{Room::roomVariant::UNDEFINED};
+    Room::RoomVariant variant{Room::RoomVariant::UNDEFINED};
 
     /*! @brief Room::getCentroid() at capture time. May reflect a
      *  concurrent bundle-adjustment update (Optimizer.cc calls
@@ -133,12 +133,16 @@ struct RoomRecord
      *  ground plane yet", the ordinary case. */
     RawPlaneRef groundPlaneRef;
 
-    /*! @brief Always NOT_TRACKED_BY_CURRENT_SCHEMA in this slice: Room has
-     *  no field recording how/why it was created (confirmed by direct
-     *  source read of Room.h/Room.cc -- roomTag, p_matchedContext, and
-     *  the meta-marker fields record identity/labelling, not creation
-     *  provenance). A later phase that adds a provenance field on Room is
-     *  the owner of resolving this to an actual value. */
+/*!
+ * @brief        Always NOT_TRACKED_BY_CURRENT_SCHEMA: Room has no
+ *               field recording how/why it was created (confirmed by
+ *               direct source read of Room.h/Room.cc -- roomTag,
+ *               p_matchedContext, and the meta-marker fields record
+ *               identity/labelling, not creation provenance). A
+ *               future extension that adds a provenance field on
+ *               Room is the owner of resolving this to an actual
+ *               value.
+ */
     UnavailableReason creationProvenanceReason{
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA};
 };

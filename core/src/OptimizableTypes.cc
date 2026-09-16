@@ -20,6 +20,12 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file         OptimizableTypes.cc
+ *
+ * @brief        Implements optimizable edges in OptimizableTypes.h.
+ */
+
 #include "OptimizableTypes.h"
 
 namespace vs_graphs
@@ -64,7 +70,8 @@ namespace core
             -z, 0.f, x, 0.f, 1.f, 0.f,
             y, -x, 0.f, 0.f, 0.f, 1.f;
 
-        _jacobianOplusXi = -pCamera->projectJac(xyz_trans) * SE3deriv;
+        _jacobianOplusXi =
+            -pCamera->computeProjectionJacobian(xyz_trans) * SE3deriv;
     }
 
     bool EdgeSE3ProjectXYZOnlyPoseToBody::read(std::istream &is)
@@ -107,7 +114,7 @@ namespace core
             -z_w, 0.f, x_w, 0.f, 1.f, 0.f,
             y_w, -x_w, 0.f, 0.f, 0.f, 1.f;
 
-        _jacobianOplusXi = -pCamera->projectJac(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
+        _jacobianOplusXi = -pCamera->computeProjectionJacobian(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
     }
 
     bool EdgeSE3ProjectXYZDepth::read(std::istream &is)
@@ -180,16 +187,16 @@ namespace core
         double y = xyz_trans[1];
         double z = xyz_trans[2];
 
-        auto projectJac = -pCamera->projectJac(xyz_trans);
+        auto projectionJacobian = -pCamera->computeProjectionJacobian(xyz_trans);
 
-        _jacobianOplusXi = projectJac * T.rotation().toRotationMatrix();
+        _jacobianOplusXi = projectionJacobian * T.rotation().toRotationMatrix();
 
         Eigen::Matrix<double, 3, 6> SE3deriv;
         SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f,
             -z, 0.f, x, 0.f, 1.f, 0.f,
             y, -x, 0.f, 0.f, 0.f, 1.f;
 
-        _jacobianOplusXj = projectJac * SE3deriv;
+        _jacobianOplusXj = projectionJacobian * SE3deriv;
     }
 
     EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody() : BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, g2o::VertexSE3Expmap>()
@@ -230,7 +237,7 @@ namespace core
         Eigen::Vector3d X_l = T_lw.map(X_w);
         Eigen::Vector3d X_r = mTrl.map(T_lw.map(X_w));
 
-        _jacobianOplusXi = -pCamera->projectJac(X_r) * T_rw.rotation().toRotationMatrix();
+        _jacobianOplusXi = -pCamera->computeProjectionJacobian(X_r) * T_rw.rotation().toRotationMatrix();
 
         double x = X_l[0];
         double y = X_l[1];
@@ -241,7 +248,7 @@ namespace core
             -z, 0.f, x, 0.f, 1.f, 0.f,
             y, -x, 0.f, 0.f, 0.f, 1.f;
 
-        _jacobianOplusXj = -pCamera->projectJac(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
+        _jacobianOplusXj = -pCamera->computeProjectionJacobian(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
     }
 
     VertexSim3Expmap::VertexSim3Expmap() : BaseVertex<7, g2o::Sim3>()

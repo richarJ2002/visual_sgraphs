@@ -20,7 +20,7 @@
  * @file            test_LegacyCaptureReplay.cpp
  *
  * @brief           GTests for the truthful deterministic legacy capture
- *                  replay (semantic-axiom-reliability-plan.md P1.9): valid
+ *                  replay: valid
  *                  parsing, malformed-file reporting, permutation
  *                  invariance, topology/geometry digest independence, never
  *                  fabricating PASS, and the actual 147-file acceptance
@@ -150,7 +150,7 @@ TEST(LegacyCaptureReplay, NeverEmitsPassOnlyFailOrUnknown)
         << "duplicate axiom code in replay result";
 }
 
-/* P1.9: the one directly provable contradiction this legacy schema can
+/* The one directly provable contradiction this legacy schema can
  * expose -- a wall's room_id names no room declared in the same file. */
 TEST(LegacyCaptureReplay,
      UnresolvableWallOwnerIsReportedAsFailDeterministically)
@@ -193,7 +193,7 @@ TEST(LegacyCaptureReplay, JsonArrayPermutationProducesIdenticalDigests)
               legacyFullGeometryDigest(reversed));
 }
 
-/* P1.9: two captures sharing every topology-relevant fact (room ids, wall
+/* Two captures sharing every topology-relevant fact (room ids, wall
  * owner ids, passage count, floor presence) but differing only in geometry
  * must keep one topology digest and produce distinct full-geometry
  * digests. */

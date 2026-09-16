@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file         GeoSemHelpers.cc
+ *
+ * @brief        Implements GeoSemHelpers declared in GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 
 #include <algorithm>
@@ -958,7 +964,7 @@ vs_graphs::core::semantic::Room *
 
     newRoom->setName("SE#" + std::to_string(roomId));
 
-    newRoom->setRoomVariant(vs_graphs::core::semantic::Room::roomVariant::UNDEFINED);
+    newRoom->setRoomVariant(vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED);
 
     std::cout << "[GeoSemHelper] Created provisional SE#" << newRoom->getId()
               << " at " << newRoom->getCentroid().transpose() << "."

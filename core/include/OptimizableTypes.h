@@ -813,10 +813,10 @@ namespace core
     };
 
     /**
-     * WP13 Phase 4 (Section 17): a fixed source/target plane-pair measurement
-     * for the inter-map transform factor below. Both plane equations and the
-     * sign hypothesis are fixed at construction; the surviving plane is not a
-     * graph variable.
+     * A fixed source/target plane-pair measurement for the inter-map
+     * transform factor below. Both plane equations and the sign
+     * hypothesis are fixed at construction; the surviving plane is not
+     * a graph variable.
      */
     struct PlanePairMeasurement
     {
@@ -834,19 +834,17 @@ namespace core
     };
 
     /**
-     * WP13 Phase 4 (Section 17): one unary factor on the inter-map SE(3)
-     * transform per accepted wall correspondence. Residual is [orientation
-     * (2D tangent at n_B), offset (1D)]. Only computeError() is provided:
-     * this codebase's VertexSE3Expmap::oplusImpl perturbs on the LEFT
-     * (setEstimate(SE3Quat::exp(update) * estimate())), which is the
-     * opposite convention the plan text assumed when it specified an
-     * analytical Jacobian; rather than re-derive under the wrong convention,
-     * this edge relies on g2o::BaseUnaryEdge's own numerical
-     * linearizeOplus() (base_unary_edge.hpp), which probes the vertex's
-     * actual oplus() and is therefore correct regardless of the
-     * perturbation-side convention. This is the plan's own explicit fallback
-     * ("if analytical derivation proves intractable, numerical
-     * differentiation with central differences is the explicit fallback").
+     * One unary factor on the inter-map SE(3) transform per accepted wall
+     * correspondence. Residual is [orientation (2D tangent at n_B), offset
+     * (1D)]. Only computeError() is provided: this codebase's
+     * VertexSE3Expmap::oplusImpl perturbs on the LEFT
+     * (setEstimate(SE3Quat::exp(update) * estimate())), so no analytical
+     * Jacobian is derived under the opposite convention; this edge relies
+     * on g2o::BaseUnaryEdge's own numerical linearizeOplus()
+     * (base_unary_edge.hpp), which probes the vertex's actual oplus() and
+     * is therefore correct regardless of the perturbation-side convention
+     * (numerical differentiation with central differences is the explicit
+     * fallback).
      */
     class EdgePlaneTransformSE3 : public g2o::BaseUnaryEdge<3, PlanePairMeasurement, g2o::VertexSE3Expmap>
     {

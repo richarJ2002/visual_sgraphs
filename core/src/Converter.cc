@@ -18,7 +18,13 @@
  *
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
+
+/*!
+ * @file         Converter.cc
+ *
+ * @brief        Implements pose and matrix conversions between library types.
+ */
 
 #include "Converter.h"
 
@@ -27,6 +33,7 @@ namespace vs_graphs
 namespace core
 {
 
+/* Each row header shares its storage with the source matrix. */
 std::vector<cv::Mat>
     Converter::toDescriptorVector(const cv::Mat &descriptors_in)
 {
@@ -74,6 +81,7 @@ std::vector<cv::Mat>
             similarity_in.rotation().toRotationMatrix();
         Eigen::Vector3d eigenTranslation = similarity_in.translation();
         double          scale            = similarity_in.scale();
+        /* Fold the similarity scale into the rotation part. */
         return toCvSE3(scale * eigenRotation, eigenTranslation);
     }
 
@@ -312,6 +320,7 @@ std::vector<cv::Mat>
         cv::Mat shouldBeIdentity = rotationTranspose * rotationMatrix_in;
         cv::Mat identity         = cv::Mat::eye(3, 3, shouldBeIdentity.type());
 
+        /* Accept small numerical drift around exact orthonormality. */
         return cv::norm(identity, shouldBeIdentity) < 1e-6;
     }
 
@@ -336,6 +345,7 @@ std::vector<cv::Mat>
         }
         else
         {
+            /* Fall back to the gimbal-lock form near the singularity. */
             xAngle = atan2(-rotationMatrix_in.at<float>(1, 2),
                            rotationMatrix_in.at<float>(1, 1));
             yAngle = atan2(-rotationMatrix_in.at<float>(2, 0), symmetricSum);

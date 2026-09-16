@@ -23,6 +23,12 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+/*!
+ * @file         Config.h
+ *
+ * @brief        Declares the configuration containers and file parser.
+ */
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,31 +39,67 @@ namespace vs_graphs
 namespace core
 {
 
+    /*!
+     * @brief        Viewer configuration container.
+     */
     class ViewerConfig
     {
     };
 
+    /*!
+     * @brief        Camera configuration container.
+     */
     class CameraConfig
     {
     };
 
+    /*!
+     * @brief        ORB extractor configuration container.
+     */
     class ORBExtractorConfig
     {
     };
 
+    /*!
+     * @brief        IMU configuration container.
+     */
     class IMUConfig
     {
     };
 
+    /*!
+     * @brief        Parses the estimator configuration file.
+     */
     class ConfigParser
     {
     public:
+        /*!
+         * @brief        Parses the configuration file at the given path.
+         *
+         * @param[in]    configFilePath_in
+         *               Path of the configuration file to parse.
+         *
+         * @return       True when parsing succeeded. The stub
+         *               implementation always reports success.
+         */
         bool parseConfigFile(const std::string &configFilePath_in);
 
     private:
+        /*!
+         * @brief        Stored viewer configuration.
+         */
         ViewerConfig viewerConfig;
+        /*!
+         * @brief        Stored camera configuration.
+         */
         CameraConfig cameraConfig;
+        /*!
+         * @brief        Stored ORB extractor configuration.
+         */
         ORBExtractorConfig orbConfig;
+        /*!
+         * @brief        Stored IMU configuration.
+         */
         IMUConfig imuConfig;
     };
 

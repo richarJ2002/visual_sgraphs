@@ -394,7 +394,7 @@ WallAdmissionEvidence
     const double majorExtent_m = std::max(extentU_m, extentV_m);
     const double minorExtent_m = std::min(extentU_m, extentV_m);
     const double area_m2       = majorExtent_m * minorExtent_m;
-    const types::SystemParams::semSeg::WallCreation &wallCreation =
+    const types::SystemParams::SemSeg::WallCreation &wallCreation =
         p_systemParams_in->semSeg.wallCreation;
     const double fitSupportRatio =
         evidence.finitePointCount > 0U
@@ -700,7 +700,7 @@ struct WallLoopClosure
 WallLoopClosure tryCloseWallLoop(
     std::vector<FiniteWallSegment2d>                wallSegments_in,
     const Eigen::Vector2d                          &roomCentroid_Ground_m_in,
-    const types::SystemParams::roomSeg::BoundaryTopology &topologyParameters_in)
+    const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters_in)
 {
     WallLoopClosure result;
 
@@ -1497,7 +1497,7 @@ SemanticsManager::SemanticsManager(Atlas *pAtlas)
     /* Get the system parameters */
     sysParams = types::SystemParams::getParams();
 
-    /* Configure the room-tracking state machine (WP13 Section 18.4). */
+    /* Configure the room-tracking state machine. */
     semantic::RoomTrackerConfig trackerConfig;
     trackerConfig.crossing_dwell_s =
         static_cast<double>(sysParams->roomTracking.crossingDwell_s);
@@ -1610,7 +1610,7 @@ SemanticsManager::ActiveMapBootstrapResult
         for (semantic::Room *p_room : activeRooms)
         {
             if (p_room != nullptr && !p_room->isBad() &&
-                p_room->getRoomVariant() == semantic::Room::roomVariant::ROOM &&
+                p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM &&
                 p_room->getId() == roomId_in)
             {
                 return p_room;
@@ -1641,7 +1641,7 @@ SemanticsManager::ActiveMapBootstrapResult
         for (semantic::Room *p_room : activeRooms)
         {
             if (p_room != nullptr && !p_room->isBad() &&
-                p_room->getRoomVariant() == semantic::Room::roomVariant::ROOM &&
+                p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM &&
                 (p_bootstrapRoom == nullptr ||
                  p_room->getId() < p_bootstrapRoom->getId()))
             {
@@ -1742,7 +1742,7 @@ SemanticsManager::ActiveMapBootstrapResult
         }
         mpAtlas->AddCandidateMapRoom(p_bootstrapRoom);
         p_activeMap->PromoteCandidateMapRoom(p_bootstrapRoom);
-        p_bootstrapRoom->setRoomVariant(semantic::Room::roomVariant::ROOM);
+        p_bootstrapRoom->setRoomVariant(semantic::Room::RoomVariant::ROOM);
         p_bootstrapRoom->setName("semantic::Room#" +
                                  std::to_string(p_bootstrapRoom->getId()));
         p_bootstrapRoom->setBoundaryStatus(semantic::Room::BoundaryStatus::UNOBSERVED);
@@ -1985,7 +1985,7 @@ void SemanticsManager::Run(void)
          * @note         This is the preferred wall-to-room association method.
          */
         if (sysParams->roomSeg.method ==
-            types::SystemParams::roomSeg::Method::FREE_SPACE)
+            types::SystemParams::RoomSeg::Method::FREE_SPACE)
         {
             detectRoom_FreeSpaceCluster();
         }
@@ -2106,23 +2106,25 @@ void SemanticsManager::Run(void)
             }
         }
 
-        /* Phase 2: Re-detect rooms from passage-partitioned free-space
+        /* Second pass: re-detect rooms from passage-partitioned free-space
          * clusters. Now that passages exist, partitionFreeSpaceAtPassages()
          * will split clusters at doorways, yielding correct per-room clusters.
          */
         if (sysParams->roomSeg.method ==
-            types::SystemParams::roomSeg::Method::FREE_SPACE)
+            types::SystemParams::RoomSeg::Method::FREE_SPACE)
         {
             detectRoom_FreeSpaceCluster(); // Second pass - updates existing
                                            // rooms
         }
 
-        /* Re-associate walls to rooms after Phase 2 cluster splitting.
-         * Walls assigned in Phase 1 may belong to wrong (merged) rooms. */
+        /* Re-associate walls to rooms after second-pass cluster splitting.
+         * Walls assigned in the first pass may belong to wrong (merged)
+         * rooms. */
         associateAllWallsToRooms();
 
         /* A wall surface is owned by exactly one room in every configuration.
-         * Run AFTER Phase 2 so split clusters get correct wall ownership. */
+         * Run AFTER the second pass so split clusters get correct wall
+         * ownership. */
         enforceUniqueWallOwnership();
 
         /* Link each wall's opposite-facing twin, now that ownership has
@@ -2143,7 +2145,7 @@ void SemanticsManager::Run(void)
          * which breaks the centroid-keyed room matching in associateRooms()
          * and spawns a duplicate room every run. */
         if (sysParams->roomSeg.method !=
-            types::SystemParams::roomSeg::Method::FREE_SPACE)
+            types::SystemParams::RoomSeg::Method::FREE_SPACE)
         {
             recomputeRoomCentroidsFromWalls();
         }
@@ -2156,17 +2158,17 @@ void SemanticsManager::Run(void)
         reconcileRoomGroundPlanes();
 
         /* Room candidate generation is pre-verification only. The legacy
-         * tag-and-wall-transfer entry point remains disabled until P4. */
+         * tag-and-wall-transfer entry point remains disabled. */
 
-        /* Advance the room-state machine (WP13 Section 18.2). It consumes the
+        /* Advance the room-state machine. It consumes the
          * traversal crossings recorded above and reports accepted/rejected
          * transitions. It is read-only with respect to the room id members. */
         const std::chrono::duration<double> roomTrackerElapsed =
             std::chrono::steady_clock::now().time_since_epoch();
         updateRoomTrackerState(roomTrackerElapsed.count());
 
-        /* P4 verification and the shared merge seam are not enabled in P1-P3.
-         * In particular, a tag match must never activate MergeMapPair(). */
+        /* Verification-gated merge is not enabled here. In particular, a tag
+         * match must never activate MergeMapPair(). */
         std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
              copiedContext  = mpAtlas->copyRoomContextHistory();
         Map *p_candidateMap = mpAtlas->GetCurrentMap();
@@ -2210,7 +2212,7 @@ void SemanticsManager::Run(void)
             sysParams->candidateGen.descriptorElementsCap;
         candidateConfig.topoRefinementIters =
             sysParams->candidateGen.topoRefinementIters;
-        /* Section 9.2's "last-confirmed room" anchor for adjacency-
+        /* The "last-confirmed room" anchor for adjacency-
          * prioritised candidate search. -1 (unset) maps to no anchor. */
         const int                lastKnownRoomId = getLastKnownRoomId();
         const std::optional<int> anchorRoomId =
@@ -2223,12 +2225,11 @@ void SemanticsManager::Run(void)
         std::cout << "[SemMgr] semantic_candidates count=" << candidates.size()
                   << std::endl;
 
-        /* Milestone 1 (WP1-master-plan.md, Part 4): run the Phase 4 verifier
-         * on the single best candidate and feed a real VerificationVerdict to
-         * roomTracker_ via submitVerificationVerdict(). This still only makes
-         * the *verdict* real -- it must not call Atlas::MergeMapPair() or
-         * otherwise mutate the Atlas; that trigger is Milestone 3's, gated
-         * behind the real-data verifier audit of Milestone 2. */
+        /* Run the geometric verifier on the single best candidate and feed
+         * the resulting VerificationVerdict to roomTracker_ via
+         * submitVerificationVerdict(). This still only makes the *verdict*
+         * real -- it must not call Atlas::MergeMapPair() or otherwise mutate
+         * the Atlas; that trigger is a separate, deliberately gated step. */
         evaluateTopCandidateVerification(candidates);
 
         /* Compact Phase-1 heartbeat: all values come from this completed
@@ -2292,7 +2293,7 @@ void SemanticsManager::Run(void)
             {
                 continue;
             }
-            if (p_room->getRoomVariant() == semantic::Room::roomVariant::ROOM)
+            if (p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM)
             {
                 realRoomCount++;
             }
@@ -2349,13 +2350,12 @@ void SemanticsManager::Run(void)
                   << std::endl;
 
         /* ------------------------------------------------------------------ *
-         * SEMANTIC MONITOR BOUNDARY (P1.4/P1.7/P1.8, semantic-axiom-
-         * reliability-plan.md): capture a complete, pointer-free snapshot
-         * plus manager-private evidence while the semantic-update lock is
-         * still held, unlock, then evaluate/digest/cache/log outside the
-         * lock. Read-only with respect to inference, ownership, passage,
-         * room, and completeness decisions -- this never mutates Atlas/Map/
-         * Room/Wall/Passage state.
+         * SEMANTIC MONITOR BOUNDARY: capture a complete, pointer-free
+         * snapshot plus manager-private evidence while the semantic-update
+         * lock is still held, unlock, then evaluate/digest/cache/log
+         * outside the lock. Read-only with respect to inference,
+         * ownership, passage, room, and completeness decisions -- this
+         * never mutates Atlas/Map/Room/Wall/Passage state.
          * ------------------------------------------------------------------ */
         const std::uint64_t semanticCycle = pipelineSemanticCycle_;
 
@@ -2567,7 +2567,7 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *groundPlane)
 void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
     const std::vector<vs_graphs::core::geometric::Plane *> &wallPlanes)
 {
-    const types::SystemParams::semSeg::PassageDetection &passageParameters =
+    const types::SystemParams::SemSeg::PassageDetection &passageParameters =
         sysParams->semSeg.passageDetection;
 
     const double minimumSideDistance =
@@ -4343,10 +4343,10 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
                 if (reachedRoomIsLive)
                 {
                     if (p_reachedRoom->getRoomVariant() ==
-                        semantic::Room::roomVariant::UNDEFINED)
+                        semantic::Room::RoomVariant::UNDEFINED)
                     {
                         p_activeMap->PromoteCandidateMapRoom(p_reachedRoom);
-                        p_reachedRoom->setRoomVariant(semantic::Room::roomVariant::ROOM);
+                        p_reachedRoom->setRoomVariant(semantic::Room::RoomVariant::ROOM);
                         p_reachedRoom->setName(
                             "semantic::Room#" + std::to_string(p_reachedRoom->getId()));
                         p_reachedRoom->setBoundaryStatus(
@@ -4440,7 +4440,7 @@ void SemanticsManager::seedCurrentRoomFromActiveMap(Map *p_activeMap_in)
     for (semantic::Room *p_room : rooms)
     {
         if (p_room != nullptr && !p_room->isBad() &&
-            p_room->getRoomVariant() == semantic::Room::roomVariant::ROOM)
+            p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM)
         {
             currentRoomId_ = p_room->getId();
             mpAtlas->setCurrentSemanticRoomIdentity(currentRoomId_);
@@ -4521,7 +4521,7 @@ void SemanticsManager::updateRoomTrackerState(double now_s)
     /* Passage crossing evidence. segmentCrossesPassageOpening() already
      * required a passable passage; a detected crossing is therefore direct
      * geometric evidence and carries full traversal confidence until the
-     * Phase 4 verifier supplies a calibrated value. */
+     * geometric verifier supplies a calibrated value. */
     semantic::TraversalGuardValues crossing;
     crossing.passageDetected   = crossingPending;
     crossing.passable          = crossingPending;
@@ -4568,7 +4568,7 @@ semantic::Room *SemanticsManager::findRoomByMapAndId(long unsigned int mapId_in,
         for (semantic::Room *p_room : p_map->GetAllRooms())
         {
             if (p_room != nullptr && !p_room->isBad() &&
-                p_room->getRoomVariant() == semantic::Room::roomVariant::ROOM &&
+                p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM &&
                 p_room->getId() == roomId_in)
             {
                 return p_room;
@@ -4683,7 +4683,7 @@ void SemanticsManager::evaluateTopCandidateVerification(
               << "\"" << std::endl;
 
     /* Verification only: no Atlas mutation here. This makes RoomTracker's
-     * VerificationVerdict input real; Milestone 3's shared merge trigger is
+     * VerificationVerdict input real; the shared merge trigger is
      * a separate, deliberately gated step (see the comment above this
      * method's call site in Run()). */
     submitVerificationVerdict(result.toVerificationVerdict());
@@ -4910,7 +4910,7 @@ std::vector<std::vector<Eigen::Vector3d>>
         const std::vector<std::vector<Eigen::Vector3d>>
             &freeSpaceClusters_World_m_in) const
 {
-    const types::SystemParams::roomSeg::PassagePartition &partitionParameters =
+    const types::SystemParams::RoomSeg::PassagePartition &partitionParameters =
         sysParams->roomSeg.passagePartition;
 
     if (!partitionParameters.enabled || freeSpaceClusters_World_m_in.empty())
@@ -5131,7 +5131,7 @@ std::vector<std::vector<Eigen::Vector3d>>
 
 void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
 {
-    const types::SystemParams::roomSeg::PassagePartition &partitionParameters =
+    const types::SystemParams::RoomSeg::PassagePartition &partitionParameters =
         sysParams->roomSeg.passagePartition;
 
     if (!partitionParameters.enabled ||
@@ -5247,7 +5247,7 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
                 if (p_otherRoom == nullptr || p_otherRoom == p_room ||
                     p_otherRoom->isBad() ||
                     p_otherRoom->getRoomVariant() ==
-                        semantic::Room::roomVariant::UNDEFINED)
+                        semantic::Room::RoomVariant::UNDEFINED)
                 {
                     continue;
                 }
@@ -5391,7 +5391,7 @@ SemanticsManager::PassageSideEnforcementOutcome
             if (p_other == nullptr || p_other->isBad() ||
                 p_other == p_room_inout ||
                 p_other->getRoomVariant() ==
-                    vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+                    vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
             {
                 continue;
             }
@@ -5480,7 +5480,7 @@ SemanticsManager::PassageSideEnforcementOutcome
             if (p_other == nullptr || p_other->isBad() ||
                 p_other == p_room_inout ||
                 p_other->getRoomVariant() ==
-                    vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+                    vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
             {
                 continue;
             }
@@ -5775,7 +5775,7 @@ bool SemanticsManager::admitWallToRoom(semantic::Room  *p_room_inout,
         return false;
     }
 
-    const types::SystemParams::roomSeg::BoundaryTopology &topologyParameters =
+    const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters =
         sysParams->roomSeg.boundaryTopology;
     geometric::Plane *p_groundPlane = mpAtlas->GetBiggestGroundPlane();
 
@@ -6343,7 +6343,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
             if (p_prospective == nullptr || p_prospective->isBad() ||
                 p_prospective->getRoomVariant() !=
-                    vs_graphs::core::semantic::Room::roomVariant::UNDEFINED ||
+                    vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED ||
                 matchedRoomIds.count(p_prospective->getId()) > 0U)
             {
                 continue;
@@ -6515,7 +6515,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                 return p_existingRoom != nullptr &&
                                        !p_existingRoom->isBad() &&
                                        p_existingRoom->getRoomVariant() ==
-                                           vs_graphs::core::semantic::Room::roomVariant::ROOM;
+                                           vs_graphs::core::semantic::Room::RoomVariant::ROOM;
                             });
 
             if (anyConfirmedRoomExistsInCurrentMap)
@@ -6580,7 +6580,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             return p_passage != nullptr &&
                                    p_passage->getProspectiveRoom() == room &&
                                    room->getRoomVariant() ==
-                                       vs_graphs::core::semantic::Room::roomVariant::UNDEFINED;
+                                       vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED;
                         });
 
         /* A prospective must first pass the external cluster validation below;
@@ -6668,7 +6668,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         if (p_other == nullptr || p_other->isBad() ||
                             p_other == room ||
                             p_other->getRoomVariant() ==
-                                vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+                                vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
                         {
                             continue;
                         }
@@ -6854,7 +6854,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
                     existingOwnerIsTransferableProvisional =
                         p_existingWallOwner->getRoomVariant() ==
-                            semantic::Room::roomVariant::UNDEFINED &&
+                            semantic::Room::RoomVariant::UNDEFINED &&
                         p_existingWallOwner->getWalls().size() == 1U &&
                         ownerPlaneDistance_m <=
                             maximumProvisionalPlaneDistance_m;
@@ -7158,7 +7158,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
         /* Confirm the cluster-backed structural element as a room. */
         if (validFreeSpaceCluster && hasBoundaryEvidence &&
-            room->getRoomVariant() == vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+            room->getRoomVariant() == vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
         {
             if (prospectiveWallEvidenceStillMatches)
             {
@@ -7168,7 +7168,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     p_roomMap->PromoteCandidateMapRoom(room);
                 }
 
-                room->setRoomVariant(vs_graphs::core::semantic::Room::roomVariant::ROOM);
+                room->setRoomVariant(vs_graphs::core::semantic::Room::RoomVariant::ROOM);
                 room->setName("semantic::Room#" + std::to_string(room->getId()));
                 prospectiveRoomCycles_.erase(room->getId());
 
@@ -7187,7 +7187,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 {
                     p_roomMap->PromoteCandidateMapRoom(room);
                 }
-                room->setRoomVariant(vs_graphs::core::semantic::Room::roomVariant::ROOM);
+                room->setRoomVariant(vs_graphs::core::semantic::Room::RoomVariant::ROOM);
                 room->setName("semantic::Room#" + std::to_string(room->getId()));
 
                 std::cout << "[SemMgr] Structural Element #" << room->getId()
@@ -7688,13 +7688,13 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             continue;
         }
 
-        const semantic::Room::roomVariant retainedType =
+        const semantic::Room::RoomVariant retainedType =
             p_retainedRoom_inout->getRoomVariant();
-        const semantic::Room::roomVariant duplicateType =
+        const semantic::Room::RoomVariant duplicateType =
             p_duplicateRoom->getRoomVariant();
 
-        if (retainedType != semantic::Room::roomVariant::UNDEFINED &&
-            duplicateType != semantic::Room::roomVariant::UNDEFINED &&
+        if (retainedType != semantic::Room::RoomVariant::UNDEFINED &&
+            duplicateType != semantic::Room::RoomVariant::UNDEFINED &&
             retainedType != duplicateType)
         {
             continue;
@@ -7900,8 +7900,8 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             p_retainedRoom_inout->setName(p_duplicateRoom->getName());
         }
 
-        if (retainedType == semantic::Room::roomVariant::UNDEFINED &&
-            duplicateType != semantic::Room::roomVariant::UNDEFINED)
+        if (retainedType == semantic::Room::RoomVariant::UNDEFINED &&
+            duplicateType != semantic::Room::RoomVariant::UNDEFINED)
         {
             p_retainedRoom_inout->setRoomVariant(duplicateType);
         }
@@ -7963,7 +7963,7 @@ void SemanticsManager::associateAllWallsToRooms(void)
         if (p_room != nullptr && !p_room->isBad() &&
             p_room->getMap() == p_activeMap &&
             p_room->getId() == currentRoomId &&
-            p_room->getRoomVariant() == semantic::Room::roomVariant::ROOM)
+            p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM)
         {
             p_currentRoom = p_room;
             break;
@@ -8509,10 +8509,10 @@ std::vector<semantic::UnresolvedWallHypothesisRecord>
 void SemanticsManager::logSemanticDiagnostics(
     const semantic::SemanticReportCacheEntry &entry_in)
 {
-    /* Pure diff/JSON construction lives in SemanticDiagnostics (P1.7,
-     * semantic-axiom-reliability-plan.md); this method's only job is
-     * deciding whether/what to print. mSemanticDiagnosticState_ is the
-     * only mutable state carried across calls. */
+    /* Pure diff/JSON construction lives in SemanticDiagnostics; this
+     * method's only job is deciding whether/what to print.
+     * mSemanticDiagnosticState_ is the only mutable state carried across
+     * calls. */
     const semantic::SemanticDiagnosticUpdate update =
         semantic::buildSemanticDiagnosticUpdate(entry_in,
                                                 mSemanticDiagnosticState_);
@@ -8659,7 +8659,7 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                                     return p_owner != p_nearOwner &&
                                            p_owner != p_farSideOwner &&
                                            p_owner->getRoomVariant() ==
-                                               semantic::Room::roomVariant::ROOM;
+                                               semantic::Room::RoomVariant::ROOM;
                                 });
                 if (wouldStealDistinctConfirmedOwner)
                 {
@@ -8668,9 +8668,9 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
 
                 if (p_retainedOwner == nullptr ||
                     (p_farSideOwner->getRoomVariant() ==
-                         semantic::Room::roomVariant::ROOM &&
+                         semantic::Room::RoomVariant::ROOM &&
                      p_retainedOwner->getRoomVariant() !=
-                         semantic::Room::roomVariant::ROOM) ||
+                         semantic::Room::RoomVariant::ROOM) ||
                     (p_farSideOwner->getRoomVariant() ==
                          p_retainedOwner->getRoomVariant() &&
                      p_farSideOwner->getId() < p_retainedOwner->getId()))
@@ -8686,7 +8686,7 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
             for (semantic::Room *p_owner : owners)
             {
                 if (passageRejectedOwners.count(p_owner) == 0U &&
-                    p_owner->getRoomVariant() == semantic::Room::roomVariant::ROOM)
+                    p_owner->getRoomVariant() == semantic::Room::RoomVariant::ROOM)
                 {
                     p_retainedOwner = p_owner;
                     break;
@@ -8921,7 +8921,7 @@ void SemanticsManager::validateRoomBoundaries(void)
 {
     std::cout << "[SemMgr] validateRoomBoundaries() called" << std::endl;
 
-    const types::SystemParams::roomSeg::BoundaryTopology &topologyParameters =
+    const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters =
         sysParams->roomSeg.boundaryTopology;
 
     if (!topologyParameters.enabled)
@@ -10083,7 +10083,7 @@ void SemanticsManager::associatePassagesToRooms(void)
              &p_undefinedAssociatedRoom](vs_graphs::core::semantic::Room *p_room)
         {
             if (p_room->getRoomVariant() ==
-                vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+                vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
             {
                 p_undefinedAssociatedRoom = p_room;
                 return;
@@ -10216,7 +10216,7 @@ void SemanticsManager::associatePassagesToRooms(void)
         }
         else if (p_existingProspective != nullptr &&
                  p_existingProspective->getRoomVariant() !=
-                     vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+                     vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
         {
             /* Promotion/replacement keeps the same far-side resolution. */
             p_existingProspective->setDoorways(p_passage);
@@ -10383,7 +10383,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                                 anteChurnGroundNormal_World
                                     .cross(anteChurnGroundAxisU_World)
                                     .normalized();
-                            const types::SystemParams::roomSeg::PassagePartition
+                            const types::SystemParams::RoomSeg::PassagePartition
                                 &anteChurnPartitionParameters =
                                     sysParams->roomSeg.passagePartition;
                             const double anteChurnOpeningMargin_m =
@@ -10392,7 +10392,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                             const double anteChurnMinimumSideDistance_m =
                                 static_cast<double>(anteChurnPartitionParameters
                                                         .minimumSideDistance_m);
-                            const types::SystemParams::roomSeg::BoundaryTopology
+                            const types::SystemParams::RoomSeg::BoundaryTopology
                                 &anteChurnTopologyParameters =
                                     sysParams->roomSeg.boundaryTopology;
                             const Eigen::Vector3d knownRoomCentroid =
@@ -10406,7 +10406,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                                     p_otherRoom->isBad() ||
                                     p_otherRoom == p_knownRoom ||
                                     p_otherRoom->getRoomVariant() ==
-                                        vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+                                        vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
                                 {
                                     continue;
                                 }
@@ -10490,7 +10490,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                             if (p_candidate != nullptr &&
                                 !p_candidate->isBad() &&
                                 p_candidate->getRoomVariant() ==
-                                    vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+                                    vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
                             {
                                 prospectiveRoomCount++;
                             }
@@ -10515,7 +10515,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                                 if (p_candidate == nullptr ||
                                     p_candidate->isBad() ||
                                     p_candidate->getRoomVariant() !=
-                                        vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+                                        vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
                                 {
                                     continue;
                                 }
@@ -10614,7 +10614,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                                     /* Mark as provisional - will be promoted
                                      * when walls are observed */
                                     p_prospectiveRoom->setRoomVariant(
-                                        vs_graphs::core::semantic::Room::roomVariant::
+                                        vs_graphs::core::semantic::Room::RoomVariant::
                                             UNDEFINED);
                                     p_prospectiveRoom->setName(
                                         "Prospective#" +
@@ -10678,7 +10678,7 @@ void SemanticsManager::associatePassagesToRooms(void)
 
             if (p_prospectiveRoom != nullptr && !p_prospectiveRoom->isBad() &&
                 p_prospectiveRoom->getRoomVariant() ==
-                    vs_graphs::core::semantic::Room::roomVariant::UNDEFINED &&
+                    vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED &&
                 !p_prospectiveRoom->getWalls().empty())
             {
                 /* Find a confirmed (non-prospective) room on the FAR side of
@@ -10760,7 +10760,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                         const Eigen::Vector3d groundAxisV_World =
                             groundNormal_World.cross(groundAxisU_World)
                                 .normalized();
-                        const types::SystemParams::roomSeg::PassagePartition
+                        const types::SystemParams::RoomSeg::PassagePartition
                             &partitionParameters =
                                 sysParams->roomSeg.passagePartition;
                         const double openingMargin_m = static_cast<double>(
@@ -10768,7 +10768,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                         const double minimumSideDistance_m =
                             static_cast<double>(
                                 partitionParameters.minimumSideDistance_m);
-                        const types::SystemParams::roomSeg::BoundaryTopology
+                        const types::SystemParams::RoomSeg::BoundaryTopology
                             &topologyParameters =
                                 sysParams->roomSeg.boundaryTopology;
                         const Eigen::Vector3d prospectiveCentroid =
@@ -10784,7 +10784,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                                 p_otherRoom == p_prospectiveRoom ||
                                 p_otherRoom == p_knownSideRoom ||
                                 p_otherRoom->getRoomVariant() ==
-                                    vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+                                    vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
                             {
                                 continue;
                             }
@@ -10874,7 +10874,7 @@ void SemanticsManager::associatePassagesToRooms(void)
     {
         if (p_room == nullptr || p_room->isBad() ||
             p_room->getRoomVariant() ==
-                vs_graphs::core::semantic::Room::roomVariant::UNDEFINED ||
+                vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED ||
             !p_room->getPassages().empty())
         {
             continue;

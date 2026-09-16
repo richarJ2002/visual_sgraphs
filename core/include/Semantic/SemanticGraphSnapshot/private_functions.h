@@ -77,7 +77,7 @@ EntityRef entityRefForPassage(Passage *p_passage_in);
 
 /*! rawPlaneRef() is declared in the module's public_functions.h (promoted
  *  from here so SemanticsManager can also build a RawPlaneRef for its own
- *  manager-private Plane* evidence -- see P1.4/P1.7). This is also the
+ *  manager-private Plane* evidence). This is also the
  *  sole representation used for every wall-shaped reference (see
  *  appendWallRef()), replacing the removed entityRefForWall(), which
  *  mislabeled every referenced Plane as EntityKind::WALL without checking

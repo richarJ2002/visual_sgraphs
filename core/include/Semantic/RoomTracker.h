@@ -29,12 +29,13 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief           Lifecycle states of the camera relative to the mapped rooms.
+ * @brief        Lifecycle states of the camera relative to the
+ *               mapped rooms.
  *
- *                  Mirrors Section 18.1 of WP13. The state machine is
- *                  self-contained: it carries only state names, event labels,
- *                  timestamps and scalar guard values, and is therefore
- *                  frame-agnostic.
+ *               The state machine is self-contained: it carries
+ *               only state names, event labels, timestamps and
+ *               scalar guard values, and is therefore
+ *               frame-agnostic.
  */
 enum class RoomTrackingState
 {
@@ -47,12 +48,12 @@ enum class RoomTrackingState
 };
 
 /*!
- * @brief           Events consumed by the transition engine.
+ * @brief        Events consumed by the transition engine.
  *
- *                  The set of (source, event) rows is exactly the Section 18.2
- *                  table. An event with no defined row for the current source
- *                  state is rejected: the state does not change and a
- *                  rejection record is logged.
+ *               The set of (source, event) rows is exactly the
+ *               transition table. An event with no defined row for
+ *               the current source state is rejected: the state
+ *               does not change and a rejection record is logged.
  */
 enum class RoomTrackingEvent
 {
@@ -68,22 +69,28 @@ enum class RoomTrackingEvent
 };
 
 /*!
- * @brief           Guard values describing one transition attempt.
+ * @brief        Guard values describing one transition attempt.
  *
- * @param dwell_s
- *                  Continuous seconds the guard has been satisfied. The caller
- *                  (RoomTracker::step in production, tests in unit test runs)
- *                  supplies this; RoomTracker::step accumulates it across the
- *                  Section 18.3 dwell timers.
- * @param confidence
- *                  Traversal/verification confidence in [0, 1] (Section 18.3).
- * @param passageDetected
- *                  A trajectory segment crossed a passable passage aperture
- *                  (segmentCrossesPassageOpening()).
- * @param passable
- *                  The crossed passage is passable (Passage::isPassable()).
- * @param bothSidesObserved
- *                  Both sides of the passage have been observed.
+ * @param[in]    dwell_s
+ *               Continuous seconds the guard has been satisfied.
+ *               The caller (RoomTracker::step in production, tests
+ *               in unit test runs) supplies this;
+ *               RoomTracker::step accumulates it across the dwell
+ *               timers.
+ *
+ * @param[in]    confidence
+ *               Traversal/verification confidence in [0, 1].
+ *
+ * @param[in]    passageDetected
+ *               A trajectory segment crossed a passable passage
+ *               aperture (segmentCrossesPassageOpening()).
+ *
+ * @param[in]    passable
+ *               The crossed passage is passable
+ *               (Passage::isPassable()).
+ *
+ * @param[in]    bothSidesObserved
+ *               Both sides of the passage have been observed.
  */
 struct TraversalGuardValues
 {
@@ -95,13 +102,13 @@ struct TraversalGuardValues
 };
 
 /*!
- * @brief           Abstract verification-result event.
+ * @brief        Abstract verification-result event.
  *
- *                  Phase 4 supplies the real plane-gated geometric verifier;
- *                  Production remains UNAVAILABLE until a future typed
- *                  geometric-verifier producer supplies a result. Tests may
- *                  inject deterministic values. Only the verdict and
- *                  confidence are consumed by the transition engine in Phase 1.
+ *               Production remains UNAVAILABLE until a future typed
+ *               geometric-verifier producer supplies a result. Tests
+ *               may inject deterministic values. Only the verdict
+ *               and confidence are consumed by the transition
+ *               engine.
  */
 enum class VerificationStatus
 {
@@ -168,7 +175,7 @@ struct TransitionEvent
 };
 
 /*!
- * @brief           RoomTracker tuning (Section 18.4).
+ * @brief        RoomTracker tuning parameters.
  */
 struct RoomTrackerConfig
 {
@@ -187,18 +194,22 @@ struct RoomTrackerConfig
     double       reacquire_retry_interval_s = 5.0;
     /*! Maximum failed reacquire attempts before timeout applies. */
     unsigned int reacquire_max_retries = 3U;
-    /*! Minimum planes required to attempt a reacquire. Consumed by the
-     *  Phase 4 verification stub; acceptance still requires the full
-     *  verification gates. */
+/*!
+ * @brief        Minimum planes required to attempt a reacquire.
+ *               Consumed by the verification stub; acceptance
+ *               still requires the full verification gates.
+ */
     unsigned int reacquire_min_planes = 3U;
 };
 
 /*!
- * @brief           Room-state machine implementing the Section 18.2 table.
+ * @brief        Room-state machine implementing the transition
+ *               table.
  *
- *                  Standalone and pure (no ROS, Eigen, PCL or Atlas types) so
- *                  it can be driven directly by deterministic unit tests and
- *                  by SemanticsManager::Run.
+ *               Standalone and pure (no ROS, Eigen, PCL or Atlas
+ *               types) so it can be driven directly by
+ *               deterministic unit tests and by
+ *               SemanticsManager::Run.
  */
 class RoomTracker
 {
@@ -215,27 +226,33 @@ class RoomTracker
     void reset(double now_s);
 
     /*!
-     * @brief       Per-cycle integration entry point.
+     * @brief        Per-cycle integration entry point.
      *
      *               1. Advances time (never backwards).
      *               2. Fires unconditional timeout transitions first.
-     *               3. Fires the tracking-lost transitions of Section 18.2.
-     *               4. Evaluates the guarded transitions using the supplied
-     *                  crossing evidence and verification verdict, applying
-     *                  the Section 18.3 dwell timers internally.
+     *               3. Fires the tracking-lost transitions of the
+     *               transition table.
+     *               4. Evaluates the guarded transitions using the
+     *               supplied crossing evidence and verification
+     *               verdict, applying the dwell timers internally.
      *
-     *                At most one transition is committed per cycle.
+     *               At most one transition is committed per cycle.
      *
-     * @param[in]   now_s
-     *              Monotonic seconds since an arbitrary epoch.
-     * @param[in]   crossing
-     *              Passage crossing evidence from updateTraversalEvidence().
-     * @param[in]   verification
-     *              Abstract verification verdict (Phase 4 stub in Phase 1).
-     * @param[in]   tracking
-     *              Tracking-loss and new-map lifecycle signals.
+     * @param[in]    now_s
+     *               Monotonic seconds since an arbitrary epoch.
      *
-     * @return      The state after the cycle.
+     * @param[in]    crossing
+     *               Passage crossing evidence from
+     *               updateTraversalEvidence().
+     *
+     * @param[in]    verification
+     *               Abstract verification verdict (verification
+     *               stub).
+     *
+     * @param[in]    tracking
+     *               Tracking-loss and new-map lifecycle signals.
+     *
+     * @return       The state after the cycle.
      */
     RoomTrackingState step(double                      now_s,
                            const TraversalGuardValues &crossing,
@@ -243,23 +260,29 @@ class RoomTracker
                            const TrackingStatusInput  &tracking);
 
     /*!
-     * @brief       Discrete transition oracle: applies exactly one Section 18.2
-     *              row and returns the resulting state.
+     * @brief        Discrete transition oracle: applies exactly one
+     *               transition-table row and returns the resulting
+     *               state.
      *
-     *              Events with no row defined for the current source state are
-     *              rejected: the state is unchanged, a rejected TransitionEvent
-     *              is recorded and a WARN is logged.
+     *               Events with no row defined for the current source
+     *               state are rejected: the state is unchanged, a
+     *               rejected TransitionEvent is recorded and a WARN is
+     *               logged.
      *
-     * @param[in]   event
-     *              The event to apply.
-     * @param[in]   now_s
-     *              Monotonic seconds used as the record timestamp.
-     * @param[in]   crossing
-     *              Explicit guard values for the guarded rows.
-     * @param[in]   verification
-     *              Explicit verification verdict for the guarded rows.
+     * @param[in]    event
+     *               The event to apply.
      *
-     * @return      The state after applying the row.
+     * @param[in]    now_s
+     *               Monotonic seconds used as the record timestamp.
+     *
+     * @param[in]    crossing
+     *               Explicit guard values for the guarded rows.
+     *
+     * @param[in]    verification
+     *               Explicit verification verdict for the guarded
+     *               rows.
+     *
+     * @return       The state after applying the row.
      */
     RoomTrackingState applyEvent(RoomTrackingEvent           event,
                                  double                      now_s,
@@ -303,15 +326,15 @@ class RoomTracker
     static std::string eventToJSON(const TransitionEvent &event);
 
     /*!
-     * @brief       Section 18.3 confidence formula:
+     * @brief        Confidence formula:
      *
-     *              confidence = inlier_ratio * (1 -
-     * normalised_condition_number)
-     *                           * exp(-angular_residual / sigma_theta_rad)
+     *               confidence = inlier_ratio * (1 -
+     *               normalised_condition_number)
+     *               * exp(-angular_residual / sigma_theta_rad)
      *
-     *              Non-finite or out-of-range inputs are clamped; a
-     *              non-positive sigma results in 1.0 for a zero residual and
-     *              0.0 otherwise.
+     *               Non-finite or out-of-range inputs are clamped; a
+     *               non-positive sigma results in 1.0 for a zero
+     *               residual and 0.0 otherwise.
      */
     static double computeConfidence(double inlier_ratio,
                                     double normalised_condition_number,

@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file         DatabaseParser.cc
+ *
+ * @brief        Implements DBParser declared in DatabaseParser.h.
+ */
+
 #include "DatabaseParser.h"
 
 #include "System.h"
@@ -72,7 +78,8 @@ std::vector<semantic::Room *>
 
             // Set the room variant (corridors are incomplete rooms, not a
             // distinct semantic type, so every env room is a plain ROOM)
-            p_environmentRoom->setRoomVariant(semantic::Room::ROOM);
+            p_environmentRoom->setRoomVariant(
+                semantic::Room::RoomVariant::ROOM);
 
             // Fill the vector
             environmentRooms.push_back(p_environmentRoom);

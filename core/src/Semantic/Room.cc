@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file         Room.cc
+ *
+ * @brief        Implements Room declared in Semantic/Room.h.
+ */
+
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>
@@ -168,13 +174,13 @@ RoomContextSnapshot *Room::getMatchedContext() const
     return p_matchedContext;
 }
 
-Room::roomVariant Room::getRoomVariant()
+Room::RoomVariant Room::getRoomVariant()
 {
     std::lock_guard<std::mutex> lock(stateMutex);
     return variant;
 }
 
-void Room::setRoomVariant(Room::roomVariant variant_in)
+void Room::setRoomVariant(Room::RoomVariant variant_in)
 {
     std::lock_guard<std::mutex> lock(stateMutex);
     variant = variant_in;

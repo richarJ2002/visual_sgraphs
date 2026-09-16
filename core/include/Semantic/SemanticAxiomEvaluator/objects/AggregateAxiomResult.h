@@ -57,7 +57,9 @@ struct AggregateAxiomResult
     /*! @brief The aggregated tri-state outcome. */
     AxiomResult result{AxiomResult::UNKNOWN};
 
-    /*! @brief Section 5's fixed "Class" column value for axiomCode. */
+/*!
+ * @brief        Fixed "Class" column value for axiomCode.
+ */
     AxiomClass classification{AxiomClass::HARD};
 
     /*! @brief How many AxiomEvaluationReport::findings entries have this

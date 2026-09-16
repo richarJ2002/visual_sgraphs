@@ -49,8 +49,8 @@ namespace semantic
  *              type is copied and sorted at capture time, so two captures of
  *              the same underlying state serialize byte-identically
  *              regardless of the model's live container iteration order (see
- *              P1.6 canonical serialization, a separate component that
- *              consumes this type).
+ *              the canonical serialization component that consumes this
+ *              type).
  *
  *              Contains no raw/smart pointers to model objects, no PCL cloud
  *              data, no mutexes, no ROS types, no logger handles, no

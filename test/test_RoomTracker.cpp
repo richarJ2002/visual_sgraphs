@@ -12,7 +12,7 @@
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details: https://www.gnu.org/licenses/
  *
- * WP13 Phase 1 confirmed: semantic::RoomTracker implements the Section 18.2 table of
+ * Confirmed: semantic::RoomTracker implements the transition table of
  * exactly 10 transition rows (6 guarded, 4 unconditional). This suite covers:
  *   (a) each guarded row with a guard-satisfied and a guard-rejected case;
  *   (b) each unconditional row as an event-triggered target-state test;

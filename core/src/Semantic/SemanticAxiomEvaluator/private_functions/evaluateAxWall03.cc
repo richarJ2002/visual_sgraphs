@@ -24,9 +24,9 @@
  *                  evaluateOneWallTwin.cc (CPP_CODING_STANDARD.md Section
  *                  5.4: one ordinary function per .cc).
  *
- *                  2026-09-07 proof-correctness repair: retired (non-live)
- *                  WallRecords are skipped -- the twin-plausibility
- *                  contract applies to live committed walls.
+ *                  Retired (non-live) WallRecords are skipped -- the
+ *                  twin-plausibility contract applies to live committed
+ *                  walls.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

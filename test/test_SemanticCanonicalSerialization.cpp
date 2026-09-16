@@ -1,6 +1,5 @@
 /**
- * Semantic-axiom-reliability-plan.md Phase 1 (P1.6, evaluator-foundation
- * slice): focused, ROS/Gazebo-free tests for versioned canonical JSON
+ * Focused, ROS/Gazebo-free tests for versioned canonical JSON
  * serialization of SemanticGraphSnapshot, AxiomEvaluationReport, and
  * MapCompletenessResult.
  */
@@ -294,7 +293,7 @@ TEST(SemanticCanonicalSerialization,
     EXPECT_EQ(snapshot.maps[0].rooms[1].key.entityId, 2);
 }
 
-/* P1.6 red-first regression: two findings sharing the same deterministic id
+/* Red-first regression: two findings sharing the same deterministic id
  * (a genuine axiomCode/reasonCode/involvedKeys collision) but different
  * evidence must still serialize identically regardless of input
  * permutation. Before the fix, serializeEvaluationReport() sorted only by
@@ -323,7 +322,7 @@ TEST(SemanticCanonicalSerialization,
               serializeEvaluationReport(reportReversed).dump());
 }
 
-/* P1.6 red-first regression: two aggregates sharing axiomCode (a genuine
+/* Red-first regression: two aggregates sharing axiomCode (a genuine
  * collision -- AxiomEvaluationReport::aggregates is documented as exactly
  * one entry per code, but the serializer must not silently assume that
  * invariant) with unequal payloads must still serialize identically
@@ -350,7 +349,7 @@ TEST(SemanticCanonicalSerialization,
               serializeEvaluationReport(reportReversed).dump());
 }
 
-/* P1.6 red-first regression: two completeness results sharing mapId with
+/* Red-first regression: two completeness results sharing mapId with
  * unequal payloads must still serialize identically regardless of input
  * permutation. */
 TEST(
@@ -375,7 +374,7 @@ TEST(
             .dump());
 }
 
-/* P1.6 red-first regression: two top-level MapSnapshot entries sharing
+/* Red-first regression: two top-level MapSnapshot entries sharing
  * mapId with unequal payloads must still serialize identically regardless
  * of input permutation, for both projections. */
 TEST(SemanticCanonicalSerialization,
@@ -407,7 +406,7 @@ TEST(SemanticCanonicalSerialization,
               serializeSnapshotTopologyOnly(snapshotReversed).dump());
 }
 
-/* P1.6 red-first regression: two WallRecord entries colliding on key
+/* Red-first regression: two WallRecord entries colliding on key
  * (identical topology, different geometry only) must produce identical
  * topology-only bytes but a different full-geometry projection -- proving
  * the topology-only order is provably independent of every geometric
@@ -444,7 +443,7 @@ TEST(SemanticCanonicalSerialization,
     EXPECT_NE(geometryNear.dump(), geometryFar.dump());
 }
 
-/* P1.6: every required enum family (AxiomCode::AX_FRAME_01, AxiomResult::
+/* Every required enum family (AxiomCode::AX_FRAME_01, AxiomResult::
  * PASS, AxiomClass::HARD, ReasonCode::FRAME_TRANSITION_EVALUATION_REQUIRED,
  * EntityKind::ROOM, UnavailableReason::NONE, CapabilityLevel::FULL,
  * MissingProofOwner::NONE) emits a known readable value, and a value
@@ -481,7 +480,7 @@ TEST(SemanticCanonicalSerialization,
               "UNKNOWN_MISSING_PROOF_OWNER");
 }
 
-/* P1.6: readable name fields actually appear in serialized output, not
+/* Readable name fields actually appear in serialized output, not
  * only reachable from a standalone EnumNames.h call. */
 TEST(SemanticCanonicalSerialization, SerializedFindingsCarryReadableNameFields)
 {
@@ -503,7 +502,7 @@ TEST(SemanticCanonicalSerialization, SerializedFindingsCarryReadableNameFields)
     EXPECT_EQ(findingJson["reasonCodeName"], "WALL_OWNERSHIP_OWNER_BAD");
 }
 
-/* P1.6 red-first regression: two OpenPassageHypothesisRecord entries
+/* Red-first regression: two OpenPassageHypothesisRecord entries
  * colliding on every topology-only field (supportingWallRef,
  * confirmationCount, missedUpdateCount, lastConfirmedSkeletonFingerprint)
  * but differing only in geometry (centroid_World_m, openingRadius_m,
@@ -553,7 +552,7 @@ TEST(SemanticCanonicalSerialization,
     EXPECT_TRUE(hypothesisJson.contains("confirmationCount"));
 }
 
-/* P1.6 red-first regression: two OpenPassageHypothesisRecord entries
+/* Red-first regression: two OpenPassageHypothesisRecord entries
  * sharing every field the sort used to compare (supportingWallRef,
  * centroid_World_m) but differing in a field the old comparator ignored
  * (confirmationCount, missedUpdateCount, lastConfirmedSkeletonFingerprint)

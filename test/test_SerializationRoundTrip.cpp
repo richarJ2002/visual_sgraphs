@@ -1,5 +1,5 @@
 /**
- * WP-00.8.1 (gated): Boost serialization round-trip self-consistency.
+ * Boost serialization round-trip self-consistency (gated).
  *
  * Covers all Boost sites: Map, MapPoint, Atlas, ImuTypes (Bias/Calib/
  * Preintegrated), KeyFrameDatabase, KeyFrame, SerializationUtils
@@ -11,7 +11,7 @@
  * Fixtures are light (default + minimally populated, no ORB vocabulary,
  * no full SLAM graph) so the test stays GREEN on HEAD and ROS/Gazebo-free.
  *
- * Comparison rules (per plan):
+ * Comparison rules:
  *  - Deep value for POD/containers; sorted set/map comparison helpers.
  *  - Pointer identity via Boost tracking IDs (polymorphic camera test).
  *  - SKIP mutex/atomic/thread handles: asserted default-constructed

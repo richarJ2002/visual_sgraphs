@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file         Atlas.cc
+ *
+ * @brief        Implements Atlas declared in Atlas.h.
+ */
+
 #include "Atlas.h"
 #include "Utils.h"
 #include "Viewer.h"
@@ -246,9 +252,12 @@ static std::size_t consecutiveContentHash(Map *p_oldMap_in,
     return contentHash;
 }
 
-/*! @brief Room-prior seed: the old final room and the new starting room
- * must carry the same non-empty tag. A silent mismatch means no prior link
- * (e.g. loop closure between non-consecutive maps): not this path's job. */
+/*!
+ * @brief        Room-prior seed: the old final room and the new starting
+ *               room must carry the same non-empty tag. A silent mismatch
+ *               means no prior link (e.g. loop closure between
+ *               non-consecutive maps): not this path's job.
+ */
 static bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in)
 {
     if (p_oldMap_in == nullptr || p_currentMap_in == nullptr)
@@ -292,14 +301,17 @@ static std::set<std::string> collectAnchorTags(Map *p_oldMap_in,
     return anchorTags;
 }
 
-/*! @brief Folds a transferred passage into the same-lineage proxy.
+/*!
+ * @brief        Folds a transferred passage into the same-lineage proxy.
  *
- * The proxy keeps its stable current-map ID and live room links and adopts
- * the transferred (already in-frame) geometry, supporting walls, door,
- * known-side direction and traversal history. Traversal windows are
- * disjoint (pre- vs post-reset), so counts add. Returns true when the
- * transferred object must NOT enter the current map (it retires with the
- * absorbed map instead). */
+ *               The proxy keeps its stable current-map ID and live room
+ *               links and adopts the transferred (already in-frame)
+ *               geometry, supporting walls, door, known-side direction
+ *               and traversal history. Traversal windows are disjoint
+ *               (pre- vs post-reset), so counts add. Returns true when
+ *               the transferred object must NOT enter the current map
+ *               (it retires with the absorbed map instead).
+ */
 static bool resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
                                           semantic::Passage *p_transferred_in)
 {
@@ -850,7 +862,7 @@ std::vector<MapPoint *> Atlas::GetReferenceMapPoints()
 vector<Map *> Atlas::GetAllMaps()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    struct compFunctor
+    struct CompFunctor
     {
         inline bool operator()(Map *elem1, Map *elem2)
         {
@@ -858,7 +870,7 @@ vector<Map *> Atlas::GetAllMaps()
         }
     };
     vector<Map *> vMaps(mspMaps.begin(), mspMaps.end());
-    sort(vMaps.begin(), vMaps.end(), compFunctor());
+    sort(vMaps.begin(), vMaps.end(), CompFunctor());
     return vMaps;
 }
 
@@ -957,12 +969,14 @@ void Atlas::RemoveBadMaps()
     mspBadMaps.clear();
 }
 
-/**
- * @brief Merges the semantic graph of the other map into the current map.
+/*!
+ * @brief        Merges the semantic graph of the other map into the
+ *               current map.
  *
- * Mirrors the semantic-transfer pattern of LoopClosing::MergeLocal using
- * Horn's deterministic closed-form solution; no g2o types are used. Caller
- * must already hold the semantic-update lock.
+ *               Mirrors the semantic-transfer pattern of
+ *               LoopClosing::MergeLocal using Horn's deterministic
+ *               closed-form solution; no g2o types are used. Caller must
+ *               already hold the semantic-update lock.
  */
 void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
 {
@@ -1706,7 +1720,7 @@ void Atlas::PreSave()
                                 1; // The init KF is the next of current maximum
     }
 
-    struct compFunctor
+    struct CompFunctor
     {
         inline bool operator()(Map *elem1, Map *elem2)
         {
@@ -1716,7 +1730,7 @@ void Atlas::PreSave()
     std::copy(mspMaps.begin(),
               mspMaps.end(),
               std::back_inserter(mvpBackupMaps));
-    sort(mvpBackupMaps.begin(), mvpBackupMaps.end(), compFunctor());
+    sort(mvpBackupMaps.begin(), mvpBackupMaps.end(), CompFunctor());
 
     std::set<camera_models::GeometricCamera *> spCams(mvpCameras.begin(), mvpCameras.end());
     for (Map *pMi : mvpBackupMaps)
@@ -1848,7 +1862,7 @@ void Atlas::exportRoomContextFromCurrentMap()
         snap.floorId       = p_snapFloor != nullptr ? p_snapFloor->getId() : -1;
         snap.centroid      = room->getCentroid();
         snap.wasConfirmedRoom =
-            room->getRoomVariant() == semantic::Room::roomVariant::ROOM;
+            room->getRoomVariant() == semantic::Room::RoomVariant::ROOM;
         snap.wasPreviouslyVisited = room->hasPreviouslyVisited();
         snap.boundaryStatus       = static_cast<int>(room->getBoundaryStatus());
         snap.timestamp =
@@ -2218,7 +2232,7 @@ std::vector<semantic::RoomContextSnapshot> Atlas::copyRoomContextForMap(Map *p_m
             p_snapshotFloor != nullptr ? p_snapshotFloor->getId() : -1;
         snapshot.centroid = p_room->getCentroid();
         snapshot.wasConfirmedRoom =
-            p_room->getRoomVariant() == semantic::Room::roomVariant::ROOM;
+            p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM;
         snapshot.boundaryStatus = static_cast<int>(p_room->getBoundaryStatus());
         snapshot.timestamp =
             std::chrono::duration<double>(

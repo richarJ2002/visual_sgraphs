@@ -39,12 +39,12 @@ namespace core
  *              id relative to the active map vector it returns in the same
  *              call.
  *
- *              Introduced 2026-09-06 because Atlas::SetMapBad() erases a map
- *              from the active set (Atlas::mspMaps) and marks it bad without
- *              clearing Atlas::mpCurrentMap; a later Atlas::ChangeMap() call
- *              is what eventually installs a new current map. Between those
- *              two calls, a truthful coherent read must be able to report
- *              that the current map id names a map genuinely absent from the
+ *              Atlas::SetMapBad() erases a map from the active set
+ *              (Atlas::mspMaps) and marks it bad without clearing
+ *              Atlas::mpCurrentMap; a later Atlas::ChangeMap() call is what
+ *              eventually installs a new current map. Between those two
+ *              calls, a truthful coherent read must be able to report that
+ *              the current map id names a map genuinely absent from the
  *              active set, rather than silently claiming an invariant that
  *              does not hold at that instant.
  */

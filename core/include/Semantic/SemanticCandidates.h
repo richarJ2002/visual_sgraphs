@@ -108,14 +108,14 @@ class SemanticCandidates
 
     /** Generates bounded candidates and reports configuration rejection.
      *
-     *  @param anchorRoomId_in  Optional identity of the last-confirmed room
-     *  (Section 9.2's "last-confirmed room"). When present, room pairs
-     *  sharing a passage with that room (or involving it directly) are
-     *  enumerated first, bounded by \c candidatePairCap; only if that
-     *  adjacency-prioritised tier yields no candidate passing minimum
-     *  evidence does a bounded global fallback (additionally capped by
-     *  \c globalFallbackCap) enumerate the remaining pairs. When absent,
-     *  behaviour is the unrestricted global enumeration only. */
+     *  @param anchorRoomId_in  Optional identity of the last-confirmed
+     *  room. When present, room pairs sharing a passage with that room
+     *  (or involving it directly) are enumerated first, bounded by
+     *  \c candidatePairCap; only if that adjacency-prioritised tier
+     *  yields no candidate passing minimum evidence does a bounded
+     *  global fallback (additionally capped by \c globalFallbackCap)
+     *  enumerate the remaining pairs. When absent, behaviour is the
+     *  unrestricted global enumeration only. */
     static SemanticCandidateGeneration generateWithStatus(
         const std::map<long unsigned int, std::vector<RoomContextSnapshot>>
                                       &history_in,

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file         Frame.cc
+ *
+ * @brief        Implements Frame declared in Frame.h.
+ */
+
 #include "Frame.h"
 
 #include "Converter.h"
@@ -1284,7 +1290,8 @@ void Frame::ComputeStereoMatches()
             if (uR >= minU && uR <= maxU)
             {
                 const cv::Mat &dR   = mDescriptorsRight.row(iR);
-                const int      dist = ORBmatcher::DescriptorDistance(dL, dR);
+                const int      dist =
+                    ORBmatcher::computeDescriptorDistance(dL, dR);
 
                 if (dist < bestDist)
                 {
@@ -1472,7 +1479,7 @@ void Frame::ComputeStereoFishEyeMatches()
                     mvLevelSigma2[mvKeysRight[(*it)[0].trainIdx + monoRight]
                                       .octave];
             float depth =
-                static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->TriangulateMatches(
+                static_cast<camera_models::KannalaBrandt8 *>(mpCamera)->triangulateMatches(
                     mpCamera2,
                     mvKeys[(*it)[0].queryIdx + monoLeft],
                     mvKeysRight[(*it)[0].trainIdx + monoRight],

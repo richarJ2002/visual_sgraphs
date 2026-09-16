@@ -17,23 +17,21 @@
  */
 
 /*!
- * @file            evaluateOneRoomCreationProvenance.cc
+ * @file         evaluateOneRoomCreationProvenance.cc
  *
- * @brief           Implements evaluateOneRoomCreationProvenance(), declared
- *                  in private_functions.h.
+ * @brief        Implements evaluateOneRoomCreationProvenance(),
+ *               declared in private_functions.h.
  *
- *                  Checkpoint-A residual repair: extracted from
- *                  evaluateAxRoom01.cc (which pushed one blanket,
- *                  non-per-room UNKNOWN Finding with empty involvedKeys) so
- *                  evaluateAxRoom01() and computeConservativeMapCompleteness()
- *                  share the identical per-room AX-ROOM-01 leaf, mirroring
- *                  AX-PASS-01's own evaluateOnePassageProvenance() split.
- *                  RoomRecord::creationProvenanceReason is always
- *                  NOT_TRACKED_BY_CURRENT_SCHEMA in this slice (see
- *                  RoomRecord.h), so this leaf can only ever report
- *                  UNKNOWN; a later phase that adds a real provenance field
- *                  on Room is the owner of resolving this to a positive or
- *                  negative result.
+ *               Shared per-room AX-ROOM-01 leaf used by both
+ *               evaluateAxRoom01() and computeConservativeMapCompleteness()
+ *               (mirroring AX-PASS-01's own evaluateOnePassageProvenance()
+ *               split), reporting one UNKNOWN Finding with the room's own
+ *               key. RoomRecord::creationProvenanceReason is
+ *               always NOT_TRACKED_BY_CURRENT_SCHEMA (see
+ *               RoomRecord.h), so this leaf can only ever report
+ *               UNKNOWN; a future extension that adds a real
+ *               provenance field on Room is the owner of resolving
+ *               this to a positive or negative result.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

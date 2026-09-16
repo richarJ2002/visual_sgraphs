@@ -53,27 +53,33 @@ class Map;
 namespace semantic { enum class SemanticMergeDecision; }
 
 /*!
- * @brief       Confirms both maps have observed floors with matching plane
- *              identity before a loop-merge is allowed to proceed.
+ * @brief        Confirms both maps have observed floors with matching
+ *               plane identity before a loop-merge is allowed to
+ *               proceed.
  *
- *              Shared by the legacy place-recognition merge path
- *              (LoopClosing.cc call sites) and WP13 Phase 4's plane-gated
- *              semantic verifier (SemanticVerify::runFloorGate), which is why
- *              this declaration lives here rather than staying local to
- *              LoopClosing.cc's anonymous namespace.
+ *               Shared by the legacy place-recognition merge path
+ *               (LoopClosing.cc call sites) and the plane-gated
+ *               semantic verifier (SemanticVerify::runFloorGate),
+ *               which is why this declaration lives here rather
+ *               than staying local to LoopClosing.cc's anonymous
+ *               namespace.
  *
- * @param[in]   p_survivingMap_in
- *              The map that remains active after the merge.
- * @param[in]   p_absorbedMap_in
- *              The map being merged into the surviving map.
- * @param[in]   transform_absorbedWorldToSurvivingWorld_in
- *              Verified Sim3 transform from the absorbed map's world frame
- *              to the surviving map's world frame.
- * @param[out]  result_out
- *              One of "ACCEPTED", "REJECTED", or "DEFERRED".
+ * @param[in]    p_survivingMap_in
+ *               The map that remains active after the merge.
  *
- * @return      True only when both floors are observed and their plane
- *              identities match within Floor's merge thresholds.
+ * @param[in]    p_absorbedMap_in
+ *               The map being merged into the surviving map.
+ *
+ * @param[in]    transform_absorbedWorldToSurvivingWorld_in
+ *               Verified Sim3 transform from the absorbed map's
+ *               world frame to the surviving map's world frame.
+ *
+ * @param[out]   result_out
+ *               One of "ACCEPTED", "REJECTED", or "DEFERRED".
+ *
+ * @return       True only when both floors are observed and their
+ *               plane identities match within Floor's merge
+ *               thresholds.
  */
 bool verifyLoopMergeFloors(
     Map             *p_survivingMap_in,

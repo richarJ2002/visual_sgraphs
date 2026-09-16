@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file         LocalMapping.cc
+ *
+ * @brief        Implements LocalMapping declared in LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 #include "Converter.h"
 #include "GeometricTools.h"
@@ -568,7 +574,7 @@ void LocalMapping::CreateNewMapPoints()
                        mpTracker->mState == Tracking::RECENTLY_LOST &&
                        mpCurrentKeyFrame->GetMap()->GetIniertialBA2();
 
-        matcher.SearchForTriangulation(mpCurrentKeyFrame,
+        matcher.searchForTriangulation(mpCurrentKeyFrame,
                                        pKF2,
                                        vMatchedIndices,
                                        false,
@@ -710,7 +716,7 @@ void LocalMapping::CreateNewMapPoints()
                  (cosParallaxRays < 0.9996 && mbInertial) ||
                  (cosParallaxRays < 0.9998 && !mbInertial)))
             {
-                goodProj = GeometricTools::Triangulate(xn1,
+                goodProj = GeometricTools::triangulate(xn1,
                                                        xn2,
                                                        eigTcw1,
                                                        eigTcw2,
@@ -923,9 +929,9 @@ void LocalMapping::SearchInNeighbors()
     {
         KeyFrame *pKFi = *vit;
 
-        matcher.Fuse(pKFi, vpMapPointMatches);
+        matcher.fuse(pKFi, vpMapPointMatches);
         if (pKFi->NLeft != -1)
-            matcher.Fuse(pKFi, vpMapPointMatches, true);
+            matcher.fuse(pKFi, vpMapPointMatches, true);
     }
 
     if (mbAbortBA)
@@ -960,9 +966,9 @@ void LocalMapping::SearchInNeighbors()
         }
     }
 
-    matcher.Fuse(mpCurrentKeyFrame, vpFuseCandidates);
+    matcher.fuse(mpCurrentKeyFrame, vpFuseCandidates);
     if (mpCurrentKeyFrame->NLeft != -1)
-        matcher.Fuse(mpCurrentKeyFrame, vpFuseCandidates, true);
+        matcher.fuse(mpCurrentKeyFrame, vpFuseCandidates, true);
 
     // Update points
     vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();

@@ -1,5 +1,5 @@
 /**
- * WP1 Milestone 1 focused test: proves SemanticsManager::Run()'s new
+ * Focused test: proves SemanticsManager::Run()'s new
  * candidate-verification wiring (evaluateTopCandidateVerification) actually
  * drives real Atlas/Map/semantic::Room/geometric::Plane/semantic::Floor objects through
  * semantic::SemanticCandidates -> semantic::SemanticVerify -> submitVerificationVerdict ->
@@ -104,7 +104,7 @@ std::unique_ptr<SyntheticRoomFixture>
     auto fixture = std::make_unique<SyntheticRoomFixture>();
     fixture->room.setId(roomId_in);
     fixture->room.setMap(p_map_in);
-    fixture->room.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    fixture->room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     fixture->room.setCentroid(centroid_in);
     for (const RawWall &wall : walls_in)
     {

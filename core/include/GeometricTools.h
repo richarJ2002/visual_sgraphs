@@ -11,7 +11,13 @@
  * This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details: https://www.gnu.org/licenses/
-*/
+ */
+
+/*!
+ * @file         GeometricTools.h
+ *
+ * @brief        Declares static two-view geometry helpers.
+ */
 
 #ifndef GEOMETRIC_TOOLS_H
 #define GEOMETRIC_TOOLS_H
@@ -27,16 +33,65 @@ namespace core
 
     class KeyFrame;
 
+    /*!
+     * @brief        Static two-view geometry helpers shared by the
+     *               estimator.
+     */
     class GeometricTools
     {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        // Compute the Fundamental matrix between KF1 and KF2
+        /*!
+         * @brief        Computes the fundamental matrix between two
+         *               keyframe views.
+         *
+         * @param[in]    pKF1
+         *               Non-owning first keyframe; shall be non-null.
+         * @param[in]    pKF2
+         *               Non-owning second keyframe; shall be
+         *               non-null.
+         *
+         * @return       Fundamental matrix mapping the second view
+         *               into the first.
+         */
         static Eigen::Matrix3f ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2);
 
-        // Triangulate point with KF1 and KF2
-        static bool Triangulate(Eigen::Vector3f &x_c1, Eigen::Vector3f &x_c2, Eigen::Matrix<float, 3, 4> &Tc1w, Eigen::Matrix<float, 3, 4> &Tc2w, Eigen::Vector3f &x3D);
+        /*!
+         * @brief        Triangulates two normalized observations
+         *               with a linear solve.
+         *
+         * @param[in]    x_c1
+         *               Normalized observation in the first view.
+         * @param[in]    x_c2
+         *               Normalized observation in the second view.
+         * @param[in]    Tc1w
+         *               Three-by-four projection matrix of the
+         *               first view.
+         * @param[in]    Tc2w
+         *               Three-by-four projection matrix of the
+         *               second view.
+         * @param[out]   x3D
+         *               Triangulated point.
+         *
+         * @return       True and x3D set when the homogeneous scale
+         *               is non-zero.
+         */
+        static bool triangulate(Eigen::Vector3f &x_c1, Eigen::Vector3f &x_c2, Eigen::Matrix<float, 3, 4> &Tc1w, Eigen::Matrix<float, 3, 4> &Tc2w, Eigen::Vector3f &x3D);
 
+        /*!
+         * @brief        Checks element-wise agreement between a cv
+         *               matrix and an Eigen matrix.
+         *
+         *              Mismatches are reported to standard output.
+         *
+         * @param[in]    cvMat
+         *               OpenCV matrix to compare.
+         * @param[in]    eigMat
+         *               Eigen matrix to compare.
+         *
+         * @return       True when sizes match and every coefficient
+         *               agrees within 1e-3.
+         */
         template <int rows, int cols>
         static bool CheckMatrices(const cv::Mat &cvMat, const Eigen::Matrix<float, rows, cols> &eigMat)
         {
@@ -61,6 +116,20 @@ namespace core
             return true;
         }
 
+        /*!
+         * @brief        Checks element-wise agreement between two
+         *               Eigen matrices.
+         *
+         *              Mismatches are reported to standard output.
+         *
+         * @param[in]    eigMat1
+         *               First matrix to compare.
+         * @param[in]    eigMat2
+         *               Second matrix to compare.
+         *
+         * @return       True when every coefficient agrees within
+         *               1e-3.
+         */
         template <typename T, int rows, int cols>
         static bool CheckMatrices(const Eigen::Matrix<T, rows, cols> &eigMat1, const Eigen::Matrix<T, rows, cols> &eigMat2)
         {

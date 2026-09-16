@@ -11,7 +11,13 @@
  * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details: https://www.gnu.org/licenses/
-*/
+ */
+
+/*!
+ * @file         ORBmatcher.cc
+ *
+ * @brief        Implements ORB matching declared in ORBmatcher.h.
+ */
 
 #include "ORBmatcher.h"
 
@@ -38,7 +44,7 @@ namespace core
     {
     }
 
-    int ORBmatcher::SearchByProjection(Frame &F, const vector<MapPoint *> &vpMapPoints, const float th, const bool bFarPoints, const float thFarPoints)
+    int ORBmatcher::searchByProjection(Frame &F, const vector<MapPoint *> &vpMapPoints, const float th, const bool bFarPoints, const float thFarPoints)
     {
         int nmatches = 0, left = 0, right = 0;
 
@@ -97,7 +103,8 @@ namespace core
 
                         const cv::Mat &d = F.mDescriptors.row(idx);
 
-                        const int dist = DescriptorDistance(MPdescriptor, d);
+                        const int dist =
+                            computeDescriptorDistance(MPdescriptor, d);
 
                         if (dist < bestDist)
                         {
@@ -174,7 +181,8 @@ namespace core
 
                         const cv::Mat &d = F.mDescriptors.row(idx + F.Nleft);
 
-                        const int dist = DescriptorDistance(MPdescriptor, d);
+                        const int dist =
+                            computeDescriptorDistance(MPdescriptor, d);
 
                         if (dist < bestDist)
                         {
@@ -294,7 +302,8 @@ namespace core
 
                         const cv::Mat &d = F.mDescriptors.row(idx);
 
-                        const int dist = DescriptorDistance(MPdescriptor, d);
+                        const int dist =
+                            computeDescriptorDistance(MPdescriptor, d);
 
                         if (dist < bestDist)
                         {
@@ -381,7 +390,8 @@ namespace core
 
                         const cv::Mat &d = F.mDescriptors.row(idx + F.Nleft);
 
-                        const int dist = DescriptorDistance(MPdescriptor, d);
+                        const int dist =
+                            computeDescriptorDistance(MPdescriptor, d);
 
                         if (dist < bestDist)
                         {
@@ -429,7 +439,7 @@ namespace core
             return 4.0;
     }
 
-    int ORBmatcher::SearchByBoW(KeyFrame *pKF, Frame &F, vector<MapPoint *> &vpMapPointMatches)
+    int ORBmatcher::searchByBoW(KeyFrame *pKF, Frame &F, vector<MapPoint *> &vpMapPointMatches)
     {
         const vector<MapPoint *> vpMapPointsKF = pKF->GetMapPointMatches();
 
@@ -490,7 +500,7 @@ namespace core
 
                             const cv::Mat &dF = F.mDescriptors.row(realIdxF);
 
-                            const int dist = DescriptorDistance(dKF, dF);
+                            const int dist = computeDescriptorDistance(dKF, dF);
 
                             if (dist < bestDist1)
                             {
@@ -512,7 +522,7 @@ namespace core
 
                             const cv::Mat &dF = F.mDescriptors.row(realIdxF);
 
-                            const int dist = DescriptorDistance(dKF, dF);
+                            const int dist = computeDescriptorDistance(dKF, dF);
 
                             if (realIdxF < F.Nleft && dist < bestDist1)
                             {
@@ -633,7 +643,7 @@ namespace core
         return nmatches;
     }
 
-    int ORBmatcher::SearchByProjection(KeyFrame *pKF, Sophus::Sim3f &Scw, const vector<MapPoint *> &vpPoints,
+    int ORBmatcher::searchByProjection(KeyFrame *pKF, Sophus::Sim3f &Scw, const vector<MapPoint *> &vpPoints,
                                        vector<MapPoint *> &vpMatched, int th, float ratioHamming)
     {
         Sophus::SE3f Tcw = Sophus::SE3f(Scw.rotationMatrix(), Scw.translation() / Scw.scale());
@@ -714,7 +724,7 @@ namespace core
 
                 const cv::Mat &dKF = pKF->mDescriptors.row(idx);
 
-                const int dist = DescriptorDistance(dMP, dKF);
+                const int dist = computeDescriptorDistance(dMP, dKF);
 
                 if (dist < bestDist)
                 {
@@ -733,7 +743,7 @@ namespace core
         return nmatches;
     }
 
-    int ORBmatcher::SearchByProjection(KeyFrame *pKF, Sophus::Sim3<float> &Scw, const std::vector<MapPoint *> &vpPoints, const std::vector<KeyFrame *> &vpPointsKFs,
+    int ORBmatcher::searchByProjection(KeyFrame *pKF, Sophus::Sim3<float> &Scw, const std::vector<MapPoint *> &vpPoints, const std::vector<KeyFrame *> &vpPointsKFs,
                                        std::vector<MapPoint *> &vpMatched, std::vector<KeyFrame *> &vpMatchedKF, int th, float ratioHamming)
     {
         // Get Calibration Parameters for later projection
@@ -826,7 +836,7 @@ namespace core
 
                 const cv::Mat &dKF = pKF->mDescriptors.row(idx);
 
-                const int dist = DescriptorDistance(dMP, dKF);
+                const int dist = computeDescriptorDistance(dMP, dKF);
 
                 if (dist < bestDist)
                 {
@@ -883,7 +893,7 @@ namespace core
 
                 cv::Mat d2 = F2.mDescriptors.row(i2);
 
-                int dist = DescriptorDistance(d1, d2);
+                int dist = computeDescriptorDistance(d1, d2);
 
                 if (vMatchedDistance[i2] <= dist)
                     continue;
@@ -961,7 +971,7 @@ namespace core
         return nmatches;
     }
 
-    int ORBmatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches12)
+    int ORBmatcher::searchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches12)
     {
         const vector<cv::KeyPoint> &vKeysUn1 = pKF1->mvKeysUn;
         const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
@@ -1032,7 +1042,7 @@ namespace core
 
                         const cv::Mat &d2 = Descriptors2.row(idx2);
 
-                        int dist = DescriptorDistance(d1, d2);
+                        int dist = computeDescriptorDistance(d1, d2);
 
                         if (dist < bestDist1)
                         {
@@ -1105,7 +1115,7 @@ namespace core
         return nmatches;
     }
 
-    int ORBmatcher::SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2,
+    int ORBmatcher::searchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2,
                                            vector<pair<size_t, size_t>> &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse)
     {
         const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
@@ -1215,7 +1225,7 @@ namespace core
 
                         const cv::Mat &d2 = pKF2->mDescriptors.row(idx2);
 
-                        const int dist = DescriptorDistance(d1, d2);
+                        const int dist = computeDescriptorDistance(d1, d2);
 
                         if (dist > TH_LOW || dist > bestDist)
                             continue;
@@ -1351,7 +1361,7 @@ namespace core
         return nmatches;
     }
 
-    int ORBmatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const float th, const bool bRight)
+    int ORBmatcher::fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const float th, const bool bRight)
     {
         camera_models::GeometricCamera *pCamera;
         Sophus::SE3f Tcw;
@@ -1503,7 +1513,7 @@ namespace core
 
                 const cv::Mat &dKF = pKF->mDescriptors.row(idx);
 
-                const int dist = DescriptorDistance(dMP, dKF);
+                const int dist = computeDescriptorDistance(dMP, dKF);
 
                 if (dist < bestDist)
                 {
@@ -1540,7 +1550,7 @@ namespace core
         return nFused;
     }
 
-    int ORBmatcher::Fuse(KeyFrame *pKF, Sophus::Sim3f &Scw, const vector<MapPoint *> &vpPoints, float th, vector<MapPoint *> &vpReplacePoint)
+    int ORBmatcher::fuse(KeyFrame *pKF, Sophus::Sim3f &Scw, const vector<MapPoint *> &vpPoints, float th, vector<MapPoint *> &vpReplacePoint)
     {
         // Decompose Scw
         Sophus::SE3f Tcw = Sophus::SE3f(Scw.rotationMatrix(), Scw.translation() / Scw.scale());
@@ -1621,7 +1631,7 @@ namespace core
 
                 const cv::Mat &dKF = pKF->mDescriptors.row(idx);
 
-                int dist = DescriptorDistance(dMP, dKF);
+                int dist = computeDescriptorDistance(dMP, dKF);
 
                 if (dist < bestDist)
                 {
@@ -1651,7 +1661,7 @@ namespace core
         return nFused;
     }
 
-    int ORBmatcher::SearchBySim3(KeyFrame *pKF1, KeyFrame *pKF2, std::vector<MapPoint *> &vpMatches12, const Sophus::Sim3f &S12, const float th)
+    int ORBmatcher::searchBySim3(KeyFrame *pKF1, KeyFrame *pKF2, std::vector<MapPoint *> &vpMatches12, const Sophus::Sim3f &S12, const float th)
     {
         const float &fx = pKF1->fx;
         const float &fy = pKF1->fy;
@@ -1754,7 +1764,7 @@ namespace core
 
                 const cv::Mat &dKF = pKF2->mDescriptors.row(idx);
 
-                const int dist = DescriptorDistance(dMP, dKF);
+                const int dist = computeDescriptorDistance(dMP, dKF);
 
                 if (dist < bestDist)
                 {
@@ -1834,7 +1844,7 @@ namespace core
 
                 const cv::Mat &dKF = pKF1->mDescriptors.row(idx);
 
-                const int dist = DescriptorDistance(dMP, dKF);
+                const int dist = computeDescriptorDistance(dMP, dKF);
 
                 if (dist < bestDist)
                 {
@@ -1870,7 +1880,7 @@ namespace core
         return nFound;
     }
 
-    int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, const float th, const bool bMono)
+    int ORBmatcher::searchByProjection(Frame &CurrentFrame, const Frame &LastFrame, const float th, const bool bMono)
     {
         int nmatches = 0;
 
@@ -1955,7 +1965,7 @@ namespace core
 
                         const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
 
-                        const int dist = DescriptorDistance(dMP, d);
+                        const int dist = computeDescriptorDistance(dMP, d);
 
                         if (dist < bestDist)
                         {
@@ -2022,7 +2032,7 @@ namespace core
 
                             const cv::Mat &d = CurrentFrame.mDescriptors.row(i2 + CurrentFrame.Nleft);
 
-                            const int dist = DescriptorDistance(dMP, d);
+                            const int dist = computeDescriptorDistance(dMP, d);
 
                             if (dist < bestDist)
                             {
@@ -2083,7 +2093,7 @@ namespace core
         return nmatches;
     }
 
-    int ORBmatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set<MapPoint *> &sAlreadyFound, const float th, const int ORBdist)
+    int ORBmatcher::searchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set<MapPoint *> &sAlreadyFound, const float th, const int ORBdist)
     {
         int nmatches = 0;
 
@@ -2151,7 +2161,7 @@ namespace core
 
                         const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
 
-                        const int dist = DescriptorDistance(dMP, d);
+                        const int dist = computeDescriptorDistance(dMP, d);
 
                         if (dist < bestDist)
                         {
@@ -2250,7 +2260,8 @@ namespace core
 
     // Bit set count operation from
     // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
-    int ORBmatcher::DescriptorDistance(const cv::Mat &a, const cv::Mat &b)
+    int ORBmatcher::computeDescriptorDistance(
+        const cv::Mat &a, const cv::Mat &b)
     {
         const int *pa = a.ptr<int32_t>();
         const int *pb = b.ptr<int32_t>();

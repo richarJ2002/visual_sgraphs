@@ -35,15 +35,15 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Stable, orderable identity for one snapshot entity.
+ * @brief        Stable, orderable identity for one snapshot entity.
  *
- *              Relationships in this snapshot always use this key, never a
- *              bare local ID, because local IDs may repeat across different
- *              maps (Section 6.3 of the semantic-axiom-reliability plan).
- *              This is the *containing* map's identity -- the map whose
- *              enumeration produced this record -- which may differ from the
- *              entity's own declared map; see the record types' declaredMapId
- *              field for that separate fact.
+ *               Relationships in this snapshot always use this key,
+ *               never a bare local ID, because local IDs may repeat
+ *               across different maps. This is the *containing*
+ *               map's identity -- the map whose enumeration produced
+ *               this record -- which may differ from the entity's
+ *               own declared map; see the record types'
+ *               declaredMapId field for that separate fact.
  */
 struct EntityKey
 {

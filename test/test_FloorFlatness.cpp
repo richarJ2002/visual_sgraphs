@@ -1,8 +1,9 @@
 /**
  * @file test_FloorFlatness.cpp
- * @brief Phase 2(ii) coverage: SemanticsManager::reconcileRoomGroundPlanes()
- *        re-points a room whose own ground plane disagrees with the
- *        just-refreshed canonical semantic::Floor identity.
+ * @brief Front-end floor-flatness coverage:
+ *        SemanticsManager::reconcileRoomGroundPlanes() re-points a room
+ *        whose own ground plane disagrees with the just-refreshed canonical
+ *        semantic::Floor identity.
  */
 
 #include "Atlas.h"
@@ -79,7 +80,7 @@ TEST(FloorFlatness, RepointsALessObservedRoomGroundPlaneToTheCanonicalOne)
     std::unique_ptr<semantic::Room> room = std::make_unique<semantic::Room>();
     room->setId(1);
     room->setMap(p_map);
-    room->setRoomVariant(semantic::Room::roomVariant::ROOM);
+    room->setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room->setGroundPlane(roomGround.get());
     atlas.AddDetectedMapRoom(room.get());
 
@@ -108,7 +109,7 @@ TEST(FloorFlatness, LeavesAnAgreeingRoomGroundPlaneUntouched)
     std::unique_ptr<semantic::Room> room = std::make_unique<semantic::Room>();
     room->setId(1);
     room->setMap(p_map);
-    room->setRoomVariant(semantic::Room::roomVariant::ROOM);
+    room->setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room->setGroundPlane(roomGround.get());
     atlas.AddDetectedMapRoom(room.get());
 

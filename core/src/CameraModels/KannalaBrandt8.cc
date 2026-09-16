@@ -11,7 +11,13 @@
  * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details: https://www.gnu.org/licenses/
-*/
+ */
+
+/*!
+ * @file         KannalaBrandt8.cc
+ *
+ * @brief        Implements KannalaBrandt8 declared in KannalaBrandt8.h.
+ */
 
 #include "KannalaBrandt8.h"
 #include <boost/serialization/export.hpp>
@@ -131,7 +137,7 @@ namespace camera_models {
         return cv::Point3f(pw.x * scale, pw.y * scale, 1.f);
     }
 
-    Eigen::Matrix<double, 2, 3> KannalaBrandt8::projectJac(const Eigen::Vector3d &point3D_in) {
+    Eigen::Matrix<double, 2, 3> KannalaBrandt8::computeProjectionJacobian(const Eigen::Vector3d &point3D_in) {
         double x2 = point3D_in[0] * point3D_in[0], y2 = point3D_in[1] * point3D_in[1], z2 = point3D_in[2] * point3D_in[2];
         double r2 = x2 + y2;
         double r = sqrt(r2);
@@ -163,7 +169,7 @@ namespace camera_models {
         return JacGood;
     }
 
-    bool KannalaBrandt8::ReconstructWithTwoViews(const std::vector<cv::KeyPoint>& keys1_in, const std::vector<cv::KeyPoint>& keys2_in, const std::vector<int> &matches12_in,
+    bool KannalaBrandt8::reconstructWithTwoViews(const std::vector<cv::KeyPoint>& keys1_in, const std::vector<cv::KeyPoint>& keys2_in, const std::vector<int> &matches12_in,
                                           Sophus::SE3f &pose21_out, std::vector<cv::Point3f> &points3D_out, std::vector<bool> &triangulated_out){
         if(!p_twoViewReconstruction){
             Eigen::Matrix3f K = this->toK_();
@@ -205,10 +211,10 @@ namespace camera_models {
     bool KannalaBrandt8::epipolarConstrain(GeometricCamera* p_otherCamera_in, const cv::KeyPoint &keypoint1_in, const cv::KeyPoint &keypoint2_in,
                                            const Eigen::Matrix3f& rotation12_in, const Eigen::Vector3f& translation12_in, const float sigmaLevel_in, const float uncertainty_in) {
         Eigen::Vector3f point3D;
-        return this->TriangulateMatches(p_otherCamera_in,keypoint1_in,keypoint2_in,rotation12_in,translation12_in,sigmaLevel_in,uncertainty_in,point3D) > 0.0001f;
+        return this->triangulateMatches(p_otherCamera_in,keypoint1_in,keypoint2_in,rotation12_in,translation12_in,sigmaLevel_in,uncertainty_in,point3D) > 0.0001f;
     }
 
-    bool KannalaBrandt8::matchAndtriangulate(const cv::KeyPoint& keypoint1_in, const cv::KeyPoint& keypoint2_in, GeometricCamera* p_otherCamera_in,
+    bool KannalaBrandt8::matchAndTriangulate(const cv::KeyPoint& keypoint1_in, const cv::KeyPoint& keypoint2_in, GeometricCamera* p_otherCamera_in,
                                              Sophus::SE3f& pose1_in, Sophus::SE3f& pose2_in,
                                              const float sigmaLevel1_in, const float sigmaLevel2_in,
                                              Eigen::Vector3f& point3D_out){
@@ -247,7 +253,7 @@ namespace camera_models {
 
         Eigen::Vector3f x3D;
 
-        Triangulate(p11,p22,eigTcw1,eigTcw2,x3D);
+        triangulate(p11,p22,eigTcw1,eigTcw2,x3D);
 
         //Check triangulation in front of cameras
         float z1 = Rcw1.row(2).dot(x3D)+pose1_in.translation()(2);
@@ -292,7 +298,7 @@ namespace camera_models {
         return true;
     }
 
-    float KannalaBrandt8::TriangulateMatches(GeometricCamera *p_otherCamera_in, const cv::KeyPoint &keypoint1_in, const cv::KeyPoint &keypoint2_in, const Eigen::Matrix3f& rotation12_in, const Eigen::Vector3f& translation12_in, const float sigmaLevel_in, const float uncertainty_in, Eigen::Vector3f& point3D_out) {
+    float KannalaBrandt8::triangulateMatches(GeometricCamera *p_otherCamera_in, const cv::KeyPoint &keypoint1_in, const cv::KeyPoint &keypoint2_in, const Eigen::Matrix3f& rotation12_in, const Eigen::Vector3f& translation12_in, const float sigmaLevel_in, const float uncertainty_in, Eigen::Vector3f& point3D_out) {
 
         Eigen::Vector3f r1 = this->unprojectEig(keypoint1_in.pt);
         Eigen::Vector3f r2 = p_otherCamera_in->unprojectEig(keypoint2_in.pt);
@@ -325,7 +331,7 @@ namespace camera_models {
         pose2_in << R21, -R21 * translation12_in;
 
 
-        Triangulate(p11,p22,pose1_in,pose2_in,x3D);
+        triangulate(p11,p22,pose1_in,pose2_in,x3D);
         // cv::Mat x3Dt = x3D.t();
 
         float z1 = x3D(2);
@@ -380,7 +386,7 @@ namespace camera_models {
         return is;
     }
 
-    void KannalaBrandt8::Triangulate(const cv::Point2f &point1_in, const cv::Point2f &point2_in, const Eigen::Matrix<float,3,4> &pose1_in,
+    void KannalaBrandt8::triangulate(const cv::Point2f &point1_in, const cv::Point2f &point2_in, const Eigen::Matrix<float,3,4> &pose1_in,
                                      const Eigen::Matrix<float,3,4> &pose2_in, Eigen::Vector3f &point3D_out)
     {
         Eigen::Matrix<float,4,4> A;

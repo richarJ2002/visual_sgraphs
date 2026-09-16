@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file         Viewer.cc
+ *
+ * @brief        Implements Viewer declared in Viewer.h.
+ */
+
 #include "Viewer.h"
 #include "ResetCause.h"
 #include <pangolin/pangolin.h>
@@ -82,7 +88,7 @@ void Viewer::newParameterLoader(Settings *settings)
 {
     mImageViewerScale = 1.f;
 
-    float fps = settings->fps();
+    float fps = settings->getFramesPerSecond();
     if (fps < 1)
         fps = 30;
     mT = 1e3 / fps;

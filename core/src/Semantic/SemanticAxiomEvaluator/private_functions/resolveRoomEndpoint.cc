@@ -17,41 +17,41 @@
  */
 
 /*!
- * @file            resolveRoomEndpoint.cc
+ * @file         resolveRoomEndpoint.cc
  *
- * @brief           Implements resolveRoomEndpoint(), declared in
- *                  private_functions.h.
+ * @brief        Implements resolveRoomEndpoint(), declared in
+ *               private_functions.h.
  *
- *                  "Real"/"confirmed" throughout this module's passage-
- *                  endpoint evaluators (AX-PASS-02/03/04) means
- *                  isLive && isConfirmedRoomVariant, read directly from the
- *                  target RoomRecord this function resolves. This is a
- *                  deliberate, documented proxy for the plan's
- *                  "authoritative side slot" concept
- *                  (PassageRecord::endpointSlotReason is always
- *                  UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA in this
- *                  slice, confirmed by direct source read of Passage.h/
- *                  Passage.cc: KnownSideProvenance and getProspectiveRoom()
- *                  record which room is known/prospective, not a named
- *                  DISCOVERY_SIDE/OPPOSITE_SIDE endpoint slot). Evaluating
- *                  cardinality, reciprocity, and map/floor agreement from
- *                  this proxy is not "claiming authoritative endpoint-slot
- *                  PASS from unavailable evidence": every field this
- *                  function reads (EntityRef::key/isLive,
- *                  RoomRecord::isLive/variant/floorRef) is genuinely,
- *                  always populated by capture -- see
- *                  ResolvedRoomEndpoint.h.
+ *               "Real"/"confirmed" throughout this module's passage-
+ *               endpoint evaluators (AX-PASS-02/03/04) means
+ *               isLive && isConfirmedRoomVariant, read directly from the
+ *               target RoomRecord this function resolves. This is a
+ *               deliberate, documented proxy for the plan's
+ *               "authoritative side slot" concept
+ *               (PassageRecord::endpointSlotReason is always
+ *               UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA in this
+ *               slice, confirmed by direct source read of Passage.h/
+ *               Passage.cc: KnownSideProvenance and getProspectiveRoom()
+ *               record which room is known/prospective, not a named
+ *               DISCOVERY_SIDE/OPPOSITE_SIDE endpoint slot). Evaluating
+ *               cardinality, reciprocity, and map/floor agreement from
+ *               this proxy is not "claiming authoritative endpoint-slot
+ *               PASS from unavailable evidence": every field this
+ *               function reads (EntityRef::key/isLive,
+ *               RoomRecord::isLive/variant/floorRef) is genuinely,
+ *               always populated by capture -- see
+ *               ResolvedRoomEndpoint.h.
  *
- *                  Residual known limitation: RoomRecord::variant is not
- *                  duplicated onto EntityRef, so isConfirmedRoomVariant can
- *                  only be known when the target is actually located via
- *                  enumeration (isFoundInSnapshot); a referenced room this
- *                  snapshot cannot enumerate in any captured map never
- *                  satisfies "real"/"confirmed" here, even when it is
- *                  genuinely live -- the downstream evaluators correctly
- *                  treat that as unproven rather than fabricating a
- *                  variant, but it remains a schema gap distinct from the
- *                  isLive fix below.
+ *               Residual known limitation: RoomRecord::variant is not
+ *               duplicated onto EntityRef, so isConfirmedRoomVariant can
+ *               only be known when the target is actually located via
+ *               enumeration (isFoundInSnapshot); a referenced room this
+ *               snapshot cannot enumerate in any captured map never
+ *               satisfies "real"/"confirmed" here, even when it is
+ *               genuinely live -- the downstream evaluators correctly
+ *               treat that as unproven rather than fabricating a
+ *               variant, but it remains a schema gap distinct from the
+ *               isLive fix below.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
@@ -78,10 +78,9 @@ ResolvedRoomEndpoint
      * read it here unconditionally so a keyed-but-unenumerated or
      * unresolvable-but-non-null reference still reports its true liveness
      * rather than silently reading as an ordinary absent reference.
-     * isLiveAvailable is recorded independently (2026-09-07 second
-     * proof-closure repair) so a caller can distinguish "genuinely unproven"
-     * from "known false" instead of treating isLive's own false default as
-     * a known-bad fact. */
+     * isLiveAvailable is recorded independently so a caller can
+     * distinguish "genuinely unproven" from "known false" instead of
+     * treating isLive's own false default as a known-bad fact. */
     if (ref_in.isLive.has_value())
     {
         resolved.isLive          = *ref_in.isLive;
@@ -102,7 +101,7 @@ ResolvedRoomEndpoint
     resolved.key         = ref_in.key;
     resolved.isCrossMap  = (ref_in.key->mapId != expectedMapId_in);
     resolved.isWrongKind = (ref_in.key->kind != EntityKind::ROOM);
-    /* Checkpoint-A residual repair: EntityRef documents
+    /* EntityRef documents
      * key.has_value() <=> reason == NONE as an invariant, but this
      * snapshot's records are adversarial value inputs -- do not assume
      * capture made them coherent. A keyed reference whose own reason is
@@ -111,7 +110,7 @@ ResolvedRoomEndpoint
 
     if (countMapSnapshotsWithId(snapshot_in, ref_in.key->mapId) > 1U)
     {
-        /* Checkpoint-A residual repair: which MapSnapshot is actually
+        /* Which MapSnapshot is actually
          * authoritative for this map id is itself ambiguous, so no
          * first-match lookup below may supply positive proof. */
         resolved.isContainingMapAmbiguous = true;
@@ -126,7 +125,7 @@ ResolvedRoomEndpoint
         }
         if (countRoomRecordsWithKey(snapshot_in, *ref_in.key) > 1U)
         {
-            /* 2026-09-07 residual proof-closure repair: more than one
+            /* More than one
              * distinct RoomRecord shares this exact key -- which room
              * actually forms the endpoint is ambiguous, so no first-match
              * lookup below may supply positive proof (see
@@ -139,7 +138,7 @@ ResolvedRoomEndpoint
         if (p_foundRoom != nullptr)
         {
             resolved.isFoundInSnapshot = true;
-            /* Checkpoint-A residual repair: do NOT fill resolved.isLive/
+            /* Do NOT fill resolved.isLive/
              * isLiveAvailable from p_foundRoom->isLive here. EntityRef::
              * isLive is already populated directly from the referenced
              * pointer's isBad() whenever the pointer was non-null (see the
@@ -152,12 +151,12 @@ ResolvedRoomEndpoint
              * liveness is not overwritten by a present/live room record and
              * must not silently become a confirmed endpoint. */
             resolved.isConfirmedRoomVariant =
-                (p_foundRoom->variant == Room::roomVariant::ROOM);
+                (p_foundRoom->variant == Room::RoomVariant::ROOM);
             if (p_foundRoom->floorRef.key.has_value())
             {
                 resolved.floorKey = p_foundRoom->floorRef.key;
             }
-            /* 2026-09-07 second proof-closure repair: the located record's
+            /* The located record's
              * own declared map must agree with the map it was actually
              * enumerated from (this loop only ever searches the map named
              * by ref_in.key->mapId), otherwise the target record itself is

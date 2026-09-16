@@ -1,5 +1,5 @@
 /**
- * WP13 Phase 2 focused tests: persistence of the last-confirmed room context
+ * Focused tests: persistence of the last-confirmed room context
  * (semantic::RoomContextSnapshot, WallBounds, semantic::PassageContext) across the real
  * Atlas::CreateNewMap() tracking-loss/new-map lifecycle boundary.
  *
@@ -102,7 +102,7 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
     room.setMap(p_map);
     room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
     room.setWalls(&wall);
-    room.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room.setBoundaryStatus(semantic::Room::BoundaryStatus::INCOMPLETE);
     p_map->AddDetectedMapRoom(&room);
 

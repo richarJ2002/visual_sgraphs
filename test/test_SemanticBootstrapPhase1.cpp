@@ -159,7 +159,7 @@ TEST(SemanticBootstrapPhase1,
     semantic::Room roomOne;
     roomOne.setId(1);
     roomOne.setMap(atlas.GetCurrentMap());
-    roomOne.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    roomOne.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     roomOne.setName("semantic::Room#1");
     roomOne.setCentroid(Eigen::Vector3d(4.0, 0.0, 1.0));
     atlas.AddDetectedMapRoom(&roomOne);
@@ -259,7 +259,7 @@ TEST(SemanticBootstrapPhase1, BootstrapIgnoresSpuriousRoomWhenRecoveryPending)
     semantic::Room spuriousRoom;
     spuriousRoom.setId(99);
     spuriousRoom.setMap(atlas.GetCurrentMap());
-    spuriousRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    spuriousRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     spuriousRoom.setName("semantic::Room#99");
     spuriousRoom.setCentroid(Eigen::Vector3d(5.0, 5.0, 1.0));
     atlas.AddDetectedMapRoom(&spuriousRoom);
@@ -406,7 +406,7 @@ TEST(SemanticBootstrapPhase1, IdempotentBootstrapPreservesTraversedCurrentRoom)
     semantic::Room roomOne;
     roomOne.setId(1);
     roomOne.setMap(atlas.GetCurrentMap());
-    roomOne.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    roomOne.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     roomOne.setName("semantic::Room#1");
     roomOne.setCentroid(Eigen::Vector3d(4.0, 0.0, 1.0));
     atlas.AddDetectedMapRoom(&roomOne);
@@ -459,7 +459,7 @@ TEST(SemanticBootstrapPhase1, PassageFarSideRoutingPrecedesCurrentRoomFallback)
     farRoom.setId(2);
     farRoom.setMap(p_map);
     farRoom.setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0));
-    farRoom.setRoomVariant(semantic::Room::roomVariant::UNDEFINED);
+    farRoom.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED);
     atlas.AddCandidateMapRoom(&farRoom);
 
     semantic::Passage passage;
@@ -750,7 +750,7 @@ TEST(SemanticBootstrapPhase1, ZeroPoseKeyFrameFallsBackToSnapshotCentroid)
     semantic::Room roomTwo;
     roomTwo.setId(2);
     roomTwo.setMap(atlas.GetCurrentMap());
-    roomTwo.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    roomTwo.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     roomTwo.setName("semantic::Room#2");
     roomTwo.setCentroid(Eigen::Vector3d(2.0, 3.0, 4.0));
     atlas.AddDetectedMapRoom(&roomTwo);

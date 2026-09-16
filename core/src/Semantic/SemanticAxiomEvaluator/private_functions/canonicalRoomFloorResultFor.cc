@@ -22,11 +22,10 @@
  * @brief           Implements canonicalRoomFloorResultFor(), declared in
  *                  private_functions.h.
  *
- *                  Checkpoint-A residual repair (checkpoint 10): replaces
- *                  hasFailingRoomFloorReciprocity()'s lossy bool return
- *                  (FAIL-or-not) with the full aggregate AxiomResult
+ *                  Returns the full aggregate AxiomResult
  *                  (FAIL/UNKNOWN/PASS) of the endpoint room's own canonical
- *                  evaluateOneRoomFloorReciprocity() findings, so
+ *                  evaluateOneRoomFloorReciprocity() findings (rather than
+ *                  a lossy FAIL-or-not bool), so
  *                  evaluatePassageFloorAgreement() can propagate a canonical
  *                  UNKNOWN (not only FAIL) before ever comparing floor keys.
  */

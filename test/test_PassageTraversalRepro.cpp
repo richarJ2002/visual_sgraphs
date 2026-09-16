@@ -141,7 +141,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     semantic::Room knownRoom;
     knownRoom.setId(10);
     knownRoom.setMap(p_map);
-    knownRoom.setRoomVariant(semantic::Room::roomVariant::ROOM);
+    knownRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     knownRoom.setCentroid(Eigen::Vector3d(-1.0, -0.5, 5.5));
     p_map->AddDetectedMapRoom(&knownRoom);
 
@@ -149,7 +149,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     semantic::Room farRoom;
     farRoom.setId(11);
     farRoom.setMap(p_map);
-    farRoom.setRoomVariant(semantic::Room::roomVariant::UNDEFINED);
+    farRoom.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED);
     farRoom.setCentroid(Eigen::Vector3d(1.0, -1.0, 6.0));
     p_map->AddDetectedMapRoom(&farRoom);
 

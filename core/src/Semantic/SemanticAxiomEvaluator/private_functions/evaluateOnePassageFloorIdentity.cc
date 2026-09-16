@@ -22,13 +22,13 @@
  * @brief           Implements evaluateOnePassageFloorIdentity(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 residual proof-closure repair: the terminal
- *                  success path now also appends a typed
- *                  FLOOR_PASSAGE_ENDPOINT_PROOF_UNVERIFIED UNKNOWN alongside
- *                  the clause-level FLOOR_PASSAGE_AGREEMENT_VALID PASS, so
- *                  the passage branch of the AX-FLOOR-01 aggregate can never
- *                  become PASS while PassageRecord::endpointSlotReason
- *                  remains NOT_TRACKED_BY_CURRENT_SCHEMA.
+ *                  The terminal success path also appends a typed
+ *                  FLOOR_PASSAGE_ENDPOINT_PROOF_UNVERIFIED UNKNOWN
+ *                  alongside the clause-level
+ *                  FLOOR_PASSAGE_AGREEMENT_VALID PASS, so the passage
+ *                  branch of the AX-FLOOR-01 aggregate can never become
+ *                  PASS while PassageRecord::endpointSlotReason remains
+ *                  NOT_TRACKED_BY_CURRENT_SCHEMA.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
@@ -79,7 +79,7 @@ void evaluateOnePassageFloorIdentity(const PassageRecord         &passage_in,
     if ((knownSide.referencePresent && knownSide.isCrossMap) ||
         (prospective.referencePresent && prospective.isCrossMap))
     {
-        /* Checkpoint-A residual repair: mirrors
+        /* Mirrors
          * evaluateOnePassageMapAndFloor.cc's own unconditional-on-
          * referencePresent cross-map check (not gated on
          * isRealPassageEndpoint) -- a reference resolving in a different map

@@ -1,10 +1,10 @@
 /**
  * @file test_GlobalWallMetrics.cpp
  * @brief Self-test for the scoped global-wall-metrics evaluation adapter
- *        (semantic-axiom-reliability-plan.md, P0.5).
+ *.
  *
  * `compare_sgraph_to_ground_truth.py`'s wall precision/recall denominator
- * (gap G17) only counts walls belonging to a room that matched between truth
+ * only counts walls belonging to a room that matched between truth
  * and generated. A truth room with no matching generated room (or a
  * hallucinated generated room with no matching truth room) silently drops
  * that room's walls out of the denominator instead of counting them as
@@ -54,8 +54,8 @@ TEST(GlobalWallMetrics, IdenticalGraphScoresPerfectGlobalMatch)
 {
     const nlohmann::json truth = loadOfficeCleanGroundTruth();
     ASSERT_EQ(truth.at("walls").size(), 56U)
-        << "office_clean ground truth fixture drifted from the plan's "
-           "recorded baseline (Section 4.2: 14 rooms, 56 walls, 13 passages)";
+        << "office_clean ground truth fixture drifted from the "
+           "recorded baseline (14 rooms, 56 walls, 13 passages)";
 
     const WallPrfResult result = computeGlobalWallMetrics(truth, truth);
 

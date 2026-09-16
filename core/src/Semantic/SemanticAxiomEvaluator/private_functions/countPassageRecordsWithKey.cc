@@ -22,8 +22,7 @@
  * @brief           Implements countPassageRecordsWithKey(), declared in
  *                  private_functions.h.
  *
- *                  2026-09-07 second proof-closure repair: made
- *                  snapshot-wide (see countFloorRecordsWithKey.cc's
+ *                  Snapshot-wide (see countFloorRecordsWithKey.cc's
  *                  identical rationale).
  */
 

@@ -1,6 +1,6 @@
 /**
- * Semantic-axiom-reliability-plan.md Phase 1 (P1.7): focused, ROS/Gazebo-free
- * tests for the pure buildSemanticDiagnosticUpdate() builder extracted from
+ * Focused, ROS/Gazebo-free tests for the pure
+ * buildSemanticDiagnosticUpdate() builder extracted from
  * SemanticsManager::logSemanticDiagnostics().
  */
 

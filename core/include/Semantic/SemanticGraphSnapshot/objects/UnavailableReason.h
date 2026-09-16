@@ -36,20 +36,24 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Explains why a reference field carries no valid value.
+ * @brief        Explains why a reference field carries no valid
+ *               value.
  *
- *              A plain "no such reference at all" case (e.g. a room with no
- *              floor yet) is represented by UnavailableReason::NULL_REFERENCE,
- *              which is also every reference field's default value -- see
- *              EntityRef.h and RawPlaneRef.h for why NONE is never a valid
- *              default. Consumers interpret which values are ordinary versus
- *              a hard violation per field; this snapshot only reports what
- *              capture actually observed.
+ *               A plain "no such reference at all" case (e.g. a room
+ *               with no floor yet) is represented by
+ *               UnavailableReason::NULL_REFERENCE, which is also
+ *               every reference field's default value -- see
+ *               EntityRef.h and RawPlaneRef.h for why NONE is never
+ *               a valid default. Consumers interpret which values
+ *               are ordinary versus a hard violation per field;
+ *               this snapshot only reports what capture actually
+ *               observed.
  *
- *              Whether a *present* reference is additionally bad or cross-map
- *              is an evaluator judgement (P1.2) made from the plain
- *              EntityKey/liveness data this snapshot already carries -- it is
- *              not decided at capture time and is not a value of this enum.
+ *               Whether a *present* reference is additionally bad or
+ *               cross-map is an evaluator judgement made from the
+ *               plain EntityKey/liveness data this snapshot already
+ *               carries -- it is not decided at capture time and is
+ *               not a value of this enum.
  */
 enum class UnavailableReason : std::uint8_t
 {
@@ -74,7 +78,9 @@ enum class UnavailableReason : std::uint8_t
     /*! @brief No public Atlas/Map API exposes this state at all. */
     NOT_EXPOSED_BY_CURRENT_API = 4U,
 
-    /*! @brief Deferred to a later Phase-1 slice; not read by this one. */
+/*!
+ * @brief        Deferred to a later extension; not read here.
+ */
     NOT_CAPTURED_IN_FOUNDATION_SLICE = 5U
 };
 

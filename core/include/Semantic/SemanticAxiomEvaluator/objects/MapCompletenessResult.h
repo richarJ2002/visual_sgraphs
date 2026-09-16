@@ -43,12 +43,13 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       One map's shadow completeness result, produced by
- *              evaluateMapCompleteness(). This is a shadow/comparison value
- *              only in this slice (P1.3): nothing in this module changes
- *              SemanticsManager's own logging-only completeness calculation
- *              or any runtime consumer of it -- see \c legacy below and
- *              LegacyMapCompletenessResult.h.
+ * @brief        One map's shadow completeness result, produced by
+ *               evaluateMapCompleteness(). This is a
+ *               shadow/comparison value only: nothing in this module
+ *               changes SemanticsManager's own logging-only
+ *               completeness calculation or any runtime consumer of
+ *               it -- see \c legacy below and
+ *               LegacyMapCompletenessResult.h.
  */
 struct MapCompletenessResult
 {

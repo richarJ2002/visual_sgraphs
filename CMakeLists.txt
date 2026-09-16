@@ -253,7 +253,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/src/Semantic/SemanticAxiomEvaluator/public_functions/evaluateTransition.cc
   core/src/Semantic/SemanticAxiomEvaluator/public_functions/evaluateMapCompleteness.cc
   core/src/Semantic/SemanticAxiomEvaluator/private_functions/makeAxiomCapabilityEntry.cc
-  core/src/Semantic/SemanticAxiomEvaluator/public_functions/axiomCapabilityTable.cc
+  core/src/Semantic/SemanticAxiomEvaluator/public_functions/computeAxiomCapabilityTable.cc
   core/src/Semantic/SemanticAxiomEvaluator/EnumNames/axiomCodeName.cc
   core/src/Semantic/SemanticAxiomEvaluator/EnumNames/axiomResultName.cc
   core/src/Semantic/SemanticAxiomEvaluator/EnumNames/axiomClassName.cc
@@ -519,10 +519,10 @@ install(DIRECTORY
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 # ---------------------------------------------------------------------------
-# Tests (WP13 Phase 0/1): deterministic, no Gazebo.
+# Deterministic unit tests, no Gazebo.
 # RoomTracker is standalone, so the unit targets link its sources directly and
 # do not depend on the heavy production library. The multi-process bag-replay
-# harness (WP13 Section 19.1, category B) is intentionally deferred.
+# harness is intentionally deferred.
 # ---------------------------------------------------------------------------
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
@@ -625,7 +625,7 @@ if(BUILD_TESTING)
     "-Wl,--export-dynamic-symbol=vsGraphsAtlasLockOrderBeforeMapSnapshot"
   )
 
-  # WP1 Milestone 1: exercises SemanticsManager::evaluateTopCandidateVerification
+  # Exercises SemanticsManager::evaluateTopCandidateVerification
   # against real Atlas/Map/Room/Plane/Floor objects. Reuses the same
   # VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK-instrumented production library as
   # test_room_tracker_integration above (built once, above).
@@ -639,7 +639,7 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_room_tracker_test_lib
   )
 
-  # WP1 Milestone 2: two wall-admission fixes reported directly against a
+  # Two wall-admission fixes reported directly against a
   # live sim run (ground-aligned height/width gate, wrong-side observation
   # backstop). Reuses the same instrumented production library as above.
   ament_add_gtest(test_WallAdmission
@@ -775,10 +775,9 @@ if(BUILD_TESTING)
     ${PROJECT_SOURCE_DIR}/core/include
   )
 
-  # Semantic-axiom-reliability-plan.md Phase 0 (P0.4): deterministic,
-  # ROS/Gazebo-free fixture builders shared by later semantic-axiom-plan
-  # tests. Self-test only exercises plain model construction (no
-  # SemanticsManager private methods), so it links the plain production
+  # Deterministic, ROS/Gazebo-free fixture builders shared by later
+  # semantic-axiom tests. Self-test only exercises plain model construction
+  # (no SemanticsManager private methods), so it links the plain production
   # library.
   ament_add_gtest(test_SemanticFixtures
     test/test_SemanticFixtures.cpp
@@ -788,10 +787,9 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
-  # Semantic-axiom-reliability-plan.md Phase 0 (P0.5): scoped global wall
-  # precision/recall/F1 adapter fixing the comparator's matched-room-only
-  # wall denominator (gap G17). Header-only nlohmann::json parsing plus plain
-  # Eigen geometry -- no production library dependency.
+  # Scoped global wall precision/recall/F1 adapter fixing the comparator's
+  # matched-room-only wall denominator. Header-only nlohmann::json parsing
+  # plus plain Eigen geometry -- no production library dependency.
   get_filename_component(VS_GRAPHS_WORKSPACE_ROOT
     "${PROJECT_SOURCE_DIR}/../.." ABSOLUTE
   )
@@ -803,10 +801,10 @@ if(BUILD_TESTING)
     VS_GRAPHS_WORKSPACE_ROOT="${VS_GRAPHS_WORKSPACE_ROOT}"
   )
 
-  # Semantic-axiom-reliability-plan.md Phase 1 (P1.1): focused,
-  # ROS/Gazebo-free tests for the value-only SemanticGraphSnapshot capture
-  # contract. Links the production library (captureSemanticGraphSnapshot()
-  # and the model classes it reads) plus the shared fixture builders.
+  # Focused, ROS/Gazebo-free tests for the value-only
+  # SemanticGraphSnapshot capture contract. Links the production library
+  # (captureSemanticGraphSnapshot() and the model classes it reads) plus
+  # the shared fixture builders.
   ament_add_gtest(test_SemanticGraphSnapshot
     test/test_SemanticGraphSnapshot.cpp
     test/SemanticFixtures.cc
@@ -826,10 +824,9 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
-  # Semantic-axiom-reliability-plan.md Phase 1 (evaluator-foundation slice,
-  # P1.2/P1.3/P1.5): focused, ROS/Gazebo-free tests for the pure
-  # SemanticAxiomEvaluator module (evaluateState(), evaluateTransition(),
-  # evaluateMapCompleteness(), axiomCapabilityTable()).
+  # Focused, ROS/Gazebo-free tests for the pure SemanticAxiomEvaluator
+  # module (evaluateState(), evaluateTransition(),
+  # evaluateMapCompleteness(), computeAxiomCapabilityTable()).
   ament_add_gtest(test_SemanticAxiomEvaluator
     test/test_SemanticAxiomEvaluator.cpp
     test/SemanticFixtures.cc
@@ -838,8 +835,7 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
-  # Semantic-axiom-reliability-plan.md Phase 1 (evaluator-foundation slice,
-  # P1.6): focused, ROS/Gazebo-free tests for versioned canonical JSON
+  # Focused, ROS/Gazebo-free tests for versioned canonical JSON
   # serialization of SemanticGraphSnapshot/AxiomEvaluationReport/
   # MapCompletenessResult.
   ament_add_gtest(test_SemanticCanonicalSerialization
@@ -850,8 +846,8 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
-  # Semantic-axiom-reliability-plan.md Phase 1 (P1.4): focused, ROS/Gazebo-
-  # free tests for the copied-value SemanticReportCache contract.
+  # Focused, ROS/Gazebo-free tests for the copied-value
+  # SemanticReportCache contract.
   ament_add_gtest(test_SemanticReportCache
     test/test_SemanticReportCache.cpp
     test/SemanticFixtures.cc
@@ -860,8 +856,8 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
-  # Semantic-axiom-reliability-plan.md Phase 1 (P1.8): focused, ROS/Gazebo-
-  # free tests for the pure mission-health topology schema-2 extension.
+  # Focused, ROS/Gazebo-free tests for the pure mission-health topology
+  # schema-2 extension.
   ament_add_gtest(test_MissionHealthTopologyJson
     test/test_MissionHealthTopologyJson.cpp
   )
@@ -869,8 +865,8 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
-  # Semantic-axiom-reliability-plan.md Phase 1 (P1.7): focused, ROS/Gazebo-
-  # free tests for the pure SG_AXIOM/SG_VIOLATION diagnostic-update builder.
+  # Focused, ROS/Gazebo-free tests for the pure SG_AXIOM/SG_VIOLATION
+  # diagnostic-update builder.
   ament_add_gtest(test_SemanticDiagnostics
     test/test_SemanticDiagnostics.cpp
   )
@@ -878,9 +874,9 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
-  # Semantic-axiom-reliability-plan.md Phase 1 (P1.9): deterministic replay
-  # of 147 preserved legacy capture_attempt_*.json files through the current
-  # evaluator. Produces topology-hash stability proof and malformed-file report.
+  # Deterministic replay of 147 preserved legacy capture_attempt_*.json
+  # files through the current evaluator. Produces topology-hash stability
+  # proof and malformed-file report.
   ament_add_gtest(test_LegacyCaptureReplay
     test/test_LegacyCaptureReplay.cpp
     test/LegacyCaptureReplay.cc
@@ -907,7 +903,7 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
-  # WP-00.8.1 (gated): Boost serialization round-trip self-consistency over
+  # Boost serialization round-trip self-consistency over
   # all Boost sites (Map/MapPoint/Atlas/ImuTypes/KeyFrameDatabase/KeyFrame/
   # SerializationUtils + 3 CameraModels). ROS/Gazebo-free, links production
   # library like test_atlas_lock_order.
@@ -918,7 +914,7 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
-  # WP-03.8 skeleton: fault-injection registry + probe-macro test. Test-only
+  # Skeleton fault-injection registry + probe-macro test. Test-only
   # TU (never linked into ${PROJECT_NAME}_lib); the toggle is enabled for
   # this target only so production builds keep zero-cost disabled probes.
   ament_add_gtest(test_FaultInjection

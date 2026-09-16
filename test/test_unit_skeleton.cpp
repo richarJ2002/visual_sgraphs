@@ -12,7 +12,7 @@
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details: https://www.gnu.org/licenses/
  *
- * Phase 0 unit-test skeleton (WP13 Section 19.1). Deterministic helpers only;
+ * Unit-test skeleton. Deterministic helpers only;
  * no Gazebo, no ROS, no multi-process harness. Three of the tests here
  * exercise semantic::RoomTracker pure helpers so the GTest baseline has content before
  * the transition oracle tests (test_RoomTracker).
@@ -73,7 +73,7 @@ TEST(RoomTrackerSkeleton, StateAndEventLiteralsAreStable)
 }
 
 /*!
- * @brief Section 18.3 confidence formula matches hand-computed values.
+ * @brief Confidence formula matches hand-computed values.
  */
 TEST(RoomTrackerSkeleton, ConfidenceFormula)
 {
@@ -123,7 +123,7 @@ TEST(RoomTrackerSkeleton, EventSerialisationIsJSON)
 }
 
 /*!
- * @brief Configuration defaults follow Section 18.4/18.5.
+ * @brief Configuration defaults match the declared tuning values.
  */
 TEST(RoomTrackerSkeleton, DefaultConfiguration)
 {

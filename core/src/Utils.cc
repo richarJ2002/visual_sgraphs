@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file         Utils.cc
+ *
+ * @brief        Implements utilities declared in Utils.h.
+ */
+
 #include "Utils.h"
 #include "GeoSemHelpers.h"
 
@@ -36,21 +42,24 @@ namespace core
 namespace
 {
 /*!
- * @brief       Estimates which side of a mapped plane observed it.
+ * @brief        Estimates which side of a mapped plane observed it.
  *
- *              Plane coefficients have an arbitrary sign, so the caller
- *              supplies an already normalized and consistently oriented
- *              equation. The median camera-to-plane distance rejects isolated
- *              poses produced during relocalization. Observations too close to
- *              the surface do not provide reliable side evidence.
+ *               Plane coefficients have an arbitrary sign, so the caller
+ *               supplies an already normalized and consistently oriented
+ *               equation. The median camera-to-plane distance rejects
+ *               isolated poses produced during relocalization.
+ *               Observations too close to the surface do not provide
+ *               reliable side evidence.
  *
- * @param[in]   p_plane_in
- *              Plane whose observing keyframes provide the camera positions.
- * @param[in]   planeEquation_World_in
- *              Normalized plane equation expressed in the active map frame.
+ * @param[in]    p_plane_in
+ *               Plane whose observing keyframes provide the camera
+ *               positions.
+ * @param[in]    planeEquation_World_in
+ *               Normalized plane equation expressed in the active map
+ *               frame.
  *
- * @return      Median signed camera distance in metres, or no value when the
- *              available observations do not establish a side.
+ * @return       Median signed camera distance in metres, or no value
+ *               when the available observations do not establish a side.
  */
 struct ObservationSideEvidence
 {
@@ -85,17 +94,18 @@ struct ProjectedPlaneBounds
 };
 
 /*!
- * @brief Projects a finite plane cloud onto a shared in-plane coordinate
- *        system.
+ * @brief        Projects a finite plane cloud onto a shared in-plane
+ *               coordinate system.
  *
- * @param[in] p_planeCloud_in
- *            Plane support cloud expressed in the active map frame.
- * @param[in] tangentU_World_in
- *            First unit tangent of the common plane.
- * @param[in] tangentV_World_in
- *            Second unit tangent of the common plane.
+ * @param[in]    p_planeCloud_in
+ *               Plane support cloud expressed in the active map frame.
+ * @param[in]    tangentU_World_in
+ *               First unit tangent of the common plane.
+ * @param[in]    tangentV_World_in
+ *               Second unit tangent of the common plane.
  *
- * @return Finite projected bounds, or invalid bounds for an empty cloud.
+ * @return       Finite projected bounds, or invalid bounds for an empty
+ *               cloud.
  */
 ProjectedPlaneBounds projectPlaneBounds(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_planeCloud_in,
@@ -134,19 +144,29 @@ ProjectedPlaneBounds projectPlaneBounds(
 }
 
 /*!
- * @brief Tests whether a segment traverses a passable passage aperture.
+ * @brief        Tests whether a segment traverses a passable passage
+ *               aperture.
  *
- *        Mirrors the far-side wall-routing crossing test used by the semantic
- *        manager so that the merge path can apply the same rule when imported
- *        walls are copied into a retained room.
+ *               Mirrors the far-side wall-routing crossing test used by
+ *               the semantic manager so that the merge path can apply
+ *               the same rule when imported walls are copied into a
+ *               retained room.
  *
- * @param[in] segmentStart_World_m_in First endpoint in the active map frame.
- * @param[in] segmentEnd_World_m_in Second endpoint in the active map frame.
- * @param[in] p_passage_in Passable passage defining the finite aperture.
- * @param[in] groundNormal_World_in Unit ground normal in the active map frame.
- * @param[in] openingMargin_m_in Aperture expansion used for noisy geometry.
- * @param[in] minimumSideDistance_m_in Required endpoint distance from plane.
- * @return True only when the segment crosses inside the finite opening.
+ * @param[in]    segmentStart_World_m_in
+ *               First endpoint in the active map frame.
+ * @param[in]    segmentEnd_World_m_in
+ *               Second endpoint in the active map frame.
+ * @param[in]    p_passage_in
+ *               Passable passage defining the finite aperture.
+ * @param[in]    groundNormal_World_in
+ *               Unit ground normal in the active map frame.
+ * @param[in]    openingMargin_m_in
+ *               Aperture expansion used for noisy geometry.
+ * @param[in]    minimumSideDistance_m_in
+ *               Required endpoint distance from plane.
+ *
+ * @return       True only when the segment crosses inside the finite
+ *               opening.
  */
 bool crossesPassablePassageOpening(
     const Eigen::Vector3d &segmentStart_World_m_in,
@@ -225,21 +245,23 @@ bool crossesPassablePassageOpening(
 }
 
 /*!
- * @brief Tests whether two finite clouds overlap or extend one another along
- *        the same plane.
+ * @brief        Tests whether two finite clouds overlap or extend one
+ *               another along the same plane.
  *
- * @param[in] p_firstCloud_in
- *            First finite plane support cloud.
- * @param[in] p_secondCloud_in
- *            Second finite plane support cloud.
- * @param[in] commonNormal_World_in
- *            Unit normal shared by the already equation-compatible planes.
- * @param[in] maximumInPlaneGap_m_in
- *            Maximum permitted extension gap along either tangent.
- * @param[in] minimumOrthogonalOverlap_m_in
- *            Required overlap along the other tangent.
+ * @param[in]    p_firstCloud_in
+ *               First finite plane support cloud.
+ * @param[in]    p_secondCloud_in
+ *               Second finite plane support cloud.
+ * @param[in]    commonNormal_World_in
+ *               Unit normal shared by the already equation-compatible
+ *               planes.
+ * @param[in]    maximumInPlaneGap_m_in
+ *               Maximum permitted extension gap along either tangent.
+ * @param[in]    minimumOrthogonalOverlap_m_in
+ *               Required overlap along the other tangent.
  *
- * @return True when the clouds overlap or form adjacent finite extensions.
+ * @return       True when the clouds overlap or form adjacent finite
+ *               extensions.
  */
 bool finiteWallExtentsAreCompatible(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_firstCloud_in,
@@ -1569,7 +1591,7 @@ void Utils::reAssociateRooms(Atlas *p_atlas_inout)
          * structural elements.
          */
         const bool isConfirmedRoom =
-            room->getRoomVariant() == vs_graphs::core::semantic::Room::roomVariant::ROOM;
+            room->getRoomVariant() == vs_graphs::core::semantic::Room::RoomVariant::ROOM;
 
         if (!isConfirmedRoom)
         {
@@ -1774,10 +1796,10 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             continue;
         }
 
-        const semantic::Room::roomVariant importedRoomType =
+        const semantic::Room::RoomVariant importedRoomType =
             p_importedRoom->getRoomVariant();
 
-        if (importedRoomType == semantic::Room::roomVariant::UNDEFINED)
+        if (importedRoomType == semantic::Room::RoomVariant::UNDEFINED)
         {
             continue;
         }
@@ -2064,7 +2086,7 @@ void Utils::fuseDuplicateRoomsAfterMerge(
                     p_existingOwner == p_importedRoom ||
                     p_existingOwner == p_bestRetainedRoom ||
                     p_existingOwner->getRoomVariant() !=
-                        semantic::Room::roomVariant::ROOM)
+                        semantic::Room::RoomVariant::ROOM)
                 {
                     continue;
                 }
@@ -2242,7 +2264,7 @@ void Utils::reAssociatePassages(Atlas *p_atlas_inout)
                   return p_firstPassage->getId() < p_secondPassage->getId();
               });
 
-    const types::SystemParams::semSeg::PassageDetection &passageParameters =
+    const types::SystemParams::SemSeg::PassageDetection &passageParameters =
         types::SystemParams::getParams()->semSeg.passageDetection;
 
     /*
@@ -3014,7 +3036,7 @@ void Utils::consolidateProvisionalRooms(vs_graphs::core::semantic::Room *p_selec
          * Classified rooms and corridors must never be merged automatically.
          */
         if (candidateRoom->getRoomVariant() !=
-            vs_graphs::core::semantic::Room::roomVariant::UNDEFINED)
+            vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
         {
             continue;
         }

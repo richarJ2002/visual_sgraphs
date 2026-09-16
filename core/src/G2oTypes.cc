@@ -18,7 +18,13 @@
  *
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
+
+/*!
+ * @file         G2oTypes.cc
+ *
+ * @brief        Implements g2o edges declared in G2oTypes.h.
+ */
 
 #include "G2oTypes.h"
 #include "ImuTypes.h"
@@ -369,7 +375,7 @@ namespace core
         const Eigen::Vector3d Xb = VPose->estimate().Rbc[cam_idx] * Xc + VPose->estimate().tbc[cam_idx];
         const Eigen::Matrix3d &Rcb = VPose->estimate().Rcb[cam_idx];
 
-        const Eigen::Matrix<double, 2, 3> proj_jac = VPose->estimate().pCamera[cam_idx]->projectJac(Xc);
+        const Eigen::Matrix<double, 2, 3> proj_jac = VPose->estimate().pCamera[cam_idx]->computeProjectionJacobian(Xc);
         _jacobianOplusXi = -proj_jac * Rcw;
 
         Eigen::Matrix<double, 3, 6> SE3deriv;
@@ -394,7 +400,7 @@ namespace core
         const Eigen::Vector3d Xb = VPose->estimate().Rbc[cam_idx] * Xc + VPose->estimate().tbc[cam_idx];
         const Eigen::Matrix3d &Rcb = VPose->estimate().Rcb[cam_idx];
 
-        Eigen::Matrix<double, 2, 3> proj_jac = VPose->estimate().pCamera[cam_idx]->projectJac(Xc);
+        Eigen::Matrix<double, 2, 3> proj_jac = VPose->estimate().pCamera[cam_idx]->computeProjectionJacobian(Xc);
 
         Eigen::Matrix<double, 3, 6> SE3deriv;
         double x = Xb(0);
@@ -420,7 +426,7 @@ namespace core
         const double inv_z2 = 1.0 / (Xc(2) * Xc(2));
 
         Eigen::Matrix<double, 3, 3> proj_jac;
-        proj_jac.block<2, 3>(0, 0) = VPose->estimate().pCamera[cam_idx]->projectJac(Xc);
+        proj_jac.block<2, 3>(0, 0) = VPose->estimate().pCamera[cam_idx]->computeProjectionJacobian(Xc);
         proj_jac.block<1, 3>(2, 0) = proj_jac.block<1, 3>(0, 0);
         proj_jac(2, 2) += bf * inv_z2;
 
@@ -451,7 +457,7 @@ namespace core
         const double inv_z2 = 1.0 / (Xc(2) * Xc(2));
 
         Eigen::Matrix<double, 3, 3> proj_jac;
-        proj_jac.block<2, 3>(0, 0) = VPose->estimate().pCamera[cam_idx]->projectJac(Xc);
+        proj_jac.block<2, 3>(0, 0) = VPose->estimate().pCamera[cam_idx]->computeProjectionJacobian(Xc);
         proj_jac.block<1, 3>(2, 0) = proj_jac.block<1, 3>(0, 0);
         proj_jac(2, 2) += bf * inv_z2;
 

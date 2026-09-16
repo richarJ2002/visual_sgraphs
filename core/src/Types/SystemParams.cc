@@ -66,7 +66,7 @@ void SystemParams::setParams(const std::string &configFilePath_in)
         // General Parameters
         general.envDatabase =
             config["general"]["env_database"].as<std::string>();
-        general.modeOfOperation = static_cast<general::ModeOfOperation>(
+        general.modeOfOperation = static_cast<General::ModeOfOperation>(
             config["general"]["mode_of_operation"].as<int>());
 
         // Marker Parameters
@@ -303,7 +303,7 @@ void SystemParams::setParams(const std::string &configFilePath_in)
         // Room Segmentation Parameters
         roomSeg.gnnVersion =
             config["room_seg"]["gnn_based"]["gnn_version"].as<int>();
-        roomSeg.method = static_cast<roomSeg::Method>(
+        roomSeg.method = static_cast<RoomSeg::Method>(
             config["room_seg"]["method"].as<int>());
         roomSeg.wallsParallelismThresh =
             config["room_seg"]["parallelism_thresh"].as<float>();
@@ -421,7 +421,7 @@ void SystemParams::setParams(const std::string &configFilePath_in)
         mapMerge.roomCentroidTolerance_m =
             config["map_merge"]["room_centroid_tolerance_m"].as<float>();
 
-        // Room-Tracking State Machine Parameters (WP13 Section 18.4)
+        // Room-Tracking State Machine Parameters
         roomTracking.crossingDwell_s =
             config["room_tracking"]["crossing_dwell_s"].as<float>();
         roomTracking.crossingConfidence =
@@ -504,12 +504,12 @@ void SystemParams::setParams(const std::string &configFilePath_in)
         this->factor.optimizerIterations =
             config["factor"]["optimizer_iterations"].as<unsigned int>();
 
-        const roomSeg::BoundaryTopology &boundaryTopology =
+        const RoomSeg::BoundaryTopology &boundaryTopology =
             roomSeg.boundaryTopology;
 
-        const semSeg::PassageDetection &passageDetection =
+        const SemSeg::PassageDetection &passageDetection =
             semSeg.passageDetection;
-        const roomSeg::PassagePartition &passagePartition =
+        const RoomSeg::PassagePartition &passagePartition =
             roomSeg.passagePartition;
 
         if (passageDetection.minimumSideDistance_m <= 0.0F ||

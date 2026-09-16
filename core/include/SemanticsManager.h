@@ -80,30 +80,28 @@ class SemanticsManager
      * @brief       Copied-value cache of the latest complete semantic
      *              evaluation cycle, published for any reader thread (a ROS
      *              service callback in particular) without touching the
-     *              semantic-update lock -- see
-     *              semantic-axiom-reliability-plan.md P1.4/P1.7/P1.8.
+     *              semantic-update lock.
      */
     semantic::SemanticReportCache mSemanticReportCache;
 
     /*!
      * @brief       Caller-owned state carried across
      *              logSemanticDiagnostics() calls so
-     *              semantic::buildSemanticDiagnosticUpdate() (P1.7,
-     *              semantic-axiom-reliability-plan.md, a pure, directly
-     *              tested module) can detect an appeared/changed/resolved
-     *              FAIL-finding transition or a topology digest change,
-     *              and pace the heartbeat.
+     *              semantic::buildSemanticDiagnosticUpdate() (a pure,
+     *              directly tested module) can detect an
+     *              appeared/changed/resolved FAIL-finding transition or a
+     *              topology digest change, and pace the heartbeat.
      */
     semantic::SemanticDiagnosticState mSemanticDiagnosticState_;
 
     /*!
-     * @brief       Room-state machine implementing the WP13 Section 18.2
-     *              transition table.
+     * @brief        Room-state machine implementing the transition
+     *               table.
      *
-     *              The tracker is a parallel, read-only observer of the
-     *              currentRoomId_/lastKnownRoomId_ bookkeeping; Phase 1 does
-     *              not move those ids, it just records state transitions and
-     *              guards.
+     *               The tracker is a parallel, read-only observer of
+     *               the currentRoomId_/lastKnownRoomId_ bookkeeping;
+     *               it does not move those ids, it just records state
+     *               transitions and guards.
      */
     semantic::RoomTracker roomTracker_;
 
@@ -339,12 +337,14 @@ class SemanticsManager
     void seedCurrentRoomFromActiveMap(Map *p_activeMap_in);
 
     /*!
-     * @brief       Advances the room-state machine once per semantic cycle.
+     * @brief        Advances the room-state machine once per semantic
+     *               cycle.
      *
-     *              Consumes the per-cycle crossing and tracking-loss signals
-     *              and feeds them to roomTracker_ together with the abstract
-     *              (Phase 4 stub) verification verdict. Read-only with respect
-     *              to currentRoomId_/lastKnownRoomId_.
+     *               Consumes the per-cycle crossing and tracking-loss
+     *               signals and feeds them to roomTracker_ together
+     *               with the abstract verification verdict from the
+     *               verification stub. Read-only with respect to
+     *               currentRoomId_/lastKnownRoomId_.
      */
     void updateRoomTrackerState(double now_s);
 
@@ -359,17 +359,18 @@ class SemanticsManager
     semantic::Room *findRoomByMapAndId(long unsigned int mapId_in, int roomId_in) const;
 
     /*!
-     * @brief       WP1 Milestone 1: runs the Phase 4 geometric verifier on
-     *              the single best Phase 3 candidate and feeds a real
-     *              VerificationVerdict to the room-state machine.
+     * @brief        Runs the geometric verifier on the single best
+     *               candidate and feeds the resulting
+     *               VerificationVerdict to the room-state machine.
      *
-     *              Verification only -- this never mutates the Atlas or
-     *              triggers a map merge; see the comment above its call site
-     *              in Run() for why that trigger (Milestone 3) is a
-     *              separate, deliberately gated step.
+     *               Verification only -- this never mutates the Atlas
+     *               or triggers a map merge; see the comment above
+     *               its call site in Run() for why that trigger is a
+     *               separate, deliberately gated step.
      *
-     * @param[in]   candidates_in
-     *              This cycle's ranked SemanticCandidate list, best first.
+     * @param[in]    candidates_in
+     *               This cycle's ranked SemanticCandidate list, best
+     *               first.
      */
     void evaluateTopCandidateVerification(
         const std::vector<semantic::SemanticCandidate> &candidates_in);
@@ -433,17 +434,18 @@ class SemanticsManager
         captureUnresolvedWallHypotheses(void) const;
 
     /*!
-     * @brief       Emits bounded, parseable SG_AXIOM/SG_VIOLATION diagnostic
-     *              lines for \p entry_in via
-     *              semantic::buildSemanticDiagnosticUpdate() (P1.7), which
-     *              also updates mSemanticDiagnosticState_ so the next call
-     *              can detect a transition. Never acquires the
-     *              semantic-update lock (called after it is released) and
-     *              never mutates evaluator/inference state -- read-only with
-     *              respect to everything except mSemanticDiagnosticState_.
+     * @brief        Emits bounded, parseable SG_AXIOM/SG_VIOLATION
+     *               diagnostic lines for \p entry_in via
+     *               semantic::buildSemanticDiagnosticUpdate(), which
+     *               also updates mSemanticDiagnosticState_ so the
+     *               next call can detect a transition. Never acquires
+     *               the semantic-update lock (called after it is
+     *               released) and never mutates evaluator/inference
+     *               state -- read-only with respect to everything
+     *               except mSemanticDiagnosticState_.
      *
-     * @param[in]   entry_in    The cache entry just published for this
-     *                          cycle.
+     * @param[in]    entry_in
+     *               The cache entry just published for this cycle.
      */
     void logSemanticDiagnostics(
         const semantic::SemanticReportCacheEntry &entry_in);
@@ -888,15 +890,19 @@ class SemanticsManager
      */
     void RequestFinish();
 
-    /**
-     * @brief Queues one typed Phase 4 verification result for the next cycle.
+    /*!
+     * @brief        Queues one typed verification result for the
+     *               next cycle.
      *
-     * This is an internal, in-process handoff; it does not create a ROS topic.
-     * The caller may run concurrently with Run().  Until a PASS result is
-     * supplied, production verification remains UNAVAILABLE.
+     *               This is an internal, in-process handoff; it does
+     *               not create a ROS topic. The caller may run
+     *               concurrently with Run(). Until a PASS result is
+     *               supplied, production verification remains
+     *               UNAVAILABLE.
      *
-     * @param[in] verdict_in
-     *        Value-only result produced by the future geometric verifier.
+     * @param[in]    verdict_in
+     *               Value-only result produced by the geometric
+     *               verifier.
      */
     void submitVerificationVerdict(const semantic::VerificationVerdict &verdict_in);
 
@@ -923,7 +929,7 @@ class SemanticsManager
      */
     void setRoomTrackerPendingPublishHookForTest(std::function<void()> hook_in);
 
-    /** Test-only direct call into the WP1 Milestone 1 candidate-verification
+    /*! Test-only direct call into the candidate-verification
      *  wiring, bypassing Run()'s full ROS/PCL/ORB3-dependent cycle. */
     void evaluateTopCandidateVerificationForTest(
         const std::vector<semantic::SemanticCandidate> &candidates_in);

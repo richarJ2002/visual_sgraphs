@@ -41,7 +41,7 @@ void evaluateAxBound01(const SemanticGraphSnapshot &snapshot_in,
     {
         for (const RoomRecord &room : mapSnapshot.rooms)
         {
-            if (!room.isLive || room.variant != Room::roomVariant::ROOM)
+            if (!room.isLive || room.variant != Room::RoomVariant::ROOM)
             {
                 continue;
             }

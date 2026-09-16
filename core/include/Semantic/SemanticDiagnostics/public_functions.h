@@ -26,8 +26,7 @@
  *                  SemanticsManager::logSemanticDiagnostics() so its
  *                  determinism, transition, cap, and cadence rules are
  *                  directly testable without SemanticsManager, Atlas, or
- *                  I/O of any kind (semantic-axiom-reliability-plan.md
- *                  P1.7).
+ *                  I/O of any kind.
  */
 
 #ifndef SEMANTIC_DIAGNOSTICS_PUBLIC_FUNCTIONS_H

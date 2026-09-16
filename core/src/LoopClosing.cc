@@ -42,7 +42,7 @@ namespace vs_graphs
 namespace core
 {
 
-/* Declared in LoopClosing.h: shared with WP13 Phase 4's SemanticVerify. */
+/* Declared in LoopClosing.h: shared with SemanticVerify. */
 bool verifyLoopMergeFloors(
     Map             *p_survivingMap_in,
     Map             *p_absorbedMap_in,
@@ -1379,7 +1379,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
             if (!vpCovKFi[j] || vpCovKFi[j]->isBad())
                 continue;
 
-            int num = matcherBoW.SearchByBoW(mpCurrentKF,
+            int num = matcherBoW.searchByBoW(mpCurrentKF,
                                              vpCovKFi[j],
                                              vvpMatchedMPs[j]);
             if (num > nMostBoWNumMatches)
@@ -1499,7 +1499,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
                 vector<KeyFrame *> vpMatchedKF;
                 vpMatchedKF.resize(mpCurrentKF->GetMapPointMatches().size(),
                                    static_cast<KeyFrame *>(nullptr));
-                int numProjMatches = matcher.SearchByProjection(mpCurrentKF,
+                int numProjMatches = matcher.searchByProjection(mpCurrentKF,
                                                                 mScw,
                                                                 vpMapPoints,
                                                                 vpKeyFrames,
@@ -1545,7 +1545,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
                             mpCurrentKF->GetMapPointMatches().size(),
                             static_cast<MapPoint *>(nullptr));
                         int numProjOptMatches =
-                            matcher.SearchByProjection(mpCurrentKF,
+                            matcher.searchByProjection(mpCurrentKF,
                                                        mScw,
                                                        vpMapPoints,
                                                        vpMatchedMP,
@@ -1768,7 +1768,7 @@ int LoopClosing::FindMatchesByProjection(KeyFrame        *pCurrentKF,
 
     vpMatchedMapPoints.resize(pCurrentKF->GetMapPointMatches().size(),
                               static_cast<MapPoint *>(nullptr));
-    int num_matches = matcher.SearchByProjection(pCurrentKF,
+    int num_matches = matcher.searchByProjection(pCurrentKF,
                                                  mScw,
                                                  vpMapPoints,
                                                  vpMatchedMapPoints,
@@ -4166,7 +4166,7 @@ void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap,
 
         vector<MapPoint *> vpReplacePoints(vpMapPoints.size(),
                                            static_cast<MapPoint *>(nullptr));
-        int numFused = matcher.Fuse(pKFi, Scw, vpMapPoints, 4, vpReplacePoints);
+        int numFused = matcher.fuse(pKFi, Scw, vpMapPoints, 4, vpReplacePoints);
 
         // Get Map Mutex
         unique_lock<mutex> lock(pMap->mMutexMapUpdate);
@@ -4213,7 +4213,7 @@ void LoopClosing::SearchAndFuse(const vector<KeyFrame *> &vConectedKFs,
             Scw.scale() - 1.f << std::endl;*/
         vector<MapPoint *> vpReplacePoints(vpMapPoints.size(),
                                            static_cast<MapPoint *>(nullptr));
-        matcher.Fuse(pKF, Scw, vpMapPoints, 4, vpReplacePoints);
+        matcher.fuse(pKF, Scw, vpMapPoints, 4, vpReplacePoints);
 
         // Get Map Mutex
         unique_lock<mutex> lock(pMap->mMutexMapUpdate);

@@ -39,8 +39,7 @@ namespace semantic
 {
 /*!
  * @brief       Typed validity of one RoomRecord::wallRefs entry as boundary
- *              support evidence for its owning room (2026-09-07 residual
- *              proof-closure repair).
+ *              support evidence for its owning room.
  */
 enum class RoomBoundaryWallEvidenceStatus : std::uint8_t
 {

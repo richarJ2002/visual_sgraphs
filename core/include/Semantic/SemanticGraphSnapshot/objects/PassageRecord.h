@@ -121,16 +121,20 @@ struct PassageRecord
     /*! @brief Passage::getTraversalUnknownCount() at capture time. */
     std::size_t traversalUnknownCount{0U};
 
-    /*! @brief Always NOT_TRACKED_BY_CURRENT_SCHEMA in this slice: the
-     *  current Passage model has no field distinguishing an authoritative
-     *  DISCOVERY_SIDE/OPPOSITE_SIDE endpoint slot (confirmed by direct
-     *  source read of Passage.h/Passage.cc -- KnownSideProvenance and
-     *  getProspectiveRoom() record which room is known/prospective, not a
-     *  named endpoint slot). An explicit schema field, not only prose in an
-     *  evidence log, per this plan's P1.1 checklist requirement for
-     *  "authoritative passage endpoints." A later phase that adds endpoint-
-     *  slot tracking to Passage (Section 6.3 / P3.1 / P4.1 of this plan) is
-     *  the owner of resolving this to an actual value. */
+/*!
+ * @brief        Always NOT_TRACKED_BY_CURRENT_SCHEMA: the current
+ *               Passage model has no field distinguishing an
+ *               authoritative DISCOVERY_SIDE/OPPOSITE_SIDE endpoint
+ *               slot (confirmed by direct source read of
+ *               Passage.h/Passage.cc -- KnownSideProvenance and
+ *               getProspectiveRoom() record which room is
+ *               known/prospective, not a named endpoint slot). An
+ *               explicit schema field, not only prose in an
+ *               evidence log, is required for "authoritative
+ *               passage endpoints." A future extension that adds
+ *               endpoint-slot tracking to Passage is the owner of
+ *               resolving this to an actual value.
+ */
     UnavailableReason endpointSlotReason{
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA};
 };

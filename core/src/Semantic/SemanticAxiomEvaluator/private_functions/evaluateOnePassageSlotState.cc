@@ -17,30 +17,31 @@
  */
 
 /*!
- * @file            evaluateOnePassageSlotState.cc
+ * @file         evaluateOnePassageSlotState.cc
  *
- * @brief           Implements evaluateOnePassageSlotState(), declared in
- *                  private_functions.h.
+ * @brief        Implements evaluateOnePassageSlotState(), declared
+ *               in private_functions.h.
  *
- *                  The current Passage model has exactly one prospective-
- *                  room field (PassageRecord::prospectiveRoomRef), so "the
- *                  opposite slot contains at most one stable prospective
- *                  handle" is structurally guaranteed rather than checked;
- *                  the substantive, checkable clause left is that a
- *                  "known"/near side, when it resolves at all, must
- *                  actually be a confirmed (ROOM-variant) room rather than
- *                  an unpromoted prospective handle -- a fact read directly
- *                  from RoomRecord::variant, independent of the
- *                  authoritative-endpoint-slot gap axiomCapabilityTable()
- *                  now records for this code (2026-09-07: downgraded to
- *                  PARTIAL/Phase 3 alongside AX-PASS-02/04, since the
- *                  "which slot is authoritative" clause is unprovable, even
- *                  though this specific variant-confirmation clause is
- *                  not). Cardinality/duplicate/reciprocity issues are
- *                  AX-PASS-02's concern, not re-checked here.
+ *               The current Passage model has exactly one
+ *               prospective-room field
+ *               (PassageRecord::prospectiveRoomRef), so "the
+ *               opposite slot contains at most one stable
+ *               prospective handle" is structurally guaranteed
+ *               rather than checked; the substantive, checkable
+ *               clause left is that a "known"/near side, when it
+ *               resolves at all, must actually be a confirmed
+ *               (ROOM-variant) room rather than an unpromoted
+ *               prospective handle -- a fact read directly from
+ *               RoomRecord::variant, independent of the
+ *               authoritative-endpoint-slot gap
+ *               computeAxiomCapabilityTable() records for this code
+ *               (downgraded to PARTIAL alongside AX-PASS-02/04, since the
+ *               "which slot is authoritative" clause is unprovable, even
+ *               though this specific variant-confirmation clause is not).
+ *               Cardinality/duplicate/reciprocity issues are
+ *               AX-PASS-02's concern, not re-checked here.
  *
- *                  2026-09-07 residual proof-closure repair: the terminal
- *                  success path now also appends a typed
+ *                  The terminal success path also appends a typed
  *                  PASSAGE_SLOT_ENDPOINT_PROOF_UNVERIFIED UNKNOWN alongside
  *                  the clause-level PASSAGE_SLOT_STATE_VALID PASS, so the
  *                  AX-PASS-03 aggregate can never become PASS while
@@ -88,7 +89,7 @@ void evaluateOnePassageSlotState(const PassageRecord         &passage_in,
     if (isKnownInvalidPassageEndpointReference(knownSide) ||
         isKnownInvalidPassageEndpointReference(prospective))
     {
-        /* 2026-09-07 second proof-closure repair: a provably invalid
+        /* A provably invalid
          * forward reference must dominate this clause too, not only
          * AX-PASS-02's own cardinality check. */
         findings_inout.push_back(
@@ -102,7 +103,7 @@ void evaluateOnePassageSlotState(const PassageRecord         &passage_in,
     if ((knownSide.referencePresent && knownSide.isCrossMap) ||
         (prospective.referencePresent && prospective.isCrossMap))
     {
-        /* Checkpoint-A residual repair: mirrors AX-PASS-02's own
+        /* Mirrors AX-PASS-02's own
          * unconditional-on-referencePresent cross-map check (not gated on
          * isRealPassageEndpoint, since an unenumerated or unconfirmed
          * cross-map reference is just as much a known contradiction as a

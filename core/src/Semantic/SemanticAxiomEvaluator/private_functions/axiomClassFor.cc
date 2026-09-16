@@ -34,7 +34,7 @@ namespace semantic
 
 AxiomClass axiomClassFor(AxiomCode axiomCode_in)
 {
-    /* Section 5's catalogue marks every code "hard" except the derived
+    /* The catalogue marks every code "hard" except the derived
      * AX-COMP-01. A switch with no default lets -Wswitch catch a future
      * AxiomCode enumerator left unhandled here. */
     switch (axiomCode_in)

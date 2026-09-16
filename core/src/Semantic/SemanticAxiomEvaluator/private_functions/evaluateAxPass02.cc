@@ -24,11 +24,10 @@
  *                  evaluateOnePassageCardinality.cc (CPP_CODING_STANDARD.md
  *                  Section 5.4: one ordinary function per .cc).
  *
- *                  2026-09-07 second proof-closure repair: also runs
- *                  evaluateRoomMalformedPassageReferences() once per map,
- *                  independent of any specific passage (see that function's
- *                  own Doxygen for why this evidence cannot be attributed to
- *                  one passage).
+ *                  Also runs evaluateRoomMalformedPassageReferences()
+ *                  once per map, independent of any specific passage (see
+ *                  that function's own Doxygen for why this evidence
+ *                  cannot be attributed to one passage).
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

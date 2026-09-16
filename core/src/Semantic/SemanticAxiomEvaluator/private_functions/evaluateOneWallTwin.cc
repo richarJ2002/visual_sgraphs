@@ -41,7 +41,7 @@ void evaluateOneWallTwin(const WallRecord            &wall_in,
     const RawPlaneRef &twin = wall_in.twinRef;
     if (twin.reason != UnavailableReason::NONE)
     {
-        /* Checkpoint-A residual repair (D2): RawPlaneRef documents
+        /* RawPlaneRef documents
          * reason == NONE exactly when the underlying plane pointer was
          * non-null; a "reason claims absent" value that nonetheless carries
          * populated data (mapId/wallKey/a real planeType) is an invariant
@@ -115,7 +115,7 @@ void evaluateOneWallTwin(const WallRecord            &wall_in,
     }
     if (countMapSnapshotsWithId(snapshot_in, twin.wallKey->mapId) > 1U)
     {
-        /* Checkpoint-A residual repair: which MapSnapshot actually holds
+        /* Which MapSnapshot actually holds
          * the twin is itself ambiguous when its own containing map id is
          * duplicated -- findWallByKeyInSnapshot()'s first-match lookup may
          * not supply positive proof in that case. */

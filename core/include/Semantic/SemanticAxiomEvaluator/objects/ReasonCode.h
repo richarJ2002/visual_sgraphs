@@ -48,8 +48,10 @@ enum class ReasonCode : std::uint8_t
     /*! @brief evaluateState() cannot prove frame equivariance from one
      *  static snapshot; only evaluateTransition() can. */
     FRAME_TRANSITION_EVALUATION_REQUIRED = 0U,
-    /*! @brief evaluateTransition() does not yet implement frame-equivariance
-     *  detection; owned by Phase 2. */
+/*!
+ * @brief        evaluateTransition() does not yet implement
+ *               frame-equivariance detection.
+ */
     FRAME_EQUIVARIANCE_NOT_YET_IMPLEMENTED = 1U,
 
     /* AX-WALL-01 */
@@ -68,8 +70,10 @@ enum class ReasonCode : std::uint8_t
     WALL_OWNERSHIP_OWNER_CROSS_MAP = 7U,
 
     /* AX-WALL-02 */
-    /*! @brief No current schema field records individual observation rays
-     *  or aperture-crossing order; owned by Phase 4. */
+/*!
+ * @brief        No current schema field records individual
+ *               observation rays or aperture-crossing order.
+ */
     WALL_OBSERVATION_RAY_EVIDENCE_UNAVAILABLE = 8U,
 
     /* AX-WALL-03 */
@@ -101,9 +105,11 @@ enum class ReasonCode : std::uint8_t
     /*! @brief A live (published) passage is not marked passable, so it
      *  lacks the skeleton-crossing evidence the axiom requires. */
     PASSAGE_PROVENANCE_NOT_PASSABLE = 18U,
-    /*! @brief passable() is a derived boolean, not a retained chain-of-
-     *  custody provenance record; full provenance is unverifiable in this
-     *  schema. Owned by Phase 5. */
+/*!
+ * @brief        passable() is a derived boolean, not a retained
+ *               chain-of-custody provenance record; full provenance
+ *               is unverifiable in this schema.
+ */
     PASSAGE_PROVENANCE_FULL_CHAIN_UNVERIFIABLE = 19U,
 
     /* AX-PASS-02 */
@@ -148,16 +154,20 @@ enum class ReasonCode : std::uint8_t
     PASSAGE_FLOOR_AGREEMENT_VALID = 32U,
 
     /* AX-ROOM-01 */
-    /*! @brief No current schema field records room creation provenance
-     *  (bootstrap-vs-passage-far-side, origin passage/side); owned by
-     *  Phase 3. */
+/*!
+ * @brief        No current schema field records room creation
+ *               provenance (bootstrap-vs-passage-far-side, origin
+ *               passage/side).
+ */
     ROOM_CREATION_PROVENANCE_UNAVAILABLE = 33U,
 
     /* AX-ROOM-02 */
-    /*! @brief No current schema field records independent far-side
-     *  free-space partitioning/observation-owned wall support; validated
-     *  traversal counts alone are documented as never sufficient. Owned by
-     *  Phase 3. */
+/*!
+ * @brief        No current schema field records independent
+ *               far-side free-space partitioning/observation-owned
+ *               wall support; validated traversal counts alone are
+ *               documented as never sufficient.
+ */
     ROOM_FAR_SIDE_EVIDENCE_UNAVAILABLE = 34U,
 
     /* AX-BOUND-01 */
@@ -172,9 +182,11 @@ enum class ReasonCode : std::uint8_t
     ROOM_BOUNDARY_NO_WALL_EVIDENCE = 38U,
     /*! @brief The model itself reports Room::BoundaryStatus::CONFLICTING. */
     ROOM_BOUNDARY_CONFLICTING_STATE = 39U,
-    /*! @brief A COMPLETE, structurally valid boundary retains observation
-     *  gaps whose correspondence to a real aperture is not verified in this
-     *  slice; owned by Phase 6. */
+/*!
+ * @brief        A COMPLETE, structurally valid boundary retains
+ *               observation gaps whose correspondence to a real
+ *               aperture is not verified.
+ */
     ROOM_BOUNDARY_GAP_CORRESPONDENCE_UNVERIFIED = 40U,
     /*! @brief boundaryStatus is UNOBSERVED or INCOMPLETE; the axiom's
      *  COMPLETE-only contract is not yet triggered for this room. */
@@ -203,17 +215,21 @@ enum class ReasonCode : std::uint8_t
     FLOOR_PASSAGE_AGREEMENT_VALID = 49U,
 
     /* AX-LIFE-01 */
-    /*! @brief No current schema field records quarantine provenance;
-     *  detecting silent erasure additionally requires transition history.
-     *  Owned by Phase 4/5. */
+/*!
+ * @brief        No current schema field records quarantine
+ *               provenance; detecting silent erasure additionally
+ *               requires transition history.
+ */
     LIFECYCLE_QUARANTINE_PROVENANCE_UNAVAILABLE = 50U,
 
     /* AX-TXN-01 */
     /*! @brief evaluateState() cannot prove transaction determinism/
      *  idempotence from one static snapshot. */
     TRANSACTION_EVALUATION_REQUIRES_TRANSITION = 51U,
-    /*! @brief evaluateTransition() does not yet implement postcondition
-     *  re-validation; owned by Phase 7. */
+/*!
+ * @brief        evaluateTransition() does not yet implement
+ *               postcondition re-validation.
+ */
     TRANSACTION_POSTCONDITION_NOT_YET_IMPLEMENTED = 52U,
 
     /* AX-COMP-01 */
@@ -241,11 +257,13 @@ enum class ReasonCode : std::uint8_t
     COMPLETENESS_ALL_CLEAR = 60U,
 
     /* AX-MERGE-01 */
-    /*! @brief No map-merge preservation/postcondition logic is implemented
-     *  in this slice; owned by Phase 8. */
+/*!
+ * @brief        No map-merge preservation/postcondition logic is
+ *               implemented.
+ */
     MERGE_PRESERVATION_NOT_YET_IMPLEMENTED = 61U,
 
-    /* AX-PASS-02 (2026-09-07 proof-correctness repair additions) */
+    /* AX-PASS-02 */
     /*! @brief A third live, confirmed, same-map room -- distinct from both
      *  forward-named slots -- lists this passage in its own passageRefs. */
     PASSAGE_CARDINALITY_THIRD_ENDPOINT = 62U,
@@ -262,23 +280,26 @@ enum class ReasonCode : std::uint8_t
      *  to a specific passage merely because a bare integer happens to equal
      *  that passage's own local id, since local ids are unique only within
      *  one map and are not by themselves a map-qualified identity (see
-     *  EntityKey.h). 2026-09-07 second proof-closure repair: renamed in
-     *  place from PASSAGE_CARDINALITY_REVERSE_ENDPOINT_UNRESOLVABLE, which
+     *  EntityKey.h). Renamed in place from
+     *  PASSAGE_CARDINALITY_REVERSE_ENDPOINT_UNRESOLVABLE, which
      *  incorrectly attributed this same evidence to one specific passage by
      *  bare local-id equality; the numeric value is unchanged. */
     PASSAGE_CARDINALITY_ROOM_HAS_MALFORMED_REFERENCE = 65U,
     /*! @brief More than one RoomRecord in the same map shares the exact key
      *  of a room this passage's cardinality evaluation depends on. */
     PASSAGE_CARDINALITY_DUPLICATE_ROOM_IDENTITY = 66U,
-    /*! @brief At least one real, reciprocal, non-contradictory endpoint was
-     *  found and no third/bad/cross-map/unresolvable/duplicate reverse
-     *  reference was found either, but PassageRecord::endpointSlotReason is
-     *  NOT_TRACKED_BY_CURRENT_SCHEMA: no authoritative DISCOVERY_SIDE/
-     *  OPPOSITE_SIDE slot proof exists, so cardinality remains UNKNOWN
-     *  rather than PASS. Owned by Phase 3. */
+/*!
+ * @brief        At least one real, reciprocal, non-contradictory
+ *               endpoint was found and no third/bad/cross-map/
+ *               unresolvable/duplicate reverse reference was found
+ *               either, but PassageRecord::endpointSlotReason is
+ *               NOT_TRACKED_BY_CURRENT_SCHEMA: no authoritative
+ *               DISCOVERY_SIDE/OPPOSITE_SIDE slot proof exists, so
+ *               cardinality remains UNKNOWN rather than PASS.
+ */
     PASSAGE_CARDINALITY_ENDPOINT_SLOT_UNVERIFIED = 67U,
 
-    /* AX-WALL-01 (2026-09-07 proof-correctness repair additions) */
+    /* AX-WALL-01 */
     /*! @brief The single owner reference is present and not explicitly bad,
      *  but EntityRef::isLive itself carries no value (livenessUnavailable
      *  Reason != NONE): liveness is genuinely unproven, not merely
@@ -300,21 +321,24 @@ enum class ReasonCode : std::uint8_t
     WALL_OWNERSHIP_OWNER_DUPLICATE_IDENTITY = 72U,
     /*! @brief The owner reference is present, live, and same-map, but no
      *  RoomRecord with that exact key was located in any captured map
-     *  (see resolveRoomEndpoint.cc's analogous residual-limitation note):
-     *  genuinely missing enumeration evidence, not a proven contradiction. */
+     *  (see the analogous missing-enumeration note in
+     *  resolveRoomEndpoint.cc): genuinely missing enumeration evidence,
+     *  not a proven contradiction. */
     WALL_OWNERSHIP_OWNER_RECORD_UNAVAILABLE = 73U,
 
-    /* AX-BOUND-01 (2026-09-07 proof-correctness repair additions) */
+    /* AX-BOUND-01 */
     /*! @brief A COMPLETE room's boundary polygon has a non-finite (NaN or
      *  Infinity) corner coordinate. */
     ROOM_BOUNDARY_NON_FINITE_CORNER = 74U,
-    /*! @brief A COMPLETE, structurally valid boundary has at least one
-     *  verified live, same-map, reciprocal WALL evidence reference, but
-     *  full edge-to-wall geometric correspondence is not implemented in
-     *  this slice; owned by Phase 6. */
+/*!
+ * @brief        A COMPLETE, structurally valid boundary has at
+ *               least one verified live, same-map, reciprocal WALL
+ *               evidence reference, but full edge-to-wall geometric
+ *               correspondence is not implemented.
+ */
     ROOM_BOUNDARY_EDGE_SUPPORT_UNVERIFIED = 75U,
 
-    /* AX-FLOOR-01 (2026-09-07 proof-correctness repair additions) */
+    /* AX-FLOOR-01 */
     /*! @brief A floor's own roomRefs lists the same room key more than
      *  once. */
     ROOM_FLOOR_DUPLICATE_REVERSE_MEMBERSHIP = 76U,
@@ -325,18 +349,19 @@ enum class ReasonCode : std::uint8_t
      *  key the room's floorRef names. */
     ROOM_FLOOR_DUPLICATE_IDENTITY = 78U,
 
-    /* AX-COMP-01 (2026-09-07 proof-correctness repair addition) */
-    /*! @brief The map has at least one live passage; PassageRecord::
-     *  endpointSlotReason is always NOT_TRACKED_BY_CURRENT_SCHEMA, so no
-     *  live passage can contribute positive completeness proof in this
-     *  slice regardless of how plausible its endpoints look. Owned by
-     *  Phase 3. */
+    /* AX-COMP-01 */
+/*!
+ * @brief        The map has at least one live passage;
+ *               PassageRecord::endpointSlotReason is always
+ *               NOT_TRACKED_BY_CURRENT_SCHEMA, so no live passage
+ *               can contribute positive completeness proof
+ *               regardless of how plausible its endpoints look.
+ */
     COMPLETENESS_PASSAGE_SLOT_PROOF_UNAVAILABLE = 79U,
 
-    /* AX-PASS-03/04, AX-FLOOR-01 (2026-09-07 residual proof-closure
-     * repair): a non-contradictory passage still cannot positively PASS
-     * its own axiom-specific clause while PassageRecord::endpointSlotReason
-     * remains NOT_TRACKED_BY_CURRENT_SCHEMA, so each of these three
+    /* AX-PASS-03/04, AX-FLOOR-01: a non-contradictory passage still
+     * cannot positively PASS its own axiom-specific clause while
+     * PassageRecord::endpointSlotReason remains NOT_TRACKED_BY_CURRENT_SCHEMA, so each of these three
      * evaluators also emits one of these typed UNKNOWNs alongside any
      * clause-level PASS, capping the aggregate at UNKNOWN via FAIL > UNKNOWN
      * > PASS precedence. */
@@ -350,7 +375,7 @@ enum class ReasonCode : std::uint8_t
      *  authoritative endpoint slot proof exists for this passage. */
     FLOOR_PASSAGE_ENDPOINT_PROOF_UNVERIFIED = 82U,
 
-    /* AX-PASS-02 (2026-09-07 residual proof-closure repair additions) */
+    /* AX-PASS-02 */
     /*! @brief A same-map, live room's passageRefs entry shares this
      *  passage's map/entity id but a different EntityKind: a wrong-kind key
      *  masquerading as a reference to this passage. */
@@ -365,7 +390,7 @@ enum class ReasonCode : std::uint8_t
      *  it can never supply positive cardinality proof. */
     PASSAGE_CARDINALITY_FORWARD_ENDPOINT_DUPLICATE_IDENTITY = 85U,
 
-    /* AX-WALL-01 (2026-09-07 residual proof-closure repair additions) */
+    /* AX-WALL-01 */
     /*! @brief More than one WallRecord in the wall's own map shares its
      *  exact key: which wall this evaluation is even about is ambiguous. */
     WALL_OWNERSHIP_WALL_DUPLICATE_IDENTITY = 86U,
@@ -377,15 +402,18 @@ enum class ReasonCode : std::uint8_t
      *  reported it as live -- a record/reference disagreement. */
     WALL_OWNERSHIP_OWNER_RECORD_NOT_LIVE = 88U,
 
-    /* AX-BOUND-01 (2026-09-07 residual proof-closure repair addition) */
-    /*! @brief At least one RoomRecord::wallRefs entry is provably invalid
-     *  (wrong type, retired, cross-map, ambiguous identity, or non-
-     *  reciprocal) rather than merely unavailable; a known contradiction
-     *  that must not be hidden behind another valid reference or the
-     *  Phase-6 support UNKNOWN. */
+    /* AX-BOUND-01 */
+/*!
+ * @brief        At least one RoomRecord::wallRefs entry is provably
+ *               invalid (wrong type, retired, cross-map, ambiguous
+ *               identity, or non-reciprocal) rather than merely
+ *               unavailable; a known contradiction that must not be
+ *               hidden behind another valid reference or the
+ *               edge-support-coverage UNKNOWN.
+ */
     ROOM_BOUNDARY_INVALID_WALL_EVIDENCE = 89U,
 
-    /* AX-FLOOR-01 (2026-09-07 residual proof-closure repair additions) */
+    /* AX-FLOOR-01 */
     /*! @brief A floor's roomRefs reverse-claims a room that itself has no
      *  forward floorRef naming any floor at all: a known contradiction, not
      *  the ordinary "room has no floor yet" case. */
@@ -405,12 +433,15 @@ enum class ReasonCode : std::uint8_t
      *  AMBIGUOUS's underlying condition. */
     FLOOR_PASSAGE_IDENTITY_AMBIGUOUS = 94U,
 
-    /* AX-COMP-01 (2026-09-07 residual proof-closure repair additions) */
-    /*! @brief The map has at least one confirmed (live, ROOM-variant) room;
-     *  RoomRecord::creationProvenanceReason is always NOT_TRACKED_BY_
-     *  CURRENT_SCHEMA, so room-creation/bootstrap provenance can never
-     *  positively contribute to completeness in this slice. Owned by
-     *  Phase 3. */
+    /* AX-COMP-01 */
+/*!
+ * @brief        The map has at least one confirmed (live,
+ *               ROOM-variant) room;
+ *               RoomRecord::creationProvenanceReason is always
+ *               NOT_TRACKED_BY_CURRENT_SCHEMA, so
+ *               room-creation/bootstrap provenance can never
+ *               positively contribute to completeness.
+ */
     COMPLETENESS_ROOM_CREATION_PROVENANCE_UNAVAILABLE = 95U,
     /*! @brief At least one room, wall, passage, or floor key in this map is
      *  shared by more than one distinct record: identity itself is
@@ -418,7 +449,7 @@ enum class ReasonCode : std::uint8_t
      *  trusted. */
     COMPLETENESS_DUPLICATE_IDENTITY = 96U,
 
-    /* AX-PASS-02 (2026-09-07 second proof-closure repair additions) */
+    /* AX-PASS-02 */
     /*! @brief A forward (known-side or prospective) endpoint reference's
      *  key has an EntityKind other than ROOM: a wrong-kind key
      *  masquerading as a room reference. */
@@ -440,7 +471,7 @@ enum class ReasonCode : std::uint8_t
      *  this passage's cardinality cannot be certified either way. */
     PASSAGE_CARDINALITY_REVERSE_ENDPOINT_LIVENESS_UNAVAILABLE = 100U,
 
-    /* AX-PASS-03 (2026-09-07 second proof-closure repair addition) */
+    /* AX-PASS-03 */
     /*! @brief A forward endpoint reference is provably invalid (wrong kind,
      *  unresolvable, duplicate identity, cross-map, declared-map mismatch,
      *  or known-bad liveness) -- must dominate this clause's ordinary
@@ -448,7 +479,7 @@ enum class ReasonCode : std::uint8_t
      *  because it does not resolve to a confirmed room at all. */
     PASSAGE_SLOT_FORWARD_ENDPOINT_INVALID = 101U,
 
-    /* AX-PASS-04 (2026-09-07 second proof-closure repair additions) */
+    /* AX-PASS-04 */
     /*! @brief Same contradiction as PASSAGE_SLOT_FORWARD_ENDPOINT_INVALID,
      *  reported under AX-PASS-04's own map/floor-agreement clause. */
     PASSAGE_FLOOR_FORWARD_ENDPOINT_INVALID = 102U,
@@ -459,7 +490,7 @@ enum class ReasonCode : std::uint8_t
      *  room/floor relationship is itself contradictory. */
     PASSAGE_FLOOR_ENDPOINT_ROOM_FLOOR_INVALID = 103U,
 
-    /* AX-FLOOR-01 (2026-09-07 second proof-closure repair additions) */
+    /* AX-FLOOR-01 */
     /*! @brief Same contradiction as PASSAGE_SLOT_FORWARD_ENDPOINT_INVALID,
      *  reported under AX-FLOOR-01's passage-floor-identity clause. */
     FLOOR_PASSAGE_FORWARD_ENDPOINT_INVALID = 104U,
@@ -467,7 +498,7 @@ enum class ReasonCode : std::uint8_t
      *  PASSAGE_FLOOR_ENDPOINT_ROOM_FLOOR_INVALID's underlying condition. */
     FLOOR_PASSAGE_ENDPOINT_ROOM_FLOOR_INVALID = 105U,
 
-    /* AX-WALL-01 (2026-09-07 second proof-closure repair additions) */
+    /* AX-WALL-01 */
     /*! @brief The wall's own key.kind is not EntityKind::WALL. */
     WALL_OWNERSHIP_WALL_WRONG_KEY_KIND = 106U,
     /*! @brief The wall's own planeType is not Plane::planeVariant::WALL. */
@@ -492,7 +523,7 @@ enum class ReasonCode : std::uint8_t
      *  reference is the "real" reciprocal link is ambiguous. */
     WALL_OWNERSHIP_RECIPROCAL_DUPLICATE = 111U,
 
-    /* AX-BOUND-01 (2026-09-07 second proof-closure repair addition) */
+    /* AX-BOUND-01 */
     /*! @brief A COMPLETE room's wallRefs collection is nonempty, but every
      *  entry is RoomBoundaryWallEvidenceStatus::UNAVAILABLE (no entry is
      *  independently known INVALID): an ordinary evidence gap, not the
@@ -500,14 +531,14 @@ enum class ReasonCode : std::uint8_t
      *  genuinely empty wallRefs collection. */
     ROOM_BOUNDARY_WALL_EVIDENCE_UNAVAILABLE = 112U,
 
-    /* AX-COMP-01 (2026-09-07 second proof-closure repair addition) */
+    /* AX-COMP-01 */
     /*! @brief More than one MapSnapshot in the evaluated snapshot shares
      *  this map's own mapId: which MapSnapshot is authoritative for this
      *  map is itself ambiguous, so no first-matching-map lookup anywhere in
      *  this map's completeness evaluation can be trusted. */
     COMPLETENESS_DUPLICATE_MAP_IDENTITY = 113U,
 
-    /* AX-FLOOR-01 (2026-09-07 second proof-closure repair additions) */
+    /* AX-FLOOR-01 */
     /*! @brief The room's own key.kind is not EntityKind::ROOM. */
     ROOM_FLOOR_ROOM_WRONG_KIND = 114U,
     /*! @brief The room's own declaredMapId disagrees with the containing
@@ -518,26 +549,26 @@ enum class ReasonCode : std::uint8_t
      *  reciprocity proof is capped at UNKNOWN rather than PASS. */
     ROOM_FLOOR_ROOM_DECLARED_MAP_UNAVAILABLE = 116U,
 
-    /* AX-COMP-01 (2026-09-07 second proof-closure repair addition) */
+    /* AX-COMP-01 */
     /*! @brief At least one live room in this map has a passageRefs entry
      *  the evaluator cannot safely resolve (a local id with no key):
      *  PASSAGE_CARDINALITY_ROOM_HAS_MALFORMED_REFERENCE. */
     COMPLETENESS_ROOM_HAS_MALFORMED_PASSAGE_REFERENCE = 117U,
 
-    /* AX-PASS-02 (Checkpoint-A residual repair) */
+    /* AX-PASS-02 */
     /*! @brief A forward endpoint's source EntityRef violates its own
      *  key/reason invariant (key.has_value() with reason != NONE): an
      *  adversarial/corrupt snapshot value, not an ordinary valid keyed
      *  reference. */
     PASSAGE_CARDINALITY_ENDPOINT_REASON_INCONSISTENT = 118U,
 
-    /* AX-PASS-03 (Checkpoint-A residual repair) */
+    /* AX-PASS-03 */
     /*! @brief A real (found, live, confirmed-variant) forward endpoint
      *  resolves in a different map than this passage's own declared/
      *  containing map. */
     PASSAGE_SLOT_ENDPOINT_CROSS_MAP = 119U,
 
-    /* AX-FLOOR-01 (Checkpoint-A residual repair) */
+    /* AX-FLOOR-01 */
     /*! @brief The passage branch's real forward endpoint resolves in a
      *  different map than this passage's own declared/containing map. */
     FLOOR_PASSAGE_ENDPOINT_CROSS_MAP = 120U,
@@ -547,7 +578,6 @@ enum class ReasonCode : std::uint8_t
      *  rather than PASS. */
     ROOM_FLOOR_FLOOR_DECLARED_MAP_UNAVAILABLE = 121U,
 
-    /* P1.R10 second-round residual repair (post-independent-audit) */
     /* AX-FLOOR-01 */
     /*! @brief This room's own containing map id is duplicated across more
      *  than one MapSnapshot: no first-match FloorRecord lookup may supply

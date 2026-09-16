@@ -17,32 +17,29 @@
  */
 
 /*!
- * @file            evaluateOneRoomBoundary.cc
+ * @file         evaluateOneRoomBoundary.cc
  *
- * @brief           Implements evaluateOneRoomBoundary(), declared in
- *                  private_functions.h.
+ * @brief        Implements evaluateOneRoomBoundary(), declared in
+ *               private_functions.h.
  *
- *                  2026-09-07 proof-correctness repair: a non-finite corner
- *                  is now an explicit FAIL (checkRoomBoundaryGeometry()'s
- *                  new NON_FINITE_CORNER status); wall evidence is now
- *                  validated per-reference by isValidBoundaryWallEvidence()
- *                  rather than accepted merely for being a nonempty vector;
- *                  and this slice never emits ROOM_BOUNDARY_STRUCTURALLY_
- *                  VALID/PASS -- edge-to-wall and gap-to-aperture geometric
- *                  correspondence are Phase 6's planar-arrangement
- *                  algorithm, not implemented here, so a COMPLETE room with
- *                  otherwise-valid geometry and at least one verified,
- *                  live, reciprocal, same-map WALL reference is UNKNOWN,
- *                  never PASS.
+ *               A non-finite corner is an explicit FAIL
+ *               (checkRoomBoundaryGeometry()'s NON_FINITE_CORNER status);
+ *               wall evidence is validated per-reference by
+ *               isValidBoundaryWallEvidence() rather than accepted merely
+ *               for being a nonempty vector; and this evaluator never emits
+ *               ROOM_BOUNDARY_STRUCTURALLY_VALID/PASS -- edge-to-wall and
+ *               gap-to-aperture geometric correspondence are not
+ *               implemented here, so a COMPLETE room with otherwise-valid
+ *               geometry and at least one verified, live, reciprocal,
+ *               same-map WALL reference is UNKNOWN, never PASS.
  *
- *                  2026-09-07 residual proof-closure repair: each
- *                  RoomRecord::wallRefs entry's typed
- *                  RoomBoundaryWallEvidenceStatus is now inspected
- *                  individually rather than merely counted as a boolean: a
- *                  known-INVALID reference is a FAIL even when another
- *                  reference is VALID, so a provable contradiction can no
- *                  longer be hidden behind one otherwise-valid reference or
- *                  silently reach the Phase-6 support UNKNOWN.
+ *               Each RoomRecord::wallRefs entry's typed
+ *               RoomBoundaryWallEvidenceStatus is inspected individually
+ *               rather than merely counted as a boolean: a known-INVALID
+ *               reference is a FAIL even when another reference is VALID,
+ *               so a provable contradiction cannot be hidden behind one
+ *               otherwise-valid reference or silently reach the
+ *               edge-support-coverage UNKNOWN.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
@@ -153,8 +150,7 @@ void evaluateOneRoomBoundary(const RoomRecord            &room_in,
         /* A nonempty wallRefs collection whose every entry is genuinely
          * UNAVAILABLE (no entry independently proven INVALID, already
          * excluded above) is an evidence gap, not the same contradiction as
-         * a room with no wall evidence at all -- 2026-09-07 second
-         * proof-closure repair. */
+         * a room with no wall evidence at all. */
         findings_inout.push_back(
             makeFinding(AxiomCode::AX_BOUND_01,
                         AxiomResult::UNKNOWN,

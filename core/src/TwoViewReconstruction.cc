@@ -11,7 +11,13 @@
  * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details: https://www.gnu.org/licenses/
-*/
+ */
+
+/*!
+ * @file         TwoViewReconstruction.cc
+ *
+ * @brief        Implements TwoViewReconstruction in its header.
+ */
 
 #include "TwoViewReconstruction.h"
 
@@ -826,7 +832,7 @@ namespace core
             Eigen::Vector3f x_p1(kp1.pt.x, kp1.pt.y, 1);
             Eigen::Vector3f x_p2(kp2.pt.x, kp2.pt.y, 1);
 
-            GeometricTools::Triangulate(x_p1, x_p2, P1, P2, p3dC1);
+            GeometricTools::triangulate(x_p1, x_p2, P1, P2, p3dC1);
 
             if (!isfinite(p3dC1(0)) || !isfinite(p3dC1(1)) || !isfinite(p3dC1(2)))
             {

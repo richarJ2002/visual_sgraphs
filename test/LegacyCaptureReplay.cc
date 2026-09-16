@@ -341,7 +341,8 @@ std::vector<LegacyAxiomResultRecord>
     static constexpr const char *kLegacySchemaInsufficient =
         "LEGACY_SCHEMA_INSUFFICIENT_NO_IDENTITY_LIVENESS_MAP_OR_PROVENANCE";
 
-    std::vector<AxiomCapabilityEntry> capabilityTable = axiomCapabilityTable();
+    std::vector<AxiomCapabilityEntry> capabilityTable =
+        computeAxiomCapabilityTable();
     std::vector<LegacyAxiomResultRecord> results;
     results.reserve(capabilityTable.size());
     for (const AxiomCapabilityEntry &entry : capabilityTable)
