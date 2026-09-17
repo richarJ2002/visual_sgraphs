@@ -1,7 +1,7 @@
 /**
  * @file StereoMatchOutlierRejection.cc
  * @brief Defines the median-distance outlier rejection step used by
- *        Frame::ComputeStereoMatches().
+ *        Frame::computeStereoMatches().
  */
 
 #include "StereoMatchOutlierRejection.h"

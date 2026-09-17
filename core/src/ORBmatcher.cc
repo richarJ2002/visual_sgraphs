@@ -73,7 +73,7 @@ namespace core
                     r *= th;
 
                 const vector<size_t> vIndices =
-                    F.GetFeaturesInArea(pMP->mTrackProjX, pMP->mTrackProjY, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel);
+                    F.getFeaturesInArea(pMP->mTrackProjX, pMP->mTrackProjY, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel);
 
                 if (!vIndices.empty())
                 {
@@ -157,7 +157,7 @@ namespace core
                     float r = RadiusByViewingCos(pMP->mTrackViewCosR);
 
                     const vector<size_t> vIndices =
-                        F.GetFeaturesInArea(pMP->mTrackProjXR, pMP->mTrackProjYR, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel, true);
+                        F.getFeaturesInArea(pMP->mTrackProjXR, pMP->mTrackProjYR, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel, true);
 
                     if (vIndices.empty())
                         continue;
@@ -272,7 +272,7 @@ namespace core
                 }
 
                 const vector<size_t> vIndices =
-                    F.GetFeaturesInArea(pMP->mTrackProjX, pMP->mTrackProjY, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel);
+                    F.getFeaturesInArea(pMP->mTrackProjX, pMP->mTrackProjY, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel);
 
                 if (!vIndices.empty())
                 {
@@ -366,7 +366,7 @@ namespace core
                     }
 
                     const vector<size_t> vIndices =
-                        F.GetFeaturesInArea(pMP->mTrackProjXR, pMP->mTrackProjYR, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel, true);
+                        F.getFeaturesInArea(pMP->mTrackProjXR, pMP->mTrackProjYR, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel, true);
 
                     if (vIndices.empty())
                         continue;
@@ -876,7 +876,7 @@ namespace core
             if (level1 > 0)
                 continue;
 
-            vector<size_t> vIndices2 = F2.GetFeaturesInArea(vbPrevMatched[i1].x, vbPrevMatched[i1].y, windowSize, level1, level1);
+            vector<size_t> vIndices2 = F2.getFeaturesInArea(vbPrevMatched[i1].x, vbPrevMatched[i1].y, windowSize, level1, level1);
 
             if (vIndices2.empty())
                 continue;
@@ -1890,10 +1890,10 @@ namespace core
             rotHist[i].reserve(500);
         const float factor = 1.0f / HISTO_LENGTH;
 
-        const Sophus::SE3f Tcw = CurrentFrame.GetPose();
+        const Sophus::SE3f Tcw = CurrentFrame.getPose();
         const Eigen::Vector3f twc = Tcw.inverse().translation();
 
-        const Sophus::SE3f Tlw = LastFrame.GetPose();
+        const Sophus::SE3f Tlw = LastFrame.getPose();
         const Eigen::Vector3f tlc = Tlw * twc;
 
         const bool bForward = tlc(2) > CurrentFrame.mb && !bMono;
@@ -1933,11 +1933,11 @@ namespace core
                     vector<size_t> vIndices2;
 
                     if (bForward)
-                        vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, nLastOctave);
+                        vIndices2 = CurrentFrame.getFeaturesInArea(uv(0), uv(1), radius, nLastOctave);
                     else if (bBackward)
-                        vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, 0, nLastOctave);
+                        vIndices2 = CurrentFrame.getFeaturesInArea(uv(0), uv(1), radius, 0, nLastOctave);
                     else
-                        vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, nLastOctave - 1, nLastOctave + 1);
+                        vIndices2 = CurrentFrame.getFeaturesInArea(uv(0), uv(1), radius, nLastOctave - 1, nLastOctave + 1);
 
                     if (vIndices2.empty())
                         continue;
@@ -2000,7 +2000,7 @@ namespace core
                     }
                     if (CurrentFrame.Nleft != -1)
                     {
-                        Eigen::Vector3f x3Dr = CurrentFrame.GetRelativePoseTrl() * x3Dc;
+                        Eigen::Vector3f x3Dr = CurrentFrame.getRelativePoseTrl() * x3Dc;
                         Eigen::Vector2f uv = CurrentFrame.p_camera->project(x3Dr);
 
                         int nLastOctave = (LastFrame.Nleft == -1 || i < LastFrame.Nleft) ? LastFrame.keyPoints[i].octave
@@ -2012,11 +2012,11 @@ namespace core
                         vector<size_t> vIndices2;
 
                         if (bForward)
-                            vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, nLastOctave, -1, true);
+                            vIndices2 = CurrentFrame.getFeaturesInArea(uv(0), uv(1), radius, nLastOctave, -1, true);
                         else if (bBackward)
-                            vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, 0, nLastOctave, true);
+                            vIndices2 = CurrentFrame.getFeaturesInArea(uv(0), uv(1), radius, 0, nLastOctave, true);
                         else
-                            vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, nLastOctave - 1, nLastOctave + 1, true);
+                            vIndices2 = CurrentFrame.getFeaturesInArea(uv(0), uv(1), radius, nLastOctave - 1, nLastOctave + 1, true);
 
                         const cv::Mat dMP = pMP->GetDescriptor();
 
@@ -2097,7 +2097,7 @@ namespace core
     {
         int nmatches = 0;
 
-        const Sophus::SE3f Tcw = CurrentFrame.GetPose();
+        const Sophus::SE3f Tcw = CurrentFrame.getPose();
         Eigen::Vector3f Ow = Tcw.inverse().translation();
 
         // Rotation Histogram (to check rotation consistency)
@@ -2143,7 +2143,7 @@ namespace core
                     // Search in a window
                     const float radius = th * CurrentFrame.scaleFactors[nPredictedLevel];
 
-                    const vector<size_t> vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, nPredictedLevel - 1, nPredictedLevel + 1);
+                    const vector<size_t> vIndices2 = CurrentFrame.getFeaturesInArea(uv(0), uv(1), radius, nPredictedLevel - 1, nPredictedLevel + 1);
 
                     if (vIndices2.empty())
                         continue;

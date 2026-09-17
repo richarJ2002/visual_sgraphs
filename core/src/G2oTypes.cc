@@ -85,8 +85,8 @@ namespace core
     ImuCamPose::ImuCamPose(Frame *pF) : its(0)
     {
         // Load IMU pose
-        twb = pF->GetImuPosition().cast<double>();
-        Rwb = pF->GetImuRotation().cast<double>();
+        twb = pF->getImuPosition().cast<double>();
+        Rwb = pF->getImuRotation().cast<double>();
 
         // Load camera poses
         int num_cams;
@@ -104,8 +104,8 @@ namespace core
         pCamera.resize(num_cams);
 
         // Left camera
-        tcw[0] = pF->GetPose().translation().cast<double>();
-        Rcw[0] = pF->GetPose().rotationMatrix().cast<double>();
+        tcw[0] = pF->getPose().translation().cast<double>();
+        Rcw[0] = pF->getPose().rotationMatrix().cast<double>();
         tcb[0] = pF->imuCalibration.mTcb.translation().cast<double>();
         Rcb[0] = pF->imuCalibration.mTcb.rotationMatrix().cast<double>();
         Rbc[0] = Rcb[0].transpose();
@@ -115,7 +115,7 @@ namespace core
 
         if (num_cams > 1)
         {
-            Eigen::Matrix4d Trl = pF->GetRelativePoseTrl().matrix().cast<double>();
+            Eigen::Matrix4d Trl = pF->getRelativePoseTrl().matrix().cast<double>();
             Rcw[1] = Trl.block<3, 3>(0, 0) * Rcw[0];
             tcw[1] = Trl.block<3, 3>(0, 0) * tcw[0] + Trl.block<3, 1>(0, 3);
             tcb[1] = Trl.block<3, 3>(0, 0) * tcb[0] + Trl.block<3, 1>(0, 3);

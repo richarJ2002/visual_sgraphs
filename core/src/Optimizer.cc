@@ -1564,7 +1564,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
     // Set Frame vertex
     g2o::VertexSE3Expmap *vSE3 = new g2o::VertexSE3Expmap();
-    Sophus::SE3<float>    Tcw  = pFrame->GetPose();
+    Sophus::SE3<float>    Tcw  = pFrame->getPose();
     vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
                                    Tcw.translation().cast<double>()));
     vSE3->setId(0);
@@ -1754,10 +1754,10 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         e->pCamera = pFrame->p_camera2;
                         e->Xw      = pMP->GetWorldPos().cast<double>();
 
-                        e->mTrl = g2o::SE3Quat(pFrame->GetRelativePoseTrl()
+                        e->mTrl = g2o::SE3Quat(pFrame->getRelativePoseTrl()
                                                    .unit_quaternion()
                                                    .cast<double>(),
-                                               pFrame->GetRelativePoseTrl()
+                                               pFrame->getRelativePoseTrl()
                                                    .translation()
                                                    .cast<double>());
 
@@ -1831,7 +1831,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     int nBad = 0;
     for (size_t it = 0; it < 4; it++)
     {
-        Tcw = pFrame->GetPose();
+        Tcw = pFrame->getPose();
         vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
                                        Tcw.translation().cast<double>()));
 
@@ -2063,7 +2063,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     g2o::SE3Quat       SE3quat_recov = vSE3_recov->estimate();
     Sophus::SE3<float> pose(SE3quat_recov.rotation().cast<float>(),
                             SE3quat_recov.translation().cast<float>());
-    pFrame->SetPose(pose);
+    pFrame->setPose(pose);
 
     return nInitialCorrespondences - nBad;
 }
@@ -7206,7 +7206,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
     }
 
     // Recover optimized pose, velocity and biases
-    pFrame->SetImuPoseVelocity(VP->estimate().Rwb.cast<float>(),
+    pFrame->setImuPoseVelocity(VP->estimate().Rwb.cast<float>(),
                                VP->estimate().twb.cast<float>(),
                                VV->estimate().cast<float>());
     Vector6d b;
@@ -7634,7 +7634,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     nInliers = nInliersMono + nInliersStereo;
 
     // Recover optimized pose, velocity and biases
-    pFrame->SetImuPoseVelocity(VP->estimate().Rwb.cast<float>(),
+    pFrame->setImuPoseVelocity(VP->estimate().Rwb.cast<float>(),
                                VP->estimate().twb.cast<float>(),
                                VV->estimate().cast<float>());
     Vector6d b;

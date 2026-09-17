@@ -169,11 +169,11 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     mpCamera2(F.p_camera2),
     mvLeftToRightMatch(F.leftToRightMatches),
     mvRightToLeftMatch(F.rightToLeftMatches),
-    mTlr(F.GetRelativePoseTlr()),
+    mTlr(F.getRelativePoseTlr()),
     mvKeysRight(F.keyPointsRight),
     NLeft(F.Nleft),
     NRight(F.Nright),
-    mTrl(F.GetRelativePoseTrl()),
+    mTrl(F.getRelativePoseTrl()),
     mnNumberOfOpt(0),
     mbHasVelocity(false),
     mCurrentFrameMarkers(F.mapMarkers),
@@ -202,7 +202,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
         }
     }
 
-    if (!F.HasVelocity())
+    if (!F.hasVelocity())
     {
         mVw.setZero();
         mbHasVelocity = false;
@@ -214,7 +214,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     }
 
     mImuBias = F.imuBias;
-    SetPose(F.GetPose());
+    SetPose(F.getPose());
 
     mnOriginMapId = pMap->GetId();
 }

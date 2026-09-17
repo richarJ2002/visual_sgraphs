@@ -2078,7 +2078,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat              &imRectLeft,
 
     Track();
 
-    return mCurrentFrame.GetPose();
+    return mCurrentFrame.getPose();
 }
 
 Sophus::SE3f Tracking::GrabImageRGBD(
@@ -2161,7 +2161,7 @@ Sophus::SE3f Tracking::GrabImageRGBD(
 
     Track();
 
-    return mCurrentFrame.GetPose();
+    return mCurrentFrame.getPose();
 }
 
 Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat              &im,
@@ -2267,7 +2267,7 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat              &im,
     lastID = mCurrentFrame.mnId;
     Track();
 
-    return mCurrentFrame.GetPose();
+    return mCurrentFrame.getPose();
 }
 
 void Tracking::GrabImuData(const IMU::Point &imuMeasurement)
@@ -2436,7 +2436,7 @@ bool Tracking::PredictStateIMU()
             Vwb1 + t12 * Gz +
             Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(
                        mpLastKeyFrame->GetImuBias());
-        mCurrentFrame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
+        mCurrentFrame.setImuPoseVelocity(Rwb2, twb2, Vwb2);
 
         mCurrentFrame.imuBias  = mpLastKeyFrame->GetImuBias();
         mCurrentFrame.predictedBias = mCurrentFrame.imuBias;
@@ -2444,8 +2444,8 @@ bool Tracking::PredictStateIMU()
     }
     else if (!mbMapUpdated)
     {
-        const Eigen::Vector3f twb1 = mLastFrame.GetImuPosition();
-        const Eigen::Matrix3f Rwb1 = mLastFrame.GetImuRotation();
+        const Eigen::Vector3f twb1 = mLastFrame.getImuPosition();
+        const Eigen::Matrix3f Rwb1 = mLastFrame.getImuRotation();
         const Eigen::Vector3f Vwb1 = mLastFrame.GetVelocity();
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
         const float           t12 = mCurrentFrame.p_imuPreintegratedFrame->dT;
@@ -2462,7 +2462,7 @@ bool Tracking::PredictStateIMU()
             Rwb1 * mCurrentFrame.p_imuPreintegratedFrame->GetDeltaVelocity(
                        mLastFrame.imuBias);
 
-        mCurrentFrame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
+        mCurrentFrame.setImuPoseVelocity(Rwb2, twb2, Vwb2);
 
         mCurrentFrame.imuBias  = mLastFrame.imuBias;
         mCurrentFrame.predictedBias = mCurrentFrame.imuBias;
@@ -2562,7 +2562,7 @@ void Tracking::Track()
     if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO ||
          mSensor == System::IMU_RGBD) &&
         mpLastKeyFrame)
-        mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
+        mCurrentFrame.setNewBias(mpLastKeyFrame->GetImuBias());
 
     if (mState == NO_IMAGES_YET)
         mState = NOT_INITIALIZED;
@@ -2808,13 +2808,13 @@ void Tracking::Track()
                         bOKMM   = TrackWithMotionModel();
                         vpMPsMM = mCurrentFrame.mapPoints;
                         vbOutMM = mCurrentFrame.outlierFlags;
-                        TcwMM   = mCurrentFrame.GetPose();
+                        TcwMM   = mCurrentFrame.getPose();
                     }
                     bOKReloc = Relocalization();
 
                     if (bOKMM && !bOKReloc)
                     {
-                        mCurrentFrame.SetPose(TcwMM);
+                        mCurrentFrame.setPose(TcwMM);
                         mCurrentFrame.mapPoints = vpMPsMM;
                         mCurrentFrame.outlierFlags   = vbOutMM;
 
@@ -2934,15 +2934,15 @@ void Tracking::Track()
         // Update drawer
         mpFrameDrawer->Update(this);
         if (mCurrentFrame.isSet())
-            mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
+            mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.getPose());
 
         if (bOK || mState == RECENTLY_LOST)
         {
             // Update motion model
             if (mLastFrame.isSet() && mCurrentFrame.isSet())
             {
-                Sophus::SE3f LastTwc = mLastFrame.GetPose().inverse();
-                mVelocity            = mCurrentFrame.GetPose() * LastTwc;
+                Sophus::SE3f LastTwc = mLastFrame.getPose().inverse();
+                mVelocity            = mCurrentFrame.getPose() * LastTwc;
                 mbVelocity           = true;
             }
             else
@@ -2952,7 +2952,7 @@ void Tracking::Track()
 
             if (mSensor == System::IMU_MONOCULAR ||
                 mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-                mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
+                mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.getPose());
 
             // Clean VO matches
             for (int i = 0; i < mCurrentFrame.N; i++)
@@ -3061,7 +3061,7 @@ void Tracking::Track()
         // trajectory afterwards.
         if (mCurrentFrame.isSet())
         {
-            Sophus::SE3f Tcr_ = mCurrentFrame.GetPose() *
+            Sophus::SE3f Tcr_ = mCurrentFrame.getPose() *
                                 mCurrentFrame.p_referenceKeyFrame->GetPoseInverse();
             mlRelativeFramePoses.push_back(Tcr_);
             mlpReferences.push_back(mCurrentFrame.p_referenceKeyFrame);
@@ -3149,10 +3149,10 @@ void Tracking::StereoInitialization()
             Eigen::Vector3f twb0 = mCurrentFrame.imuCalibration.mTcb.translation();
             Eigen::Vector3f Vwb0;
             Vwb0.setZero();
-            mCurrentFrame.SetImuPoseVelocity(Rwb0, twb0, Vwb0);
+            mCurrentFrame.setImuPoseVelocity(Rwb0, twb0, Vwb0);
         }
         else
-            mCurrentFrame.SetPose(Sophus::SE3f());
+            mCurrentFrame.setPose(Sophus::SE3f());
 
         // Create KeyFrame
         vs_graphs::core::KeyFrame *pKFini =
@@ -3173,7 +3173,7 @@ void Tracking::StereoInitialization()
                 if (z > 0)
                 {
                     Eigen::Vector3f x3D;
-                    mCurrentFrame.UnprojectStereo(i, x3D);
+                    mCurrentFrame.unprojectStereo(i, x3D);
                     MapPoint *pNewMP =
                         new MapPoint(x3D, pKFini, mpAtlas->GetCurrentMap());
                     pNewMP->AddObservation(pKFini, i);
@@ -3250,7 +3250,7 @@ void Tracking::StereoInitialization()
 
         mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.push_back(pKFini);
 
-        mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
+        mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.getPose());
 
         mState = OK;
     }
@@ -3332,9 +3332,9 @@ void Tracking::MonocularInitialization()
             }
 
             // Set Frame Poses
-            // mInitialFrame.SetPose(Sophus::SE3f());
-            mInitialFrame.SetPose(Tc0w);
-            mCurrentFrame.SetPose(Tcw * Tc0w);
+            // mInitialFrame.setPose(Sophus::SE3f());
+            mInitialFrame.setPose(Tc0w);
+            mCurrentFrame.setPose(Tcw * Tc0w);
 
             CreateInitialMapMonocular();
         }
@@ -3459,7 +3459,7 @@ void Tracking::CreateInitialMapMonocular()
     mpLocalMapper->InsertKeyFrame(pKFcur);
     mpLocalMapper->mFirstTs = pKFcur->mTimeStamp;
 
-    mCurrentFrame.SetPose(pKFcur->GetPose());
+    mCurrentFrame.setPose(pKFcur->GetPose());
     mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame   = pKFcur;
     // mnLastRelocFrameId = mInitialFrame.mnId;
@@ -3563,7 +3563,7 @@ void Tracking::CheckReplacedInLastFrame()
 bool Tracking::TrackReferenceKeyFrame()
 {
     // Compute Bag of Words vector
-    mCurrentFrame.ComputeBoW();
+    mCurrentFrame.computeBagOfWords();
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
@@ -3581,9 +3581,9 @@ bool Tracking::TrackReferenceKeyFrame()
     }
 
     mCurrentFrame.mapPoints = vpMapPointMatches;
-    mCurrentFrame.SetPose(mLastFrame.GetPose());
+    mCurrentFrame.setPose(mLastFrame.getPose());
 
-    // mCurrentFrame.PrintPointDistribution();
+    // mCurrentFrame.printPointDistribution();
 
     Optimizer::PoseOptimization(&mCurrentFrame);
 
@@ -3631,7 +3631,7 @@ void Tracking::UpdateLastFrame()
     Sophus::SE3f Tlr  = mlRelativeFramePoses.empty()
                             ? Sophus::SE3f()
                             : mlRelativeFramePoses.back();
-    mLastFrame.SetPose(Tlr * pRef->GetPose());
+    mLastFrame.setPose(Tlr * pRef->GetPose());
 
     if (mnLastKeyFrameId == mLastFrame.mnId || mSensor == System::MONOCULAR ||
         mSensor == System::IMU_MONOCULAR || !mbOnlyTracking)
@@ -3679,11 +3679,11 @@ void Tracking::UpdateLastFrame()
 
             if (mLastFrame.Nleft == -1)
             {
-                mLastFrame.UnprojectStereo(i, x3D);
+                mLastFrame.unprojectStereo(i, x3D);
             }
             else
             {
-                x3D = mLastFrame.UnprojectStereoFishEye(i);
+                x3D = mLastFrame.unprojectStereoFishEye(i);
             }
 
             MapPoint *pNewMP =
@@ -3720,7 +3720,7 @@ bool Tracking::TrackWithMotionModel()
     }
     else
     {
-        mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
+        mCurrentFrame.setPose(mVelocity * mLastFrame.getPose());
     }
 
     fill(mCurrentFrame.mapPoints.begin(),
@@ -4203,7 +4203,7 @@ void Tracking::CreateNewKeyFrame()
 
     if (mSensor != System::MONOCULAR && mSensor != System::IMU_MONOCULAR)
     {
-        mCurrentFrame.UpdatePoseMatrices();
+        mCurrentFrame.updatePoseMatrices();
         // We sort points by the measured depth by the stereo/RGBD sensor.
         // We create all those MapPoints whose depth < mThDepth.
         // If there are less than 100 close points we create the 100 closest.
@@ -4248,9 +4248,9 @@ void Tracking::CreateNewKeyFrame()
                     Eigen::Vector3f x3D;
 
                     if (mCurrentFrame.Nleft == -1)
-                        mCurrentFrame.UnprojectStereo(i, x3D);
+                        mCurrentFrame.unprojectStereo(i, x3D);
                     else
-                        x3D = mCurrentFrame.UnprojectStereoFishEye(i);
+                        x3D = mCurrentFrame.unprojectStereoFishEye(i);
 
                     MapPoint *pNewMP =
                         new MapPoint(x3D, pKF, mpAtlas->GetCurrentMap());
@@ -4661,7 +4661,7 @@ bool Tracking::Relocalization()
 {
     Verbose::PrintMess("Starting relocalization", Verbose::VERBOSITY_NORMAL);
     // Compute Bag of Words Vector
-    mCurrentFrame.ComputeBoW();
+    mCurrentFrame.computeBagOfWords();
 
     // STRUCTURAL PRIORS: Use room centroids from S-Graph to guide
     // relocalization In office corridors, room/passage markers provide strong
@@ -4755,7 +4755,7 @@ bool Tracking::Relocalization()
         // Get current frame's estimated position from IMU prediction or motion
         // model
         Eigen::Vector3f currentPos =
-            mCurrentFrame.GetPose().translation().head<3>();
+            mCurrentFrame.getPose().translation().head<3>();
 
         // Score candidates by: visual matches + proximity to known room
         // centroids
@@ -4840,7 +4840,7 @@ bool Tracking::Relocalization()
             if (bTcw)
             {
                 Sophus::SE3f Tcw(eigTcw);
-                mCurrentFrame.SetPose(Tcw);
+                mCurrentFrame.setPose(Tcw);
                 // Tcw.copyTo(mCurrentFrame.poseTcw);
 
                 set<MapPoint *> sFound;
@@ -5177,17 +5177,17 @@ void Tracking::UpdateFrameIMU(const float      s,
 
     mpLastKeyFrame = pCurrentKeyFrame;
 
-    mLastFrame.SetNewBias(mLastBias);
-    mCurrentFrame.SetNewBias(mLastBias);
+    mLastFrame.setNewBias(mLastBias);
+    mCurrentFrame.setNewBias(mLastBias);
 
-    while (!mCurrentFrame.imuIsPreintegrated())
+    while (!mCurrentFrame.isImuPreintegrated())
     {
         usleep(500);
     }
 
     if (mLastFrame.mnId == mLastFrame.p_lastKeyFrame->mnFrameId)
     {
-        mLastFrame.SetImuPoseVelocity(
+        mLastFrame.setImuPoseVelocity(
             mLastFrame.p_lastKeyFrame->GetImuRotation(),
             mLastFrame.p_lastKeyFrame->GetImuPosition(),
             mLastFrame.p_lastKeyFrame->GetVelocity());
@@ -5202,7 +5202,7 @@ void Tracking::UpdateFrameIMU(const float      s,
         const Eigen::Vector3f Vwb1 = mLastFrame.p_lastKeyFrame->GetVelocity();
         float                 t12  = mLastFrame.p_imuPreintegrated->dT;
 
-        mLastFrame.SetImuPoseVelocity(
+        mLastFrame.setImuPoseVelocity(
             IMU::NormalizeRotation(
                 Rwb1 *
                 mLastFrame.p_imuPreintegrated->GetUpdatedDeltaRotation()),
@@ -5225,7 +5225,7 @@ void Tracking::UpdateFrameIMU(const float      s,
             mCurrentFrame.p_lastKeyFrame->GetVelocity();
         float t12 = mCurrentFrame.p_imuPreintegrated->dT;
 
-        mCurrentFrame.SetImuPoseVelocity(
+        mCurrentFrame.setImuPoseVelocity(
             IMU::NormalizeRotation(
                 Rwb1 *
                 mCurrentFrame.p_imuPreintegrated->GetUpdatedDeltaRotation()),
@@ -5280,12 +5280,12 @@ float Tracking::GetImageScale()
 
 Sophus::SE3f Tracking::GetCamTwc()
 {
-    return (mCurrentFrame.GetPose()).inverse();
+    return (mCurrentFrame.getPose()).inverse();
 }
 
 Sophus::SE3f Tracking::GetImuTwb()
 {
-    return mCurrentFrame.GetImuPose();
+    return mCurrentFrame.getImuPose();
 }
 
 Eigen::Vector3f Tracking::GetImuVwb()

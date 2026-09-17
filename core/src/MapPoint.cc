@@ -165,13 +165,13 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos,
     Eigen::Vector3f Ow;
     if (pFrame->Nleft == -1 || idxF < pFrame->Nleft)
     {
-        Ow = pFrame->GetCameraCenter();
+        Ow = pFrame->getCameraCenter();
     }
     else
     {
-        Eigen::Matrix3f Rwl = pFrame->GetRwc();
-        Eigen::Vector3f tlr = pFrame->GetRelativePoseTlr().translation();
-        Eigen::Vector3f twl = pFrame->GetOw();
+        Eigen::Matrix3f Rwl = pFrame->getRotationRwc();
+        Eigen::Vector3f tlr = pFrame->getRelativePoseTlr().translation();
+        Eigen::Vector3f twl = pFrame->getCenterOw();
 
         Ow = Rwl * tlr + twl;
     }

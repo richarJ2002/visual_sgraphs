@@ -1,6 +1,6 @@
 /**
  * @file test_StereoMatchOutlierRejection.cpp
- * @brief B3 regression coverage: Frame::ComputeStereoMatches()'s extracted
+ * @brief B3 regression coverage: Frame::computeStereoMatches()'s extracted
  *        outlier-rejection step must not read past an empty match list.
  */
 
