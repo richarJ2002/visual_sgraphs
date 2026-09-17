@@ -73,7 +73,7 @@ namespace core
                     r *= th;
 
                 const vector<size_t> vIndices =
-                    F.GetFeaturesInArea(pMP->mTrackProjX, pMP->mTrackProjY, r * F.mvScaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel);
+                    F.GetFeaturesInArea(pMP->mTrackProjX, pMP->mTrackProjY, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel);
 
                 if (!vIndices.empty())
                 {
@@ -90,18 +90,18 @@ namespace core
                     {
                         const size_t idx = *vit;
 
-                        if (F.mvpMapPoints[idx])
-                            if (F.mvpMapPoints[idx]->Observations() > 0)
+                        if (F.mapPoints[idx])
+                            if (F.mapPoints[idx]->Observations() > 0)
                                 continue;
 
-                        if (F.Nleft == -1 && F.mvuRight[idx] > 0)
+                        if (F.Nleft == -1 && F.uRight[idx] > 0)
                         {
-                            const float er = fabs(pMP->mTrackProjXR - F.mvuRight[idx]);
-                            if (er > r * F.mvScaleFactors[nPredictedLevel])
+                            const float er = fabs(pMP->mTrackProjXR - F.uRight[idx]);
+                            if (er > r * F.scaleFactors[nPredictedLevel])
                                 continue;
                         }
 
-                        const cv::Mat &d = F.mDescriptors.row(idx);
+                        const cv::Mat &d = F.descriptors.row(idx);
 
                         const int dist =
                             computeDescriptorDistance(MPdescriptor, d);
@@ -111,16 +111,16 @@ namespace core
                             bestDist2 = bestDist;
                             bestDist = dist;
                             bestLevel2 = bestLevel;
-                            bestLevel = (F.Nleft == -1)   ? F.mvKeysUn[idx].octave
-                                        : (idx < F.Nleft) ? F.mvKeys[idx].octave
-                                                          : F.mvKeysRight[idx - F.Nleft].octave;
+                            bestLevel = (F.Nleft == -1)   ? F.keyPointsUndistorted[idx].octave
+                                        : (idx < F.Nleft) ? F.keyPoints[idx].octave
+                                                          : F.keyPointsRight[idx - F.Nleft].octave;
                             bestIdx = idx;
                         }
                         else if (dist < bestDist2)
                         {
-                            bestLevel2 = (F.Nleft == -1)   ? F.mvKeysUn[idx].octave
-                                         : (idx < F.Nleft) ? F.mvKeys[idx].octave
-                                                           : F.mvKeysRight[idx - F.Nleft].octave;
+                            bestLevel2 = (F.Nleft == -1)   ? F.keyPointsUndistorted[idx].octave
+                                         : (idx < F.Nleft) ? F.keyPoints[idx].octave
+                                                           : F.keyPointsRight[idx - F.Nleft].octave;
                             bestDist2 = dist;
                         }
                     }
@@ -133,11 +133,11 @@ namespace core
 
                         if (bestLevel != bestLevel2 || bestDist <= mfNNratio * bestDist2)
                         {
-                            F.mvpMapPoints[bestIdx] = pMP;
+                            F.mapPoints[bestIdx] = pMP;
 
-                            if (F.Nleft != -1 && F.mvLeftToRightMatch[bestIdx] != -1)
+                            if (F.Nleft != -1 && F.leftToRightMatches[bestIdx] != -1)
                             { // Also match with the stereo observation at right camera
-                                F.mvpMapPoints[F.mvLeftToRightMatch[bestIdx] + F.Nleft] = pMP;
+                                F.mapPoints[F.leftToRightMatches[bestIdx] + F.Nleft] = pMP;
                                 nmatches++;
                                 right++;
                             }
@@ -157,7 +157,7 @@ namespace core
                     float r = RadiusByViewingCos(pMP->mTrackViewCosR);
 
                     const vector<size_t> vIndices =
-                        F.GetFeaturesInArea(pMP->mTrackProjXR, pMP->mTrackProjYR, r * F.mvScaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel, true);
+                        F.GetFeaturesInArea(pMP->mTrackProjXR, pMP->mTrackProjYR, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel, true);
 
                     if (vIndices.empty())
                         continue;
@@ -175,11 +175,11 @@ namespace core
                     {
                         const size_t idx = *vit;
 
-                        if (F.mvpMapPoints[idx + F.Nleft])
-                            if (F.mvpMapPoints[idx + F.Nleft]->Observations() > 0)
+                        if (F.mapPoints[idx + F.Nleft])
+                            if (F.mapPoints[idx + F.Nleft]->Observations() > 0)
                                 continue;
 
-                        const cv::Mat &d = F.mDescriptors.row(idx + F.Nleft);
+                        const cv::Mat &d = F.descriptors.row(idx + F.Nleft);
 
                         const int dist =
                             computeDescriptorDistance(MPdescriptor, d);
@@ -189,12 +189,12 @@ namespace core
                             bestDist2 = bestDist;
                             bestDist = dist;
                             bestLevel2 = bestLevel;
-                            bestLevel = F.mvKeysRight[idx].octave;
+                            bestLevel = F.keyPointsRight[idx].octave;
                             bestIdx = idx;
                         }
                         else if (dist < bestDist2)
                         {
-                            bestLevel2 = F.mvKeysRight[idx].octave;
+                            bestLevel2 = F.keyPointsRight[idx].octave;
                             bestDist2 = dist;
                         }
                     }
@@ -205,14 +205,14 @@ namespace core
                         if (bestLevel == bestLevel2 && bestDist > mfNNratio * bestDist2)
                             continue;
 
-                        if (F.Nleft != -1 && F.mvRightToLeftMatch[bestIdx] != -1)
+                        if (F.Nleft != -1 && F.rightToLeftMatches[bestIdx] != -1)
                         { // Also match with the stereo observation at right camera
-                            F.mvpMapPoints[F.mvRightToLeftMatch[bestIdx]] = pMP;
+                            F.mapPoints[F.rightToLeftMatches[bestIdx]] = pMP;
                             nmatches++;
                             left++;
                         }
 
-                        F.mvpMapPoints[bestIdx + F.Nleft] = pMP;
+                        F.mapPoints[bestIdx + F.Nleft] = pMP;
                         nmatches++;
                         right++;
                     }
@@ -272,7 +272,7 @@ namespace core
                 }
 
                 const vector<size_t> vIndices =
-                    F.GetFeaturesInArea(pMP->mTrackProjX, pMP->mTrackProjY, r * F.mvScaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel);
+                    F.GetFeaturesInArea(pMP->mTrackProjX, pMP->mTrackProjY, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel);
 
                 if (!vIndices.empty())
                 {
@@ -289,18 +289,18 @@ namespace core
                     {
                         const size_t idx = *vit;
 
-                        if (F.mvpMapPoints[idx])
-                            if (F.mvpMapPoints[idx]->Observations() > 0)
+                        if (F.mapPoints[idx])
+                            if (F.mapPoints[idx]->Observations() > 0)
                                 continue;
 
-                        if (F.Nleft == -1 && F.mvuRight[idx] > 0)
+                        if (F.Nleft == -1 && F.uRight[idx] > 0)
                         {
-                            const float er = fabs(pMP->mTrackProjXR - F.mvuRight[idx]);
-                            if (er > r * F.mvScaleFactors[nPredictedLevel])
+                            const float er = fabs(pMP->mTrackProjXR - F.uRight[idx]);
+                            if (er > r * F.scaleFactors[nPredictedLevel])
                                 continue;
                         }
 
-                        const cv::Mat &d = F.mDescriptors.row(idx);
+                        const cv::Mat &d = F.descriptors.row(idx);
 
                         const int dist =
                             computeDescriptorDistance(MPdescriptor, d);
@@ -310,16 +310,16 @@ namespace core
                             bestDist2 = bestDist;
                             bestDist = dist;
                             bestLevel2 = bestLevel;
-                            bestLevel = (F.Nleft == -1)   ? F.mvKeysUn[idx].octave
-                                        : (idx < F.Nleft) ? F.mvKeys[idx].octave
-                                                          : F.mvKeysRight[idx - F.Nleft].octave;
+                            bestLevel = (F.Nleft == -1)   ? F.keyPointsUndistorted[idx].octave
+                                        : (idx < F.Nleft) ? F.keyPoints[idx].octave
+                                                          : F.keyPointsRight[idx - F.Nleft].octave;
                             bestIdx = idx;
                         }
                         else if (dist < bestDist2)
                         {
-                            bestLevel2 = (F.Nleft == -1)   ? F.mvKeysUn[idx].octave
-                                         : (idx < F.Nleft) ? F.mvKeys[idx].octave
-                                                           : F.mvKeysRight[idx - F.Nleft].octave;
+                            bestLevel2 = (F.Nleft == -1)   ? F.keyPointsUndistorted[idx].octave
+                                         : (idx < F.Nleft) ? F.keyPoints[idx].octave
+                                                           : F.keyPointsRight[idx - F.Nleft].octave;
                             bestDist2 = dist;
                         }
                     }
@@ -332,11 +332,11 @@ namespace core
 
                         if (bestLevel != bestLevel2 || bestDist <= mfNNratio * bestDist2)
                         {
-                            F.mvpMapPoints[bestIdx] = pMP;
+                            F.mapPoints[bestIdx] = pMP;
 
-                            if (F.Nleft != -1 && F.mvLeftToRightMatch[bestIdx] != -1)
+                            if (F.Nleft != -1 && F.leftToRightMatches[bestIdx] != -1)
                             { // Also match with the stereo observation at right camera
-                                F.mvpMapPoints[F.mvLeftToRightMatch[bestIdx] + F.Nleft] = pMP;
+                                F.mapPoints[F.leftToRightMatches[bestIdx] + F.Nleft] = pMP;
                                 nmatches++;
                                 right++;
                             }
@@ -366,7 +366,7 @@ namespace core
                     }
 
                     const vector<size_t> vIndices =
-                        F.GetFeaturesInArea(pMP->mTrackProjXR, pMP->mTrackProjYR, r * F.mvScaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel, true);
+                        F.GetFeaturesInArea(pMP->mTrackProjXR, pMP->mTrackProjYR, r * F.scaleFactors[nPredictedLevel], nPredictedLevel - 1, nPredictedLevel, true);
 
                     if (vIndices.empty())
                         continue;
@@ -384,11 +384,11 @@ namespace core
                     {
                         const size_t idx = *vit;
 
-                        if (F.mvpMapPoints[idx + F.Nleft])
-                            if (F.mvpMapPoints[idx + F.Nleft]->Observations() > 0)
+                        if (F.mapPoints[idx + F.Nleft])
+                            if (F.mapPoints[idx + F.Nleft]->Observations() > 0)
                                 continue;
 
-                        const cv::Mat &d = F.mDescriptors.row(idx + F.Nleft);
+                        const cv::Mat &d = F.descriptors.row(idx + F.Nleft);
 
                         const int dist =
                             computeDescriptorDistance(MPdescriptor, d);
@@ -398,12 +398,12 @@ namespace core
                             bestDist2 = bestDist;
                             bestDist = dist;
                             bestLevel2 = bestLevel;
-                            bestLevel = F.mvKeysRight[idx].octave;
+                            bestLevel = F.keyPointsRight[idx].octave;
                             bestIdx = idx;
                         }
                         else if (dist < bestDist2)
                         {
-                            bestLevel2 = F.mvKeysRight[idx].octave;
+                            bestLevel2 = F.keyPointsRight[idx].octave;
                             bestDist2 = dist;
                         }
                     }
@@ -414,14 +414,14 @@ namespace core
                         if (bestLevel == bestLevel2 && bestDist > mfNNratio * bestDist2)
                             continue;
 
-                        if (F.Nleft != -1 && F.mvRightToLeftMatch[bestIdx] != -1)
+                        if (F.Nleft != -1 && F.rightToLeftMatches[bestIdx] != -1)
                         { // Also match with the stereo observation at right camera
-                            F.mvpMapPoints[F.mvRightToLeftMatch[bestIdx]] = pMP;
+                            F.mapPoints[F.rightToLeftMatches[bestIdx]] = pMP;
                             nmatches++;
                             left++;
                         }
 
-                        F.mvpMapPoints[bestIdx + F.Nleft] = pMP;
+                        F.mapPoints[bestIdx + F.Nleft] = pMP;
                         nmatches++;
                         right++;
                     }
@@ -456,9 +456,9 @@ namespace core
 
         // We perform the matching over ORB that belong to the same vocabulary node (at a certain level)
         DBoW2::FeatureVector::const_iterator KFit = vFeatVecKF.begin();
-        DBoW2::FeatureVector::const_iterator Fit = F.mFeatVec.begin();
+        DBoW2::FeatureVector::const_iterator Fit = F.featureVector.begin();
         DBoW2::FeatureVector::const_iterator KFend = vFeatVecKF.end();
-        DBoW2::FeatureVector::const_iterator Fend = F.mFeatVec.end();
+        DBoW2::FeatureVector::const_iterator Fend = F.featureVector.end();
 
         while (KFit != KFend && Fit != Fend)
         {
@@ -498,7 +498,7 @@ namespace core
                             if (vpMapPointMatches[realIdxF])
                                 continue;
 
-                            const cv::Mat &dF = F.mDescriptors.row(realIdxF);
+                            const cv::Mat &dF = F.descriptors.row(realIdxF);
 
                             const int dist = computeDescriptorDistance(dKF, dF);
 
@@ -520,7 +520,7 @@ namespace core
                             if (vpMapPointMatches[realIdxF])
                                 continue;
 
-                            const cv::Mat &dF = F.mDescriptors.row(realIdxF);
+                            const cv::Mat &dF = F.descriptors.row(realIdxF);
 
                             const int dist = computeDescriptorDistance(dKF, dF);
 
@@ -561,8 +561,8 @@ namespace core
                             if (mbCheckOrientation)
                             {
                                 cv::KeyPoint &Fkp =
-                                    (!pKF->mpCamera2 || F.Nleft == -1) ? F.mvKeys[bestIdxF] : (bestIdxF >= F.Nleft) ? F.mvKeysRight[bestIdxF - F.Nleft]
-                                                                                                                    : F.mvKeys[bestIdxF];
+                                    (!pKF->mpCamera2 || F.Nleft == -1) ? F.keyPoints[bestIdxF] : (bestIdxF >= F.Nleft) ? F.keyPointsRight[bestIdxF - F.Nleft]
+                                                                                                                    : F.keyPoints[bestIdxF];
 
                                 float rot = kp.angle - Fkp.angle;
                                 if (rot < 0.0)
@@ -589,8 +589,8 @@ namespace core
                                 if (mbCheckOrientation)
                                 {
                                     cv::KeyPoint &Fkp =
-                                        (!F.mpCamera2) ? F.mvKeys[bestIdxFR] : (bestIdxFR >= F.Nleft) ? F.mvKeysRight[bestIdxFR - F.Nleft]
-                                                                                                      : F.mvKeys[bestIdxFR];
+                                        (!F.p_camera2) ? F.keyPoints[bestIdxFR] : (bestIdxFR >= F.Nleft) ? F.keyPointsRight[bestIdxFR - F.Nleft]
+                                                                                                      : F.keyPoints[bestIdxFR];
 
                                     float rot = kp.angle - Fkp.angle;
                                     if (rot < 0.0)
@@ -616,7 +616,7 @@ namespace core
             }
             else
             {
-                Fit = F.mFeatVec.lower_bound(KFit->first);
+                Fit = F.featureVector.lower_bound(KFit->first);
             }
         }
 
@@ -859,19 +859,19 @@ namespace core
     int ORBmatcher::SearchForInitialization(Frame &F1, Frame &F2, vector<cv::Point2f> &vbPrevMatched, vector<int> &vnMatches12, int windowSize)
     {
         int nmatches = 0;
-        vnMatches12 = vector<int>(F1.mvKeysUn.size(), -1);
+        vnMatches12 = vector<int>(F1.keyPointsUndistorted.size(), -1);
 
         vector<int> rotHist[HISTO_LENGTH];
         for (int i = 0; i < HISTO_LENGTH; i++)
             rotHist[i].reserve(500);
         const float factor = 1.0f / HISTO_LENGTH;
 
-        vector<int> vMatchedDistance(F2.mvKeysUn.size(), INT_MAX);
-        vector<int> vnMatches21(F2.mvKeysUn.size(), -1);
+        vector<int> vMatchedDistance(F2.keyPointsUndistorted.size(), INT_MAX);
+        vector<int> vnMatches21(F2.keyPointsUndistorted.size(), -1);
 
-        for (size_t i1 = 0, iend1 = F1.mvKeysUn.size(); i1 < iend1; i1++)
+        for (size_t i1 = 0, iend1 = F1.keyPointsUndistorted.size(); i1 < iend1; i1++)
         {
-            cv::KeyPoint kp1 = F1.mvKeysUn[i1];
+            cv::KeyPoint kp1 = F1.keyPointsUndistorted[i1];
             int level1 = kp1.octave;
             if (level1 > 0)
                 continue;
@@ -881,7 +881,7 @@ namespace core
             if (vIndices2.empty())
                 continue;
 
-            cv::Mat d1 = F1.mDescriptors.row(i1);
+            cv::Mat d1 = F1.descriptors.row(i1);
 
             int bestDist = INT_MAX;
             int bestDist2 = INT_MAX;
@@ -891,7 +891,7 @@ namespace core
             {
                 size_t i2 = *vit;
 
-                cv::Mat d2 = F2.mDescriptors.row(i2);
+                cv::Mat d2 = F2.descriptors.row(i2);
 
                 int dist = computeDescriptorDistance(d1, d2);
 
@@ -926,7 +926,7 @@ namespace core
 
                     if (mbCheckOrientation)
                     {
-                        float rot = F1.mvKeysUn[i1].angle - F2.mvKeysUn[bestIdx2].angle;
+                        float rot = F1.keyPointsUndistorted[i1].angle - F2.keyPointsUndistorted[bestIdx2].angle;
                         if (rot < 0.0)
                             rot += 360.0f;
                         int bin = round(rot * factor);
@@ -966,7 +966,7 @@ namespace core
         // Update prev matched
         for (size_t i1 = 0, iend1 = vnMatches12.size(); i1 < iend1; i1++)
             if (vnMatches12[i1] >= 0)
-                vbPrevMatched[i1] = F2.mvKeysUn[vnMatches12[i1]].pt;
+                vbPrevMatched[i1] = F2.keyPointsUndistorted[vnMatches12[i1]].pt;
 
         return nmatches;
     }
@@ -1901,10 +1901,10 @@ namespace core
 
         for (int i = 0; i < LastFrame.N; i++)
         {
-            MapPoint *pMP = LastFrame.mvpMapPoints[i];
+            MapPoint *pMP = LastFrame.mapPoints[i];
             if (pMP)
             {
-                if (!LastFrame.mvbOutlier[i])
+                if (!LastFrame.outlierFlags[i])
                 {
                     // Project
                     Eigen::Vector3f x3Dw = pMP->GetWorldPos();
@@ -1917,18 +1917,18 @@ namespace core
                     if (invzc < 0)
                         continue;
 
-                    Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dc);
+                    Eigen::Vector2f uv = CurrentFrame.p_camera->project(x3Dc);
 
-                    if (uv(0) < CurrentFrame.mnMinX || uv(0) > CurrentFrame.mnMaxX)
+                    if (uv(0) < CurrentFrame.gridMinX || uv(0) > CurrentFrame.gridMaxX)
                         continue;
-                    if (uv(1) < CurrentFrame.mnMinY || uv(1) > CurrentFrame.mnMaxY)
+                    if (uv(1) < CurrentFrame.gridMinY || uv(1) > CurrentFrame.gridMaxY)
                         continue;
 
-                    int nLastOctave = (LastFrame.Nleft == -1 || i < LastFrame.Nleft) ? LastFrame.mvKeys[i].octave
-                                                                                     : LastFrame.mvKeysRight[i - LastFrame.Nleft].octave;
+                    int nLastOctave = (LastFrame.Nleft == -1 || i < LastFrame.Nleft) ? LastFrame.keyPoints[i].octave
+                                                                                     : LastFrame.keyPointsRight[i - LastFrame.Nleft].octave;
 
                     // Search in a window. Size depends on scale
-                    float radius = th * CurrentFrame.mvScaleFactors[nLastOctave];
+                    float radius = th * CurrentFrame.scaleFactors[nLastOctave];
 
                     vector<size_t> vIndices2;
 
@@ -1951,19 +1951,19 @@ namespace core
                     {
                         const size_t i2 = *vit;
 
-                        if (CurrentFrame.mvpMapPoints[i2])
-                            if (CurrentFrame.mvpMapPoints[i2]->Observations() > 0)
+                        if (CurrentFrame.mapPoints[i2])
+                            if (CurrentFrame.mapPoints[i2]->Observations() > 0)
                                 continue;
 
-                        if (CurrentFrame.Nleft == -1 && CurrentFrame.mvuRight[i2] > 0)
+                        if (CurrentFrame.Nleft == -1 && CurrentFrame.uRight[i2] > 0)
                         {
                             const float ur = uv(0) - CurrentFrame.mbf * invzc;
-                            const float er = fabs(ur - CurrentFrame.mvuRight[i2]);
+                            const float er = fabs(ur - CurrentFrame.uRight[i2]);
                             if (er > radius)
                                 continue;
                         }
 
-                        const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
+                        const cv::Mat &d = CurrentFrame.descriptors.row(i2);
 
                         const int dist = computeDescriptorDistance(dMP, d);
 
@@ -1976,18 +1976,18 @@ namespace core
 
                     if (bestDist <= TH_HIGH)
                     {
-                        CurrentFrame.mvpMapPoints[bestIdx2] = pMP;
+                        CurrentFrame.mapPoints[bestIdx2] = pMP;
                         nmatches++;
 
                         if (mbCheckOrientation)
                         {
-                            cv::KeyPoint kpLF = (LastFrame.Nleft == -1) ? LastFrame.mvKeysUn[i]
-                                                : (i < LastFrame.Nleft) ? LastFrame.mvKeys[i]
-                                                                        : LastFrame.mvKeysRight[i - LastFrame.Nleft];
+                            cv::KeyPoint kpLF = (LastFrame.Nleft == -1) ? LastFrame.keyPointsUndistorted[i]
+                                                : (i < LastFrame.Nleft) ? LastFrame.keyPoints[i]
+                                                                        : LastFrame.keyPointsRight[i - LastFrame.Nleft];
 
-                            cv::KeyPoint kpCF = (CurrentFrame.Nleft == -1)        ? CurrentFrame.mvKeysUn[bestIdx2]
-                                                : (bestIdx2 < CurrentFrame.Nleft) ? CurrentFrame.mvKeys[bestIdx2]
-                                                                                  : CurrentFrame.mvKeysRight[bestIdx2 - CurrentFrame.Nleft];
+                            cv::KeyPoint kpCF = (CurrentFrame.Nleft == -1)        ? CurrentFrame.keyPointsUndistorted[bestIdx2]
+                                                : (bestIdx2 < CurrentFrame.Nleft) ? CurrentFrame.keyPoints[bestIdx2]
+                                                                                  : CurrentFrame.keyPointsRight[bestIdx2 - CurrentFrame.Nleft];
                             float rot = kpLF.angle - kpCF.angle;
                             if (rot < 0.0)
                                 rot += 360.0f;
@@ -2001,13 +2001,13 @@ namespace core
                     if (CurrentFrame.Nleft != -1)
                     {
                         Eigen::Vector3f x3Dr = CurrentFrame.GetRelativePoseTrl() * x3Dc;
-                        Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dr);
+                        Eigen::Vector2f uv = CurrentFrame.p_camera->project(x3Dr);
 
-                        int nLastOctave = (LastFrame.Nleft == -1 || i < LastFrame.Nleft) ? LastFrame.mvKeys[i].octave
-                                                                                         : LastFrame.mvKeysRight[i - LastFrame.Nleft].octave;
+                        int nLastOctave = (LastFrame.Nleft == -1 || i < LastFrame.Nleft) ? LastFrame.keyPoints[i].octave
+                                                                                         : LastFrame.keyPointsRight[i - LastFrame.Nleft].octave;
 
                         // Search in a window. Size depends on scale
-                        float radius = th * CurrentFrame.mvScaleFactors[nLastOctave];
+                        float radius = th * CurrentFrame.scaleFactors[nLastOctave];
 
                         vector<size_t> vIndices2;
 
@@ -2026,11 +2026,11 @@ namespace core
                         for (vector<size_t>::const_iterator vit = vIndices2.begin(), vend = vIndices2.end(); vit != vend; vit++)
                         {
                             const size_t i2 = *vit;
-                            if (CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft])
-                                if (CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft]->Observations() > 0)
+                            if (CurrentFrame.mapPoints[i2 + CurrentFrame.Nleft])
+                                if (CurrentFrame.mapPoints[i2 + CurrentFrame.Nleft]->Observations() > 0)
                                     continue;
 
-                            const cv::Mat &d = CurrentFrame.mDescriptors.row(i2 + CurrentFrame.Nleft);
+                            const cv::Mat &d = CurrentFrame.descriptors.row(i2 + CurrentFrame.Nleft);
 
                             const int dist = computeDescriptorDistance(dMP, d);
 
@@ -2043,15 +2043,15 @@ namespace core
 
                         if (bestDist <= TH_HIGH)
                         {
-                            CurrentFrame.mvpMapPoints[bestIdx2 + CurrentFrame.Nleft] = pMP;
+                            CurrentFrame.mapPoints[bestIdx2 + CurrentFrame.Nleft] = pMP;
                             nmatches++;
                             if (mbCheckOrientation)
                             {
-                                cv::KeyPoint kpLF = (LastFrame.Nleft == -1) ? LastFrame.mvKeysUn[i]
-                                                    : (i < LastFrame.Nleft) ? LastFrame.mvKeys[i]
-                                                                            : LastFrame.mvKeysRight[i - LastFrame.Nleft];
+                                cv::KeyPoint kpLF = (LastFrame.Nleft == -1) ? LastFrame.keyPointsUndistorted[i]
+                                                    : (i < LastFrame.Nleft) ? LastFrame.keyPoints[i]
+                                                                            : LastFrame.keyPointsRight[i - LastFrame.Nleft];
 
-                                cv::KeyPoint kpCF = CurrentFrame.mvKeysRight[bestIdx2];
+                                cv::KeyPoint kpCF = CurrentFrame.keyPointsRight[bestIdx2];
 
                                 float rot = kpLF.angle - kpCF.angle;
                                 if (rot < 0.0)
@@ -2083,7 +2083,7 @@ namespace core
                 {
                     for (size_t j = 0, jend = rotHist[i].size(); j < jend; j++)
                     {
-                        CurrentFrame.mvpMapPoints[rotHist[i][j]] = static_cast<MapPoint *>(nullptr);
+                        CurrentFrame.mapPoints[rotHist[i][j]] = static_cast<MapPoint *>(nullptr);
                         nmatches--;
                     }
                 }
@@ -2120,11 +2120,11 @@ namespace core
                     Eigen::Vector3f x3Dw = pMP->GetWorldPos();
                     Eigen::Vector3f x3Dc = Tcw * x3Dw;
 
-                    const Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dc);
+                    const Eigen::Vector2f uv = CurrentFrame.p_camera->project(x3Dc);
 
-                    if (uv(0) < CurrentFrame.mnMinX || uv(0) > CurrentFrame.mnMaxX)
+                    if (uv(0) < CurrentFrame.gridMinX || uv(0) > CurrentFrame.gridMaxX)
                         continue;
-                    if (uv(1) < CurrentFrame.mnMinY || uv(1) > CurrentFrame.mnMaxY)
+                    if (uv(1) < CurrentFrame.gridMinY || uv(1) > CurrentFrame.gridMaxY)
                         continue;
 
                     // Compute predicted scale level
@@ -2141,7 +2141,7 @@ namespace core
                     int nPredictedLevel = pMP->PredictScale(dist3D, &CurrentFrame);
 
                     // Search in a window
-                    const float radius = th * CurrentFrame.mvScaleFactors[nPredictedLevel];
+                    const float radius = th * CurrentFrame.scaleFactors[nPredictedLevel];
 
                     const vector<size_t> vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, nPredictedLevel - 1, nPredictedLevel + 1);
 
@@ -2156,10 +2156,10 @@ namespace core
                     for (vector<size_t>::const_iterator vit = vIndices2.begin(); vit != vIndices2.end(); vit++)
                     {
                         const size_t i2 = *vit;
-                        if (CurrentFrame.mvpMapPoints[i2])
+                        if (CurrentFrame.mapPoints[i2])
                             continue;
 
-                        const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
+                        const cv::Mat &d = CurrentFrame.descriptors.row(i2);
 
                         const int dist = computeDescriptorDistance(dMP, d);
 
@@ -2172,12 +2172,12 @@ namespace core
 
                     if (bestDist <= ORBdist)
                     {
-                        CurrentFrame.mvpMapPoints[bestIdx2] = pMP;
+                        CurrentFrame.mapPoints[bestIdx2] = pMP;
                         nmatches++;
 
                         if (mbCheckOrientation)
                         {
-                            float rot = pKF->mvKeysUn[i].angle - CurrentFrame.mvKeysUn[bestIdx2].angle;
+                            float rot = pKF->mvKeysUn[i].angle - CurrentFrame.keyPointsUndistorted[bestIdx2].angle;
                             if (rot < 0.0)
                                 rot += 360.0f;
                             int bin = round(rot * factor);
@@ -2205,7 +2205,7 @@ namespace core
                 {
                     for (size_t j = 0, jend = rotHist[i].size(); j < jend; j++)
                     {
-                        CurrentFrame.mvpMapPoints[rotHist[i][j]] = nullptr;
+                        CurrentFrame.mapPoints[rotHist[i][j]] = nullptr;
                         nmatches--;
                     }
                 }

@@ -90,7 +90,7 @@ namespace core
 
         // Load camera poses
         int num_cams;
-        if (pF->mpCamera2)
+        if (pF->p_camera2)
             num_cams = 2;
         else
             num_cams = 1;
@@ -106,11 +106,11 @@ namespace core
         // Left camera
         tcw[0] = pF->GetPose().translation().cast<double>();
         Rcw[0] = pF->GetPose().rotationMatrix().cast<double>();
-        tcb[0] = pF->mImuCalib.mTcb.translation().cast<double>();
-        Rcb[0] = pF->mImuCalib.mTcb.rotationMatrix().cast<double>();
+        tcb[0] = pF->imuCalibration.mTcb.translation().cast<double>();
+        Rcb[0] = pF->imuCalibration.mTcb.rotationMatrix().cast<double>();
         Rbc[0] = Rcb[0].transpose();
-        tbc[0] = pF->mImuCalib.mTbc.translation().cast<double>();
-        pCamera[0] = pF->mpCamera;
+        tbc[0] = pF->imuCalibration.mTbc.translation().cast<double>();
+        pCamera[0] = pF->p_camera;
         bf = pF->mbf;
 
         if (num_cams > 1)
@@ -122,7 +122,7 @@ namespace core
             Rcb[1] = Trl.block<3, 3>(0, 0) * Rcb[0];
             Rbc[1] = Rcb[1].transpose();
             tbc[1] = -Rbc[1] * tcb[1];
-            pCamera[1] = pF->mpCamera2;
+            pCamera[1] = pF->p_camera2;
         }
 
         // For posegraph 4DoF
@@ -489,7 +489,7 @@ namespace core
     VertexGyroBias::VertexGyroBias(Frame *pF)
     {
         Eigen::Vector3d bg;
-        bg << pF->mImuBias.bwx, pF->mImuBias.bwy, pF->mImuBias.bwz;
+        bg << pF->imuBias.bwx, pF->imuBias.bwy, pF->imuBias.bwz;
         setEstimate(bg);
     }
 
@@ -501,7 +501,7 @@ namespace core
     VertexAccBias::VertexAccBias(Frame *pF)
     {
         Eigen::Vector3d ba;
-        ba << pF->mImuBias.bax, pF->mImuBias.bay, pF->mImuBias.baz;
+        ba << pF->imuBias.bax, pF->imuBias.bay, pF->imuBias.baz;
         setEstimate(ba);
     }
 

@@ -51,15 +51,15 @@ namespace vs_graphs
 {
 namespace core
 {
-    MLPnPsolver::MLPnPsolver(const Frame &F, const vector<MapPoint *> &vpMapPointMatches) : mnInliersi(0), mnIterations(0), mnBestInliers(0), N(0), mpCamera(F.mpCamera)
+    MLPnPsolver::MLPnPsolver(const Frame &F, const vector<MapPoint *> &vpMapPointMatches) : mnInliersi(0), mnIterations(0), mnBestInliers(0), N(0), mpCamera(F.p_camera)
     {
         mvpMapPointMatches = vpMapPointMatches;
-        mvBearingVecs.reserve(F.mvpMapPoints.size());
-        mvP2D.reserve(F.mvpMapPoints.size());
-        mvSigma2.reserve(F.mvpMapPoints.size());
-        mvP3Dw.reserve(F.mvpMapPoints.size());
-        mvKeyPointIndices.reserve(F.mvpMapPoints.size());
-        mvAllIndices.reserve(F.mvpMapPoints.size());
+        mvBearingVecs.reserve(F.mapPoints.size());
+        mvP2D.reserve(F.mapPoints.size());
+        mvSigma2.reserve(F.mapPoints.size());
+        mvP3Dw.reserve(F.mapPoints.size());
+        mvKeyPointIndices.reserve(F.mapPoints.size());
+        mvAllIndices.reserve(F.mapPoints.size());
 
         int idx = 0;
         for (size_t i = 0, iend = mvpMapPointMatches.size(); i < iend; i++)
@@ -70,12 +70,12 @@ namespace core
             {
                 if (!pMP->isBad())
                 {
-                    if (i >= F.mvKeysUn.size())
+                    if (i >= F.keyPointsUndistorted.size())
                         continue;
-                    const cv::KeyPoint &kp = F.mvKeysUn[i];
+                    const cv::KeyPoint &kp = F.keyPointsUndistorted[i];
 
                     mvP2D.push_back(kp.pt);
-                    mvSigma2.push_back(F.mvLevelSigma2[kp.octave]);
+                    mvSigma2.push_back(F.levelSigmaSquared[kp.octave]);
 
                     // Bearing vector should be normalized
                     cv::Point3f cv_br = mpCamera->unproject(kp.pt);

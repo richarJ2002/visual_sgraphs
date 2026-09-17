@@ -1469,7 +1469,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
 
     mScale = 1.0;
 
-    mInitTime = mpTracker->mLastFrame.mTimeStamp - vpKF.front()->mTimeStamp;
+    mInitTime = mpTracker->mLastFrame.timeStamp - vpKF.front()->mTimeStamp;
 
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
     Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(),
@@ -1530,7 +1530,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     if (!mpAtlas->isImuInitialized())
     {
         mpAtlas->SetImuInitialized();
-        mpTracker->t0IMU        = mpTracker->mCurrentFrame.mTimeStamp;
+        mpTracker->t0IMU        = mpTracker->mCurrentFrame.timeStamp;
         mpCurrentKeyFrame->bImu = true;
     }
 

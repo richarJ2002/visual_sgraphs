@@ -1602,20 +1602,20 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
         for (int i = 0; i < N; i++)
         {
-            MapPoint *pMP = pFrame->mvpMapPoints[i];
+            MapPoint *pMP = pFrame->mapPoints[i];
             if (pMP)
             {
                 // Conventional SLAM
-                if (!pFrame->mpCamera2)
+                if (!pFrame->p_camera2)
                 {
                     // Monocular observation
-                    if (pFrame->mvuRight[i] < 0)
+                    if (pFrame->uRight[i] < 0)
                     {
                         nInitialCorrespondences++;
-                        pFrame->mvbOutlier[i] = false;
+                        pFrame->outlierFlags[i] = false;
 
                         Eigen::Matrix<double, 2, 1> obs;
-                        const cv::KeyPoint         &kpUn = pFrame->mvKeysUn[i];
+                        const cv::KeyPoint         &kpUn = pFrame->keyPointsUndistorted[i];
                         obs << kpUn.pt.x, kpUn.pt.y;
 
                         vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *e =
@@ -1627,7 +1627,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                                 optimizer.vertex(0)));
                         e->setMeasurement(obs);
                         const float invSigma2 =
-                            pFrame->mvInvLevelSigma2[kpUn.octave];
+                            pFrame->invLevelSigmaSquared[kpUn.octave];
                         e->setInformation(Eigen::Matrix2d::Identity() *
                                           invSigma2);
 
@@ -1635,7 +1635,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         e->setRobustKernel(rk);
                         rk->setDelta(deltaMono);
 
-                        e->pCamera = pFrame->mpCamera;
+                        e->pCamera = pFrame->p_camera;
                         e->Xw      = pMP->GetWorldPos().cast<double>();
 
                         optimizer.addEdge(e);
@@ -1646,11 +1646,11 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                     else // Stereo observation
                     {
                         nInitialCorrespondences++;
-                        pFrame->mvbOutlier[i] = false;
+                        pFrame->outlierFlags[i] = false;
 
                         Eigen::Matrix<double, 3, 1> obs;
-                        const cv::KeyPoint         &kpUn  = pFrame->mvKeysUn[i];
-                        const float                &kp_ur = pFrame->mvuRight[i];
+                        const cv::KeyPoint         &kpUn  = pFrame->keyPointsUndistorted[i];
+                        const float                &kp_ur = pFrame->uRight[i];
                         obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
                         g2o::EdgeStereoSE3ProjectXYZOnlyPose *e =
@@ -1662,7 +1662,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                                 optimizer.vertex(0)));
                         e->setMeasurement(obs);
                         const float invSigma2 =
-                            pFrame->mvInvLevelSigma2[kpUn.octave];
+                            pFrame->invLevelSigmaSquared[kpUn.octave];
                         Eigen::Matrix3d Info =
                             Eigen::Matrix3d::Identity() * invSigma2;
                         e->setInformation(Info);
@@ -1693,9 +1693,9 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
                     if (i < pFrame->Nleft)
                     { // Left camera observation
-                        kpUn = pFrame->mvKeys[i];
+                        kpUn = pFrame->keyPoints[i];
 
-                        pFrame->mvbOutlier[i] = false;
+                        pFrame->outlierFlags[i] = false;
 
                         Eigen::Matrix<double, 2, 1> obs;
                         obs << kpUn.pt.x, kpUn.pt.y;
@@ -1709,7 +1709,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                                 optimizer.vertex(0)));
                         e->setMeasurement(obs);
                         const float invSigma2 =
-                            pFrame->mvInvLevelSigma2[kpUn.octave];
+                            pFrame->invLevelSigmaSquared[kpUn.octave];
                         e->setInformation(Eigen::Matrix2d::Identity() *
                                           invSigma2);
 
@@ -1717,7 +1717,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         e->setRobustKernel(rk);
                         rk->setDelta(deltaMono);
 
-                        e->pCamera = pFrame->mpCamera;
+                        e->pCamera = pFrame->p_camera;
                         e->Xw      = pMP->GetWorldPos().cast<double>();
 
                         optimizer.addEdge(e);
@@ -1727,12 +1727,12 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                     }
                     else
                     {
-                        kpUn = pFrame->mvKeysRight[i - pFrame->Nleft];
+                        kpUn = pFrame->keyPointsRight[i - pFrame->Nleft];
 
                         Eigen::Matrix<double, 2, 1> obs;
                         obs << kpUn.pt.x, kpUn.pt.y;
 
-                        pFrame->mvbOutlier[i] = false;
+                        pFrame->outlierFlags[i] = false;
 
                         vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody *e =
                             new vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody();
@@ -1743,7 +1743,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                                 optimizer.vertex(0)));
                         e->setMeasurement(obs);
                         const float invSigma2 =
-                            pFrame->mvInvLevelSigma2[kpUn.octave];
+                            pFrame->invLevelSigmaSquared[kpUn.octave];
                         e->setInformation(Eigen::Matrix2d::Identity() *
                                           invSigma2);
 
@@ -1751,7 +1751,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         e->setRobustKernel(rk);
                         rk->setDelta(deltaMono);
 
-                        e->pCamera = pFrame->mpCamera2;
+                        e->pCamera = pFrame->p_camera2;
                         e->Xw      = pMP->GetWorldPos().cast<double>();
 
                         e->mTrl = g2o::SE3Quat(pFrame->GetRelativePoseTrl()
@@ -1773,17 +1773,17 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
     // DEPTH-AIDED TRACKING: Add depth residuals for RGB-D frames
     // This provides additional constraints from depth measurements
-    bool isRGBD = (pFrame->mvDepth.size() > 0 && !pFrame->mpCamera2);
+    bool isRGBD = (pFrame->depths.size() > 0 && !pFrame->p_camera2);
     if (isRGBD)
     {
         unique_lock<mutex> lock(MapPoint::mGlobalMutex);
         for (int i = 0; i < N; i++)
         {
-            MapPoint *pMP = pFrame->mvpMapPoints[i];
-            if (pMP && !pFrame->mvbOutlier[i] && i < (int)pFrame->mvDepth.size())
+            MapPoint *pMP = pFrame->mapPoints[i];
+            if (pMP && !pFrame->outlierFlags[i] && i < (int)pFrame->depths.size())
             {
-                float depth = pFrame->mvDepth[i];
-                if (depth > 0 && depth < pFrame->mThDepth) // Only use reliable close depths
+                float depth = pFrame->depths[i];
+                if (depth > 0 && depth < pFrame->depthThreshold) // Only use reliable close depths
                 {
                     nInitialCorrespondences++;
                     
@@ -1806,7 +1806,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                     e->setRobustKernel(rk);
                     rk->setDelta(deltaDepth);
 
-                    e->pCamera = pFrame->mpCamera;
+                    e->pCamera = pFrame->p_camera;
                     e->Xw      = pMP->GetWorldPos().cast<double>();
 
                     optimizer.addEdge(e);
@@ -1839,7 +1839,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
         optimizer.optimize(its[it]);
 
         // before the last step, remove bad map points
-        KeyFrame *refKF = pFrame->mpReferenceKF;
+        KeyFrame *refKF = pFrame->p_referenceKeyFrame;
         if (sysParams->refineMapPoints.enabled && refKF && it == 2)
         {
             vector<geometric::Plane *>               vpPlanes;
@@ -1885,7 +1885,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                 // for each map point in the frame, check if it is on the plane
                 for (size_t j = 0; j < pFrame->N; j++)
                 {
-                    MapPoint *pMP = pFrame->mvpMapPoints[j];
+                    MapPoint *pMP = pFrame->mapPoints[j];
                     if (!pMP || pMP->isBad())
                         continue;
 
@@ -1905,10 +1905,10 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         // check if the map point is in the plane cloud
                         if (pPlane->isPointinPlaneCloud(intersect))
                         {
-                            pFrame->mvpMapPoints[j]->SetBadFlag();
-                            pFrame->mvpMapPoints[j] =
+                            pFrame->mapPoints[j]->SetBadFlag();
+                            pFrame->mapPoints[j] =
                                 static_cast<MapPoint *>(nullptr);
-                            pFrame->mvbOutlier[j] = true;
+                            pFrame->outlierFlags[j] = true;
                         }
                     }
                 }
@@ -1924,9 +1924,9 @@ int Optimizer::PoseOptimization(Frame *pFrame)
             if (it == 2)
                 e->setRobustKernel(0);
 
-            if (pFrame->mvbOutlier[idx])
+            if (pFrame->outlierFlags[idx])
             {
-                if (!pFrame->mvpMapPoints[idx])
+                if (!pFrame->mapPoints[idx])
                 {
                     optimizer.removeEdge(e);
                     nBad++;
@@ -1939,13 +1939,13 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
             if (chi2 > chi2Mono[it])
             {
-                pFrame->mvbOutlier[idx] = true;
+                pFrame->outlierFlags[idx] = true;
                 e->setLevel(1);
                 nBad++;
             }
             else
             {
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
                 e->setLevel(0);
             }
         }
@@ -1958,9 +1958,9 @@ int Optimizer::PoseOptimization(Frame *pFrame)
             if (it == 2)
                 e->setRobustKernel(0);
 
-            if (pFrame->mvbOutlier[idx])
+            if (pFrame->outlierFlags[idx])
             {
-                if (!pFrame->mvpMapPoints[idx])
+                if (!pFrame->mapPoints[idx])
                 {
                     optimizer.removeEdge(e);
                     nBad++;
@@ -1973,13 +1973,13 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
             if (chi2 > chi2Mono[it])
             {
-                pFrame->mvbOutlier[idx] = true;
+                pFrame->outlierFlags[idx] = true;
                 e->setLevel(1);
                 nBad++;
             }
             else
             {
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
                 e->setLevel(0);
             }
         }
@@ -1992,9 +1992,9 @@ int Optimizer::PoseOptimization(Frame *pFrame)
             if (it == 2)
                 e->setRobustKernel(0);
 
-            if (pFrame->mvbOutlier[idx])
+            if (pFrame->outlierFlags[idx])
             {
-                if (!pFrame->mvpMapPoints[idx])
+                if (!pFrame->mapPoints[idx])
                 {
                     optimizer.removeEdge(e);
                     nBad++;
@@ -2007,14 +2007,14 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
             if (chi2 > chi2Stereo[it])
             {
-                pFrame->mvbOutlier[idx] = true;
+                pFrame->outlierFlags[idx] = true;
                 e->setLevel(1);
                 nBad++;
             }
             else
             {
                 e->setLevel(0);
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
             }
         }
 
@@ -2027,9 +2027,9 @@ int Optimizer::PoseOptimization(Frame *pFrame)
             if (it == 2)
                 e->setRobustKernel(0);
 
-            if (pFrame->mvbOutlier[idx])
+            if (pFrame->outlierFlags[idx])
             {
-                if (!pFrame->mvpMapPoints[idx])
+                if (!pFrame->mapPoints[idx])
                 {
                     optimizer.removeEdge(e);
                     nBad++;
@@ -2042,14 +2042,14 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
             if (chi2 > deltaDepth)
             {
-                pFrame->mvbOutlier[idx] = true;
+                pFrame->outlierFlags[idx] = true;
                 e->setLevel(1);
                 nBad++;
             }
             else
             {
                 e->setLevel(0);
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
             }
         }
 
@@ -6915,21 +6915,21 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
 
         for (int i = 0; i < N; i++)
         {
-            MapPoint *pMP = pFrame->mvpMapPoints[i];
+            MapPoint *pMP = pFrame->mapPoints[i];
             if (pMP)
             {
                 cv::KeyPoint kpUn;
 
                 // Left monocular observation
-                if ((!bRight && pFrame->mvuRight[i] < 0) || i < Nleft)
+                if ((!bRight && pFrame->uRight[i] < 0) || i < Nleft)
                 {
                     if (i < Nleft) // pair left-right
-                        kpUn = pFrame->mvKeys[i];
+                        kpUn = pFrame->keyPoints[i];
                     else
-                        kpUn = pFrame->mvKeysUn[i];
+                        kpUn = pFrame->keyPointsUndistorted[i];
 
                     nInitialMonoCorrespondences++;
-                    pFrame->mvbOutlier[i] = false;
+                    pFrame->outlierFlags[i] = false;
 
                     Eigen::Matrix<double, 2, 1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
@@ -6941,10 +6941,10 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
                     e->setMeasurement(obs);
 
                     // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs);
+                    const float unc2 = pFrame->p_camera->uncertainty2(obs);
 
                     const float invSigma2 =
-                        pFrame->mvInvLevelSigma2[kpUn.octave] / unc2;
+                        pFrame->invLevelSigmaSquared[kpUn.octave] / unc2;
                     e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
 
                     g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
@@ -6960,10 +6960,10 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
                 else if (!bRight)
                 {
                     nInitialStereoCorrespondences++;
-                    pFrame->mvbOutlier[i] = false;
+                    pFrame->outlierFlags[i] = false;
 
-                    kpUn                              = pFrame->mvKeysUn[i];
-                    const float                 kp_ur = pFrame->mvuRight[i];
+                    kpUn                              = pFrame->keyPointsUndistorted[i];
+                    const float                 kp_ur = pFrame->uRight[i];
                     Eigen::Matrix<double, 3, 1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
@@ -6975,10 +6975,10 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
 
                     // Add here uncerteinty
                     const float unc2 =
-                        pFrame->mpCamera->uncertainty2(obs.head(2));
+                        pFrame->p_camera->uncertainty2(obs.head(2));
 
                     const float &invSigma2 =
-                        pFrame->mvInvLevelSigma2[kpUn.octave] / unc2;
+                        pFrame->invLevelSigmaSquared[kpUn.octave] / unc2;
                     e->setInformation(Eigen::Matrix3d::Identity() * invSigma2);
 
                     g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
@@ -6995,9 +6995,9 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
                 if (bRight && i >= Nleft)
                 {
                     nInitialMonoCorrespondences++;
-                    pFrame->mvbOutlier[i] = false;
+                    pFrame->outlierFlags[i] = false;
 
-                    kpUn = pFrame->mvKeysRight[i - Nleft];
+                    kpUn = pFrame->keyPointsRight[i - Nleft];
                     Eigen::Matrix<double, 2, 1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
 
@@ -7008,10 +7008,10 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
                     e->setMeasurement(obs);
 
                     // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs);
+                    const float unc2 = pFrame->p_camera->uncertainty2(obs);
 
                     const float invSigma2 =
-                        pFrame->mvInvLevelSigma2[kpUn.octave] / unc2;
+                        pFrame->invLevelSigmaSquared[kpUn.octave] / unc2;
                     e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
 
                     g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
@@ -7029,7 +7029,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
     nInitialCorrespondences =
         nInitialMonoCorrespondences + nInitialStereoCorrespondences;
 
-    KeyFrame   *pKF = pFrame->mpLastKeyFrame;
+    KeyFrame   *pKF = pFrame->p_lastKeyFrame;
     VertexPose *VPk = new VertexPose(pKF);
     VPk->setId(4);
     VPk->setFixed(true);
@@ -7047,7 +7047,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
     VAk->setFixed(true);
     optimizer.addVertex(VAk);
 
-    EdgeInertial *ei = new EdgeInertial(pFrame->mpImuPreintegrated);
+    EdgeInertial *ei = new EdgeInertial(pFrame->p_imuPreintegrated);
 
     ei->setVertex(0, VPk);
     ei->setVertex(1, VVk);
@@ -7060,7 +7060,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
     EdgeGyroRW *egr = new EdgeGyroRW();
     egr->setVertex(0, VGk);
     egr->setVertex(1, VG);
-    Eigen::Matrix3d InfoG = pFrame->mpImuPreintegrated->C.block<3, 3>(9, 9)
+    Eigen::Matrix3d InfoG = pFrame->p_imuPreintegrated->C.block<3, 3>(9, 9)
                                 .cast<double>()
                                 .inverse();
     egr->setInformation(InfoG);
@@ -7069,7 +7069,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
     EdgeAccRW *ear = new EdgeAccRW();
     ear->setVertex(0, VAk);
     ear->setVertex(1, VA);
-    Eigen::Matrix3d InfoA = pFrame->mpImuPreintegrated->C.block<3, 3>(12, 12)
+    Eigen::Matrix3d InfoA = pFrame->p_imuPreintegrated->C.block<3, 3>(12, 12)
                                 .cast<double>()
                                 .inverse();
     ear->setInformation(InfoA);
@@ -7109,24 +7109,24 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
 
             const size_t idx = vnIndexEdgeMono[i];
 
-            if (pFrame->mvbOutlier[idx])
+            if (pFrame->outlierFlags[idx])
             {
                 e->computeError();
             }
 
             const float chi2   = e->chi2();
-            bool        bClose = pFrame->mvpMapPoints[idx]->mTrackDepth < 10.f;
+            bool        bClose = pFrame->mapPoints[idx]->mTrackDepth < 10.f;
 
             if ((chi2 > chi2Mono[it] && !bClose) ||
                 (bClose && chi2 > chi2close) || !e->isDepthPositive())
             {
-                pFrame->mvbOutlier[idx] = true;
+                pFrame->outlierFlags[idx] = true;
                 e->setLevel(1);
                 nBadMono++;
             }
             else
             {
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
                 e->setLevel(0);
                 nInliersMono++;
             }
@@ -7142,7 +7142,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
 
             const size_t idx = vnIndexEdgeStereo[i];
 
-            if (pFrame->mvbOutlier[idx])
+            if (pFrame->outlierFlags[idx])
             {
                 e->computeError();
             }
@@ -7151,13 +7151,13 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
 
             if (chi2 > chi2Stereo[it])
             {
-                pFrame->mvbOutlier[idx] = true;
+                pFrame->outlierFlags[idx] = true;
                 e->setLevel(1); // not included in next optimization
                 nBadStereo++;
             }
             else
             {
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
                 e->setLevel(0);
                 nInliersStereo++;
             }
@@ -7189,7 +7189,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
             e1               = vpEdgesMono[i];
             e1->computeError();
             if (e1->chi2() < chi2MonoOut)
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
             else
                 nBad++;
         }
@@ -7199,7 +7199,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
             e2               = vpEdgesStereo[i];
             e2->computeError();
             if (e2->chi2() < chi2StereoOut)
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
             else
                 nBad++;
         }
@@ -7211,7 +7211,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
                                VV->estimate().cast<float>());
     Vector6d b;
     b << VG->estimate(), VA->estimate();
-    pFrame->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
+    pFrame->imuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
 
     // Recover Hessian, marginalize keyFframe states and generate new prior for
     // frame
@@ -7229,7 +7229,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
 
         const size_t idx = vnIndexEdgeMono[i];
 
-        if (!pFrame->mvbOutlier[idx])
+        if (!pFrame->outlierFlags[idx])
         {
             H.block<6, 6>(0, 0) += e->GetHessian();
             tot_in++;
@@ -7244,7 +7244,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
 
         const size_t idx = vnIndexEdgeStereo[i];
 
-        if (!pFrame->mvbOutlier[idx])
+        if (!pFrame->outlierFlags[idx])
         {
             H.block<6, 6>(0, 0) += e->GetHessian();
             tot_in++;
@@ -7253,7 +7253,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
             tot_out++;
     }
 
-    pFrame->mpcpi = new ConstraintPoseImu(VP->estimate().Rwb,
+    pFrame->p_poseImuConstraint = new ConstraintPoseImu(VP->estimate().Rwb,
                                           VP->estimate().twb,
                                           VV->estimate(),
                                           VG->estimate(),
@@ -7322,20 +7322,20 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
         for (int i = 0; i < N; i++)
         {
-            MapPoint *pMP = pFrame->mvpMapPoints[i];
+            MapPoint *pMP = pFrame->mapPoints[i];
             if (pMP)
             {
                 cv::KeyPoint kpUn;
                 // Left monocular observation
-                if ((!bRight && pFrame->mvuRight[i] < 0) || i < Nleft)
+                if ((!bRight && pFrame->uRight[i] < 0) || i < Nleft)
                 {
                     if (i < Nleft) // pair left-right
-                        kpUn = pFrame->mvKeys[i];
+                        kpUn = pFrame->keyPoints[i];
                     else
-                        kpUn = pFrame->mvKeysUn[i];
+                        kpUn = pFrame->keyPointsUndistorted[i];
 
                     nInitialMonoCorrespondences++;
-                    pFrame->mvbOutlier[i] = false;
+                    pFrame->outlierFlags[i] = false;
 
                     Eigen::Matrix<double, 2, 1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
@@ -7347,10 +7347,10 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                     e->setMeasurement(obs);
 
                     // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs);
+                    const float unc2 = pFrame->p_camera->uncertainty2(obs);
 
                     const float invSigma2 =
-                        pFrame->mvInvLevelSigma2[kpUn.octave] / unc2;
+                        pFrame->invLevelSigmaSquared[kpUn.octave] / unc2;
                     e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
 
                     g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
@@ -7366,10 +7366,10 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                 else if (!bRight)
                 {
                     nInitialStereoCorrespondences++;
-                    pFrame->mvbOutlier[i] = false;
+                    pFrame->outlierFlags[i] = false;
 
-                    kpUn                              = pFrame->mvKeysUn[i];
-                    const float                 kp_ur = pFrame->mvuRight[i];
+                    kpUn                              = pFrame->keyPointsUndistorted[i];
+                    const float                 kp_ur = pFrame->uRight[i];
                     Eigen::Matrix<double, 3, 1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
@@ -7381,10 +7381,10 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
                     // Add here uncerteinty
                     const float unc2 =
-                        pFrame->mpCamera->uncertainty2(obs.head(2));
+                        pFrame->p_camera->uncertainty2(obs.head(2));
 
                     const float &invSigma2 =
-                        pFrame->mvInvLevelSigma2[kpUn.octave] / unc2;
+                        pFrame->invLevelSigmaSquared[kpUn.octave] / unc2;
                     e->setInformation(Eigen::Matrix3d::Identity() * invSigma2);
 
                     g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
@@ -7401,9 +7401,9 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                 if (bRight && i >= Nleft)
                 {
                     nInitialMonoCorrespondences++;
-                    pFrame->mvbOutlier[i] = false;
+                    pFrame->outlierFlags[i] = false;
 
-                    kpUn = pFrame->mvKeysRight[i - Nleft];
+                    kpUn = pFrame->keyPointsRight[i - Nleft];
                     Eigen::Matrix<double, 2, 1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
 
@@ -7414,10 +7414,10 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                     e->setMeasurement(obs);
 
                     // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs);
+                    const float unc2 = pFrame->p_camera->uncertainty2(obs);
 
                     const float invSigma2 =
-                        pFrame->mvInvLevelSigma2[kpUn.octave] / unc2;
+                        pFrame->invLevelSigmaSquared[kpUn.octave] / unc2;
                     e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
 
                     g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
@@ -7437,7 +7437,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
         nInitialMonoCorrespondences + nInitialStereoCorrespondences;
 
     // Set Previous Frame Vertex
-    Frame *pFp = pFrame->mpPrevFrame;
+    Frame *pFp = pFrame->p_previousFrame;
 
     VertexPose *VPk = new VertexPose(pFp);
     VPk->setId(4);
@@ -7456,7 +7456,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     VAk->setFixed(false);
     optimizer.addVertex(VAk);
 
-    EdgeInertial *ei = new EdgeInertial(pFrame->mpImuPreintegratedFrame.get());
+    EdgeInertial *ei = new EdgeInertial(pFrame->p_imuPreintegratedFrame.get());
 
     ei->setVertex(0, VPk);
     ei->setVertex(1, VVk);
@@ -7469,7 +7469,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     EdgeGyroRW *egr = new EdgeGyroRW();
     egr->setVertex(0, VGk);
     egr->setVertex(1, VG);
-    Eigen::Matrix3d InfoG = pFrame->mpImuPreintegrated->C.block<3, 3>(9, 9)
+    Eigen::Matrix3d InfoG = pFrame->p_imuPreintegrated->C.block<3, 3>(9, 9)
                                 .cast<double>()
                                 .inverse();
     egr->setInformation(InfoG);
@@ -7478,16 +7478,16 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     EdgeAccRW *ear = new EdgeAccRW();
     ear->setVertex(0, VAk);
     ear->setVertex(1, VA);
-    Eigen::Matrix3d InfoA = pFrame->mpImuPreintegrated->C.block<3, 3>(12, 12)
+    Eigen::Matrix3d InfoA = pFrame->p_imuPreintegrated->C.block<3, 3>(12, 12)
                                 .cast<double>()
                                 .inverse();
     ear->setInformation(InfoA);
     optimizer.addEdge(ear);
 
     EdgePriorPoseImu *ep = nullptr;
-    if (pFp->mpcpi)
+    if (pFp->p_poseImuConstraint)
     {
-        ep = new EdgePriorPoseImu(pFp->mpcpi);
+        ep = new EdgePriorPoseImu(pFp->p_poseImuConstraint);
 
         ep->setVertex(0, VPk);
         ep->setVertex(1, VVk);
@@ -7500,7 +7500,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     }
     else
     {
-        Verbose::PrintMess("pFp->mpcpi does not exist!!!\nPrevious Frame " +
+        Verbose::PrintMess("pFp->p_poseImuConstraint does not exist!!!\nPrevious Frame " +
                                to_string(pFp->mnId),
                            Verbose::VERBOSITY_NORMAL);
     }
@@ -7536,9 +7536,9 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
             EdgeMonoOnlyPose *e = vpEdgesMono[i];
 
             const size_t idx    = vnIndexEdgeMono[i];
-            bool         bClose = pFrame->mvpMapPoints[idx]->mTrackDepth < 10.f;
+            bool         bClose = pFrame->mapPoints[idx]->mTrackDepth < 10.f;
 
-            if (pFrame->mvbOutlier[idx])
+            if (pFrame->outlierFlags[idx])
             {
                 e->computeError();
             }
@@ -7548,13 +7548,13 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
             if ((chi2 > chi2Mono[it] && !bClose) ||
                 (bClose && chi2 > chi2close) || !e->isDepthPositive())
             {
-                pFrame->mvbOutlier[idx] = true;
+                pFrame->outlierFlags[idx] = true;
                 e->setLevel(1);
                 nBadMono++;
             }
             else
             {
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
                 e->setLevel(0);
                 nInliersMono++;
             }
@@ -7569,7 +7569,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
             const size_t idx = vnIndexEdgeStereo[i];
 
-            if (pFrame->mvbOutlier[idx])
+            if (pFrame->outlierFlags[idx])
             {
                 e->computeError();
             }
@@ -7578,13 +7578,13 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
             if (chi2 > chi2Stereo[it])
             {
-                pFrame->mvbOutlier[idx] = true;
+                pFrame->outlierFlags[idx] = true;
                 e->setLevel(1);
                 nBadStereo++;
             }
             else
             {
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
                 e->setLevel(0);
                 nInliersStereo++;
             }
@@ -7615,7 +7615,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
             e1               = vpEdgesMono[i];
             e1->computeError();
             if (e1->chi2() < chi2MonoOut)
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
             else
                 nBad++;
         }
@@ -7625,7 +7625,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
             e2               = vpEdgesStereo[i];
             e2->computeError();
             if (e2->chi2() < chi2StereoOut)
-                pFrame->mvbOutlier[idx] = false;
+                pFrame->outlierFlags[idx] = false;
             else
                 nBad++;
         }
@@ -7639,7 +7639,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                                VV->estimate().cast<float>());
     Vector6d b;
     b << VG->estimate(), VA->estimate();
-    pFrame->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
+    pFrame->imuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
 
     // Recover Hessian, marginalize previous frame states and generate new prior
     // for frame
@@ -7670,7 +7670,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
         const size_t idx = vnIndexEdgeMono[i];
 
-        if (!pFrame->mvbOutlier[idx])
+        if (!pFrame->outlierFlags[idx])
         {
             H.block<6, 6>(15, 15) += e->GetHessian();
             tot_in++;
@@ -7685,7 +7685,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
         const size_t idx = vnIndexEdgeStereo[i];
 
-        if (!pFrame->mvbOutlier[idx])
+        if (!pFrame->outlierFlags[idx])
         {
             H.block<6, 6>(15, 15) += e->GetHessian();
             tot_in++;
@@ -7696,14 +7696,14 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
     H = Marginalize(H, 0, 14);
 
-    pFrame->mpcpi = new ConstraintPoseImu(VP->estimate().Rwb,
+    pFrame->p_poseImuConstraint = new ConstraintPoseImu(VP->estimate().Rwb,
                                           VP->estimate().twb,
                                           VV->estimate(),
                                           VG->estimate(),
                                           VA->estimate(),
                                           H.block<15, 15>(15, 15));
-    delete pFp->mpcpi;
-    pFp->mpcpi = nullptr;
+    delete pFp->p_poseImuConstraint;
+    pFp->p_poseImuConstraint = nullptr;
 
     return nInitialCorrespondences - nBad;
 }

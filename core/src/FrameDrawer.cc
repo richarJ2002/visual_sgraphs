@@ -372,13 +372,13 @@ namespace core
     {
         unique_lock<mutex> lock(mMutex);
         pTracker->mImGray.copyTo(mIm);
-        mvCurrentKeys = pTracker->mCurrentFrame.mvKeys;
-        mThDepth = pTracker->mCurrentFrame.mThDepth;
-        mvCurrentDepth = pTracker->mCurrentFrame.mvDepth;
+        mvCurrentKeys = pTracker->mCurrentFrame.keyPoints;
+        mThDepth = pTracker->mCurrentFrame.depthThreshold;
+        mvCurrentDepth = pTracker->mCurrentFrame.depths;
 
         if (both)
         {
-            mvCurrentKeysRight = pTracker->mCurrentFrame.mvKeysRight;
+            mvCurrentKeysRight = pTracker->mCurrentFrame.keyPointsRight;
             pTracker->mImRight.copyTo(mImRight);
             N = mvCurrentKeys.size() + mvCurrentKeysRight.size();
         }
@@ -393,7 +393,7 @@ namespace core
 
         // Variables for the new visualization
         mCurrentFrame = pTracker->mCurrentFrame;
-        mmProjectPoints = mCurrentFrame.mmProjectPoints;
+        mmProjectPoints = mCurrentFrame.projectedPoints;
         mmMatchedInImage.clear();
 
         mvpLocalMap = pTracker->GetLocalMapMPS();
@@ -408,17 +408,17 @@ namespace core
 
         if (pTracker->mLastProcessedState == Tracking::NOT_INITIALIZED)
         {
-            mvIniKeys = pTracker->mInitialFrame.mvKeys;
+            mvIniKeys = pTracker->mInitialFrame.keyPoints;
             mvIniMatches = pTracker->mvIniMatches;
         }
         else if (pTracker->mLastProcessedState == Tracking::OK)
         {
             for (int i = 0; i < N; i++)
             {
-                MapPoint *pMP = pTracker->mCurrentFrame.mvpMapPoints[i];
+                MapPoint *pMP = pTracker->mCurrentFrame.mapPoints[i];
                 if (pMP)
                 {
-                    if (!pTracker->mCurrentFrame.mvbOutlier[i])
+                    if (!pTracker->mCurrentFrame.outlierFlags[i])
                     {
                         if (pMP->Observations() > 0)
                             mvbMap[i] = true;

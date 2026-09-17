@@ -100,11 +100,11 @@ KeyFrame::KeyFrame() :
 KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     bImu(pMap->isImuInitialized()),
     mnFrameId(F.mnId),
-    mTimeStamp(F.mTimeStamp),
+    mTimeStamp(F.timeStamp),
     mnGridCols(FRAME_GRID_COLS),
     mnGridRows(FRAME_GRID_ROWS),
-    mfGridElementWidthInv(F.mfGridElementWidthInv),
-    mfGridElementHeightInv(F.mfGridElementHeightInv),
+    mfGridElementWidthInv(F.gridElementWidthInverse),
+    mfGridElementHeightInv(F.gridElementHeightInverse),
     mnTrackReferenceForFrame(0),
     mnFuseTargetForKF(0),
     mnBALocalForKF(0),
@@ -126,59 +126,59 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     invfy(F.invfy),
     mbf(F.mbf),
     mb(F.mb),
-    mThDepth(F.mThDepth),
+    mThDepth(F.depthThreshold),
     N(F.N),
-    mvKeys(F.mvKeys),
-    mvKeysUn(F.mvKeysUn),
-    mvuRight(F.mvuRight),
-    mvDepth(F.mvDepth),
-    mDescriptors(F.mDescriptors.clone()),
-    mBowVec(F.mBowVec),
-    mFeatVec(F.mFeatVec),
-    mnScaleLevels(F.mnScaleLevels),
-    mfScaleFactor(F.mfScaleFactor),
-    mfLogScaleFactor(F.mfLogScaleFactor),
-    mvScaleFactors(F.mvScaleFactors),
-    mvLevelSigma2(F.mvLevelSigma2),
-    mvInvLevelSigma2(F.mvInvLevelSigma2),
-    mnMinX(F.mnMinX),
-    mnMinY(F.mnMinY),
-    mnMaxX(F.mnMaxX),
-    mnMaxY(F.mnMaxY),
-    mK_(F.mK_),
+    mvKeys(F.keyPoints),
+    mvKeysUn(F.keyPointsUndistorted),
+    mvuRight(F.uRight),
+    mvDepth(F.depths),
+    mDescriptors(F.descriptors.clone()),
+    mBowVec(F.bowVector),
+    mFeatVec(F.featureVector),
+    mnScaleLevels(F.scaleLevelCount),
+    mfScaleFactor(F.scaleFactor),
+    mfLogScaleFactor(F.logScaleFactor),
+    mvScaleFactors(F.scaleFactors),
+    mvLevelSigma2(F.levelSigmaSquared),
+    mvInvLevelSigma2(F.invLevelSigmaSquared),
+    mnMinX(F.gridMinX),
+    mnMinY(F.gridMinY),
+    mnMaxX(F.gridMaxX),
+    mnMaxY(F.gridMaxY),
+    mK_(F.calibrationMatrixEigen),
     mPrevKF(nullptr),
     mNextKF(nullptr),
-    mpImuPreintegrated(F.mpImuPreintegrated),
-    mImuCalib(F.mImuCalib),
-    mvpMapPoints(F.mvpMapPoints),
+    mpImuPreintegrated(F.p_imuPreintegrated),
+    mImuCalib(F.imuCalibration),
+    mvpMapPoints(F.mapPoints),
     mpKeyFrameDB(pKFDB),
-    mpORBvocabulary(F.mpORBvocabulary),
+    mpORBvocabulary(F.p_orbVocabulary),
     mbFirstConnection(true),
     mpParent(nullptr),
-    mDistCoef(F.mDistCoef),
+    mDistCoef(F.distortionCoefficients),
     mbNotErase(false),
-    mnDataset(F.mnDataset),
+    mnDataset(F.datasetId),
     mbToBeErased(false),
     mbBad(false),
     mHalfBaseline(F.mb / 2),
     mpMap(pMap),
     mbCurrentPlaceRecognition(false),
-    mNameFile(F.mNameFile),
+    mNameFile(F.fileName),
     mnMergeCorrectedForKF(0),
-    mpCamera(F.mpCamera),
-    mpCamera2(F.mpCamera2),
-    mvLeftToRightMatch(F.mvLeftToRightMatch),
-    mvRightToLeftMatch(F.mvRightToLeftMatch),
+    mpCamera(F.p_camera),
+    mpCamera2(F.p_camera2),
+    mvLeftToRightMatch(F.leftToRightMatches),
+    mvRightToLeftMatch(F.rightToLeftMatches),
     mTlr(F.GetRelativePoseTlr()),
-    mvKeysRight(F.mvKeysRight),
+    mvKeysRight(F.keyPointsRight),
     NLeft(F.Nleft),
     NRight(F.Nright),
     mTrl(F.GetRelativePoseTrl()),
     mnNumberOfOpt(0),
     mbHasVelocity(false),
-    mCurrentFrameMarkers(F.mvpMapMarkers),
-    mCurrentFrameMapPoints(F.mvpMapPoints),
-    mCurrentFramePointClouds(F.mvpPointClouds),
+    mCurrentFrameMarkers(F.mapMarkers),
+    mCurrentFrameMapPoints(F.mapPoints),
+    mCurrentFramePointClouds(F.pointClouds),
     mImage(F.colorImg),
     isPublished(false)
 {
@@ -194,10 +194,10 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
             mGridRight[i].resize(mnGridRows);
         for (int j = 0; j < mnGridRows; j++)
         {
-            mGrid[i][j] = F.mGrid[i][j];
+            mGrid[i][j] = F.grid[i][j];
             if (F.Nleft != -1)
             {
-                mGridRight[i][j] = F.mGridRight[i][j];
+                mGridRight[i][j] = F.gridRight[i][j];
             }
         }
     }
@@ -213,7 +213,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
         mbHasVelocity = true;
     }
 
-    mImuBias = F.mImuBias;
+    mImuBias = F.imuBias;
     SetPose(F.GetPose());
 
     mnOriginMapId = pMap->GetId();

@@ -588,8 +588,8 @@ Sophus::SE3f System::TrackStereo(const cv::Mat              &imLeft,
     mTrackingState           = mpTracker->mState;
     mTrackingInliers         = mpTracker->GetMatchesInliers();
     mLastFrameTimestamp      = timestamp;
-    mTrackedMapPoints        = mpTracker->mCurrentFrame.mvpMapPoints;
-    mTrackedKeyPointsUn      = mpTracker->mCurrentFrame.mvKeysUn;
+    mTrackedMapPoints        = mpTracker->mCurrentFrame.mapPoints;
+    mTrackedKeyPointsUn      = mpTracker->mCurrentFrame.keyPointsUndistorted;
     mCurrentCameraPose_World = Tcw.inverse();
     mCurrentCameraPoseValid =
         mTrackingState == Tracking::OK &&
@@ -687,8 +687,8 @@ Sophus::SE3f
     mTrackingState      = mpTracker->mState;
     mTrackingInliers    = mpTracker->GetMatchesInliers();
     mLastFrameTimestamp = timestamp;
-    mTrackedMapPoints   = mpTracker->mCurrentFrame.mvpMapPoints;
-    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+    mTrackedMapPoints   = mpTracker->mCurrentFrame.mapPoints;
+    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.keyPointsUndistorted;
 
     mCurrentCameraPose_World = Tcw.inverse();
     mCurrentCameraPoseValid =
@@ -837,8 +837,8 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat              &im,
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState      = mpTracker->mState;
-    mTrackedMapPoints   = mpTracker->mCurrentFrame.mvpMapPoints;
-    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+    mTrackedMapPoints   = mpTracker->mCurrentFrame.mapPoints;
+    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.keyPointsUndistorted;
     return Tcw;
 }
 

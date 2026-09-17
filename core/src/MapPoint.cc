@@ -180,17 +180,17 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos,
 
     Eigen::Vector3f PC   = mWorldPos - Ow;
     const float     dist = PC.norm();
-    const int   level    = (pFrame->Nleft == -1) ? pFrame->mvKeysUn[idxF].octave
+    const int   level    = (pFrame->Nleft == -1) ? pFrame->keyPointsUndistorted[idxF].octave
                            : (idxF < pFrame->Nleft)
-                               ? pFrame->mvKeys[idxF].octave
-                               : pFrame->mvKeysRight[idxF].octave;
-    const float levelScaleFactor = pFrame->mvScaleFactors[level];
-    const int   nLevels          = pFrame->mnScaleLevels;
+                               ? pFrame->keyPoints[idxF].octave
+                               : pFrame->keyPointsRight[idxF].octave;
+    const float levelScaleFactor = pFrame->scaleFactors[level];
+    const int   nLevels          = pFrame->scaleLevelCount;
 
     mfMaxDistance = dist * levelScaleFactor;
-    mfMinDistance = mfMaxDistance / pFrame->mvScaleFactors[nLevels - 1];
+    mfMinDistance = mfMaxDistance / pFrame->scaleFactors[nLevels - 1];
 
-    pFrame->mDescriptors.row(idxF).copyTo(mDescriptor);
+    pFrame->descriptors.row(idxF).copyTo(mDescriptor);
 
     // MapPoints can be created from Tracking and Local Mapping. This mutex
     // avoid conflicts with id.
@@ -680,11 +680,11 @@ int MapPoint::PredictScale(const float &currentDist, Frame *pF)
         ratio = mfMaxDistance / currentDist;
     }
 
-    int nScale = ceil(log(ratio) / pF->mfLogScaleFactor);
+    int nScale = ceil(log(ratio) / pF->logScaleFactor);
     if (nScale < 0)
         nScale = 0;
-    else if (nScale >= pF->mnScaleLevels)
-        nScale = pF->mnScaleLevels - 1;
+    else if (nScale >= pF->scaleLevelCount)
+        nScale = pF->scaleLevelCount - 1;
 
     return nScale;
 }
