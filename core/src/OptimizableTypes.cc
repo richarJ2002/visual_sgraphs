@@ -187,7 +187,11 @@ namespace core
         double y = xyz_trans[1];
         double z = xyz_trans[2];
 
-        auto projectionJacobian = -pCamera->computeProjectionJacobian(xyz_trans);
+    // Materialize eagerly: computeProjectionJacobian() returns by value,
+    // so `auto` would capture a lazy expression referencing a dead
+    // temporary (stack-use-after-scope under vectorized evaluation).
+    const Eigen::Matrix<double, 2, 3> projectionJacobian =
+        -pCamera->computeProjectionJacobian(xyz_trans);
 
         _jacobianOplusXi = projectionJacobian * T.rotation().toRotationMatrix();
 
