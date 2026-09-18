@@ -420,7 +420,7 @@ namespace core
                 {
                     if (!pTracker->mCurrentFrame.outlierFlags[i])
                     {
-                        if (pMP->Observations() > 0)
+                        if (pMP->getObservationCount() > 0)
                             mvbMap[i] = true;
                         else
                             mvbVO[i] = true;

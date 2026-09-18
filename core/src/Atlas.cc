@@ -508,7 +508,7 @@ void Atlas::AddKeyFrame(KeyFrame *pKF)
 
 void Atlas::AddMapPoint(MapPoint *pMP)
 {
-    Map *pMapMP = pMP->GetMap();
+    Map *pMapMP = pMP->getMap();
     pMapMP->AddMapPoint(pMP);
 }
 
@@ -1180,7 +1180,7 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     for (MapPoint *p_mapPoint : importedMapPoints)
     {
         if (p_mapPoint == nullptr ||
-            !ownerIsTransferable(p_mapPoint->GetMap()) ||
+            !ownerIsTransferable(p_mapPoint->getMap()) ||
             destinationMapPointSet.count(p_mapPoint) > 0U)
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source map "
@@ -1300,7 +1300,7 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
 
         for (MapPoint *p_mapPoint : importedMapPoints)
         {
-            p_mapPoint->UpdateMap(p_currentMap_in);
+            p_mapPoint->updateMap(p_currentMap_in);
             p_currentMap_in->AddMapPoint(p_mapPoint);
             p_otherMap_in->EraseMapPoint(p_mapPoint);
         }
@@ -1392,7 +1392,7 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
         for (MapPoint *p_mapPoint : importedReferenceMapPoints)
         {
             if (p_mapPoint != nullptr &&
-                p_mapPoint->GetMap() == p_currentMap_in &&
+                p_mapPoint->getMap() == p_currentMap_in &&
                 std::find(mergedReferenceMapPoints.begin(),
                           mergedReferenceMapPoints.end(),
                           p_mapPoint) == mergedReferenceMapPoints.end())

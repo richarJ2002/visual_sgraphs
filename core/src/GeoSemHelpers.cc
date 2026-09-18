@@ -294,7 +294,7 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
         {
             /* If the orb feature is within the plane, set as map point */
             if (newMapPlane->isPointinPlaneCloud(
-                    mapPoint->GetWorldPos().cast<double>()))
+                    mapPoint->getWorldPos().cast<double>()))
             {
                 newMapPlane->setMapPoints(mapPoint);
             }
@@ -377,7 +377,7 @@ void GeoSemHelpers::updateMapPlane(
     {
         for (const auto &mapPoint : pKF->GetMapPoints())
             if (currentPlane->isPointinPlaneCloud(
-                    mapPoint->GetWorldPos().cast<double>()))
+                    mapPoint->getWorldPos().cast<double>()))
                 currentPlane->setMapPoints(mapPoint);
     }
 }

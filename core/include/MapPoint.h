@@ -114,52 +114,52 @@ namespace core
         MapPoint(const double invDepth, cv::Point2f uv_init, KeyFrame *pRefKF, KeyFrame *pHostKF, Map *pMap);
         MapPoint(const Eigen::Vector3f &Pos, Map *pMap, Frame *pFrame, const int &idxF);
 
-        void SetWorldPos(const Eigen::Vector3f &Pos);
-        Eigen::Vector3f GetWorldPos();
+        void setWorldPos(const Eigen::Vector3f &Pos);
+        Eigen::Vector3f getWorldPos();
 
-        Eigen::Vector3f GetNormal();
-        void SetNormalVector(const Eigen::Vector3f &normal);
+        Eigen::Vector3f getNormal();
+        void setNormalVector(const Eigen::Vector3f &normal);
 
-        KeyFrame *GetReferenceKeyFrame();
+        KeyFrame *getReferenceKeyFrame();
 
-        std::map<KeyFrame *, std::tuple<int, int>> GetObservations();
-        int Observations();
+        std::map<KeyFrame *, std::tuple<int, int>> getObservations();
+        int getObservationCount();
 
-        void AddObservation(KeyFrame *pKF, int idx);
-        void EraseObservation(KeyFrame *pKF);
+        void addObservation(KeyFrame *pKF, int idx);
+        void eraseObservation(KeyFrame *pKF);
 
-        std::tuple<int, int> GetIndexInKeyFrame(KeyFrame *pKF);
-        bool IsInKeyFrame(KeyFrame *pKF);
+        std::tuple<int, int> getIndexInKeyFrame(KeyFrame *pKF);
+        bool isInKeyFrame(KeyFrame *pKF);
 
-        void SetBadFlag();
+        void setBadFlag();
         bool isBad();
 
-        void Replace(MapPoint *pMP);
-        MapPoint *GetReplaced();
+        void replace(MapPoint *pMP);
+        MapPoint *getReplaced();
 
-        void IncreaseVisible(int n = 1);
-        void IncreaseFound(int n = 1);
-        float GetFoundRatio();
-        inline int GetFound()
+        void increaseVisible(int n = 1);
+        void increaseFound(int n = 1);
+        float getFoundRatio();
+        inline int getFound()
         {
             return mnFound;
         }
 
-        void ComputeDistinctiveDescriptors();
+        void computeDistinctiveDescriptors();
 
-        cv::Mat GetDescriptor();
+        cv::Mat getDescriptor();
 
-        void UpdateNormalAndDepth();
+        void updateNormalAndDepth();
 
-        float GetMinDistanceInvariance();
-        float GetMaxDistanceInvariance();
-        int PredictScale(const float &currentDist, KeyFrame *pKF);
-        int PredictScale(const float &currentDist, Frame *pF);
+        float getMinDistanceInvariance();
+        float getMaxDistanceInvariance();
+        int predictScale(const float &currentDist, KeyFrame *pKF);
+        int predictScale(const float &currentDist, Frame *pF);
 
-        Map *GetMap();
-        void UpdateMap(Map *pMap);
+        Map *getMap();
+        void updateMap(Map *pMap);
 
-        void PrintObservations();
+        void printObservations();
 
         void PreSave(set<KeyFrame *> &spKF, set<MapPoint *> &spMP);
         void PostLoad(map<long unsigned int, KeyFrame *> &mpKFid, map<long unsigned int, MapPoint *> &mpMPid);

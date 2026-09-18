@@ -638,7 +638,7 @@ void KeyFrame::EraseMapPointMatch(const int &idx)
 
 void KeyFrame::EraseMapPointMatch(MapPoint *pMP)
 {
-    tuple<size_t, size_t> indexes = pMP->GetIndexInKeyFrame(this);
+    tuple<size_t, size_t> indexes = pMP->getIndexInKeyFrame(this);
     size_t leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
     if (leftIndex != -1)
         mvpMapPoints[leftIndex] = static_cast<MapPoint *>(nullptr);
@@ -695,7 +695,7 @@ int KeyFrame::TrackedMapPoints(const int &minObs)
             {
                 if (bCheckObs)
                 {
-                    if (mvpMapPoints[i]->Observations() >= minObs)
+                    if (mvpMapPoints[i]->getObservationCount() >= minObs)
                         nPoints++;
                 }
                 else
@@ -801,7 +801,7 @@ void KeyFrame::UpdateConnections(bool upParent)
         if (pMP->isBad())
             continue;
 
-        map<KeyFrame *, tuple<int, int>> observations = pMP->GetObservations();
+        map<KeyFrame *, tuple<int, int>> observations = pMP->getObservations();
 
         for (map<KeyFrame *, tuple<int, int>>::iterator
                  mit  = observations.begin(),
@@ -1031,7 +1031,7 @@ void KeyFrame::SetBadFlag()
     {
         if (mvpMapPoints[i])
         {
-            mvpMapPoints[i]->EraseObservation(this);
+            mvpMapPoints[i]->eraseObservation(this);
         }
     }
 
@@ -1256,7 +1256,7 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
         if (mvpMapPoints[i])
         {
             MapPoint       *pMP  = mvpMapPoints[i];
-            Eigen::Vector3f x3Dw = pMP->GetWorldPos();
+            Eigen::Vector3f x3Dw = pMP->getWorldPos();
             float           z    = Rcw2.dot(x3Dw) + zcw;
             vDepths.push_back(z);
         }
@@ -1503,7 +1503,7 @@ bool KeyFrame::ProjectPointDistort(MapPoint    *pMP,
 {
 
     // 3D in absolute coordinates
-    Eigen::Vector3f P = pMP->GetWorldPos();
+    Eigen::Vector3f P = pMP->getWorldPos();
 
     // 3D in camera coordinates
     Eigen::Vector3f Pc  = mRcw * P + mTcw.translation();
@@ -1569,7 +1569,7 @@ bool KeyFrame::ProjectPointUnDistort(MapPoint    *pMP,
 {
 
     // 3D in absolute coordinates
-    Eigen::Vector3f P = pMP->GetWorldPos();
+    Eigen::Vector3f P = pMP->getWorldPos();
 
     // 3D in camera coordinates
     Eigen::Vector3f Pc  = mRcw * P + mTcw.translation();

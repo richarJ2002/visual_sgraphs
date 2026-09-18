@@ -77,7 +77,7 @@ namespace core
 
                 if (!vIndices.empty())
                 {
-                    const cv::Mat MPdescriptor = pMP->GetDescriptor();
+                    const cv::Mat MPdescriptor = pMP->getDescriptor();
 
                     int bestDist = 256;
                     int bestLevel = -1;
@@ -91,7 +91,7 @@ namespace core
                         const size_t idx = *vit;
 
                         if (F.mapPoints[idx])
-                            if (F.mapPoints[idx]->Observations() > 0)
+                            if (F.mapPoints[idx]->getObservationCount() > 0)
                                 continue;
 
                         if (F.Nleft == -1 && F.uRight[idx] > 0)
@@ -162,7 +162,7 @@ namespace core
                     if (vIndices.empty())
                         continue;
 
-                    const cv::Mat MPdescriptor = pMP->GetDescriptor();
+                    const cv::Mat MPdescriptor = pMP->getDescriptor();
 
                     int bestDist = 256;
                     int bestLevel = -1;
@@ -176,7 +176,8 @@ namespace core
                         const size_t idx = *vit;
 
                         if (F.mapPoints[idx + F.Nleft])
-                            if (F.mapPoints[idx + F.Nleft]->Observations() > 0)
+                            if (F.mapPoints[idx + F.Nleft]
+                                    ->getObservationCount() > 0)
                                 continue;
 
                         const cv::Mat &d = F.descriptors.row(idx + F.Nleft);
@@ -276,7 +277,7 @@ namespace core
 
                 if (!vIndices.empty())
                 {
-                    const cv::Mat MPdescriptor = pMP->GetDescriptor();
+                    const cv::Mat MPdescriptor = pMP->getDescriptor();
 
                     int bestDist = 256;
                     int bestLevel = -1;
@@ -290,7 +291,7 @@ namespace core
                         const size_t idx = *vit;
 
                         if (F.mapPoints[idx])
-                            if (F.mapPoints[idx]->Observations() > 0)
+                            if (F.mapPoints[idx]->getObservationCount() > 0)
                                 continue;
 
                         if (F.Nleft == -1 && F.uRight[idx] > 0)
@@ -371,7 +372,7 @@ namespace core
                     if (vIndices.empty())
                         continue;
 
-                    const cv::Mat MPdescriptor = pMP->GetDescriptor();
+                    const cv::Mat MPdescriptor = pMP->getDescriptor();
 
                     int bestDist = 256;
                     int bestLevel = -1;
@@ -385,7 +386,8 @@ namespace core
                         const size_t idx = *vit;
 
                         if (F.mapPoints[idx + F.Nleft])
-                            if (F.mapPoints[idx + F.Nleft]->Observations() > 0)
+                            if (F.mapPoints[idx + F.Nleft]
+                                    ->getObservationCount() > 0)
                                 continue;
 
                         const cv::Mat &d = F.descriptors.row(idx + F.Nleft);
@@ -665,7 +667,7 @@ namespace core
                 continue;
 
             // Get 3D Coords.
-            Eigen::Vector3f p3Dw = pMP->GetWorldPos();
+            Eigen::Vector3f p3Dw = pMP->getWorldPos();
 
             // Transform into Camera Coords.
             Eigen::Vector3f p3Dc = Tcw * p3Dw;
@@ -682,8 +684,8 @@ namespace core
                 continue;
 
             // Depth must be inside the scale invariance region of the point
-            const float maxDistance = pMP->GetMaxDistanceInvariance();
-            const float minDistance = pMP->GetMinDistanceInvariance();
+            const float maxDistance = pMP->getMaxDistanceInvariance();
+            const float minDistance = pMP->getMinDistanceInvariance();
             Eigen::Vector3f PO = p3Dw - Ow;
             const float dist = PO.norm();
 
@@ -691,12 +693,12 @@ namespace core
                 continue;
 
             // Viewing angle must be less than 60 deg
-            Eigen::Vector3f Pn = pMP->GetNormal();
+            Eigen::Vector3f Pn = pMP->getNormal();
 
             if (PO.dot(Pn) < 0.5 * dist)
                 continue;
 
-            int nPredictedLevel = pMP->PredictScale(dist, pKF);
+            int nPredictedLevel = pMP->predictScale(dist, pKF);
 
             // Search in a radius
             const float radius = th * pKF->mvScaleFactors[nPredictedLevel];
@@ -707,7 +709,7 @@ namespace core
                 continue;
 
             // Match to the most similar keypoint in the radius
-            const cv::Mat dMP = pMP->GetDescriptor();
+            const cv::Mat dMP = pMP->getDescriptor();
 
             int bestDist = 256;
             int bestIdx = -1;
@@ -772,7 +774,7 @@ namespace core
                 continue;
 
             // Get 3D Coords.
-            Eigen::Vector3f p3Dw = pMP->GetWorldPos();
+            Eigen::Vector3f p3Dw = pMP->getWorldPos();
 
             // Transform into Camera Coords.
             Eigen::Vector3f p3Dc = Tcw * p3Dw;
@@ -794,8 +796,8 @@ namespace core
                 continue;
 
             // Depth must be inside the scale invariance region of the point
-            const float maxDistance = pMP->GetMaxDistanceInvariance();
-            const float minDistance = pMP->GetMinDistanceInvariance();
+            const float maxDistance = pMP->getMaxDistanceInvariance();
+            const float minDistance = pMP->getMinDistanceInvariance();
             Eigen::Vector3f PO = p3Dw - Ow;
             const float dist = PO.norm();
 
@@ -803,12 +805,12 @@ namespace core
                 continue;
 
             // Viewing angle must be less than 60 deg
-            Eigen::Vector3f Pn = pMP->GetNormal();
+            Eigen::Vector3f Pn = pMP->getNormal();
 
             if (PO.dot(Pn) < 0.5 * dist)
                 continue;
 
-            int nPredictedLevel = pMP->PredictScale(dist, pKF);
+            int nPredictedLevel = pMP->predictScale(dist, pKF);
 
             // Search in a radius
             const float radius = th * pKF->mvScaleFactors[nPredictedLevel];
@@ -819,7 +821,7 @@ namespace core
                 continue;
 
             // Match to the most similar keypoint in the radius
-            const cv::Mat dMP = pMP->GetDescriptor();
+            const cv::Mat dMP = pMP->getDescriptor();
 
             int bestDist = 256;
             int bestIdx = -1;
@@ -1401,13 +1403,13 @@ namespace core
                 count_bad++;
                 continue;
             }
-            else if (pMP->IsInKeyFrame(pKF))
+            else if (pMP->isInKeyFrame(pKF))
             {
                 count_isinKF++;
                 continue;
             }
 
-            Eigen::Vector3f p3Dw = pMP->GetWorldPos();
+            Eigen::Vector3f p3Dw = pMP->getWorldPos();
             Eigen::Vector3f p3Dc = Tcw * p3Dw;
 
             // Depth must be positive
@@ -1430,8 +1432,8 @@ namespace core
 
             const float ur = uv(0) - bf * invz;
 
-            const float maxDistance = pMP->GetMaxDistanceInvariance();
-            const float minDistance = pMP->GetMinDistanceInvariance();
+            const float maxDistance = pMP->getMaxDistanceInvariance();
+            const float minDistance = pMP->getMinDistanceInvariance();
             Eigen::Vector3f PO = p3Dw - Ow;
             const float dist3D = PO.norm();
 
@@ -1443,7 +1445,7 @@ namespace core
             }
 
             // Viewing angle must be less than 60 deg
-            Eigen::Vector3f Pn = pMP->GetNormal();
+            Eigen::Vector3f Pn = pMP->getNormal();
 
             if (PO.dot(Pn) < 0.5 * dist3D)
             {
@@ -1451,7 +1453,7 @@ namespace core
                 continue;
             }
 
-            int nPredictedLevel = pMP->PredictScale(dist3D, pKF);
+            int nPredictedLevel = pMP->predictScale(dist3D, pKF);
 
             // Search in a radius
             const float radius = th * pKF->mvScaleFactors[nPredictedLevel];
@@ -1466,7 +1468,7 @@ namespace core
 
             // Match to the most similar keypoint in the radius
 
-            const cv::Mat dMP = pMP->GetDescriptor();
+            const cv::Mat dMP = pMP->getDescriptor();
 
             int bestDist = 256;
             int bestIdx = -1;
@@ -1530,15 +1532,16 @@ namespace core
                 {
                     if (!pMPinKF->isBad())
                     {
-                        if (pMPinKF->Observations() > pMP->Observations())
-                            pMP->Replace(pMPinKF);
+                        if (pMPinKF->getObservationCount() >
+                            pMP->getObservationCount())
+                            pMP->replace(pMPinKF);
                         else
-                            pMPinKF->Replace(pMP);
+                            pMPinKF->replace(pMP);
                     }
                 }
                 else
                 {
-                    pMP->AddObservation(pKF, bestIdx);
+                    pMP->addObservation(pKF, bestIdx);
                     pKF->AddMapPoint(pMP, bestIdx);
                 }
                 nFused++;
@@ -1573,7 +1576,7 @@ namespace core
                 continue;
 
             // Get 3D Coords.
-            Eigen::Vector3f p3Dw = pMP->GetWorldPos();
+            Eigen::Vector3f p3Dw = pMP->getWorldPos();
 
             // Transform into Camera Coords.
             Eigen::Vector3f p3Dc = Tcw * p3Dw;
@@ -1590,8 +1593,8 @@ namespace core
                 continue;
 
             // Depth must be inside the scale pyramid of the image
-            const float maxDistance = pMP->GetMaxDistanceInvariance();
-            const float minDistance = pMP->GetMinDistanceInvariance();
+            const float maxDistance = pMP->getMaxDistanceInvariance();
+            const float minDistance = pMP->getMinDistanceInvariance();
             Eigen::Vector3f PO = p3Dw - Ow;
             const float dist3D = PO.norm();
 
@@ -1599,13 +1602,13 @@ namespace core
                 continue;
 
             // Viewing angle must be less than 60 deg
-            Eigen::Vector3f Pn = pMP->GetNormal();
+            Eigen::Vector3f Pn = pMP->getNormal();
 
             if (PO.dot(Pn) < 0.5 * dist3D)
                 continue;
 
             // Compute predicted scale level
-            const int nPredictedLevel = pMP->PredictScale(dist3D, pKF);
+            const int nPredictedLevel = pMP->predictScale(dist3D, pKF);
 
             // Search in a radius
             const float radius = th * pKF->mvScaleFactors[nPredictedLevel];
@@ -1617,7 +1620,7 @@ namespace core
 
             // Match to the most similar keypoint in the radius
 
-            const cv::Mat dMP = pMP->GetDescriptor();
+            const cv::Mat dMP = pMP->getDescriptor();
 
             int bestDist = INT_MAX;
             int bestIdx = -1;
@@ -1651,7 +1654,7 @@ namespace core
                 }
                 else
                 {
-                    pMP->AddObservation(pKF, bestIdx);
+                    pMP->addObservation(pKF, bestIdx);
                     pKF->AddMapPoint(pMP, bestIdx);
                 }
                 nFused++;
@@ -1690,7 +1693,7 @@ namespace core
             if (pMP)
             {
                 vbAlreadyMatched1[i] = true;
-                int idx2 = get<0>(pMP->GetIndexInKeyFrame(pKF2));
+                int idx2 = get<0>(pMP->getIndexInKeyFrame(pKF2));
                 if (idx2 >= 0 && idx2 < N2)
                     vbAlreadyMatched2[idx2] = true;
             }
@@ -1710,7 +1713,7 @@ namespace core
             if (pMP->isBad())
                 continue;
 
-            Eigen::Vector3f p3Dw = pMP->GetWorldPos();
+            Eigen::Vector3f p3Dw = pMP->getWorldPos();
             Eigen::Vector3f p3Dc1 = T1w * p3Dw;
             Eigen::Vector3f p3Dc2 = S21 * p3Dc1;
 
@@ -1729,8 +1732,8 @@ namespace core
             if (!pKF2->IsInImage(u, v))
                 continue;
 
-            const float maxDistance = pMP->GetMaxDistanceInvariance();
-            const float minDistance = pMP->GetMinDistanceInvariance();
+            const float maxDistance = pMP->getMaxDistanceInvariance();
+            const float minDistance = pMP->getMinDistanceInvariance();
             const float dist3D = p3Dc2.norm();
 
             // Depth must be inside the scale invariance region
@@ -1738,7 +1741,7 @@ namespace core
                 continue;
 
             // Compute predicted octave
-            const int nPredictedLevel = pMP->PredictScale(dist3D, pKF2);
+            const int nPredictedLevel = pMP->predictScale(dist3D, pKF2);
 
             // Search in a radius
             const float radius = th * pKF2->mvScaleFactors[nPredictedLevel];
@@ -1749,7 +1752,7 @@ namespace core
                 continue;
 
             // Match to the most similar keypoint in the radius
-            const cv::Mat dMP = pMP->GetDescriptor();
+            const cv::Mat dMP = pMP->getDescriptor();
 
             int bestDist = INT_MAX;
             int bestIdx = -1;
@@ -1790,7 +1793,7 @@ namespace core
             if (pMP->isBad())
                 continue;
 
-            Eigen::Vector3f p3Dw = pMP->GetWorldPos();
+            Eigen::Vector3f p3Dw = pMP->getWorldPos();
             Eigen::Vector3f p3Dc2 = T2w * p3Dw;
             Eigen::Vector3f p3Dc1 = S12 * p3Dc2;
 
@@ -1809,8 +1812,8 @@ namespace core
             if (!pKF1->IsInImage(u, v))
                 continue;
 
-            const float maxDistance = pMP->GetMaxDistanceInvariance();
-            const float minDistance = pMP->GetMinDistanceInvariance();
+            const float maxDistance = pMP->getMaxDistanceInvariance();
+            const float minDistance = pMP->getMinDistanceInvariance();
             const float dist3D = p3Dc1.norm();
 
             // Depth must be inside the scale pyramid of the image
@@ -1818,7 +1821,7 @@ namespace core
                 continue;
 
             // Compute predicted octave
-            const int nPredictedLevel = pMP->PredictScale(dist3D, pKF1);
+            const int nPredictedLevel = pMP->predictScale(dist3D, pKF1);
 
             // Search in a radius of 2.5*sigma(ScaleLevel)
             const float radius = th * pKF1->mvScaleFactors[nPredictedLevel];
@@ -1829,7 +1832,7 @@ namespace core
                 continue;
 
             // Match to the most similar keypoint in the radius
-            const cv::Mat dMP = pMP->GetDescriptor();
+            const cv::Mat dMP = pMP->getDescriptor();
 
             int bestDist = INT_MAX;
             int bestIdx = -1;
@@ -1907,7 +1910,7 @@ namespace core
                 if (!LastFrame.outlierFlags[i])
                 {
                     // Project
-                    Eigen::Vector3f x3Dw = pMP->GetWorldPos();
+                    Eigen::Vector3f x3Dw = pMP->getWorldPos();
                     Eigen::Vector3f x3Dc = Tcw * x3Dw;
 
                     const float xc = x3Dc(0);
@@ -1942,7 +1945,7 @@ namespace core
                     if (vIndices2.empty())
                         continue;
 
-                    const cv::Mat dMP = pMP->GetDescriptor();
+                    const cv::Mat dMP = pMP->getDescriptor();
 
                     int bestDist = 256;
                     int bestIdx2 = -1;
@@ -1952,7 +1955,8 @@ namespace core
                         const size_t i2 = *vit;
 
                         if (CurrentFrame.mapPoints[i2])
-                            if (CurrentFrame.mapPoints[i2]->Observations() > 0)
+                            if (CurrentFrame.mapPoints[i2]
+                                    ->getObservationCount() > 0)
                                 continue;
 
                         if (CurrentFrame.Nleft == -1 && CurrentFrame.uRight[i2] > 0)
@@ -2018,7 +2022,7 @@ namespace core
                         else
                             vIndices2 = CurrentFrame.getFeaturesInArea(uv(0), uv(1), radius, nLastOctave - 1, nLastOctave + 1, true);
 
-                        const cv::Mat dMP = pMP->GetDescriptor();
+                        const cv::Mat dMP = pMP->getDescriptor();
 
                         int bestDist = 256;
                         int bestIdx2 = -1;
@@ -2027,7 +2031,9 @@ namespace core
                         {
                             const size_t i2 = *vit;
                             if (CurrentFrame.mapPoints[i2 + CurrentFrame.Nleft])
-                                if (CurrentFrame.mapPoints[i2 + CurrentFrame.Nleft]->Observations() > 0)
+                                if (CurrentFrame
+                                        .mapPoints[i2 + CurrentFrame.Nleft]
+                                        ->getObservationCount() > 0)
                                     continue;
 
                             const cv::Mat &d = CurrentFrame.descriptors.row(i2 + CurrentFrame.Nleft);
@@ -2117,7 +2123,7 @@ namespace core
                 if (!pMP->isBad() && !sAlreadyFound.count(pMP))
                 {
                     // Project
-                    Eigen::Vector3f x3Dw = pMP->GetWorldPos();
+                    Eigen::Vector3f x3Dw = pMP->getWorldPos();
                     Eigen::Vector3f x3Dc = Tcw * x3Dw;
 
                     const Eigen::Vector2f uv = CurrentFrame.p_camera->project(x3Dc);
@@ -2131,14 +2137,15 @@ namespace core
                     Eigen::Vector3f PO = x3Dw - Ow;
                     float dist3D = PO.norm();
 
-                    const float maxDistance = pMP->GetMaxDistanceInvariance();
-                    const float minDistance = pMP->GetMinDistanceInvariance();
+                    const float maxDistance = pMP->getMaxDistanceInvariance();
+                    const float minDistance = pMP->getMinDistanceInvariance();
 
                     // Depth must be inside the scale pyramid of the image
                     if (dist3D < minDistance || dist3D > maxDistance)
                         continue;
 
-                    int nPredictedLevel = pMP->PredictScale(dist3D, &CurrentFrame);
+                    int nPredictedLevel =
+                        pMP->predictScale(dist3D, &CurrentFrame);
 
                     // Search in a window
                     const float radius = th * CurrentFrame.scaleFactors[nPredictedLevel];
@@ -2148,7 +2155,7 @@ namespace core
                     if (vIndices2.empty())
                         continue;
 
-                    const cv::Mat dMP = pMP->GetDescriptor();
+                    const cv::Mat dMP = pMP->getDescriptor();
 
                     int bestDist = 256;
                     int bestIdx2 = -1;

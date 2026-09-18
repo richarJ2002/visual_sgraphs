@@ -421,11 +421,11 @@ void LocalMapping::ProcessNewKeyFrame()
         {
             if (!pMP->isBad())
             {
-                if (!pMP->IsInKeyFrame(mpCurrentKeyFrame))
+                if (!pMP->isInKeyFrame(mpCurrentKeyFrame))
                 {
-                    pMP->AddObservation(mpCurrentKeyFrame, i);
-                    pMP->UpdateNormalAndDepth();
-                    pMP->ComputeDistinctiveDescriptors();
+                    pMP->addObservation(mpCurrentKeyFrame, i);
+                    pMP->updateNormalAndDepth();
+                    pMP->computeDistinctiveDescriptors();
                 }
                 else // this can only happen for new stereo points inserted by
                      // the Tracking
@@ -470,15 +470,15 @@ void LocalMapping::MapPointCulling()
 
         if (pMP->isBad())
             lit = mlpRecentAddedMapPoints.erase(lit);
-        else if (pMP->GetFoundRatio() < 0.25f)
+        else if (pMP->getFoundRatio() < 0.25f)
         {
-            pMP->SetBadFlag();
+            pMP->setBadFlag();
             lit = mlpRecentAddedMapPoints.erase(lit);
         }
         else if (((int)nCurrentKFid - (int)pMP->mnFirstKFid) >= 2 &&
-                 pMP->Observations() <= cnThObs)
+                 pMP->getObservationCount() <= cnThObs)
         {
-            pMP->SetBadFlag();
+            pMP->setBadFlag();
             lit = mlpRecentAddedMapPoints.erase(lit);
         }
         else if (((int)nCurrentKFid - (int)pMP->mnFirstKFid) >= 3)
@@ -840,15 +840,15 @@ void LocalMapping::CreateNewMapPoints()
             if (bPointStereo)
                 countStereo++;
 
-            pMP->AddObservation(mpCurrentKeyFrame, idx1);
-            pMP->AddObservation(pKF2, idx2);
+            pMP->addObservation(mpCurrentKeyFrame, idx1);
+            pMP->addObservation(pKF2, idx2);
 
             mpCurrentKeyFrame->AddMapPoint(pMP, idx1);
             pKF2->AddMapPoint(pMP, idx2);
 
-            pMP->ComputeDistinctiveDescriptors();
+            pMP->computeDistinctiveDescriptors();
 
-            pMP->UpdateNormalAndDepth();
+            pMP->updateNormalAndDepth();
 
             mpAtlas->AddMapPoint(pMP);
             mlpRecentAddedMapPoints.push_back(pMP);
@@ -979,8 +979,8 @@ void LocalMapping::SearchInNeighbors()
         {
             if (!pMP->isBad())
             {
-                pMP->ComputeDistinctiveDescriptors();
-                pMP->UpdateNormalAndDepth();
+                pMP->computeDistinctiveDescriptors();
+                pMP->updateNormalAndDepth();
             }
         }
     }
@@ -1134,14 +1134,14 @@ void LocalMapping::KeyFrameCulling()
                     }
 
                     nMPs++;
-                    if (pMP->Observations() > thObs)
+                    if (pMP->getObservationCount() > thObs)
                     {
                         const int &scaleLevel =
                             (pKF->NLeft == -1) ? pKF->mvKeysUn[i].octave
                             : (i < pKF->NLeft) ? pKF->mvKeys[i].octave
                                                : pKF->mvKeysRight[i].octave;
                         const map<KeyFrame *, tuple<int, int>> observations =
-                            pMP->GetObservations();
+                            pMP->getObservations();
                         int nObs = 0;
                         for (map<KeyFrame *, tuple<int, int>>::const_iterator
                                  mit  = observations.begin(),
@@ -1649,21 +1649,21 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         if (pMP->baGlobalKeyFrameId == GBAid)
         {
             // If optimized by Global BA, just update
-            pMP->SetWorldPos(pMP->mPosGBA);
+            pMP->setWorldPos(pMP->mPosGBA);
         }
         else
         {
             // Update according to the correction of its reference keyframe
-            KeyFrame *pRefKF = pMP->GetReferenceKeyFrame();
+            KeyFrame *pRefKF = pMP->getReferenceKeyFrame();
 
             if (pRefKF->baGlobalKeyFrameId != GBAid)
                 continue;
 
             // Map to non-corrected camera
-            Eigen::Vector3f Xc = pRefKF->mTcwBefGBA * pMP->GetWorldPos();
+            Eigen::Vector3f Xc = pRefKF->mTcwBefGBA * pMP->getWorldPos();
 
             // Backproject using corrected camera
-            pMP->SetWorldPos(pRefKF->GetPoseInverse() * Xc);
+            pMP->setWorldPos(pRefKF->GetPoseInverse() * Xc);
         }
     }
 

@@ -80,8 +80,8 @@ namespace core
                 if (bDifferentKFs)
                     pKFm = vpKeyFrameMatchedMP[i1];
 
-                int indexKF1 = get<0>(pMP1->GetIndexInKeyFrame(pKF1));
-                int indexKF2 = get<0>(pMP2->GetIndexInKeyFrame(pKFm));
+                int indexKF1 = get<0>(pMP1->getIndexInKeyFrame(pKF1));
+                int indexKF2 = get<0>(pMP2->getIndexInKeyFrame(pKFm));
 
                 if (indexKF1 < 0 || indexKF2 < 0)
                     continue;
@@ -99,10 +99,10 @@ namespace core
                 mvpMapPoints2.push_back(pMP2);
                 mvnIndices1.push_back(i1);
 
-                Eigen::Vector3f X3D1w = pMP1->GetWorldPos();
+                Eigen::Vector3f X3D1w = pMP1->getWorldPos();
                 mvX3Dc1.push_back(Rcw1 * X3D1w + tcw1);
 
-                Eigen::Vector3f X3D2w = pMP2->GetWorldPos();
+                Eigen::Vector3f X3D2w = pMP2->getWorldPos();
                 mvX3Dc2.push_back(Rcw2 * X3D2w + tcw2);
 
                 mvAllIndices.push_back(idx);

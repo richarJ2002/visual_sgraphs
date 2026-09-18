@@ -415,9 +415,9 @@ namespace ORB_SLAM3
             MapPoint *pMP = vMPs[i];
             if (pMP)
             {
-                if (pMP->Observations() > 5)
+                if (pMP->getObservationCount() > 5)
                 {
-                    vPoints.push_back(pMP->GetWorldPos());
+                    vPoints.push_back(pMP->getWorldPos());
                     vPointMP.push_back(pMP);
                 }
             }
@@ -541,7 +541,7 @@ namespace ORB_SLAM3
             MapPoint *pMP = mvMPs[i];
             if (!pMP->isBad())
             {
-                cv::Mat Xw = pMP->GetWorldPos();
+                cv::Mat Xw = pMP->getWorldPos();
                 o += Xw;
                 A.row(nPoints).colRange(0, 3) = Xw.t();
                 nPoints++;

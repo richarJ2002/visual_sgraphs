@@ -2183,7 +2183,7 @@ bool System::SaveMapPointsAsPCD(const string &filename)
             if (pMP->isBad())
                 continue;
 
-            Eigen::Vector3d P3Dw = pMP->GetWorldPos().cast<double>();
+            Eigen::Vector3d P3Dw = pMP->getWorldPos().cast<double>();
             pcl::PointXYZ   point;
             point.x = P3Dw.x();
             point.y = P3Dw.y();

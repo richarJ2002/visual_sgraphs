@@ -895,7 +895,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
         pMP->mTrackProjY   = -1;
 
         // 3D in absolute coordinates
-        Eigen::Matrix<float, 3, 1> P = pMP->GetWorldPos();
+        Eigen::Matrix<float, 3, 1> P = pMP->getWorldPos();
 
         // 3D in camera coordinates
         const Eigen::Matrix<float, 3, 1> Pc      = rotationRcw * P + translationTcw;
@@ -918,8 +918,8 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
         pMP->mTrackProjY = uv(1);
 
         // Check distance is in the scale invariance region of the MapPoint
-        const float           maxDistance = pMP->GetMaxDistanceInvariance();
-        const float           minDistance = pMP->GetMinDistanceInvariance();
+        const float           maxDistance = pMP->getMaxDistanceInvariance();
+        const float           minDistance = pMP->getMinDistanceInvariance();
         const Eigen::Vector3f PO          = P - centerOw;
         const float           dist        = PO.norm();
 
@@ -927,7 +927,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
             return false;
 
         // Check viewing angle
-        Eigen::Vector3f Pn = pMP->GetNormal();
+        Eigen::Vector3f Pn = pMP->getNormal();
 
         const float viewCos = PO.dot(Pn) / dist;
 
@@ -935,7 +935,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
             return false;
 
         // Predict scale in the image
-        const int nPredictedLevel = pMP->PredictScale(dist, this);
+        const int nPredictedLevel = pMP->predictScale(dist, this);
 
         // Data used by the tracking
         pMP->mbTrackInView = true;
@@ -971,7 +971,7 @@ bool Frame::projectPointDistort(MapPoint    *pMP,
 {
 
     // 3D in absolute coordinates
-    Eigen::Vector3f P = pMP->GetWorldPos();
+    Eigen::Vector3f P = pMP->getWorldPos();
 
     // 3D in camera coordinates
     const Eigen::Vector3f Pc  = rotationRcw * P + translationTcw;
@@ -1505,7 +1505,7 @@ void Frame::computeStereoFishEyeMatches()
 bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
 {
     // 3D in absolute coordinates
-    Eigen::Vector3f P = pMP->GetWorldPos();
+    Eigen::Vector3f P = pMP->getWorldPos();
 
     Eigen::Matrix3f mR;
     Eigen::Vector3f mt, twc;
@@ -1546,8 +1546,8 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
         return false;
 
     // Check distance is in the scale invariance region of the MapPoint
-    const float           maxDistance = pMP->GetMaxDistanceInvariance();
-    const float           minDistance = pMP->GetMinDistanceInvariance();
+    const float           maxDistance = pMP->getMaxDistanceInvariance();
+    const float           minDistance = pMP->getMinDistanceInvariance();
     const Eigen::Vector3f PO          = P - twc;
     const float           dist        = PO.norm();
 
@@ -1555,7 +1555,7 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
         return false;
 
     // Check viewing angle
-    Eigen::Vector3f Pn = pMP->GetNormal();
+    Eigen::Vector3f Pn = pMP->getNormal();
 
     const float viewCos = PO.dot(Pn) / dist;
 
@@ -1563,7 +1563,7 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
         return false;
 
     // Predict scale in the image
-    const int nPredictedLevel = pMP->PredictScale(dist, this);
+    const int nPredictedLevel = pMP->predictScale(dist, this);
 
     if (bRight)
     {

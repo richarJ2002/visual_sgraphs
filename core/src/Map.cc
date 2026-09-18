@@ -902,8 +902,8 @@ void Map::ApplyScaledRotation(const Sophus::SE3f &T,
          sit++)
     {
         MapPoint *pMP = *sit;
-        pMP->SetWorldPos(s * Ryw * pMP->GetWorldPos() + tyw);
-        pMP->UpdateNormalAndDepth();
+        pMP->setWorldPos(s * Ryw * pMP->getWorldPos() + tyw);
+        pMP->updateNormalAndDepth();
     }
 
     for (geometric::Plane *p_plane : mspPlanes)
@@ -1067,11 +1067,11 @@ void Map::PreSave(std::set<camera_models::GeometricCamera *> &spCams)
         if (!pMPi || pMPi->isBad())
             continue;
 
-        if (pMPi->GetObservations().size() == 0)
+        if (pMPi->getObservations().size() == 0)
         {
             nMPWithoutObs++;
         }
-        map<KeyFrame *, std::tuple<int, int>> mpObs = pMPi->GetObservations();
+        map<KeyFrame *, std::tuple<int, int>> mpObs = pMPi->getObservations();
         for (map<KeyFrame *, std::tuple<int, int>>::iterator it = mpObs.begin(),
                                                              end = mpObs.end();
              it != end;
@@ -1079,7 +1079,7 @@ void Map::PreSave(std::set<camera_models::GeometricCamera *> &spCams)
         {
             if (it->first->GetMap() != this || it->first->isBad())
             {
-                pMPi->EraseObservation(it->first);
+                pMPi->eraseObservation(it->first);
             }
         }
     }
@@ -1150,7 +1150,7 @@ void Map::PostLoad(
         if (!pMPi || pMPi->isBad())
             continue;
 
-        pMPi->UpdateMap(this);
+        pMPi->updateMap(this);
         mpMapPointId[pMPi->mnId] = pMPi;
     }
 

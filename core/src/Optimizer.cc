@@ -234,7 +234,7 @@ void Optimizer::BundleAdjustment(
         if (pMP->isBad())
             continue;
         g2o::VertexSBAPointXYZ *vPoint = new g2o::VertexSBAPointXYZ();
-        vPoint->setEstimate(pMP->GetWorldPos().cast<double>());
+        vPoint->setEstimate(pMP->getWorldPos().cast<double>());
         const int id = pMP->mnId + maxKFid + 1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
@@ -245,7 +245,7 @@ void Optimizer::BundleAdjustment(
             maxOpId = id;
 
         const map<KeyFrame *, tuple<int, int>> observations =
-            pMP->GetObservations();
+            pMP->getObservations();
 
         int nEdges = 0;
         // SET EDGES
@@ -898,8 +898,8 @@ void Optimizer::BundleAdjustment(
 
         if (nLoopKF == pMap->GetOriginKF()->mnId)
         {
-            pMP->SetWorldPos(vPoint->estimate().cast<float>());
-            pMP->UpdateNormalAndDepth();
+            pMP->setWorldPos(vPoint->estimate().cast<float>());
+            pMP->updateNormalAndDepth();
         }
         else
         {
@@ -1303,14 +1303,14 @@ void Optimizer::FullInertialBA(Map                    *pMap,
     {
         MapPoint               *pMP    = vpMPs[i];
         g2o::VertexSBAPointXYZ *vPoint = new g2o::VertexSBAPointXYZ();
-        vPoint->setEstimate(pMP->GetWorldPos().cast<double>());
+        vPoint->setEstimate(pMP->getWorldPos().cast<double>());
         unsigned long id = pMP->mnId + iniMPid + 1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
         optimizer.addVertex(vPoint);
 
         const map<KeyFrame *, tuple<int, int>> observations =
-            pMP->GetObservations();
+            pMP->getObservations();
 
         bool bAllFixed = true;
 
@@ -1531,8 +1531,8 @@ void Optimizer::FullInertialBA(Map                    *pMap,
 
         if (nLoopId == 0)
         {
-            pMP->SetWorldPos(vPoint->estimate().cast<float>());
-            pMP->UpdateNormalAndDepth();
+            pMP->setWorldPos(vPoint->estimate().cast<float>());
+            pMP->updateNormalAndDepth();
         }
         else
         {
@@ -1636,7 +1636,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         rk->setDelta(deltaMono);
 
                         e->pCamera = pFrame->p_camera;
-                        e->Xw      = pMP->GetWorldPos().cast<double>();
+                        e->Xw      = pMP->getWorldPos().cast<double>();
 
                         optimizer.addEdge(e);
 
@@ -1676,7 +1676,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         e->cx = pFrame->cx;
                         e->cy = pFrame->cy;
                         e->bf = pFrame->mbf;
-                        e->Xw = pMP->GetWorldPos().cast<double>();
+                        e->Xw = pMP->getWorldPos().cast<double>();
 
                         optimizer.addEdge(e);
 
@@ -1718,7 +1718,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         rk->setDelta(deltaMono);
 
                         e->pCamera = pFrame->p_camera;
-                        e->Xw      = pMP->GetWorldPos().cast<double>();
+                        e->Xw      = pMP->getWorldPos().cast<double>();
 
                         optimizer.addEdge(e);
 
@@ -1752,7 +1752,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         rk->setDelta(deltaMono);
 
                         e->pCamera = pFrame->p_camera2;
-                        e->Xw      = pMP->GetWorldPos().cast<double>();
+                        e->Xw      = pMP->getWorldPos().cast<double>();
 
                         e->mTrl = g2o::SE3Quat(pFrame->getRelativePoseTrl()
                                                    .unit_quaternion()
@@ -1807,7 +1807,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                     rk->setDelta(deltaDepth);
 
                     e->pCamera = pFrame->p_camera;
-                    e->Xw      = pMP->GetWorldPos().cast<double>();
+                    e->Xw      = pMP->getWorldPos().cast<double>();
 
                     optimizer.addEdge(e);
 
@@ -1890,7 +1890,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         continue;
 
                     // calculate distance from the map point to the plane
-                    Eigen::Vector3d pMPw = pMP->GetWorldPos().cast<double>();
+                    Eigen::Vector3d pMPw = pMP->getWorldPos().cast<double>();
                     double distance = planeEq.head<3>().dot(pMPw) + planeEq(3);
                     if (distance <
                         -sysParams->refineMapPoints.maxDistanceForDelete)
@@ -1905,7 +1905,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                         // check if the map point is in the plane cloud
                         if (pPlane->isPointinPlaneCloud(intersect))
                         {
-                            pFrame->mapPoints[j]->SetBadFlag();
+                            pFrame->mapPoints[j]->setBadFlag();
                             pFrame->mapPoints[j] =
                                 static_cast<MapPoint *>(nullptr);
                             pFrame->outlierFlags[j] = true;
@@ -2168,7 +2168,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
             // If the MapPoint is proper, add it to the list of local MapPoints
             // for LBA
             if (pMP)
-                if (!pMP->isBad() && pMP->GetMap() == pCurrentMap)
+                if (!pMP->isBad() && pMP->getMap() == pCurrentMap)
                 {
                     if (pMP->baLocalKeyFrameId != pKF->mnId)
                     {
@@ -2316,7 +2316,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
         {
             vs_graphs::core::MapPoint *pMP = *vit;
             if (pMP)
-                if (!pMP->isBad() && pMP->GetMap() == pCurrentMap)
+                if (!pMP->isBad() && pMP->getMap() == pCurrentMap)
                 {
                     if (pMP->baLocalKeyFrameId != pKF->mnId)
                     {
@@ -2338,7 +2338,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
          lit++)
     {
         std::map<vs_graphs::core::KeyFrame *, std::tuple<int, int>> observations =
-            (*lit)->GetObservations();
+            (*lit)->getObservations();
         for (std::map<vs_graphs::core::KeyFrame *, std::tuple<int, int>>::iterator
                  mit  = observations.begin(),
                  mend = observations.end();
@@ -2507,7 +2507,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
     {
         vs_graphs::core::MapPoint    *pMP    = *lit;
         g2o::VertexSBAPointXYZ *vPoint = new g2o::VertexSBAPointXYZ();
-        vPoint->setEstimate(pMP->GetWorldPos().cast<double>());
+        vPoint->setEstimate(pMP->getWorldPos().cast<double>());
         int id = pMP->mnId + maxKFid + 1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
@@ -2519,7 +2519,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
             maxOpId = id;
 
         const map<KeyFrame *, tuple<int, int>> observations =
-            pMP->GetObservations();
+            pMP->getObservations();
 
         // Set edges
         for (map<KeyFrame *, tuple<int, int>>::const_iterator
@@ -3127,7 +3127,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
             KeyFrame *pKFi = vToErase[i].first;
             MapPoint *pMPi = vToErase[i].second;
             pKFi->EraseMapPointMatch(pMPi);
-            pMPi->EraseObservation(pKFi);
+            pMPi->eraseObservation(pKFi);
         }
     }
 
@@ -3179,8 +3179,8 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
             g2o::VertexSBAPointXYZ *vPoint =
                 static_cast<g2o::VertexSBAPointXYZ *>(
                     optimizer.vertex(pMP->mnId + maxKFid + 1));
-            pMP->SetWorldPos(vPoint->estimate().cast<float>());
-            pMP->UpdateNormalAndDepth();
+            pMP->setWorldPos(vPoint->estimate().cast<float>());
+            pMP->updateNormalAndDepth();
         }
         catch (std::exception &e)
         {
@@ -3630,19 +3630,19 @@ void Optimizer::OptimizeEssentialGraph(
         }
         else
         {
-            KeyFrame *pRefKF = pMP->GetReferenceKeyFrame();
+            KeyFrame *pRefKF = pMP->getReferenceKeyFrame();
             nIDr             = pRefKF->mnId;
         }
 
         g2o::Sim3 Srw          = vScw[nIDr];
         g2o::Sim3 correctedSwr = vCorrectedSwc[nIDr];
 
-        Eigen::Matrix<double, 3, 1> eigP3Dw = pMP->GetWorldPos().cast<double>();
+        Eigen::Matrix<double, 3, 1> eigP3Dw = pMP->getWorldPos().cast<double>();
         Eigen::Matrix<double, 3, 1> eigCorrectedP3Dw =
             correctedSwr.map(Srw.map(eigP3Dw));
-        pMP->SetWorldPos(eigCorrectedP3Dw.cast<float>());
+        pMP->setWorldPos(eigCorrectedP3Dw.cast<float>());
 
-        pMP->UpdateNormalAndDepth();
+        pMP->updateNormalAndDepth();
     }
 
     pMap->IncreaseChangeIndex();
@@ -4040,13 +4040,13 @@ void Optimizer::OptimizeEssentialGraph(
                    vpBadPose[p_keyFrame_in->mnId];
         };
 
-        KeyFrame *pRefKF = pMPi->GetReferenceKeyFrame();
+        KeyFrame *pRefKF = pMPi->getReferenceKeyFrame();
 
         if (!canCorrectFromReference(pRefKF))
         {
             pRefKF = nullptr;
 
-            const auto observations = pMPi->GetObservations();
+            const auto observations = pMPi->getObservations();
             for (const auto &[p_observingKeyFrame, featureIndexes] :
                  observations)
             {
@@ -4072,10 +4072,10 @@ void Optimizer::OptimizeEssentialGraph(
             Sophus::SE3f Twr             = pRefKF->GetPoseInverse();
 
             Eigen::Vector3f eigCorrectedP3Dw =
-                Twr * TNonCorrectedwr.inverse() * pMPi->GetWorldPos();
-            pMPi->SetWorldPos(eigCorrectedP3Dw);
+                Twr * TNonCorrectedwr.inverse() * pMPi->getWorldPos();
+            pMPi->setWorldPos(eigCorrectedP3Dw);
 
-            pMPi->UpdateNormalAndDepth();
+            pMPi->updateNormalAndDepth();
             mapPointWasTransformed = true;
         }
 
@@ -4086,18 +4086,18 @@ void Optimizer::OptimizeEssentialGraph(
          */
         if (!mapPointWasTransformed)
         {
-            const Eigen::Vector3f position_mergeWorld_m = pMPi->GetWorldPos();
-            const Eigen::Vector3f normal_mergeWorld     = pMPi->GetNormal();
+            const Eigen::Vector3f position_mergeWorld_m = pMPi->getWorldPos();
+            const Eigen::Vector3f normal_mergeWorld     = pMPi->getNormal();
 
-            pMPi->SetWorldPos(transform_mergeWorldToCurrentWorld_in
+            pMPi->setWorldPos(transform_mergeWorldToCurrentWorld_in
                                   .map(position_mergeWorld_m.cast<double>())
                                   .cast<float>());
 
-            pMPi->SetNormalVector(
+            pMPi->setNormalVector(
                 transform_mergeWorldToCurrentWorld_in.rotation().cast<float>() *
                 normal_mergeWorld);
 
-            pMPi->UpdateNormalAndDepth();
+            pMPi->updateNormalAndDepth();
         }
     }
 
@@ -4225,7 +4225,7 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
         const int id1 = 2 * i + 1;
         const int id2 = 2 * (i + 1);
 
-        const int i2 = get<0>(pMP2->GetIndexInKeyFrame(pKF2));
+        const int i2 = get<0>(pMP2->getIndexInKeyFrame(pKF2));
 
         Eigen::Vector3f P3D1c;
         Eigen::Vector3f P3D2c;
@@ -4235,7 +4235,7 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
             if (!pMP1->isBad() && !pMP2->isBad())
             {
                 g2o::VertexSBAPointXYZ *vPoint1 = new g2o::VertexSBAPointXYZ();
-                Eigen::Vector3f         P3D1w   = pMP1->GetWorldPos();
+                Eigen::Vector3f         P3D1w   = pMP1->getWorldPos();
                 P3D1c                           = R1w * P3D1w + t1w;
                 vPoint1->setEstimate(P3D1c.cast<double>());
                 vPoint1->setId(id1);
@@ -4243,7 +4243,7 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
                 optimizer.addVertex(vPoint1);
 
                 g2o::VertexSBAPointXYZ *vPoint2 = new g2o::VertexSBAPointXYZ();
-                Eigen::Vector3f         P3D2w   = pMP2->GetWorldPos();
+                Eigen::Vector3f         P3D2w   = pMP2->getWorldPos();
                 P3D2c                           = R2w * P3D2w + t2w;
                 vPoint2->setEstimate(P3D2c.cast<double>());
                 vPoint2->setId(id2);
@@ -4264,7 +4264,7 @@ int Optimizer::OptimizeSim3(KeyFrame                    *pKF1,
             if (!pMP2->isBad())
             {
                 g2o::VertexSBAPointXYZ *vPoint2 = new g2o::VertexSBAPointXYZ();
-                Eigen::Vector3f         P3D2w   = pMP2->GetWorldPos();
+                Eigen::Vector3f         P3D2w   = pMP2->getWorldPos();
                 P3D2c                           = R2w * P3D2w + t2w;
                 vPoint2->setEstimate(P3D2c.cast<double>());
                 vPoint2->setId(id2);
@@ -4569,7 +4569,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
          lit++)
     {
         map<KeyFrame *, tuple<int, int>> observations =
-            (*lit)->GetObservations();
+            (*lit)->getObservations();
         for (map<KeyFrame *, tuple<int, int>>::iterator
                  mit  = observations.begin(),
                  mend = observations.end();
@@ -4845,14 +4845,14 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
     {
         MapPoint               *pMP    = *lit;
         g2o::VertexSBAPointXYZ *vPoint = new g2o::VertexSBAPointXYZ();
-        vPoint->setEstimate(pMP->GetWorldPos().cast<double>());
+        vPoint->setEstimate(pMP->getWorldPos().cast<double>());
 
         unsigned long id = pMP->mnId + iniMPid + 1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
         optimizer.addVertex(vPoint);
         const map<KeyFrame *, tuple<int, int>> observations =
-            pMP->GetObservations();
+            pMP->getObservations();
 
         // Create visual constraints
         for (map<KeyFrame *, tuple<int, int>>::const_iterator
@@ -5067,7 +5067,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
             KeyFrame *pKFi = vToErase[i].first;
             MapPoint *pMPi = vToErase[i].second;
             pKFi->EraseMapPointMatch(pMPi);
-            pMPi->EraseObservation(pKFi);
+            pMPi->eraseObservation(pKFi);
         }
     }
 
@@ -5130,8 +5130,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
         MapPoint               *pMP    = *lit;
         g2o::VertexSBAPointXYZ *vPoint = static_cast<g2o::VertexSBAPointXYZ *>(
             optimizer.vertex(pMP->mnId + iniMPid + 1));
-        pMP->SetWorldPos(vPoint->estimate().cast<float>());
-        pMP->UpdateNormalAndDepth();
+        pMP->setWorldPos(vPoint->estimate().cast<float>());
+        pMP->updateNormalAndDepth();
     }
 
     pMap->IncreaseChangeIndex();
@@ -5802,7 +5802,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
         set<MapPoint *> spViewMPs = pKFi->GetMapPoints();
         for (MapPoint *pMPi : spViewMPs)
             if (pMPi)
-                if (!pMPi->isBad() && pMPi->GetMap() == pCurrentMap)
+                if (!pMPi->isBad() && pMPi->getMap() == pCurrentMap)
                     if (pMPi->baLocalMergeId != pMainKF->mnId)
                     {
                         // Add the map point to the list of optimizable map
@@ -5837,7 +5837,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
         set<MapPoint *> spViewMPs = pKFi->GetMapPoints();
         for (MapPoint *pMPi : spViewMPs)
             if (pMPi)
-                if (!pMPi->isBad() && pMPi->GetMap() == pCurrentMap)
+                if (!pMPi->isBad() && pMPi->getMap() == pCurrentMap)
                     if (pMPi->baLocalMergeId != pMainKF->mnId)
                     {
                         vpMPs.push_back(pMPi);
@@ -5883,14 +5883,14 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
             continue;
 
         g2o::VertexSBAPointXYZ *vPoint = new g2o::VertexSBAPointXYZ();
-        vPoint->setEstimate(pMPi->GetWorldPos().cast<double>());
+        vPoint->setEstimate(pMPi->getWorldPos().cast<double>());
         const int id = pMPi->mnId + maxKFid + 1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
         optimizer.addVertex(vPoint);
 
         const map<KeyFrame *, tuple<int, int>> observations =
-            pMPi->GetObservations();
+            pMPi->getObservations();
         int nEdges = 0;
         // SET EDGES
         for (map<KeyFrame *, tuple<int, int>>::const_iterator mit =
@@ -6104,7 +6104,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
             KeyFrame *pKFi = vToErase[i].first;
             MapPoint *pMPi = vToErase[i].second;
             pKFi->EraseMapPointMatch(pMPi);
-            pMPi->EraseObservation(pKFi);
+            pMPi->eraseObservation(pKFi);
         }
     }
     for (unsigned int i = 0; i < vpMPs.size(); ++i)
@@ -6114,7 +6114,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
             continue;
 
         const map<KeyFrame *, tuple<int, int>> observations =
-            pMPi->GetObservations();
+            pMPi->getObservations();
         for (map<KeyFrame *, tuple<int, int>>::const_iterator mit =
                  observations.begin();
              mit != observations.end();
@@ -6218,8 +6218,8 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
 
         g2o::VertexSBAPointXYZ *vPoint = static_cast<g2o::VertexSBAPointXYZ *>(
             optimizer.vertex(pMPi->mnId + maxKFid + 1));
-        pMPi->SetWorldPos(vPoint->estimate().cast<float>());
-        pMPi->UpdateNormalAndDepth();
+        pMPi->setWorldPos(vPoint->estimate().cast<float>());
+        pMPi->updateNormalAndDepth();
     }
 }
 
@@ -6360,7 +6360,7 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
          lit++, i++)
     {
         map<KeyFrame *, tuple<int, int>> observations =
-            lit->first->GetObservations();
+            lit->first->getObservations();
         if (i >= maxCovKF)
             break;
         for (map<KeyFrame *, tuple<int, int>>::iterator
@@ -6623,7 +6623,7 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
             continue;
 
         g2o::VertexSBAPointXYZ *vPoint = new g2o::VertexSBAPointXYZ();
-        vPoint->setEstimate(pMP->GetWorldPos().cast<double>());
+        vPoint->setEstimate(pMP->getWorldPos().cast<double>());
 
         unsigned long id = pMP->mnId + iniMPid + 1;
         vPoint->setId(id);
@@ -6631,7 +6631,7 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
         optimizer.addVertex(vPoint);
 
         const map<KeyFrame *, tuple<int, int>> observations =
-            pMP->GetObservations();
+            pMP->getObservations();
 
         // Create visual constraints
         for (map<KeyFrame *, tuple<int, int>>::const_iterator
@@ -6775,7 +6775,7 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
             KeyFrame *pKFi = vToErase[i].first;
             MapPoint *pMPi = vToErase[i].second;
             pKFi->EraseMapPointMatch(pMPi);
-            pMPi->EraseObservation(pKFi);
+            pMPi->eraseObservation(pKFi);
         }
     }
 
@@ -6848,8 +6848,8 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
         MapPoint               *pMP    = *lit;
         g2o::VertexSBAPointXYZ *vPoint = static_cast<g2o::VertexSBAPointXYZ *>(
             optimizer.vertex(pMP->mnId + iniMPid + 1));
-        pMP->SetWorldPos(vPoint->estimate().cast<float>());
-        pMP->UpdateNormalAndDepth();
+        pMP->setWorldPos(vPoint->estimate().cast<float>());
+        pMP->updateNormalAndDepth();
     }
 
     pMap->IncreaseChangeIndex();
@@ -6935,7 +6935,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
                     obs << kpUn.pt.x, kpUn.pt.y;
 
                     EdgeMonoOnlyPose *e =
-                        new EdgeMonoOnlyPose(pMP->GetWorldPos(), 0);
+                        new EdgeMonoOnlyPose(pMP->getWorldPos(), 0);
 
                     e->setVertex(0, VP);
                     e->setMeasurement(obs);
@@ -6968,7 +6968,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
                     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
                     EdgeStereoOnlyPose *e =
-                        new EdgeStereoOnlyPose(pMP->GetWorldPos());
+                        new EdgeStereoOnlyPose(pMP->getWorldPos());
 
                     e->setVertex(0, VP);
                     e->setMeasurement(obs);
@@ -7002,7 +7002,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
                     obs << kpUn.pt.x, kpUn.pt.y;
 
                     EdgeMonoOnlyPose *e =
-                        new EdgeMonoOnlyPose(pMP->GetWorldPos(), 1);
+                        new EdgeMonoOnlyPose(pMP->getWorldPos(), 1);
 
                     e->setVertex(0, VP);
                     e->setMeasurement(obs);
@@ -7341,7 +7341,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                     obs << kpUn.pt.x, kpUn.pt.y;
 
                     EdgeMonoOnlyPose *e =
-                        new EdgeMonoOnlyPose(pMP->GetWorldPos(), 0);
+                        new EdgeMonoOnlyPose(pMP->getWorldPos(), 0);
 
                     e->setVertex(0, VP);
                     e->setMeasurement(obs);
@@ -7374,7 +7374,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
                     EdgeStereoOnlyPose *e =
-                        new EdgeStereoOnlyPose(pMP->GetWorldPos());
+                        new EdgeStereoOnlyPose(pMP->getWorldPos());
 
                     e->setVertex(0, VP);
                     e->setMeasurement(obs);
@@ -7408,7 +7408,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                     obs << kpUn.pt.x, kpUn.pt.y;
 
                     EdgeMonoOnlyPose *e =
-                        new EdgeMonoOnlyPose(pMP->GetWorldPos(), 1);
+                        new EdgeMonoOnlyPose(pMP->getWorldPos(), 1);
 
                     e->setVertex(0, VP);
                     e->setMeasurement(obs);
@@ -8044,18 +8044,18 @@ void Optimizer::OptimizeEssentialGraph4DoF(
 
         int nIDr;
 
-        KeyFrame *pRefKF = pMP->GetReferenceKeyFrame();
+        KeyFrame *pRefKF = pMP->getReferenceKeyFrame();
         nIDr             = pRefKF->mnId;
 
         g2o::Sim3 Srw          = vScw[nIDr];
         g2o::Sim3 correctedSwr = vCorrectedSwc[nIDr];
 
-        Eigen::Matrix<double, 3, 1> eigP3Dw = pMP->GetWorldPos().cast<double>();
+        Eigen::Matrix<double, 3, 1> eigP3Dw = pMP->getWorldPos().cast<double>();
         Eigen::Matrix<double, 3, 1> eigCorrectedP3Dw =
             correctedSwr.map(Srw.map(eigP3Dw));
-        pMP->SetWorldPos(eigCorrectedP3Dw.cast<float>());
+        pMP->setWorldPos(eigCorrectedP3Dw.cast<float>());
 
-        pMP->UpdateNormalAndDepth();
+        pMP->updateNormalAndDepth();
     }
     pMap->IncreaseChangeIndex();
 }

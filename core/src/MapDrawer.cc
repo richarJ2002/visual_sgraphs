@@ -161,7 +161,7 @@ namespace core
         {
             if (vpMPs[i]->isBad() || spRefMPs.count(vpMPs[i]))
                 continue;
-            Eigen::Matrix<float, 3, 1> pos = vpMPs[i]->GetWorldPos();
+            Eigen::Matrix<float, 3, 1> pos = vpMPs[i]->getWorldPos();
             glVertex3f(pos(0), pos(1), pos(2));
         }
         glEnd();
@@ -174,7 +174,7 @@ namespace core
         {
             if ((*sit)->isBad())
                 continue;
-            Eigen::Matrix<float, 3, 1> pos = (*sit)->GetWorldPos();
+            Eigen::Matrix<float, 3, 1> pos = (*sit)->getWorldPos();
             glVertex3f(pos(0), pos(1), pos(2));
         }
 

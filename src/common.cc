@@ -2228,7 +2228,7 @@ sensor_msgs::msg::PointCloud2
         if (mapPoints_in[idx] && !mapPoints_in[idx]->isBad())
         {
             Eigen::Vector3d P3Dw =
-                mapPoints_in[idx]->GetWorldPos().cast<double>();
+                mapPoints_in[idx]->getWorldPos().cast<double>();
             tf2::Vector3 pointTranslation(P3Dw.x(), P3Dw.y(), P3Dw.z());
             float        dataArray[numChannels] = {
                 static_cast<float>(pointTranslation.x()),

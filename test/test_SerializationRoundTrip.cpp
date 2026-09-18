@@ -508,7 +508,7 @@ TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
 
     MapPoint original(Eigen::Vector3f(1.0F, 2.0F, 3.0F), &ref_keyframe,
                       &map);
-    original.SetNormalVector(Eigen::Vector3f(0.0F, 0.0F, 1.0F));
+    original.setNormalVector(Eigen::Vector3f(0.0F, 0.0F, 1.0F));
     const long unsigned int original_id = original.mnId;
 
     std::set<KeyFrame *> keyframe_set{&ref_keyframe};
@@ -520,17 +520,17 @@ TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
     EXPECT_EQ(original_id, loaded.mnId);
     EXPECT_EQ(original.mnFirstKFid, loaded.mnFirstKFid);
     EXPECT_EQ(original.nObs, loaded.nObs);
-    EXPECT_TRUE(original.GetWorldPos().isApprox(loaded.GetWorldPos(),
+    EXPECT_TRUE(original.getWorldPos().isApprox(loaded.getWorldPos(),
                                                 1.0e-6F));
-    EXPECT_TRUE(original.GetNormal().isApprox(loaded.GetNormal(), 1.0e-6F));
+    EXPECT_TRUE(original.getNormal().isApprox(loaded.getNormal(), 1.0e-6F));
     EXPECT_EQ(original.isBad(), loaded.isBad());
-    EXPECT_FLOAT_EQ(original.GetMinDistanceInvariance(),
-                    loaded.GetMinDistanceInvariance());
-    EXPECT_FLOAT_EQ(original.GetMaxDistanceInvariance(),
-                    loaded.GetMaxDistanceInvariance());
+    EXPECT_FLOAT_EQ(original.getMinDistanceInvariance(),
+                    loaded.getMinDistanceInvariance());
+    EXPECT_FLOAT_EQ(original.getMaxDistanceInvariance(),
+                    loaded.getMaxDistanceInvariance());
     // SKIP mutexes (mMutexPos/mMutexFeatures/mMutexMap): post-load object
     // must be usable through its public getters (exercised above).
-    EXPECT_NO_THROW(loaded.SetWorldPos(
+    EXPECT_NO_THROW(loaded.setWorldPos(
         Eigen::Vector3f(4.0F, 5.0F, 6.0F)));
 }
 

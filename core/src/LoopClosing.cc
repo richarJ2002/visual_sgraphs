@@ -1564,7 +1564,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
                                 }
 
                                 tuple<size_t, size_t> indexes =
-                                    pMPi->GetIndexInKeyFrame(pKFi);
+                                    pMPi->getIndexInKeyFrame(pKFi);
                                 int index = get<0>(indexes);
                                 if (index >= 0)
                                 {
@@ -1891,14 +1891,14 @@ void LoopClosing::CorrectLoop()
 
                 // Project with non-corrected pose and project back with
                 // corrected pose
-                Eigen::Vector3d P3Dw = pMPi->GetWorldPos().cast<double>();
+                Eigen::Vector3d P3Dw = pMPi->getWorldPos().cast<double>();
                 Eigen::Vector3d eigCorrectedP3Dw =
                     g2oCorrectedSwi.map(g2oSiw.map(P3Dw));
 
-                pMPi->SetWorldPos(eigCorrectedP3Dw.cast<float>());
+                pMPi->setWorldPos(eigCorrectedP3Dw.cast<float>());
                 pMPi->correctedByKeyFrameId      = mpCurrentKF->mnId;
                 pMPi->correctedReferenceKeyFrameId = pKFi->mnId;
-                pMPi->UpdateNormalAndDepth();
+                pMPi->updateNormalAndDepth();
             }
 
             // Correct velocity according to orientation correction
@@ -1925,12 +1925,12 @@ void LoopClosing::CorrectLoop()
                 MapPoint *pLoopMP = mvpLoopMatchedMPs[i];
                 MapPoint *pCurMP  = mpCurrentKF->GetMapPoint(i);
                 if (pCurMP)
-                    pCurMP->Replace(pLoopMP);
+                    pCurMP->replace(pLoopMP);
                 else
                 {
                     mpCurrentKF->AddMapPoint(pLoopMP, i);
-                    pLoopMP->AddObservation(mpCurrentKF, i);
-                    pLoopMP->ComputeDistinctiveDescriptors();
+                    pLoopMP->addObservation(mpCurrentKF, i);
+                    pLoopMP->computeDistinctiveDescriptors();
                 }
             }
         }
@@ -2593,21 +2593,21 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocal()
         MapPoint *pMPi = *itMP;
 
         /* If the mapped points are invalud, erase and skip */
-        if (!pMPi || pMPi->isBad() || pMPi->GetMap() != pMergeMap)
+        if (!pMPi || pMPi->isBad() || pMPi->getMap() != pMergeMap)
         {
             itMP = spMapPointMerge.erase(itMP);
             continue;
         }
 
         /* Extract position of point */
-        const Eigen::Vector3d P3DwMerge = pMPi->GetWorldPos().cast<double>();
+        const Eigen::Vector3d P3DwMerge = pMPi->getWorldPos().cast<double>();
 
         /* Transform the point into the current map world frame */
         pMPi->mPosMerge = g2oSwCurrentWMerge.map(P3DwMerge).cast<float>();
 
         /* Transform the points surface normal into current map world frame */
         pMPi->mNormalVectorMerge =
-            g2oSwCurrentWMerge.rotation().cast<float>() * pMPi->GetNormal();
+            g2oSwCurrentWMerge.rotation().cast<float>() * pMPi->getNormal();
 
         /* Step to next mapped point */
         itMP++;
@@ -2689,19 +2689,19 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocal()
         for (MapPoint *pMPi : spMapPointMerge)
         {
             /* Skip null, invalid, or no-longer merge-owned map points */
-            if (!pMPi || pMPi->isBad() || pMPi->GetMap() != pMergeMap)
+            if (!pMPi || pMPi->isBad() || pMPi->getMap() != pMergeMap)
             {
                 continue;
             }
 
             /* Apply position expressed in the surviving current-map frame */
-            pMPi->SetWorldPos(pMPi->mPosMerge);
+            pMPi->setWorldPos(pMPi->mPosMerge);
 
             /* Apply the normal rotated into the surviving current-map frame */
-            pMPi->SetNormalVector(pMPi->mNormalVectorMerge);
+            pMPi->setNormalVector(pMPi->mNormalVectorMerge);
 
             /* Change the map point's internal owner to the current map */
-            pMPi->UpdateMap(pCurrentMap);
+            pMPi->updateMap(pCurrentMap);
 
             /* Register the same map-point pointer in the surviving map */
             pCurrentMap->AddMapPoint(pMPi);
@@ -3013,27 +3013,27 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocal()
             for (MapPoint *pMPi : vpCurrentMapMPs)
             {
                 /* Skip invalid points or points no longer in this map */
-                if (!pMPi || pMPi->isBad() || pMPi->GetMap() != pMergeMap)
+                if (!pMPi || pMPi->isBad() || pMPi->getMap() != pMergeMap)
                 {
                     continue;
                 }
 
                 /* Read the landmark position in the merge world frame */
                 const Eigen::Vector3d P3DwMerge =
-                    pMPi->GetWorldPos().cast<double>();
+                    pMPi->getWorldPos().cast<double>();
 
-                const Eigen::Vector3f normal_mergeWorld = pMPi->GetNormal();
+                const Eigen::Vector3f normal_mergeWorld = pMPi->getNormal();
 
                 /* Transform the landmark into the current world frame */
-                pMPi->SetWorldPos(
+                pMPi->setWorldPos(
                     g2oSwCurrentWMerge.map(P3DwMerge).cast<float>());
 
-                pMPi->SetNormalVector(
+                pMPi->setNormalVector(
                     g2oSwCurrentWMerge.rotation().cast<float>() *
                     normal_mergeWorld);
 
                 /* Refresh the point normal and valid viewing depth range */
-                pMPi->UpdateNormalAndDepth();
+                pMPi->updateNormalAndDepth();
             }
         }
 
@@ -3137,25 +3137,25 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocal()
         for (MapPoint *p_mapPoint : vpCurrentMapMPs)
         {
             if (p_mapPoint == nullptr || p_mapPoint->isBad() ||
-                p_mapPoint->GetMap() != pMergeMap)
+                p_mapPoint->getMap() != pMergeMap)
             {
                 continue;
             }
 
             const Eigen::Vector3f position_mergeWorld_m =
-                p_mapPoint->GetWorldPos();
+                p_mapPoint->getWorldPos();
 
-            const Eigen::Vector3f normal_mergeWorld = p_mapPoint->GetNormal();
+            const Eigen::Vector3f normal_mergeWorld = p_mapPoint->getNormal();
 
-            p_mapPoint->SetWorldPos(
+            p_mapPoint->setWorldPos(
                 g2oSwCurrentWMerge.map(position_mergeWorld_m.cast<double>())
                     .cast<float>());
 
-            p_mapPoint->SetNormalVector(
+            p_mapPoint->setNormalVector(
                 g2oSwCurrentWMerge.rotation().cast<float>() *
                 normal_mergeWorld);
 
-            p_mapPoint->UpdateNormalAndDepth();
+            p_mapPoint->updateNormalAndDepth();
         }
     }
 
@@ -3219,10 +3219,10 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocal()
         // new map
         for (MapPoint *pMPi : vpCurrentMapMPs)
         {
-            if (!pMPi || pMPi->isBad() || pMPi->GetMap() != pMergeMap)
+            if (!pMPi || pMPi->isBad() || pMPi->getMap() != pMergeMap)
                 continue;
 
-            pMPi->UpdateMap(pCurrentMap);
+            pMPi->updateMap(pCurrentMap);
             pCurrentMap->AddMapPoint(pMPi);
             pMergeMap->EraseMapPoint(pMPi);
         }
@@ -3710,10 +3710,10 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocalInertial()
 
         for (MapPoint *pMPi : vpMergeMapMPs)
         {
-            if (!pMPi || pMPi->isBad() || pMPi->GetMap() != pMergeMap)
+            if (!pMPi || pMPi->isBad() || pMPi->getMap() != pMergeMap)
                 continue;
 
-            pMPi->UpdateMap(pCurrentMap);
+            pMPi->updateMap(pCurrentMap);
             pCurrentMap->AddMapPoint(pMPi);
             pMergeMap->EraseMapPoint(pMPi);
         }
@@ -4101,7 +4101,7 @@ void LoopClosing::CheckObservations(set<KeyFrame *> &spKFsMap1,
             }
 
             map<KeyFrame *, tuple<int, int>> mMPijObs =
-                pMPij->GetObservations();
+                pMPij->getObservations();
             for (KeyFrame *pKFi2 : spKFsMap2)
             {
                 if (mMPijObs.find(pKFi2) != mMPijObs.end())
@@ -4178,7 +4178,7 @@ void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap,
             {
 
                 num_replaces += 1;
-                pRep->Replace(vpMapPoints[i]);
+                pRep->replace(vpMapPoints[i]);
             }
         }
 
@@ -4224,7 +4224,7 @@ void LoopClosing::SearchAndFuse(const vector<KeyFrame *> &vConectedKFs,
             if (pRep)
             {
                 num_replaces += 1;
-                pRep->Replace(vpMapPoints[i]);
+                pRep->replace(vpMapPoints[i]);
             }
         }
         /*cout << "FUSE-POSE: KF " << pKF->mnId << " ->" << num_replaces << "
@@ -4499,14 +4499,14 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
                 if (pMP->baGlobalKeyFrameId == nLoopKF)
                 {
                     // If optimized by Global BA, just update
-                    pMP->SetWorldPos(pMP->mPosGBA);
+                    pMP->setWorldPos(pMP->mPosGBA);
                     mapPointWasCorrected = true;
                 }
                 else
                 {
                     // Update according to the correction of its reference
                     // keyframe
-                    KeyFrame *pRefKF = pMP->GetReferenceKeyFrame();
+                    KeyFrame *pRefKF = pMP->getReferenceKeyFrame();
 
                     if (pRefKF == nullptr || pRefKF->isBad() ||
                         pRefKF->GetMap() != pActiveMap ||
@@ -4514,7 +4514,7 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
                     {
                         pRefKF = nullptr;
 
-                        const auto observations = pMP->GetObservations();
+                        const auto observations = pMP->getObservations();
 
                         for (const auto &[p_observingKeyFrame, featureIndexes] :
                              observations)
@@ -4550,16 +4550,16 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
                     // pRefKF->mTcwBefGBA.rowRange(0,3).colRange(0,3); cv::Mat
                     // tcw = pRefKF->mTcwBefGBA.rowRange(0,3).col(3);
                     Eigen::Vector3f Xc =
-                        pRefKF->mTcwBefGBA * pMP->GetWorldPos();
+                        pRefKF->mTcwBefGBA * pMP->getWorldPos();
 
                     // Backproject using corrected camera
-                    pMP->SetWorldPos(pRefKF->GetPoseInverse() * Xc);
+                    pMP->setWorldPos(pRefKF->GetPoseInverse() * Xc);
                     mapPointWasCorrected = true;
                 }
 
                 if (mapPointWasCorrected)
                 {
-                    pMP->UpdateNormalAndDepth();
+                    pMP->updateNormalAndDepth();
                 }
             }
 
