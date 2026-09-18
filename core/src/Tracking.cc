@@ -3609,7 +3609,7 @@ bool Tracking::TrackReferenceKeyFrame()
                     pMP->mbTrackInViewR = false;
                 }
                 pMP->mbTrackInView   = false;
-                pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+                pMP->lastSeenFrameId = mCurrentFrame.mnId;
                 nmatches--;
             }
             else if (mCurrentFrame.mapPoints[i]->Observations() > 0)
@@ -3806,7 +3806,7 @@ bool Tracking::TrackWithMotionModel()
                 {
                     pMP->mbTrackInViewR = false;
                 }
-                pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+                pMP->lastSeenFrameId = mCurrentFrame.mnId;
                 nmatches--;
             }
             else if (mCurrentFrame.mapPoints[i]->Observations() > 0)
@@ -4330,7 +4330,7 @@ void Tracking::SearchLocalPoints()
             else
             {
                 pMP->IncreaseVisible();
-                pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+                pMP->lastSeenFrameId = mCurrentFrame.mnId;
                 pMP->mbTrackInView   = false;
                 pMP->mbTrackInViewR  = false;
             }
@@ -4347,7 +4347,7 @@ void Tracking::SearchLocalPoints()
     {
         MapPoint *pMP = *vit;
 
-        if (pMP->mnLastFrameSeen == mCurrentFrame.mnId)
+        if (pMP->lastSeenFrameId == mCurrentFrame.mnId)
             continue;
         if (pMP->isBad())
             continue;
@@ -4463,13 +4463,13 @@ void Tracking::UpdateLocalPoints()
             MapPoint *pMP = *itMP;
             if (!pMP)
                 continue;
-            if (pMP->mnTrackReferenceForFrame == mCurrentFrame.mnId)
+            if (pMP->trackReferenceFrameId == mCurrentFrame.mnId)
                 continue;
             if (!pMP->isBad())
             {
                 count_pts++;
                 mvpLocalMapPoints.push_back(pMP);
-                pMP->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+                pMP->trackReferenceFrameId = mCurrentFrame.mnId;
             }
         }
     }
@@ -4560,7 +4560,7 @@ void Tracking::UpdateLocalKeyFrames()
         }
 
         mvpLocalKeyFrames.push_back(pKF);
-        pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+        pKF->trackReferenceFrameId = mCurrentFrame.mnId;
     }
 
     // Include also some not-already-included keyframes that are neighbors to
@@ -4590,10 +4590,10 @@ void Tracking::UpdateLocalKeyFrames()
             KeyFrame *pNeighKF = *itNeighKF;
             if (!pNeighKF->isBad())
             {
-                if (pNeighKF->mnTrackReferenceForFrame != mCurrentFrame.mnId)
+                if (pNeighKF->trackReferenceFrameId != mCurrentFrame.mnId)
                 {
                     mvpLocalKeyFrames.push_back(pNeighKF);
-                    pNeighKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+                    pNeighKF->trackReferenceFrameId = mCurrentFrame.mnId;
                     break;
                 }
             }
@@ -4608,10 +4608,10 @@ void Tracking::UpdateLocalKeyFrames()
             KeyFrame *pChildKF = *sit;
             if (!pChildKF->isBad())
             {
-                if (pChildKF->mnTrackReferenceForFrame != mCurrentFrame.mnId)
+                if (pChildKF->trackReferenceFrameId != mCurrentFrame.mnId)
                 {
                     mvpLocalKeyFrames.push_back(pChildKF);
-                    pChildKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+                    pChildKF->trackReferenceFrameId = mCurrentFrame.mnId;
                     break;
                 }
             }
@@ -4620,10 +4620,10 @@ void Tracking::UpdateLocalKeyFrames()
         KeyFrame *pParent = pKF->GetParent();
         if (pParent)
         {
-            if (pParent->mnTrackReferenceForFrame != mCurrentFrame.mnId)
+            if (pParent->trackReferenceFrameId != mCurrentFrame.mnId)
             {
                 mvpLocalKeyFrames.push_back(pParent);
-                pParent->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+                pParent->trackReferenceFrameId = mCurrentFrame.mnId;
                 break;
             }
         }
@@ -4641,10 +4641,10 @@ void Tracking::UpdateLocalKeyFrames()
         {
             if (!tempKeyFrame)
                 break;
-            if (tempKeyFrame->mnTrackReferenceForFrame != mCurrentFrame.mnId)
+            if (tempKeyFrame->trackReferenceFrameId != mCurrentFrame.mnId)
             {
                 mvpLocalKeyFrames.push_back(tempKeyFrame);
-                tempKeyFrame->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+                tempKeyFrame->trackReferenceFrameId = mCurrentFrame.mnId;
                 tempKeyFrame                           = tempKeyFrame->mPrevKF;
             }
         }
@@ -5185,7 +5185,7 @@ void Tracking::UpdateFrameIMU(const float      s,
         usleep(500);
     }
 
-    if (mLastFrame.mnId == mLastFrame.p_lastKeyFrame->mnFrameId)
+    if (mLastFrame.mnId == mLastFrame.p_lastKeyFrame->frameId)
     {
         mLastFrame.setImuPoseVelocity(
             mLastFrame.p_lastKeyFrame->GetImuRotation(),

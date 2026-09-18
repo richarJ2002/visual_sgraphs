@@ -36,24 +36,24 @@ namespace core
 long unsigned int KeyFrame::nNextId = 0;
 
 KeyFrame::KeyFrame() :
-    mnFrameId(0),
+    frameId(0),
     mTimeStamp(0),
-    mnGridCols(FRAME_GRID_COLS),
-    mnGridRows(FRAME_GRID_ROWS),
-    mfGridElementWidthInv(0),
-    mfGridElementHeightInv(0),
-    mnTrackReferenceForFrame(0),
-    mnFuseTargetForKF(0),
-    mnBALocalForKF(0),
-    mnBAFixedForKF(0),
-    mnBALocalForMerge(0),
+    gridCols(FRAME_GRID_COLS),
+    gridRows(FRAME_GRID_ROWS),
+    gridElementWidthInverse(0),
+    gridElementHeightInverse(0),
+    trackReferenceFrameId(0),
+    fuseTargetKeyFrameId(0),
+    baLocalKeyFrameId(0),
+    baFixedKeyFrameId(0),
+    baLocalMergeId(0),
     mnLoopQuery(0),
     mnLoopWords(0),
     mnRelocQuery(0),
     mnRelocWords(0),
     mnMergeQuery(0),
     mnMergeWords(0),
-    mnBAGlobalForKF(0),
+    baGlobalKeyFrameId(0),
     fx(0),
     fy(0),
     cx(0),
@@ -90,31 +90,31 @@ KeyFrame::KeyFrame() :
     mbBad(false),
     mHalfBaseline(0),
     mbCurrentPlaceRecognition(false),
-    mnMergeCorrectedForKF(0),
+    mergeCorrectedKeyFrameId(0),
     NLeft(0),
     NRight(0),
-    mnNumberOfOpt(0),
+    optimizationCount(0),
     mbHasVelocity(false)
 {}
 
 KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     bImu(pMap->isImuInitialized()),
-    mnFrameId(F.mnId),
+    frameId(F.mnId),
     mTimeStamp(F.timeStamp),
-    mnGridCols(FRAME_GRID_COLS),
-    mnGridRows(FRAME_GRID_ROWS),
-    mfGridElementWidthInv(F.gridElementWidthInverse),
-    mfGridElementHeightInv(F.gridElementHeightInverse),
-    mnTrackReferenceForFrame(0),
-    mnFuseTargetForKF(0),
-    mnBALocalForKF(0),
-    mnBAFixedForKF(0),
-    mnBALocalForMerge(0),
+    gridCols(FRAME_GRID_COLS),
+    gridRows(FRAME_GRID_ROWS),
+    gridElementWidthInverse(F.gridElementWidthInverse),
+    gridElementHeightInverse(F.gridElementHeightInverse),
+    trackReferenceFrameId(0),
+    fuseTargetKeyFrameId(0),
+    baLocalKeyFrameId(0),
+    baFixedKeyFrameId(0),
+    baLocalMergeId(0),
     mnLoopQuery(0),
     mnLoopWords(0),
     mnRelocQuery(0),
     mnRelocWords(0),
-    mnBAGlobalForKF(0),
+    baGlobalKeyFrameId(0),
     mnPlaceRecognitionQuery(0),
     mnPlaceRecognitionWords(0),
     mPlaceRecognitionScore(0),
@@ -157,14 +157,14 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     mpParent(nullptr),
     mDistCoef(F.distortionCoefficients),
     mbNotErase(false),
-    mnDataset(F.datasetId),
+    datasetId(F.datasetId),
     mbToBeErased(false),
     mbBad(false),
     mHalfBaseline(F.mb / 2),
     mpMap(pMap),
     mbCurrentPlaceRecognition(false),
     mNameFile(F.fileName),
-    mnMergeCorrectedForKF(0),
+    mergeCorrectedKeyFrameId(0),
     mpCamera(F.p_camera),
     mpCamera2(F.p_camera2),
     mvLeftToRightMatch(F.leftToRightMatches),
@@ -174,7 +174,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     NLeft(F.Nleft),
     NRight(F.Nright),
     mTrl(F.getRelativePoseTrl()),
-    mnNumberOfOpt(0),
+    optimizationCount(0),
     mbHasVelocity(false),
     mCurrentFrameMarkers(F.mapMarkers),
     mCurrentFrameMapPoints(F.mapPoints),
@@ -184,15 +184,15 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
 {
     mnId = nNextId++;
 
-    mGrid.resize(mnGridCols);
+    mGrid.resize(gridCols);
     if (F.Nleft != -1)
-        mGridRight.resize(mnGridCols);
-    for (int i = 0; i < mnGridCols; i++)
+        mGridRight.resize(gridCols);
+    for (int i = 0; i < gridCols; i++)
     {
-        mGrid[i].resize(mnGridRows);
+        mGrid[i].resize(gridRows);
         if (F.Nleft != -1)
-            mGridRight[i].resize(mnGridRows);
-        for (int j = 0; j < mnGridRows; j++)
+            mGridRight[i].resize(gridRows);
+        for (int j = 0; j < gridRows; j++)
         {
             mGrid[i][j] = F.grid[i][j];
             if (F.Nleft != -1)
@@ -216,7 +216,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     mImuBias = F.imuBias;
     SetPose(F.getPose());
 
-    mnOriginMapId = pMap->GetId();
+    originMapId = pMap->GetId();
 }
 
 void KeyFrame::ComputeBoW()
@@ -1163,24 +1163,24 @@ vector<size_t> KeyFrame::GetFeaturesInArea(const float &x,
     float factorY = r;
 
     const int nMinCellX =
-        max(0, (int)floor((x - mnMinX - factorX) * mfGridElementWidthInv));
-    if (nMinCellX >= mnGridCols)
+        max(0, (int)floor((x - mnMinX - factorX) * gridElementWidthInverse));
+    if (nMinCellX >= gridCols)
         return vIndices;
 
     const int nMaxCellX =
-        min((int)mnGridCols - 1,
-            (int)ceil((x - mnMinX + factorX) * mfGridElementWidthInv));
+        min((int)gridCols - 1,
+            (int)ceil((x - mnMinX + factorX) * gridElementWidthInverse));
     if (nMaxCellX < 0)
         return vIndices;
 
     const int nMinCellY =
-        max(0, (int)floor((y - mnMinY - factorY) * mfGridElementHeightInv));
-    if (nMinCellY >= mnGridRows)
+        max(0, (int)floor((y - mnMinY - factorY) * gridElementHeightInverse));
+    if (nMinCellY >= gridRows)
         return vIndices;
 
     const int nMaxCellY =
-        min((int)mnGridRows - 1,
-            (int)ceil((y - mnMinY + factorY) * mfGridElementHeightInv));
+        min((int)gridRows - 1,
+            (int)ceil((y - mnMinY + factorY) * gridElementHeightInverse));
     if (nMaxCellY < 0)
         return vIndices;
 
@@ -1369,13 +1369,13 @@ void KeyFrame::PreSave(set<KeyFrame *>        &spKF,
     }
 
     // Camera data
-    mnBackupIdCamera = -1;
+    backupCameraId = -1;
     if (mpCamera && spCam.find(mpCamera) != spCam.end())
-        mnBackupIdCamera = mpCamera->getId();
+        backupCameraId = mpCamera->getId();
 
-    mnBackupIdCamera2 = -1;
+    backupCamera2Id = -1;
     if (mpCamera2 && spCam.find(mpCamera2) != spCam.end())
-        mnBackupIdCamera2 = mpCamera2->getId();
+        backupCamera2Id = mpCamera2->getId();
 
     // Inertial data
     mBackupPrevKFId = -1;
@@ -1463,17 +1463,17 @@ void KeyFrame::PostLoad(map<long unsigned int, KeyFrame *>   &mpKFid,
     }
 
     // Camera data
-    if (mnBackupIdCamera >= 0)
+    if (backupCameraId >= 0)
     {
-        mpCamera = mpCamId[mnBackupIdCamera];
+        mpCamera = mpCamId[backupCameraId];
     }
     else
     {
         cout << "ERROR: There is not a main camera in KF " << mnId << endl;
     }
-    if (mnBackupIdCamera2 >= 0)
+    if (backupCamera2Id >= 0)
     {
-        mpCamera2 = mpCamId[mnBackupIdCamera2];
+        mpCamera2 = mpCamId[backupCamera2Id];
     }
 
     // Inertial data

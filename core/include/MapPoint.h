@@ -55,7 +55,7 @@ namespace core
         {
             ar & mnId;
             ar & mnFirstKFid;
-            ar & mnFirstFrame;
+            ar & firstFrameId;
             ar & nObs;
             // Variables used by the tracking
             // ar & mTrackProjX;
@@ -70,20 +70,20 @@ namespace core
             // ar & mnTrackScaleLevelR;
             // ar & mTrackViewCos;
             // ar & mTrackViewCosR;
-            // ar & mnTrackReferenceForFrame;
-            // ar & mnLastFrameSeen;
+            // ar & trackReferenceFrameId;
+            // ar & lastSeenFrameId;
 
             // Variables used by local mapping
-            // ar & mnBALocalForKF;
-            // ar & mnFuseCandidateForKF;
+            // ar & baLocalKeyFrameId;
+            // ar & fuseCandidateKeyFrameId;
 
             // Variables used by loop closing and merging
-            // ar & mnLoopPointForKF;
-            // ar & mnCorrectedByKF;
-            // ar & mnCorrectedReference;
+            // ar & loopPointKeyFrameId;
+            // ar & correctedByKeyFrameId;
+            // ar & correctedReferenceKeyFrameId;
             // serializeMatrix(ar,mPosGBA,version);
-            // ar & mnBAGlobalForKF;
-            // ar & mnBALocalForMerge;
+            // ar & baGlobalKeyFrameId;
+            // ar & baLocalMergeId;
             // serializeMatrix(ar,mPosMerge,version);
             // serializeMatrix(ar,mNormalVectorMerge,version);
 
@@ -168,7 +168,7 @@ namespace core
         long unsigned int mnId;
         static long unsigned int nNextId;
         long int mnFirstKFid;
-        long int mnFirstFrame;
+        long int firstFrameId;
         int nObs;
 
         // Variables used by the tracking
@@ -181,20 +181,20 @@ namespace core
         bool mbTrackInView, mbTrackInViewR;
         int mnTrackScaleLevel, mnTrackScaleLevelR;
         float mTrackViewCos, mTrackViewCosR;
-        long unsigned int mnTrackReferenceForFrame;
-        long unsigned int mnLastFrameSeen;
+        long unsigned int trackReferenceFrameId;
+        long unsigned int lastSeenFrameId;
 
         // Variables used by local mapping
-        long unsigned int mnBALocalForKF;
-        long unsigned int mnFuseCandidateForKF;
+        long unsigned int baLocalKeyFrameId;
+        long unsigned int fuseCandidateKeyFrameId;
 
         // Variables used by loop closing
-        long unsigned int mnLoopPointForKF;
-        long unsigned int mnCorrectedByKF;
-        long unsigned int mnCorrectedReference;
+        long unsigned int loopPointKeyFrameId;
+        long unsigned int correctedByKeyFrameId;
+        long unsigned int correctedReferenceKeyFrameId;
         Eigen::Vector3f mPosGBA;
-        long unsigned int mnBAGlobalForKF;
-        long unsigned int mnBALocalForMerge;
+        long unsigned int baGlobalKeyFrameId;
+        long unsigned int baLocalMergeId;
 
         // Variable used by merging
         Eigen::Vector3f mPosMerge;
@@ -208,7 +208,7 @@ namespace core
 
         static std::mutex mGlobalMutex;
 
-        unsigned int mnOriginMapId;
+        unsigned int originMapId;
 
     protected:
         // Position in absolute coordinates

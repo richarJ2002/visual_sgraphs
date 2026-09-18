@@ -203,7 +203,7 @@ namespace core
             {
                 KeyFrame *pKF = vpKFs[i];
                 Eigen::Matrix4f Twc = pKF->GetPoseInverse().matrix();
-                unsigned int index_color = pKF->mnOriginMapId;
+                unsigned int index_color = pKF->originMapId;
 
                 glPushMatrix();
 
@@ -355,7 +355,7 @@ namespace core
                 {
                     KeyFrame *pKF = vpKFs[i];
                     Eigen::Matrix4f Twc = pKF->GetPoseInverse().matrix();
-                    unsigned int index_color = pKF->mnOriginMapId;
+                    unsigned int index_color = pKF->originMapId;
 
                     glPushMatrix();
 

@@ -871,10 +871,10 @@ void LocalMapping::SearchInNeighbors()
          vit++)
     {
         KeyFrame *pKFi = *vit;
-        if (pKFi->isBad() || pKFi->mnFuseTargetForKF == mpCurrentKeyFrame->mnId)
+        if (pKFi->isBad() || pKFi->fuseTargetKeyFrameId == mpCurrentKeyFrame->mnId)
             continue;
         vpTargetKFs.push_back(pKFi);
-        pKFi->mnFuseTargetForKF = mpCurrentKeyFrame->mnId;
+        pKFi->fuseTargetKeyFrameId = mpCurrentKeyFrame->mnId;
     }
 
     // Add some covisible of covisible
@@ -890,11 +890,11 @@ void LocalMapping::SearchInNeighbors()
         {
             KeyFrame *pKFi2 = *vit2;
             if (pKFi2->isBad() ||
-                pKFi2->mnFuseTargetForKF == mpCurrentKeyFrame->mnId ||
+                pKFi2->fuseTargetKeyFrameId == mpCurrentKeyFrame->mnId ||
                 pKFi2->mnId == mpCurrentKeyFrame->mnId)
                 continue;
             vpTargetKFs.push_back(pKFi2);
-            pKFi2->mnFuseTargetForKF = mpCurrentKeyFrame->mnId;
+            pKFi2->fuseTargetKeyFrameId = mpCurrentKeyFrame->mnId;
         }
         if (mbAbortBA)
             break;
@@ -907,13 +907,13 @@ void LocalMapping::SearchInNeighbors()
         while (vpTargetKFs.size() < 20 && pKFi)
         {
             if (pKFi->isBad() ||
-                pKFi->mnFuseTargetForKF == mpCurrentKeyFrame->mnId)
+                pKFi->fuseTargetKeyFrameId == mpCurrentKeyFrame->mnId)
             {
                 pKFi = pKFi->mPrevKF;
                 continue;
             }
             vpTargetKFs.push_back(pKFi);
-            pKFi->mnFuseTargetForKF = mpCurrentKeyFrame->mnId;
+            pKFi->fuseTargetKeyFrameId = mpCurrentKeyFrame->mnId;
             pKFi                    = pKFi->mPrevKF;
         }
     }
@@ -959,9 +959,9 @@ void LocalMapping::SearchInNeighbors()
             if (!pMP)
                 continue;
             if (pMP->isBad() ||
-                pMP->mnFuseCandidateForKF == mpCurrentKeyFrame->mnId)
+                pMP->fuseCandidateKeyFrameId == mpCurrentKeyFrame->mnId)
                 continue;
-            pMP->mnFuseCandidateForKF = mpCurrentKeyFrame->mnId;
+            pMP->fuseCandidateKeyFrameId = mpCurrentKeyFrame->mnId;
             vpFuseCandidates.push_back(pMP);
         }
     }
@@ -1595,7 +1595,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
             if (!pChild || pChild->isBad())
                 continue;
 
-            if (pChild->mnBAGlobalForKF != GBAid)
+            if (pChild->baGlobalKeyFrameId != GBAid)
             {
                 Sophus::SE3f Tchildc = pChild->GetPose() * Twc;
                 pChild->mTcwGBA      = Tchildc * pKF->mTcwGBA;
@@ -1613,7 +1613,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
                 }
 
                 pChild->mBiasGBA        = pChild->GetImuBias();
-                pChild->mnBAGlobalForKF = GBAid;
+                pChild->baGlobalKeyFrameId = GBAid;
             }
             lpKFtoCheck.push_back(pChild);
         }
@@ -1646,7 +1646,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         if (pMP->isBad())
             continue;
 
-        if (pMP->mnBAGlobalForKF == GBAid)
+        if (pMP->baGlobalKeyFrameId == GBAid)
         {
             // If optimized by Global BA, just update
             pMP->SetWorldPos(pMP->mPosGBA);
@@ -1656,7 +1656,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
             // Update according to the correction of its reference keyframe
             KeyFrame *pRefKF = pMP->GetReferenceKeyFrame();
 
-            if (pRefKF->mnBAGlobalForKF != GBAid)
+            if (pRefKF->baGlobalKeyFrameId != GBAid)
                 continue;
 
             // Map to non-corrected camera

@@ -70,21 +70,21 @@ class KeyFrame
     void serialize(Archive &ar, const unsigned int version)
     {
         ar & mnId;
-        ar &const_cast<long unsigned int &>(mnFrameId);
+        ar &const_cast<long unsigned int &>(frameId);
         ar &const_cast<double &>(mTimeStamp);
         // Grid
-        ar &const_cast<int &>(mnGridCols);
-        ar &const_cast<int &>(mnGridRows);
-        ar &const_cast<float &>(mfGridElementWidthInv);
-        ar &const_cast<float &>(mfGridElementHeightInv);
+        ar &const_cast<int &>(gridCols);
+        ar &const_cast<int &>(gridRows);
+        ar &const_cast<float &>(gridElementWidthInverse);
+        ar &const_cast<float &>(gridElementHeightInverse);
 
         // Variables of tracking
-        // ar & mnTrackReferenceForFrame;
-        // ar & mnFuseTargetForKF;
+        // ar & trackReferenceFrameId;
+        // ar & fuseTargetKeyFrameId;
         // Variables of local mapping
-        // ar & mnBALocalForKF;
-        // ar & mnBAFixedForKF;
-        // ar & mnNumberOfOpt;
+        // ar & baLocalKeyFrameId;
+        // ar & baFixedKeyFrameId;
+        // ar & optimizationCount;
         // Variables used by KeyFrameDatabase
         // ar & mnLoopQuery;
         // ar & mnLoopWords;
@@ -105,7 +105,7 @@ class KeyFrame
         // serializeMatrix(ar,mVwbGBA,version);
         // serializeMatrix(ar,mVwbBefGBA,version);
         // ar & mBiasGBA;
-        // ar & mnBAGlobalForKF;
+        // ar & baGlobalKeyFrameId;
         // Variables of Merging
         // serializeMatrix(ar,mTcwMerge,version);
         // serializeMatrix(ar,mTcwBefMerge,version);
@@ -113,10 +113,10 @@ class KeyFrame
         // serializeMatrix(ar,mVwbMerge,version);
         // serializeMatrix(ar,mVwbBefMerge,version);
         // ar & mBiasMerge;
-        // ar & mnMergeCorrectedForKF;
-        // ar & mnMergeForKF;
+        // ar & mergeCorrectedKeyFrameId;
+        // ar & mergeKeyFrameId;
         // ar & mfScaleMerge;
-        // ar & mnBALocalForMerge;
+        // ar & baLocalMergeId;
 
         // Scale
         ar & mfScale;
@@ -178,11 +178,11 @@ class KeyFrame
 
         ar & mHalfBaseline;
 
-        ar & mnOriginMapId;
+        ar & originMapId;
 
         // Camera variables
-        ar & mnBackupIdCamera;
-        ar & mnBackupIdCamera2;
+        ar & backupCameraId;
+        ar & backupCamera2Id;
 
         // Fisheye variables
         ar & mvLeftToRightMatch;
@@ -381,26 +381,26 @@ class KeyFrame
   public:
     static long unsigned int nNextId;
     long unsigned int        mnId;
-    const long unsigned int  mnFrameId;
+    const long unsigned int  frameId;
 
     const double mTimeStamp;
 
     // Grid (to speed up feature matching)
-    const int   mnGridCols;
-    const int   mnGridRows;
-    const float mfGridElementWidthInv;
-    const float mfGridElementHeightInv;
+    const int   gridCols;
+    const int   gridRows;
+    const float gridElementWidthInverse;
+    const float gridElementHeightInverse;
 
     // Variables used by the tracking
-    long unsigned int mnTrackReferenceForFrame;
-    long unsigned int mnFuseTargetForKF;
+    long unsigned int trackReferenceFrameId;
+    long unsigned int fuseTargetKeyFrameId;
 
     // Variables used by the local mapping
-    long unsigned int mnBALocalForKF;
-    long unsigned int mnBAFixedForKF;
+    long unsigned int baLocalKeyFrameId;
+    long unsigned int baFixedKeyFrameId;
 
     // Number of optimizations by BA(amount of iterations in BA)
-    long unsigned int mnNumberOfOpt;
+    long unsigned int optimizationCount;
 
     // Variables used by the keyframe database
     long unsigned int mnLoopQuery;
@@ -424,7 +424,7 @@ class KeyFrame
     Eigen::Vector3f   mVwbGBA;
     Eigen::Vector3f   mVwbBefGBA;
     IMU::Bias         mBiasGBA;
-    long unsigned int mnBAGlobalForKF;
+    long unsigned int baGlobalKeyFrameId;
 
     // Variables used by merging
     Sophus::SE3f      mTcwMerge;
@@ -433,10 +433,10 @@ class KeyFrame
     Eigen::Vector3f   mVwbMerge;
     Eigen::Vector3f   mVwbBefMerge;
     IMU::Bias         mBiasMerge;
-    long unsigned int mnMergeCorrectedForKF;
-    long unsigned int mnMergeForKF;
+    long unsigned int mergeCorrectedKeyFrameId;
+    long unsigned int mergeKeyFrameId;
     float             mfScaleMerge;
-    long unsigned int mnBALocalForMerge;
+    long unsigned int baLocalMergeId;
 
     float mfScale;
 
@@ -482,11 +482,11 @@ class KeyFrame
     IMU::Preintegrated *mpImuPreintegrated;
     IMU::Calib          mImuCalib;
 
-    unsigned int mnOriginMapId;
+    unsigned int originMapId;
 
     string mNameFile;
 
-    int mnDataset;
+    int datasetId;
 
     std::vector<KeyFrame *> mvpLoopCandKFs;
     std::vector<KeyFrame *> mvpMergeCandKFs;
@@ -586,7 +586,7 @@ class KeyFrame
     IMU::Preintegrated mBackupImuPreintegrated;
 
     // Backup for Cameras
-    unsigned int mnBackupIdCamera, mnBackupIdCamera2;
+    unsigned int backupCameraId, backupCamera2Id;
 
     // Calibration
     Eigen::Matrix3f mK_;

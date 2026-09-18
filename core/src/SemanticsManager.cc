@@ -1563,7 +1563,7 @@ void SemanticsManager::resetTemporalStateForMap(Map *p_activeMap_in)
         for (KeyFrame *p_keyFrame : p_activeMap_in->GetAllKeyFrames())
         {
             if (p_keyFrame == nullptr || p_keyFrame->isBad() ||
-                p_keyFrame->mnFrameId != lastTraversalFrameId_ ||
+                p_keyFrame->frameId != lastTraversalFrameId_ ||
                 p_keyFrame->mnId != lastTraversalKeyFrameId_)
             {
                 continue;
@@ -4176,9 +4176,9 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
               orderedKeyFrames.end(),
               [](const KeyFrame *p_first, const KeyFrame *p_second)
               {
-                  if (p_first->mnFrameId != p_second->mnFrameId)
+                  if (p_first->frameId != p_second->frameId)
                   {
-                      return p_first->mnFrameId < p_second->mnFrameId;
+                      return p_first->frameId < p_second->frameId;
                   }
                   return p_first->mnId < p_second->mnId;
               });
@@ -4250,7 +4250,7 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
         const Eigen::Vector3d nextCameraCenter_World_m =
             p_keyFrame->GetCameraCenter().cast<double>();
 
-        lastTraversalFrameId_    = p_keyFrame->mnFrameId;
+        lastTraversalFrameId_    = p_keyFrame->frameId;
         lastTraversalKeyFrameId_ = p_keyFrame->mnId;
 
         if (!nextCameraCenter_World_m.allFinite())
@@ -4383,7 +4383,7 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
 
                 const bool addedTraversal =
                     p_passage->addTraversalObservation(traversalDirection,
-                                                       p_keyFrame->mnFrameId,
+                                                       p_keyFrame->frameId,
                                                        p_keyFrame->mnId);
 
                 /* Only newly accepted segment evidence is a new tracker event.
@@ -4418,7 +4418,7 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
     }
 
     KeyFrame *p_latestKeyFrame  = orderedKeyFrames.back();
-    lastTraversalFrameId_       = p_latestKeyFrame->mnFrameId;
+    lastTraversalFrameId_       = p_latestKeyFrame->frameId;
     lastTraversalKeyFrameId_    = p_latestKeyFrame->mnId;
     hasTraversalKeyFrameCursor_ = true;
 }

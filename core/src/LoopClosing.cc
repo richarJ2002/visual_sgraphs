@@ -1886,7 +1886,7 @@ void LoopClosing::CorrectLoop()
                     continue;
                 if (pMPi->isBad())
                     continue;
-                if (pMPi->mnCorrectedByKF == mpCurrentKF->mnId)
+                if (pMPi->correctedByKeyFrameId == mpCurrentKF->mnId)
                     continue;
 
                 // Project with non-corrected pose and project back with
@@ -1896,8 +1896,8 @@ void LoopClosing::CorrectLoop()
                     g2oCorrectedSwi.map(g2oSiw.map(P3Dw));
 
                 pMPi->SetWorldPos(eigCorrectedP3Dw.cast<float>());
-                pMPi->mnCorrectedByKF      = mpCurrentKF->mnId;
-                pMPi->mnCorrectedReference = pKFi->mnId;
+                pMPi->correctedByKeyFrameId      = mpCurrentKF->mnId;
+                pMPi->correctedReferenceKeyFrameId = pKFi->mnId;
                 pMPi->UpdateNormalAndDepth();
             }
 
@@ -2663,7 +2663,7 @@ semantic::SemanticMergeDecision LoopClosing::MergeLocal()
             pKFi->UpdateMap(pCurrentMap);
 
             /* Record which current keyframe triggered this merge correction */
-            pKFi->mnMergeCorrectedForKF = mpCurrentKF->mnId;
+            pKFi->mergeCorrectedKeyFrameId = mpCurrentKF->mnId;
 
             /* Insert the same keyframe pointer into surviving map container */
             pCurrentMap->AddKeyFrame(pKFi);
@@ -4428,7 +4428,7 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
                     if (!pChild || pChild->isBad())
                         continue;
 
-                    if (pChild->mnBAGlobalForKF != nLoopKF)
+                    if (pChild->baGlobalKeyFrameId != nLoopKF)
                     {
                         Sophus::SE3f Tchildc = pChild->GetPose() * Twc;
                         pChild->mTcwGBA =
@@ -4446,7 +4446,7 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
 
                         pChild->mBiasGBA = pChild->GetImuBias();
 
-                        pChild->mnBAGlobalForKF = nLoopKF;
+                        pChild->baGlobalKeyFrameId = nLoopKF;
                     }
                     lpKFtoCheck.push_back(pChild);
                 }
@@ -4496,7 +4496,7 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
 
                 bool mapPointWasCorrected = false;
 
-                if (pMP->mnBAGlobalForKF == nLoopKF)
+                if (pMP->baGlobalKeyFrameId == nLoopKF)
                 {
                     // If optimized by Global BA, just update
                     pMP->SetWorldPos(pMP->mPosGBA);
@@ -4510,7 +4510,7 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
 
                     if (pRefKF == nullptr || pRefKF->isBad() ||
                         pRefKF->GetMap() != pActiveMap ||
-                        pRefKF->mnBAGlobalForKF != nLoopKF)
+                        pRefKF->baGlobalKeyFrameId != nLoopKF)
                     {
                         pRefKF = nullptr;
 
@@ -4524,7 +4524,7 @@ void LoopClosing::RunGlobalBundleAdjustment(Map          *pActiveMap,
                             if (p_observingKeyFrame == nullptr ||
                                 p_observingKeyFrame->isBad() ||
                                 p_observingKeyFrame->GetMap() != pActiveMap ||
-                                p_observingKeyFrame->mnBAGlobalForKF != nLoopKF)
+                                p_observingKeyFrame->baGlobalKeyFrameId != nLoopKF)
                             {
                                 continue;
                             }

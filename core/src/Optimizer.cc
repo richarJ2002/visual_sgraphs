@@ -817,7 +817,7 @@ void Optimizer::BundleAdjustment(
             pKF->mTcwGBA =
                 Sophus::SE3d(SE3quat.rotation(), SE3quat.translation())
                     .cast<float>();
-            pKF->mnBAGlobalForKF = nLoopKF;
+            pKF->baGlobalKeyFrameId = nLoopKF;
 
             Sophus::SE3f    mTwc        = pKF->GetPoseInverse();
             Sophus::SE3f    mTcGBA_c    = pKF->mTcwGBA * mTwc;
@@ -904,7 +904,7 @@ void Optimizer::BundleAdjustment(
         else
         {
             pMP->mPosGBA         = vPoint->estimate().cast<float>();
-            pMP->mnBAGlobalForKF = nLoopKF;
+            pMP->baGlobalKeyFrameId = nLoopKF;
         }
     }
 
@@ -1090,8 +1090,8 @@ void Optimizer::FullInertialBA(Map                    *pMap,
         bool bFixed              = false;
         if (bFixLocal)
         {
-            bFixed = (pKFi->mnBALocalForKF >= (maxKFid - 1)) ||
-                     (pKFi->mnBAFixedForKF >= (maxKFid - 1));
+            bFixed = (pKFi->baLocalKeyFrameId >= (maxKFid - 1)) ||
+                     (pKFi->baFixedKeyFrameId >= (maxKFid - 1));
             if (!bFixed)
                 nNonFixed++;
             VP->setFixed(bFixed);
@@ -1473,7 +1473,7 @@ void Optimizer::FullInertialBA(Map                    *pMap,
         {
             pKFi->mTcwGBA = Sophus::SE3f(VP->estimate().Rcw[0].cast<float>(),
                                          VP->estimate().tcw[0].cast<float>());
-            pKFi->mnBAGlobalForKF = nLoopId;
+            pKFi->baGlobalKeyFrameId = nLoopId;
         }
         if (pKFi->bImu)
         {
@@ -1537,7 +1537,7 @@ void Optimizer::FullInertialBA(Map                    *pMap,
         else
         {
             pMP->mPosGBA         = vPoint->estimate().cast<float>();
-            pMP->mnBAGlobalForKF = nLoopId;
+            pMP->baGlobalKeyFrameId = nLoopId;
         }
     }
 
@@ -2106,7 +2106,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
     // [LBA] Initialize the KeyFrame-related variables
     localKeyFrameList.push_back(pKF);
     mpLocalKeyFrameId[pKF->mnId] = true;
-    pKF->mnBALocalForKF          = pKF->mnId;
+    pKF->baLocalKeyFrameId          = pKF->mnId;
 
     // [LBA] Fill in the neighbor KeyFrames
     if (sysParams->planeBasedCovisibility.enabled)
@@ -2123,7 +2123,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
         // Get the current KeyFrame's neighbors
         vs_graphs::core::KeyFrame *pKFi = neighborKeyFrameVec[idx];
         // Mark the KeyFrame as a part of the current LBA
-        pKFi->mnBALocalForKF = pKF->mnId;
+        pKFi->baLocalKeyFrameId = pKF->mnId;
         // If the KeyFrame is proper, add it to the list of local KeyFrames for
         // LBA
         if (!pKFi->isBad() && pKFi->GetMap() == pCurrentMap)
@@ -2170,11 +2170,11 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
             if (pMP)
                 if (!pMP->isBad() && pMP->GetMap() == pCurrentMap)
                 {
-                    if (pMP->mnBALocalForKF != pKF->mnId)
+                    if (pMP->baLocalKeyFrameId != pKF->mnId)
                     {
                         localMapPointList.push_back(pMP);
                         mpLocalMapPointId[pMP->mnId] = true;
-                        pMP->mnBALocalForKF          = pKF->mnId;
+                        pMP->baLocalKeyFrameId          = pKF->mnId;
                     }
                 }
         }
@@ -2293,7 +2293,7 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                 {
                     localKeyFrameList.push_back(pKFi);
                     mpLocalKeyFrameId[pKFi->mnId] = true;
-                    pKFi->mnBALocalForKF          = pKF->mnId;
+                    pKFi->baLocalKeyFrameId          = pKF->mnId;
                     lRecentLocalMapKeyFrames.push_back(pKFi);
                 }
             }
@@ -2318,11 +2318,11 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
             if (pMP)
                 if (!pMP->isBad() && pMP->GetMap() == pCurrentMap)
                 {
-                    if (pMP->mnBALocalForKF != pKF->mnId)
+                    if (pMP->baLocalKeyFrameId != pKF->mnId)
                     {
                         localMapPointList.push_back(pMP);
                         mpLocalMapPointId[pMP->mnId] = true;
-                        pMP->mnBALocalForKF          = pKF->mnId;
+                        pMP->baLocalKeyFrameId          = pKF->mnId;
                     }
                 }
         }
@@ -2347,10 +2347,10 @@ void Optimizer::LocalBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
         {
             vs_graphs::core::KeyFrame *pKFi = mit->first;
 
-            if (pKFi->mnBALocalForKF != pKF->mnId &&
-                pKFi->mnBAFixedForKF != pKF->mnId)
+            if (pKFi->baLocalKeyFrameId != pKF->mnId &&
+                pKFi->baFixedKeyFrameId != pKF->mnId)
             {
-                pKFi->mnBAFixedForKF = pKF->mnId;
+                pKFi->baFixedKeyFrameId = pKF->mnId;
                 if (!pKFi->isBad() && pKFi->GetMap() == pCurrentMap)
                     lFixedCameras.push_back(pKFi);
             }
@@ -3624,9 +3624,9 @@ void Optimizer::OptimizeEssentialGraph(
             continue;
 
         int nIDr;
-        if (pMP->mnCorrectedByKF == pCurKF->mnId)
+        if (pMP->correctedByKeyFrameId == pCurKF->mnId)
         {
-            nIDr = pMP->mnCorrectedReference;
+            nIDr = pMP->correctedReferenceKeyFrameId;
         }
         else
         {
@@ -4476,13 +4476,13 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
 
     vpOptimizableKFs.reserve(Nd);
     vpOptimizableKFs.push_back(pKF);
-    pKF->mnBALocalForKF = pKF->mnId;
+    pKF->baLocalKeyFrameId = pKF->mnId;
     for (int i = 1; i < Nd; i++)
     {
         if (vpOptimizableKFs.back()->mPrevKF)
         {
             vpOptimizableKFs.push_back(vpOptimizableKFs.back()->mPrevKF);
-            vpOptimizableKFs.back()->mnBALocalForKF = pKF->mnId;
+            vpOptimizableKFs.back()->baLocalKeyFrameId = pKF->mnId;
         }
         else
             break;
@@ -4503,10 +4503,10 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
             MapPoint *pMP = *vit;
             if (pMP)
                 if (!pMP->isBad())
-                    if (pMP->mnBALocalForKF != pKF->mnId)
+                    if (pMP->baLocalKeyFrameId != pKF->mnId)
                     {
                         localMapPointList.push_back(pMP);
-                        pMP->mnBALocalForKF = pKF->mnId;
+                        pMP->baLocalKeyFrameId = pKF->mnId;
                     }
         }
     }
@@ -4516,12 +4516,12 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
     if (vpOptimizableKFs.back()->mPrevKF)
     {
         lFixedKeyFrames.push_back(vpOptimizableKFs.back()->mPrevKF);
-        vpOptimizableKFs.back()->mPrevKF->mnBAFixedForKF = pKF->mnId;
+        vpOptimizableKFs.back()->mPrevKF->baFixedKeyFrameId = pKF->mnId;
     }
     else
     {
-        vpOptimizableKFs.back()->mnBALocalForKF = 0;
-        vpOptimizableKFs.back()->mnBAFixedForKF = pKF->mnId;
+        vpOptimizableKFs.back()->baLocalKeyFrameId = 0;
+        vpOptimizableKFs.back()->baFixedKeyFrameId = pKF->mnId;
         lFixedKeyFrames.push_back(vpOptimizableKFs.back());
         vpOptimizableKFs.pop_back();
     }
@@ -4534,10 +4534,10 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
             break;
 
         KeyFrame *pKFi = vpNeighsKFs[i];
-        if (pKFi->mnBALocalForKF == pKF->mnId ||
-            pKFi->mnBAFixedForKF == pKF->mnId)
+        if (pKFi->baLocalKeyFrameId == pKF->mnId ||
+            pKFi->baFixedKeyFrameId == pKF->mnId)
             continue;
-        pKFi->mnBALocalForKF = pKF->mnId;
+        pKFi->baLocalKeyFrameId = pKF->mnId;
         if (!pKFi->isBad() && pKFi->GetMap() == pCurrentMap)
         {
             lpOptVisKFs.push_back(pKFi);
@@ -4551,10 +4551,10 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
                 MapPoint *pMP = *vit;
                 if (pMP)
                     if (!pMP->isBad())
-                        if (pMP->mnBALocalForKF != pKF->mnId)
+                        if (pMP->baLocalKeyFrameId != pKF->mnId)
                         {
                             localMapPointList.push_back(pMP);
-                            pMP->mnBALocalForKF = pKF->mnId;
+                            pMP->baLocalKeyFrameId = pKF->mnId;
                         }
             }
         }
@@ -4578,10 +4578,10 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
         {
             KeyFrame *pKFi = mit->first;
 
-            if (pKFi->mnBALocalForKF != pKF->mnId &&
-                pKFi->mnBAFixedForKF != pKF->mnId)
+            if (pKFi->baLocalKeyFrameId != pKF->mnId &&
+                pKFi->baFixedKeyFrameId != pKF->mnId)
             {
-                pKFi->mnBAFixedForKF = pKF->mnId;
+                pKFi->baFixedKeyFrameId = pKF->mnId;
                 if (!pKFi->isBad())
                 {
                     lFixedKeyFrames.push_back(pKFi);
@@ -4863,8 +4863,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
         {
             KeyFrame *pKFi = mit->first;
 
-            if (pKFi->mnBALocalForKF != pKF->mnId &&
-                pKFi->mnBAFixedForKF != pKF->mnId)
+            if (pKFi->baLocalKeyFrameId != pKF->mnId &&
+                pKFi->baFixedKeyFrameId != pKF->mnId)
                 continue;
 
             if (!pKFi->isBad() && pKFi->GetMap() == pCurrentMap)
@@ -5075,7 +5075,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
                                     lend = lFixedKeyFrames.end();
          lit != lend;
          lit++)
-        (*lit)->mnBAFixedForKF = 0;
+        (*lit)->baFixedKeyFrameId = 0;
 
     // Recover optimized data
     // Local temporal Keyframes
@@ -5089,7 +5089,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
         Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(),
                          VP->estimate().tcw[0].cast<float>());
         pKFi->SetPose(Tcw);
-        pKFi->mnBALocalForKF = 0;
+        pKFi->baLocalKeyFrameId = 0;
 
         if (pKFi->bImu)
         {
@@ -5118,7 +5118,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF,
         Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(),
                          VP->estimate().tcw[0].cast<float>());
         pKFi->SetPose(Tcw);
-        pKFi->mnBALocalForKF = 0;
+        pKFi->baLocalKeyFrameId = 0;
     }
 
     // Points
@@ -5785,7 +5785,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
         }
 
         // Set the local BA id for the KeyFrame
-        pKFi->mnBALocalForMerge = pMainKF->mnId;
+        pKFi->baLocalMergeId = pMainKF->mnId;
 
         // Create a new vertex for the KeyFrame
         g2o::VertexSE3Expmap *vSE3 = new g2o::VertexSE3Expmap();
@@ -5803,12 +5803,12 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
         for (MapPoint *pMPi : spViewMPs)
             if (pMPi)
                 if (!pMPi->isBad() && pMPi->GetMap() == pCurrentMap)
-                    if (pMPi->mnBALocalForMerge != pMainKF->mnId)
+                    if (pMPi->baLocalMergeId != pMainKF->mnId)
                     {
                         // Add the map point to the list of optimizable map
                         // points
                         vpMPs.push_back(pMPi);
-                        pMPi->mnBALocalForMerge = pMainKF->mnId;
+                        pMPi->baLocalMergeId = pMainKF->mnId;
                         numInsertedPoints++;
                     }
 
@@ -5823,7 +5823,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
         if (pKFi->isBad() || pKFi->GetMap() != pCurrentMap)
             continue;
 
-        pKFi->mnBALocalForMerge = pMainKF->mnId;
+        pKFi->baLocalMergeId = pMainKF->mnId;
 
         g2o::VertexSE3Expmap *vSE3 = new g2o::VertexSE3Expmap();
         Sophus::SE3<float>    Tcw  = pKFi->GetPose();
@@ -5838,10 +5838,10 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
         for (MapPoint *pMPi : spViewMPs)
             if (pMPi)
                 if (!pMPi->isBad() && pMPi->GetMap() == pCurrentMap)
-                    if (pMPi->mnBALocalForMerge != pMainKF->mnId)
+                    if (pMPi->baLocalMergeId != pMainKF->mnId)
                     {
                         vpMPs.push_back(pMPi);
-                        pMPi->mnBALocalForMerge = pMainKF->mnId;
+                        pMPi->baLocalMergeId = pMainKF->mnId;
                         numInsertedPoints++;
                     }
 
@@ -5900,7 +5900,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
         {
             KeyFrame *pKF = mit->first;
             if (pKF->isBad() || pKF->mnId > maxKFid ||
-                pKF->mnBALocalForMerge != pMainKF->mnId ||
+                pKF->baLocalMergeId != pMainKF->mnId ||
                 !pKF->GetMapPoint(get<0>(mit->second)))
                 continue;
 
@@ -6122,7 +6122,7 @@ void Optimizer::LoopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
         {
             KeyFrame *pKF = mit->first;
             if (pKF->isBad() || pKF->mnId > maxKFid ||
-                pKF->mnBALocalForKF != pMainKF->mnId ||
+                pKF->baLocalKeyFrameId != pMainKF->mnId ||
                 !pKF->GetMapPoint(get<0>(mit->second)))
                 continue;
 
@@ -6242,13 +6242,13 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
 
     // Add sliding window for current KF
     vpOptimizableKFs.push_back(pCurrKF);
-    pCurrKF->mnBALocalForKF = pCurrKF->mnId;
+    pCurrKF->baLocalKeyFrameId = pCurrKF->mnId;
     for (int i = 1; i < Nd; i++)
     {
         if (vpOptimizableKFs.back()->mPrevKF)
         {
             vpOptimizableKFs.push_back(vpOptimizableKFs.back()->mPrevKF);
-            vpOptimizableKFs.back()->mnBALocalForKF = pCurrKF->mnId;
+            vpOptimizableKFs.back()->baLocalKeyFrameId = pCurrKF->mnId;
         }
         else
             break;
@@ -6258,7 +6258,7 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
     if (vpOptimizableKFs.back()->mPrevKF)
     {
         vpOptimizableCovKFs.push_back(vpOptimizableKFs.back()->mPrevKF);
-        vpOptimizableKFs.back()->mPrevKF->mnBALocalForKF = pCurrKF->mnId;
+        vpOptimizableKFs.back()->mPrevKF->baLocalKeyFrameId = pCurrKF->mnId;
     }
     else
     {
@@ -6268,7 +6268,7 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
 
     // Add temporal neighbours to merge KF (previous and next KFs)
     vpOptimizableKFs.push_back(pMergeKF);
-    pMergeKF->mnBALocalForKF = pCurrKF->mnId;
+    pMergeKF->baLocalKeyFrameId = pCurrKF->mnId;
 
     // Previous KFs
     for (int i = 1; i < (Nd / 2); i++)
@@ -6276,7 +6276,7 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
         if (vpOptimizableKFs.back()->mPrevKF)
         {
             vpOptimizableKFs.push_back(vpOptimizableKFs.back()->mPrevKF);
-            vpOptimizableKFs.back()->mnBALocalForKF = pCurrKF->mnId;
+            vpOptimizableKFs.back()->baLocalKeyFrameId = pCurrKF->mnId;
         }
         else
             break;
@@ -6286,12 +6286,12 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
     if (vpOptimizableKFs.back()->mPrevKF)
     {
         lFixedKeyFrames.push_back(vpOptimizableKFs.back()->mPrevKF);
-        vpOptimizableKFs.back()->mPrevKF->mnBAFixedForKF = pCurrKF->mnId;
+        vpOptimizableKFs.back()->mPrevKF->baFixedKeyFrameId = pCurrKF->mnId;
     }
     else
     {
-        vpOptimizableKFs.back()->mnBALocalForKF = 0;
-        vpOptimizableKFs.back()->mnBAFixedForKF = pCurrKF->mnId;
+        vpOptimizableKFs.back()->baLocalKeyFrameId = 0;
+        vpOptimizableKFs.back()->baFixedKeyFrameId = pCurrKF->mnId;
         lFixedKeyFrames.push_back(vpOptimizableKFs.back());
         vpOptimizableKFs.pop_back();
     }
@@ -6300,7 +6300,7 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
     if (pMergeKF->mNextKF)
     {
         vpOptimizableKFs.push_back(pMergeKF->mNextKF);
-        vpOptimizableKFs.back()->mnBALocalForKF = pCurrKF->mnId;
+        vpOptimizableKFs.back()->baLocalKeyFrameId = pCurrKF->mnId;
     }
 
     while (vpOptimizableKFs.size() < (2 * Nd))
@@ -6308,7 +6308,7 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
         if (vpOptimizableKFs.back()->mNextKF)
         {
             vpOptimizableKFs.push_back(vpOptimizableKFs.back()->mNextKF);
-            vpOptimizableKFs.back()->mnBALocalForKF = pCurrKF->mnId;
+            vpOptimizableKFs.back()->baLocalKeyFrameId = pCurrKF->mnId;
         }
         else
             break;
@@ -6332,11 +6332,11 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
             MapPoint *pMP = *vit;
             if (pMP)
                 if (!pMP->isBad())
-                    if (pMP->mnBALocalForKF != pCurrKF->mnId)
+                    if (pMP->baLocalKeyFrameId != pCurrKF->mnId)
                     {
                         mLocalObs[pMP] = 1;
                         localMapPointList.push_back(pMP);
-                        pMP->mnBALocalForKF = pCurrKF->mnId;
+                        pMP->baLocalKeyFrameId = pCurrKF->mnId;
                     }
                     else
                     {
@@ -6371,11 +6371,11 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
         {
             KeyFrame *pKFi = mit->first;
 
-            if (pKFi->mnBALocalForKF != pCurrKF->mnId &&
-                pKFi->mnBAFixedForKF !=
+            if (pKFi->baLocalKeyFrameId != pCurrKF->mnId &&
+                pKFi->baFixedKeyFrameId !=
                     pCurrKF->mnId) // If optimizable or already included...
             {
-                pKFi->mnBALocalForKF = pCurrKF->mnId;
+                pKFi->baLocalKeyFrameId = pCurrKF->mnId;
                 if (!pKFi->isBad())
                 {
                     vpOptimizableCovKFs.push_back(pKFi);
@@ -6645,8 +6645,8 @@ void Optimizer::MergeInertialBA(KeyFrame                     *pCurrKF,
             if (!pKFi)
                 continue;
 
-            if ((pKFi->mnBALocalForKF != pCurrKF->mnId) &&
-                (pKFi->mnBAFixedForKF != pCurrKF->mnId))
+            if ((pKFi->baLocalKeyFrameId != pCurrKF->mnId) &&
+                (pKFi->baFixedKeyFrameId != pCurrKF->mnId))
                 continue;
 
             if (pKFi->mnId > maxKFid)
