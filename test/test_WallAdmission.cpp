@@ -753,17 +753,21 @@ TEST(WallAdmission, BoundsTrimStrayOutliersButKeepTheGridSurface)
     wall.setMapClouds(cloud);
     wall.updateSizeOfPlane();
 
-    const geometric::Plane::GeometrySnapshot geometry = wall.getGeometrySnapshot();
-    /* Grid step is ~0.16 m in U and ~0.11 m in V: trimmed bounds must sit
-     * within a couple of steps of the true +-1.5/+-1.0 m surface. */
-    EXPECT_GT(geometry.minPlaneU_m, -1.9);
-    EXPECT_LT(geometry.minPlaneU_m, -1.0);
-    EXPECT_GT(geometry.maxPlaneU_m, 1.0);
-    EXPECT_LT(geometry.maxPlaneU_m, 1.9);
-    EXPECT_GT(geometry.minPlaneV_m, -1.3);
-    EXPECT_LT(geometry.minPlaneV_m, -0.5);
-    EXPECT_GT(geometry.maxPlaneV_m, 0.5);
-    EXPECT_LT(geometry.maxPlaneV_m, 1.3);
+    const geometric::Plane::GeometrySnapshot geometry =
+        wall.getGeometrySnapshot();
+    /* Production projects onto its own deterministic in-plane axes: for
+     * this x=0 wall axisU is world +Z and axisV is world -Y, so the
+     * 3.0 m generator-U span lands on V and the 2.0 m generator-V span
+     * lands on U. Grid step is ~0.11 m in U and ~0.16 m in V: trimmed
+     * bounds must sit within a couple of steps of the true surface. */
+    EXPECT_GT(geometry.minPlaneU_m, -1.3);
+    EXPECT_LT(geometry.minPlaneU_m, -0.5);
+    EXPECT_GT(geometry.maxPlaneU_m, 0.5);
+    EXPECT_LT(geometry.maxPlaneU_m, 1.3);
+    EXPECT_GT(geometry.minPlaneV_m, -1.9);
+    EXPECT_LT(geometry.minPlaneV_m, -1.0);
+    EXPECT_GT(geometry.maxPlaneV_m, 1.0);
+    EXPECT_LT(geometry.maxPlaneV_m, 1.9);
 }
 
 } // namespace core
