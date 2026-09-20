@@ -1,4 +1,4 @@
-/**
+/*!
  * @file test_WallPairing.cpp
  * @brief Wall-pairing coverage: SemanticsManager::reconcileWallFacePairs()
  *        links the two opposite-facing geometric::Plane hypotheses of one
@@ -24,31 +24,36 @@ namespace core
 namespace
 {
 
-/** Builds a WALL geometric::Plane whose surface sits at x = planeX_m_in, with normal
- * along +/-X (normalXSign_in), an observation origin stamped along that same
- * axis, and a genuine on-plane point cloud spanning [yMin,yMax] x [zMin,zMax]
+/*! Builds a WALL geometric::Plane whose surface sits at x = planeX_m_in, with
+ * normal along +/-X (normalXSign_in), an observation origin stamped along that
+ * same axis, and a genuine on-plane point cloud spanning [yMin,yMax] x
+ * [zMin,zMax]
  * -- exactly on the plane, so footprint projection is faithful regardless of
  * which in-plane basis reconcileWallFacePairs() happens to pick. */
-std::unique_ptr<geometric::Plane> makeWallFace(int                     id_in,
-                                    Map                    *p_map_in,
-                                    double                  planeX_m_in,
-                                    double                  normalXSign_in,
-                                    const Eigen::Vector3d  &observationOrigin_World_in,
-                                    double                  yMin_m_in,
-                                    double                  yMax_m_in,
-                                    double                  zMin_m_in,
-                                    double                  zMax_m_in)
+std::unique_ptr<geometric::Plane>
+    makeWallFace(int                    id_in,
+                 Map                   *p_map_in,
+                 double                 planeX_m_in,
+                 double                 normalXSign_in,
+                 const Eigen::Vector3d &observationOrigin_World_in,
+                 double                 yMin_m_in,
+                 double                 yMax_m_in,
+                 double                 zMin_m_in,
+                 double                 zMax_m_in)
 {
     auto wall = std::make_unique<geometric::Plane>();
     wall->setId(id_in);
     wall->setMap(p_map_in);
     wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
 
-    const Eigen::Vector4d equation(
-        normalXSign_in, 0.0, 0.0, -normalXSign_in * planeX_m_in);
+    const Eigen::Vector4d equation(normalXSign_in,
+                                   0.0,
+                                   0.0,
+                                   -normalXSign_in * planeX_m_in);
     wall->setGlobalEquation(g2o::Plane3D(equation));
-    wall->setCentroid(Eigen::Vector3d(
-        planeX_m_in, (yMin_m_in + yMax_m_in) / 2.0, (zMin_m_in + zMax_m_in) / 2.0));
+    wall->setCentroid(Eigen::Vector3d(planeX_m_in,
+                                      (yMin_m_in + yMax_m_in) / 2.0,
+                                      (zMin_m_in + zMax_m_in) / 2.0));
     wall->setObservationOrigin_World(observationOrigin_World_in);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
@@ -80,26 +85,35 @@ std::unique_ptr<geometric::Plane> makeWallFace(int                     id_in,
 TEST(WallPairing, LinksAPlausibleTwinPairSymmetrically)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
     /* Face A at x=0, normal +X, camera at x=1 (its own +X exterior side). */
-    std::unique_ptr<geometric::Plane> faceA = makeWallFace(
-        1, p_map, 0.0, 1.0, Eigen::Vector3d(1.0, 0.0, 0.0), -1.0, 1.0, 1.0, 2.0);
+    std::unique_ptr<geometric::Plane> faceA =
+        makeWallFace(1,
+                     p_map,
+                     0.0,
+                     1.0,
+                     Eigen::Vector3d(1.0, 0.0, 0.0),
+                     -1.0,
+                     1.0,
+                     1.0,
+                     2.0);
     /* Face B at x=-0.2 (0.2 m wall thickness), normal -X, camera at x=-1
      * (the opposite exterior side). Footprint overlaps A's. */
-    std::unique_ptr<geometric::Plane> faceB = makeWallFace(2,
-                                                p_map,
-                                                -0.2,
-                                                -1.0,
-                                                Eigen::Vector3d(-1.0, 0.0, 0.0),
-                                                -0.9,
-                                                0.9,
-                                                1.1,
-                                                1.9);
+    std::unique_ptr<geometric::Plane> faceB =
+        makeWallFace(2,
+                     p_map,
+                     -0.2,
+                     -1.0,
+                     Eigen::Vector3d(-1.0, 0.0, 0.0),
+                     -0.9,
+                     0.9,
+                     1.1,
+                     1.9);
 
-    atlas.AddMapPlane(faceA.get());
-    atlas.AddMapPlane(faceB.get());
+    atlas.addMapPlane(faceA.get());
+    atlas.addMapPlane(faceB.get());
 
     manager.reconcileWallFacePairsForTest();
 
@@ -110,24 +124,33 @@ TEST(WallPairing, LinksAPlausibleTwinPairSymmetrically)
 TEST(WallPairing, DoesNotLinkPlanesThinnerThanAnyPlausibleWall)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
     /* Only 0.01 m apart -- thinner than any plausible physical wall. */
-    std::unique_ptr<geometric::Plane> faceA = makeWallFace(
-        1, p_map, 0.0, 1.0, Eigen::Vector3d(1.0, 0.0, 0.0), -1.0, 1.0, 1.0, 2.0);
-    std::unique_ptr<geometric::Plane> faceB = makeWallFace(2,
-                                                p_map,
-                                                -0.01,
-                                                -1.0,
-                                                Eigen::Vector3d(-1.0, 0.0, 0.0),
-                                                -0.9,
-                                                0.9,
-                                                1.1,
-                                                1.9);
+    std::unique_ptr<geometric::Plane> faceA =
+        makeWallFace(1,
+                     p_map,
+                     0.0,
+                     1.0,
+                     Eigen::Vector3d(1.0, 0.0, 0.0),
+                     -1.0,
+                     1.0,
+                     1.0,
+                     2.0);
+    std::unique_ptr<geometric::Plane> faceB =
+        makeWallFace(2,
+                     p_map,
+                     -0.01,
+                     -1.0,
+                     Eigen::Vector3d(-1.0, 0.0, 0.0),
+                     -0.9,
+                     0.9,
+                     1.1,
+                     1.9);
 
-    atlas.AddMapPlane(faceA.get());
-    atlas.AddMapPlane(faceB.get());
+    atlas.addMapPlane(faceA.get());
+    atlas.addMapPlane(faceB.get());
 
     manager.reconcileWallFacePairsForTest();
 
@@ -138,24 +161,33 @@ TEST(WallPairing, DoesNotLinkPlanesThinnerThanAnyPlausibleWall)
 TEST(WallPairing, DoesNotLinkPlanesFartherApartThanAnyPlausibleWall)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
     /* 3 m apart -- two different walls, not two faces of one wall. */
-    std::unique_ptr<geometric::Plane> faceA = makeWallFace(
-        1, p_map, 0.0, 1.0, Eigen::Vector3d(1.0, 0.0, 0.0), -1.0, 1.0, 1.0, 2.0);
-    std::unique_ptr<geometric::Plane> faceB = makeWallFace(2,
-                                                p_map,
-                                                -3.0,
-                                                -1.0,
-                                                Eigen::Vector3d(-4.0, 0.0, 0.0),
-                                                -0.9,
-                                                0.9,
-                                                1.1,
-                                                1.9);
+    std::unique_ptr<geometric::Plane> faceA =
+        makeWallFace(1,
+                     p_map,
+                     0.0,
+                     1.0,
+                     Eigen::Vector3d(1.0, 0.0, 0.0),
+                     -1.0,
+                     1.0,
+                     1.0,
+                     2.0);
+    std::unique_ptr<geometric::Plane> faceB =
+        makeWallFace(2,
+                     p_map,
+                     -3.0,
+                     -1.0,
+                     Eigen::Vector3d(-4.0, 0.0, 0.0),
+                     -0.9,
+                     0.9,
+                     1.1,
+                     1.9);
 
-    atlas.AddMapPlane(faceA.get());
-    atlas.AddMapPlane(faceB.get());
+    atlas.addMapPlane(faceA.get());
+    atlas.addMapPlane(faceB.get());
 
     manager.reconcileWallFacePairsForTest();
 
@@ -166,26 +198,35 @@ TEST(WallPairing, DoesNotLinkPlanesFartherApartThanAnyPlausibleWall)
 TEST(WallPairing, DoesNotLinkPlanesObservedFromTheSameExteriorSide)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
     /* Both cameras on the +X side -- inconsistent with being two opposite
      * faces of one wall (a genuine twin pair is observed from opposite
      * exterior sides). */
-    std::unique_ptr<geometric::Plane> faceA = makeWallFace(
-        1, p_map, 0.0, 1.0, Eigen::Vector3d(1.0, 0.0, 0.0), -1.0, 1.0, 1.0, 2.0);
-    std::unique_ptr<geometric::Plane> faceB = makeWallFace(2,
-                                                p_map,
-                                                -0.2,
-                                                -1.0,
-                                                Eigen::Vector3d(1.0, 0.0, 0.0),
-                                                -0.9,
-                                                0.9,
-                                                1.1,
-                                                1.9);
+    std::unique_ptr<geometric::Plane> faceA =
+        makeWallFace(1,
+                     p_map,
+                     0.0,
+                     1.0,
+                     Eigen::Vector3d(1.0, 0.0, 0.0),
+                     -1.0,
+                     1.0,
+                     1.0,
+                     2.0);
+    std::unique_ptr<geometric::Plane> faceB =
+        makeWallFace(2,
+                     p_map,
+                     -0.2,
+                     -1.0,
+                     Eigen::Vector3d(1.0, 0.0, 0.0),
+                     -0.9,
+                     0.9,
+                     1.1,
+                     1.9);
 
-    atlas.AddMapPlane(faceA.get());
-    atlas.AddMapPlane(faceB.get());
+    atlas.addMapPlane(faceA.get());
+    atlas.addMapPlane(faceB.get());
 
     manager.reconcileWallFacePairsForTest();
 
@@ -196,26 +237,35 @@ TEST(WallPairing, DoesNotLinkPlanesObservedFromTheSameExteriorSide)
 TEST(WallPairing, DoesNotLinkPlanesWithNoFootprintOverlap)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
     /* Parallel, plausibly wall-thick apart, opposite sides -- but their
      * footprints sit at completely different Y ranges (two unrelated wall
      * segments on parallel planes, not one physical wall). */
-    std::unique_ptr<geometric::Plane> faceA = makeWallFace(
-        1, p_map, 0.0, 1.0, Eigen::Vector3d(1.0, 0.0, 0.0), -1.0, 1.0, 1.0, 2.0);
-    std::unique_ptr<geometric::Plane> faceB = makeWallFace(2,
-                                                p_map,
-                                                -0.2,
-                                                -1.0,
-                                                Eigen::Vector3d(-1.0, 0.0, 0.0),
-                                                10.0,
-                                                12.0,
-                                                1.1,
-                                                1.9);
+    std::unique_ptr<geometric::Plane> faceA =
+        makeWallFace(1,
+                     p_map,
+                     0.0,
+                     1.0,
+                     Eigen::Vector3d(1.0, 0.0, 0.0),
+                     -1.0,
+                     1.0,
+                     1.0,
+                     2.0);
+    std::unique_ptr<geometric::Plane> faceB =
+        makeWallFace(2,
+                     p_map,
+                     -0.2,
+                     -1.0,
+                     Eigen::Vector3d(-1.0, 0.0, 0.0),
+                     10.0,
+                     12.0,
+                     1.1,
+                     1.9);
 
-    atlas.AddMapPlane(faceA.get());
-    atlas.AddMapPlane(faceB.get());
+    atlas.addMapPlane(faceA.get());
+    atlas.addMapPlane(faceB.get());
 
     manager.reconcileWallFacePairsForTest();
 
@@ -226,23 +276,32 @@ TEST(WallPairing, DoesNotLinkPlanesWithNoFootprintOverlap)
 TEST(WallPairing, UnlinksAPreviouslyPairedPlaneThatDrifted)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
-    std::unique_ptr<geometric::Plane> faceA = makeWallFace(
-        1, p_map, 0.0, 1.0, Eigen::Vector3d(1.0, 0.0, 0.0), -1.0, 1.0, 1.0, 2.0);
-    std::unique_ptr<geometric::Plane> faceB = makeWallFace(2,
-                                                p_map,
-                                                -0.2,
-                                                -1.0,
-                                                Eigen::Vector3d(-1.0, 0.0, 0.0),
-                                                -0.9,
-                                                0.9,
-                                                1.1,
-                                                1.9);
+    std::unique_ptr<geometric::Plane> faceA =
+        makeWallFace(1,
+                     p_map,
+                     0.0,
+                     1.0,
+                     Eigen::Vector3d(1.0, 0.0, 0.0),
+                     -1.0,
+                     1.0,
+                     1.0,
+                     2.0);
+    std::unique_ptr<geometric::Plane> faceB =
+        makeWallFace(2,
+                     p_map,
+                     -0.2,
+                     -1.0,
+                     Eigen::Vector3d(-1.0, 0.0, 0.0),
+                     -0.9,
+                     0.9,
+                     1.1,
+                     1.9);
 
-    atlas.AddMapPlane(faceA.get());
-    atlas.AddMapPlane(faceB.get());
+    atlas.addMapPlane(faceA.get());
+    atlas.addMapPlane(faceB.get());
 
     manager.reconcileWallFacePairsForTest();
     ASSERT_EQ(faceA->getTwinFace(), faceB.get());
@@ -250,7 +309,8 @@ TEST(WallPairing, UnlinksAPreviouslyPairedPlaneThatDrifted)
 
     /* Simulate a later refit drifting faceB far away -- no longer a
      * plausible twin (too far apart to be one physical wall). */
-    faceB->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(-1.0, 0.0, 0.0, 3.0)));
+    faceB->setGlobalEquation(
+        g2o::Plane3D(Eigen::Vector4d(-1.0, 0.0, 0.0, 3.0)));
     faceB->setObservationOrigin_World(Eigen::Vector3d(-4.0, 0.0, 0.0));
 
     manager.reconcileWallFacePairsForTest();

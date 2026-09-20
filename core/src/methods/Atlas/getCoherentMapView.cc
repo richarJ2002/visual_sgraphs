@@ -47,25 +47,25 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<Map *> Atlas::GetCoherentMapView(
+std::vector<Map *> Atlas::getCoherentMapView(
     std::optional<long unsigned int> &currentMapId_out,
     AtlasCurrentMapStatus            &currentMapStatus_out)
 {
     std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
 
-    std::vector<Map *> activeMaps(mspMaps.begin(), mspMaps.end());
+    std::vector<Map *> activeMaps(maps.begin(), maps.end());
     std::sort(activeMaps.begin(),
               activeMaps.end(),
               [](Map *p_lhs_in, Map *p_rhs_in)
-              { return p_lhs_in->GetId() < p_rhs_in->GetId(); });
+              { return p_lhs_in->getId() < p_rhs_in->getId(); });
 
     currentMapId_out.reset();
     currentMapStatus_out = AtlasCurrentMapStatus::NO_CURRENT_MAP;
-    if (mpCurrentMap != nullptr)
+    if (p_activeMap != nullptr)
     {
-        currentMapId_out = mpCurrentMap->GetId();
+        currentMapId_out = p_activeMap->getId();
         const bool isCurrentMapActive =
-            std::find(activeMaps.begin(), activeMaps.end(), mpCurrentMap) !=
+            std::find(activeMaps.begin(), activeMaps.end(), p_activeMap) !=
             activeMaps.end();
         /* SetMapBad(mpCurrentMap) erases the map from mspMaps and marks it
          * bad without clearing mpCurrentMap; a later ChangeMap() call is

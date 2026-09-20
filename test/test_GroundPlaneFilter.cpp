@@ -1,14 +1,14 @@
-/**
+/*!
  * @file test_GroundPlaneFilter.cpp
  * @brief B1 regression coverage: computeGroundPlaneHeight() must not read
  *        past an empty (or single-point) support cloud.
  *
  * Before the fix, an empty support cloud made numPoint (= yVals.size() / 2)
  * equal to 0, and yVals[numPoint - 1] underflowed to yVals[SIZE_MAX] -- an
- * out-of-bounds read. A freshly constructed geometric::Plane (never given points via
- * setMapClouds/replaceMapClouds) is already in exactly this state, since
- * geometric::Plane's constructor allocates a valid but empty point cloud rather than a
- * null one.
+ * out-of-bounds read. A freshly constructed geometric::Plane (never given
+ * points via setMapClouds/replaceMapClouds) is already in exactly this state,
+ * since geometric::Plane's constructor allocates a valid but empty point cloud
+ * rather than a null one.
  */
 
 #include "Atlas.h"
@@ -28,11 +28,11 @@ namespace core
 TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
-    /* A freshly constructed geometric::Plane has a valid but empty support cloud --
-     * exactly the state a plane can be in before its first successful
+    /* A freshly constructed geometric::Plane has a valid but empty support
+     * cloud -- exactly the state a plane can be in before its first successful
      * refit, or right after replaceMapClouds() clears it. */
     geometric::Plane groundPlane;
     groundPlane.setId(1);
@@ -48,7 +48,7 @@ TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
     /* numPoint = yVals.size() / 2 is also 0 for a single-point cloud, not
      * only for an empty one -- the same underflow is reachable here too. */
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
     geometric::Plane groundPlane;
@@ -72,7 +72,7 @@ TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
 TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
     geometric::Plane groundPlane;

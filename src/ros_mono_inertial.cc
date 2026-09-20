@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -60,7 +60,7 @@ class ImageGrabber
 
   private:
     // Marker detection
-    double                           minMarkerTimeDiff;
+    double                                           minMarkerTimeDiff;
     std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers;
 };
 
@@ -139,10 +139,10 @@ int main(int argc, char **argv)
     sensorType = vs_graphs::core::System::IMU_MONOCULAR;
 
     p_slamSystem = new vs_graphs::core::System(voc_file,
-                                         settings_file,
-                                         sys_params_file,
-                                         sensorType,
-                                         enable_pangolin);
+                                               settings_file,
+                                               sys_params_file,
+                                               sensorType,
+                                               enable_pangolin);
 
     // Subscribe to get raw images and IMU data
     ros::Subscriber sub_imu =
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
     ros::spin();
 
     // Stop all threads
-    p_slamSystem->Shutdown();
+    p_slamSystem->shutdown();
     ros::shutdown();
 
     return 0;
@@ -248,7 +248,7 @@ void ImageGrabber::SyncWithImu()
             this->mBufMutex.unlock();
 
             vector<vs_graphs::core::IMU::Point> vImuMeas;
-            Eigen::Vector3f               Wbb;
+            Eigen::Vector3f                     Wbb;
             mpImuGb->mBufMutex.lock();
             if (!mpImuGb->imuBuf.empty())
             {
@@ -266,7 +266,8 @@ void ImageGrabber::SyncWithImu()
                         mpImuGb->imuBuf.front()->angular_velocity.x,
                         mpImuGb->imuBuf.front()->angular_velocity.y,
                         mpImuGb->imuBuf.front()->angular_velocity.z);
-                    vImuMeas.push_back(vs_graphs::core::IMU::Point(acc, gyr, t));
+                    vImuMeas.push_back(
+                        vs_graphs::core::IMU::Point(acc, gyr, t));
                     Wbb << mpImuGb->imuBuf.front()->angular_velocity.x,
                         mpImuGb->imuBuf.front()->angular_velocity.y,
                         mpImuGb->imuBuf.front()->angular_velocity.z;
@@ -278,7 +279,7 @@ void ImageGrabber::SyncWithImu()
             // ORB-SLAM3 runs in TrackMonocular()
             if (minMarkerTimeDiff < 0.05)
             {
-                Sophus::SE3f Tcw = p_slamSystem->TrackMonocular(im,
+                Sophus::SE3f Tcw = p_slamSystem->trackMonocular(im,
                                                                 tIm,
                                                                 vImuMeas,
                                                                 "",
@@ -287,7 +288,7 @@ void ImageGrabber::SyncWithImu()
             }
             else
                 Sophus::SE3f Tcw =
-                    p_slamSystem->TrackMonocular(im, tIm, vImuMeas);
+                    p_slamSystem->trackMonocular(im, tIm, vImuMeas);
 
             publishTopics(msg_time, Wbb);
         }
@@ -305,13 +306,6 @@ void ImuGrabber::GrabImu(const sensor_msgs::ImuConstPtr &imu_msg)
 
     return;
 }
-
-// void ImageGrabber::GrabArUcoMarker(const aruco_msgs::MarkerArray
-// &markerArray)
-// {
-//     // Pass the visited markers to a buffer to be processed later
-//     // addMarkersToBuffer(markerArray);
-// }
 
 void ImageGrabber::GrabSegmentation(
     const segmenter_ros::SegmenterDataMsg &msgSegImage)

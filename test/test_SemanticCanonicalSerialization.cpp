@@ -1,4 +1,4 @@
-/**
+/*!
  * Focused, ROS/Gazebo-free tests for versioned canonical JSON
  * serialization of SemanticGraphSnapshot, AxiomEvaluationReport, and
  * MapCompletenessResult.
@@ -70,8 +70,8 @@ TEST(SemanticCanonicalSerialization, SchemaVersionFieldsArePresentAndStable)
 
 TEST(SemanticCanonicalSerialization, SnapshotTopologyOnlyOmitsGeometryFields)
 {
-    Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Atlas            atlas(0);
+    Map             *p_map = atlas.getCurrentMap();
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -81,7 +81,7 @@ TEST(SemanticCanonicalSerialization, SnapshotTopologyOnlyOmitsGeometryFields)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->AddMapPlane(&wall);
+    p_map->addMapPlane(&wall);
 
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
     const nlohmann::json topologyJson = serializeSnapshotTopologyOnly(snapshot);
@@ -108,8 +108,8 @@ TEST(SemanticCanonicalSerialization,
      * one snapshot's own record vectors in memory, so mapId and every
      * other field stays identical between the two serialized inputs and
      * only container order differs. */
-    Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Atlas            atlas(0);
+    Map             *p_map = atlas.getCurrentMap();
     geometric::Plane wall1;
     test::makeWallPlane(wall1,
                         1,
@@ -128,14 +128,14 @@ TEST(SemanticCanonicalSerialization,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->AddMapPlane(&wall1);
-    p_map->AddMapPlane(&wall2);
+    p_map->addMapPlane(&wall1);
+    p_map->addMapPlane(&wall2);
     Room room1;
     test::makeRoom(room1, 1, p_map, &wall1);
     Room room2;
     test::makeRoom(room2, 2, p_map, &wall2);
-    p_map->AddDetectedMapRoom(&room1);
-    p_map->AddDetectedMapRoom(&room2);
+    p_map->addDetectedMapRoom(&room1);
+    p_map->addDetectedMapRoom(&room2);
 
     const SemanticGraphSnapshot original = captureSemanticGraphSnapshot(&atlas);
     SemanticGraphSnapshot       reordered = original;
@@ -153,7 +153,7 @@ TEST(SemanticCanonicalSerialization,
      SnapshotSerializationPreservesEntityKeyCollisionDuplicates)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     Room roomFirst;
     test::makeRoom(roomFirst,
@@ -161,7 +161,7 @@ TEST(SemanticCanonicalSerialization,
                    p_map,
                    nullptr,
                    Eigen::Vector3d(1.0, 0.0, 0.0));
-    p_map->AddDetectedMapRoom(&roomFirst);
+    p_map->addDetectedMapRoom(&roomFirst);
     Room roomSecondSameId;
     test::makeRoom(roomSecondSameId,
                    1,
@@ -172,7 +172,7 @@ TEST(SemanticCanonicalSerialization,
      * AddCandidateMapRoom() (a bare std::set<Room *>::insert() with no id
      * bookkeeping), confirmed by direct source read during P1.1's residual
      * repair. */
-    p_map->AddCandidateMapRoom(&roomSecondSameId);
+    p_map->addCandidateMapRoom(&roomSecondSameId);
 
     const nlohmann::json json =
         serializeSnapshotTopologyOnly(captureSemanticGraphSnapshot(&atlas));
@@ -186,8 +186,8 @@ TEST(SemanticCanonicalSerialization,
      * re-order a copy of one report's own findings vector in memory rather
      * than comparing across two independently constructed Atlas instances,
      * whose Map ids would genuinely differ. */
-    Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Atlas            atlas(0);
+    Map             *p_map = atlas.getCurrentMap();
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -197,13 +197,13 @@ TEST(SemanticCanonicalSerialization,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->AddMapPlane(&wall);
+    p_map->addMapPlane(&wall);
     Room room1;
     test::makeRoom(room1, 1, p_map, &wall);
-    p_map->AddDetectedMapRoom(&room1);
+    p_map->addDetectedMapRoom(&room1);
     Room room2;
     test::makeRoom(room2, 2, p_map, &wall);
-    p_map->AddDetectedMapRoom(&room2);
+    p_map->addDetectedMapRoom(&room2);
 
     const AxiomEvaluationReport original =
         evaluateState(captureSemanticGraphSnapshot(&atlas));
@@ -218,7 +218,7 @@ TEST(SemanticCanonicalSerialization,
      CompletenessResultsSerializationIsInvariantUnderMapPermutation)
 {
     Atlas atlas(0);
-    atlas.CreateNewMap();
+    atlas.createNewMap();
 
     const std::vector<MapCompletenessResult> original =
         evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
@@ -237,11 +237,11 @@ TEST(SemanticCanonicalSerialization,
      CompletenessSerializationPreservesLegacyMultiplicityDuplicateIds)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
     Room  bothCollections;
     test::makeRoom(bothCollections, 1, p_map, nullptr);
-    p_map->AddDetectedMapRoom(&bothCollections);
-    p_map->AddCandidateMapRoom(&bothCollections);
+    p_map->addDetectedMapRoom(&bothCollections);
+    p_map->addCandidateMapRoom(&bothCollections);
 
     const std::vector<MapCompletenessResult> results =
         evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
@@ -256,8 +256,8 @@ TEST(SemanticCanonicalSerialization,
 TEST(SemanticCanonicalSerialization,
      SerializationNeverMutatesInputAndIsRepeatable)
 {
-    Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Atlas            atlas(0);
+    Map             *p_map = atlas.getCurrentMap();
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -267,13 +267,13 @@ TEST(SemanticCanonicalSerialization,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->AddMapPlane(&wall);
+    p_map->addMapPlane(&wall);
     Room roomB;
     test::makeRoom(roomB, 2, p_map, &wall);
-    p_map->AddDetectedMapRoom(&roomB);
+    p_map->addDetectedMapRoom(&roomB);
     Room roomA;
     test::makeRoom(roomA, 1, p_map, &wall);
-    p_map->AddDetectedMapRoom(&roomA);
+    p_map->addDetectedMapRoom(&roomA);
 
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
     /* snapshot.maps[0].rooms is already sorted ascending by key (roomA
@@ -600,8 +600,8 @@ TEST(SemanticCanonicalSerialization, VisitedFlagDoesNotChangeDigests)
     /* The visited flag is mission state, not identity: flipping it must not
      * alter either canonical digest, or revisiting a room would break merge
      * matching. */
-    Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Atlas            atlas(0);
+    Map             *p_map = atlas.getCurrentMap();
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -612,11 +612,11 @@ TEST(SemanticCanonicalSerialization, VisitedFlagDoesNotChangeDigests)
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->AddMapPlane(&wall);
+    p_map->addMapPlane(&wall);
 
     Room room;
     test::makeRoom(room, 1, p_map, &wall, Eigen::Vector3d(1.0, 0.0, 1.0));
-    p_map->AddDetectedMapRoom(&room);
+    p_map->addDetectedMapRoom(&room);
 
     const std::string topologyBefore =
         serializeSnapshotTopologyOnly(captureSemanticGraphSnapshot(&atlas))

@@ -44,13 +44,19 @@ namespace vs_graphs
 {
 namespace core
 {
-namespace types { class SystemParams; }
+namespace types
+{
+class SystemParams;
+}
 
 class Tracking;
 class LocalMapping;
 class KeyFrameDatabase;
 class Map;
-namespace semantic { enum class SemanticMergeDecision; }
+namespace semantic
+{
+enum class SemanticMergeDecision;
+}
 
 /*!
  * @brief        Confirms both maps have observed floors with matching
@@ -164,7 +170,7 @@ class LoopClosing
      * @param[in]   pTracker
      *              TODO
      */
-    void SetTracker(Tracking *pTracker);
+    void setTracker(Tracking *pTracker);
 
     /*!
      * @brief       TODO
@@ -172,7 +178,7 @@ class LoopClosing
      * @param[in]   pLocalMapper
      *              TODO
      */
-    void SetLocalMapper(LocalMapping *pLocalMapper);
+    void setLocalMapper(LocalMapping *pLocalMapper);
 
     /*!
      * @brief       TODO
@@ -180,12 +186,12 @@ class LoopClosing
      * @param[in]   mergeStatus_in
      *              TODO
      */
-    void SetMergeStatus(bool mergeStatus_in);
+    void setMergeStatus(bool mergeStatus_in);
 
     /*!
      * @brief       TODO
      */
-    void Run(void);
+    void run(void);
 
     /*!
      * @brief       TODO
@@ -193,12 +199,12 @@ class LoopClosing
      * @param[in]   pKF
      *              TODO
      */
-    void InsertKeyFrame(KeyFrame *pKF);
+    void insertKeyFrame(KeyFrame *pKF);
 
     /*!
      * @brief       TODO
      */
-    void RequestReset();
+    void requestReset();
 
     /*!
      * @brief       TODO
@@ -206,7 +212,7 @@ class LoopClosing
      * @param[in]   pMap
      *              TODO
      */
-    void RequestResetActiveMap(Map *pMap);
+    void requestResetActiveMap(Map *pMap);
 
     /*!
      * @brief       TODO
@@ -222,7 +228,7 @@ class LoopClosing
      * @param[in]   generation_in
      *              TODO
      */
-    void RunGlobalBundleAdjustment(Map          *pActiveMap,
+    void runGlobalBundleAdjustment(Map          *pActiveMap,
                                    unsigned long nLoopKF,
                                    unsigned int  generation_in);
 
@@ -235,7 +241,7 @@ class LoopClosing
         unique_lock<std::mutex> lock(mMutexGBA);
 
         /* Return flag to indicate if global bundal adjustemnt is running */
-        return mbRunningGBA;
+        return runningGBA;
     }
 
     /*!
@@ -247,13 +253,13 @@ class LoopClosing
         unique_lock<std::mutex> lock(mMutexGBA);
 
         /* Return flag to indicate if global bundal adjustemnt is finished */
-        return mbFinishedGBA;
+        return finishedGBA;
     }
 
     /*!
      * @brief       TODO
      */
-    void RequestFinish(void);
+    void requestFinish(void);
 
     /*!
      * @brief       TODO
@@ -268,9 +274,9 @@ class LoopClosing
     /*!
      * @brief       TODO
      */
-    LoopCorrectionStatus GetLoopCorrectionStatus() const;
+    LoopCorrectionStatus getLoopCorrectionStatus() const;
 
-    Viewer *mpViewer;
+    Viewer *p_viewer;
 
 #ifdef REGISTER_TIMES
 
@@ -312,17 +318,17 @@ class LoopClosing
     /*!
      * @brief      TODO
      */
-    bool mbResetRequested;
+    bool resetRequested;
 
     /*!
      * @brief      TODO
      */
-    bool mbResetActiveMapRequested;
+    bool resetActiveMapRequested;
 
     /*!
      * @brief      TODO
      */
-    Map *mpMapToReset;
+    Map *p_mapToReset;
 
     /*!
      * @brief      TODO
@@ -332,12 +338,12 @@ class LoopClosing
     /*!
      * @brief      TODO
      */
-    bool mbFinishRequested;
+    bool finishRequested;
 
     /*!
      * @brief      TODO
      */
-    bool mbFinished;
+    bool finished;
 
     /*!
      * @brief      TODO
@@ -347,27 +353,27 @@ class LoopClosing
     /*!
      * @brief      TODO
      */
-    Atlas *mpAtlas;
+    Atlas *p_atlas;
 
     /*!
      * @brief      TODO
      */
-    Tracking *mpTracker;
+    Tracking *p_tracker;
 
     /*!
      * @brief      TODO
      */
-    KeyFrameDatabase *mpKeyFrameDB;
+    KeyFrameDatabase *p_keyFrameDatabase;
 
     /*!
      * @brief      TODO
      */
-    ORBVocabulary *mpORBVocabulary;
+    ORBVocabulary *p_orbVocabulary;
 
     /*!
      * @brief      TODO
      */
-    LocalMapping *mpLocalMapper;
+    LocalMapping *p_localMapper;
 
     /*!
      * @brief      TODO
@@ -382,52 +388,52 @@ class LoopClosing
     /*!
      * @brief      Loop detector parameters
      */
-    float mnCovisibilityConsistencyTh;
+    float covisibilityConsistencyThreshold;
 
     /*!
      * @brief      TODO
      */
-    KeyFrame *mpCurrentKF;
+    KeyFrame *p_currentKF;
 
     /*!
      * @brief      TODO
      */
-    KeyFrame *mpLastCurrentKF;
+    KeyFrame *p_lastCurrentKF;
 
     /*!
      * @brief      TODO
      */
-    KeyFrame *mpMatchedKF;
+    KeyFrame *p_matchedKF;
 
     /*!
      * @brief      TODO
      */
-    std::vector<ConsistentGroup> mvConsistentGroups;
+    std::vector<ConsistentGroup> consistentGroups;
 
     /*!
      * @brief      TODO
      */
-    std::vector<KeyFrame *> mvpEnoughConsistentCandidates;
+    std::vector<KeyFrame *> enoughConsistentCandidates;
 
     /*!
      * @brief      TODO
      */
-    std::vector<KeyFrame *> mvpCurrentConnectedKFs;
+    std::vector<KeyFrame *> currentConnectedKFs;
 
     /*!
      * @brief      TODO
      */
-    std::vector<MapPoint *> mvpCurrentMatchedPoints;
+    std::vector<MapPoint *> currentMatchedPoints;
 
     /*!
      * @brief      TODO
      */
-    std::vector<MapPoint *> mvpLoopMapPoints;
+    std::vector<MapPoint *> loopMapPoints;
 
     /*!
      * @brief      TODO
      */
-    cv::Mat mScw;
+    cv::Mat correctedPose;
 
     /*!
      * @brief      TODO
@@ -437,27 +443,27 @@ class LoopClosing
     /*!
      * @brief      TODO
      */
-    Map *mpLastMap;
+    Map *p_lastMap;
 
     /*!
      * @brief      TODO
      */
-    bool mbLoopDetected;
+    bool loopDetected;
 
     /*!
      * @brief      TODO
      */
-    int mnLoopNumCoincidences;
+    int loopNumCoincidences;
 
     /*!
      * @brief      TODO
      */
-    int mnLoopNumNotFound;
+    int loopNumNotFound;
 
     /*!
      * @brief      TODO
      */
-    KeyFrame *mpLoopLastCurrentKF;
+    KeyFrame *p_loopLastCurrentKF;
 
     /*!
      * @brief      TODO
@@ -472,42 +478,42 @@ class LoopClosing
     /*!
      * @brief      TODO
      */
-    KeyFrame *mpLoopMatchedKF;
+    KeyFrame *p_loopMatchedKF;
 
     /*!
      * @brief      TODO
      */
-    std::vector<MapPoint *> mvpLoopMPs;
+    std::vector<MapPoint *> loopMPs;
 
     /*!
      * @brief      TODO
      */
-    std::vector<MapPoint *> mvpLoopMatchedMPs;
+    std::vector<MapPoint *> loopMatchedMPs;
 
     /*!
      * @brief      TODO
      */
-    bool mbMergeDetected;
+    bool mergeDetected;
 
     /*!
      * @brief      TODO
      */
-    std::atomic_bool mbMergeInProgress;
+    std::atomic_bool mergeInProgress;
 
     /*!
      * @brief      TODO
      */
-    int mnMergeNumCoincidences;
+    int mergeNumCoincidences;
 
     /*!
      * @brief      TODO
      */
-    int mnMergeNumNotFound;
+    int mergeNumNotFound;
 
     /*!
      * @brief      TODO
      */
-    KeyFrame *mpMergeLastCurrentKF;
+    KeyFrame *p_mergeLastCurrentKF;
 
     /*!
      * @brief      TODO
@@ -536,42 +542,42 @@ class LoopClosing
     /*!
      * @brief      TODO
      */
-    KeyFrame *mpMergeMatchedKF;
+    KeyFrame *p_mergeMatchedKF;
 
     /*!
      * @brief      TODO
      */
-    std::vector<MapPoint *> mvpMergeMPs;
+    std::vector<MapPoint *> mergeMPs;
 
     /*!
      * @brief      TODO
      */
-    std::vector<MapPoint *> mvpMergeMatchedMPs;
+    std::vector<MapPoint *> mergeMatchedMPs;
 
     /*!
      * @brief      TODO
      */
-    std::vector<KeyFrame *> mvpMergeConnectedKFs;
+    std::vector<KeyFrame *> mergeConnectedKFs;
 
     /*!
      * @brief      TODO
      */
-    g2o::Sim3 mSold_new;
+    g2o::Sim3 oldCorrectedPose;
 
     /*!
      * @brief      TODO
      */
-    long unsigned int mLastLoopKFid;
+    long unsigned int lastLoopKeyFrameId;
 
     /*!
      * @brief      TODO
      */
-    bool mbRunningGBA;
+    bool runningGBA;
 
     /*!
      * @brief      TODO
      */
-    bool mbFinishedGBA;
+    bool finishedGBA;
 
     /*!
      * @brief      TODO
@@ -581,7 +587,7 @@ class LoopClosing
     /*!
      * @brief      TODO
      */
-    std::thread *mpThreadGBA;
+    std::thread *p_threadGBA;
 
     /*!
      * @brief      TODO
@@ -593,12 +599,12 @@ class LoopClosing
      *
      * @note        Fix scale in the stereo/RGB-D case
      */
-    bool mbFixScale;
+    bool fixScale;
 
     /*!
      * @brief      TODO
      */
-    unsigned int mnFullBAIdx;
+    unsigned int fullBundleAdjustmentIndex;
 
     /*!
      * @brief      TODO
@@ -623,12 +629,12 @@ class LoopClosing
     /*!
      * @brief      TODO
      */
-    int mnNumCorrection;
+    int numCorrection;
 
     /*!
      * @brief      TODO
      */
-    int mnCorrectionGBA;
+    int correctionGBA;
 
     /*!
      * @brief      TODO
@@ -638,17 +644,17 @@ class LoopClosing
     /*!
      * @brief      TODO
      */
-    LoopCorrectionStatus mLoopCorrectionStatus;
+    LoopCorrectionStatus loopCorrectionStatus;
 
     /*!
      * @brief      TODO
      */
-    bool mbActiveLC = true;
+    bool activeLC = true;
 
     /*!
      * @brief      TODO
      */
-    types::SystemParams *sysParams;
+    types::SystemParams *p_sysParams;
 
     /* ---------------------------------------------------------------------- *
      * PROTECTED METHODS
@@ -657,12 +663,12 @@ class LoopClosing
     /*!
      * @brief       TODO
      */
-    bool CheckNewKeyFrames(void);
+    bool checkNewKeyFrames(void);
 
     /*!
      * @brief       TODO
      */
-    bool NewDetectCommonRegions(void);
+    bool newDetectCommonRegions(void);
 
     /*!
      * @brief       TODO
@@ -685,7 +691,7 @@ class LoopClosing
      * @param[in]   vpMatchedMPs
      *              TODO
      */
-    bool DetectAndReffineSim3FromLastKF(KeyFrame  *pCurrentKF,
+    bool detectAndReffineSim3FromLastKF(KeyFrame  *pCurrentKF,
                                         KeyFrame  *pMatchedKF,
                                         g2o::Sim3 &gScw,
                                         int       &nNumProjMatches,
@@ -719,7 +725,7 @@ class LoopClosing
      * @param[in]   vpMatchedMPs
      *              TODO
      */
-    bool DetectCommonRegionsFromBoW(std::vector<KeyFrame *> &vpBowCand,
+    bool detectCommonRegionsFromBoW(std::vector<KeyFrame *> &vpBowCand,
                                     KeyFrame               *&pMatchedKF,
                                     KeyFrame               *&pLastCurrentKF,
                                     g2o::Sim3               &g2oScw,
@@ -748,7 +754,7 @@ class LoopClosing
      * @param[in]   vpMatchedMPs
      *              TODO
      */
-    bool DetectCommonRegionsFromLastKF(KeyFrame                *pCurrentKF,
+    bool detectCommonRegionsFromLastKF(KeyFrame                *pCurrentKF,
                                        KeyFrame                *pMatchedKF,
                                        g2o::Sim3               &gScw,
                                        int                     &nNumProjMatches,
@@ -776,7 +782,7 @@ class LoopClosing
      * @param[in]   vpMatchedMapPoints
      *              TODO
      */
-    int FindMatchesByProjection(KeyFrame           *pCurrentKF,
+    int findMatchesByProjection(KeyFrame           *pCurrentKF,
                                 KeyFrame           *pMatchedKFw,
                                 g2o::Sim3          &g2oScw,
                                 set<MapPoint *>    &spMatchedMPinOrigin,
@@ -792,7 +798,7 @@ class LoopClosing
      * @param[in]   vpMapPoints
      *              TODO
      */
-    void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap,
+    void searchAndFuse(const KeyFrameAndPose &CorrectedPosesMap,
                        vector<MapPoint *>    &vpMapPoints);
 
     /*!
@@ -804,13 +810,13 @@ class LoopClosing
      * @param[in]   vpMapPoints
      *              TODO
      */
-    void SearchAndFuse(const vector<KeyFrame *> &vConectedKFs,
+    void searchAndFuse(const vector<KeyFrame *> &vConectedKFs,
                        vector<MapPoint *>       &vpMapPoints);
 
     /*!
      * @brief       TODO
      */
-    void CorrectLoop(void);
+    void correctLoop(void);
 
     /*!
      * @brief       Stops and joins the owned global bundle-adjustment worker.
@@ -846,26 +852,26 @@ class LoopClosing
     /*!
      * @brief       TODO
      */
-    /**
+    /*!
      * @brief       Attempts a visual map merge after all preconditions pass.
      *
      * @return      ACCEPT only after the merge is committed, DEFER when
      *              semantic evidence is incomplete and the candidate remains
      *              retryable, or REJECT when the attempt is invalid.
      */
-    semantic::SemanticMergeDecision MergeLocal(void);
+    semantic::SemanticMergeDecision mergeLocal(void);
 
     /*!
      * @brief       TODO
      */
-    /**
+    /*!
      * @brief       Attempts an inertial map merge after all preconditions pass.
      *
      * @return      ACCEPT only after the merge is committed, DEFER when
      *              semantic evidence is incomplete and the candidate remains
      *              retryable, or REJECT when the attempt is invalid.
      */
-    semantic::SemanticMergeDecision MergeLocalInertial(void);
+    semantic::SemanticMergeDecision mergeLocalInertial(void);
 
     /*!
      * @brief       TODO
@@ -876,23 +882,23 @@ class LoopClosing
      * @param[in]   spKFsMap2
      *              TODO
      */
-    void CheckObservations(set<KeyFrame *> &spKFsMap1,
+    void checkObservations(set<KeyFrame *> &spKFsMap1,
                            set<KeyFrame *> &spKFsMap2);
 
     /*!
      * @brief       TODO
      */
-    void ResetIfRequested(void);
+    void resetIfRequested(void);
 
     /*!
      * @brief      TODO
      */
-    bool CheckFinish(void);
+    bool checkFinish(void);
 
     /*!
      * @brief      TODO
      */
-    void SetFinish(void);
+    void setFinish(void);
 #ifdef REGISTER_LOOP
     string mstrFolderLoop;
 #endif

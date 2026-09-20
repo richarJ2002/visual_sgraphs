@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -119,7 +119,7 @@ class Verbose
      *              The static gate `th` still filters by level: only messages
      *              with `lev <= th` are emitted.
      */
-    static void PrintMess(std::string str, eLevel lev)
+    static void printMess(std::string str, eLevel lev)
     {
         if (lev <= th)
         {
@@ -157,7 +157,7 @@ class Verbose
      * "VERBOSITY_QUIET", VERBOSITY_NORMAL, VERBOSITY_VERBOSE,
      * VERBOSITY_VERY_VERBOSE, or VERBOSITY_DEBUG.
      */
-    static void SetTh(eLevel _th_in)
+    static void setTh(eLevel _th_in)
     {
         th = _th_in;
     }
@@ -168,7 +168,7 @@ class Verbose
      *              Unknown strings default to `VERBOSITY_QUIET` so an unset or
      *              invalid value preserves the current quiet behaviour.
      */
-    static eLevel StringToLevel(const std::string &level)
+    static eLevel parseVerbosityLevel(const std::string &level)
     {
         if (level == "debug")
         {
@@ -936,14 +936,15 @@ class System
      * @return      The camera pose (empty if tracking fails)
      */
     Sophus::SE3f
-        TrackStereo(const cv::Mat            &imLeft,
+        trackStereo(const cv::Mat            &imLeft,
                     const cv::Mat            &imRight,
                     const double             &timestamp,
                     const vector<IMU::Point> &vImuMeas = vector<IMU::Point>(),
                     string                    filename = "",
-                    const vector<semantic::Marker *>    markers  = vector<semantic::Marker *>{});
+                    const vector<semantic::Marker *> markers =
+                        vector<semantic::Marker *>{});
 
-    /**
+    /*!
      * @brief       Process the given rgbd frame for tracking. The DepthMap must
      *              be registered to the RGB frame.
      *
@@ -971,15 +972,16 @@ class System
      * @return      The camera pose (empty if tracking fails)
      */
     Sophus::SE3f
-        TrackRGBD(const cv::Mat                                &im,
+        trackRGBD(const cv::Mat                                &im,
                   const cv::Mat                                &depthmap,
                   const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &mainCloud,
                   const double                                 &timestamp,
                   const vector<IMU::Point> &vImuMeas = vector<IMU::Point>(),
                   string                    filename = "",
-                  const vector<semantic::Marker *>    markers  = vector<semantic::Marker *>{});
+                  const vector<semantic::Marker *> markers =
+                      vector<semantic::Marker *>{});
 
-    /**
+    /*!
      * @brief       Process the given stereo frame for tracking. Images must be
      *              synchronized and rectified.
      *
@@ -1001,32 +1003,33 @@ class System
      *
      * @return      The camera pose (empty if tracking fails)
      */
-    Sophus::SE3f TrackMonocular(
-        const cv::Mat            &im,
-        const double             &timestamp,
-        const vector<IMU::Point> &vImuMeas = vector<IMU::Point>(),
-        string                    filename = "",
-        const vector<semantic::Marker *>    markers  = vector<semantic::Marker *>{});
+    Sophus::SE3f trackMonocular(
+        const cv::Mat                   &im,
+        const double                    &timestamp,
+        const vector<IMU::Point>        &vImuMeas = vector<IMU::Point>(),
+        string                           filename = "",
+        const vector<semantic::Marker *> markers =
+            vector<semantic::Marker *>{});
 
     /*!
      * @brief       This stops local mapping thread (map building) and performs
      *              only camera tracking.
      */
-    void ActivateLocalizationMode();
+    void activateLocalizationMode();
 
     /*!
      * @brief        This resumes local mapping thread and performs SLAM again.
      */
-    void DeactivateLocalizationMode();
+    void deactivateLocalizationMode();
 
-    /**
+    /*!
      * @brief       Get the current active map in Atlas.
      *
      * @return      The current active map.
      */
-    vs_graphs::core::Map *GetCurrentMap();
+    vs_graphs::core::Map *getCurrentMap();
 
-    /**
+    /*!
      * @brief       Get the Atlas owning every map in the system.
      *
      *              Exposed so ROS-layer consumers (e.g. the SGraph JSON
@@ -1036,18 +1039,18 @@ class System
      *
      * @return      Pointer to the Atlas, or nullptr before initialisation.
      */
-    vs_graphs::core::Atlas *GetAtlas();
+    vs_graphs::core::Atlas *getAtlas();
 
     /*!
      * @brief       Returns true if there have been a big map change (loop
      *              closure, global BA) since last call to this function.
      */
-    bool MapChanged();
+    bool mapChanged();
 
     MissionHealthSnapshot
-        GetMissionHealthSnapshot(bool includeSemantics = true);
+        getMissionHealthSnapshot(bool includeSemantics = true);
 
-    /**
+    /*!
      * @brief       Updates RGB-D frontend progress exposed through mission
      *              health. Safe to call from the callback or worker thread.
      *
@@ -1063,7 +1066,7 @@ class System
      *              Latest successfully tracked sensor timestamp, in
      *              nanoseconds.
      */
-    void UpdateRgbdFrontendHealth(
+    void updateRgbdFrontendHealth(
         std::uint64_t acceptedCount_in,
         std::uint64_t processedCount_in,
         std::uint64_t overwrittenCount_in,
@@ -1077,18 +1080,18 @@ class System
      *              no SemanticsManager exists yet or no cycle has completed
      *              -- check IsSemanticReportCacheAvailable() first.
      */
-    semantic::SemanticReportCacheEntry GetSemanticReportCacheEntry() const;
+    semantic::SemanticReportCacheEntry getSemanticReportCacheEntry() const;
 
     /*!
      * @brief       True once mpSemanticsManager exists and has cached at least
      *              one complete semantic evaluation cycle.
      */
-    bool IsSemanticReportCacheAvailable() const;
+    bool isSemanticReportCacheAvailable() const;
 
     /*!
      * @brief       Reset the system (clear Atlas or the active map).
      */
-    void Reset();
+    void reset();
 
     /*!
      * @brief       Reset the active map (clear the current map while retaining
@@ -1096,7 +1099,7 @@ class System
      *              system with a fresh map while keeping map topology and
      *              previously built map points.
      */
-    void ResetActiveMap();
+    void resetActiveMap();
 
     /*!
      * @brief       Requests an active-map reset while retaining its
@@ -1109,14 +1112,14 @@ class System
      *              multiple unlike requests as a combined cause rather than
      *              assigning one misleading cause.
      */
-    void RequestResetActiveMapWithCause(ResetCause cause_in);
+    void requestResetActiveMapWithCause(ResetCause cause_in);
 
     /*!
      * @brief       All threads will be requested to finish. It waits until all
      *              threads have finished. This function must be called before
      *              saving the trajectory to ensure a clean shutdown.
      */
-    void Shutdown();
+    void shutdown();
 
     /*!
      * @brief       Reset the system (clear Atlas or the active map).
@@ -1136,7 +1139,7 @@ class System
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
-    void SaveTrajectoryTUM(const string &filename);
+    void saveTrajectoryTUM(const string &filename);
 
     /*!
      * @brief       Save keyframe poses in the TUM RGB-D dataset format. This
@@ -1147,7 +1150,7 @@ class System
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
-    void SaveKeyFrameTrajectoryTUM(const string &filename);
+    void saveKeyFrameTrajectoryTUM(const string &filename);
 
     /*!
      * @brief       Save camera trajectory in the EuRoC MAV dataset format.
@@ -1162,7 +1165,7 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void SaveTrajectoryEuRoC(const string &filename);
+    void saveTrajectoryEuRoC(const string &filename);
 
     /*!
      * @brief       Save keyframe poses in the EuRoC MAV dataset format. This
@@ -1177,7 +1180,7 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void SaveKeyFrameTrajectoryEuRoC(const string &filename);
+    void saveKeyFrameTrajectoryEuRoC(const string &filename);
 
     /*!
      * @brief       Save camera trajectory in the EuRoC MAV dataset format,
@@ -1194,7 +1197,7 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void SaveTrajectoryEuRoC(const string &filename, Map *pMap);
+    void saveTrajectoryEuRoC(const string &filename, Map *pMap);
 
     /*!
      * @brief       Save keyframe poses in the EuRoC MAV dataset format,
@@ -1213,7 +1216,7 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void SaveKeyFrameTrajectoryEuRoC(const string &filename, Map *pMap);
+    void saveKeyFrameTrajectoryEuRoC(const string &filename, Map *pMap);
 
     /*!
      * @brief       Save data used for initialization debug. This dump includes
@@ -1225,7 +1228,7 @@ class System
      *              Multiple debug dumps may be available for different
      *              initialization attempts.
      */
-    void SaveDebugData(const int &iniIdx);
+    void saveDebugData(const int &iniIdx);
 
     /*!
      * @brief       Save camera trajectory in the KITTI dataset format. Only for
@@ -1236,7 +1239,7 @@ class System
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
-    void SaveTrajectoryKITTI(const string &filename);
+    void saveTrajectoryKITTI(const string &filename);
 
     /*!
      * @brief       Save the map to a file. The format (text or binary) is
@@ -1250,7 +1253,7 @@ class System
      *              initialized or if saving is not supported for the current
      *              sensor configuration.
      */
-    bool SaveMap(const string &filename);
+    bool saveMap(const string &filename);
 
     /*!
      * @brief       Save map points as a PCD (Point Cloud Data) file. This can
@@ -1264,7 +1267,7 @@ class System
      *              otherwise. Returns `false` if the system is not properly
      *              initialized or if there are no map points to save.
      */
-    bool SaveMapPointsAsPCD(const string &filename);
+    bool saveMapPointsAsPCD(const string &filename);
 
     /*!
      * @brief       Get the current tracking state code. This reflects the
@@ -1273,7 +1276,7 @@ class System
      *
      * @return      Tracking state code integer.
      */
-    int GetTrackingState();
+    int getTrackingState();
 
     /*!
      * @brief       Get a copy of the current frame image. The returned image
@@ -1283,7 +1286,7 @@ class System
      * @return      Current frame as a cv::Mat. May be empty if no frame
      *              has been processed yet.
      */
-    cv::Mat GetCurrentFrame();
+    cv::Mat getCurrentFrame();
 
     /*!
      * @brief       Get all rooms in the current map. Rooms are semantic
@@ -1293,7 +1296,7 @@ class System
      * @return      Vector of pointers to Room objects. May be empty if no
      *              rooms have been created yet.
      */
-    std::vector<vs_graphs::core::semantic::Room *> GetAllRooms();
+    std::vector<vs_graphs::core::semantic::Room *> getAllRooms();
 
     /*!
      * @brief       Get all floors in the current map. Floors are semantic
@@ -1302,7 +1305,7 @@ class System
      * @return      Vector of pointers to Floor objects. May be empty if no
      *              floors have been created yet.
      */
-    std::vector<vs_graphs::core::semantic::Floor *> GetAllFloors();
+    std::vector<vs_graphs::core::semantic::Floor *> getAllFloors();
 
     /*!
      * @brief       Get all planes in the current map. Planes represent
@@ -1312,7 +1315,7 @@ class System
      * @return      Vector of pointers to Plane objects. May be empty if no
      *              planes have been detected yet.
      */
-    std::vector<vs_graphs::core::geometric::Plane *> GetAllPlanes();
+    std::vector<vs_graphs::core::geometric::Plane *> getAllPlanes();
 
     /*!
      * @brief       Get all doors in the current map. Doors are semantic
@@ -1321,7 +1324,7 @@ class System
      * @return      Vector of pointers to Door objects. May be empty if no
      *              doors have been detected yet.
      */
-    std::vector<vs_graphs::core::Door *> GetAllDoors();
+    std::vector<vs_graphs::core::Door *> getAllDoors();
 
     /*!
      * @brief       Get all markers (fiducial markers/AprilTags) in the current
@@ -1331,7 +1334,7 @@ class System
      * @return      Vector of pointers to Marker objects. May be empty if no
      *              markers have been detected yet.
      */
-    std::vector<vs_graphs::core::semantic::Marker *> GetAllMarkers();
+    std::vector<vs_graphs::core::semantic::Marker *> getAllMarkers();
 
     /*!
      * @brief       Get all passages in the current map. Passages connect rooms
@@ -1341,7 +1344,7 @@ class System
      * @return      Vector of pointers to Passage objects. May be empty if no
      *              passages have been detected yet.
      */
-    std::vector<vs_graphs::core::semantic::Passage *> GetAllPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> getAllPassages();
 
     /*!
      * @brief       Get all keyframes in the current map. Keyframes represent
@@ -1350,7 +1353,7 @@ class System
      * @return      Vector of pointers to KeyFrame objects. May be empty if
      *              no keyframes have been created yet.
      */
-    std::vector<vs_graphs::core::KeyFrame *> GetAllKeyFrames();
+    std::vector<vs_graphs::core::KeyFrame *> getAllKeyFrames();
 
     /*!
      * @brief       Get all map points in the current map. Map points are
@@ -1359,7 +1362,7 @@ class System
      * @return      Vector of pointers to MapPoint objects. May be empty if
      *              no map points have been created yet.
      */
-    std::vector<vs_graphs::core::MapPoint *> GetAllMapPoints();
+    std::vector<vs_graphs::core::MapPoint *> getAllMapPoints();
 
     /*!
      * @brief       Get only the map points that are currently being tracked.
@@ -1369,7 +1372,7 @@ class System
      * @return      Vector of pointers to MapPoint objects currently being
      *              tracked. May be empty if no points are being tracked.
      */
-    std::vector<vs_graphs::core::MapPoint *> GetTrackedMapPoints();
+    std::vector<vs_graphs::core::MapPoint *> getTrackedMapPoints();
 
     /*!
      * @brief       Get all keyframe poses in the current map. Each pose
@@ -1379,7 +1382,7 @@ class System
      * @return      Vector of Sophus::SE3f poses, one per keyframe. May be
      *              empty if no keyframes have been created yet.
      */
-    std::vector<Sophus::SE3f> GetAllKeyframePoses();
+    std::vector<Sophus::SE3f> getAllKeyframePoses();
 
     /*!
      * @brief       Get the un-tracked keypoints from the current frame. These
@@ -1389,7 +1392,7 @@ class System
      * @return      Vector of cv::KeyPoint objects representing un-tracked
      *              keypoints. May be empty if all keypoints are tracked.
      */
-    std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
+    std::vector<cv::KeyPoint> getTrackedKeyPointsUn();
 
     /*!
      * @brief       Get the pose of a specific keyframe.
@@ -1401,7 +1404,7 @@ class System
      * @return      The camera pose (Sophus::SE3f) of the requested keyframe.
      *              Returns an empty pose if the keyframe pointer is invalid.
      */
-    Sophus::SE3f GetKeyFramePose(KeyFrame *pKF);
+    Sophus::SE3f getKeyFramePose(KeyFrame *pKF);
 
     /*!
      * @brief       Get the camera pose in the world frame. This is the
@@ -1411,7 +1414,7 @@ class System
      * @return      Camera pose as Sophus::SE3f. May be invalid if the
      *              system has not yet initialized the pose.
      */
-    Sophus::SE3f GetCamTwc();
+    Sophus::SE3f getCamTwc();
 
     /*!
      * @brief       Get the IMU pose in the body frame. Represents the
@@ -1421,7 +1424,7 @@ class System
      * @return      IMU pose as Sophus::SE3f. May be invalid if IMU data
      *              has not been sufficiently processed.
      */
-    Sophus::SE3f GetImuTwb();
+    Sophus::SE3f getImuTwb();
 
     /*!
      * @brief       Get the IMU velocity in the body frame. Represents the
@@ -1430,7 +1433,7 @@ class System
      * @return      IMU velocity as Eigen::Vector3f. May be invalid if IMU
      *              data has not been sufficiently processed.
      */
-    Eigen::Vector3f GetImuVwb();
+    Eigen::Vector3f getImuVwb();
 
     /*!
      * @brief       Check whether IMU preintegration is active. When `true`,
@@ -1451,7 +1454,7 @@ class System
      *              greater than ~0.1 seconds typically indicates the IMU
      *              has converged and is providing reliable data.
      */
-    double GetTimeFromIMUInit();
+    double getTimeFromIMUInit();
 
     /*!
      * @brief       Check whether the system considers its current state as
@@ -1484,7 +1487,7 @@ class System
      * @note        This function is currently a placeholder. Full dataset
      *              switching support may be added in future versions.
      */
-    void ChangeDataset();
+    void changeDataset();
 
     /*!
      * @brief       Get the image scale factor used by the system. This factor
@@ -1494,7 +1497,7 @@ class System
      *              depends on the specific sensor configuration and
      *              calibration.
      */
-    float GetImageScale();
+    float getImageScale();
 
     /*!
      * @brief       Marks one keyframe as handed off to the semantic
@@ -1505,7 +1508,7 @@ class System
      *              in-flight window, not just what `System` can see
      *              internally.
      */
-    void IncrementSegmentationPublishedCount();
+    void incrementSegmentationPublishedCount();
 
     /*!
      * @brief       Parse the JSON file containing the environment data
@@ -1554,12 +1557,13 @@ class System
      * @brief       Update the GNN room candidates list
      */
     void setGNNRoomCandidates(
-        const std::vector<vs_graphs::core::semantic::Room *> &gnnRoomCandidates);
+        const std::vector<vs_graphs::core::semantic::Room *>
+            &gnnRoomCandidates);
 
 #ifdef REGISTER_TIMES
-    void InsertRectTime(double &time);
-    void InsertResizeTime(double &time);
-    void InsertTrackTime(double &time);
+    void insertRectTime(double &time);
+    void insertResizeTime(double &time);
+    void insertTrackTime(double &time);
 #endif
 
   private:
@@ -1569,19 +1573,19 @@ class System
      *              IMU_STEREO, IMU_RGBD). Determines which tracking method
      *              is used (TrackStereo, TrackRGBD, TrackMonocular).
      */
-    eSensor mSensor;
+    eSensor sensor;
 
     /*!
      * @brief       ORB vocabulary used for place recognition and feature
      *              matching.
      */
-    ORBVocabulary *mpVocabulary;
+    ORBVocabulary *p_vocabulary;
 
     /*!
      * @brief       KeyFrame database for place recognition (relocalization and
      *              loop detection).
      */
-    KeyFrameDatabase *mpKeyFrameDatabase;
+    KeyFrameDatabase *p_keyFrameDatabase;
 
     /*!
      * @brief       Save the current Atlas to a file. The type parameter
@@ -1597,7 +1601,7 @@ class System
      * @frame       N/A
      * @unit        N/A
      */
-    bool SaveAtlas(int type);
+    bool saveAtlas(int type);
 
     /*!
      * @brief       Load an Atlas from a file. The type parameter determines the
@@ -1613,7 +1617,7 @@ class System
      * @frame       N/A
      * @unit        N/A
      */
-    bool LoadAtlas(int type);
+    bool loadAtlas(int type);
 
     /*!
      * @brief       Calculate a checksum for a file to verify data integrity.
@@ -1632,13 +1636,13 @@ class System
      * @frame       N/A
      * @unit        N/A
      */
-    string CalculateCheckSum(string filename, int type);
+    string calculateCheckSum(string filename, int type);
 
     /*!
      * @brief       Atlas pointer. Owned by the System class. Provides access to
      *              the global map, keyframes, and map points.
      */
-    Atlas *mpAtlas;
+    Atlas *p_atlas;
 
     /*!
      * @brief       Tracker pointer. Owned by the System class. Receives frames
@@ -1646,20 +1650,20 @@ class System
      * keyframes, create MapPoints, and perform relocalization if tracking
      * fails.
      */
-    Tracking *mpTracker;
+    Tracking *p_tracker;
 
     /*!
      * @brief       Local Mapping pointer. Owned by the System class. Manages
      * the local map and performs local bundle adjustment.
      */
-    LocalMapping *mpLocalMapper;
+    LocalMapping *p_localMapper;
 
     /*!
      * @brief       Loop Closing pointer. Owned by the System class. Searches
      * for loops with every new keyframe. If a loop is found, performs pose
      * graph optimization and full bundle adjustment in a separate thread.
      */
-    LoopClosing *mpLoopCloser;
+    LoopClosing *p_loopCloser;
 
     /*!
      * @brief       Viewer pointer. Owned by the System class. Draws the map and
@@ -1667,32 +1671,32 @@ class System
      * when
      *              @ref bUseViewer "bUseViewer" is `false`.
      */
-    Viewer *mpViewer;
+    Viewer *p_viewer;
 
     /*!
      * @brief       Frame Drawer pointer. Owned by the System class. Handles the
      *              drawing of frames for visualization.
      */
-    FrameDrawer *mpFrameDrawer;
+    FrameDrawer *p_frameDrawer;
 
     /*!
      * @brief       Map Drawer pointer. Owned by the System class. Handles the
      *              drawing of the map structure.
      */
-    MapDrawer *mpMapDrawer;
+    MapDrawer *p_mapDrawer;
 
     /*!
      * @brief       Semantic Segmentation pointer. Owned by the System class.
      *              Processes RGB-D images to produce semantic segmentations.
      */
-    SemanticSegmentation *mpSemanticSegmentation;
+    SemanticSegmentation *p_semanticSegmentation;
 
     /*!
      * @brief       Semantics Manager pointer. Owned by the System class.
      * Manages the semantic evaluation pipeline, including room/floor/passage
      *              topology and segmentation result caching.
      */
-    SemanticsManager *mpSemanticsManager;
+    SemanticsManager *p_semanticsManager;
 
     /* ---------------------------------------------------------------------- *
      * SLAM SYSTEM THREADS
@@ -1749,13 +1753,13 @@ class System
      * @brief       Reset flag. When `true`, requests a full system reset
      * (clears Atlas and active map). Must be handled carefully across threads.
      */
-    bool mbReset;
+    bool resetRequested;
 
     /*!
      * @brief       Reset active map flag. When `true`, requests a reset of only
      *              the active map while retaining the overall Atlas state.
      */
-    bool mbResetActiveMap;
+    bool resetActiveMapRequested;
 
     /*!
      * @brief       Mode mutex. Protects mode transitions (e.g. localization
@@ -1767,67 +1771,67 @@ class System
      * @brief       Localization mode activation flag. When `true`, the local
      *              mapping thread is paused and only camera tracking runs.
      */
-    bool mbActivateLocalizationMode;
+    bool activateLocalizationModeRequested;
 
     /*!
      * @brief       Localization mode deactivation flag. When `true`, resumes
      * the local mapping thread and resumes full SLAM operation.
      */
-    bool mbDeactivateLocalizationMode;
+    bool deactivateLocalizationModeRequested;
 
     /*!
      * @brief       Shutdown flag. When `true`, requests all threads to finish.
      *              After all threads have been joined via @ref Shutdown(), the
      *              system is fully shut down.
      */
-    bool mbShutDown;
+    bool shutdownRequested;
 
     /*!
      * @brief       Current tracking state. Updated by the tracker and read by
      *              various services. Values correspond to the tracking state
      *              machine enumeration.
      */
-    int mTrackingState{-1};
+    int trackingState{-1};
 
     /*!
      * @brief       Number of inliers from the most recent tracking frame.
      *              Used to assess tracking quality.
      */
-    int mTrackingInliers{0};
+    int trackingInliers{0};
 
     /*!
      * @brief       Timestamp of the last processed frame. Used for timing
      *              analysis and frame-to-frame consistency checks.
      */
-    double mLastFrameTimestamp{0.0};
+    double lastFrameTimestamp{0.0};
 
     /*!
      * @brief       Current camera pose in the world frame. Updated by the
      * tracker after each frame processing. Represents the estimated position
      * and orientation of the camera.
      */
-    Sophus::SE3f mCurrentCameraPose_World;
+    Sophus::SE3f currentCameraPose_World;
 
     /*!
      * @brief       Whether the current camera pose is valid. If `false`, the
      * pose should not be relied upon for navigation or planning.
      */
-    bool mCurrentCameraPoseValid{false};
+    bool currentCameraPoseValid{false};
 
     /*!
      * @brief       Reset counter. Atomic counter tracking the number of system
      *              resets. Written from the reset thread and read by the
      * mission health service.
      */
-    std::atomic<std::uint64_t> mResetCount{0U};
+    std::atomic<std::uint64_t> resetCount{0U};
 
     /*! RGB-D frontend counters sampled by the mission-health service. */
-    std::atomic<std::uint64_t> mRgbdFrontendAcceptedCount{0U};
-    std::atomic<std::uint64_t> mRgbdFrontendProcessedCount{0U};
-    std::atomic<std::uint64_t> mRgbdFrontendOverwrittenCount{0U};
-    std::atomic<bool>          mRgbdFrontendWorkerInFlight{false};
+    std::atomic<std::uint64_t> rgbdFrontendAcceptedCount{0U};
+    std::atomic<std::uint64_t> rgbdFrontendProcessedCount{0U};
+    std::atomic<std::uint64_t> rgbdFrontendOverwrittenCount{0U};
+    std::atomic<bool>          rgbdFrontendWorkerInFlight{false};
     std::atomic<std::int64_t>
-        mRgbdFrontendLastProcessedSensorTimestampNanoseconds{0};
+        rgbdFrontendLastProcessedSensorTimestampNanoseconds{0};
 
     /*!
      * @brief       In-flight semantic-segmentation keyframe accounting.
@@ -1843,7 +1847,7 @@ class System
      * two writers need no ordering relative to each other beyond eventual
      * consistency.
      */
-    std::atomic<std::uint64_t> mSegmentationPublishedCount{0U};
+    std::atomic<std::uint64_t> segmentationPublishedCount{0U};
 
     /*!
      * @brief       In-frame semantic-segmentation result counting.
@@ -1852,7 +1856,7 @@ class System
      *              @ref mSegmentationPublishedCount, the difference indicates
      * how many keyframes remain in-flight.
      */
-    std::atomic<std::uint64_t> mSegmentationReturnedCount{0U};
+    std::atomic<std::uint64_t> segmentationReturnedCount{0U};
 
     /*!
      * @brief       Last returned keyframe ID. Advances in
@@ -1861,20 +1865,20 @@ class System
      *              @ref mSegmentationReturnedCount to track in-flight
      * keyframes.
      */
-    std::atomic<std::uint64_t> mLastReturnedKeyFrameId{0U};
+    std::atomic<std::uint64_t> lastReturnedKeyFrameId{0U};
 
     /*!
      * @brief       Tracked map points. List of MapPoint pointers currently
      * being tracked. Maintained for quick access without traversing the full
      * Atlas.
      */
-    std::vector<MapPoint *> mTrackedMapPoints;
+    std::vector<MapPoint *> trackedMapPoints;
 
     /*!
      * @brief       Un-tracked keypoints from the current frame. These are
      * keypoints that were detected but not yet associated with MapPoints.
      */
-    std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
+    std::vector<cv::KeyPoint> trackedKeyPointsUn;
 
     /*!
      * @brief       State mutex. Protects shared state related to tracking and
@@ -1887,33 +1891,33 @@ class System
      * @brief       Map ID of the most recently processed frame, used to detect
      *              map restarts for room-context carryover.
      */
-    long unsigned int mLastProcessedMapId{0};
+    long unsigned int lastProcessedMapId{0};
 
     /*!
      * @brief       Initial map initialization flag. When `true`, the first map
      *              build is in progress. Set to `false` once the initial map
      *              has been built and the system is tracking.
      */
-    bool mFirstMapInit{true};
+    bool firstMapInit{true};
 
     /*!
      * @brief       File path for loading an Atlas from disk. Used to resume
      *              processing from a saved map state.
      */
-    string mStrLoadAtlasFromFile;
+    string loadAtlasFile;
 
     /*!
      * @brief       File path for saving the Atlas to disk. Used to persist the
      *              map state for later resumption.
      */
-    string mStrSaveAtlasToFile;
+    string saveAtlasFile;
 
     /*!
      * @brief       File path for the ORB vocabulary. Used by the System
      *              constructor to locate the vocabulary file for place
      *              recognition and feature matching.
      */
-    string mStrVocabularyFilePath;
+    string vocabularyFilePath;
 
     /*!
      * @brief       Vector of Room pointers from the environment. Maintained for

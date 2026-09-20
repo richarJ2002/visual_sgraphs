@@ -1,4 +1,4 @@
-/**
+/*!
  * @file test_PassageTraversalRepro.cpp
  * @brief Regression test: reproduce the silent-passage-traversal miss.
  *
@@ -7,8 +7,8 @@
  *
  * This test builds a minimal synthetic scenario with exactly 3 keyframes
  * and a passage whose geometry is derived from the gate run's sgraph
- * output (semantic::Passage#1: centroid ≈ (-0.21,-0.75,5.72), width ≈ 1.135, height 2.0).
- * It calls updateTraversalEvidence() and asserts that
+ * output (semantic::Passage#1: centroid ≈ (-0.21,-0.75,5.72), width ≈ 1.135,
+ * height 2.0). It calls updateTraversalEvidence() and asserts that
  * passage.getTraversalKnownToFarCount() > 0.
  *
  * Outcome: the unit-level trigger works -- with a bracketing keyframe pair
@@ -47,7 +47,8 @@ namespace test
 {
 
 // --------------------------------------------------------------------------
-// semantic::Passage geometry (derived from gate run 20260911-105315__gate_verification):
+// semantic::Passage geometry (derived from gate run
+// 20260911-105315__gate_verification):
 //   centroid: (-0.21, -0.75, 5.72) m
 //   width:  1.135355933026258 m
 //   height: 2.0 m
@@ -104,7 +105,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     // --- Atlas / map / passage setup ---------------------------------------
     Atlas atlas(0);
     EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
-    Map *p_map = atlas.GetCurrentMap();
+    Map *p_map = atlas.getCurrentMap();
     EXPECT_NE(p_map, nullptr);
 
     // Ground plane
@@ -135,7 +136,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     }
     groundPlane.setMapClouds(groundCloud);
     EXPECT_TRUE(GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane));
-    p_map->AddMapPlane(&groundPlane);
+    p_map->addMapPlane(&groundPlane);
 
     // Known-side room
     semantic::Room knownRoom;
@@ -143,7 +144,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     knownRoom.setMap(p_map);
     knownRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     knownRoom.setCentroid(Eigen::Vector3d(-1.0, -0.5, 5.5));
-    p_map->AddDetectedMapRoom(&knownRoom);
+    p_map->addDetectedMapRoom(&knownRoom);
 
     // Far-side room (prospective)
     semantic::Room farRoom;
@@ -151,7 +152,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     farRoom.setMap(p_map);
     farRoom.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED);
     farRoom.setCentroid(Eigen::Vector3d(1.0, -1.0, 6.0));
-    p_map->AddDetectedMapRoom(&farRoom);
+    p_map->addDetectedMapRoom(&farRoom);
 
     // semantic::Passage#1 with geometry from the gate run
     semantic::Passage passage;
@@ -173,35 +174,35 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
                                                                     // side
                                                                     // is -X
     passage.setProspectiveRoom(&farRoom);
-    p_map->AddMapPassage(&passage);
+    p_map->addMapPassage(&passage);
 
     // --- KeyFrames (exactly 3) -------------------------------------------
     KeyFrame knownSideKeyFrame;
     knownSideKeyFrame.mnId = 0U;
-    knownSideKeyFrame.SetPose(
+    knownSideKeyFrame.setPose(
         Sophus::SE3f(Eigen::Matrix3f::Identity(),
                      Eigen::Vector3f(-KNOWN_SIDE_CAMERA_CENTER_X,
                                      -KNOWN_SIDE_CAMERA_CENTER_Y,
                                      -KNOWN_SIDE_CAMERA_CENTER_Z)));
-    p_map->AddKeyFrame(&knownSideKeyFrame);
+    p_map->addKeyFrame(&knownSideKeyFrame);
 
     KeyFrame apertureKeyFrame;
     apertureKeyFrame.mnId = 1U;
-    apertureKeyFrame.SetPose(
+    apertureKeyFrame.setPose(
         Sophus::SE3f(Eigen::Matrix3f::Identity(),
                      Eigen::Vector3f(-APERTURE_CAMERA_CENTER_X,
                                      -APERTURE_CAMERA_CENTER_Y,
                                      -APERTURE_CAMERA_CENTER_Z)));
-    p_map->AddKeyFrame(&apertureKeyFrame);
+    p_map->addKeyFrame(&apertureKeyFrame);
 
     KeyFrame farSideKeyFrame;
     farSideKeyFrame.mnId = 2U;
-    farSideKeyFrame.SetPose(
+    farSideKeyFrame.setPose(
         Sophus::SE3f(Eigen::Matrix3f::Identity(),
                      Eigen::Vector3f(-FAR_SIDE_CAMERA_CENTER_X,
                                      -FAR_SIDE_CAMERA_CENTER_Y,
                                      -FAR_SIDE_CAMERA_CENTER_Z)));
-    p_map->AddKeyFrame(&farSideKeyFrame);
+    p_map->addKeyFrame(&farSideKeyFrame);
 
     // --- SemanticsManager + traversal evidence -----------------------------
     SemanticsManager manager(&atlas);

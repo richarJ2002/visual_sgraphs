@@ -1,10 +1,11 @@
-/**
+/*!
  * Boost serialization round-trip self-consistency (gated).
  *
  * Covers all Boost sites: Map, MapPoint, Atlas, ImuTypes (Bias/Calib/
  * Preintegrated), KeyFrameDatabase, KeyFrame, SerializationUtils
  * (Sophus SE3, cv::Mat, vector<KeyPoint>) + 3 CameraModels
- * (camera_models::Pinhole/camera_models::KannalaBrandt8/camera_models::GeometricCamera base).
+ * (camera_models::Pinhole/camera_models::KannalaBrandt8/camera_models::GeometricCamera
+ * base).
  *
  * Scope: self-consistency only (save HEAD, load HEAD, compare). No
  * cross-version support (see docs/deviations/serialization_versioning.md).
@@ -60,8 +61,7 @@ namespace core
 namespace
 {
 
-template <typename T>
-T RoundTripBinaryCopyable(const T &input_in)
+template <typename T> T RoundTripBinaryCopyable(const T &input_in)
 {
     std::stringstream stream_inout(std::ios::in | std::ios::out |
                                    std::ios::binary);
@@ -77,8 +77,7 @@ T RoundTripBinaryCopyable(const T &input_in)
     return output_out;
 }
 
-template <typename T>
-void RoundTripBinaryInto(const T &input_in, T &output_out)
+template <typename T> void RoundTripBinaryInto(const T &input_in, T &output_out)
 {
     std::stringstream stream_inout(std::ios::in | std::ios::out |
                                    std::ios::binary);
@@ -93,16 +92,17 @@ void RoundTripBinaryInto(const T &input_in, T &output_out)
 }
 
 template <typename T>
-void RoundTripTextFileInto(const T &input_in, const std::string &path_in,
-                           T &output_out)
+void RoundTripTextFileInto(const T           &input_in,
+                           const std::string &path_in,
+                           T                 &output_out)
 {
     {
-        std::ofstream output_stream(path_in, std::ios::binary);
+        std::ofstream                 output_stream(path_in, std::ios::binary);
         boost::archive::text_oarchive output_archive(output_stream);
         output_archive << input_in;
     }
     {
-        std::ifstream input_stream(path_in, std::ios::binary);
+        std::ifstream                 input_stream(path_in, std::ios::binary);
         boost::archive::text_iarchive input_archive(input_stream);
         input_archive >> output_out;
     }
@@ -120,13 +120,11 @@ std::string TmpPath(const std::string &name_in)
 void ExpectSophusEqual(const Sophus::SE3f &expected_in,
                        const Sophus::SE3f &actual_in)
 {
-    EXPECT_TRUE(expected_in.translation().isApprox(actual_in.translation(),
-                                                   1.0e-5F));
-    const Eigen::Quaternionf expected_quat =
-        expected_in.unit_quaternion();
-    const Eigen::Quaternionf actual_quat = actual_in.unit_quaternion();
-    const float dot =
-        std::abs(expected_quat.dot(actual_quat));
+    EXPECT_TRUE(
+        expected_in.translation().isApprox(actual_in.translation(), 1.0e-5F));
+    const Eigen::Quaternionf expected_quat = expected_in.unit_quaternion();
+    const Eigen::Quaternionf actual_quat   = actual_in.unit_quaternion();
+    const float              dot = std::abs(expected_quat.dot(actual_quat));
     EXPECT_NEAR(dot, 1.0F, 1.0e-5F);
 }
 
@@ -154,8 +152,7 @@ void ExpectKeyPointsEqual(const std::vector<cv::KeyPoint> &expected_in,
         EXPECT_FLOAT_EQ(expected_in[index].pt.y, actual_in[index].pt.y);
         EXPECT_FLOAT_EQ(expected_in[index].size, actual_in[index].size);
         EXPECT_FLOAT_EQ(expected_in[index].angle, actual_in[index].angle);
-        EXPECT_FLOAT_EQ(expected_in[index].response,
-                        actual_in[index].response);
+        EXPECT_FLOAT_EQ(expected_in[index].response, actual_in[index].response);
         EXPECT_EQ(expected_in[index].octave, actual_in[index].octave);
         EXPECT_EQ(expected_in[index].class_id, actual_in[index].class_id);
     }
@@ -167,7 +164,7 @@ void ExpectMapsEqualSorted(const std::map<Key, Value> &expected_in,
 {
     ASSERT_EQ(expected_in.size(), actual_in.size());
     auto expected_it = expected_in.begin();
-    auto actual_it = actual_in.begin();
+    auto actual_it   = actual_in.begin();
     while (expected_it != expected_in.end())
     {
         EXPECT_EQ(expected_it->first, actual_it->first);
@@ -183,7 +180,7 @@ void ExpectSetsEqualSorted(const std::set<Value> &expected_in,
 {
     ASSERT_EQ(expected_in.size(), actual_in.size());
     auto expected_it = expected_in.begin();
-    auto actual_it = actual_in.begin();
+    auto actual_it   = actual_in.begin();
     while (expected_it != expected_in.end())
     {
         EXPECT_EQ(*expected_it, *actual_it);
@@ -215,13 +212,13 @@ TEST(SerializationUtils, SophusSe3RoundTrip)
     ExpectSophusEqual(original, loaded);
 
     const Sophus::SE3f identity;
-    Sophus::SE3f identity_loaded;
+    Sophus::SE3f       identity_loaded;
     {
         std::stringstream stream(std::ios::in | std::ios::out |
                                  std::ios::binary);
         {
             boost::archive::binary_oarchive output_archive(stream);
-            Sophus::SE3f mutable_identity = identity;
+            Sophus::SE3f                    mutable_identity = identity;
             serializeSophusSE3(output_archive, mutable_identity, 0U);
         }
         {
@@ -345,7 +342,7 @@ TEST(SerializationImu, BiasRoundTripMemoryAndTmpFile)
     EXPECT_FLOAT_EQ(original.bwz, loaded.bwz);
 
     const std::string path = TmpPath("bias.bin");
-    IMU::Bias file_loaded;
+    IMU::Bias         file_loaded;
     RoundTripTextFileInto(original, path, file_loaded);
     EXPECT_FLOAT_EQ(original.bax, file_loaded.bax);
     EXPECT_FLOAT_EQ(original.bwz, file_loaded.bwz);
@@ -359,21 +356,20 @@ TEST(SerializationImu, BiasRoundTripMemoryAndTmpFile)
 
 TEST(SerializationImu, CalibRoundTrip)
 {
-    const Sophus::SE3f known_tbc(
-        Eigen::Quaternionf(0.0F, 0.0F, 0.0F, 1.0F),
-        Eigen::Vector3f(0.1F, 0.2F, 0.3F));
-    IMU::Calib original;
-    original.Set(known_tbc, 0.01F, 0.02F, 0.001F, 0.002F);
+    const Sophus::SE3f known_tbc(Eigen::Quaternionf(0.0F, 0.0F, 0.0F, 1.0F),
+                                 Eigen::Vector3f(0.1F, 0.2F, 0.3F));
+    IMU::Calib         original;
+    original.setCalibration(known_tbc, 0.01F, 0.02F, 0.001F, 0.002F);
     EXPECT_TRUE(original.mbIsSet);
 
     const IMU::Calib loaded = RoundTripBinaryCopyable(original);
     EXPECT_TRUE(loaded.mbIsSet);
     ExpectSophusEqual(original.mTbc, loaded.mTbc);
     ExpectSophusEqual(original.mTcb, loaded.mTcb);
-    EXPECT_TRUE(original.Cov.diagonal().isApprox(loaded.Cov.diagonal(),
-                                                 1.0e-6F));
-    EXPECT_TRUE(original.CovWalk.diagonal().isApprox(
-        loaded.CovWalk.diagonal(), 1.0e-6F));
+    EXPECT_TRUE(
+        original.Cov.diagonal().isApprox(loaded.Cov.diagonal(), 1.0e-6F));
+    EXPECT_TRUE(original.CovWalk.diagonal().isApprox(loaded.CovWalk.diagonal(),
+                                                     1.0e-6F));
 
     const IMU::Calib unset;
     EXPECT_FALSE(unset.mbIsSet);
@@ -383,17 +379,17 @@ TEST(SerializationImu, CalibRoundTrip)
 
 TEST(SerializationImu, PreintegratedRoundTrip)
 {
-    const IMU::Bias bias(0.01F, 0.02F, 0.03F, 0.001F, 0.002F, 0.003F);
+    const IMU::Bias    bias(0.01F, 0.02F, 0.03F, 0.001F, 0.002F, 0.003F);
     const Sophus::SE3f tbc(Eigen::Quaternionf::Identity(),
                            Eigen::Vector3f(0.05F, 0.0F, 0.0F));
-    IMU::Calib calib;
-    calib.Set(tbc, 0.01F, 0.02F, 0.001F, 0.002F);
+    IMU::Calib         calib;
+    calib.setCalibration(tbc, 0.01F, 0.02F, 0.001F, 0.002F);
 
     IMU::Preintegrated original(bias, calib);
-    original.IntegrateNewMeasurement(Eigen::Vector3f(0.0F, 0.0F, 9.81F),
+    original.integrateNewMeasurement(Eigen::Vector3f(0.0F, 0.0F, 9.81F),
                                      Eigen::Vector3f(0.01F, 0.0F, 0.0F),
                                      0.01F);
-    original.IntegrateNewMeasurement(Eigen::Vector3f(0.1F, 0.0F, 9.80F),
+    original.integrateNewMeasurement(Eigen::Vector3f(0.1F, 0.0F, 9.80F),
                                      Eigen::Vector3f(0.0F, 0.01F, 0.0F),
                                      0.01F);
     EXPECT_GT(original.dT, 0.0F);
@@ -410,47 +406,56 @@ TEST(SerializationImu, PreintegratedRoundTrip)
 
     // SKIP mutex: post-load object must remain usable (default-constructed
     // lock state). Integrating one more sample must not deadlock or crash.
-    EXPECT_NO_THROW(loaded.IntegrateNewMeasurement(
-        Eigen::Vector3f(0.0F, 0.0F, 9.81F), Eigen::Vector3f::Zero(), 0.005F));
+    EXPECT_NO_THROW(
+        loaded.integrateNewMeasurement(Eigen::Vector3f(0.0F, 0.0F, 9.81F),
+                                       Eigen::Vector3f::Zero(),
+                                       0.005F));
 }
 
 TEST(SerializationCamera, PinholeRoundTrip)
 {
-    camera_models::Pinhole original(std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
-    const unsigned int original_id = original.getId();
-    // Heap leak intentional: camera_models::Pinhole default ctor leaves tvr uninitialised
-    // and serialize() never touches it, so a stack-loaded object could
-    // destroy garbage. Leaking mirrors Atlas (which never deletes cameras).
-    camera_models::Pinhole *loaded_ptr = new camera_models::Pinhole(std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F});
+    camera_models::Pinhole original(
+        std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
+    const unsigned int      original_id = original.getId();
+    // Heap leak intentional: camera_models::Pinhole default ctor leaves tvr
+    // uninitialised and serialize() never touches it, so a stack-loaded object
+    // could destroy garbage. Leaking mirrors Atlas (which never deletes
+    // cameras).
+    camera_models::Pinhole *loaded_ptr =
+        new camera_models::Pinhole(std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F});
     RoundTripBinaryInto(original, *loaded_ptr);
     camera_models::Pinhole &loaded = *loaded_ptr;
     EXPECT_EQ(original_id, loaded.getId());
     // NB: compare by value (== 0U) not EXPECT_EQ(CAM_*): CAM_* has no
     // out-of-line definition, EXPECT_EQ would ODR-use and fail to link.
-    EXPECT_TRUE(loaded.getType() == camera_models::GeometricCamera::CAM_PINHOLE);
+    EXPECT_TRUE(loaded.getType() ==
+                camera_models::GeometricCamera::CAM_PINHOLE);
     EXPECT_EQ(0U, loaded.getType());
     EXPECT_EQ(4U, loaded.size());
     EXPECT_FLOAT_EQ(500.0F, loaded.getParameter(0));
     EXPECT_FLOAT_EQ(240.0F, loaded.getParameter(3));
-    EXPECT_TRUE(loaded.isEqual(const_cast<camera_models::Pinhole *>(&original)));
+    EXPECT_TRUE(
+        loaded.isEqual(const_cast<camera_models::Pinhole *>(&original)));
     // SKIP tvr raw pointer: not serialized by design; no assertion.
 }
 
 TEST(SerializationCamera, KannalaBrandt8RoundTrip)
 {
-    const std::vector<float> params{500.0F, 500.0F, 320.0F, 240.0F,
-                                    0.1F,   0.01F,  0.001F, 0.0001F};
-    camera_models::KannalaBrandt8 original(params, 1.0e-5F);
-    const unsigned int original_id = original.getId();
+    const std::vector<float>
+        params{500.0F, 500.0F, 320.0F, 240.0F, 0.1F, 0.01F, 0.001F, 0.0001F};
+    camera_models::KannalaBrandt8  original(params, 1.0e-5F);
+    const unsigned int             original_id = original.getId();
     // Heap leak intentional (see PinholeRoundTrip): default-constructed
     // tvr is untouched by serialize().
-    camera_models::KannalaBrandt8 *loaded_ptr = new camera_models::KannalaBrandt8(
-        std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F});
+    camera_models::KannalaBrandt8 *loaded_ptr =
+        new camera_models::KannalaBrandt8(
+            std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F});
     RoundTripBinaryInto(original, *loaded_ptr);
     camera_models::KannalaBrandt8 &loaded = *loaded_ptr;
     EXPECT_EQ(original_id, loaded.getId());
     // NB: see PinholeRoundTrip: avoid ODR-use of CAM_* (no definition).
-    EXPECT_TRUE(loaded.getType() == camera_models::GeometricCamera::CAM_FISHEYE);
+    EXPECT_TRUE(loaded.getType() ==
+                camera_models::GeometricCamera::CAM_FISHEYE);
     EXPECT_EQ(1U, loaded.getType());
     EXPECT_EQ(8U, loaded.size());
     for (std::size_t index = 0; index < params.size(); ++index)
@@ -458,15 +463,17 @@ TEST(SerializationCamera, KannalaBrandt8RoundTrip)
         EXPECT_FLOAT_EQ(params[index], loaded.getParameter(index));
     }
     EXPECT_FLOAT_EQ(original.getPrecision(), loaded.getPrecision());
-    EXPECT_TRUE(loaded.isEqual(const_cast<camera_models::KannalaBrandt8 *>(&original)));
+    EXPECT_TRUE(
+        loaded.isEqual(const_cast<camera_models::KannalaBrandt8 *>(&original)));
 }
 
 TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
 {
-    camera_models::Pinhole *original_camera =
-        new camera_models::Pinhole(std::vector<float>{400.0F, 400.0F, 300.0F, 200.0F});
-    std::vector<camera_models::GeometricCamera *> original_ptrs{original_camera,
-                                                 original_camera};
+    camera_models::Pinhole *original_camera = new camera_models::Pinhole(
+        std::vector<float>{400.0F, 400.0F, 300.0F, 200.0F});
+    std::vector<camera_models::GeometricCamera *> original_ptrs{
+        original_camera,
+        original_camera};
 
     std::vector<camera_models::GeometricCamera *> loaded_ptrs;
     {
@@ -475,13 +482,15 @@ TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
         {
             boost::archive::binary_oarchive output_archive(stream);
             output_archive.template register_type<camera_models::Pinhole>();
-            output_archive.template register_type<camera_models::KannalaBrandt8>();
+            output_archive
+                .template register_type<camera_models::KannalaBrandt8>();
             output_archive << original_ptrs;
         }
         {
             boost::archive::binary_iarchive input_archive(stream);
             input_archive.template register_type<camera_models::Pinhole>();
-            input_archive.template register_type<camera_models::KannalaBrandt8>();
+            input_archive
+                .template register_type<camera_models::KannalaBrandt8>();
             input_archive >> loaded_ptrs;
         }
     }
@@ -490,24 +499,24 @@ TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
     EXPECT_EQ(loaded_ptrs[0], loaded_ptrs[1]);
     EXPECT_NE(original_camera, loaded_ptrs[0]);
     EXPECT_EQ(original_camera->getId(), loaded_ptrs[0]->getId());
-    EXPECT_TRUE(loaded_ptrs[0]->getType() == camera_models::GeometricCamera::CAM_PINHOLE);
+    EXPECT_TRUE(loaded_ptrs[0]->getType() ==
+                camera_models::GeometricCamera::CAM_PINHOLE);
 
     delete original_camera;
-    // Intentional leak: loaded camera_models::Pinhole tvr is untouched by serialize()
-    // (see PinholeRoundTrip); deleting would free garbage.
+    // Intentional leak: loaded camera_models::Pinhole tvr is untouched by
+    // serialize() (see PinholeRoundTrip); deleting would free garbage.
 }
 
 TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
 {
-    Map map;
+    Map      map;
     KeyFrame ref_keyframe;
-    ref_keyframe.mnId = 7U;
-    ref_keyframe.mpCamera = nullptr;
-    ref_keyframe.mpCamera2 = nullptr;
-    ref_keyframe.mpImuPreintegrated = nullptr;
+    ref_keyframe.mnId               = 7U;
+    ref_keyframe.p_camera           = nullptr;
+    ref_keyframe.p_camera2          = nullptr;
+    ref_keyframe.p_imuPreintegrated = nullptr;
 
-    MapPoint original(Eigen::Vector3f(1.0F, 2.0F, 3.0F), &ref_keyframe,
-                      &map);
+    MapPoint original(Eigen::Vector3f(1.0F, 2.0F, 3.0F), &ref_keyframe, &map);
     original.setNormalVector(Eigen::Vector3f(0.0F, 0.0F, 1.0F));
     const long unsigned int original_id = original.mnId;
 
@@ -518,10 +527,9 @@ TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
     MapPoint loaded;
     RoundTripBinaryInto(original, loaded);
     EXPECT_EQ(original_id, loaded.mnId);
-    EXPECT_EQ(original.mnFirstKFid, loaded.mnFirstKFid);
-    EXPECT_EQ(original.nObs, loaded.nObs);
-    EXPECT_TRUE(original.getWorldPos().isApprox(loaded.getWorldPos(),
-                                                1.0e-6F));
+    EXPECT_EQ(original.firstKeyFrameId, loaded.firstKeyFrameId);
+    EXPECT_EQ(original.observationCount, loaded.observationCount);
+    EXPECT_TRUE(original.getWorldPos().isApprox(loaded.getWorldPos(), 1.0e-6F));
     EXPECT_TRUE(original.getNormal().isApprox(loaded.getNormal(), 1.0e-6F));
     EXPECT_EQ(original.isBad(), loaded.isBad());
     EXPECT_FLOAT_EQ(original.getMinDistanceInvariance(),
@@ -530,8 +538,7 @@ TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
                     loaded.getMaxDistanceInvariance());
     // SKIP mutexes (mMutexPos/mMutexFeatures/mMutexMap): post-load object
     // must be usable through its public getters (exercised above).
-    EXPECT_NO_THROW(loaded.setWorldPos(
-        Eigen::Vector3f(4.0F, 5.0F, 6.0F)));
+    EXPECT_NO_THROW(loaded.setWorldPos(Eigen::Vector3f(4.0F, 5.0F, 6.0F)));
 }
 
 TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
@@ -569,62 +576,61 @@ TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
 TEST(SerializationKeyFrame, DefaultRoundTrip)
 {
     KeyFrame original;
-    original.mnId = 11U;
-    original.bImu = false;
-    original.mpCamera = nullptr;
-    original.mpCamera2 = nullptr;
-    original.mpImuPreintegrated = nullptr;
-    original.SetPose(Sophus::SE3f(Eigen::Quaternionf::Identity(),
+    original.mnId               = 11U;
+    original.isImu              = false;
+    original.p_camera           = nullptr;
+    original.p_camera2          = nullptr;
+    original.p_imuPreintegrated = nullptr;
+    original.setPose(Sophus::SE3f(Eigen::Quaternionf::Identity(),
                                   Eigen::Vector3f(1.0F, 0.0F, 0.0F)));
-    original.SetVelocity(Eigen::Vector3f(0.1F, 0.2F, 0.3F));
-    original.SetNewBias(IMU::Bias(0.01F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F));
+    original.setVelocity(Eigen::Vector3f(0.1F, 0.2F, 0.3F));
+    original.setNewBias(IMU::Bias(0.01F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F));
 
-    std::set<KeyFrame *> keyframe_set;
-    std::set<MapPoint *> mappoint_set;
+    std::set<KeyFrame *>                       keyframe_set;
+    std::set<MapPoint *>                       mappoint_set;
     std::set<camera_models::GeometricCamera *> camera_set;
     original.PreSave(keyframe_set, mappoint_set, camera_set);
 
     KeyFrame loaded;
-    loaded.mpCamera = nullptr;
-    loaded.mpCamera2 = nullptr;
-    loaded.mpImuPreintegrated = nullptr;
+    loaded.p_camera           = nullptr;
+    loaded.p_camera2          = nullptr;
+    loaded.p_imuPreintegrated = nullptr;
     RoundTripBinaryInto(original, loaded);
     EXPECT_EQ(original.mnId, loaded.mnId);
     EXPECT_EQ(original.N, loaded.N);
     EXPECT_EQ(original.isBad(), loaded.isBad());
-    ExpectSophusEqual(original.GetPose(), loaded.GetPose());
-    EXPECT_TRUE(original.GetVelocity().isApprox(loaded.GetVelocity(),
-                                                1.0e-5F));
-    EXPECT_FLOAT_EQ(original.GetImuBias().bax, loaded.GetImuBias().bax);
+    ExpectSophusEqual(original.getPose(), loaded.getPose());
+    EXPECT_TRUE(original.getVelocity().isApprox(loaded.getVelocity(), 1.0e-5F));
+    EXPECT_FLOAT_EQ(original.getImuBias().bax, loaded.getImuBias().bax);
     // SKIP mutexes/atomic/thread handles: loaded frame must remain
     // usable (pose getter + new pose set must not deadlock).
-    EXPECT_NO_THROW(loaded.SetPose(Sophus::SE3f()));
+    EXPECT_NO_THROW(loaded.setPose(Sophus::SE3f()));
 }
 
 TEST(SerializationMap, EmptyRoundTripMemoryAndTmpFile)
 {
     Map original(5);
-    EXPECT_EQ(0U, original.KeyFramesInMap());
-    EXPECT_EQ(0U, original.MapPointsInMap());
+    EXPECT_EQ(0U, original.getKeyFrameCount());
+    EXPECT_EQ(0U, original.getMapPointCount());
 
     Map loaded;
     RoundTripBinaryInto(original, loaded);
-    EXPECT_EQ(original.GetId(), loaded.GetId());
-    EXPECT_EQ(original.GetInitKFid(), loaded.GetInitKFid());
-    EXPECT_EQ(original.GetMaxKFid(), loaded.GetMaxKFid());
+    EXPECT_EQ(original.getId(), loaded.getId());
+    EXPECT_EQ(original.getInitKeyFrameId(), loaded.getInitKeyFrameId());
+    EXPECT_EQ(original.getMaxKeyFrameId(), loaded.getMaxKeyFrameId());
     EXPECT_EQ(original.isImuInitialized(), loaded.isImuInitialized());
-    EXPECT_EQ(original.IsInertial(), loaded.IsInertial());
-    EXPECT_EQ(original.IsBad(), loaded.IsBad());
-    EXPECT_EQ(0U, loaded.KeyFramesInMap());
+    EXPECT_EQ(original.isInertial(), loaded.isInertial());
+    EXPECT_EQ(original.isBad(), loaded.isBad());
+    EXPECT_EQ(0U, loaded.getKeyFrameCount());
 
     const std::string path = TmpPath("map.bin");
-    Map file_loaded;
+    Map               file_loaded;
     RoundTripTextFileInto(original, path, file_loaded);
-    EXPECT_EQ(original.GetId(), file_loaded.GetId());
+    EXPECT_EQ(original.getId(), file_loaded.getId());
     std::remove(path.c_str());
 
     // SKIP mutex/atomic/thumbnail: post-load map must be queryable.
-    EXPECT_NO_THROW(loaded.GetAllKeyFrames());
+    EXPECT_NO_THROW(loaded.getAllKeyFrames());
 }
 
 TEST(SerializationAtlas, EmptyAndCameraRoundTrip)
@@ -632,46 +638,46 @@ TEST(SerializationAtlas, EmptyAndCameraRoundTrip)
     Atlas original;
     Atlas loaded;
     RoundTripBinaryInto(original, loaded);
-    EXPECT_EQ(original.CountMaps(), loaded.CountMaps());
-    EXPECT_EQ(0, loaded.CountMaps());
-    EXPECT_TRUE(loaded.GetAllCameras().empty());
+    EXPECT_EQ(original.countMaps(), loaded.countMaps());
+    EXPECT_EQ(0, loaded.countMaps());
+    EXPECT_TRUE(loaded.getAllCameras().empty());
     // SKIP mutex/atomic/viewer/DB pointers: loaded atlas must be queryable.
-    EXPECT_NO_THROW(loaded.GetAllMaps());
+    EXPECT_NO_THROW(loaded.getAllMaps());
 }
 
 TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
 {
     Atlas original(0);
-    EXPECT_EQ(1, original.CountMaps());
-    camera_models::Pinhole *camera =
-        new camera_models::Pinhole(std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
-    original.AddCamera(camera);
-    ASSERT_EQ(1U, original.GetAllCameras().size());
+    EXPECT_EQ(1, original.countMaps());
+    camera_models::Pinhole *camera = new camera_models::Pinhole(
+        std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
+    original.addCamera(camera);
+    ASSERT_EQ(1U, original.getAllCameras().size());
 
     // Direct serialize saves backup maps (empty until PreSave) + cameras +
     // static IDs. Active sets are rebuilt by PostLoad, so compare the
     // serialized state (cameras + init ID), not the transient active set.
     const std::string path = TmpPath("atlas.bin");
-    Atlas loaded;
+    Atlas             loaded;
     {
-        std::ofstream output_stream(path, std::ios::binary);
+        std::ofstream                   output_stream(path, std::ios::binary);
         boost::archive::binary_oarchive output_archive(output_stream);
         output_archive << original;
     }
     {
-        std::ifstream input_stream(path, std::ios::binary);
+        std::ifstream                   input_stream(path, std::ios::binary);
         boost::archive::binary_iarchive input_archive(input_stream);
         input_archive >> loaded;
     }
     std::remove(path.c_str());
 
-    EXPECT_EQ(original.GetLastInitKFid(), loaded.GetLastInitKFid());
-    ASSERT_EQ(1U, loaded.GetAllCameras().size());
-    EXPECT_EQ(camera->getId(), loaded.GetAllCameras()[0]->getId());
-    EXPECT_TRUE(loaded.GetAllCameras()[0]->getType() ==
+    EXPECT_EQ(original.getLastInitKeyFrameId(), loaded.getLastInitKeyFrameId());
+    ASSERT_EQ(1U, loaded.getAllCameras().size());
+    EXPECT_EQ(camera->getId(), loaded.getAllCameras()[0]->getId());
+    EXPECT_TRUE(loaded.getAllCameras()[0]->getType() ==
                 camera_models::GeometricCamera::CAM_PINHOLE);
     // SKIP mutex/atomic/thread handles: loaded atlas must stay queryable.
-    EXPECT_NO_THROW(loaded.GetAllMaps());
+    EXPECT_NO_THROW(loaded.getAllMaps());
 }
 
 TEST(SerializationOrdering, SortedSetMapComparisonIsDeterministic)

@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -45,7 +45,7 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
     core::Map *p_declaredMap = p_passage_in->getMap();
     if (p_declaredMap != nullptr)
     {
-        record.declaredMapId = p_declaredMap->GetId();
+        record.declaredMapId = p_declaredMap->getId();
     }
 
     record.passageType      = p_passage_in->getPassageType();

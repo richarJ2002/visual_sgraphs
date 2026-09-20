@@ -1,12 +1,12 @@
-/**
+/*!
  * Focused, ROS/Gazebo-free tests for the value-only SemanticGraphSnapshot
  * capture contract. These
  * exercise the genuine production capture entry point
  * (vs_graphs::core::semantic::captureSemanticGraphSnapshot()) against real
- * Atlas/Map/Room/geometric::Plane/Passage/Floor objects built through SemanticFixtures
- * and the model's own setters -- they do not reconstruct the expected
- * snapshot by hand, except where a test white-box-verifies one internal
- * helper directly (documented at each such case).
+ * Atlas/Map/Room/geometric::Plane/Passage/Floor objects built through
+ * SemanticFixtures and the model's own setters -- they do not reconstruct the
+ * expected snapshot by hand, except where a test white-box-verifies one
+ * internal helper directly (documented at each such case).
  *
  * Each TEST below is annotated with the minimum-proof item it satisfies.
  */
@@ -50,8 +50,8 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
     long unsigned int                    mapId = 0U;
     {
         Atlas atlas(0);
-        Map  *p_map = atlas.GetCurrentMap();
-        mapId       = p_map->GetId();
+        Map  *p_map = atlas.getCurrentMap();
+        mapId       = p_map->getId();
 
         geometric::Plane wall;
         test::makeWallPlane(wall,
@@ -63,11 +63,11 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
                             1.0,
                             1.0,
                             Eigen::Vector3d(0.0, 0.0, 1.0));
-        p_map->AddMapPlane(&wall);
+        p_map->addMapPlane(&wall);
 
         Room room;
         test::makeRoom(room, 1, p_map, &wall, Eigen::Vector3d(1.0, 0.0, 1.0));
-        p_map->AddDetectedMapRoom(&room);
+        p_map->addDetectedMapRoom(&room);
 
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
         capturedSnapshot = captureSemanticGraphSnapshot(&atlas);
@@ -82,7 +82,8 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
     ASSERT_EQ(p_mapSnapshot->walls.size(), 1U);
     EXPECT_EQ(p_mapSnapshot->rooms[0].centroid_World_m,
               Eigen::Vector3d(1.0, 0.0, 1.0));
-    EXPECT_EQ(p_mapSnapshot->walls[0].planeType, geometric::Plane::PlaneVariant::WALL);
+    EXPECT_EQ(p_mapSnapshot->walls[0].planeType,
+              geometric::Plane::PlaneVariant::WALL);
     /* updateSizeOfPlane() (called by makeWallPlane()) populates the finite
      * U/V bounds; finiteSupportCount is populated only by the separate
      * beginMapCloudRefit()/completeMapCloudRefit() pipeline, which this
@@ -105,8 +106,8 @@ TEST(SemanticGraphSnapshot,
     long unsigned int                    mapId = 0U;
     {
         Atlas atlas(0);
-        Map  *p_map = atlas.GetCurrentMap();
-        mapId       = p_map->GetId();
+        Map  *p_map = atlas.getCurrentMap();
+        mapId       = p_map->getId();
 
         geometric::Plane wall;
         test::makeWallPlane(wall,
@@ -118,22 +119,22 @@ TEST(SemanticGraphSnapshot,
                             1.0,
                             1.0,
                             Eigen::Vector3d(0.0, 0.0, 1.0));
-        p_map->AddMapPlane(&wall);
+        p_map->addMapPlane(&wall);
 
         Room room;
         test::makeRoom(room, 2, p_map, &wall, Eigen::Vector3d(1.0, 0.0, 1.0));
-        p_map->AddDetectedMapRoom(&room);
+        p_map->addDetectedMapRoom(&room);
 
         Passage passage;
         passage.setId(3);
         passage.setMap(p_map);
         passage.setKnownSideRoom(&room);
-        p_map->AddMapPassage(&passage);
+        p_map->addMapPassage(&passage);
         room.setDoorways(&passage);
 
         Floor floor;
         test::makeFloor(floor, 4, p_map, {&room});
-        p_map->AddMapFloor(&floor);
+        p_map->addMapFloor(&floor);
         room.setFloor(&floor);
 
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
@@ -173,10 +174,10 @@ TEST(SemanticGraphSnapshot,
 TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.GetCurrentMap();
-    atlas.CreateNewMap();
-    Map *p_mapB = atlas.GetCurrentMap();
-    ASSERT_NE(p_mapA->GetId(), p_mapB->GetId());
+    Map  *p_mapA = atlas.getCurrentMap();
+    atlas.createNewMap();
+    Map *p_mapB = atlas.getCurrentMap();
+    ASSERT_NE(p_mapA->getId(), p_mapB->getId());
 
     geometric::Plane wallA;
     test::makeWallPlane(wallA,
@@ -188,10 +189,10 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_mapA->AddMapPlane(&wallA);
+    p_mapA->addMapPlane(&wallA);
     Room roomA;
     test::makeRoom(roomA, 1, p_mapA, &wallA);
-    p_mapA->AddDetectedMapRoom(&roomA);
+    p_mapA->addDetectedMapRoom(&roomA);
 
     geometric::Plane wallB;
     test::makeWallPlane(wallB,
@@ -203,35 +204,35 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
                         1.0,
                         1.0,
                         Eigen::Vector3d(5.0, 0.0, 1.0));
-    p_mapB->AddMapPlane(&wallB);
+    p_mapB->addMapPlane(&wallB);
     Room roomB;
     test::makeRoom(roomB, 1, p_mapB, &wallB);
-    p_mapB->AddDetectedMapRoom(&roomB);
+    p_mapB->addDetectedMapRoom(&roomB);
 
     Passage passageA;
     passageA.setId(1);
     passageA.setMap(p_mapA);
-    p_mapA->AddMapPassage(&passageA);
+    p_mapA->addMapPassage(&passageA);
     Passage passageB;
     passageB.setId(1);
     passageB.setMap(p_mapB);
-    p_mapB->AddMapPassage(&passageB);
+    p_mapB->addMapPassage(&passageB);
 
     Floor floorA;
     floorA.setId(1);
     floorA.setMap(p_mapA);
-    p_mapA->AddMapFloor(&floorA);
+    p_mapA->addMapFloor(&floorA);
     Floor floorB;
     floorB.setId(1);
     floorB.setMap(p_mapB);
-    p_mapB->AddMapFloor(&floorB);
+    p_mapB->addMapFloor(&floorB);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
 
     ASSERT_EQ(snapshot.maps.size(), 2U);
-    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, p_mapA->GetId());
-    const MapSnapshot *p_snapshotB = findMapSnapshot(snapshot, p_mapB->GetId());
+    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, p_mapA->getId());
+    const MapSnapshot *p_snapshotB = findMapSnapshot(snapshot, p_mapB->getId());
     ASSERT_NE(p_snapshotA, nullptr);
     ASSERT_NE(p_snapshotB, nullptr);
 
@@ -267,20 +268,20 @@ TEST(SemanticGraphSnapshot,
      ContainingMapVersusDeclaredMapIsPreservedForEveryEntityKind)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.GetCurrentMap();
-    atlas.CreateNewMap();
-    Map *p_mapB = atlas.GetCurrentMap();
+    Map  *p_mapA = atlas.getCurrentMap();
+    atlas.createNewMap();
+    Map *p_mapB = atlas.getCurrentMap();
 
     /* Room: enumerated from mapA, but declares mapB. */
     Room mismatchedRoom;
     mismatchedRoom.setId(1);
     mismatchedRoom.setMap(p_mapB);
-    p_mapA->AddDetectedMapRoom(&mismatchedRoom);
+    p_mapA->addDetectedMapRoom(&mismatchedRoom);
 
     /* Room: enumerated from mapA, declares no map at all. */
     Room noMapRoom;
     noMapRoom.setId(2);
-    p_mapA->AddDetectedMapRoom(&noMapRoom);
+    p_mapA->addDetectedMapRoom(&noMapRoom);
 
     /* Wall: enumerated from mapA, but declares mapB. */
     geometric::Plane mismatchedWall;
@@ -293,11 +294,12 @@ TEST(SemanticGraphSnapshot,
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_mapA->AddMapPlane(&mismatchedWall);
+    p_mapA->addMapPlane(&mismatchedWall);
 
     /* Wall: enumerated from mapA, declares no map at all. Map::AddMapPlane()
      * only requires a non-null pointer; the plane's own setMap() is
-     * independent (confirmed by direct source read of Map.h/geometric::Plane.h). */
+     * independent (confirmed by direct source read of
+     * Map.h/geometric::Plane.h). */
     geometric::Plane noMapWall;
     test::makeWallPlane(noMapWall,
                         6,
@@ -308,41 +310,41 @@ TEST(SemanticGraphSnapshot,
                         1.0,
                         1.0,
                         Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_mapA->AddMapPlane(&noMapWall);
+    p_mapA->addMapPlane(&noMapWall);
 
     /* Passage: enumerated from mapA, declares no map at all. */
     Passage noMapPassage;
     noMapPassage.setId(4);
-    p_mapA->AddMapPassage(&noMapPassage);
+    p_mapA->addMapPassage(&noMapPassage);
 
     /* Passage: enumerated from mapA, but declares mapB. */
     Passage mismatchedPassage;
     mismatchedPassage.setId(7);
     mismatchedPassage.setMap(p_mapB);
-    p_mapA->AddMapPassage(&mismatchedPassage);
+    p_mapA->addMapPassage(&mismatchedPassage);
 
     /* Floor: enumerated from mapA, but declares mapB. */
     Floor mismatchedFloor;
     mismatchedFloor.setId(5);
     mismatchedFloor.setMap(p_mapB);
-    p_mapA->AddMapFloor(&mismatchedFloor);
+    p_mapA->addMapFloor(&mismatchedFloor);
 
     /* Floor: enumerated from mapA, declares no map at all. */
     Floor noMapFloor;
     noMapFloor.setId(8);
-    p_mapA->AddMapFloor(&noMapFloor);
+    p_mapA->addMapFloor(&noMapFloor);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
 
-    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, p_mapA->GetId());
+    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, p_mapA->getId());
     ASSERT_NE(p_snapshotA, nullptr);
 
     const RoomRecord *p_mismatchedRoom = findRoomRecord(*p_snapshotA, 1);
     ASSERT_NE(p_mismatchedRoom, nullptr);
-    EXPECT_EQ(p_mismatchedRoom->key.mapId, p_mapA->GetId());
+    EXPECT_EQ(p_mismatchedRoom->key.mapId, p_mapA->getId());
     ASSERT_TRUE(p_mismatchedRoom->declaredMapId.has_value());
-    EXPECT_EQ(*p_mismatchedRoom->declaredMapId, p_mapB->GetId());
+    EXPECT_EQ(*p_mismatchedRoom->declaredMapId, p_mapB->getId());
 
     const RoomRecord *p_noMapRoom = findRoomRecord(*p_snapshotA, 2);
     ASSERT_NE(p_noMapRoom, nullptr);
@@ -350,9 +352,9 @@ TEST(SemanticGraphSnapshot,
 
     const WallRecord *p_mismatchedWallRecord = findWallRecord(*p_snapshotA, 3);
     ASSERT_NE(p_mismatchedWallRecord, nullptr);
-    EXPECT_EQ(p_mismatchedWallRecord->key.mapId, p_mapA->GetId());
+    EXPECT_EQ(p_mismatchedWallRecord->key.mapId, p_mapA->getId());
     ASSERT_TRUE(p_mismatchedWallRecord->declaredMapId.has_value());
-    EXPECT_EQ(*p_mismatchedWallRecord->declaredMapId, p_mapB->GetId());
+    EXPECT_EQ(*p_mismatchedWallRecord->declaredMapId, p_mapB->getId());
 
     const WallRecord *p_noMapWallRecord = findWallRecord(*p_snapshotA, 6);
     ASSERT_NE(p_noMapWallRecord, nullptr);
@@ -365,9 +367,9 @@ TEST(SemanticGraphSnapshot,
     const PassageRecord *p_mismatchedPassage =
         findPassageRecord(*p_snapshotA, 7);
     ASSERT_NE(p_mismatchedPassage, nullptr);
-    EXPECT_EQ(p_mismatchedPassage->key.mapId, p_mapA->GetId());
+    EXPECT_EQ(p_mismatchedPassage->key.mapId, p_mapA->getId());
     ASSERT_TRUE(p_mismatchedPassage->declaredMapId.has_value());
-    EXPECT_EQ(*p_mismatchedPassage->declaredMapId, p_mapB->GetId());
+    EXPECT_EQ(*p_mismatchedPassage->declaredMapId, p_mapB->getId());
 
     ASSERT_EQ(p_snapshotA->floors.size(), 2U);
     const FloorRecord *p_mismatchedFloor  = nullptr;
@@ -384,9 +386,9 @@ TEST(SemanticGraphSnapshot,
         }
     }
     ASSERT_NE(p_mismatchedFloor, nullptr);
-    EXPECT_EQ(p_mismatchedFloor->key.mapId, p_mapA->GetId());
+    EXPECT_EQ(p_mismatchedFloor->key.mapId, p_mapA->getId());
     ASSERT_TRUE(p_mismatchedFloor->declaredMapId.has_value());
-    EXPECT_EQ(*p_mismatchedFloor->declaredMapId, p_mapB->GetId());
+    EXPECT_EQ(*p_mismatchedFloor->declaredMapId, p_mapB->getId());
     ASSERT_NE(p_noMapFloorRecord, nullptr);
     EXPECT_FALSE(p_noMapFloorRecord->declaredMapId.has_value());
 }
@@ -397,29 +399,29 @@ TEST(SemanticGraphSnapshot,
      DetectedCandidateAndBothCollectionMembershipAreDistinguishable)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     Room detectedOnly;
     detectedOnly.setId(1);
     detectedOnly.setMap(p_map);
-    p_map->AddDetectedMapRoom(&detectedOnly);
+    p_map->addDetectedMapRoom(&detectedOnly);
 
     Room candidateOnly;
     candidateOnly.setId(2);
     candidateOnly.setMap(p_map);
-    p_map->AddCandidateMapRoom(&candidateOnly);
+    p_map->addCandidateMapRoom(&candidateOnly);
 
     Room bothCollections;
     bothCollections.setId(3);
     bothCollections.setMap(p_map);
-    p_map->AddDetectedMapRoom(&bothCollections);
-    p_map->AddCandidateMapRoom(&bothCollections);
+    p_map->addDetectedMapRoom(&bothCollections);
+    p_map->addCandidateMapRoom(&bothCollections);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
 
     const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->GetId());
+        findMapSnapshot(snapshot, p_map->getId());
     ASSERT_NE(p_mapSnapshot, nullptr);
     ASSERT_EQ(p_mapSnapshot->rooms.size(), 3U);
 
@@ -440,20 +442,20 @@ TEST(SemanticGraphSnapshot,
 }
 
 /* Minimum-proof item 5: null, unmapped, bad, missing-from-enumeration,
- * cross-map, and wrong geometric::Plane-type relationship targets retain truthful
- * key/reason/liveness/type evidence. */
+ * cross-map, and wrong geometric::Plane-type relationship targets retain
+ * truthful key/reason/liveness/type evidence. */
 TEST(SemanticGraphSnapshot,
      RelationshipTargetsRetainTruthfulEvidenceAcrossEveryUnusualCase)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.GetCurrentMap();
-    atlas.CreateNewMap();
-    Map *p_mapB = atlas.GetCurrentMap();
+    Map  *p_mapA = atlas.getCurrentMap();
+    atlas.createNewMap();
+    Map *p_mapB = atlas.getCurrentMap();
 
     /* Room with no ground plane at all -- null RawPlaneRef. */
     Room noGroundRoom;
     test::makeRoom(noGroundRoom, 1, p_mapA, nullptr);
-    p_mapA->AddDetectedMapRoom(&noGroundRoom);
+    p_mapA->addDetectedMapRoom(&noGroundRoom);
 
     /* Room whose ground plane is a real, but never map-registered
      * ("unmapped"), WALL-typed ("wrong type") plane. */
@@ -471,7 +473,7 @@ TEST(SemanticGraphSnapshot,
     unusualGroundRoom.setId(3);
     unusualGroundRoom.setMap(p_mapA);
     unusualGroundRoom.setGroundPlane(&unmappedWrongTypeGround);
-    p_mapA->AddDetectedMapRoom(&unusualGroundRoom);
+    p_mapA->addDetectedMapRoom(&unusualGroundRoom);
 
     /* Room referenced as a "missing-from-enumeration" far-side target: it
      * has a real map but was never added to any Map room collection. */
@@ -484,31 +486,31 @@ TEST(SemanticGraphSnapshot,
     Room crossMapRoom;
     crossMapRoom.setId(7);
     crossMapRoom.setMap(p_mapB);
-    p_mapB->AddDetectedMapRoom(&crossMapRoom);
+    p_mapB->addDetectedMapRoom(&crossMapRoom);
 
     /* Bad wall, referenced as another room's ground plane, to prove
      * liveness is captured truthfully even for a retired target. */
     geometric::Plane badGroundPlane;
     test::makeGroundPlane(badGroundPlane, 8, p_mapA);
-    p_mapA->AddMapPlane(&badGroundPlane);
+    p_mapA->addMapPlane(&badGroundPlane);
     badGroundPlane.setBad();
     Room badGroundOwnerRoom;
     badGroundOwnerRoom.setId(9);
     badGroundOwnerRoom.setMap(p_mapA);
     badGroundOwnerRoom.setGroundPlane(&badGroundPlane);
-    p_mapA->AddDetectedMapRoom(&badGroundOwnerRoom);
+    p_mapA->addDetectedMapRoom(&badGroundOwnerRoom);
 
     Passage passage;
     passage.setId(10);
     passage.setMap(p_mapA);
     passage.setKnownSideRoom(&ghostRoom);
     passage.setProspectiveRoom(&crossMapRoom);
-    p_mapA->AddMapPassage(&passage);
+    p_mapA->addMapPassage(&passage);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
 
-    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, p_mapA->GetId());
+    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, p_mapA->getId());
     ASSERT_NE(p_snapshotA, nullptr);
 
     /* Null. */
@@ -535,7 +537,7 @@ TEST(SemanticGraphSnapshot,
     ASSERT_NE(p_passageRecord, nullptr);
     ASSERT_TRUE(p_passageRecord->knownSideRoomRef.key.has_value());
     EXPECT_EQ(p_passageRecord->knownSideRoomRef.key->entityId, 99);
-    EXPECT_EQ(p_passageRecord->knownSideRoomRef.key->mapId, p_mapA->GetId());
+    EXPECT_EQ(p_passageRecord->knownSideRoomRef.key->mapId, p_mapA->getId());
     EXPECT_EQ(findRoomRecord(*p_snapshotA, 99), nullptr);
     ASSERT_TRUE(p_passageRecord->knownSideRoomRef.isLive.has_value());
     EXPECT_TRUE(*p_passageRecord->knownSideRoomRef.isLive);
@@ -543,7 +545,7 @@ TEST(SemanticGraphSnapshot,
     /* Cross-map: the referenced room's key names mapB, distinct from the
      * passage record's own mapA key. */
     ASSERT_TRUE(p_passageRecord->prospectiveRoomRef.key.has_value());
-    EXPECT_EQ(p_passageRecord->prospectiveRoomRef.key->mapId, p_mapB->GetId());
+    EXPECT_EQ(p_passageRecord->prospectiveRoomRef.key->mapId, p_mapB->getId());
     EXPECT_NE(p_passageRecord->prospectiveRoomRef.key->mapId,
               p_passageRecord->key.mapId);
 
@@ -577,26 +579,27 @@ TEST(SemanticGraphSnapshot, DefaultReferenceInvariantsAreValid)
 }
 
 /* Regression coverage: entityRefForWall() used
- * to label every referenced geometric::Plane as EntityKind::WALL without checking its
- * real geometric::Plane::PlaneVariant, fabricating a WallRecord identity for a
- * non-WALL target. Wall-shaped references (a wall's twin face, a Room's
- * owned walls, a Passage's associated walls) always use RawPlaneRef, so
+ * to label every referenced geometric::Plane as EntityKind::WALL without
+ * checking its real geometric::Plane::PlaneVariant, fabricating a WallRecord
+ * identity for a non-WALL target. Wall-shaped references (a wall's twin face, a
+ * Room's owned walls, a Passage's associated walls) always use RawPlaneRef, so
  * a wrong-type target retains its true planeType/isLive/mapId instead of a
  * fabricated WALL key. */
 TEST(SemanticGraphSnapshot,
      WrongTypePlaneTargetsInWallShapedReferencesRetainTruthfulEvidence)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     /* A live GROUND-typed plane, never a WallRecord in this snapshot. */
     geometric::Plane groundNotWall;
     ASSERT_TRUE(test::makeGroundPlane(groundNotWall, 1, p_map));
-    p_map->AddMapPlane(&groundNotWall);
+    p_map->addMapPlane(&groundNotWall);
 
     /* Case 1: a genuine wall whose twinFace_ is wrongly set to the
-     * GROUND-typed plane (geometric::Plane::setTwinFace() has no type check, so this
-     * is a real reachable model state, not a fabricated test-only shape). */
+     * GROUND-typed plane (geometric::Plane::setTwinFace() has no type check, so
+     * this is a real reachable model state, not a fabricated test-only shape).
+     */
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         2,
@@ -607,7 +610,7 @@ TEST(SemanticGraphSnapshot,
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->AddMapPlane(&wall);
+    p_map->addMapPlane(&wall);
     wall.setTwinFace(&groundNotWall);
 
     /* Case 2: a Room whose getWalls() names the GROUND-typed plane (e.g. a
@@ -617,7 +620,7 @@ TEST(SemanticGraphSnapshot,
     room.setId(3);
     room.setMap(p_map);
     room.setWalls(&groundNotWall);
-    p_map->AddDetectedMapRoom(&room);
+    p_map->addDetectedMapRoom(&room);
 
     /* Case 3: a Passage whose getAssociateWalls() names the same
      * GROUND-typed plane. */
@@ -625,13 +628,13 @@ TEST(SemanticGraphSnapshot,
     passage.setId(4);
     passage.setMap(p_map);
     passage.addAssociateWall(&groundNotWall);
-    p_map->AddMapPassage(&passage);
+    p_map->addMapPassage(&passage);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
 
     const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->GetId());
+        findMapSnapshot(snapshot, p_map->getId());
     ASSERT_NE(p_mapSnapshot, nullptr);
 
     /* The GROUND-typed plane must never appear as a WallRecord. */
@@ -642,14 +645,16 @@ TEST(SemanticGraphSnapshot,
     EXPECT_EQ(p_wallRecord->twinRef.reason, UnavailableReason::NONE);
     EXPECT_EQ(p_wallRecord->twinRef.planeId, 1);
     EXPECT_TRUE(p_wallRecord->twinRef.isLive);
-    EXPECT_EQ(p_wallRecord->twinRef.planeType, geometric::Plane::PlaneVariant::GROUND);
+    EXPECT_EQ(p_wallRecord->twinRef.planeType,
+              geometric::Plane::PlaneVariant::GROUND);
     EXPECT_FALSE(p_wallRecord->twinRef.wallKey.has_value());
 
     const RoomRecord *p_roomRecord = findRoomRecord(*p_mapSnapshot, 3);
     ASSERT_NE(p_roomRecord, nullptr);
     ASSERT_EQ(p_roomRecord->wallRefs.size(), 1U);
     EXPECT_EQ(p_roomRecord->wallRefs[0].planeId, 1);
-    EXPECT_EQ(p_roomRecord->wallRefs[0].planeType, geometric::Plane::PlaneVariant::GROUND);
+    EXPECT_EQ(p_roomRecord->wallRefs[0].planeType,
+              geometric::Plane::PlaneVariant::GROUND);
     EXPECT_FALSE(p_roomRecord->wallRefs[0].wallKey.has_value());
 
     const PassageRecord *p_passageRecord = findPassageRecord(*p_mapSnapshot, 4);
@@ -671,7 +676,7 @@ TEST(SemanticGraphSnapshot,
      UnmappedNonNullRoomAndFloorReferencesRetainLocalIdentityAndLiveness)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     /* An unmapped, bad, non-null Room, referenced from a Passage. */
     Room unmappedBadRoom;
@@ -682,7 +687,7 @@ TEST(SemanticGraphSnapshot,
     passage.setId(1);
     passage.setMap(p_map);
     passage.setProspectiveRoom(&unmappedBadRoom);
-    p_map->AddMapPassage(&passage);
+    p_map->addMapPassage(&passage);
 
     /* An unmapped, non-null Floor, referenced from a Room. */
     Floor unmappedFloor;
@@ -692,13 +697,13 @@ TEST(SemanticGraphSnapshot,
     room.setId(2);
     room.setMap(p_map);
     room.setFloor(&unmappedFloor);
-    p_map->AddDetectedMapRoom(&room);
+    p_map->addDetectedMapRoom(&room);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
 
     const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->GetId());
+        findMapSnapshot(snapshot, p_map->getId());
     ASSERT_NE(p_mapSnapshot, nullptr);
 
     const PassageRecord *p_passageRecord = findPassageRecord(*p_mapSnapshot, 1);
@@ -737,7 +742,7 @@ TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
 {
     Atlas atlas(0);
     atlas.clearAtlas();
-    ASSERT_EQ(atlas.GetAllMaps().size(), 0U);
+    ASSERT_EQ(atlas.getAllMaps().size(), 0U);
 
     SemanticGraphSnapshot snapshot;
     {
@@ -750,7 +755,7 @@ TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
     EXPECT_TRUE(snapshot.maps.empty());
     /* The real proof: capture must not have created a map as a side
      * effect, unlike calling Atlas::GetCurrentMap() would have. */
-    EXPECT_EQ(atlas.GetAllMaps().size(), 0U);
+    EXPECT_EQ(atlas.getAllMaps().size(), 0U);
 }
 
 /* Atlas::SetMapBad(currentMap) erases the map from the active
@@ -763,10 +768,10 @@ TEST(SemanticGraphSnapshot,
      CurrentMapMarkedBadBeforeChangeMapIsReportedAsNotActive)
 {
     Atlas                   atlas(0);
-    Map                    *p_currentMap = atlas.GetCurrentMap();
-    const long unsigned int currentMapId = p_currentMap->GetId();
+    Map                    *p_currentMap = atlas.getCurrentMap();
+    const long unsigned int currentMapId = p_currentMap->getId();
 
-    atlas.SetMapBad(p_currentMap);
+    atlas.setMapBad(p_currentMap);
     /* No ChangeMap() call yet: mpCurrentMap still points at the now-bad,
      * now-inactive map. */
 
@@ -787,17 +792,17 @@ TEST(SemanticGraphSnapshot,
 TEST(SemanticGraphSnapshot, CurrentMapStatusIsActiveForAnOrdinaryCurrentMap)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
 
     ASSERT_TRUE(snapshot.currentMapId.has_value());
-    EXPECT_EQ(*snapshot.currentMapId, p_map->GetId());
+    EXPECT_EQ(*snapshot.currentMapId, p_map->getId());
     EXPECT_EQ(snapshot.currentMapStatus,
               AtlasCurrentMapStatus::CURRENT_MAP_ACTIVE);
     const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->GetId());
+        findMapSnapshot(snapshot, p_map->getId());
     ASSERT_NE(p_mapSnapshot, nullptr);
     EXPECT_TRUE(p_mapSnapshot->isCurrentMap);
 }
@@ -811,7 +816,7 @@ TEST(SemanticGraphSnapshot,
      ManagerPrivateAndHistoryUnavailableDefaultsAreReported)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -823,7 +828,7 @@ TEST(SemanticGraphSnapshot,
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->AddMapPlane(&wall);
+    p_map->addMapPlane(&wall);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
@@ -836,7 +841,7 @@ TEST(SemanticGraphSnapshot,
               UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE);
 
     const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->GetId());
+        findMapSnapshot(snapshot, p_map->getId());
     ASSERT_NE(p_mapSnapshot, nullptr);
     const WallRecord *p_wallRecord = findWallRecord(*p_mapSnapshot, 1);
     ASSERT_NE(p_wallRecord, nullptr);
@@ -858,7 +863,7 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
     auto buildAndCapture = [](bool constructLowerCentroidFirst_in)
     {
         Atlas atlas(0);
-        Map  *p_map = atlas.GetCurrentMap();
+        Map  *p_map = atlas.getCurrentMap();
 
         std::unique_ptr<Room> p_lowerCentroidRoom = std::make_unique<Room>();
         p_lowerCentroidRoom->setId(1);
@@ -872,13 +877,13 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
 
         if (constructLowerCentroidFirst_in)
         {
-            p_map->AddDetectedMapRoom(p_lowerCentroidRoom.get());
-            p_map->AddDetectedMapRoom(p_higherCentroidRoom.get());
+            p_map->addDetectedMapRoom(p_lowerCentroidRoom.get());
+            p_map->addDetectedMapRoom(p_higherCentroidRoom.get());
         }
         else
         {
-            p_map->AddDetectedMapRoom(p_higherCentroidRoom.get());
-            p_map->AddDetectedMapRoom(p_lowerCentroidRoom.get());
+            p_map->addDetectedMapRoom(p_higherCentroidRoom.get());
+            p_map->addDetectedMapRoom(p_lowerCentroidRoom.get());
         }
 
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
@@ -1019,7 +1024,7 @@ TEST(SemanticGraphSnapshot,
 TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     geometric::Plane sharedWall;
     test::makeWallPlane(sharedWall,
@@ -1031,11 +1036,11 @@ TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->AddMapPlane(&sharedWall);
+    p_map->addMapPlane(&sharedWall);
 
     Room liveOwner;
     test::makeRoom(liveOwner, 2, p_map, &sharedWall, Eigen::Vector3d(1, 0, 1));
-    p_map->AddDetectedMapRoom(&liveOwner);
+    p_map->addDetectedMapRoom(&liveOwner);
 
     Room badOwnerSameId;
     test::makeRoom(badOwnerSameId,
@@ -1044,13 +1049,13 @@ TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
                    &sharedWall,
                    Eigen::Vector3d(-1, 0, 1));
     badOwnerSameId.setBad();
-    p_map->AddDetectedMapRoom(&badOwnerSameId);
+    p_map->addDetectedMapRoom(&badOwnerSameId);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
 
     const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->GetId());
+        findMapSnapshot(snapshot, p_map->getId());
     ASSERT_NE(p_mapSnapshot, nullptr);
     const WallRecord *p_wallRecord = findWallRecord(*p_mapSnapshot, 1);
     ASSERT_NE(p_wallRecord, nullptr);
@@ -1076,9 +1081,9 @@ TEST(SemanticGraphSnapshot,
      OwnerRoomRefIsKeyedByContainingMapEvenWhenRoomDeclaresADifferentMap)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.GetCurrentMap();
-    atlas.CreateNewMap();
-    Map *p_mapB = atlas.GetCurrentMap();
+    Map  *p_mapA = atlas.getCurrentMap();
+    atlas.createNewMap();
+    Map *p_mapB = atlas.getCurrentMap();
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -1090,26 +1095,26 @@ TEST(SemanticGraphSnapshot,
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_mapA->AddMapPlane(&wall);
+    p_mapA->addMapPlane(&wall);
 
     /* Enumerated from mapA (AddDetectedMapRoom), but declares mapB. */
     Room mismatchedOwner;
     mismatchedOwner.setId(2);
     mismatchedOwner.setMap(p_mapB);
     mismatchedOwner.setWalls(&wall);
-    p_mapA->AddDetectedMapRoom(&mismatchedOwner);
+    p_mapA->addDetectedMapRoom(&mismatchedOwner);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
 
     const MapSnapshot *p_mapSnapshotA =
-        findMapSnapshot(snapshot, p_mapA->GetId());
+        findMapSnapshot(snapshot, p_mapA->getId());
     ASSERT_NE(p_mapSnapshotA, nullptr);
     const RoomRecord *p_ownerRecord = findRoomRecord(*p_mapSnapshotA, 2);
     ASSERT_NE(p_ownerRecord, nullptr);
-    EXPECT_EQ(p_ownerRecord->key.mapId, p_mapA->GetId());
+    EXPECT_EQ(p_ownerRecord->key.mapId, p_mapA->getId());
     ASSERT_TRUE(p_ownerRecord->declaredMapId.has_value());
-    EXPECT_EQ(*p_ownerRecord->declaredMapId, p_mapB->GetId());
+    EXPECT_EQ(*p_ownerRecord->declaredMapId, p_mapB->getId());
 
     const WallRecord *p_wallRecord = findWallRecord(*p_mapSnapshotA, 1);
     ASSERT_NE(p_wallRecord, nullptr);
@@ -1119,7 +1124,7 @@ TEST(SemanticGraphSnapshot,
      * (mapA-qualified), not a mapB-qualified key derived from the room's
      * own declared map. */
     EXPECT_EQ(*p_wallRecord->ownerRoomRefs[0].key, p_ownerRecord->key);
-    EXPECT_EQ(p_wallRecord->ownerRoomRefs[0].key->mapId, p_mapA->GetId());
+    EXPECT_EQ(p_wallRecord->ownerRoomRefs[0].key->mapId, p_mapA->getId());
 }
 
 /* Minimum-proof item 7: bad room owners and duplicate/colliding relationship
@@ -1127,7 +1132,7 @@ TEST(SemanticGraphSnapshot,
 TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     geometric::Plane sharedWall;
     test::makeWallPlane(sharedWall,
@@ -1139,13 +1144,13 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->AddMapPlane(&sharedWall);
+    p_map->addMapPlane(&sharedWall);
 
     /* Two distinct, live rooms both claim the same wall -- a real AX-WALL-01
      * violation that capture must retain, not silently resolve. */
     Room firstOwner;
     test::makeRoom(firstOwner, 2, p_map, &sharedWall, Eigen::Vector3d(1, 0, 1));
-    p_map->AddDetectedMapRoom(&firstOwner);
+    p_map->addDetectedMapRoom(&firstOwner);
 
     Room secondOwner;
     test::makeRoom(secondOwner,
@@ -1153,13 +1158,13 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
                    p_map,
                    &sharedWall,
                    Eigen::Vector3d(-1, 0, 1));
-    p_map->AddDetectedMapRoom(&secondOwner);
+    p_map->addDetectedMapRoom(&secondOwner);
 
     /* A retired (bad) room that still lists the wall. */
     Room badOwner;
     test::makeRoom(badOwner, 4, p_map, &sharedWall, Eigen::Vector3d(0, 1, 1));
     badOwner.setBad();
-    p_map->AddDetectedMapRoom(&badOwner);
+    p_map->addDetectedMapRoom(&badOwner);
 
     /* A room registered in BOTH Map::GetAllDetectedMapRooms() and
      * Map::GetAllMarkerBasedMapRooms(), owning its own wall. This is the
@@ -1177,21 +1182,21 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
                         1.0,
                         1.0,
                         Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_map->AddMapPlane(&doublyRegisteredOwnerWall);
+    p_map->addMapPlane(&doublyRegisteredOwnerWall);
     Room doublyRegisteredOwner;
     test::makeRoom(doublyRegisteredOwner,
                    6,
                    p_map,
                    &doublyRegisteredOwnerWall,
                    Eigen::Vector3d(2, 0, 1));
-    p_map->AddDetectedMapRoom(&doublyRegisteredOwner);
-    p_map->AddCandidateMapRoom(&doublyRegisteredOwner);
+    p_map->addDetectedMapRoom(&doublyRegisteredOwner);
+    p_map->addCandidateMapRoom(&doublyRegisteredOwner);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
 
     const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->GetId());
+        findMapSnapshot(snapshot, p_map->getId());
     ASSERT_NE(p_mapSnapshot, nullptr);
 
     const WallRecord *p_sharedWallRecord = findWallRecord(*p_mapSnapshot, 1);
@@ -1242,14 +1247,14 @@ TEST(
     auto buildAndCapture = [](const std::vector<int> &roomIdInsertionOrder_in)
     {
         Atlas                              atlas(0);
-        Map                               *p_map = atlas.GetCurrentMap();
+        Map                               *p_map = atlas.getCurrentMap();
         std::vector<std::unique_ptr<Room>> rooms;
         for (int roomId : roomIdInsertionOrder_in)
         {
             std::unique_ptr<Room> p_room = std::make_unique<Room>();
             p_room->setId(roomId);
             p_room->setMap(p_map);
-            p_map->AddDetectedMapRoom(p_room.get());
+            p_map->addDetectedMapRoom(p_room.get());
             rooms.push_back(std::move(p_room));
         }
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
@@ -1279,19 +1284,19 @@ TEST(
 
     /* Non-mutation: capturing must not have changed the source graph. */
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
     Room  room;
     room.setId(1);
     room.setMap(p_map);
     room.setCentroid(Eigen::Vector3d(3.0, 4.0, 5.0));
-    p_map->AddDetectedMapRoom(&room);
+    p_map->addDetectedMapRoom(&room);
     {
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
         (void)captureSemanticGraphSnapshot(&atlas);
     }
     EXPECT_EQ(room.getCentroid(), Eigen::Vector3d(3.0, 4.0, 5.0));
     EXPECT_FALSE(room.isBad());
-    EXPECT_EQ(p_map->GetAllDetectedMapRooms().size(), 1U);
+    EXPECT_EQ(p_map->getAllDetectedMapRooms().size(), 1U);
 }
 
 /* "ordering of maps and every record/relationship collection":
@@ -1310,20 +1315,21 @@ TEST(
     auto buildAndCapture = [](bool ascendingInsertionOrder_in)
     {
         Atlas atlas(0);
-        Map  *p_mapA = atlas.GetCurrentMap();
+        Map  *p_mapA = atlas.getCurrentMap();
         /* A second, otherwise-unused map only to give the top-level maps
          * vector two entries to check std::is_sorted() over. */
-        atlas.CreateNewMap();
+        atlas.createNewMap();
 
-        std::vector<std::unique_ptr<geometric::Plane>>   walls;
-        std::vector<std::unique_ptr<Passage>> passages;
-        std::vector<std::unique_ptr<Floor>>   floors;
+        std::vector<std::unique_ptr<geometric::Plane>> walls;
+        std::vector<std::unique_ptr<Passage>>          passages;
+        std::vector<std::unique_ptr<Floor>>            floors;
         for (int index = 0; index < 3; ++index)
         {
             const int entityId =
                 ascendingInsertionOrder_in ? index + 1 : 3 - index;
 
-            std::unique_ptr<geometric::Plane> p_wall = std::make_unique<geometric::Plane>();
+            std::unique_ptr<geometric::Plane> p_wall =
+                std::make_unique<geometric::Plane>();
             test::makeWallPlane(
                 *p_wall,
                 entityId,
@@ -1334,25 +1340,25 @@ TEST(
                 1.0,
                 1.0,
                 Eigen::Vector3d(static_cast<double>(index), 0.0, 1.0));
-            p_mapA->AddMapPlane(p_wall.get());
+            p_mapA->addMapPlane(p_wall.get());
             walls.push_back(std::move(p_wall));
 
             std::unique_ptr<Passage> p_passage = std::make_unique<Passage>();
             p_passage->setId(entityId);
             p_passage->setMap(p_mapA);
-            p_mapA->AddMapPassage(p_passage.get());
+            p_mapA->addMapPassage(p_passage.get());
             passages.push_back(std::move(p_passage));
 
             std::unique_ptr<Floor> p_floor = std::make_unique<Floor>();
             p_floor->setId(entityId);
             p_floor->setMap(p_mapA);
-            p_mapA->AddMapFloor(p_floor.get());
+            p_mapA->addMapFloor(p_floor.get());
             floors.push_back(std::move(p_floor));
         }
 
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
         SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
-        return std::make_pair(std::move(snapshot), p_mapA->GetId());
+        return std::make_pair(std::move(snapshot), p_mapA->getId());
     };
 
     const auto [ascendingSnapshot, ascendingMapAId]   = buildAndCapture(true);
@@ -1413,12 +1419,13 @@ TEST(
     auto buildAndCapture = [](bool ascendingInsertionOrder_in)
     {
         Atlas atlas(0);
-        Map  *p_map = atlas.GetCurrentMap();
+        Map  *p_map = atlas.getCurrentMap();
 
         std::vector<std::unique_ptr<geometric::Plane>> walls;
         for (int index = 0; index < 3; ++index)
         {
-            std::unique_ptr<geometric::Plane> p_wall = std::make_unique<geometric::Plane>();
+            std::unique_ptr<geometric::Plane> p_wall =
+                std::make_unique<geometric::Plane>();
             test::makeWallPlane(
                 *p_wall,
                 index + 1,
@@ -1429,7 +1436,7 @@ TEST(
                 1.0,
                 1.0,
                 Eigen::Vector3d(static_cast<double>(index), 0.0, 1.0));
-            p_map->AddMapPlane(p_wall.get());
+            p_map->addMapPlane(p_wall.get());
             walls.push_back(std::move(p_wall));
         }
 
@@ -1439,7 +1446,7 @@ TEST(
             std::unique_ptr<Passage> p_passage = std::make_unique<Passage>();
             p_passage->setId(index + 1);
             p_passage->setMap(p_map);
-            p_map->AddMapPassage(p_passage.get());
+            p_map->addMapPassage(p_passage.get());
             passages.push_back(std::move(p_passage));
         }
 
@@ -1452,7 +1459,8 @@ TEST(
             owningRooms.push_back(std::move(p_room));
         }
 
-        std::unique_ptr<geometric::Plane> p_sharedWall = std::make_unique<geometric::Plane>();
+        std::unique_ptr<geometric::Plane> p_sharedWall =
+            std::make_unique<geometric::Plane>();
         test::makeWallPlane(*p_sharedWall,
                             4,
                             p_map,
@@ -1462,7 +1470,7 @@ TEST(
                             1.0,
                             1.0,
                             Eigen::Vector3d(4.0, 0.0, 1.0));
-        p_map->AddMapPlane(p_sharedWall.get());
+        p_map->addMapPlane(p_sharedWall.get());
 
         Room subjectRoom;
         subjectRoom.setId(10);
@@ -1488,13 +1496,13 @@ TEST(
             subjectFloor.addRoom(owningRooms[memberIndex].get());
             subjectPassage.addAssociateWall(walls[memberIndex].get());
         }
-        p_map->AddDetectedMapRoom(&subjectRoom);
+        p_map->addDetectedMapRoom(&subjectRoom);
         for (const std::unique_ptr<Room> &p_owningRoom : owningRooms)
         {
-            p_map->AddDetectedMapRoom(p_owningRoom.get());
+            p_map->addDetectedMapRoom(p_owningRoom.get());
         }
-        p_map->AddMapFloor(&subjectFloor);
-        p_map->AddMapPassage(&subjectPassage);
+        p_map->addMapFloor(&subjectFloor);
+        p_map->addMapPassage(&subjectPassage);
 
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
         return captureSemanticGraphSnapshot(&atlas);
@@ -1562,11 +1570,11 @@ TEST(SemanticGraphSnapshot,
      CaptureUnderHeldSemanticLockCompletesWithoutReacquiring)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
     Room  room;
     room.setId(1);
     room.setMap(p_map);
-    p_map->AddDetectedMapRoom(&room);
+    p_map->addDetectedMapRoom(&room);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
@@ -1575,13 +1583,14 @@ TEST(SemanticGraphSnapshot,
     EXPECT_EQ(snapshot.maps[0].rooms.size(), 1U);
 }
 
-/* Minimum-proof item 10: the cheap geometric::Plane accessor agrees with the scalar
- * fields in the full geometry snapshot while returning no cloud payload. */
+/* Minimum-proof item 10: the cheap geometric::Plane accessor agrees with the
+ * scalar fields in the full geometry snapshot while returning no cloud payload.
+ */
 TEST(SemanticGraphSnapshot,
      CheapPlaneAccessorAgreesWithFullGeometrySnapshotScalars)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -1593,9 +1602,10 @@ TEST(SemanticGraphSnapshot,
                         1.5,
                         0.75,
                         Eigen::Vector3d(0.0, 2.0, 0.0));
-    p_map->AddMapPlane(&wall);
+    p_map->addMapPlane(&wall);
 
-    const geometric::Plane::GeometrySnapshot fullSnapshot = wall.getGeometrySnapshot();
+    const geometric::Plane::GeometrySnapshot fullSnapshot =
+        wall.getGeometrySnapshot();
     const geometric::PlaneGeometryMetadataSnapshot metadata =
         wall.getGeometryMetadataSnapshot();
 
@@ -1616,13 +1626,13 @@ TEST(SemanticGraphSnapshot,
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
     const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
     const MapSnapshot          *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->GetId());
+        findMapSnapshot(snapshot, p_map->getId());
     ASSERT_NE(p_mapSnapshot, nullptr);
     const WallRecord *p_wallRecord = findWallRecord(*p_mapSnapshot, 1);
     ASSERT_NE(p_wallRecord, nullptr);
 
-    /* Every one of the 10 geometric::PlaneGeometryMetadataSnapshot fields, not just a
-     * convenient subset -- a field-swap bug touching any single one of
+    /* Every one of the 10 geometric::PlaneGeometryMetadataSnapshot fields, not
+     * just a convenient subset -- a field-swap bug touching any single one of
      * these (e.g. minPlaneV_m/maxPlaneV_m, observationCount, or
      * successfulRefitGeneration) must fail this test. */
     EXPECT_EQ(p_wallRecord->equation_World, metadata.equation_World);

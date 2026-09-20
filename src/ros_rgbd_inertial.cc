@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -59,7 +59,7 @@ class ImuGrabber : public rclcpp::Node
 class ImageGrabber : public rclcpp::Node
 {
   public:
-    /** A synchronized image pair and the closest available depth cloud. */
+    /*! A synchronized image pair and the closest available depth cloud. */
     struct SynchronizedRgbdPacket
     {
         sensor_msgs::msg::Image::ConstSharedPtr       p_rgbImageMessage;
@@ -67,7 +67,7 @@ class ImageGrabber : public rclcpp::Node
         sensor_msgs::msg::PointCloud2::ConstSharedPtr p_pointCloudMessage;
     };
 
-    /**
+    /*!
      * @brief Construct the synchronized RGB-D and IMU ingestion adapter.
      *
      * @param[in] p_imuGrabber_in Shared owner of the IMU sample buffer.
@@ -116,10 +116,10 @@ class ImageGrabber : public rclcpp::Node
     bool                               hasProcessedRgbdPacket{false};
     sensor_msgs::msg::PointCloud2::ConstSharedPtr p_latestPointCloudMessage;
     const bool                                    directGazeboFluCloud;
-    double                             lastConsumedImuTimestamp_seconds{0.0};
-    bool                               hasConsumedImuSample{false};
+    double lastConsumedImuTimestamp_seconds{0.0};
+    bool   hasConsumedImuSample{false};
     std::vector<vs_graphs::core::IMU::Point> pendingImuMeasurements;
-    double                             pendingMaximumImuGap_seconds{0.0};
+    double                                   pendingMaximumImuGap_seconds{0.0};
 
     void    SyncWithImu();
     // void GrabArUcoMarker(const aruco_msgs::MarkerArray &msg);
@@ -182,7 +182,7 @@ cv::Mat ImageGrabber::GetImage(
     return cv_ptr->image.clone();
 }
 
-/**
+/*!
  * @brief Callback function to get scene segmentation results from the
  * SemanticSegmenter module
  *
@@ -241,7 +241,7 @@ void ImageGrabber::SyncWithImu()
         sensor_msgs::msg::Image::ConstSharedPtr       p_rgbImageMessage;
         sensor_msgs::msg::Image::ConstSharedPtr       p_depthImageMessage;
         sensor_msgs::msg::PointCloud2::ConstSharedPtr p_pointCloudMessage;
-        std::vector<vs_graphs::core::IMU::Point>            imuMeasurements;
+        std::vector<vs_graphs::core::IMU::Point>      imuMeasurements;
         Eigen::Vector3f angularVelocity_body_radPerSec =
             Eigen::Vector3f::Zero();
         double imageTimestamp_seconds     = 0.0;
@@ -368,7 +368,7 @@ void ImageGrabber::SyncWithImu()
             pendingImuMeasurements.clear();
             pendingMaximumImuGap_seconds = 0.0;
             hasConsumedImuSample         = false;
-            p_slamSystem->RequestResetActiveMapWithCause(
+            p_slamSystem->requestResetActiveMapWithCause(
                 vs_graphs::core::ResetCause::IMU_DELIVERY_GAP);
             continue;
         }
@@ -428,7 +428,7 @@ void ImageGrabber::SyncWithImu()
             processingStage = "inertial RGB-D tracking";
             if (markerTimeDifference_seconds < 0.05)
             {
-                p_slamSystem->TrackRGBD(rgbImage,
+                p_slamSystem->trackRGBD(rgbImage,
                                         depthImage,
                                         p_pointCloud,
                                         imageTimestamp_seconds,
@@ -439,7 +439,7 @@ void ImageGrabber::SyncWithImu()
             }
             else
             {
-                p_slamSystem->TrackRGBD(rgbImage,
+                p_slamSystem->trackRGBD(rgbImage,
                                         depthImage,
                                         p_pointCloud,
                                         imageTimestamp_seconds,
@@ -567,7 +567,7 @@ int main(int argc, char **argv)
     frameSE = node->get_parameter("frame_structural_element").as_string();
     pubStaticTransform      = node->get_parameter("static_transform").as_bool();
     bool enablePangolin     = node->get_parameter("enable_pangolin").as_bool();
-    const auto verboseLevel = vs_graphs::core::Verbose::StringToLevel(
+    const auto verboseLevel = vs_graphs::core::Verbose::parseVerbosityLevel(
         node->get_parameter("log_level").as_string());
 
     sgraphArchiveTestRunDir = node->get_parameter("test_run_dir").as_string();
@@ -604,13 +604,13 @@ int main(int argc, char **argv)
 
     sensorType   = vs_graphs::core::System::IMU_RGBD;
     p_slamSystem = new vs_graphs::core::System(vocFile,
-                                         settingsFile,
-                                         sysParamsFile,
-                                         sensorType,
-                                         enablePangolin,
-                                         /*initFr*/ 0,
-                                         /*strSequence*/ std::string(),
-                                         verboseLevel);
+                                               settingsFile,
+                                               sysParamsFile,
+                                               sensorType,
+                                               enablePangolin,
+                                               /*initFr*/ 0,
+                                               /*strSequence*/ std::string(),
+                                               verboseLevel);
 
     // Subscribe to get raw images (message_filters in ROS2)
     using message_filters::Subscriber;
@@ -735,7 +735,7 @@ int main(int argc, char **argv)
     sync_thread.join();
 
     // No sensor worker may call TrackRGBD while SLAM threads are stopping.
-    p_slamSystem->Shutdown();
+    p_slamSystem->shutdown();
 
     rclcpp::shutdown();
 
@@ -789,7 +789,7 @@ void ImageGrabber::GrabRGBD(
             mpImuGb->imuBuf.swap(emptyImuBuffer);
         }
 
-        p_slamSystem->RequestResetActiveMapWithCause(
+        p_slamSystem->requestResetActiveMapWithCause(
             vs_graphs::core::ResetCause::SENSOR_PROCESSING_OVERLOAD);
         discardInputUntilBufferDrained = false;
         hasAdmittedRgbdPacket          = false;
@@ -901,7 +901,7 @@ void ImageGrabber::GrabRGBD(
     hasAdmittedRgbdPacket             = true;
 }
 
-/**
+/*!
  * @brief Callback function to get the markers detected by the `aruco_ros`
  * library
  *
@@ -914,7 +914,7 @@ void ImageGrabber::GrabRGBD(
 //     addMarkersToBuffer(msgMarkerArray);
 // }
 
-/**
+/*!
  * @brief Callback function to get the skeleton graph from the `voxblox` module
  *
  * @param msgSkeletonGraphs The skeleton graph from the `voxblox` module

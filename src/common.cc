@@ -2644,31 +2644,31 @@ void maybeArchiveSGraph(
     };
     std::vector<SgraphMapInput> mapInputs;
     vs_graphs::core::Atlas           *p_atlas =
-        (p_slamSystem != nullptr) ? p_slamSystem->GetAtlas() : nullptr;
+        (p_slamSystem != nullptr) ? p_slamSystem->getAtlas() : nullptr;
     if (p_atlas != nullptr)
     {
         std::optional<long unsigned int> currentMapId;
         vs_graphs::core::AtlasCurrentMapStatus mapStatus;
         std::vector<vs_graphs::core::Map *>    atlasMaps =
-            p_atlas->GetCoherentMapView(currentMapId, mapStatus);
+            p_atlas->getCoherentMapView(currentMapId, mapStatus);
         std::sort(atlasMaps.begin(),
                   atlasMaps.end(),
                   [](vs_graphs::core::Map *first_in, vs_graphs::core::Map *second_in)
-                  { return first_in->GetId() < second_in->GetId(); });
+                  { return first_in->getId() < second_in->getId(); });
         for (vs_graphs::core::Map *p_map : atlasMaps)
         {
-            if (p_map == nullptr || p_map->IsBad())
+            if (p_map == nullptr || p_map->isBad())
             {
                 continue;
             }
             SgraphMapInput mapInput;
-            mapInput.mapId = static_cast<long>(p_map->GetId());
+            mapInput.mapId = static_cast<long>(p_map->getId());
             mapInput.isActive =
-                currentMapId.has_value() && (*currentMapId == p_map->GetId());
-            mapInput.worldFrameEpoch = p_map->GetWorldFrameEpoch();
-            mapInput.floorsRaw       = p_map->GetAllFloors();
-            mapInput.roomsRaw        = p_map->GetAllRooms();
-            mapInput.passagesRaw     = p_map->GetAllPassages();
+                currentMapId.has_value() && (*currentMapId == p_map->getId());
+            mapInput.worldFrameEpoch = p_map->getWorldFrameEpoch();
+            mapInput.floorsRaw       = p_map->getAllFloors();
+            mapInput.roomsRaw        = p_map->getAllRooms();
+            mapInput.passagesRaw     = p_map->getAllPassages();
             mapInputs.push_back(std::move(mapInput));
         }
     }
@@ -3667,7 +3667,7 @@ void publishKeyFrameImages(
         }
 
         /* Skip keyframes that do not contain a valid image */
-        if (keyFrame->mImage.empty())
+        if (keyFrame->colorImg.empty())
         {
             continue;
         }
@@ -3681,7 +3681,7 @@ void publishKeyFrameImages(
 
         /* Convert the OpenCV keyframe image into a ROS image message */
         const sensor_msgs::msg::Image::SharedPtr keyFrameImageMessage =
-            cv_bridge::CvImage(messageHeader, "bgr8", keyFrame->mImage)
+            cv_bridge::CvImage(messageHeader, "bgr8", keyFrame->colorImg)
                 .toImageMsg();
 
         /* Confirm that the image conversion succeeded */
@@ -3716,7 +3716,7 @@ void publishKeyFrameImages(
         /* Mark the keyframe as in flight for the lockstep backlog signal */
         if (p_slamSystem != nullptr)
         {
-            p_slamSystem->IncrementSegmentationPublishedCount();
+            p_slamSystem->incrementSegmentationPublishedCount();
         }
     }
 }
@@ -3810,7 +3810,7 @@ void publishKeyFrameMarkers(
     {
         /* Obtain the globally expressed keyframe pose */
         const Sophus::SE3f T_world_keyFrame_SE3f =
-            p_slamSystem->GetKeyFramePose(keyFrame);
+            p_slamSystem->getKeyFramePose(keyFrame);
 
         /* Reject invalid poses */
         if (!T_world_keyFrame_SE3f.translation().allFinite() ||
@@ -3841,7 +3841,7 @@ void publishKeyFrameMarkers(
         keyFramePoseMessage.header.frame_id = frameWorld;
 
         keyFramePoseMessage.header.stamp =
-            rclcpp::Time(static_cast<std::int64_t>(keyFrame->mTimeStamp * 1e9));
+            rclcpp::Time(static_cast<std::int64_t>(keyFrame->timeStamp * 1e9));
 
         keyFramePoseMessage.pose.position.x = keyFramePosition_world_m.x();
         keyFramePoseMessage.pose.position.y = keyFramePosition_world_m.y();
@@ -5058,7 +5058,7 @@ void publishTopics(
     }
 
     /* Obtain the current camera pose relative to the world frame */
-    const Sophus::SE3f T_world_camera_SE3f = p_slamSystem->GetCamTwc();
+    const Sophus::SE3f T_world_camera_SE3f = p_slamSystem->getCamTwc();
 
     /* Prevent invalid camera transformations from entering ROS messages */
     if (!T_world_camera_SE3f.translation().allFinite() ||
@@ -5088,14 +5088,14 @@ void publishTopics(
 
     if (p_mapRevisionPublisher != nullptr)
     {
-        vs_graphs::core::Map *p_activeMap = p_slamSystem->GetCurrentMap();
+        vs_graphs::core::Map *p_activeMap = p_slamSystem->getCurrentMap();
 
         if (p_activeMap != nullptr)
         {
             const std::uint64_t mapId =
-                static_cast<std::uint64_t>(p_activeMap->GetId());
+                static_cast<std::uint64_t>(p_activeMap->getId());
 
-            const int mapChangeIndex = p_activeMap->GetLastBigChangeIdx();
+            const int mapChangeIndex = p_activeMap->getLastBigChangeIndex();
 
             const std::uint64_t nonNegativeMapChangeIndex =
                 mapChangeIndex > 0 ? static_cast<std::uint64_t>(mapChangeIndex)
@@ -5148,22 +5148,22 @@ void publishTopics(
      * ---------------------------------------------------------------------- */
 
     const std::vector<vs_graphs::core::KeyFrame *> mappedKeyFrames =
-        p_slamSystem->GetAllKeyFrames();
+        p_slamSystem->getAllKeyFrames();
 
     const std::vector<vs_graphs::core::semantic::Marker *> mappedFiducialMarkers =
-        p_slamSystem->GetAllMarkers();
+        p_slamSystem->getAllMarkers();
 
     const std::vector<vs_graphs::core::semantic::Room *> mappedRooms =
-        p_slamSystem->GetAllRooms();
+        p_slamSystem->getAllRooms();
 
     const std::vector<vs_graphs::core::semantic::Floor *> mappedFloors =
-        p_slamSystem->GetAllFloors();
+        p_slamSystem->getAllFloors();
 
     const std::vector<vs_graphs::core::semantic::Passage *> mappedPassages =
-        p_slamSystem->GetAllPassages();
+        p_slamSystem->getAllPassages();
 
     const std::vector<vs_graphs::core::geometric::Plane *> mappedPlanes =
-        p_slamSystem->GetAllPlanes();
+        p_slamSystem->getAllPlanes();
 
     /* ---------------------------------------------------------------------- *
      * KEYFRAMES, TRACKING, AND STRUCTURAL ELEMENTS
@@ -5172,7 +5172,7 @@ void publishTopics(
     publishKeyFrameImages(mappedKeyFrames, msgTime_s_in);
     publishKeyFrameMarkers(mappedKeyFrames, msgTime_s_in);
     publishFiducialMarkers(mappedFiducialMarkers, msgTime_s_in);
-    publishTrackingImage(p_slamSystem->GetCurrentFrame(), msgTime_s_in);
+    publishTrackingImage(p_slamSystem->getCurrentFrame(), msgTime_s_in);
     publishStructuralElements(mappedRooms,
                               mappedFloors,
                               mappedPassages,
@@ -5223,7 +5223,7 @@ void publishTopics(
         {
             publishTimed(vs_graphs::observability::PublishTopic::ALL_POINTS,
                          [&]() {
-                             publishAllPoints(p_slamSystem->GetAllMapPoints(),
+                             publishAllPoints(p_slamSystem->getAllMapPoints(),
                                               msgTime_s_in);
                          });
         }
@@ -5237,7 +5237,7 @@ void publishTopics(
         publishTimed(vs_graphs::observability::PublishTopic::TRACKED_POINTS,
                      [&]() {
                          publishTrackedPoints(
-                             p_slamSystem->GetTrackedMapPoints(),
+                             p_slamSystem->getTrackedMapPoints(),
                              msgTime_s_in);
                      });
         publishTimed(
@@ -5272,13 +5272,13 @@ void publishTopics(
     }
 
     /* T_world_body_SE3f describes the body pose relative to the world frame */
-    const Sophus::SE3f T_world_body_SE3f = p_slamSystem->GetImuTwb();
+    const Sophus::SE3f T_world_body_SE3f = p_slamSystem->getImuTwb();
 
     /*!
      * ORB-SLAM3 supplies the body linear velocity expressed in the world
      * frame.
      */
-    const Eigen::Vector3f linearVelocity_world_mps = p_slamSystem->GetImuVwb();
+    const Eigen::Vector3f linearVelocity_world_mps = p_slamSystem->getImuVwb();
 
     /* Validate all inertial quantities before publication */
     if (!T_world_body_SE3f.translation().allFinite() ||
@@ -5490,7 +5490,7 @@ void saveMapPointsAsPCDService(
     try
     {
         response_out->success =
-            p_slamSystem->SaveMapPointsAsPCD(request_in->name);
+            p_slamSystem->saveMapPointsAsPCD(request_in->name);
     }
     catch (const std::exception &exception)
     {
@@ -5563,7 +5563,7 @@ void saveMapService(
     /* Request that ORB-SLAM3 save the current map */
     try
     {
-        response_out->success = p_slamSystem->SaveMap(request_in->name);
+        response_out->success = p_slamSystem->saveMap(request_in->name);
     }
     catch (const std::exception &exception)
     {
@@ -5644,10 +5644,10 @@ void saveTrajectoryService(
     try
     {
         /* Save the complete estimated camera trajectory */
-        p_slamSystem->SaveTrajectoryEuRoC(cameraTrajectoryFileName);
+        p_slamSystem->saveTrajectoryEuRoC(cameraTrajectoryFileName);
 
         /* Save the estimated keyframe trajectory */
-        p_slamSystem->SaveKeyFrameTrajectoryEuRoC(keyFrameTrajectoryFileName);
+        p_slamSystem->saveKeyFrameTrajectoryEuRoC(keyFrameTrajectoryFileName);
 
         response_out->success = true;
     }
@@ -6008,7 +6008,7 @@ static void getMissionHealthService(
      * (e.g. a lockstep controller sampling at ~10 Hz) sets
      * include_topology=false and gets the cheap snapshot path instead. */
     const vs_graphs::core::System::MissionHealthSnapshot snapshot =
-        p_slamSystem->GetMissionHealthSnapshot(request_in->include_topology);
+        p_slamSystem->getMissionHealthSnapshot(request_in->include_topology);
     response_out->available            = true;
     response_out->mode                 = sensorModeName();
     response_out->frame_timestamp      = snapshot.frameTimestamp;
@@ -6161,9 +6161,9 @@ static void getMissionHealthService(
          * additions, without changing GetMissionHealth.srv or duplicating
          * this method's own schema-1 collection above. */
         const bool cacheAvailable =
-            p_slamSystem->IsSemanticReportCacheAvailable();
+            p_slamSystem->isSemanticReportCacheAvailable();
         const vs_graphs::core::semantic::SemanticReportCacheEntry entry =
-            p_slamSystem->GetSemanticReportCacheEntry();
+            p_slamSystem->getSemanticReportCacheEntry();
         topology = vs_graphs::core::augmentMissionHealthTopologyJsonWithSemantics(
             std::move(topology),
             entry,

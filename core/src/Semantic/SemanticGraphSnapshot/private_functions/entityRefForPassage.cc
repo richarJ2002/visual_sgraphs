@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -52,7 +52,7 @@ EntityRef entityRefForPassage(Passage *p_passage_in)
         return ref;
     }
     ref.key =
-        makeKey(EntityKind::PASSAGE, p_map->GetId(), p_passage_in->getId());
+        makeKey(EntityKind::PASSAGE, p_map->getId(), p_passage_in->getId());
     ref.reason = UnavailableReason::NONE;
     return ref;
 }

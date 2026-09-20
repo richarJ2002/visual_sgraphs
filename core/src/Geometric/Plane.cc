@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -44,8 +44,8 @@ Plane::Plane(void)
 
     p_map = nullptr;
 
-    refKeyFrame     = nullptr;
-    mnBAGlobalForKF = 0;
+    p_refKeyFrame      = nullptr;
+    baGlobalKeyFrameId = 0;
 
     planeCloud = std::make_shared<pcl::PointCloud<pcl::PointXYZRGBA>>();
 
@@ -199,7 +199,7 @@ Plane::ObservationSideSnapshot Plane::getObservationSideSnapshot(
         }
 
         const Eigen::Vector3d cameraCenter_World_m =
-            p_keyFrame->GetCameraCenter().cast<double>();
+            p_keyFrame->getCameraCenter().cast<double>();
         const double signedDistance_m =
             normalizedEquation_World_in.head<3>().dot(cameraCenter_World_m) +
             normalizedEquation_World_in(3);
@@ -604,17 +604,17 @@ bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &point)
     pointPCL.y = point(1);
     pointPCL.z = point(2);
 
-    types::SystemParams      *sysParams = types::SystemParams::getParams();
-    std::vector<int>   pointIdxRadiusSearch;
-    std::vector<float> pointRadiusSquaredDistance;
+    types::SystemParams *p_sysParams = types::SystemParams::getParams();
+    std::vector<int>     pointIdxRadiusSearch;
+    std::vector<float>   pointRadiusSquaredDistance;
 
     if (octree->radiusSearch(
             pointPCL,
-            sysParams->refineMapPoints.octree.searchRadius,
+            p_sysParams->refineMapPoints.octree.searchRadius,
             pointIdxRadiusSearch,
             pointRadiusSquaredDistance,
-            sysParams->refineMapPoints.octree.minNeighbors) ==
-        sysParams->refineMapPoints.octree.minNeighbors)
+            p_sysParams->refineMapPoints.octree.minNeighbors) ==
+        p_sysParams->refineMapPoints.octree.minNeighbors)
     {
         return true;
     }
@@ -841,13 +841,12 @@ void Plane::updatePlaneBoundsWithoutLock(void)
     constexpr double      lowerPercentile     = 0.01;
     constexpr double      upperPercentile     = 0.99;
 
-    const auto robustBound = [](std::vector<double> &samples_inout,
-                                double               percentile_in)
+    const auto robustBound =
+        [](std::vector<double> &samples_inout, double percentile_in)
     {
         std::sort(samples_inout.begin(), samples_inout.end());
         const double position =
-            percentile_in *
-            static_cast<double>(samples_inout.size() - 1U);
+            percentile_in * static_cast<double>(samples_inout.size() - 1U);
         return samples_inout[static_cast<std::size_t>(position)];
     };
 
@@ -892,22 +891,23 @@ std::optional<Eigen::Vector3d> Plane::getObservationOrigin_World(void) const
 Plane *Plane::getTwinFace(void) const
 {
     unique_lock<mutex> lock(mMutexPos);
-    return twinFace_;
+    return p_twinFace;
 }
 
 void Plane::setTwinFace(Plane *p_twin_in)
 {
     unique_lock<mutex> lock(mMutexPos);
-    twinFace_ = p_twin_in;
+    p_twinFace = p_twin_in;
 }
 
 void Plane::clearTwinFace(void)
 {
     unique_lock<mutex> lock(mMutexPos);
-    twinFace_ = nullptr;
+    p_twinFace = nullptr;
 }
 
-std::map<core::KeyFrame *, Plane::Observation> Plane::getObservations(void) const
+std::map<core::KeyFrame *, Plane::Observation>
+    Plane::getObservations(void) const
 {
     unique_lock<mutex> lock(mMutexFeatures);
     return observations;
@@ -919,7 +919,7 @@ std::size_t Plane::getObservationCount(void) const
     return observationCount;
 }
 
-void Plane::addObservation(core::KeyFrame          *p_keyFrame_in,
+void Plane::addObservation(core::KeyFrame    *p_keyFrame_in,
                            const Observation &observation_in)
 {
     /* Confirm the keyframe is valid */
@@ -943,14 +943,14 @@ void Plane::addObservation(core::KeyFrame          *p_keyFrame_in,
     {
         observationCount++;
 
-        if (refKeyFrame == nullptr)
+        if (p_refKeyFrame == nullptr)
         {
-            refKeyFrame = p_keyFrame_in;
+            p_refKeyFrame = p_keyFrame_in;
         }
     }
 }
 
-void Plane::mergeObservation(core::KeyFrame          *p_keyFrame_in,
+void Plane::mergeObservation(core::KeyFrame    *p_keyFrame_in,
                              const Observation &observation_in)
 {
     if (p_keyFrame_in == nullptr || p_keyFrame_in->isBad())
@@ -979,9 +979,9 @@ void Plane::mergeObservation(core::KeyFrame          *p_keyFrame_in,
             evidenceFromObservation(observation_in);
         observations.emplace(p_keyFrame_in, std::move(mergedObservation));
         ++observationCount;
-        if (refKeyFrame == nullptr)
+        if (p_refKeyFrame == nullptr)
         {
-            refKeyFrame = p_keyFrame_in;
+            p_refKeyFrame = p_keyFrame_in;
         }
     }
     else
@@ -1080,9 +1080,9 @@ void Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
             observationCount--;
         }
 
-        if (refKeyFrame == p_keyFrame_in)
+        if (p_refKeyFrame == p_keyFrame_in)
         {
-            refKeyFrame = nullptr;
+            p_refKeyFrame = nullptr;
 
             for (const auto &[p_candidateKeyFrame, candidateObservation] :
                  observations)
@@ -1094,10 +1094,10 @@ void Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
                     continue;
                 }
 
-                if (refKeyFrame == nullptr ||
-                    p_candidateKeyFrame->mnId < refKeyFrame->mnId)
+                if (p_refKeyFrame == nullptr ||
+                    p_candidateKeyFrame->mnId < p_refKeyFrame->mnId)
                 {
-                    refKeyFrame = p_candidateKeyFrame;
+                    p_refKeyFrame = p_candidateKeyFrame;
                 }
             }
         }

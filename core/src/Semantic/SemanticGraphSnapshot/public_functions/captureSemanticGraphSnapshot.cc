@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -57,7 +57,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
      * SemanticGraphSnapshot::currentMapStatus's Doxygen and
      * AtlasCurrentMapStatus.h. */
     const std::vector<core::Map *> maps =
-        p_atlas_in->GetCoherentMapView(snapshot.currentMapId,
+        p_atlas_in->getCoherentMapView(snapshot.currentMapId,
                                        snapshot.currentMapStatus);
 
     /* Pass 1: invert Room -> Wall ownership across every live map so each
@@ -88,16 +88,16 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
         {
             continue;
         }
-        const long unsigned int mapId = p_map->GetId();
+        const long unsigned int mapId = p_map->getId();
         std::set<Room *>        roomsInMap;
-        for (Room *p_room : p_map->GetAllDetectedMapRooms())
+        for (Room *p_room : p_map->getAllDetectedMapRooms())
         {
             if (p_room != nullptr)
             {
                 roomsInMap.insert(p_room);
             }
         }
-        for (Room *p_room : p_map->GetAllMarkerBasedMapRooms())
+        for (Room *p_room : p_map->getAllMarkerBasedMapRooms())
         {
             if (p_room != nullptr)
             {
@@ -136,7 +136,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
         }
 
         MapSnapshot mapSnapshot;
-        mapSnapshot.mapId = p_map->GetId();
+        mapSnapshot.mapId = p_map->getId();
         mapSnapshot.isCurrentMap =
             snapshot.currentMapId.has_value() &&
             (*snapshot.currentMapId == mapSnapshot.mapId);
@@ -146,7 +146,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
          * so a room present in both collections stays diagnosable rather
          * than being collapsed by a single union enumeration. */
         std::set<Room *> detectedRooms;
-        for (Room *p_room : p_map->GetAllDetectedMapRooms())
+        for (Room *p_room : p_map->getAllDetectedMapRooms())
         {
             if (p_room != nullptr)
             {
@@ -154,7 +154,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
             }
         }
         std::set<Room *> markerBasedRooms;
-        for (Room *p_room : p_map->GetAllMarkerBasedMapRooms())
+        for (Room *p_room : p_map->getAllMarkerBasedMapRooms())
         {
             if (p_room != nullptr)
             {
@@ -174,7 +174,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
         }
         sortByKey(mapSnapshot.rooms);
 
-        for (geometric::Plane *p_plane : p_map->GetAllPlanes())
+        for (geometric::Plane *p_plane : p_map->getAllPlanes())
         {
             if (p_plane == nullptr ||
                 p_plane->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
@@ -186,7 +186,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
         }
         sortByKey(mapSnapshot.walls);
 
-        for (Passage *p_passage : p_map->GetAllPassages())
+        for (Passage *p_passage : p_map->getAllPassages())
         {
             if (p_passage == nullptr)
             {
@@ -197,7 +197,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
         }
         sortByKey(mapSnapshot.passages);
 
-        for (Floor *p_floor : p_map->GetAllFloors())
+        for (Floor *p_floor : p_map->getAllFloors())
         {
             if (p_floor == nullptr)
             {

@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -40,7 +40,7 @@ class Atlas;
 class SemanticSegmentation
 {
   public:
-    /**
+    /*!
      * @brief       Lock-free counters plus a coherent queue-depth sample for
      *              processing-aware simulation lockstep.
      */
@@ -79,42 +79,42 @@ class SemanticSegmentation
 
     static constexpr std::size_t MAX_BUFFERED_WORK_ITEMS = 32U;
 
-    bool mGeoRuns;
+    bool geoRuns;
 
-    Atlas *mpAtlas;
+    Atlas *p_atlas;
 
     std::mutex mMutexNewKFs;
 
     // Four bytes per class probability - refer to scene_segment_ros
     const uint8_t bytesPerClassProb = 4;
 
-    unsigned long int mLastProcessedKeyFrameId = 0;
+    unsigned long int lastProcessedKeyFrameId = 0;
 
     std::deque<WorkItem> segmentedImageBuffer;
 
-    std::atomic<std::uint64_t> mEnqueuedCount{0U};
-    std::atomic<std::uint64_t> mDequeuedCount{0U};
-    std::atomic<std::uint64_t> mTerminalCount{0U};
-    std::atomic<std::uint64_t> mAcceptedCount{0U};
-    std::atomic<std::uint64_t> mDroppedCount{0U};
-    std::atomic<std::uint64_t> mMissingKeyFrameCount{0U};
-    std::atomic<std::uint64_t> mMissingCloudCount{0U};
-    std::atomic<std::uint64_t> mStaleMapCount{0U};
-    std::atomic<std::uint64_t> mLastTerminalKeyFrameId{0U};
-    std::atomic<std::uint32_t> mQueueHighWatermark{0U};
+    std::atomic<std::uint64_t> enqueuedCount{0U};
+    std::atomic<std::uint64_t> dequeuedCount{0U};
+    std::atomic<std::uint64_t> terminalCount{0U};
+    std::atomic<std::uint64_t> acceptedCount{0U};
+    std::atomic<std::uint64_t> droppedCount{0U};
+    std::atomic<std::uint64_t> missingKeyFrameCount{0U};
+    std::atomic<std::uint64_t> missingCloudCount{0U};
+    std::atomic<std::uint64_t> staleMapCount{0U};
+    std::atomic<std::uint64_t> lastTerminalKeyFrameId{0U};
+    std::atomic<std::uint32_t> queueHighWatermark{0U};
 
     void recordTerminalOutcome(std::uint64_t   keyFrameId,
                                TerminalOutcome outcome);
 
     // System parameters
-    types::SystemParams *sysParams;
+    types::SystemParams *p_sysParams;
 
     // Shutdown control (LocalMapping-style handshake)
     std::mutex mMutexFinish;
-    bool       mbFinishRequested = false;
-    bool       mbFinished        = false;
-    bool       CheckFinish();
-    void       SetFinish();
+    bool       finishRequested = false;
+    bool       finished        = false;
+    bool       checkFinish();
+    void       setFinish();
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -122,16 +122,16 @@ class SemanticSegmentation
     SemanticSegmentation(Atlas *pAtlas);
 
     // Semantic segmentation frame buffer processing
-    void AddSegmentedFrameToBuffer(
+    void addSegmentedFrameToBuffer(
         std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *tuple);
 
-    /**
+    /*!
      * @brief       Returns processing counters used by mission health and
      *              simulation lockstep. Safe to call from any thread.
      */
-    ProcessingStats GetProcessingStats();
+    ProcessingStats getProcessingStats();
 
-    /**
+    /*!
      * @brief       Segments the point cloud into class specific point clouds
      *              and enriches them with the current keyframe point cloud.
      *
@@ -161,7 +161,7 @@ class SemanticSegmentation
         std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &clsCloudPtrs,
         const pcl::PointCloud<pcl::PointXYZRGB>::Ptr         &thisKFPointCloud);
 
-    /**
+    /*!
      * @brief       Gets all planes for each class specific point cloud using
      *              RANSAC. Will perform filtering of point clouds, then
      *              extract the planes using RANSAC. Important to note that the
@@ -180,7 +180,7 @@ class SemanticSegmentation
         getPlanesFromClassClouds(
             std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &clsCloudPtrs);
 
-    /**
+    /*!
      * @brief       Adds the planes to the Atlas
      *
      * @param       clsPlanes
@@ -195,7 +195,7 @@ class SemanticSegmentation
             std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
                                   Eigen::Vector4d>>> &clsPlanes);
 
-    /**
+    /*!
      * @brief       Updates the map plane
      *
      * @param       planeId
@@ -210,11 +210,11 @@ class SemanticSegmentation
     void updatePlaneSemantics(int planeId, int clsId, double confidence);
 
     // Shutdown control
-    void RequestFinish();
+    void requestFinish();
     bool isFinished();
 
     // Running the thread
-    void Run();
+    void run();
 };
 } // namespace core
 } // namespace vs_graphs

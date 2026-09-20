@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -112,10 +112,10 @@ int main(int argc, char **argv)
     sensorType = vs_graphs::core::System::MONOCULAR;
 
     p_slamSystem = new vs_graphs::core::System(voc_file,
-                                         settings_file,
-                                         sys_params_file,
-                                         sensorType,
-                                         enable_pangolin);
+                                               settings_file,
+                                               sys_params_file,
+                                               sensorType,
+                                               enable_pangolin);
 
     // Subscribe to get raw images
     ros::Subscriber sub_img = nodeHandler.subscribe("/camera/image_raw",
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
     ros::spin();
 
     // Stop all threads
-    p_slamSystem->Shutdown();
+    p_slamSystem->shutdown();
     ros::shutdown();
 
     return 0;
@@ -174,15 +174,16 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr &msg)
     // frame
     std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>> result =
         findNearestMarker(cv_ptr->header.stamp.toSec());
-    double                           minMarkerTimeDiff = result.first;
-    std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers    = result.second;
+    double minMarkerTimeDiff = result.first;
+    std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers =
+        result.second;
 
     // Tracking process sends markers found in this frame for tracking and
     // clears the buffer
     if (minMarkerTimeDiff < 0.05)
     {
         Sophus::SE3f Tcw =
-            p_slamSystem->TrackMonocular(cv_ptr->image,
+            p_slamSystem->trackMonocular(cv_ptr->image,
                                          cv_ptr->header.stamp.toSec(),
                                          {},
                                          "",
@@ -191,7 +192,7 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr &msg)
     }
     else
         Sophus::SE3f Tcw =
-            p_slamSystem->TrackMonocular(cv_ptr->image,
+            p_slamSystem->trackMonocular(cv_ptr->image,
                                          cv_ptr->header.stamp.toSec());
 
     rclcpp::Time msg_time = msg->header.stamp;

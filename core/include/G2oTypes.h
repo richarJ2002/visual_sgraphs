@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -51,7 +51,10 @@ namespace core
 
 class KeyFrame;
 class Frame;
-namespace camera_models { class GeometricCamera; }
+namespace camera_models
+{
+class GeometricCamera;
+}
 
 typedef Eigen::Matrix<double, 6, 1>   Vector6d;
 typedef Eigen::Matrix<double, 9, 1>   Vector9d;
@@ -93,17 +96,17 @@ class ImuCamPose
     ImuCamPose(Frame *pF);
     ImuCamPose(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, KeyFrame *pKF);
 
-    void SetParam(const std::vector<Eigen::Matrix3d> &_Rcw,
+    void setParam(const std::vector<Eigen::Matrix3d> &_Rcw,
                   const std::vector<Eigen::Vector3d> &_tcw,
                   const std::vector<Eigen::Matrix3d> &_Rbc,
                   const std::vector<Eigen::Vector3d> &_tbc,
                   const double                       &_bf);
 
-    void            Update(const double *pu);  // update in the imu reference
-    void            UpdateW(const double *pu); // update in the world reference
-    Eigen::Vector2d Project(const Eigen::Vector3d &Xw,
+    void            update(const double *pu);  // update in the imu reference
+    void            updateW(const double *pu); // update in the world reference
+    Eigen::Vector2d project(const Eigen::Vector3d &Xw,
                             int                    cam_idx = 0) const; // Mono
-    Eigen::Vector3d ProjectStereo(const Eigen::Vector3d &Xw,
+    Eigen::Vector3d projectStereo(const Eigen::Vector3d &Xw,
                                   int cam_idx = 0) const; // Stereo
     bool isDepthPositive(const Eigen::Vector3d &Xw, int cam_idx = 0) const;
 
@@ -113,11 +116,11 @@ class ImuCamPose
     Eigen::Vector3d twb;
 
     // For set of cameras
-    std::vector<Eigen::Matrix3d>   Rcw;
-    std::vector<Eigen::Vector3d>   tcw;
-    std::vector<Eigen::Matrix3d>   Rcb, Rbc;
-    std::vector<Eigen::Vector3d>   tcb, tbc;
-    double                         bf;
+    std::vector<Eigen::Matrix3d>                  Rcw;
+    std::vector<Eigen::Vector3d>                  tcw;
+    std::vector<Eigen::Matrix3d>                  Rcb, Rbc;
+    std::vector<Eigen::Vector3d>                  tcb, tbc;
+    double                                        bf;
     std::vector<camera_models::GeometricCamera *> pCamera;
 
     // For posegraph 4DoF
@@ -134,7 +137,7 @@ class InvDepthPoint
     InvDepthPoint() {}
     InvDepthPoint(double _rho, double _u, double _v, KeyFrame *pHostKF);
 
-    void Update(const double *pu);
+    void update(const double *pu);
 
     double rho;
     double u, v; // they are not variables, observation in the host frame
@@ -166,7 +169,7 @@ class VertexPose : public g2o::BaseVertex<6, ImuCamPose>
 
     virtual void oplusImpl(const double *update_)
     {
-        _estimate.Update(update_);
+        _estimate.update(update_);
         updateCache();
     }
 };
@@ -211,7 +214,7 @@ class VertexPose4DoF : public g2o::BaseVertex<4, ImuCamPose>
         update6DoF[3] = update_[1];
         update6DoF[4] = update_[2];
         update6DoF[5] = update_[3];
-        _estimate.UpdateW(update6DoF);
+        _estimate.updateW(update6DoF);
         updateCache();
     }
 };
@@ -314,7 +317,7 @@ class GDirection
         its(0)
     {}
 
-    void Update(const double *pu)
+    void update(const double *pu)
     {
         Rwg = Rwg * ExpSO3(pu[0], pu[1], 0.0);
         Rgw = Rwg.transpose();
@@ -348,7 +351,7 @@ class VertexGDir : public g2o::BaseVertex<2, GDirection>
 
     virtual void oplusImpl(const double *update_)
     {
-        _estimate.Update(update_);
+        _estimate.update(update_);
         updateCache();
     }
 };
@@ -411,7 +414,7 @@ class VertexInvDepth : public g2o::BaseVertex<1, InvDepthPoint>
 
     virtual void oplusImpl(const double *update_)
     {
-        _estimate.Update(update_);
+        _estimate.update(update_);
         updateCache();
     }
 };
@@ -442,7 +445,7 @@ class EdgeMono
             static_cast<const g2o::VertexSBAPointXYZ *>(_vertices[0]);
         const VertexPose *VPose = static_cast<const VertexPose *>(_vertices[1]);
         const Eigen::Vector2d obs(_measurement);
-        _error = obs - VPose->estimate().Project(VPoint->estimate(), cam_idx);
+        _error = obs - VPose->estimate().project(VPoint->estimate(), cam_idx);
     }
 
     virtual void linearizeOplus();
@@ -455,7 +458,7 @@ class EdgeMono
         return VPose->estimate().isDepthPositive(VPoint->estimate(), cam_idx);
     }
 
-    Eigen::Matrix<double, 2, 9> GetJacobian()
+    Eigen::Matrix<double, 2, 9> getJacobian()
     {
         linearizeOplus();
         Eigen::Matrix<double, 2, 9> J;
@@ -464,7 +467,7 @@ class EdgeMono
         return J;
     }
 
-    Eigen::Matrix<double, 9, 9> GetHessian()
+    Eigen::Matrix<double, 9, 9> getHessian()
     {
         linearizeOplus();
         Eigen::Matrix<double, 2, 9> J;
@@ -501,7 +504,7 @@ class EdgeMonoOnlyPose
     {
         const VertexPose *VPose = static_cast<const VertexPose *>(_vertices[0]);
         const Eigen::Vector2d obs(_measurement);
-        _error = obs - VPose->estimate().Project(Xw, cam_idx);
+        _error = obs - VPose->estimate().project(Xw, cam_idx);
     }
 
     virtual void linearizeOplus();
@@ -512,7 +515,7 @@ class EdgeMonoOnlyPose
         return VPose->estimate().isDepthPositive(Xw, cam_idx);
     }
 
-    Eigen::Matrix<double, 6, 6> GetHessian()
+    Eigen::Matrix<double, 6, 6> getHessian()
     {
         linearizeOplus();
         return _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;
@@ -550,12 +553,12 @@ class EdgeStereo
         const VertexPose *VPose = static_cast<const VertexPose *>(_vertices[1]);
         const Eigen::Vector3d obs(_measurement);
         _error =
-            obs - VPose->estimate().ProjectStereo(VPoint->estimate(), cam_idx);
+            obs - VPose->estimate().projectStereo(VPoint->estimate(), cam_idx);
     }
 
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 3, 9> GetJacobian()
+    Eigen::Matrix<double, 3, 9> getJacobian()
     {
         linearizeOplus();
         Eigen::Matrix<double, 3, 9> J;
@@ -564,7 +567,7 @@ class EdgeStereo
         return J;
     }
 
-    Eigen::Matrix<double, 9, 9> GetHessian()
+    Eigen::Matrix<double, 9, 9> getHessian()
     {
         linearizeOplus();
         Eigen::Matrix<double, 3, 9> J;
@@ -601,12 +604,12 @@ class EdgeStereoOnlyPose
     {
         const VertexPose *VPose = static_cast<const VertexPose *>(_vertices[0]);
         const Eigen::Vector3d obs(_measurement);
-        _error = obs - VPose->estimate().ProjectStereo(Xw, cam_idx);
+        _error = obs - VPose->estimate().projectStereo(Xw, cam_idx);
     }
 
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 6, 6> GetHessian()
+    Eigen::Matrix<double, 6, 6> getHessian()
     {
         linearizeOplus();
         return _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;
@@ -636,7 +639,7 @@ class EdgeInertial : public g2o::BaseMultiEdge<9, Vector9d>
     void         computeError();
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 24, 24> GetHessian()
+    Eigen::Matrix<double, 24, 24> getHessian()
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 24> J;
@@ -649,7 +652,7 @@ class EdgeInertial : public g2o::BaseMultiEdge<9, Vector9d>
         return J.transpose() * information() * J;
     }
 
-    Eigen::Matrix<double, 18, 18> GetHessianNoPose1()
+    Eigen::Matrix<double, 18, 18> getHessianNoPose1()
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 18> J;
@@ -661,7 +664,7 @@ class EdgeInertial : public g2o::BaseMultiEdge<9, Vector9d>
         return J.transpose() * information() * J;
     }
 
-    Eigen::Matrix<double, 9, 9> GetHessian2()
+    Eigen::Matrix<double, 9, 9> getHessian2()
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 9> J;
@@ -672,7 +675,7 @@ class EdgeInertial : public g2o::BaseMultiEdge<9, Vector9d>
 
     const Eigen::Matrix3d JRg, JVg, JPg;
     const Eigen::Matrix3d JVa, JPa;
-    IMU::Preintegrated   *mpInt;
+    IMU::Preintegrated   *p_preintegrated;
     const double          dt;
     Eigen::Vector3d       g;
 };
@@ -701,11 +704,11 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
 
     const Eigen::Matrix3d JRg, JVg, JPg;
     const Eigen::Matrix3d JVa, JPa;
-    IMU::Preintegrated   *mpInt;
+    IMU::Preintegrated   *p_preintegrated;
     const double          dt;
     Eigen::Vector3d       g, gI;
 
-    Eigen::Matrix<double, 27, 27> GetHessian()
+    Eigen::Matrix<double, 27, 27> getHessian()
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 27> J;
@@ -720,7 +723,7 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
         return J.transpose() * information() * J;
     }
 
-    Eigen::Matrix<double, 27, 27> GetHessian2()
+    Eigen::Matrix<double, 27, 27> getHessian2()
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 27> J;
@@ -735,7 +738,7 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
         return J.transpose() * information() * J;
     }
 
-    Eigen::Matrix<double, 9, 9> GetHessian3()
+    Eigen::Matrix<double, 9, 9> getHessian3()
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 9> J;
@@ -746,28 +749,28 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
         return J.transpose() * information() * J;
     }
 
-    Eigen::Matrix<double, 1, 1> GetHessianScale()
+    Eigen::Matrix<double, 1, 1> getHessianScale()
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 1> J = _jacobianOplus[7];
         return J.transpose() * information() * J;
     }
 
-    Eigen::Matrix<double, 3, 3> GetHessianBiasGyro()
+    Eigen::Matrix<double, 3, 3> getHessianBiasGyro()
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 3> J = _jacobianOplus[2];
         return J.transpose() * information() * J;
     }
 
-    Eigen::Matrix<double, 3, 3> GetHessianBiasAcc()
+    Eigen::Matrix<double, 3, 3> getHessianBiasAcc()
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 3> J = _jacobianOplus[3];
         return J.transpose() * information() * J;
     }
 
-    Eigen::Matrix<double, 2, 2> GetHessianGDir()
+    Eigen::Matrix<double, 2, 2> getHessianGDir()
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 2> J = _jacobianOplus[6];
@@ -808,7 +811,7 @@ class EdgeGyroRW
         _jacobianOplusXj.setIdentity();
     }
 
-    Eigen::Matrix<double, 6, 6> GetHessian()
+    Eigen::Matrix<double, 6, 6> getHessian()
     {
         linearizeOplus();
         Eigen::Matrix<double, 3, 6> J;
@@ -817,7 +820,7 @@ class EdgeGyroRW
         return J.transpose() * information() * J;
     }
 
-    Eigen::Matrix3d GetHessian2()
+    Eigen::Matrix3d getHessian2()
     {
         linearizeOplus();
         return _jacobianOplusXj.transpose() * information() * _jacobianOplusXj;
@@ -857,7 +860,7 @@ class EdgeAccRW
         _jacobianOplusXj.setIdentity();
     }
 
-    Eigen::Matrix<double, 6, 6> GetHessian()
+    Eigen::Matrix<double, 6, 6> getHessian()
     {
         linearizeOplus();
         Eigen::Matrix<double, 3, 6> J;
@@ -866,7 +869,7 @@ class EdgeAccRW
         return J.transpose() * information() * J;
     }
 
-    Eigen::Matrix3d GetHessian2()
+    Eigen::Matrix3d getHessian2()
     {
         linearizeOplus();
         return _jacobianOplusXj.transpose() * information() * _jacobianOplusXj;
@@ -927,7 +930,7 @@ class EdgePriorPoseImu : public g2o::BaseMultiEdge<15, Vector15d>
     void         computeError();
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 15, 15> GetHessian()
+    Eigen::Matrix<double, 15, 15> getHessian()
     {
         linearizeOplus();
         Eigen::Matrix<double, 15, 15> J;
@@ -938,7 +941,7 @@ class EdgePriorPoseImu : public g2o::BaseMultiEdge<15, Vector15d>
         return J.transpose() * information() * J;
     }
 
-    Eigen::Matrix<double, 9, 9> GetHessianNoPose()
+    Eigen::Matrix<double, 9, 9> getHessianNoPose()
     {
         linearizeOplus();
         Eigen::Matrix<double, 15, 9> J;
@@ -980,7 +983,7 @@ class EdgePriorAcc
     }
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 3, 3> GetHessian()
+    Eigen::Matrix<double, 3, 3> getHessian()
     {
         linearizeOplus();
         return _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;
@@ -1016,7 +1019,7 @@ class EdgePriorGyro
     }
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 3, 3> GetHessian()
+    Eigen::Matrix<double, 3, 3> getHessian()
     {
         linearizeOplus();
         return _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;

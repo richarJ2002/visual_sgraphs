@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -44,18 +44,18 @@ RawPlaneRef rawPlaneRef(geometric::Plane *p_plane_in)
     {
         return ref;
     }
-    ref.reason    = UnavailableReason::NONE;
-    ref.planeId   = p_plane_in->getId();
-    ref.isLive    = !p_plane_in->isBad();
-    ref.planeType = p_plane_in->getPlaneType();
-    core::Map *p_map    = p_plane_in->getMap();
+    ref.reason       = UnavailableReason::NONE;
+    ref.planeId      = p_plane_in->getId();
+    ref.isLive       = !p_plane_in->isBad();
+    ref.planeType    = p_plane_in->getPlaneType();
+    core::Map *p_map = p_plane_in->getMap();
     if (p_map != nullptr)
     {
-        ref.mapId = p_map->GetId();
+        ref.mapId = p_map->getId();
         if (ref.planeType == geometric::Plane::PlaneVariant::WALL)
         {
             ref.wallKey =
-                makeKey(EntityKind::WALL, p_map->GetId(), p_plane_in->getId());
+                makeKey(EntityKind::WALL, p_map->getId(), p_plane_in->getId());
         }
     }
     return ref;

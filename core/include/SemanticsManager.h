@@ -57,7 +57,7 @@ class SemanticsManager
     /*!
      * @brief       This member contains the address of semantic map.
      */
-    Atlas *mpAtlas;
+    Atlas *p_atlas;
 
     /*!
      * @brief       Serializes updates to the set of newly detected rooms.
@@ -71,10 +71,10 @@ class SemanticsManager
 
     // Shutdown control (LocalMapping-style handshake)
     std::mutex mMutexFinish;
-    bool       mbFinishRequested = false;
-    bool       mbFinished        = false;
-    bool       CheckFinish();
-    void       SetFinish();
+    bool       finishRequested = false;
+    bool       finished        = false;
+    bool       checkFinish();
+    void       setFinish();
 
     /*!
      * @brief       Copied-value cache of the latest complete semantic
@@ -105,7 +105,7 @@ class SemanticsManager
      */
     semantic::RoomTracker roomTracker_;
 
-    /**
+    /*!
      * @brief Queued typed result from the future geometric verifier.
      *
      * The mutex below protects both the pending flag and value.  A producer
@@ -113,7 +113,7 @@ class SemanticsManager
      * geometry or identity is inferred when the flag is clear.
      */
     semantic::VerificationVerdict verificationVerdict_{};
-    bool                verificationVerdictPending_ = false;
+    bool                          verificationVerdictPending_ = false;
 
     /*!
      * @brief       Set by updateTraversalEvidence() when a passable passage
@@ -158,7 +158,7 @@ class SemanticsManager
     /*!
      * @brief       The transformation matrix from ground plane to horizontal.
      */
-    Eigen::Matrix4f mPlanePoseMat;
+    Eigen::Matrix4f planePoseMat;
 
     /*!
      * @brief       The main Run() function runs every runInterval_s seconds.
@@ -168,23 +168,23 @@ class SemanticsManager
     /*!
      * @brief       Member which contains the system parameters.
      */
-    types::SystemParams *sysParams;
+    types::SystemParams *p_sysParams;
 
     /*!
      * @brief       Temporally tracked evidence for one open-passage hypothesis.
      */
     struct OpenPassageEvidence
     {
-        geometric::Plane          *p_supportingWall  = nullptr;
-        Eigen::Vector3d centroid_World_m  = Eigen::Vector3d::Zero();
-        std::size_t     confirmationCount = 0U;
-        std::size_t     missedUpdateCount = 0U;
-        std::uint64_t   lastConfirmedSkeletonFingerprint = 0U;
-        /** Best (largest) opening radius / vertical span observed across all
+        geometric::Plane *p_supportingWall  = nullptr;
+        Eigen::Vector3d   centroid_World_m  = Eigen::Vector3d::Zero();
+        std::size_t       confirmationCount = 0U;
+        std::size_t       missedUpdateCount = 0U;
+        std::uint64_t     lastConfirmedSkeletonFingerprint = 0U;
+        /*! Best (largest) opening radius / vertical span observed across all
          *  cycles this hypothesis has been confirmed in -- the running size
          *  estimate later written onto the confirmed Passage's width/height. */
-        double          openingRadius_m = 0.0;
-        double          heightSpan_m    = 0.0;
+        double            openingRadius_m = 0.0;
+        double            heightSpan_m    = 0.0;
     };
 
     /*!
@@ -262,10 +262,10 @@ class SemanticsManager
 
     struct UndefendedWallState
     {
-        geometric::Plane       *p_wall           = nullptr;
-        unsigned int unresolvedCycles = 0U;
-        std::size_t  cloudPointCount  = 0U;
-        std::size_t  observationCount = 0U;
+        geometric::Plane *p_wall           = nullptr;
+        unsigned int      unresolvedCycles = 0U;
+        std::size_t       cloudPointCount  = 0U;
+        std::size_t       observationCount = 0U;
     };
 
     /*! @brief Weak, unused wall hypotheses awaiting bounded retirement. */
@@ -310,7 +310,7 @@ class SemanticsManager
      */
     static constexpr double kProspectiveDedupDistance_m = 2.0;
 
-    /**
+    /*!
      * @brief Scopes transient semantic evidence to one active map and frame.
      *
      * A map switch clears every map-local cache. An in-place map correction
@@ -318,7 +318,7 @@ class SemanticsManager
      */
     void resetTemporalStateForMap(Map *p_activeMap_in);
 
-    /**
+    /*!
      * @brief Ensures one real bootstrap room and canonical floor for the
      *        active map before any semantic inference is performed.
      * @return Typed initialization result, also emitted through SG_PIPELINE.
@@ -356,7 +356,8 @@ class SemanticsManager
      *
      * @return      The matching, non-bad ROOM-variant room, or nullptr.
      */
-    semantic::Room *findRoomByMapAndId(long unsigned int mapId_in, int roomId_in) const;
+    semantic::Room *findRoomByMapAndId(long unsigned int mapId_in,
+                                       int               roomId_in) const;
 
     /*!
      * @brief        Runs the geometric verifier on the single best
@@ -496,7 +497,8 @@ class SemanticsManager
      * @param[in] p_candidateWall_in Candidate finite wall hypothesis.
      * @return True when the candidate is already present or was admitted.
      */
-    bool admitWallToRoom(semantic::Room *p_room_inout, geometric::Plane *p_candidateWall_in);
+    bool admitWallToRoom(semantic::Room   *p_room_inout,
+                         geometric::Plane *p_candidateWall_in);
 
     /*! @brief Outcome of enforcePassageApertureBackstop(). */
     enum class PassageSideEnforcementOutcome
@@ -541,9 +543,9 @@ class SemanticsManager
      */
     PassageSideEnforcementOutcome enforcePassageApertureBackstop(
         semantic::Room                         *p_room_inout,
-        geometric::Plane                        *p_wall_in,
+        geometric::Plane                       *p_wall_in,
         const std::vector<semantic::Passage *> &allPassages_in,
-        const Eigen::Vector3d        &groundNormal_World_in);
+        const Eigen::Vector3d                  &groundNormal_World_in);
 
     /*!
      * @brief       Wall-face ownership rule: is this face the NEIGHBOURING
@@ -580,7 +582,8 @@ class SemanticsManager
      *              stamped or either side is too close to the plane to
      *              resolve (fails open, does not reject).
      */
-    bool isWallFaceForeignToRoom(semantic::Room *p_room_in, geometric::Plane *p_wall_in);
+    bool isWallFaceForeignToRoom(semantic::Room   *p_room_in,
+                                 geometric::Plane *p_wall_in);
 
     /*!
      * @brief       Continuous invariant sweep: re-applies
@@ -656,7 +659,8 @@ class SemanticsManager
      * @brief       Gets the latest detected room candidates from GNN-based room
      *              detection.
      */
-    std::vector<vs_graphs::core::semantic::Room *> getLatestGNNRoomCandidates(void);
+    std::vector<vs_graphs::core::semantic::Room *>
+        getLatestGNNRoomCandidates(void);
 
     /*!
      * @brief       Filters the wall planes to remove heavily tilted walls. Does
@@ -744,7 +748,7 @@ class SemanticsManager
      */
     void onTrackingLost(void);
 
-    /**
+    /*!
      * @brief Marks the end of the current LOST episode.
      *
      * System calls this after observing a non-LOST tracking state. It re-arms
@@ -776,7 +780,8 @@ class SemanticsManager
      *              compute a height from -- must not be treated as 0.0,
      *              which is a valid real height).
      */
-    std::optional<float> computeGroundPlaneHeight(geometric::Plane *groundPlane);
+    std::optional<float>
+        computeGroundPlaneHeight(geometric::Plane *groundPlane);
 
     /*!
      * @brief       Computes the transformation matrix from the ground plane to
@@ -808,10 +813,11 @@ class SemanticsManager
      *              Room IDs already matched to other clusters in this cycle.
      */
     vs_graphs::core::semantic::Room *associateRooms(
-        const Eigen::Vector3d                  clusterCentroid_World_in,
-        const std::vector<vs_graphs::core::geometric::Plane *> &wallList_World_in,
-        const std::vector<Eigen::Vector3d>    &freeSpaceCluster_World_m_in,
-        const std::unordered_set<int>         &excludedRoomIds_in);
+        const Eigen::Vector3d clusterCentroid_World_in,
+        const std::vector<vs_graphs::core::geometric::Plane *>
+                                           &wallList_World_in,
+        const std::vector<Eigen::Vector3d> &freeSpaceCluster_World_m_in,
+        const std::unordered_set<int>      &excludedRoomIds_in);
 
     /*!
      * @brief       Fuses duplicate room hypotheses supported by one connected
@@ -825,9 +831,10 @@ class SemanticsManager
      *              Current mapped wall surfaces used as merge vetoes.
      */
     void consolidateRoomsInFreeSpaceCluster(
-        vs_graphs::core::semantic::Room                       *p_retainedRoom_inout,
-        const std::vector<Eigen::Vector3d>    &freeSpaceCluster_World_m_in,
-        const std::vector<vs_graphs::core::geometric::Plane *> &wallList_World_in);
+        vs_graphs::core::semantic::Room    *p_retainedRoom_inout,
+        const std::vector<Eigen::Vector3d> &freeSpaceCluster_World_m_in,
+        const std::vector<vs_graphs::core::geometric::Plane *>
+            &wallList_World_in);
 
     /*!
      * @brief       Ensures every valid WALL plane belongs to at least one  room
@@ -883,12 +890,12 @@ class SemanticsManager
     /*!
      * @brief       Method which runs the thread of the segmantic manager.
      */
-    void Run(void);
+    void run(void);
 
     /*!
      * @brief       Requests a graceful stop of the semantic manager thread.
      */
-    void RequestFinish();
+    void requestFinish();
 
     /*!
      * @brief        Queues one typed verification result for the
@@ -904,26 +911,27 @@ class SemanticsManager
      *               Value-only result produced by the geometric
      *               verifier.
      */
-    void submitVerificationVerdict(const semantic::VerificationVerdict &verdict_in);
+    void submitVerificationVerdict(
+        const semantic::VerificationVerdict &verdict_in);
 
 #ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
-    /** Test-only deterministic drain of the production event seam. */
+    /*! Test-only deterministic drain of the production event seam. */
     void processRoomTrackerPendingForTest(double now_s);
 
-    /** Test-only readout of the production-owned tracker history. */
+    /*! Test-only readout of the production-owned tracker history. */
     const std::vector<semantic::TransitionEvent> &
         getRoomTrackerEventHistoryForTest() const;
 
-    /** Test-only readout of the crossing and both-sides pending flags. */
+    /*! Test-only readout of the crossing and both-sides pending flags. */
     std::pair<bool, bool> getRoomTrackerPendingForTest() const;
 
-    /** Test-only readout of the production-owned tracker state. */
+    /*! Test-only readout of the production-owned tracker state. */
     semantic::RoomTrackingState getRoomTrackerStateForTest() const;
 
-    /** Returns true only when the genuine pending-event mutex was acquired. */
+    /*! Returns true only when the genuine pending-event mutex was acquired. */
     bool tryLockRoomTrackerPendingMutexForTest() const;
 
-    /**
+    /*!
      * Installs a one-shot hook invoked while the genuine pending-event mutex is
      * held by updateTraversalEvidence().
      */
@@ -934,66 +942,67 @@ class SemanticsManager
     void evaluateTopCandidateVerificationForTest(
         const std::vector<semantic::SemanticCandidate> &candidates_in);
 
-    /** Test-only readout of evaluateWallAdmissionEvidence()'s admissible
+    /*! Test-only readout of evaluateWallAdmissionEvidence()'s admissible
      *  flag (the full WallAdmissionEvidence struct is file-local to
      *  SemanticsManager.cc's anonymous namespace). */
     bool evaluateWallAdmissionEvidenceAdmissibleForTest(
-        geometric::Plane                 *p_wall_in,
+        geometric::Plane      *p_wall_in,
         const Eigen::Vector3d &groundNormal_World_in) const;
 
-    /** Test-only direct call into the private admission gate (far-side
+    /*! Test-only direct call into the private admission gate (far-side
      *  backstop, evidence check, wrong-side observation check, boundary
      *  topology). */
-    bool admitWallToRoomForTest(semantic::Room *p_room_inout, geometric::Plane *p_candidateWall_in);
+    bool admitWallToRoomForTest(semantic::Room   *p_room_inout,
+                                geometric::Plane *p_candidateWall_in);
 
-    /** Test-only direct call into the private per-cycle passage-side sweep
+    /*! Test-only direct call into the private per-cycle passage-side sweep
      *  (prospective-placement exemption, wall-face ownership, aperture
      *  backstop). Callers inspect the result via Room::getWalls(). */
     void enforcePassageSideInvariantForTest(void);
 
-    /** Test-only direct call into the private current-room fallback seed.
+    /*! Test-only direct call into the private current-room fallback seed.
      *  Callers inspect the result via getCurrentRoomId(). */
     void seedCurrentRoomFromActiveMapForTest(Map *p_activeMap_in);
 
-    /** Test-only direct call into the private empty-cloud-safe ground plane
+    /*! Test-only direct call into the private empty-cloud-safe ground plane
      *  height computation (B1 regression coverage). */
     std::optional<float>
         computeGroundPlaneHeightForTest(geometric::Plane *p_groundPlane_in);
 
-    /** Test-only direct call into the private wall-twin-face reconciliation
+    /*! Test-only direct call into the private wall-twin-face reconciliation
      *  pass. Callers inspect the result via Plane::getTwinFace(). */
     void reconcileWallFacePairsForTest(void);
 
-    /** Test-only direct call into the private floor-hierarchy refresh (must
+    /*! Test-only direct call into the private floor-hierarchy refresh (must
      *  run before reconcileRoomGroundPlanesForTest() so a canonical Floor
      *  identity exists to reconcile against). */
     void getUpdatedFloorsForTest(void);
 
-    /** Test-only bootstrap seam with an explicit valid camera position. */
+    /*! Test-only bootstrap seam with an explicit valid camera position. */
     int ensureActiveMapBootstrapHierarchyForTest(
         const Eigen::Vector3d &cameraPosition_World_m_in);
 
-    /** Test-only equivalent of committing a passage traversal room change. */
+    /*! Test-only equivalent of committing a passage traversal room change. */
     void setCurrentRoomIdForTest(int roomId_in);
 
-    /** Test-only direct ordinary-wall association pass. */
+    /*! Test-only direct ordinary-wall association pass. */
     void associateAllWallsToRoomsForTest(void);
 
-    /** Test-only direct passage/room reciprocity and lifecycle pass. */
+    /*! Test-only direct passage/room reciprocity and lifecycle pass. */
     void associatePassagesToRoomsForTest(void);
 
-    /** Test-only direct bounded pending-wall retirement pass. */
+    /*! Test-only direct bounded pending-wall retirement pass. */
     void suppressUndefendedWallsForTest(void);
 
-    /** Test-only pending age readout; -1 means the wall is not pending. */
+    /*! Test-only pending age readout; -1 means the wall is not pending. */
     int getPendingWallAgeForTest(int wallId_in) const;
 
-    /** Test-only direct call into the private room/floor ground-plane
+    /*! Test-only direct call into the private room/floor ground-plane
      *  reconciliation pass. Callers inspect the result via
      *  Room::getGroundPlane(). */
     void reconcileRoomGroundPlanesForTest(void);
 
-    /** Test-only direct call into the private boundary validator (closed-
+    /*! Test-only direct call into the private boundary validator (closed-
      *  loop detection, single-outlier-wall tolerance, and off-loop wall
      *  pruning). Callers inspect the result via Room::getBoundaryStatus(),
      *  Room::getBoundaryCorners_World_m(), and Room::getWalls(). */

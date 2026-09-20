@@ -1,4 +1,4 @@
-/**
+/*!
  * @file test_ConsecutiveMapMatcher.cpp
  * @brief Regression test suite for consecutive-map merge gating:
  *        Atlas::attemptConsecutiveMergeIfGated() and
@@ -96,11 +96,11 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
     void SetUp() override
     {
         EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
-        p_map0 = atlas.GetCurrentMap();
+        p_map0 = atlas.getCurrentMap();
         EXPECT_NE(p_map0, nullptr);
-        atlas.CreateNewMap();
+        atlas.createNewMap();
         EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
-        p_map1 = atlas.GetCurrentMap();
+        p_map1 = atlas.getCurrentMap();
         EXPECT_NE(p_map1, nullptr);
         EXPECT_NE(p_map0, p_map1);
     }
@@ -137,7 +137,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                                                               WALL_A_NORMAL_Z,
                                                               WALL_A_D)));
         wallA->setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0));
-        p_map->AddMapPlane(wallA);
+        p_map->addMapPlane(wallA);
         room->setWalls(wallA);
 
         // Wall B: y = 1
@@ -150,7 +150,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                                                               WALL_B_NORMAL_Z,
                                                               WALL_B_D)));
         wallB->setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0));
-        p_map->AddMapPlane(wallB);
+        p_map->addMapPlane(wallB);
         room->setWalls(wallB);
 
         // Wall C: x = -1 face (normal +X after toward-room orientation)
@@ -163,7 +163,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                                                               WALL_C_NORMAL_Z,
                                                               WALL_C_D)));
         wallC->setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
-        p_map->AddMapPlane(wallC);
+        p_map->addMapPlane(wallC);
         room->setWalls(wallC);
 
         // Passage
@@ -184,11 +184,11 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
             passage->setKnownSideRoom(room);
             passage->setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0));
             passage->setProspectiveRoom(p_farRoom_in);
-            p_map->AddMapPassage(passage);
+            p_map->addMapPassage(passage);
             room->setDoorways(passage);
         }
 
-        p_map->AddDetectedMapRoom(room);
+        p_map->addDetectedMapRoom(room);
         return room;
     }
 
@@ -199,7 +199,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         p_floor->setId(floorId_in);
         p_floor->setMap(p_map);
         EXPECT_TRUE(p_floor->setPlaneIdentity(equation_in, 100U, 10U));
-        p_map->AddMapFloor(p_floor);
+        p_map->addMapFloor(p_floor);
         return p_floor;
     }
 
@@ -323,14 +323,14 @@ TEST_F(ConsecutiveMapMatcherTest, TC2_aliasing)
     r0_1->setRoomVariant(Room::RoomVariant::ROOM);
     r0_1->setCentroid(ROOM_12_CENTROID);
     r0_1->setRoomTag("room_12");
-    p_map0->AddDetectedMapRoom(r0_1);
+    p_map0->addDetectedMapRoom(r0_1);
     Room *r1_1 = new Room();
     r1_1->setId(6);
     r1_1->setMap(p_map1);
     r1_1->setRoomVariant(Room::RoomVariant::ROOM);
     r1_1->setCentroid(ROOM_6_CENTROID);
     r1_1->setRoomTag("room_6");
-    p_map1->AddDetectedMapRoom(r1_1);
+    p_map1->addDetectedMapRoom(r1_1);
     EXPECT_NE(addFloor(p_map0, 0, FLOOR_EQ), nullptr);
     EXPECT_NE(addFloor(p_map1, 0, FLOOR_EQ), nullptr);
     setSeedRooms(p_map0, p_map1, r0_1, r1_1);
@@ -371,7 +371,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC3_singleAnchor)
     r0_2->setMap(p_map0);
     r0_2->setRoomVariant(Room::RoomVariant::ROOM);
     r0_2->setCentroid(ROOM2_CENTROID);
-    p_map0->AddDetectedMapRoom(r0_2);
+    p_map0->addDetectedMapRoom(r0_2);
     Room *r1_1 = addRoomWithWallsAndPassage(p_map1,
                                             1,
                                             "room_1",
@@ -384,9 +384,9 @@ TEST_F(ConsecutiveMapMatcherTest, TC3_singleAnchor)
     EXPECT_NE(addFloor(p_map1, 0, FLOOR_EQ), nullptr);
     setSeedRooms(p_map0, p_map1, r0_1, r1_1);
     atlas.attemptConsecutiveMergeIfGated();
-    EXPECT_FALSE(p_map0->IsBad())
+    EXPECT_FALSE(p_map0->isBad())
         << "TC3: single anchor must not merge (old map stays live)";
-    EXPECT_FALSE(p_map1->IsBad())
+    EXPECT_FALSE(p_map1->isBad())
         << "TC3: single anchor must not merge (current map stays live)";
 }
 
@@ -398,13 +398,13 @@ TEST_F(ConsecutiveMapMatcherTest, TC4_emptyNewMap)
     bootstrap->setMap(p_map0);
     bootstrap->setRoomVariant(Room::RoomVariant::ROOM);
     bootstrap->setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0));
-    p_map0->AddDetectedMapRoom(bootstrap);
+    p_map0->addDetectedMapRoom(bootstrap);
     Room *bootstrap1 = new Room();
     bootstrap1->setId(1);
     bootstrap1->setMap(p_map1);
     bootstrap1->setRoomVariant(Room::RoomVariant::ROOM);
     bootstrap1->setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0));
-    p_map1->AddDetectedMapRoom(bootstrap1);
+    p_map1->addDetectedMapRoom(bootstrap1);
     setSeedRooms(p_map0, p_map1, bootstrap, bootstrap1);
     g2o::Sim3                      identity_sim3(Eigen::Matrix3d::Identity(),
                             Eigen::Vector3d::Zero(),
@@ -575,7 +575,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC7_passageEndpointContradiction)
     r0_3->setRoomVariant(Room::RoomVariant::ROOM);
     r0_3->setCentroid(Eigen::Vector3d(7.0, 0.0, 1.0));
     r0_3->setRoomTag("room_3");
-    p_map0->AddDetectedMapRoom(r0_3);
+    p_map0->addDetectedMapRoom(r0_3);
     r0_1->getPassages()[0]->setProspectiveRoom(r0_3);
     Room *r1_2 = addRoomWithWallsAndPassage(p_map1,
                                             2,
@@ -701,7 +701,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
     r0_2->setMap(p_map0);
     r0_2->setRoomVariant(Room::RoomVariant::ROOM);
     r0_2->setCentroid(ROOM2_CENTROID);
-    p_map0->AddDetectedMapRoom(r0_2);
+    p_map0->addDetectedMapRoom(r0_2);
     Room *r1_1 = addRoomWithWallsAndPassage(p_map1,
                                             1,
                                             "room_1",
@@ -728,7 +728,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
         pos1++;
     }
     Room          *r1_1_current = nullptr;
-    vector<Room *> rooms1       = p_map1->GetAllRooms();
+    vector<Room *> rooms1       = p_map1->getAllRooms();
     for (Room *r : rooms1)
     {
         if (r->getRoomTag() == "room_1")
@@ -748,7 +748,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
                                                               WALL_D_NORMAL_Z,
                                                               WALL_D_D)));
         wall4->setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0));
-        p_map1->AddMapPlane(wall4);
+        p_map1->addMapPlane(wall4);
         r1_1_current->setWalls(wall4);
     }
     testing::internal::CaptureStdout();
@@ -1020,7 +1020,7 @@ TEST_F(ConsecutiveMapMatcherTest, TC13_proxyReunionOnMerge)
     proxy11->setPassable(true);
     proxy11->setRecoveryProxy(true);
     proxy11->setKnownSideRoom(r1_1);
-    p_map1->AddMapPassage(proxy11);
+    p_map1->addMapPassage(proxy11);
     r1_1->setDoorways(proxy11);
     Passage *proxy12 = new Passage();
     proxy12->setId(12);
@@ -1028,12 +1028,12 @@ TEST_F(ConsecutiveMapMatcherTest, TC13_proxyReunionOnMerge)
     proxy12->setPassable(true);
     proxy12->setRecoveryProxy(true);
     proxy12->setKnownSideRoom(r1_1);
-    p_map1->AddMapPassage(proxy12);
+    p_map1->addMapPassage(proxy12);
     r1_1->setDoorways(proxy12);
     EXPECT_NE(addFloor(p_map1, 0, FLOOR_EQ), nullptr);
     setSeedRooms(p_map0, p_map1, r0_1, r1_1);
     atlas.attemptConsecutiveMergeIfGated();
-    EXPECT_TRUE(p_map0->IsBad()) << "TC13: old map must retire on merge commit";
+    EXPECT_TRUE(p_map0->isBad()) << "TC13: old map must retire on merge commit";
     EXPECT_FALSE(proxy11->isRecoveryProxy())
         << "TC13: proxy must surface with adopted geometry";
     EXPECT_GT(proxy11->getWidth(), 0.0)

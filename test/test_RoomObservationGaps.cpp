@@ -1,4 +1,4 @@
-/**
+/*!
  * @file test_RoomObservationGaps.cpp
  * @brief User rule: manage incomplete rooms explicitly -- track which
  *        angular sectors around a room still have no wall evidence, as a
@@ -26,10 +26,11 @@ namespace core
 namespace
 {
 
-/** Builds a GROUND geometric::Plane at z=0 with a genuine, production-refit geometry
- * snapshot (Map::GetBiggestGroundPlane() requires cloudGeneration ==
+/*! Builds a GROUND geometric::Plane at z=0 with a genuine, production-refit
+ * geometry snapshot (Map::GetBiggestGroundPlane() requires cloudGeneration ==
  * successfulRefitGeneration and a finite support count). */
-std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int id_in, Map *p_map_in)
+std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
+                                                               Map *p_map_in)
 {
     auto ground = std::make_unique<geometric::Plane>();
     ground->setId(id_in);
@@ -57,17 +58,18 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int id_in, Map *p
     return ground;
 }
 
-/** Builds an admissible WALL geometric::Plane on the plane {normal . p + d = 0} passing
- * through pointOnPlane_World_in, with a genuine on-plane point cloud running
- * along axisAlong_World_in (must be horizontal). */
-std::unique_ptr<geometric::Plane> makeWallSegmentPlane(int                     id_in,
-                                            Map                    *p_map_in,
-                                            const Eigen::Vector3d  &normal_World_in,
-                                            const Eigen::Vector3d  &pointOnPlane_World_in,
-                                            const Eigen::Vector3d  &axisAlong_World_in,
-                                            double                  halfLength_m_in,
-                                            double                  zMin_m_in,
-                                            double                  zMax_m_in)
+/*! Builds an admissible WALL geometric::Plane on the plane {normal . p + d = 0}
+ * passing through pointOnPlane_World_in, with a genuine on-plane point cloud
+ * running along axisAlong_World_in (must be horizontal). */
+std::unique_ptr<geometric::Plane>
+    makeWallSegmentPlane(int                    id_in,
+                         Map                   *p_map_in,
+                         const Eigen::Vector3d &normal_World_in,
+                         const Eigen::Vector3d &pointOnPlane_World_in,
+                         const Eigen::Vector3d &axisAlong_World_in,
+                         double                 halfLength_m_in,
+                         double                 zMin_m_in,
+                         double                 zMax_m_in)
 {
     auto wall = std::make_unique<geometric::Plane>();
     wall->setId(id_in);
@@ -76,8 +78,10 @@ std::unique_ptr<geometric::Plane> makeWallSegmentPlane(int                     i
     wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
 
     const double d = -normal_World_in.dot(pointOnPlane_World_in);
-    wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(
-        normal_World_in.x(), normal_World_in.y(), normal_World_in.z(), d)));
+    wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(normal_World_in.x(),
+                                                         normal_World_in.y(),
+                                                         normal_World_in.z(),
+                                                         d)));
     wall->setCentroid(pointOnPlane_World_in);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
@@ -91,10 +95,9 @@ std::unique_ptr<geometric::Plane> makeWallSegmentPlane(int                     i
                                    static_cast<double>(steps - 1);
         for (int heightIndex = 0; heightIndex < steps; ++heightIndex)
         {
-            const double z =
-                zMin_m_in + (zMax_m_in - zMin_m_in) *
-                                static_cast<double>(heightIndex) /
-                                static_cast<double>(steps - 1);
+            const double z = zMin_m_in + (zMax_m_in - zMin_m_in) *
+                                             static_cast<double>(heightIndex) /
+                                             static_cast<double>(steps - 1);
             pcl::PointXYZRGBA point;
             point.x = static_cast<float>(pointOnPlane_World_in.x() +
                                          t * axisAlong_World_in.x());
@@ -113,22 +116,24 @@ std::unique_ptr<geometric::Plane> makeWallSegmentPlane(int                     i
 TEST(RoomObservationGaps, ReportsAFullCircleGapForARoomWithNoWalls)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
-    std::unique_ptr<geometric::Plane> ground = makeRefitGroundPlaneAtOrigin(100, p_map);
-    atlas.AddMapPlane(ground.get());
+    std::unique_ptr<geometric::Plane> ground =
+        makeRefitGroundPlaneAtOrigin(100, p_map);
+    atlas.addMapPlane(ground.get());
 
     semantic::Room room;
     room.setId(1);
     room.setMap(p_map);
     room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
-    atlas.AddDetectedMapRoom(&room);
+    atlas.addDetectedMapRoom(&room);
 
     manager.validateRoomBoundariesForTest();
 
-    const std::vector<semantic::Room::ObservationGap> gaps = room.getObservationGaps();
+    const std::vector<semantic::Room::ObservationGap> gaps =
+        room.getObservationGaps();
     ASSERT_EQ(gaps.size(), 1U);
     EXPECT_NEAR(gaps.front().spanAngle_rad, 2.0 * M_PI, 1e-6);
 }
@@ -136,22 +141,23 @@ TEST(RoomObservationGaps, ReportsAFullCircleGapForARoomWithNoWalls)
 TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
-    std::unique_ptr<geometric::Plane> ground = makeRefitGroundPlaneAtOrigin(100, p_map);
-    atlas.AddMapPlane(ground.get());
+    std::unique_ptr<geometric::Plane> ground =
+        makeRefitGroundPlaneAtOrigin(100, p_map);
+    atlas.addMapPlane(ground.get());
 
     /* A single wall at y=3 (north side), facing the room centre. */
-    std::unique_ptr<geometric::Plane> northWall = makeWallSegmentPlane(
-        1,
-        p_map,
-        Eigen::Vector3d(0.0, 1.0, 0.0),
-        Eigen::Vector3d(2.0, 3.0, 1.5),
-        Eigen::Vector3d(1.0, 0.0, 0.0),
-        2.0,
-        1.0,
-        2.0);
+    std::unique_ptr<geometric::Plane> northWall =
+        makeWallSegmentPlane(1,
+                             p_map,
+                             Eigen::Vector3d(0.0, 1.0, 0.0),
+                             Eigen::Vector3d(2.0, 3.0, 1.5),
+                             Eigen::Vector3d(1.0, 0.0, 0.0),
+                             2.0,
+                             1.0,
+                             2.0);
 
     semantic::Room room;
     room.setId(1);
@@ -159,13 +165,14 @@ TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
     room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
     room.setWalls(northWall.get());
-    atlas.AddDetectedMapRoom(&room);
+    atlas.addDetectedMapRoom(&room);
 
     manager.validateRoomBoundariesForTest();
 
     /* One wall gives one point on the circle -- the gap wraps all the way
      * around back to that same point, i.e. one (nearly) full-circle gap. */
-    const std::vector<semantic::Room::ObservationGap> gaps = room.getObservationGaps();
+    const std::vector<semantic::Room::ObservationGap> gaps =
+        room.getObservationGaps();
     ASSERT_EQ(gaps.size(), 1U);
     EXPECT_GT(gaps.front().spanAngle_rad, M_PI);
 }
@@ -173,28 +180,49 @@ TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
 TEST(RoomObservationGaps, ReportsNoGapsForARoomWithACompleteBoundary)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
-    std::unique_ptr<geometric::Plane> ground = makeRefitGroundPlaneAtOrigin(100, p_map);
-    atlas.AddMapPlane(ground.get());
+    std::unique_ptr<geometric::Plane> ground =
+        makeRefitGroundPlaneAtOrigin(100, p_map);
+    atlas.addMapPlane(ground.get());
 
-    std::unique_ptr<geometric::Plane> north = makeWallSegmentPlane(
-        1, p_map, Eigen::Vector3d(0.0, 1.0, 0.0),
-        Eigen::Vector3d(2.0, 3.0, 1.5), Eigen::Vector3d(1.0, 0.0, 0.0), 2.0,
-        1.0, 2.0);
-    std::unique_ptr<geometric::Plane> south = makeWallSegmentPlane(
-        2, p_map, Eigen::Vector3d(0.0, -1.0, 0.0),
-        Eigen::Vector3d(2.0, 0.0, 1.5), Eigen::Vector3d(1.0, 0.0, 0.0), 2.0,
-        1.0, 2.0);
-    std::unique_ptr<geometric::Plane> east = makeWallSegmentPlane(
-        3, p_map, Eigen::Vector3d(1.0, 0.0, 0.0),
-        Eigen::Vector3d(4.0, 1.5, 1.5), Eigen::Vector3d(0.0, 1.0, 0.0), 1.5,
-        1.0, 2.0);
-    std::unique_ptr<geometric::Plane> west = makeWallSegmentPlane(
-        4, p_map, Eigen::Vector3d(-1.0, 0.0, 0.0),
-        Eigen::Vector3d(0.0, 1.5, 1.5), Eigen::Vector3d(0.0, 1.0, 0.0), 1.5,
-        1.0, 2.0);
+    std::unique_ptr<geometric::Plane> north =
+        makeWallSegmentPlane(1,
+                             p_map,
+                             Eigen::Vector3d(0.0, 1.0, 0.0),
+                             Eigen::Vector3d(2.0, 3.0, 1.5),
+                             Eigen::Vector3d(1.0, 0.0, 0.0),
+                             2.0,
+                             1.0,
+                             2.0);
+    std::unique_ptr<geometric::Plane> south =
+        makeWallSegmentPlane(2,
+                             p_map,
+                             Eigen::Vector3d(0.0, -1.0, 0.0),
+                             Eigen::Vector3d(2.0, 0.0, 1.5),
+                             Eigen::Vector3d(1.0, 0.0, 0.0),
+                             2.0,
+                             1.0,
+                             2.0);
+    std::unique_ptr<geometric::Plane> east =
+        makeWallSegmentPlane(3,
+                             p_map,
+                             Eigen::Vector3d(1.0, 0.0, 0.0),
+                             Eigen::Vector3d(4.0, 1.5, 1.5),
+                             Eigen::Vector3d(0.0, 1.0, 0.0),
+                             1.5,
+                             1.0,
+                             2.0);
+    std::unique_ptr<geometric::Plane> west =
+        makeWallSegmentPlane(4,
+                             p_map,
+                             Eigen::Vector3d(-1.0, 0.0, 0.0),
+                             Eigen::Vector3d(0.0, 1.5, 1.5),
+                             Eigen::Vector3d(0.0, 1.0, 0.0),
+                             1.5,
+                             1.0,
+                             2.0);
 
     semantic::Room room;
     room.setId(1);
@@ -205,11 +233,12 @@ TEST(RoomObservationGaps, ReportsNoGapsForARoomWithACompleteBoundary)
     room.setWalls(south.get());
     room.setWalls(east.get());
     room.setWalls(west.get());
-    atlas.AddDetectedMapRoom(&room);
+    atlas.addDetectedMapRoom(&room);
 
     manager.validateRoomBoundariesForTest();
 
-    ASSERT_EQ(room.getBoundaryStatus(), semantic::Room::BoundaryStatus::COMPLETE);
+    ASSERT_EQ(room.getBoundaryStatus(),
+              semantic::Room::BoundaryStatus::COMPLETE);
     /* Four evenly-spaced walls around a rectangle are each exactly 90 deg
      * apart (wall midpoints sit on the centroid's principal axes) --
      * comfortably under the (100 deg) gap-reporting threshold. */

@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -80,7 +80,7 @@ class ImageGrabber : public rclcpp::Node
      */
     void RequestStop();
 
-    /** Logs a cumulative summary without holding packet/accounting locks. */
+    /*! Logs a cumulative summary without holding packet/accounting locks. */
     void LogRgbdObservabilitySummary(const std::string &event_in) const;
 
     /*!
@@ -122,7 +122,7 @@ class ImageGrabber : public rclcpp::Node
                  const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC_in);
 
   private:
-    /** Publishes a lock-free copy of frontend progress into System health. */
+    /*! Publishes a lock-free copy of frontend progress into System health. */
     void PublishRgbdFrontendHealth() const;
 
     std::mutex              rgbdPacketMutex;
@@ -225,7 +225,7 @@ int main(int argc, char **argv)
     frameSE = node->get_parameter("frame_structural_element").as_string();
     pubStaticTransform      = node->get_parameter("static_transform").as_bool();
     bool enablePangolin     = node->get_parameter("enable_pangolin").as_bool();
-    const auto verboseLevel = vs_graphs::core::Verbose::StringToLevel(
+    const auto verboseLevel = vs_graphs::core::Verbose::parseVerbosityLevel(
         node->get_parameter("log_level").as_string());
 
     sgraphArchiveTestRunDir = node->get_parameter("test_run_dir").as_string();
@@ -250,13 +250,13 @@ int main(int argc, char **argv)
      * ---------------------------------------------------------------------- */
 
     p_slamSystem = new vs_graphs::core::System(vocFile,
-                                         settingsFile,
-                                         sysParamsFile,
-                                         sensorType,
-                                         enablePangolin,
-                                         /*initFr*/ 0,
-                                         /*strSequence*/ std::string(),
-                                         verboseLevel);
+                                               settingsFile,
+                                               sysParamsFile,
+                                               sensorType,
+                                               enablePangolin,
+                                               /*initFr*/ 0,
+                                               /*strSequence*/ std::string(),
+                                               verboseLevel);
 
     /* ---------------------------------------------------------------------- *
      * SETUP CALLBACKS
@@ -411,7 +411,7 @@ int main(int argc, char **argv)
     igb->RequestStop();
     rgbdProcessingThread.join();
     igb->LogRgbdObservabilitySummary("shutdown_after_worker_join");
-    p_slamSystem->Shutdown();
+    p_slamSystem->shutdown();
     delete p_slamSystem;
     p_slamSystem = nullptr;
     shutdownRosInterfaces();
@@ -546,7 +546,7 @@ void ImageGrabber::ProcessRgbdPackets()
         {
             if (markerTimeDifference_seconds < 0.05)
             {
-                p_slamSystem->TrackRGBD(p_rgbImage->image,
+                p_slamSystem->trackRGBD(p_rgbImage->image,
                                         p_depthImage->image,
                                         p_pointCloud,
                                         rgbTimestamp_seconds,
@@ -556,7 +556,7 @@ void ImageGrabber::ProcessRgbdPackets()
             }
             else
             {
-                p_slamSystem->TrackRGBD(p_rgbImage->image,
+                p_slamSystem->trackRGBD(p_rgbImage->image,
                                         p_depthImage->image,
                                         p_pointCloud,
                                         rgbTimestamp_seconds);
@@ -671,7 +671,7 @@ void ImageGrabber::PublishRgbdFrontendHealth() const
         snapshot.processedPackets + snapshot.imageConversionRejects +
         snapshot.cloudConversionRejects + snapshot.trackFailures +
         snapshot.publishTopicsFailures + snapshot.shutdownPendingDrops;
-    p_slamSystem->UpdateRgbdFrontendHealth(
+    p_slamSystem->updateRgbdFrontendHealth(
         snapshot.pendingStores,
         terminalCount,
         snapshot.pendingOverwrites,

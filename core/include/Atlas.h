@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -58,17 +58,38 @@ namespace vs_graphs
 namespace core
 {
 class Map;
-namespace semantic { class Room; }
+namespace semantic
+{
+class Room;
+}
 class Frame;
-namespace geometric { class Plane; }
-namespace semantic { class Floor; }
+namespace geometric
+{
+class Plane;
+}
+namespace semantic
+{
+class Floor;
+}
 class Viewer;
-namespace semantic { class Marker; }
-namespace camera_models { class Pinhole; }
-namespace semantic { class Passage; }
+namespace semantic
+{
+class Marker;
+}
+namespace camera_models
+{
+class Pinhole;
+}
+namespace semantic
+{
+class Passage;
+}
 class MapPoint;
 class KeyFrame;
-namespace camera_models { class KannalaBrandt8; }
+namespace camera_models
+{
+class KannalaBrandt8;
+}
 class KeyFrameDatabase;
 
 /*!
@@ -109,8 +130,8 @@ class Atlas
         // Save/load a set structure, the set structure is broken in
         // libboost 1.58 for ubuntu 16.04, a vector is serializated ar &
         // mspMaps;
-        ar & mvpBackupMaps;
-        ar & mvpCameras;
+        ar & backupMaps;
+        ar & cameras;
         // Need to save/load the static Id from Frame, KeyFrame, MapPoint and
         // Map
         ar &Map::nNextId;
@@ -118,7 +139,7 @@ class Atlas
         ar &KeyFrame::nNextId;
         ar &MapPoint::nNextId;
         ar &camera_models::GeometricCamera::nextId;
-        ar & mnLastInitKFidMap;
+        ar & lastInitKeyFrameId;
     }
 
   public:
@@ -140,92 +161,93 @@ class Atlas
     Atlas(int initKFid); // When its initialization the first map is created
     ~Atlas();
 
-    void CreateNewMap();
-    void ChangeMap(Map *pMap);
+    void createNewMap();
+    void changeMap(Map *pMap);
 
-    unsigned long int GetLastInitKFid();
+    unsigned long int getLastInitKeyFrameId();
 
-    void SetViewer(Viewer *pViewer);
+    void setViewer(Viewer *pViewer);
 
     // Methods for adding new components in the current map
-    void AddMapFloor(semantic::Floor *floor);
-    void AddMapPlane(geometric::Plane *plane);
-    void AddKeyFrame(KeyFrame *pKF);
-    void AddMapPoint(MapPoint *pMP);
-    void AddMapMarker(semantic::Marker *marker);
-    void AddDetectedMapRoom(semantic::Room *room);
-    void AddCandidateMapRoom(semantic::Room *room);
-    void AddMapPassage(vs_graphs::core::semantic::Passage *passage);
-    void AddRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane);
+    void addMapFloor(semantic::Floor *floor);
+    void addMapPlane(geometric::Plane *plane);
+    void addKeyFrame(KeyFrame *pKF);
+    void addMapPoint(MapPoint *pMP);
+    void addMapMarker(semantic::Marker *marker);
+    void addDetectedMapRoom(semantic::Room *room);
+    void addCandidateMapRoom(semantic::Room *room);
+    void addMapPassage(vs_graphs::core::semantic::Passage *passage);
+    void addRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane);
 
-    /** Reserves the next mission-stable room identity, beginning at zero. */
+    /*! Reserves the next mission-stable room identity, beginning at zero. */
     int reserveRoomIdentity(void);
 
-    /** Reserves the next mission-stable passage identity, beginning at zero. */
+    /*! Reserves the next mission-stable passage identity, beginning at zero. */
     int reservePassageIdentity(void);
 
-    /** Reserves the next mission-stable floor identity, beginning at zero. */
+    /*! Reserves the next mission-stable floor identity, beginning at zero. */
     int reserveFloorIdentity(void);
 
-    /** Advances the room allocator past an explicitly restored identity. */
+    /*! Advances the room allocator past an explicitly restored identity. */
     void observeRoomIdentity(int roomId_in);
 
-    /** Advances the passage allocator past an explicitly restored identity. */
+    /*! Advances the passage allocator past an explicitly restored identity. */
     void observePassageIdentity(int passageId_in);
 
-    /** Advances the floor allocator past an explicitly restored identity. */
+    /*! Advances the floor allocator past an explicitly restored identity. */
     void observeFloorIdentity(int floorId_in);
 
-    /** Stores the mission-stable identity occupied by the camera. */
+    /*! Stores the mission-stable identity occupied by the camera. */
     void setCurrentSemanticRoomIdentity(int roomId_in);
 
-    /** Returns the last mission-stable room identity, or -1 before bootstrap.
+    /*! Returns the last mission-stable room identity, or -1 before bootstrap.
      */
     int getCurrentSemanticRoomIdentity(void) const;
 
-    std::vector<camera_models::GeometricCamera *> GetAllCameras();
-    camera_models::GeometricCamera               *AddCamera(camera_models::GeometricCamera *pCam);
+    std::vector<camera_models::GeometricCamera *> getAllCameras();
+    camera_models::GeometricCamera *
+        addCamera(camera_models::GeometricCamera *pCam);
 
     /* All methods without Map pointer work on current map */
-    void InformNewBigChange();
-    int  GetLastBigChangeIdx();
-    void SetReferenceMapPoints(const std::vector<MapPoint *> &vpMPs);
+    void informNewBigChange();
+    int  getLastBigChangeIndex();
+    void setReferenceMapPoints(const std::vector<MapPoint *> &vpMPs);
 
-    long unsigned     MarkersInMap();
-    long unsigned     KeyFramesInMap();
-    long unsigned int MapPointsInMap();
+    long unsigned     getMarkerCount();
+    long unsigned     getKeyFrameCount();
+    long unsigned int getMapPointCount();
 
     // List of marker-ids placed on planes detected so far
     std::vector<int> visitedPlanesMarkerIds;
 
     // Method for get data in current map
-    std::vector<semantic::Room *>               GetAllRooms();
-    std::vector<semantic::Floor *>              GetAllFloors();
-    std::vector<semantic::Marker *>             GetAllMarkers();
-    std::vector<KeyFrame *>           GetAllKeyFrames();
-    std::vector<MapPoint *>           GetAllMapPoints();
-    std::vector<semantic::Room *>               GetAllDetectedMapRooms();
-    std::vector<vs_graphs::core::geometric::Plane *>   GetAllPlanes();
-    std::vector<semantic::Room *>               GetAllMarkerBasedMapRooms();
-    std::vector<semantic::Room *>               GetAllCandidateMapRooms();
-    std::vector<MapPoint *>           GetReferenceMapPoints();
-    std::vector<vs_graphs::core::semantic::Passage *> GetAllPassages();
+    std::vector<semantic::Room *>                    getAllRooms();
+    std::vector<semantic::Floor *>                   getAllFloors();
+    std::vector<semantic::Marker *>                  getAllMarkers();
+    std::vector<KeyFrame *>                          getAllKeyFrames();
+    std::vector<MapPoint *>                          getAllMapPoints();
+    std::vector<semantic::Room *>                    getAllDetectedMapRooms();
+    std::vector<vs_graphs::core::geometric::Plane *> getAllPlanes();
+    std::vector<semantic::Room *> getAllMarkerBasedMapRooms();
+    std::vector<semantic::Room *> getAllCandidateMapRooms();
+    std::vector<MapPoint *>       getReferenceMapPoints();
+    std::vector<vs_graphs::core::semantic::Passage *> getAllPassages();
 
     /*!
      * @brief Get the cluster points of the map set by `voxblox_skeleton`
      */
-    std::vector<std::vector<Eigen::Vector3d>> GetSkeletoClusterPoints();
+    std::vector<std::vector<Eigen::Vector3d>> getSkeletonClusterPoints();
 
     /*!
      * @brief       Gets the latest connected Voxblox skeleton edges.
      */
     std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-        GetSkeletonEdges(void);
+        getSkeletonEdges(void);
 
     /*!
      * @brief       Stores the latest connected Voxblox skeleton edges.
      */
-    void SetSkeletonEdges(
+    void setSkeletonEdges(
         const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
             &newSkeletonEdges);
 
@@ -235,14 +257,14 @@ class Atlas
      * @param[in]   newClusterPoints
      *              The new cluster points to set
      */
-    void SetSkeletonClusterPoints(
+    void setSkeletonClusterPoints(
         const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints);
 
-    geometric::Plane *GetBiggestGroundPlane();
+    geometric::Plane *getBiggestGroundPlane();
 
-    vector<Map *> GetAllMaps();
+    vector<Map *> getAllMaps();
 
-    /**
+    /*!
      * @brief Checks whether a map is still an active, non-retired Atlas map.
      *
      * @param[in] p_map_in Map pointer to validate.
@@ -250,13 +272,13 @@ class Atlas
      */
     bool isActiveMap(Map *p_map_in);
 
-    int CountMaps();
+    int countMaps();
 
     void clearMap();
 
     void clearAtlas();
 
-    Map *GetCurrentMap();
+    Map *getCurrentMap();
 
     /*!
      * @brief       Returns the current map's id, its truthful status
@@ -300,7 +322,7 @@ class Atlas
      *              content and order to GetAllMaps().
      */
     std::vector<Map *>
-        GetCoherentMapView(std::optional<long unsigned int> &currentMapId_out,
+        getCoherentMapView(std::optional<long unsigned int> &currentMapId_out,
                            AtlasCurrentMapStatus &currentMapStatus_out);
 
     /*!
@@ -316,14 +338,14 @@ class Atlas
      */
     std::unique_lock<std::mutex> acquireSemanticUpdateLock();
 
-    /**
+    /*!
      * @brief Removes a map from the active Atlas and marks it invalid.
      *
      * @param[in] p_map_in Map whose merge lifecycle has completed.
      */
-    void SetMapBad(Map *p_map_in);
+    void setMapBad(Map *p_map_in);
 
-    /**
+    /*!
      * @brief Merges the semantic graph of \p p_otherMap_in into
      *        \p p_currentMap_in.
      *
@@ -345,7 +367,7 @@ class Atlas
      * @param[in] p_otherMap_in   Map to be transformed, absorbed, then marked
      *                            bad.
      */
-    void MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in);
+    void mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in);
 
     /*!
      * @brief Attempts validated consecutive-map merges, old into current.
@@ -385,32 +407,33 @@ class Atlas
      */
     void matchRoomsToContext(Map *pNewMap);
 
-    /** Copies room history without exposing references beyond the lock scope.
+    /*! Copies room history without exposing references beyond the lock scope.
      */
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
         copyRoomContextHistory() const;
 
-    /** Copies invariant context from a live map under the semantic transaction.
+    /*! Copies invariant context from a live map under the semantic transaction.
      */
-    std::vector<semantic::RoomContextSnapshot> copyRoomContextForMap(Map *p_map_in);
+    std::vector<semantic::RoomContextSnapshot>
+        copyRoomContextForMap(Map *p_map_in);
 
-    /** Copies the newest departed-map snapshot for one stable room identity. */
+    /*! Copies the newest departed-map snapshot for one stable room identity. */
     std::optional<semantic::RoomContextSnapshot>
         copyLatestRoomContext(int roomId_in) const;
 
-    /** Copies live entities only when the caller owns the semantic transaction.
+    /*! Copies live entities only when the caller owns the semantic transaction.
      */
     SnapshotCopyResult
         copyRoomContextForMapChecked(Map *p_map_in,
                                      bool callerOwnsSemanticLock);
 
-    /** Returns and clears the map-created lifecycle event. */
+    /*! Returns and clears the map-created lifecycle event. */
     bool consumeNewMapCreatedEvent();
 
-    /** Reads the lifecycle event without acknowledging it. */
+    /*! Reads the lifecycle event without acknowledging it. */
     bool peekNewMapCreatedEvent() const;
 
-    /** Acknowledges the pending lifecycle event after verified handling. */
+    /*! Acknowledges the pending lifecycle event after verified handling. */
     void acknowledgeNewMapCreatedEvent();
 
     /*!
@@ -419,71 +442,71 @@ class Atlas
     const std::vector<semantic::RoomContextSnapshot> &
         getRoomContextForMap(long unsigned int mapId) const;
 
-    /**
+    /*!
      * @brief Moves invalid maps out of the transient retirement queue.
      *
      * Retired maps remain owned by the Atlas until shutdown. Delayed
      * reclamation avoids invalidating raw map pointers which can still be held
      * by tracking or visualization readers after a merge.
      */
-    void RemoveBadMaps();
+    void removeBadMaps();
 
     bool isInertial();
-    void SetInertialSensor();
-    void SetImuInitialized();
+    void setInertialSensor();
+    void setImuInitialized();
     bool isImuInitialized();
 
     // Function for garantee the correction of serialization of this object
     void PreSave();
     void PostLoad();
 
-    map<long unsigned int, KeyFrame *> GetAtlasKeyframes();
+    map<long unsigned int, KeyFrame *> getAtlasKeyFrames();
 
     // Functions for getting the entities
-    geometric::Plane              *GetPlaneById(int planeId);
-    semantic::Floor              *GetFloorById(int floorId);
-    semantic::Marker             *GetMarkerById(int markerId);
-    KeyFrame           *GetKeyFrameById(long unsigned int mnId);
-    vs_graphs::core::semantic::Passage *GetPassageById(int passageId);
-    vs_graphs::core::geometric::Plane   *GetRoomWallPlaneById(int planeId);
+    geometric::Plane                   *getPlaneById(int planeId);
+    semantic::Floor                    *getFloorById(int floorId);
+    semantic::Marker                   *getMarkerById(int markerId);
+    KeyFrame                           *getKeyFrameById(long unsigned int mnId);
+    vs_graphs::core::semantic::Passage *getPassageById(int passageId);
+    vs_graphs::core::geometric::Plane  *getRoomWallPlaneById(int planeId);
 
-    KeyFrameDatabase *GetKeyFrameDatabase();
-    void              SetKeyFrameDababase(KeyFrameDatabase *pKFDB);
+    KeyFrameDatabase *getKeyFrameDatabase();
+    void              setKeyFrameDatabase(KeyFrameDatabase *pKFDB);
 
-    ORBVocabulary *GetORBVocabulary();
-    void           SetORBVocabulary(ORBVocabulary *pORBVoc);
+    ORBVocabulary *getORBVocabulary();
+    void           setORBVocabulary(ORBVocabulary *pORBVoc);
 
-    long unsigned int GetNumLivedKF();
-    long unsigned int GetNumLivedMP();
+    long unsigned int getLivedKeyFrameCount();
+    long unsigned int getLivedMapPointCount();
 
   protected:
-    /**
+    /*!
      * @brief Creates the next map while the caller owns mMutexAtlas.
      */
     void createNewMapWhileAtlasLocked();
 
-    std::set<Map *> mspMaps;
-    std::set<Map *> mspBadMaps;
+    std::set<Map *> maps;
+    std::set<Map *> badMaps;
 
-    /** Maps retired from active use but still owned until Atlas destruction. */
-    std::set<Map *> mspRetiredMaps;
+    /*! Maps retired from active use but still owned until Atlas destruction. */
+    std::set<Map *> retiredMaps;
 
     // Its necessary change the container from set to vector because
     // libboost 1.58 and Ubuntu 16.04 have an error with this cointainer
-    std::vector<Map *> mvpBackupMaps;
+    std::vector<Map *> backupMaps;
 
-    Map *mpCurrentMap;
+    Map *p_activeMap;
 
-    std::vector<camera_models::GeometricCamera *> mvpCameras;
+    std::vector<camera_models::GeometricCamera *> cameras;
 
-    unsigned long int mnLastInitKFidMap;
+    unsigned long int lastInitKeyFrameId;
 
-    Viewer *mpViewer;
-    bool    mHasViewer;
+    Viewer *p_viewer;
+    bool    hasViewer;
 
     // Class references for the map reconstruction from the save file
-    KeyFrameDatabase *mpKeyFrameDB;
-    ORBVocabulary    *mpORBVocabulary;
+    KeyFrameDatabase *p_keyFrameDatabase;
+    ORBVocabulary    *p_orbVocabulary;
 
     // Mutex
     std::mutex mMutexAtlas;
@@ -509,13 +532,13 @@ class Atlas
      * @brief Snapshots of departed maps' room geometry, keyed by Map::GetId().
      */
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
-        mRoomContextHistory;
+        roomContextHistory;
 
     /*!
      * @brief Continuous-match bookkeeping per old map ID. Guarded by
      *        mMutexAtlas like the other Atlas-owned indexes.
      */
-    std::map<long unsigned int, MergeAttemptState> mConsecutiveMergeState;
+    std::map<long unsigned int, MergeAttemptState> consecutiveMergeState;
 
     /*!
      * @brief Protects \ref mRoomContextHistory against concurrent access from

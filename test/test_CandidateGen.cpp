@@ -47,7 +47,8 @@ semantic::RoomContextSnapshot
     return snapshot;
 }
 
-std::string candidateBytes(const std::vector<semantic::SemanticCandidate> &candidates)
+std::string
+    candidateBytes(const std::vector<semantic::SemanticCandidate> &candidates)
 {
     std::ostringstream stream;
     for (const semantic::SemanticCandidate &candidate : candidates)
@@ -62,8 +63,8 @@ std::string candidateBytes(const std::vector<semantic::SemanticCandidate> &candi
     return stream.str();
 }
 
-semantic::RoomContextSnapshot makeMultiWallRoom(int                        roomId,
-                                      const std::vector<double> &angles_rad)
+semantic::RoomContextSnapshot
+    makeMultiWallRoom(int roomId, const std::vector<double> &angles_rad)
 {
     semantic::RoomContextSnapshot snapshot;
     snapshot.roomId = roomId;
@@ -76,7 +77,7 @@ semantic::RoomContextSnapshot makeMultiWallRoom(int                        roomI
     return snapshot;
 }
 
-/** No walls, no passages: always fails minimum evidence regardless of which
+/*! No walls, no passages: always fails minimum evidence regardless of which
  * cue weights are configured. */
 semantic::RoomContextSnapshot emptyEvidenceRoom(int roomId)
 {
@@ -85,7 +86,7 @@ semantic::RoomContextSnapshot emptyEvidenceRoom(int roomId)
     return snapshot;
 }
 
-/** One wall (valid normal, degenerate/invalid bounds) plus one aperture-valid
+/*! One wall (valid normal, degenerate/invalid bounds) plus one aperture-valid
  * passage: passes minimum evidence via the mixed branch, but its own median
  * extent is 0 (no wall has valid bounds), so extent/aperture normalisation
  * cannot proceed. */
@@ -105,7 +106,7 @@ semantic::RoomContextSnapshot degenerateMedianRoom(int roomId, int passageId)
     return snapshot;
 }
 
-/** One valid wall plus one aperture-valid passage of the given dimensions. */
+/*! One valid wall plus one aperture-valid passage of the given dimensions. */
 semantic::RoomContextSnapshot
     singlePassageRoom(int roomId, double width_m, double height_m)
 {
@@ -123,8 +124,9 @@ semantic::RoomContextSnapshot
     return snapshot;
 }
 
-semantic::RoomContextSnapshot rotateRoom(const semantic::RoomContextSnapshot &source,
-                               const Eigen::Matrix3d     &rotation)
+semantic::RoomContextSnapshot
+    rotateRoom(const semantic::RoomContextSnapshot &source,
+               const Eigen::Matrix3d               &rotation)
 {
     semantic::RoomContextSnapshot transformed = source;
     for (Eigen::Vector3d &normal : transformed.wallNormals)
@@ -156,7 +158,8 @@ semantic::RoomContextSnapshot rotateRoom(const semantic::RoomContextSnapshot &so
 
 TEST(CandidateGen, UsesDeterministicNumeratorAndDenominator)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[10U].push_back(makeRoom(1, 1.0));
     history[20U].push_back(makeRoom(2, 1.2));
     semantic::SemanticCandidateConfig config;
@@ -177,8 +180,10 @@ TEST(CandidateGen, UsesDeterministicNumeratorAndDenominator)
 
 TEST(CandidateGen, DoesNotDependOnContainerInsertionOrder)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> first;
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> second;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        first;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        second;
     first[20U].push_back(makeRoom(2, 1.2));
     first[10U].push_back(makeRoom(1, 1.0));
     second[10U].push_back(makeRoom(1, 1.0));
@@ -195,7 +200,8 @@ TEST(CandidateGen, DoesNotDependOnContainerInsertionOrder)
 
 TEST(CandidateGen, CanonicalizesLocalTopologyWithoutComparingRawIds)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[1U].push_back(makeTopologyRoom(11, 7, 99, true));
     history[2U].push_back(makeTopologyRoom(22, 3, 4, true));
     semantic::SemanticCandidateConfig config;
@@ -218,7 +224,8 @@ TEST(CandidateGen, CanonicalizesLocalTopologyWithoutComparingRawIds)
 
 TEST(CandidateGen, AngleToleranceControlsNearZeroEquivalence)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[1U].push_back(makeRoom(1, 1.0));
     history[2U].push_back(makeRoom(2, 1.0 + 5.0e-10));
     semantic::SemanticCandidateConfig config;
@@ -241,13 +248,14 @@ TEST(CandidateGen, RejectsInvalidConfigurationWithTypedReason)
 {
     semantic::SemanticCandidateConfig config;
     config.angleTolerance_rad = std::numeric_limits<double>::quiet_NaN();
-    EXPECT_EQ(
-        semantic::SemanticCandidates::validateConfig(config),
-        semantic::SemanticCandidateConfigRejectionReason::NONFINITE_ANGLE_TOLERANCE);
+    EXPECT_EQ(semantic::SemanticCandidates::validateConfig(config),
+              semantic::SemanticCandidateConfigRejectionReason::
+                  NONFINITE_ANGLE_TOLERANCE);
     config.angleTolerance_rad = 1.0e-9;
     config.runtimeBudget_ms   = std::numeric_limits<double>::infinity();
     EXPECT_EQ(semantic::SemanticCandidates::validateConfig(config),
-              semantic::SemanticCandidateConfigRejectionReason::NONFINITE_RUNTIME_BUDGET);
+              semantic::SemanticCandidateConfigRejectionReason::
+                  NONFINITE_RUNTIME_BUDGET);
     config.runtimeBudget_ms = 0.0;
     config.topK             = 0U;
     const semantic::SemanticCandidateGeneration result =
@@ -258,21 +266,25 @@ TEST(CandidateGen, RejectsInvalidConfigurationWithTypedReason)
     config.topK             = 10U;
     config.candidatePairCap = 5U;
     EXPECT_EQ(semantic::SemanticCandidates::validateConfig(config),
-              semantic::SemanticCandidateConfigRejectionReason::TOP_K_EXCEEDS_PAIR_CAP);
+              semantic::SemanticCandidateConfigRejectionReason::
+                  TOP_K_EXCEEDS_PAIR_CAP);
     config.candidatePairCap      = 1000U;
     config.descriptorElementsCap = 0U;
-    EXPECT_EQ(semantic::SemanticCandidates::validateConfig(config),
-              semantic::SemanticCandidateConfigRejectionReason::DESCRIPTOR_CAP_ZERO);
+    EXPECT_EQ(
+        semantic::SemanticCandidates::validateConfig(config),
+        semantic::SemanticCandidateConfigRejectionReason::DESCRIPTOR_CAP_ZERO);
     config.descriptorElementsCap = 4096U;
     config.weightAngle           = std::numeric_limits<double>::max();
     config.weightExtent          = std::numeric_limits<double>::max();
-    EXPECT_EQ(semantic::SemanticCandidates::validateConfig(config),
-              semantic::SemanticCandidateConfigRejectionReason::WEIGHT_SUM_OVERFLOW);
+    EXPECT_EQ(
+        semantic::SemanticCandidates::validateConfig(config),
+        semantic::SemanticCandidateConfigRejectionReason::WEIGHT_SUM_OVERFLOW);
 }
 
 TEST(CandidateGen, OmitsTopologyWhenNodeCapWouldBeExceeded)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[1U].push_back(makeTopologyRoom(1, 1, 2, true));
     history[2U].push_back(makeTopologyRoom(2, 2, 3, true));
     semantic::SemanticCandidateConfig config;
@@ -300,7 +312,8 @@ TEST(CandidateGen, SeededTransformInvarianceIs100Of100)
                                          .normalized();
         const Eigen::Matrix3d rotation =
             Eigen::AngleAxisd(angle(generator), axis).toRotationMatrix();
-        std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+        std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+            history;
         history[10U].push_back(source);
         history[20U].push_back(rotateRoom(source, rotation));
         const std::vector<semantic::SemanticCandidate> candidates =
@@ -324,7 +337,8 @@ TEST(CandidateGen, SeededTopOneStabilityIsAtLeast45Of50)
     unsigned int                           stableCount = 0U;
     for (unsigned int iteration = 0U; iteration < 50U; ++iteration)
     {
-        std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+        std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+            history;
         history[10U] = {makeRoom(1, 1.0), makeRoom(2, 0.2), makeRoom(3, 2.2)};
         history[20U] = {makeRoom(11, 1.0 + perturbation(generator)),
                         makeRoom(12, 0.35),
@@ -354,7 +368,8 @@ TEST(CandidateGen, SeededTruePairRecallIsAtLeast48Of50)
     unsigned int                           recallCount = 0U;
     for (unsigned int iteration = 0U; iteration < 50U; ++iteration)
     {
-        std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+        std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+            history;
         history[10U].push_back(makeRoom(1, 1.0));
         history[20U].push_back(makeRoom(101, 1.0 + perturbation(generator)));
         for (int distractor = 0; distractor < 10; ++distractor)
@@ -364,12 +379,11 @@ TEST(CandidateGen, SeededTruePairRecallIsAtLeast48Of50)
         }
         const std::vector<semantic::SemanticCandidate> candidates =
             semantic::SemanticCandidates::generate(history, config);
-        const bool found = std::any_of(candidates.begin(),
-                                       candidates.end(),
-                                       [](const semantic::SemanticCandidate &candidate) {
-                                           return candidate.roomAId == 1 &&
-                                                  candidate.roomBId == 101;
-                                       });
+        const bool found = std::any_of(
+            candidates.begin(),
+            candidates.end(),
+            [](const semantic::SemanticCandidate &candidate)
+            { return candidate.roomAId == 1 && candidate.roomBId == 101; });
         recallCount += found ? 1U : 0U;
     }
     EXPECT_GE(recallCount, 48U);
@@ -377,8 +391,10 @@ TEST(CandidateGen, SeededTruePairRecallIsAtLeast48Of50)
 
 TEST(CandidateGen, CandidateBytesAreInsertionOrderIndependent)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> first;
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> second;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        first;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        second;
     first[10U]  = {makeRoom(3, 1.2), makeRoom(1, 1.0), makeRoom(2, 0.8)};
     first[20U]  = {makeRoom(13, 1.2), makeRoom(11, 1.0), makeRoom(12, 0.8)};
     second[10U] = {first[10U][2], first[10U][0], first[10U][1]};
@@ -392,12 +408,13 @@ TEST(CandidateGen, CandidateBytesAreInsertionOrderIndependent)
 
 TEST(CandidateGen, RuntimeBudgetNeverChangesDeterministicBytes)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[1U].push_back(makeRoom(1, 1.0));
     history[2U].push_back(makeRoom(2, 1.1));
     semantic::SemanticCandidateConfig unprofiled;
     semantic::SemanticCandidateConfig profiled = unprofiled;
-    profiled.runtimeBudget_ms        = 1.0e-12;
+    profiled.runtimeBudget_ms                  = 1.0e-12;
     const std::vector<semantic::SemanticCandidate> left =
         semantic::SemanticCandidates::generate(history, unprofiled);
     const std::vector<semantic::SemanticCandidate> right =
@@ -411,7 +428,8 @@ TEST(CandidateGen, RuntimeBudgetNeverChangesDeterministicBytes)
  * cues; topology/aperture are absent, not trivially "available". */
 TEST(CandidateGen, WallOnlyRoomsScoreWallCuesWithTopologyAndApertureAbsent)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[10U].push_back(makeRoom(1, 1.0));
     history[20U].push_back(makeRoom(2, 1.2));
     const std::vector<semantic::SemanticCandidate> candidates =
@@ -439,9 +457,10 @@ TEST(CandidateGen, PartiallyMissingBoundsOmitsExtentButRetainsAngleEvidence)
                             {false, 0.0, 0.0, 0.0, 0.0}};
 
     semantic::RoomContextSnapshot sameThirdNormal = baseline;
-    sameThirdNormal.roomId              = 2;
+    sameThirdNormal.roomId                        = 2;
 
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> historySame;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        historySame;
     historySame[10U].push_back(baseline);
     historySame[20U].push_back(sameThirdNormal);
     const std::vector<semantic::SemanticCandidate> sameCandidates =
@@ -451,11 +470,12 @@ TEST(CandidateGen, PartiallyMissingBoundsOmitsExtentButRetainsAngleEvidence)
     EXPECT_DOUBLE_EQ(sameCandidates.front().cues.extentDistance, 0.0);
 
     semantic::RoomContextSnapshot differentThirdNormal = baseline;
-    differentThirdNormal.roomId              = 3;
+    differentThirdNormal.roomId                        = 3;
     differentThirdNormal.wallNormals[2] =
         Eigen::Vector3d(0.0, std::cos(1.0), std::sin(1.0));
 
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> historyDiff;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        historyDiff;
     historyDiff[10U].push_back(baseline);
     historyDiff[20U].push_back(differentThirdNormal);
     const std::vector<semantic::SemanticCandidate> diffCandidates =
@@ -473,7 +493,8 @@ TEST(CandidateGen, PartiallyMissingBoundsOmitsExtentButRetainsAngleEvidence)
  * padded mean-L1 rule. */
 TEST(CandidateGen, UnequalSignatureCountsExercisePadding)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[10U].push_back(makeMultiWallRoom(1, {0.0, 0.5}));
     history[20U].push_back(makeMultiWallRoom(2, {0.0, 0.5, 2.0}));
     semantic::SemanticCandidateConfig config;
@@ -507,7 +528,8 @@ TEST(CandidateGen, UnequalSignatureCountsExercisePadding)
  * extent and aperture families without rejecting the room outright. */
 TEST(CandidateGen, InvalidMedianDisablesExtentAndApertureCues)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[10U].push_back(degenerateMedianRoom(1, 100));
     history[20U].push_back(degenerateMedianRoom(2, 200));
     semantic::SemanticCandidateConfig config;
@@ -516,7 +538,8 @@ TEST(CandidateGen, InvalidMedianDisablesExtentAndApertureCues)
     /* With only extent/aperture weighted and both disabled, the denominator
      * is zero and the pair is rejected -- proving neither cue leaked a
      * spurious zero-weighted contribution. */
-    EXPECT_TRUE(semantic::SemanticCandidates::generate(history, config).empty());
+    EXPECT_TRUE(
+        semantic::SemanticCandidates::generate(history, config).empty());
 
     /* Allowing topology proves the room itself was not rejected for lack of
      * minimum evidence -- only the normalised-size cues were disabled. */
@@ -533,7 +556,8 @@ TEST(CandidateGen, InvalidMedianDisablesExtentAndApertureCues)
  * ambiguity margin of the best distance are marked ambiguous. */
 TEST(CandidateGen, AmbiguityMarginMarksOnlyCandidatesWithinMargin)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[10U].push_back(makeRoom(1, 1.0));
     history[20U] = {makeRoom(11, 1.0), makeRoom(12, 1.03), makeRoom(13, 1.20)};
     semantic::SemanticCandidateConfig config;
@@ -557,7 +581,8 @@ TEST(CandidateGen, AmbiguityMarginMarksOnlyCandidatesWithinMargin)
  * minimum evidence for the anchor's own disqualifying pairs. */
 TEST(CandidateGen, FallbackFindsTruePairWhenAnchorHasNoUsableEvidence)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[5U].push_back(emptyEvidenceRoom(999));
     history[10U].push_back(makeRoom(1, 1.0));
     history[20U].push_back(makeRoom(101, 1.0));
@@ -577,7 +602,8 @@ TEST(CandidateGen, FallbackFindsTruePairWhenAnchorHasNoUsableEvidence)
  * the (mapAId,roomAId,mapBId,roomBId) tie-break, never by distance alone. */
 TEST(CandidateGen, TieBreaksByMapAndRoomIdWhenDistancesAreEqual)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[100U].push_back(makeRoom(50, 1.0));
     history[200U].push_back(makeRoom(60, 1.0));
     history[300U].push_back(makeRoom(10, 2.0));
@@ -608,7 +634,8 @@ TEST(CandidateGen, TieBreaksByMapAndRoomIdWhenDistancesAreEqual)
  * would sort to the identical multiset {1,2}), scoring distance 0. */
 TEST(CandidateGen, AperturePairwiseManhattanDistinguishesSwappedWidthHeight)
 {
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>> history;
+    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
+        history;
     history[10U].push_back(singlePassageRoom(1, 1.0, 2.0));
     history[20U].push_back(singlePassageRoom(2, 2.0, 1.0));
     semantic::SemanticCandidateConfig config;
@@ -627,9 +654,9 @@ TEST(CandidateGen, RejectsZeroTopoRefinementIters)
 {
     semantic::SemanticCandidateConfig config;
     config.topoRefinementIters = 0U;
-    EXPECT_EQ(
-        semantic::SemanticCandidates::validateConfig(config),
-        semantic::SemanticCandidateConfigRejectionReason::TOPO_REFINEMENT_ITERS_ZERO);
+    EXPECT_EQ(semantic::SemanticCandidates::validateConfig(config),
+              semantic::SemanticCandidateConfigRejectionReason::
+                  TOPO_REFINEMENT_ITERS_ZERO);
 }
 
 /* Required test (m): semantic::SemanticCandidates.cc links only against

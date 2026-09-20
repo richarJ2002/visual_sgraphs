@@ -1,4 +1,4 @@
-/**
+/*!
  * @file SemanticFixtures.cc
  * @brief Implementation of the deterministic semantic-fixture builders
  *        declared in SemanticFixtures.h (semantic-axiom-reliability-plan.md,
@@ -53,7 +53,7 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
     return cloud;
 }
 
-void makeWallPlane(geometric::Plane                 &wall_inout,
+void makeWallPlane(geometric::Plane      &wall_inout,
                    int                    id_in,
                    Map                   *p_map_in,
                    const Eigen::Vector4d &equation_World_in,
@@ -82,10 +82,10 @@ void makeWallPlane(geometric::Plane                 &wall_inout,
 }
 
 bool makeGroundPlane(geometric::Plane &ground_inout,
-                     int    id_in,
-                     Map   *p_map_in,
-                     double halfExtent_m_in,
-                     int    stepsPerSide_in)
+                     int               id_in,
+                     Map              *p_map_in,
+                     double            halfExtent_m_in,
+                     int               stepsPerSide_in)
 {
     ground_inout.setId(id_in);
     ground_inout.setMap(p_map_in);
@@ -101,12 +101,12 @@ bool makeGroundPlane(geometric::Plane &ground_inout,
     return GeoSemHelpers::refitMappedPlaneFromCloud(&ground_inout);
 }
 
-void makeRoom(semantic::Room                  &room_inout,
-              int                    id_in,
-              Map                   *p_map_in,
-              geometric::Plane                 *p_wall_in,
-              const Eigen::Vector3d &centroid_World_m_in,
-              semantic::Room::RoomVariant      variant_in)
+void makeRoom(semantic::Room             &room_inout,
+              int                         id_in,
+              Map                        *p_map_in,
+              geometric::Plane           *p_wall_in,
+              const Eigen::Vector3d      &centroid_World_m_in,
+              semantic::Room::RoomVariant variant_in)
 {
     room_inout.setId(id_in);
     room_inout.setMap(p_map_in);
@@ -118,14 +118,14 @@ void makeRoom(semantic::Room                  &room_inout,
     }
 }
 
-void makePassage(semantic::Passage               &passage_inout,
+void makePassage(semantic::Passage     &passage_inout,
                  int                    id_in,
                  Map                   *p_map_in,
                  const Eigen::Vector4d &equation_World_in,
                  const Eigen::Vector3d &centroid_World_m_in,
-                 semantic::Room                  *p_knownSideRoom_in,
+                 semantic::Room        *p_knownSideRoom_in,
                  const Eigen::Vector3d &knownSideDirection_World_in,
-                 semantic::Room                  *p_farRoom_in,
+                 semantic::Room        *p_farRoom_in,
                  bool                   passable_in,
                  double                 width_m_in,
                  double                 height_m_in)
@@ -149,10 +149,10 @@ void makePassage(semantic::Passage               &passage_inout,
 }
 
 void makeFloor(semantic::Floor                     &floor_inout,
-               int                        id_in,
-               Map                       *p_map_in,
+               int                                  id_in,
+               Map                                 *p_map_in,
                const std::vector<semantic::Room *> &rooms_in,
-               double                     centroidZ_World_m_in)
+               double                               centroidZ_World_m_in)
 {
     floor_inout.setId(id_in);
     floor_inout.setMap(p_map_in);
@@ -169,11 +169,11 @@ void makeKeyFrameAt(KeyFrame              &keyFrame_inout,
     /* KeyFrame::SetPose takes T_camera_World (world -> camera); a camera
      * sitting at cameraCenter_World_m_in under identity orientation has
      * translation -cameraCenter_World_m_in in that convention. */
-    keyFrame_inout.SetPose(
+    keyFrame_inout.setPose(
         Sophus::SE3f(Eigen::Matrix3f::Identity(), -cameraCenter_World_m_in));
     if (p_map_in != nullptr)
     {
-        p_map_in->AddKeyFrame(&keyFrame_inout);
+        p_map_in->addKeyFrame(&keyFrame_inout);
     }
 }
 

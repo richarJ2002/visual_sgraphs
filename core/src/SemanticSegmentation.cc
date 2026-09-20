@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -163,17 +163,17 @@ WallComponentSupport findLargestWallComponent(
 SemanticSegmentation::SemanticSegmentation(Atlas *pAtlas)
 {
     /* Store atlas object address */
-    mpAtlas = pAtlas;
+    p_atlas = pAtlas;
 
     /* Get the system parameters */
-    sysParams = types::SystemParams::getParams();
+    p_sysParams = types::SystemParams::getParams();
 
     /* Set the booleans according to the mode of operation */
-    mGeoRuns = !(sysParams->general.modeOfOperation ==
-                 types::SystemParams::General::ModeOfOperation::SEM);
+    geoRuns = !(p_sysParams->general.modeOfOperation ==
+                types::SystemParams::General::ModeOfOperation::SEM);
 }
 
-void SemanticSegmentation::Run()
+void SemanticSegmentation::run()
 {
     /* Output message to indicate that semantic segmentation is starting */
     std::cout << "[SemSeg] Semantic Segmentation Started" << std::endl;
@@ -182,7 +182,7 @@ void SemanticSegmentation::Run()
     while (true)
     {
         /* Graceful shutdown on System::Shutdown() */
-        if (CheckFinish())
+        if (checkFinish())
         {
             break;
         }
@@ -195,7 +195,7 @@ void SemanticSegmentation::Run()
             {
                 workItem = std::move(segmentedImageBuffer.front());
                 segmentedImageBuffer.pop_front();
-                mDequeuedCount.fetch_add(1U, std::memory_order_relaxed);
+                dequeuedCount.fetch_add(1U, std::memory_order_relaxed);
                 hasWorkItem = true;
             }
         }
@@ -211,10 +211,11 @@ void SemanticSegmentation::Run()
          * Get the point cloud from the respective keyframe via the atlas -
          * ignore it if KF doesn't exist.
          */
-        KeyFrame *thisKF = mpAtlas->GetKeyFrameById(workItem.keyFrameId);
+        KeyFrame *p_thisKeyFrame =
+            p_atlas->getKeyFrameById(workItem.keyFrameId);
 
         /* If keyframe is bad continue */
-        if (thisKF == nullptr || thisKF->isBad())
+        if (p_thisKeyFrame == nullptr || p_thisKeyFrame->isBad())
         {
             recordTerminalOutcome(workItem.keyFrameId,
                                   TerminalOutcome::MISSING_KEYFRAME);
@@ -228,10 +229,10 @@ void SemanticSegmentation::Run()
             continue;
         }
 
-        Map *p_activeMap = mpAtlas->GetCurrentMap();
+        Map *p_activeMap = p_atlas->getCurrentMap();
         if (p_activeMap == nullptr ||
-            p_activeMap->GetId() != workItem.sourceMapId ||
-            thisKF->GetMap() != p_activeMap)
+            p_activeMap->getId() != workItem.sourceMapId ||
+            p_thisKeyFrame->getMap() != p_activeMap)
         {
             recordTerminalOutcome(workItem.keyFrameId,
                                   TerminalOutcome::STALE_MAP);
@@ -240,12 +241,12 @@ void SemanticSegmentation::Run()
 
         /* Extract point cloud from keyframe */
         const pcl::PointCloud<pcl::PointXYZRGB>::Ptr thisKFPointCloud =
-            thisKF->getCurrentFramePointCloud();
+            p_thisKeyFrame->getCurrentFramePointCloud();
 
         /* If no point cloud in keyframe, skip to next frame */
         if (thisKFPointCloud == nullptr)
         {
-            std::cerr << "[SemSeg] Skipping keyframe " << thisKF->mnId
+            std::cerr << "[SemSeg] Skipping keyframe " << p_thisKeyFrame->mnId
                       << ": the RGB-D point cloud is unavailable." << std::endl;
             recordTerminalOutcome(workItem.keyFrameId,
                                   TerminalOutcome::MISSING_CLOUD);
@@ -290,8 +291,8 @@ void SemanticSegmentation::Run()
             clsCloudPtrs[kWallClassIndex]->size() < kWallSilentDropLogThresh)
         {
             const Eigen::Vector3f cameraCenter_World =
-                thisKF->GetCameraCenter();
-            std::cout << "[SemSeg] KF#" << thisKF->mnId
+                p_thisKeyFrame->getCameraCenter();
+            std::cout << "[SemSeg] KF#" << p_thisKeyFrame->mnId
                       << " wall-class points after confidence gating: "
                       << clsCloudPtrs[kWallClassIndex]->size() << " (camera at "
                       << cameraCenter_World.x() << ',' << cameraCenter_World.y()
@@ -302,7 +303,7 @@ void SemanticSegmentation::Run()
          * clear pointclouds as they are no longer needed and consume
          * significant memory. also
          */
-        thisKF->clearPointCloud();
+        p_thisKeyFrame->clearPointCloud();
 
         /*!
          * Clear point-cloud data from older keyframes that were skipped by this
@@ -314,7 +315,7 @@ void SemanticSegmentation::Run()
          *              classified point-cloud data are no longer needed and can
          *              be released to reduce memory usage.
          */
-        if (thisKF->mnId - mLastProcessedKeyFrameId > 5)
+        if (p_thisKeyFrame->mnId - lastProcessedKeyFrameId > 5)
         {
             /*!
              * A keyframe more than 5 ids behind the one just processed is
@@ -324,7 +325,7 @@ void SemanticSegmentation::Run()
              * keyframe is still legitimately queued, just not its turn
              * yet. Clearing its point cloud here races the buffer's own
              * processing: this sweep would delete data the normal
-             * processing path above (thisKF->clearPointCloud(), a few
+             * processing path above (p_thisKeyFrame->clearPointCloud(), a few
              * lines up) hasn't had a chance to consume, so its later
              * dequeue finds a null point cloud and permanently logs
              * "unavailable" -- turning a temporary backlog into
@@ -342,8 +343,8 @@ void SemanticSegmentation::Run()
                 }
             }
 
-            for (unsigned long int i = mLastProcessedKeyFrameId + 1;
-                 i < thisKF->mnId - 5;
+            for (unsigned long int i = lastProcessedKeyFrameId + 1;
+                 i < p_thisKeyFrame->mnId - 5;
                  i++)
             {
                 if (pendingKeyFrameIds.count(i) > 0U)
@@ -351,7 +352,7 @@ void SemanticSegmentation::Run()
                     continue;
                 }
 
-                KeyFrame *pKF = mpAtlas->GetKeyFrameById(i);
+                KeyFrame *pKF = p_atlas->getKeyFrameById(i);
                 if (pKF != nullptr &&
                     pKF->getCurrentFramePointCloud() != nullptr)
                 {
@@ -359,7 +360,7 @@ void SemanticSegmentation::Run()
                     pKF->clearClsClouds();
                 }
             }
-            mLastProcessedKeyFrameId = thisKF->mnId - 5;
+            lastProcessedKeyFrameId = p_thisKeyFrame->mnId - 5;
         }
 
         /* ------------------------------------------------------------------ *
@@ -377,7 +378,7 @@ void SemanticSegmentation::Run()
             clsPlanes = getPlanesFromClassClouds(clsCloudPtrs);
 
         /* Set the class specific point clouds to the keyframe */
-        thisKF->setCurrentClsCloudPtrs(clsCloudPtrs);
+        p_thisKeyFrame->setCurrentClsCloudPtrs(clsCloudPtrs);
 
         {
             /*!
@@ -387,7 +388,7 @@ void SemanticSegmentation::Run()
              * transaction so it cannot unnecessarily delay a map merge.
              */
             std::unique_lock<std::mutex> semanticUpdateLock =
-                mpAtlas->acquireSemanticUpdateLock();
+                p_atlas->acquireSemanticUpdateLock();
 
             /*!
              * Plane extraction runs outside the semantic transaction. A map
@@ -396,10 +397,10 @@ void SemanticSegmentation::Run()
              * Revalidate the source only after acquiring the transaction lock
              * so stale output cannot recreate observations in the merged map.
              */
-            Map *p_currentMap = mpAtlas->GetCurrentMap();
+            Map *p_currentMap = p_atlas->getCurrentMap();
 
-            if (thisKF == nullptr || thisKF->isBad() ||
-                thisKF->GetMap() != p_currentMap)
+            if (p_thisKeyFrame == nullptr || p_thisKeyFrame->isBad() ||
+                p_thisKeyFrame->getMap() != p_currentMap)
             {
                 std::cerr
                     << "[SemSeg] Discarding stale segmentation output for "
@@ -412,18 +413,18 @@ void SemanticSegmentation::Run()
             }
 
             /* Add the planes to Atlas. */
-            updatePlaneData(thisKF, clsPlanes);
+            updatePlaneData(p_thisKeyFrame, clsPlanes);
         }
         recordTerminalOutcome(workItem.keyFrameId, TerminalOutcome::ACCEPTED);
     }
 }
 
-void SemanticSegmentation::AddSegmentedFrameToBuffer(
+void SemanticSegmentation::addSegmentedFrameToBuffer(
     std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *tuple)
 {
     const std::uint64_t keyFrameId = std::get<0>(*tuple);
-    KeyFrame           *p_keyFrame = mpAtlas->GetKeyFrameById(keyFrameId);
-    Map *p_sourceMap = p_keyFrame == nullptr ? nullptr : p_keyFrame->GetMap();
+    KeyFrame           *p_keyFrame = p_atlas->getKeyFrameById(keyFrameId);
+    Map *p_sourceMap = p_keyFrame == nullptr ? nullptr : p_keyFrame->getMap();
 
     WorkItem droppedItem;
     bool     didDrop = false;
@@ -440,18 +441,18 @@ void SemanticSegmentation::AddSegmentedFrameToBuffer(
         workItem.keyFrameId        = keyFrameId;
         workItem.sourceMapId       = p_sourceMap == nullptr
                                          ? std::numeric_limits<std::uint64_t>::max()
-                                         : p_sourceMap->GetId();
+                                         : p_sourceMap->getId();
         workItem.uncertaintyImage  = std::get<1>(*tuple);
         workItem.segmentationCloud = std::get<2>(*tuple);
         segmentedImageBuffer.push_back(std::move(workItem));
-        mEnqueuedCount.fetch_add(1U, std::memory_order_relaxed);
+        enqueuedCount.fetch_add(1U, std::memory_order_relaxed);
 
         const std::uint32_t queueDepth =
             static_cast<std::uint32_t>(segmentedImageBuffer.size());
         std::uint32_t priorHighWatermark =
-            mQueueHighWatermark.load(std::memory_order_relaxed);
+            queueHighWatermark.load(std::memory_order_relaxed);
         while (queueDepth > priorHighWatermark &&
-               !mQueueHighWatermark.compare_exchange_weak(
+               !queueHighWatermark.compare_exchange_weak(
                    priorHighWatermark,
                    queueDepth,
                    std::memory_order_relaxed))
@@ -465,23 +466,22 @@ void SemanticSegmentation::AddSegmentedFrameToBuffer(
     }
 }
 
-SemanticSegmentation::ProcessingStats SemanticSegmentation::GetProcessingStats()
+SemanticSegmentation::ProcessingStats SemanticSegmentation::getProcessingStats()
 {
     ProcessingStats stats;
-    stats.enqueuedCount = mEnqueuedCount.load(std::memory_order_relaxed);
-    stats.dequeuedCount = mDequeuedCount.load(std::memory_order_relaxed);
-    stats.terminalCount = mTerminalCount.load(std::memory_order_relaxed);
-    stats.acceptedCount = mAcceptedCount.load(std::memory_order_relaxed);
-    stats.droppedCount  = mDroppedCount.load(std::memory_order_relaxed);
+    stats.enqueuedCount = enqueuedCount.load(std::memory_order_relaxed);
+    stats.dequeuedCount = dequeuedCount.load(std::memory_order_relaxed);
+    stats.terminalCount = terminalCount.load(std::memory_order_relaxed);
+    stats.acceptedCount = acceptedCount.load(std::memory_order_relaxed);
+    stats.droppedCount  = droppedCount.load(std::memory_order_relaxed);
     stats.missingKeyFrameCount =
-        mMissingKeyFrameCount.load(std::memory_order_relaxed);
-    stats.missingCloudCount =
-        mMissingCloudCount.load(std::memory_order_relaxed);
-    stats.staleMapCount = mStaleMapCount.load(std::memory_order_relaxed);
+        missingKeyFrameCount.load(std::memory_order_relaxed);
+    stats.missingCloudCount = missingCloudCount.load(std::memory_order_relaxed);
+    stats.staleMapCount     = staleMapCount.load(std::memory_order_relaxed);
     stats.lastTerminalKeyFrameId =
-        mLastTerminalKeyFrameId.load(std::memory_order_relaxed);
+        lastTerminalKeyFrameId.load(std::memory_order_relaxed);
     stats.queueHighWatermark =
-        mQueueHighWatermark.load(std::memory_order_relaxed);
+        queueHighWatermark.load(std::memory_order_relaxed);
     {
         std::lock_guard<std::mutex> lock(mMutexNewKFs);
         stats.queueDepth =
@@ -493,24 +493,24 @@ SemanticSegmentation::ProcessingStats SemanticSegmentation::GetProcessingStats()
 void SemanticSegmentation::recordTerminalOutcome(std::uint64_t   keyFrameId,
                                                  TerminalOutcome outcome)
 {
-    mTerminalCount.fetch_add(1U, std::memory_order_relaxed);
-    mLastTerminalKeyFrameId.store(keyFrameId, std::memory_order_relaxed);
+    terminalCount.fetch_add(1U, std::memory_order_relaxed);
+    lastTerminalKeyFrameId.store(keyFrameId, std::memory_order_relaxed);
     switch (outcome)
     {
     case TerminalOutcome::ACCEPTED:
-        mAcceptedCount.fetch_add(1U, std::memory_order_relaxed);
+        acceptedCount.fetch_add(1U, std::memory_order_relaxed);
         break;
     case TerminalOutcome::QUEUE_DROPPED:
-        mDroppedCount.fetch_add(1U, std::memory_order_relaxed);
+        droppedCount.fetch_add(1U, std::memory_order_relaxed);
         break;
     case TerminalOutcome::MISSING_KEYFRAME:
-        mMissingKeyFrameCount.fetch_add(1U, std::memory_order_relaxed);
+        missingKeyFrameCount.fetch_add(1U, std::memory_order_relaxed);
         break;
     case TerminalOutcome::MISSING_CLOUD:
-        mMissingCloudCount.fetch_add(1U, std::memory_order_relaxed);
+        missingCloudCount.fetch_add(1U, std::memory_order_relaxed);
         break;
     case TerminalOutcome::STALE_MAP:
-        mStaleMapCount.fetch_add(1U, std::memory_order_relaxed);
+        staleMapCount.fetch_add(1U, std::memory_order_relaxed);
         break;
     }
 }
@@ -522,12 +522,12 @@ void SemanticSegmentation::threshSeparatePointCloud(
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr         &thisKFPointCloud)
 {
     /* Extract parameters on thresholds */
-    const uint8_t confidenceThresh = sysParams->semSeg.confThresh * 255;
-    const float   probThresh       = sysParams->semSeg.probThresh;
+    const uint8_t confidenceThresh = p_sysParams->semSeg.confThresh * 255;
+    const float   probThresh       = p_sysParams->semSeg.probThresh;
     const float   distanceThreshNear =
-        sysParams->pointcloud.distanceThresh.first;
+        p_sysParams->pointcloud.distanceThresh.first;
     const float distanceThreshFar =
-        sysParams->pointcloud.distanceThresh.second;
+        p_sysParams->pointcloud.distanceThresh.second;
 
     /* Parse the PointCloud2 message */
     const int width      = pclPc2SegPrb->width;
@@ -699,14 +699,14 @@ std::vector<std::vector<
         /* Downsample points into grid based on points within voxel grid */
         filteredCloud = Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
             filteredCloud,
-            sysParams->semSeg.pointcloud.downsample.leafSize,
-            sysParams->semSeg.pointcloud.downsample.minPointsPerVoxel);
+            p_sysParams->semSeg.pointcloud.downsample.leafSize,
+            p_sysParams->semSeg.pointcloud.downsample.minPointsPerVoxel);
 
         /* Remove points that are statically isolated from neighbors */
         filteredCloud = Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(
             filteredCloud,
-            sysParams->semSeg.pointcloud.outlierRemoval.stdThreshold,
-            sysParams->semSeg.pointcloud.outlierRemoval.meanThreshold);
+            p_sysParams->semSeg.pointcloud.outlierRemoval.stdThreshold,
+            p_sysParams->semSeg.pointcloud.outlierRemoval.meanThreshold);
 
         /*!
          * Filtering removes arbitrary points, so the result is no longer an
@@ -737,7 +737,7 @@ std::vector<std::vector<
          * greater than a threshold. This parameter is set in
          * `system_params.yaml`
          */
-        if (filteredCloud->points.size() > sysParams->seg.pointcloudsThresh)
+        if (filteredCloud->points.size() > p_sysParams->seg.pointcloudsThresh)
         {
             extractedPlanes =
                 Utils::ransacPlaneFitting<pcl::PointXYZRGBA,
@@ -768,7 +768,7 @@ void SemanticSegmentation::updatePlaneData(
 
             /* Convert the given plane to global coordinates */
             g2o::Plane3D globalEquation = Utils::applyPoseToPlane(
-                pKF->GetPoseInverse().matrix().cast<double>(),
+                pKF->getPoseInverse().matrix().cast<double>(),
                 detectedPlane);
 
             /* Extract the point cloud assoicated with the plane */
@@ -820,7 +820,7 @@ void SemanticSegmentation::updatePlaneData(
             pcl::transformPointCloud(
                 *globalPlaneCloud,
                 *globalPlaneCloud,
-                pKF->GetPoseInverse().matrix().cast<float>());
+                pKF->getPoseInverse().matrix().cast<float>());
 
             /* Get the semantic type of the observation */
             vs_graphs::core::geometric::Plane::PlaneVariant semanticType =
@@ -835,14 +835,14 @@ void SemanticSegmentation::updatePlaneData(
              *              equations, centroids and point clouds.
              */
             int matchedPlaneId = Utils::associatePlanes(
-                mpAtlas->GetAllPlanes(),
+                p_atlas->getAllPlanes(),
                 globalEquation,
                 globalPlaneCloud,
                 Eigen::Matrix4d::Identity(),
                 semanticType,
-                sysParams->seg.planeAssociation.ominusThresh,
+                p_sysParams->seg.planeAssociation.ominusThresh,
                 -1.0F,
-                pKF->GetCameraCenter().cast<double>());
+                pKF->getCameraCenter().cast<double>());
 
             /*!
              * If no mapped plane is associated with current plane
@@ -859,7 +859,7 @@ void SemanticSegmentation::updatePlaneData(
                  * whether the observation is sufficiently large to become a
                  * new mapped plane.
                  */
-                if (!mGeoRuns)
+                if (!geoRuns)
                 {
                     /*!
                      * Apply an additional geometry check before creating a new
@@ -872,11 +872,12 @@ void SemanticSegmentation::updatePlaneData(
                      *              check is only applied when a matchPlaneId is
                      *              -1.
                      */
-                    if (semanticType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
+                    if (semanticType ==
+                        vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
                     {
                         const types::SystemParams::SemSeg::WallCreation
                             &wallCreationParams =
-                                sysParams->semSeg.wallCreation;
+                                p_sysParams->semSeg.wallCreation;
 
                         WallComponentSupport connectedSupport;
 
@@ -1011,7 +1012,7 @@ void SemanticSegmentation::updatePlaneData(
 
                     /* Create a new mapped plane */
                     vs_graphs::core::geometric::Plane *newMapPlane =
-                        GeoSemHelpers::createMapPlane(mpAtlas,
+                        GeoSemHelpers::createMapPlane(p_atlas,
                                                       pKF,
                                                       detectedPlane,
                                                       planeCloud,
@@ -1032,9 +1033,9 @@ void SemanticSegmentation::updatePlaneData(
             {
                 /* Update matched mapped plane with the current observation
                  */
-                if (!mGeoRuns)
+                if (!geoRuns)
                 {
-                    GeoSemHelpers::updateMapPlane(mpAtlas,
+                    GeoSemHelpers::updateMapPlane(p_atlas,
                                                   pKF,
                                                   detectedPlane,
                                                   planeCloud,
@@ -1053,10 +1054,10 @@ void SemanticSegmentation::updatePlaneData(
                     pcl::transformPointCloud(
                         *planeCloud,
                         *planeCloud,
-                        pKF->GetPoseInverse().matrix().cast<float>());
+                        pKF->getPoseInverse().matrix().cast<float>());
 
                     vs_graphs::core::geometric::Plane *matchedPlane =
-                        mpAtlas->GetPlaneById(matchedPlaneId);
+                        p_atlas->getPlaneById(matchedPlaneId);
 
                     if (matchedPlane != nullptr && !matchedPlane->isBad() &&
                         !planeCloud->empty())
@@ -1076,7 +1077,7 @@ void SemanticSegmentation::updatePlaneData(
         }
     }
 
-    SetFinish();
+    setFinish();
 }
 
 void SemanticSegmentation::updatePlaneSemantics(int    planeId,
@@ -1084,7 +1085,7 @@ void SemanticSegmentation::updatePlaneSemantics(int    planeId,
                                                 double confidence)
 {
     // retrieve the plane from the map
-    geometric::Plane *matchedPlane = mpAtlas->GetPlaneById(planeId);
+    geometric::Plane *matchedPlane = p_atlas->getPlaneById(planeId);
 
     // plane type compatible with the Plane class
     vs_graphs::core::geometric::Plane::PlaneVariant planeType =
@@ -1094,28 +1095,28 @@ void SemanticSegmentation::updatePlaneSemantics(int    planeId,
     matchedPlane->castWeightedVote(planeType, confidence);
 }
 
-void SemanticSegmentation::RequestFinish()
+void SemanticSegmentation::requestFinish()
 {
     std::unique_lock<std::mutex> lock(mMutexFinish);
-    mbFinishRequested = true;
+    finishRequested = true;
 }
 
-bool SemanticSegmentation::CheckFinish()
+bool SemanticSegmentation::checkFinish()
 {
     std::unique_lock<std::mutex> lock(mMutexFinish);
-    return mbFinishRequested;
+    return finishRequested;
 }
 
-void SemanticSegmentation::SetFinish()
+void SemanticSegmentation::setFinish()
 {
     std::unique_lock<std::mutex> lock(mMutexFinish);
-    mbFinished = true;
+    finished = true;
 }
 
 bool SemanticSegmentation::isFinished()
 {
     std::unique_lock<std::mutex> lock(mMutexFinish);
-    return mbFinished;
+    return finished;
 }
 
 } // namespace core

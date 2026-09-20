@@ -1,4 +1,4 @@
-/**
+/*!
  * @file test_SemanticFixtures.cpp
  * @brief Self-test for the deterministic semantic-fixture builders
  *. Each case exercises one
@@ -46,7 +46,7 @@ TEST(SemanticFixtures, GridCloudIsDeterministicAndOnPlane)
 TEST(SemanticFixtures, MakeWallPlaneProducesAdmissibleGeometry)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     geometric::Plane wall;
     makeWallPlane(wall,
@@ -74,10 +74,10 @@ TEST(SemanticFixtures, MakeWallPlaneProducesAdmissibleGeometry)
 TEST(SemanticFixtures, MakeGroundPlaneRefitsSuccessfully)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
-    geometric::Plane      ground;
-    const bool refitOk = makeGroundPlane(ground, 1, p_map);
+    geometric::Plane ground;
+    const bool       refitOk = makeGroundPlane(ground, 1, p_map);
 
     EXPECT_TRUE(refitOk);
     EXPECT_EQ(ground.getPlaneType(), geometric::Plane::PlaneVariant::GROUND);
@@ -86,7 +86,7 @@ TEST(SemanticFixtures, MakeGroundPlaneRefitsSuccessfully)
 TEST(SemanticFixtures, MakeRoomAttachesWallAndCentroid)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     geometric::Plane wall;
     makeWallPlane(wall,
@@ -112,7 +112,7 @@ TEST(SemanticFixtures, MakeRoomAttachesWallAndCentroid)
 TEST(SemanticFixtures, MakePassageWiresKnownAndFarSide)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     semantic::Room knownRoom;
     makeRoom(knownRoom, 1, p_map, nullptr, Eigen::Vector3d(-1.0, 0.0, 0.0));
@@ -141,7 +141,7 @@ TEST(SemanticFixtures, MakePassageWiresKnownAndFarSide)
 TEST(SemanticFixtures, MakeFloorOwnsGivenRooms)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     semantic::Room roomA;
     makeRoom(roomA, 1, p_map, nullptr);
@@ -160,15 +160,15 @@ TEST(SemanticFixtures, MakeFloorOwnsGivenRooms)
 TEST(SemanticFixtures, MakeKeyFrameAtRegistersWithMapAndCameraCenter)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.GetCurrentMap();
+    Map  *p_map = atlas.getCurrentMap();
 
     KeyFrame keyFrame;
     makeKeyFrameAt(keyFrame, 42U, p_map, Eigen::Vector3f(1.0F, 2.0F, 3.0F));
 
     EXPECT_EQ(keyFrame.mnId, 42U);
     EXPECT_TRUE(
-        keyFrame.GetCameraCenter().isApprox(Eigen::Vector3f(1.0F, 2.0F, 3.0F)));
-    const auto allKeyFrames = p_map->GetAllKeyFrames();
+        keyFrame.getCameraCenter().isApprox(Eigen::Vector3f(1.0F, 2.0F, 3.0F)));
+    const auto allKeyFrames = p_map->getAllKeyFrames();
     EXPECT_NE(std::find(allKeyFrames.begin(), allKeyFrames.end(), &keyFrame),
               allKeyFrames.end());
 }

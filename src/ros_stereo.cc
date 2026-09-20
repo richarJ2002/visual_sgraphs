@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -115,10 +115,10 @@ int main(int argc, char **argv)
     sensorType = vs_graphs::core::System::STEREO;
 
     p_slamSystem = new vs_graphs::core::System(voc_file,
-                                         settings_file,
-                                         sys_params_file,
-                                         sensorType,
-                                         enable_pangolin);
+                                               settings_file,
+                                               sys_params_file,
+                                               sensorType,
+                                               enable_pangolin);
 
     // Subscribe to get raw images
     message_filters::Subscriber<sensor_msgs::Image> sub_img_left(
@@ -165,7 +165,7 @@ int main(int argc, char **argv)
     ros::spin();
 
     // Stop all threads
-    p_slamSystem->Shutdown();
+    p_slamSystem->shutdown();
     ros::shutdown();
 
     return 0;
@@ -193,14 +193,15 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr &msgLeft,
     // frame
     std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>> result =
         findNearestMarker(cv_ptrLeft->header.stamp.toSec());
-    double                           minMarkerTimeDiff = result.first;
-    std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers    = result.second;
+    double minMarkerTimeDiff = result.first;
+    std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers =
+        result.second;
 
     // Tracking process sends markers found in this frame for tracking and
     // clears the buffer
     if (minMarkerTimeDiff < 0.05)
     {
-        Sophus::SE3f Tcw = p_slamSystem->TrackStereo(cv_ptrLeft->image,
+        Sophus::SE3f Tcw = p_slamSystem->trackStereo(cv_ptrLeft->image,
                                                      cv_ptrRight->image,
                                                      msg_time.toSec(),
                                                      {},
@@ -210,7 +211,7 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr &msgLeft,
     }
     else
     {
-        Sophus::SE3f Tcw = p_slamSystem->TrackStereo(cv_ptrLeft->image,
+        Sophus::SE3f Tcw = p_slamSystem->trackStereo(cv_ptrLeft->image,
                                                      cv_ptrRight->image,
                                                      msg_time.toSec());
     }

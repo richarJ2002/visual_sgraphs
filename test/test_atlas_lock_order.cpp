@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -81,10 +81,10 @@ TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
     semantic::Room priorRoom;
     priorRoom.setId(42);
     priorRoom.setCentroid(Eigen::Vector3d::Zero());
-    atlas.GetCurrentMap()->AddDetectedMapRoom(&priorRoom);
+    atlas.getCurrentMap()->addDetectedMapRoom(&priorRoom);
 
-    atlas.CreateNewMap();
-    Map       *pNewMap = atlas.GetCurrentMap();
+    atlas.createNewMap();
+    Map       *pNewMap = atlas.getCurrentMap();
     const auto history = atlas.copyRoomContextHistory();
     ASSERT_EQ(history.count(0U), 1U);
     ASSERT_EQ(history.at(0U).size(), 1U);
@@ -94,7 +94,7 @@ TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
     semantic::Room newRoom;
     newRoom.setId(84);
     newRoom.setCentroid(Eigen::Vector3d::Zero());
-    pNewMap->AddDetectedMapRoom(&newRoom);
+    pNewMap->addDetectedMapRoom(&newRoom);
 
     atlas.matchRoomsToContext(pNewMap);
     EXPECT_TRUE(atlas.tryLockRoomContext());
@@ -106,7 +106,7 @@ TEST(AtlasLockOrder, NewMapEventIsConsumedExactlyOnce)
     Atlas atlas(0);
     EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
     EXPECT_FALSE(atlas.consumeNewMapCreatedEvent());
-    atlas.CreateNewMap();
+    atlas.createNewMap();
     EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
     EXPECT_FALSE(atlas.consumeNewMapCreatedEvent());
 }
@@ -114,7 +114,7 @@ TEST(AtlasLockOrder, NewMapEventIsConsumedExactlyOnce)
 TEST(AtlasLockOrder, EventAndHistoryCopiesAreSafeWithoutBorrowedEntities)
 {
     Atlas             atlas(0);
-    Map              *pStableMap = atlas.GetCurrentMap();
+    Map              *pStableMap = atlas.getCurrentMap();
     std::atomic<bool> complete{false};
     std::thread       reader(
         [&atlas, &complete, pStableMap]()
@@ -132,7 +132,7 @@ TEST(AtlasLockOrder, EventAndHistoryCopiesAreSafeWithoutBorrowedEntities)
         });
     for (unsigned int iteration = 0U; iteration < 100U; ++iteration)
     {
-        atlas.CreateNewMap();
+        atlas.createNewMap();
     }
     reader.join();
     EXPECT_TRUE(complete.load(std::memory_order_acquire));

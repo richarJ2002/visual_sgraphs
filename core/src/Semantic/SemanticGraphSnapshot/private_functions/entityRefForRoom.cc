@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -51,7 +51,7 @@ EntityRef entityRefForRoom(Room *p_room_in)
         ref.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
         return ref;
     }
-    ref.key    = makeKey(EntityKind::ROOM, p_map->GetId(), p_room_in->getId());
+    ref.key    = makeKey(EntityKind::ROOM, p_map->getId(), p_room_in->getId());
     ref.reason = UnavailableReason::NONE;
     return ref;
 }

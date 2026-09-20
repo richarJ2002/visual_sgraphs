@@ -1,4 +1,4 @@
-/**
+/*!
  * @file test_BoundaryLoopOutlierPruning.cpp
  * @brief User rule: once a room's true boundary closes into a valid loop,
  *        any wall the room still owns that is NOT part of that loop, and
@@ -28,10 +28,11 @@ namespace core
 namespace
 {
 
-/** Builds a GROUND geometric::Plane at z=0 with a genuine, production-refit geometry
- * snapshot (Map::GetBiggestGroundPlane() requires cloudGeneration ==
+/*! Builds a GROUND geometric::Plane at z=0 with a genuine, production-refit
+ * geometry snapshot (Map::GetBiggestGroundPlane() requires cloudGeneration ==
  * successfulRefitGeneration and a finite support count). */
-std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int id_in, Map *p_map_in)
+std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
+                                                               Map *p_map_in)
 {
     auto ground = std::make_unique<geometric::Plane>();
     ground->setId(id_in);
@@ -59,19 +60,20 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int id_in, Map *p
     return ground;
 }
 
-/** Builds an admissible WALL geometric::Plane on the plane {normal . p + d = 0}
+/*! Builds an admissible WALL geometric::Plane on the plane {normal . p + d = 0}
  * passing through pointOnPlane_World_in, with a genuine on-plane point
  * cloud running along axisAlong_World_in (must be horizontal) for
  * [-halfLength_m_in, halfLength_m_in] and vertically for [zMin_m_in,
  * zMax_m_in]. */
-std::unique_ptr<geometric::Plane> makeWallSegmentPlane(int                     id_in,
-                                            Map                    *p_map_in,
-                                            const Eigen::Vector3d  &normal_World_in,
-                                            const Eigen::Vector3d  &pointOnPlane_World_in,
-                                            const Eigen::Vector3d  &axisAlong_World_in,
-                                            double                  halfLength_m_in,
-                                            double                  zMin_m_in,
-                                            double                  zMax_m_in)
+std::unique_ptr<geometric::Plane>
+    makeWallSegmentPlane(int                    id_in,
+                         Map                   *p_map_in,
+                         const Eigen::Vector3d &normal_World_in,
+                         const Eigen::Vector3d &pointOnPlane_World_in,
+                         const Eigen::Vector3d &axisAlong_World_in,
+                         double                 halfLength_m_in,
+                         double                 zMin_m_in,
+                         double                 zMax_m_in)
 {
     auto wall = std::make_unique<geometric::Plane>();
     wall->setId(id_in);
@@ -80,8 +82,10 @@ std::unique_ptr<geometric::Plane> makeWallSegmentPlane(int                     i
     wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
 
     const double d = -normal_World_in.dot(pointOnPlane_World_in);
-    wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(
-        normal_World_in.x(), normal_World_in.y(), normal_World_in.z(), d)));
+    wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(normal_World_in.x(),
+                                                         normal_World_in.y(),
+                                                         normal_World_in.z(),
+                                                         d)));
     wall->setCentroid(pointOnPlane_World_in);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
@@ -95,10 +99,9 @@ std::unique_ptr<geometric::Plane> makeWallSegmentPlane(int                     i
                                    static_cast<double>(steps - 1);
         for (int heightIndex = 0; heightIndex < steps; ++heightIndex)
         {
-            const double z =
-                zMin_m_in + (zMax_m_in - zMin_m_in) *
-                                static_cast<double>(heightIndex) /
-                                static_cast<double>(steps - 1);
+            const double z = zMin_m_in + (zMax_m_in - zMin_m_in) *
+                                             static_cast<double>(heightIndex) /
+                                             static_cast<double>(steps - 1);
             pcl::PointXYZRGBA point;
             point.x = static_cast<float>(pointOnPlane_World_in.x() +
                                          t * axisAlong_World_in.x());
@@ -112,7 +115,7 @@ std::unique_ptr<geometric::Plane> makeWallSegmentPlane(int                     i
     return wall;
 }
 
-/** Builds a 4-wall rectangular loop (x in [0,4], y in [0,3], z in [1,2])
+/*! Builds a 4-wall rectangular loop (x in [0,4], y in [0,3], z in [1,2])
  * plus a 5th wall far away and disconnected from it. */
 struct RectangleWithOutlier
 {
@@ -138,7 +141,7 @@ RectangleWithOutlier makeRectangleWithOutlier(Map *p_map_in)
                                        2.0,
                                        1.0,
                                        2.0);
-    walls.east = makeWallSegmentPlane(3,
+    walls.east  = makeWallSegmentPlane(3,
                                       p_map_in,
                                       Eigen::Vector3d(1.0, 0.0, 0.0),
                                       Eigen::Vector3d(4.0, 1.5, 1.5),
@@ -146,7 +149,7 @@ RectangleWithOutlier makeRectangleWithOutlier(Map *p_map_in)
                                       1.5,
                                       1.0,
                                       2.0);
-    walls.west = makeWallSegmentPlane(4,
+    walls.west  = makeWallSegmentPlane(4,
                                       p_map_in,
                                       Eigen::Vector3d(-1.0, 0.0, 0.0),
                                       Eigen::Vector3d(0.0, 1.5, 1.5),
@@ -172,11 +175,12 @@ RectangleWithOutlier makeRectangleWithOutlier(Map *p_map_in)
 TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
-    std::unique_ptr<geometric::Plane> ground = makeRefitGroundPlaneAtOrigin(100, p_map);
-    atlas.AddMapPlane(ground.get());
+    std::unique_ptr<geometric::Plane> ground =
+        makeRefitGroundPlaneAtOrigin(100, p_map);
+    atlas.addMapPlane(ground.get());
 
     RectangleWithOutlier walls = makeRectangleWithOutlier(p_map);
 
@@ -190,11 +194,12 @@ TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
     room.setWalls(walls.east.get());
     room.setWalls(walls.west.get());
     room.setWalls(walls.outlier.get());
-    atlas.AddDetectedMapRoom(&room);
+    atlas.addDetectedMapRoom(&room);
 
     manager.validateRoomBoundariesForTest();
 
-    EXPECT_EQ(room.getBoundaryStatus(), semantic::Room::BoundaryStatus::COMPLETE);
+    EXPECT_EQ(room.getBoundaryStatus(),
+              semantic::Room::BoundaryStatus::COMPLETE);
     EXPECT_GE(room.getBoundaryCorners_World_m().size(), 3U);
 
     const std::vector<geometric::Plane *> remainingWalls = room.getWalls();
@@ -202,26 +207,27 @@ TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
     EXPECT_EQ(std::find(remainingWalls.begin(),
                         remainingWalls.end(),
                         walls.outlier.get()),
-             remainingWalls.end());
-    for (geometric::Plane *p_loopWall :
-        {walls.north.get(), walls.south.get(), walls.east.get(),
-         walls.west.get()})
+              remainingWalls.end());
+    for (geometric::Plane *p_loopWall : {walls.north.get(),
+                                         walls.south.get(),
+                                         walls.east.get(),
+                                         walls.west.get()})
     {
-        EXPECT_NE(std::find(remainingWalls.begin(),
-                            remainingWalls.end(),
-                            p_loopWall),
-                 remainingWalls.end());
+        EXPECT_NE(
+            std::find(remainingWalls.begin(), remainingWalls.end(), p_loopWall),
+            remainingWalls.end());
     }
 }
 
 TEST(BoundaryLoopOutlierPruning, KeepsAnOutlierExplainedByAPassage)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
-    std::unique_ptr<geometric::Plane> ground = makeRefitGroundPlaneAtOrigin(100, p_map);
-    atlas.AddMapPlane(ground.get());
+    std::unique_ptr<geometric::Plane> ground =
+        makeRefitGroundPlaneAtOrigin(100, p_map);
+    atlas.addMapPlane(ground.get());
 
     RectangleWithOutlier walls = makeRectangleWithOutlier(p_map);
 
@@ -235,7 +241,7 @@ TEST(BoundaryLoopOutlierPruning, KeepsAnOutlierExplainedByAPassage)
     room.setWalls(walls.east.get());
     room.setWalls(walls.west.get());
     room.setWalls(walls.outlier.get());
-    atlas.AddDetectedMapRoom(&room);
+    atlas.addDetectedMapRoom(&room);
 
     /* The outlier is a doorway wall framing a passage out of this room --
      * explained, so it must survive even though it is off the closed loop.
@@ -248,14 +254,15 @@ TEST(BoundaryLoopOutlierPruning, KeepsAnOutlierExplainedByAPassage)
 
     manager.validateRoomBoundariesForTest();
 
-    EXPECT_EQ(room.getBoundaryStatus(), semantic::Room::BoundaryStatus::COMPLETE);
+    EXPECT_EQ(room.getBoundaryStatus(),
+              semantic::Room::BoundaryStatus::COMPLETE);
 
     const std::vector<geometric::Plane *> remainingWalls = room.getWalls();
     EXPECT_EQ(remainingWalls.size(), 5U);
     EXPECT_NE(std::find(remainingWalls.begin(),
                         remainingWalls.end(),
                         walls.outlier.get()),
-             remainingWalls.end());
+              remainingWalls.end());
 }
 
 } // namespace core

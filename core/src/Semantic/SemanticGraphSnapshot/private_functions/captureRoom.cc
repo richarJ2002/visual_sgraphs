@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -50,7 +50,7 @@ RoomRecord captureRoom(Room             *p_room_in,
     core::Map *p_declaredMap = p_room_in->getMap();
     if (p_declaredMap != nullptr)
     {
-        record.declaredMapId = p_declaredMap->GetId();
+        record.declaredMapId = p_declaredMap->getId();
     }
 
     record.variant                 = p_room_in->getRoomVariant();

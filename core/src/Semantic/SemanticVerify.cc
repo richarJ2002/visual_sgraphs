@@ -33,7 +33,7 @@ bool isFiniteVector(const Eigen::Vector3d &value_in)
     return value_in.allFinite();
 }
 
-/** One admitted (indexA, indexB) candidate correspondence -- not yet a
+/*! One admitted (indexA, indexB) candidate correspondence -- not yet a
  * hypothesis, just a pairing considered for 3-subset enumeration. */
 struct CandidatePair
 {
@@ -47,7 +47,7 @@ struct RotationFit
     Eigen::Matrix3d rotation{Eigen::Matrix3d::Identity()};
 };
 
-/** Horn-style SVD rotation fit on signed normal correspondences (same
+/*! Horn-style SVD rotation fit on signed normal correspondences (same
  * closed-form pattern as Utils::computeMapTransform_Horn's covariance/SVD
  * step, applied to plane normals instead of point positions -- Horn's
  * function itself is not called; it is point-based and unsuitable here). */
@@ -96,7 +96,7 @@ struct TranslationFit
     double          conditionNumber{std::numeric_limits<double>::infinity()};
 };
 
-/** Solves N_B t = b (translation from offsets) via SVD, and reports
+/*! Solves N_B t = b (translation from offsets) via SVD, and reports
  * rank(N_B)/cond(N_B) for the observability gates. */
 TranslationFit fitTranslation(const Eigen::Matrix3d              &rotation_in,
                               const std::vector<Eigen::Vector3d> &normalsA_in,
@@ -187,7 +187,7 @@ const VerifyWallObservation *
     return it == walls_in.end() ? nullptr : &(*it);
 }
 
-/** Symmetric point-to-plane support-cloud distance (inlier
+/*! Symmetric point-to-plane support-cloud distance (inlier
  * classification): sampled points from wall A, transformed by the
  * hypothesis, checked against wall B's plane; and the reverse. Returns the
  * larger (worse) of the two mean distances; 0.0 (vacuously passing) when
@@ -223,8 +223,9 @@ double symmetricSupportDistance(const VerifyWallObservation &wallA_in,
 
 SemanticVerifyConfig SemanticVerify::configFromSystemParams()
 {
-    const auto &loadedVerification = types::SystemParams::getParams()->verification;
-    const auto &loadedFactor       = types::SystemParams::getParams()->factor;
+    const auto &loadedVerification =
+        types::SystemParams::getParams()->verification;
+    const auto &loadedFactor = types::SystemParams::getParams()->factor;
 
     SemanticVerifyConfig config;
     config.maxNormalAngle_deg =
@@ -236,11 +237,10 @@ SemanticVerifyConfig SemanticVerify::configFromSystemParams()
         static_cast<double>(loadedVerification.minInlierRatio);
     config.maxConditionNumber =
         static_cast<double>(loadedVerification.maxConditionNumber);
-    config.ambiguityMarginInliers = loadedVerification.ambiguityMarginInliers;
-    config.maxWallsPerRoom        = loadedVerification.maxWallsPerRoom;
-    config.maxHypotheses          = loadedVerification.maxHypotheses;
-    config.maxSupportSamplePerWall =
-        loadedVerification.maxSupportSamplePerWall;
+    config.ambiguityMarginInliers  = loadedVerification.ambiguityMarginInliers;
+    config.maxWallsPerRoom         = loadedVerification.maxWallsPerRoom;
+    config.maxHypotheses           = loadedVerification.maxHypotheses;
+    config.maxSupportSamplePerWall = loadedVerification.maxSupportSamplePerWall;
     config.minAbsCosNormalAngle =
         static_cast<double>(loadedVerification.minAbsCosNormalAngle);
     config.sigmaTheta_rad = static_cast<double>(loadedFactor.sigmaTheta_rad);
@@ -314,7 +314,8 @@ std::vector<VerifyWallObservation> SemanticVerify::collectWallObservations(
             continue;
         }
 
-        const geometric::Plane::GeometrySnapshot snapshot = p_wall->getGeometrySnapshot();
+        const geometric::Plane::GeometrySnapshot snapshot =
+            p_wall->getGeometrySnapshot();
         if (snapshot.supportCloud && !snapshot.supportCloud->empty())
         {
             const std::size_t total  = snapshot.supportCloud->size();
@@ -824,8 +825,8 @@ SemanticVerifyResult
 
 bool SemanticVerify::runFloorGate(
     SemanticVerifyResult    &result_inout,
-    core::Map                     *p_survivingMap_in,
-    core::Map                     *p_absorbedMap_in,
+    core::Map               *p_survivingMap_in,
+    core::Map               *p_absorbedMap_in,
     const Eigen::Isometry3d &transform_absorbedToSurviving_in)
 {
     const g2o::Sim3 transform(transform_absorbedToSurviving_in.linear(),
@@ -1170,16 +1171,16 @@ bool transformAbsorbedPoint(const g2o::Sim3       &transform_in,
     return mapped_out.allFinite();
 }
 
-bool checkConsecutiveFloors(core::Map             *p_survivingMap_in,
-                            core::Map             *p_absorbedMap_in,
+bool checkConsecutiveFloors(core::Map       *p_survivingMap_in,
+                            core::Map       *p_absorbedMap_in,
                             const g2o::Sim3 &transform_in,
                             double           maximumOffset_m_in,
                             std::string     &decision_out)
 {
     Floor *p_survivingFloor =
-        Floor::selectBestObservedFloor(p_survivingMap_in->GetAllFloors());
+        Floor::selectBestObservedFloor(p_survivingMap_in->getAllFloors());
     Floor *p_absorbedFloor =
-        Floor::selectBestObservedFloor(p_absorbedMap_in->GetAllFloors());
+        Floor::selectBestObservedFloor(p_absorbedMap_in->getAllFloors());
     const std::optional<Floor::PlaneIdentity> survivingIdentity =
         p_survivingFloor != nullptr ? p_survivingFloor->getPlaneIdentity()
                                     : std::nullopt;
@@ -1759,8 +1760,8 @@ SemanticMergeGateResult SemanticVerify::evaluateMergeAlignment(
 }
 
 SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
-    core::Map                        *p_survivingMap_in,
-    core::Map                        *p_absorbedMap_in,
+    core::Map                  *p_survivingMap_in,
+    core::Map                  *p_absorbedMap_in,
     const g2o::Sim3            &transform_absorbedToSurviving_in,
     const SemanticVerifyConfig &config_in)
 {
@@ -1788,7 +1789,7 @@ SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
     }
 
     std::vector<SemanticMergeRoomEvidence> survivingRooms;
-    for (Room *p_room : p_survivingMap_in->GetAllRooms())
+    for (Room *p_room : p_survivingMap_in->getAllRooms())
     {
         if (p_room != nullptr && !p_room->isBad() &&
             p_room->getRoomVariant() == Room::RoomVariant::ROOM)
@@ -1797,7 +1798,7 @@ SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
         }
     }
     std::vector<SemanticMergeRoomEvidence> absorbedRooms;
-    for (Room *p_room : p_absorbedMap_in->GetAllRooms())
+    for (Room *p_room : p_absorbedMap_in->getAllRooms())
     {
         if (p_room != nullptr && !p_room->isBad() &&
             p_room->getRoomVariant() == Room::RoomVariant::ROOM)
@@ -1830,8 +1831,8 @@ SemanticVerify::MapMergeConfig SemanticVerify::mapMergeConfigFromSystemParams()
 }
 
 SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
-    core::Map                  *p_survivingMap_in,
-    core::Map                  *p_absorbedMap_in,
+    core::Map            *p_survivingMap_in,
+    core::Map            *p_absorbedMap_in,
     const g2o::Sim3      &transform_absorbedToSurviving_in,
     const MapMergeConfig &config_in)
 {
@@ -1864,7 +1865,7 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     verifyConfig.maxNormalAngle_deg = config_in.wall_coplanar_angle_deg;
 
     std::vector<SemanticMergeRoomEvidence> survivingRooms;
-    for (Room *p_room : p_survivingMap_in->GetAllRooms())
+    for (Room *p_room : p_survivingMap_in->getAllRooms())
     {
         if (p_room != nullptr && !p_room->isBad() &&
             p_room->getRoomVariant() == Room::RoomVariant::ROOM)
@@ -1874,7 +1875,7 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
         }
     }
     std::vector<SemanticMergeRoomEvidence> absorbedRooms;
-    for (Room *p_room : p_absorbedMap_in->GetAllRooms())
+    for (Room *p_room : p_absorbedMap_in->getAllRooms())
     {
         if (p_room != nullptr && !p_room->isBad() &&
             p_room->getRoomVariant() == Room::RoomVariant::ROOM)

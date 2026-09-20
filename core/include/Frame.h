@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -61,9 +61,15 @@ namespace core
 class MapPoint;
 class KeyFrame;
 class ConstraintPoseImu;
-namespace camera_models { class GeometricCamera; }
+namespace camera_models
+{
+class GeometricCamera;
+}
 class ORBextractor;
-namespace semantic { class Marker; }
+namespace semantic
+{
+class Marker;
+}
 class Wall;
 
 class Frame
@@ -74,44 +80,46 @@ class Frame
     // Copy constructor.
     Frame(const Frame &frame);
 
-    /** Preserve the legacy member-wise assignment semantics explicitly. */
+    /*! Preserve the legacy member-wise assignment semantics explicitly. */
     Frame &operator=(const Frame &frame) = default;
 
     // Constructor for stereo cameras (with or without IMU) #1
-    Frame(const cv::Mat              &imColor,
-          const cv::Mat              &imLeft,
-          const cv::Mat              &imRight,
-          const double               &timeStamp,
-          ORBextractor               *extractorLeft,
-          ORBextractor               *extractorRight,
-          ORBVocabulary              *voc,
-          cv::Mat                    &K,
-          cv::Mat                    &distCoef,
-          const float                &bf,
-          const float                &thDepth,
-          camera_models::GeometricCamera            *pCamera,
-          Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
-          const IMU::Calib           &ImuCalib = IMU::Calib(),
-          const std::vector<semantic::Marker *> markers  = std::vector<semantic::Marker *>{});
+    Frame(const cv::Mat                  &imColor,
+          const cv::Mat                  &imLeft,
+          const cv::Mat                  &imRight,
+          const double                   &timeStamp,
+          ORBextractor                   *extractorLeft,
+          ORBextractor                   *extractorRight,
+          ORBVocabulary                  *voc,
+          cv::Mat                        &K,
+          cv::Mat                        &distCoef,
+          const float                    &bf,
+          const float                    &thDepth,
+          camera_models::GeometricCamera *pCamera,
+          Frame            *pPrevF   = static_cast<Frame *>(nullptr),
+          const IMU::Calib &ImuCalib = IMU::Calib(),
+          const std::vector<semantic::Marker *> markers =
+              std::vector<semantic::Marker *>{});
 
     // Constructor for stereo cameras (with or without IMU) #2
-    Frame(const cv::Mat              &imColor,
-          const cv::Mat              &imLeft,
-          const cv::Mat              &imRight,
-          const double               &timeStamp,
-          ORBextractor               *extractorLeft,
-          ORBextractor               *extractorRight,
-          ORBVocabulary              *voc,
-          cv::Mat                    &K,
-          cv::Mat                    &distCoef,
-          const float                &bf,
-          const float                &thDepth,
-          camera_models::GeometricCamera            *pCamera,
-          camera_models::GeometricCamera            *pCamera2,
-          Sophus::SE3f               &Tlr,
-          Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
-          const IMU::Calib           &ImuCalib = IMU::Calib(),
-          const std::vector<semantic::Marker *> markers  = std::vector<semantic::Marker *>{});
+    Frame(const cv::Mat                  &imColor,
+          const cv::Mat                  &imLeft,
+          const cv::Mat                  &imRight,
+          const double                   &timeStamp,
+          ORBextractor                   *extractorLeft,
+          ORBextractor                   *extractorRight,
+          ORBVocabulary                  *voc,
+          cv::Mat                        &K,
+          cv::Mat                        &distCoef,
+          const float                    &bf,
+          const float                    &thDepth,
+          camera_models::GeometricCamera *pCamera,
+          camera_models::GeometricCamera *pCamera2,
+          Sophus::SE3f                   &Tlr,
+          Frame            *pPrevF   = static_cast<Frame *>(nullptr),
+          const IMU::Calib &ImuCalib = IMU::Calib(),
+          const std::vector<semantic::Marker *> markers =
+              std::vector<semantic::Marker *>{});
 
     // Constructor for RGB-D cameras (with or without IMU)
     Frame(const cv::Mat                                &imColor,
@@ -125,26 +133,28 @@ class Frame
           cv::Mat                                      &distCoef,
           const float                                  &bf,
           const float                                  &thDepth,
-          camera_models::GeometricCamera                              *pCamera,
-          Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
-          const IMU::Calib           &ImuCalib = IMU::Calib(),
-          const std::vector<semantic::Marker *> markers  = std::vector<semantic::Marker *>{});
+          camera_models::GeometricCamera               *pCamera,
+          Frame            *pPrevF   = static_cast<Frame *>(nullptr),
+          const IMU::Calib &ImuCalib = IMU::Calib(),
+          const std::vector<semantic::Marker *> markers =
+              std::vector<semantic::Marker *>{});
 
     // Constructor for Monocular cameras (with or without IMU)
-    Frame(const cv::Mat              &imColor,
-          const cv::Mat              &imGray,
-          const double               &timeStamp,
-          ORBextractor               *extractor,
-          ORBVocabulary              *voc,
-          camera_models::GeometricCamera            *pCamera,
-          cv::Mat                    &distCoef,
-          const float                &bf,
-          const float                &thDepth,
-          Frame                      *pPrevF   = static_cast<Frame *>(nullptr),
-          const IMU::Calib           &ImuCalib = IMU::Calib(),
-          const std::vector<semantic::Marker *> markers  = std::vector<semantic::Marker *>{});
+    Frame(const cv::Mat                  &imColor,
+          const cv::Mat                  &imGray,
+          const double                   &timeStamp,
+          ORBextractor                   *extractor,
+          ORBVocabulary                  *voc,
+          camera_models::GeometricCamera *pCamera,
+          cv::Mat                        &distCoef,
+          const float                    &bf,
+          const float                    &thDepth,
+          Frame            *pPrevF   = static_cast<Frame *>(nullptr),
+          const IMU::Calib &ImuCalib = IMU::Calib(),
+          const std::vector<semantic::Marker *> markers =
+              std::vector<semantic::Marker *>{});
 
-    /**
+    /*!
      * @brief Extract ORB features from the given grayscale image
      *
      * @param flag The flag to indicate which image to extract features from (0
@@ -154,9 +164,9 @@ class Frame
      * @param x1 The x-coordinate of the bottom-right corner of the ROI
      */
     void extractOrbFeatures(int            flag,
-                    const cv::Mat &imageGray,
-                    const int      x0,
-                    const int      x1);
+                            const cv::Mat &imageGray,
+                            const int      x0,
+                            const int      x1);
 
     // Compute Bag of Words representation.
     void computeBagOfWords();
@@ -165,9 +175,9 @@ class Frame
     void setPose(const Sophus::SE3<float> &Tcw);
 
     // Set IMU velocity
-    void SetVelocity(Eigen::Vector3f Vw);
+    void setVelocity(Eigen::Vector3f Vw);
 
-    Eigen::Vector3f GetVelocity() const;
+    Eigen::Vector3f getVelocity() const;
 
     // Set IMU pose and velocity (implicitly changes camera pose)
     void setImuPoseVelocity(const Eigen::Matrix3f &Rwb,
@@ -327,9 +337,9 @@ class Frame
     int N;
 
     // Vector of keypoints (original for visualization) and undistorted
-    // (actually used by the system). In the stereo case, keyPointsUndistorted is redundant
-    // as images must be rectified. In the RGB-D case, RGB images can be
-    // distorted.
+    // (actually used by the system). In the stereo case, keyPointsUndistorted
+    // is redundant as images must be rectified. In the RGB-D case, RGB images
+    // can be distorted.
     std::vector<cv::KeyPoint> keyPoints, keyPointsRight;
     std::vector<cv::KeyPoint> keyPointsUndistorted;
 
@@ -434,7 +444,7 @@ class Frame
 
     bool imuPreintegrated;
 
-    /**
+    /*!
      * @brief Synchronizes access to this frame's IMU preintegration state.
      *
      * Frame copies share the preintegration state, so they also share its

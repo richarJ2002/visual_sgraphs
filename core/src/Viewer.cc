@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -29,8 +29,8 @@
  * @brief        Implements Viewer declared in Viewer.h.
  */
 
-#include "Viewer.h"
 #include "ResetCause.h"
+#include "Viewer.h"
 #include <pangolin/pangolin.h>
 
 #include <mutex>
@@ -47,14 +47,14 @@ Viewer::Viewer(System       *pSystem,
                const string &strSettingPath,
                Settings     *settings) :
     both(false),
-    mpSystem(pSystem),
-    mpFrameDrawer(pFrameDrawer),
-    mpMapDrawer(pMapDrawer),
-    mpTracker(pTracking),
-    mbFinishRequested(false),
-    mbFinished(true),
-    mbStopped(true),
-    mbStopRequested(false)
+    p_system(pSystem),
+    p_frameDrawer(pFrameDrawer),
+    p_mapDrawer(pMapDrawer),
+    p_tracker(pTracking),
+    finishRequested(false),
+    finished(true),
+    stopped(true),
+    stopRequestedFlag(false)
 {
     if (settings)
     {
@@ -65,7 +65,7 @@ Viewer::Viewer(System       *pSystem,
 
         cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
-        bool is_correct = ParseViewerParamFile(fSettings);
+        bool is_correct = parseViewerParamFile(fSettings);
 
         if (!is_correct)
         {
@@ -81,43 +81,43 @@ Viewer::Viewer(System       *pSystem,
         }
     }
 
-    mbStopTrack = false;
+    stopTrack = false;
 }
 
 void Viewer::newParameterLoader(Settings *settings)
 {
-    mImageViewerScale = 1.f;
+    imageViewerScale = 1.f;
 
     float fps = settings->getFramesPerSecond();
     if (fps < 1)
         fps = 30;
-    mT = 1e3 / fps;
+    framePeriod = 1e3 / fps;
 
     cv::Size imSize = settings->newImSize();
-    mImageHeight    = imSize.height;
-    mImageWidth     = imSize.width;
+    imageHeight     = imSize.height;
+    imageWidth      = imSize.width;
 
-    mImageViewerScale = settings->imageViewerScale();
-    mViewpointX       = settings->viewPointX();
-    mViewpointY       = settings->viewPointY();
-    mViewpointZ       = settings->viewPointZ();
-    mViewpointF       = settings->viewPointF();
+    imageViewerScale = settings->imageViewerScale();
+    viewpointX       = settings->viewPointX();
+    viewpointY       = settings->viewPointY();
+    viewpointZ       = settings->viewPointZ();
+    viewpointF       = settings->viewPointF();
 }
 
-bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings)
+bool Viewer::parseViewerParamFile(cv::FileStorage &fSettings)
 {
     bool b_miss_params = false;
-    mImageViewerScale  = 1.f;
+    imageViewerScale   = 1.f;
 
     float fps = fSettings["Camera.fps"];
     if (fps < 1)
         fps = 30;
-    mT = 1e3 / fps;
+    framePeriod = 1e3 / fps;
 
     cv::FileNode node = fSettings["Camera.width"];
     if (!node.empty())
     {
-        mImageWidth = node.real();
+        imageWidth = node.real();
     }
     else
     {
@@ -130,7 +130,7 @@ bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings)
     node = fSettings["Camera.height"];
     if (!node.empty())
     {
-        mImageHeight = node.real();
+        imageHeight = node.real();
     }
     else
     {
@@ -143,13 +143,13 @@ bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings)
     node = fSettings["Viewer.imageViewScale"];
     if (!node.empty())
     {
-        mImageViewerScale = node.real();
+        imageViewerScale = node.real();
     }
 
     node = fSettings["Viewer.ViewpointX"];
     if (!node.empty())
     {
-        mViewpointX = node.real();
+        viewpointX = node.real();
     }
     else
     {
@@ -162,7 +162,7 @@ bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings)
     node = fSettings["Viewer.ViewpointY"];
     if (!node.empty())
     {
-        mViewpointY = node.real();
+        viewpointY = node.real();
     }
     else
     {
@@ -175,7 +175,7 @@ bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings)
     node = fSettings["Viewer.ViewpointZ"];
     if (!node.empty())
     {
-        mViewpointZ = node.real();
+        viewpointZ = node.real();
     }
     else
     {
@@ -188,7 +188,7 @@ bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings)
     node = fSettings["Viewer.ViewpointF"];
     if (!node.empty())
     {
-        mViewpointF = node.real();
+        viewpointF = node.real();
     }
     else
     {
@@ -201,10 +201,10 @@ bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings)
     return !b_miss_params;
 }
 
-void Viewer::Run()
+void Viewer::run()
 {
-    mbFinished = false;
-    mbStopped  = false;
+    finished = false;
+    stopped  = false;
 
     pangolin::CreateWindowAndBind("ORB-SLAM3: Map Viewer", 1024, 768);
 
@@ -243,15 +243,15 @@ void Viewer::Run()
     // Define Camera Render Object (for view / scene browsing)
     pangolin::OpenGlRenderState s_cam(pangolin::ProjectionMatrix(1024,
                                                                  768,
-                                                                 mViewpointF,
-                                                                 mViewpointF,
+                                                                 viewpointF,
+                                                                 viewpointF,
                                                                  512,
                                                                  389,
                                                                  0.1,
                                                                  1000),
-                                      pangolin::ModelViewLookAt(mViewpointX,
-                                                                mViewpointY,
-                                                                mViewpointZ,
+                                      pangolin::ModelViewLookAt(viewpointX,
+                                                                viewpointY,
+                                                                viewpointZ,
                                                                 0,
                                                                 0,
                                                                 0,
@@ -276,29 +276,29 @@ void Viewer::Run()
 
     bool bFollow           = true;
     bool bLocalizationMode = false;
-    bool bStepByStep       = false;
+    bool stepByStep        = false;
     bool bCameraView       = true;
 
-    if (mpTracker->mSensor == mpSystem->MONOCULAR ||
-        mpTracker->mSensor == mpSystem->STEREO ||
-        mpTracker->mSensor == mpSystem->RGBD)
+    if (p_tracker->sensor == p_system->MONOCULAR ||
+        p_tracker->sensor == p_system->STEREO ||
+        p_tracker->sensor == p_system->RGBD)
     {
         menuShowGraph = true;
     }
 
-    float trackedImageScale = mpTracker->GetImageScale();
+    float trackedImageScale = p_tracker->getImageScale();
 
     cout << "Starting the Viewer" << endl;
     while (1)
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        mpMapDrawer->GetCurrentOpenGLCameraMatrix(Twc, Ow);
+        p_mapDrawer->getCurrentOpenGLCameraMatrix(Twc, Ow);
 
-        if (mbStopTrack)
+        if (stopTrack)
         {
             menuStepByStep = true;
-            mbStopTrack    = false;
+            stopTrack      = false;
         }
 
         if (menuFollowCamera && bFollow)
@@ -312,18 +312,17 @@ void Viewer::Run()
         {
             if (bCameraView)
             {
-                s_cam.SetProjectionMatrix(
-                    pangolin::ProjectionMatrix(1024,
-                                               768,
-                                               mViewpointF,
-                                               mViewpointF,
-                                               512,
-                                               389,
-                                               0.1,
-                                               1000));
-                s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(mViewpointX,
-                                                                   mViewpointY,
-                                                                   mViewpointZ,
+                s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024,
+                                                                     768,
+                                                                     viewpointF,
+                                                                     viewpointF,
+                                                                     512,
+                                                                     389,
+                                                                     0.1,
+                                                                     1000));
+                s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(viewpointX,
+                                                                   viewpointY,
+                                                                   viewpointZ,
                                                                    0,
                                                                    0,
                                                                    0,
@@ -366,15 +365,15 @@ void Viewer::Run()
             bCameraView = true;
             s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024,
                                                                  768,
-                                                                 mViewpointF,
-                                                                 mViewpointF,
+                                                                 viewpointF,
+                                                                 viewpointF,
                                                                  512,
                                                                  389,
                                                                  0.1,
                                                                  10000));
-            s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(mViewpointX,
-                                                               mViewpointY,
-                                                               mViewpointZ,
+            s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(viewpointX,
+                                                               viewpointY,
+                                                               viewpointZ,
                                                                0,
                                                                0,
                                                                0,
@@ -384,7 +383,7 @@ void Viewer::Run()
             s_cam.Follow(Twc);
         }
 
-        if (menuTopView && mpMapDrawer->mpAtlas->isImuInitialized())
+        if (menuTopView && p_mapDrawer->p_atlas->isImuInitialized())
         {
             menuTopView = false;
             bCameraView = false;
@@ -403,44 +402,44 @@ void Viewer::Run()
 
         if (menuLocalizationMode && !bLocalizationMode)
         {
-            mpSystem->ActivateLocalizationMode();
+            p_system->activateLocalizationMode();
             bLocalizationMode = true;
         }
         else if (!menuLocalizationMode && bLocalizationMode)
         {
-            mpSystem->DeactivateLocalizationMode();
+            p_system->deactivateLocalizationMode();
             bLocalizationMode = false;
         }
 
-        if (menuStepByStep && !bStepByStep)
+        if (menuStepByStep && !stepByStep)
         {
             // cout << "Viewer: step by step" << endl;
-            mpTracker->SetStepByStep(true);
-            bStepByStep = true;
+            p_tracker->setStepByStep(true);
+            stepByStep = true;
         }
-        else if (!menuStepByStep && bStepByStep)
+        else if (!menuStepByStep && stepByStep)
         {
-            mpTracker->SetStepByStep(false);
-            bStepByStep = false;
+            p_tracker->setStepByStep(false);
+            stepByStep = false;
         }
 
         if (menuStep)
         {
-            mpTracker->mbStep = true;
-            menuStep          = false;
+            p_tracker->step = true;
+            menuStep        = false;
         }
 
         d_cam.Activate(s_cam);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        mpMapDrawer->DrawCurrentCamera(Twc);
+        p_mapDrawer->drawCurrentCamera(Twc);
         if (menuShowKeyFrames || menuShowGraph || menuShowInertialGraph ||
             menuShowOptLba)
-            mpMapDrawer->DrawKeyFrames(menuShowKeyFrames,
+            p_mapDrawer->drawKeyFrames(menuShowKeyFrames,
                                        menuShowGraph,
                                        menuShowInertialGraph,
                                        menuShowOptLba);
         if (menuShowPoints)
-            mpMapDrawer->DrawMapPoints();
+            p_mapDrawer->drawMapPoints();
 
         // Draw world frame
         pangolin::glDrawAxis(10.0);
@@ -448,11 +447,11 @@ void Viewer::Run()
         pangolin::FinishFrame();
 
         cv::Mat toShow;
-        cv::Mat im = mpFrameDrawer->DrawFrame(trackedImageScale);
+        cv::Mat im = p_frameDrawer->drawFrame(trackedImageScale);
 
         if (both)
         {
-            cv::Mat imRight = mpFrameDrawer->DrawRightFrame(trackedImageScale);
+            cv::Mat imRight = p_frameDrawer->drawRightFrame(trackedImageScale);
             cv::hconcat(im, imRight, toShow);
         }
         else
@@ -460,15 +459,15 @@ void Viewer::Run()
             toShow = im;
         }
 
-        if (mImageViewerScale != 1.f)
+        if (imageViewerScale != 1.f)
         {
-            int width  = toShow.cols * mImageViewerScale;
-            int height = toShow.rows * mImageViewerScale;
+            int width  = toShow.cols * imageViewerScale;
+            int height = toShow.rows * imageViewerScale;
             cv::resize(toShow, toShow, cv::Size(width, height));
         }
 
         cv::imshow("ORB-SLAM3: Current Frame", toShow);
-        cv::waitKey(mT);
+        cv::waitKey(framePeriod);
 
         if (menuReset)
         {
@@ -478,11 +477,11 @@ void Viewer::Run()
             menuShowPoints        = true;
             menuLocalizationMode  = false;
             if (bLocalizationMode)
-                mpSystem->DeactivateLocalizationMode();
+                p_system->deactivateLocalizationMode();
             bLocalizationMode = false;
             bFollow           = true;
             menuFollowCamera  = true;
-            mpSystem->RequestResetActiveMapWithCause(
+            p_system->requestResetActiveMapWithCause(
                 ResetCause::VIEWER_REQUEST);
             menuReset = false;
         }
@@ -490,18 +489,18 @@ void Viewer::Run()
         if (menuStop)
         {
             if (bLocalizationMode)
-                mpSystem->DeactivateLocalizationMode();
+                p_system->deactivateLocalizationMode();
 
             // Stop all threads
-            mpSystem->Shutdown();
+            p_system->shutdown();
 
             // Save camera trajectory
-            mpSystem->SaveTrajectoryEuRoC("CameraTrajectory.txt");
-            mpSystem->SaveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
+            p_system->saveTrajectoryEuRoC("CameraTrajectory.txt");
+            p_system->saveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
             menuStop = false;
         }
 
-        if (Stop())
+        if (stop())
         {
             while (isStopped())
             {
@@ -509,71 +508,71 @@ void Viewer::Run()
             }
         }
 
-        if (CheckFinish())
+        if (checkFinish())
             break;
     }
 
-    SetFinish();
+    setFinish();
 }
 
-void Viewer::RequestFinish()
+void Viewer::requestFinish()
 {
     unique_lock<mutex> lock(mMutexFinish);
-    mbFinishRequested = true;
+    finishRequested = true;
 }
 
-bool Viewer::CheckFinish()
+bool Viewer::checkFinish()
 {
     unique_lock<mutex> lock(mMutexFinish);
-    return mbFinishRequested;
+    return finishRequested;
 }
 
-void Viewer::SetFinish()
+void Viewer::setFinish()
 {
     unique_lock<mutex> lock(mMutexFinish);
-    mbFinished = true;
+    finished = true;
 }
 
 bool Viewer::isFinished()
 {
     unique_lock<mutex> lock(mMutexFinish);
-    return mbFinished;
+    return finished;
 }
 
-void Viewer::RequestStop()
+void Viewer::requestStop()
 {
     unique_lock<mutex> lock(mMutexStop);
-    if (!mbStopped)
-        mbStopRequested = true;
+    if (!stopped)
+        stopRequestedFlag = true;
 }
 
 bool Viewer::isStopped()
 {
     unique_lock<mutex> lock(mMutexStop);
-    return mbStopped;
+    return stopped;
 }
 
-bool Viewer::Stop()
+bool Viewer::stop()
 {
     unique_lock<mutex> lock(mMutexStop);
     unique_lock<mutex> lock2(mMutexFinish);
 
-    if (mbFinishRequested)
+    if (finishRequested)
         return false;
-    else if (mbStopRequested)
+    else if (stopRequestedFlag)
     {
-        mbStopped       = true;
-        mbStopRequested = false;
+        stopped           = true;
+        stopRequestedFlag = false;
         return true;
     }
 
     return false;
 }
 
-void Viewer::Release()
+void Viewer::release()
 {
     unique_lock<mutex> lock(mMutexStop);
-    mbStopped = false;
+    stopped = false;
 }
 
 /*void Viewer::SetTrackingPause()

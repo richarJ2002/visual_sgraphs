@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -176,7 +176,7 @@ static std::size_t countLiveRooms(Map *p_map_in)
         return 0U;
     }
     std::size_t liveCount = 0U;
-    for (semantic::Room *p_room : p_map_in->GetAllRooms())
+    for (semantic::Room *p_room : p_map_in->getAllRooms())
     {
         if (p_room != nullptr && !p_room->isBad())
         {
@@ -193,7 +193,7 @@ static std::size_t countLiveWallPlanes(Map *p_map_in)
         return 0U;
     }
     std::size_t liveCount = 0U;
-    for (geometric::Plane *p_plane : p_map_in->GetAllPlanes())
+    for (geometric::Plane *p_plane : p_map_in->getAllPlanes())
     {
         if (p_plane != nullptr && !p_plane->isBad() &&
             p_plane->getPlaneType() == geometric::Plane::PlaneVariant::WALL)
@@ -211,7 +211,7 @@ static std::size_t countLivePassages(Map *p_map_in)
         return 0U;
     }
     std::size_t liveCount = 0U;
-    for (semantic::Passage *p_passage : p_map_in->GetAllPassages())
+    for (semantic::Passage *p_passage : p_map_in->getAllPassages())
     {
         if (p_passage != nullptr && !p_passage->isBad())
         {
@@ -228,7 +228,7 @@ static std::size_t countLiveFloors(Map *p_map_in)
         return 0U;
     }
     std::size_t liveCount = 0U;
-    for (semantic::Floor *p_floor : p_map_in->GetAllFloors())
+    for (semantic::Floor *p_floor : p_map_in->getAllFloors())
     {
         if (p_floor != nullptr && p_floor->hasPlaneIdentity())
         {
@@ -281,7 +281,7 @@ static std::set<std::string> collectAnchorTags(Map *p_oldMap_in,
         return anchorTags;
     }
     std::set<std::string> currentTags;
-    for (semantic::Room *p_room : p_currentMap_in->GetAllRooms())
+    for (semantic::Room *p_room : p_currentMap_in->getAllRooms())
     {
         if (p_room != nullptr && !p_room->isBad() && p_room->hasRoomTag() &&
             !p_room->getRoomTag().empty())
@@ -289,7 +289,7 @@ static std::set<std::string> collectAnchorTags(Map *p_oldMap_in,
             currentTags.insert(p_room->getRoomTag());
         }
     }
-    for (semantic::Room *p_room : p_oldMap_in->GetAllRooms())
+    for (semantic::Room *p_room : p_oldMap_in->getAllRooms())
     {
         if (p_room != nullptr && !p_room->isBad() && p_room->hasRoomTag() &&
             !p_room->getRoomTag().empty() &&
@@ -387,7 +387,7 @@ static bool resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
     }
     std::cout << "SG_PIPELINE {\"event\":\"passage_resurfaced\","
                  "\"map_id\":"
-              << p_proxy_inout->getMap()->GetId()
+              << p_proxy_inout->getMap()->getId()
               << ",\"passage_id\":" << p_proxy_inout->getId() << "}"
               << std::endl;
     return true;
@@ -396,15 +396,15 @@ static bool resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
 
 Atlas::Atlas()
 {
-    mpCurrentMap = static_cast<Map *>(nullptr);
+    p_activeMap = static_cast<Map *>(nullptr);
 }
 
 Atlas::Atlas(int initKFid) :
-    mnLastInitKFidMap(initKFid),
-    mHasViewer(false)
+    lastInitKeyFrameId(initKFid),
+    hasViewer(false)
 {
-    mpCurrentMap = static_cast<Map *>(nullptr);
-    CreateNewMap();
+    p_activeMap = static_cast<Map *>(nullptr);
+    createNewMap();
 }
 
 Atlas::~Atlas()
@@ -413,9 +413,9 @@ Atlas::~Atlas()
      * A map may move through the active, pending-retirement, and retired sets
      * during its lifetime. Delete the union exactly once at Atlas shutdown.
      */
-    std::set<Map *> mapsToDelete = mspMaps;
-    mapsToDelete.insert(mspBadMaps.begin(), mspBadMaps.end());
-    mapsToDelete.insert(mspRetiredMaps.begin(), mspRetiredMaps.end());
+    std::set<Map *> mapsToDelete = maps;
+    mapsToDelete.insert(badMaps.begin(), badMaps.end());
+    mapsToDelete.insert(retiredMaps.begin(), retiredMaps.end());
 
     for (Map *p_map : mapsToDelete)
     {
@@ -425,12 +425,12 @@ Atlas::~Atlas()
         }
     }
 
-    mspMaps.clear();
-    mspBadMaps.clear();
-    mspRetiredMaps.clear();
+    maps.clear();
+    badMaps.clear();
+    retiredMaps.clear();
 }
 
-void Atlas::CreateNewMap()
+void Atlas::createNewMap()
 {
     std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
     createNewMapWhileAtlasLocked();
@@ -440,33 +440,34 @@ void Atlas::createNewMapWhileAtlasLocked()
 {
     std::cout << "\n[Atlas]" << std::endl;
     std::cout << "- Creating a new map (MapId: " << Map::nNextId
-              << ", Init KeyFrame: " << mnLastInitKFidMap << ") ..."
+              << ", Init KeyFrame: " << lastInitKeyFrameId << ") ..."
               << std::endl;
 
-    if (mpCurrentMap)
+    if (p_activeMap)
     {
-        if (!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
-            mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;
+        if (!maps.empty() &&
+            lastInitKeyFrameId < p_activeMap->getMaxKeyFrameId())
+            lastInitKeyFrameId = p_activeMap->getMaxKeyFrameId() + 1;
 
         /* Snapshot room geometry before the map is stranded so that
          * rooms in the new map can inherit identity tags.            */
         exportRoomContextFromCurrentMap();
 
-        mpCurrentMap->SetStoredMap();
-        std::cout << "- The created map with MapId #" << mpCurrentMap->GetId()
+        p_activeMap->setStoredMap();
+        std::cout << "- The created map with MapId #" << p_activeMap->getId()
                   << " has been stored!" << std::endl;
     }
 
-    Map *p_previousMap = mpCurrentMap;
-    mpCurrentMap       = new Map(mnLastInitKFidMap);
-    mpCurrentMap->SetCurrentMap();
-    mspMaps.insert(mpCurrentMap);
+    Map *p_previousMap = p_activeMap;
+    p_activeMap        = new Map(lastInitKeyFrameId);
+    p_activeMap->setCurrentMap();
+    maps.insert(p_activeMap);
     if (p_previousMap != nullptr)
     {
         /* Mission-chain trace link: the stranded map points at its
          * successor. Same-map clears never pass through here, so the link
          * stays null for them by construction. */
-        p_previousMap->setFollowingMap(mpCurrentMap);
+        p_previousMap->setFollowingMap(p_activeMap);
     }
     {
         std::lock_guard<std::mutex> contextLock(mRoomContextMutex);
@@ -474,63 +475,63 @@ void Atlas::createNewMapWhileAtlasLocked()
     }
 }
 
-void Atlas::ChangeMap(Map *pMap)
+void Atlas::changeMap(Map *pMap)
 {
     unique_lock<mutex> lock(mMutexAtlas);
     std::cout << "\n[Atlas]" << std::endl;
-    std::cout << "- Changing to map with MapId #" << pMap->GetId() << " ..."
+    std::cout << "- Changing to map with MapId #" << pMap->getId() << " ..."
               << std::endl;
 
-    if (mpCurrentMap)
-        mpCurrentMap->SetStoredMap();
+    if (p_activeMap)
+        p_activeMap->setStoredMap();
 
-    mpCurrentMap = pMap;
-    mpCurrentMap->SetCurrentMap();
+    p_activeMap = pMap;
+    p_activeMap->setCurrentMap();
 }
 
-unsigned long int Atlas::GetLastInitKFid()
+unsigned long int Atlas::getLastInitKeyFrameId()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mnLastInitKFidMap;
+    return lastInitKeyFrameId;
 }
 
-void Atlas::SetViewer(Viewer *pViewer)
+void Atlas::setViewer(Viewer *pViewer)
 {
-    mpViewer   = pViewer;
-    mHasViewer = true;
+    p_viewer  = pViewer;
+    hasViewer = true;
 }
 
-void Atlas::AddKeyFrame(KeyFrame *pKF)
+void Atlas::addKeyFrame(KeyFrame *pKF)
 {
-    Map *pMapKF = pKF->GetMap();
-    pMapKF->AddKeyFrame(pKF);
+    Map *pMapKF = pKF->getMap();
+    pMapKF->addKeyFrame(pKF);
 }
 
-void Atlas::AddMapPoint(MapPoint *pMP)
+void Atlas::addMapPoint(MapPoint *pMP)
 {
     Map *pMapMP = pMP->getMap();
-    pMapMP->AddMapPoint(pMP);
+    pMapMP->addMapPoint(pMP);
 }
 
-void Atlas::AddMapMarker(semantic::Marker *marker)
+void Atlas::addMapMarker(semantic::Marker *marker)
 {
     Map *pMapMP = marker->getMap();
-    pMapMP->AddMapMarker(marker);
+    pMapMP->addMapMarker(marker);
 }
 
-void Atlas::AddMapPlane(vs_graphs::core::geometric::Plane *plane)
+void Atlas::addMapPlane(vs_graphs::core::geometric::Plane *plane)
 {
     vs_graphs::core::Map *pMapMP = plane->getMap();
-    pMapMP->AddMapPlane(plane);
+    pMapMP->addMapPlane(plane);
 }
 
-void Atlas::AddRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane)
+void Atlas::addRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane)
 {
     vs_graphs::core::Map *pMapMP = pPlane->getMap();
-    pMapMP->AddRoomWallPlane(pPlane);
+    pMapMP->addRoomWallPlane(pPlane);
 }
 
-void Atlas::AddMapPassage(vs_graphs::core::semantic::Passage *passage)
+void Atlas::addMapPassage(vs_graphs::core::semantic::Passage *passage)
 {
     if (passage == nullptr)
     {
@@ -538,10 +539,10 @@ void Atlas::AddMapPassage(vs_graphs::core::semantic::Passage *passage)
     }
     observePassageIdentity(passage->getId());
     vs_graphs::core::Map *pMapMP = passage->getMap();
-    pMapMP->AddMapPassage(passage);
+    pMapMP->addMapPassage(passage);
 }
 
-void Atlas::AddDetectedMapRoom(semantic::Room *room)
+void Atlas::addDetectedMapRoom(semantic::Room *room)
 {
     if (room == nullptr)
     {
@@ -549,10 +550,10 @@ void Atlas::AddDetectedMapRoom(semantic::Room *room)
     }
     observeRoomIdentity(room->getId());
     Map *pMapMP = room->getMap();
-    pMapMP->AddDetectedMapRoom(room);
+    pMapMP->addDetectedMapRoom(room);
 }
 
-void Atlas::AddCandidateMapRoom(semantic::Room *room)
+void Atlas::addCandidateMapRoom(semantic::Room *room)
 {
     if (room == nullptr)
     {
@@ -560,10 +561,10 @@ void Atlas::AddCandidateMapRoom(semantic::Room *room)
     }
     observeRoomIdentity(room->getId());
     Map *pMapMP = room->getMap();
-    pMapMP->AddCandidateMapRoom(room);
+    pMapMP->addCandidateMapRoom(room);
 }
 
-void Atlas::AddMapFloor(semantic::Floor *floor)
+void Atlas::addMapFloor(semantic::Floor *floor)
 {
     if (floor == nullptr)
     {
@@ -571,7 +572,7 @@ void Atlas::AddMapFloor(semantic::Floor *floor)
     }
     observeFloorIdentity(floor->getId());
     Map *pMapMP = floor->getMap();
-    pMapMP->AddMapFloor(floor);
+    pMapMP->addMapFloor(floor);
 }
 
 int Atlas::reserveRoomIdentity(void)
@@ -615,14 +616,15 @@ int Atlas::getCurrentSemanticRoomIdentity(void) const
     return currentSemanticRoomIdentity_.load(std::memory_order_acquire);
 }
 
-camera_models::GeometricCamera *Atlas::AddCamera(camera_models::GeometricCamera *pCam)
+camera_models::GeometricCamera *
+    Atlas::addCamera(camera_models::GeometricCamera *pCam)
 {
     // Check if the camera already exists
     bool bAlreadyInMap = false;
     int  index_cam     = -1;
-    for (size_t i = 0; i < mvpCameras.size(); ++i)
+    for (size_t i = 0; i < cameras.size(); ++i)
     {
-        camera_models::GeometricCamera *pCam_i = mvpCameras[i];
+        camera_models::GeometricCamera *pCam_i = cameras[i];
         if (!pCam)
             std::cout << "Not pCam" << std::endl;
         if (!pCam_i)
@@ -650,226 +652,226 @@ camera_models::GeometricCamera *Atlas::AddCamera(camera_models::GeometricCamera 
 
     if (bAlreadyInMap)
     {
-        return mvpCameras[index_cam];
+        return cameras[index_cam];
     }
     else
     {
-        mvpCameras.push_back(pCam);
+        cameras.push_back(pCam);
         return pCam;
     }
 }
 
-std::vector<camera_models::GeometricCamera *> Atlas::GetAllCameras()
+std::vector<camera_models::GeometricCamera *> Atlas::getAllCameras()
 {
-    return mvpCameras;
+    return cameras;
 }
 
-void Atlas::SetReferenceMapPoints(const std::vector<MapPoint *> &vpMPs)
+void Atlas::setReferenceMapPoints(const std::vector<MapPoint *> &vpMPs)
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    mpCurrentMap->SetReferenceMapPoints(vpMPs);
+    p_activeMap->setReferenceMapPoints(vpMPs);
 }
 
-void Atlas::InformNewBigChange()
+void Atlas::informNewBigChange()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    mpCurrentMap->InformNewBigChange();
+    p_activeMap->informNewBigChange();
 }
 
-int Atlas::GetLastBigChangeIdx()
+int Atlas::getLastBigChangeIndex()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetLastBigChangeIdx();
+    return p_activeMap->getLastBigChangeIndex();
 }
 
-long unsigned int Atlas::MapPointsInMap()
+long unsigned int Atlas::getMapPointCount()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->MapPointsInMap();
+    return p_activeMap->getMapPointCount();
 }
 
-long unsigned int Atlas::MarkersInMap()
+long unsigned int Atlas::getMarkerCount()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->MarkersInMap();
+    return p_activeMap->getMarkerCount();
 }
 
-long unsigned Atlas::KeyFramesInMap()
+long unsigned Atlas::getKeyFrameCount()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->KeyFramesInMap();
+    return p_activeMap->getKeyFrameCount();
 }
 
-std::vector<std::vector<Eigen::Vector3d>> Atlas::GetSkeletoClusterPoints()
+std::vector<std::vector<Eigen::Vector3d>> Atlas::getSkeletonClusterPoints()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetSkeletonClusterPoints();
+    return p_activeMap->getSkeletonClusterPoints();
 }
 
 std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-    Atlas::GetSkeletonEdges(void)
+    Atlas::getSkeletonEdges(void)
 {
     /* Lock access to the active map */
     unique_lock<mutex> lock(mMutexAtlas);
 
-    if (mpCurrentMap == nullptr)
+    if (p_activeMap == nullptr)
     {
         return {};
     }
 
     /* Return the connected edges from the active map */
-    return mpCurrentMap->GetSkeletonEdges();
+    return p_activeMap->getSkeletonEdges();
 }
 
-void Atlas::SetSkeletonEdges(
+void Atlas::setSkeletonEdges(
     const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
         &newSkeletonEdges)
 {
     /* Lock access to the active map */
     unique_lock<mutex> lock(mMutexAtlas);
 
-    if (mpCurrentMap == nullptr)
+    if (p_activeMap == nullptr)
     {
         return;
     }
 
     /* Store the connected edges in the active map */
-    mpCurrentMap->SetSkeletonEdges(newSkeletonEdges);
+    p_activeMap->setSkeletonEdges(newSkeletonEdges);
 }
 
-void Atlas::SetSkeletonClusterPoints(
+void Atlas::setSkeletonClusterPoints(
     const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints)
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    mpCurrentMap->SetSkeletonClusterPoints(newClusterPoints);
+    p_activeMap->setSkeletonClusterPoints(newClusterPoints);
 }
 
-std::vector<KeyFrame *> Atlas::GetAllKeyFrames()
+std::vector<KeyFrame *> Atlas::getAllKeyFrames()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetAllKeyFrames();
+    return p_activeMap->getAllKeyFrames();
 }
 
-KeyFrame *Atlas::GetKeyFrameById(long unsigned int mnId)
+KeyFrame *Atlas::getKeyFrameById(long unsigned int mnId)
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap != nullptr ? mpCurrentMap->GetKeyFrameById(mnId)
-                                   : nullptr;
+    return p_activeMap != nullptr ? p_activeMap->getKeyFrameById(mnId)
+                                  : nullptr;
 }
 
-vs_graphs::core::semantic::Passage *Atlas::GetPassageById(int passageId)
+vs_graphs::core::semantic::Passage *Atlas::getPassageById(int passageId)
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap != nullptr ? mpCurrentMap->GetPassageById(passageId)
-                                   : nullptr;
+    return p_activeMap != nullptr ? p_activeMap->getPassageById(passageId)
+                                  : nullptr;
 }
 
-semantic::Floor *Atlas::GetFloorById(int floorId)
+semantic::Floor *Atlas::getFloorById(int floorId)
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap != nullptr ? mpCurrentMap->GetFloorById(floorId)
-                                   : nullptr;
+    return p_activeMap != nullptr ? p_activeMap->getFloorById(floorId)
+                                  : nullptr;
 }
 
-geometric::Plane *Atlas::GetPlaneById(int planeId)
+geometric::Plane *Atlas::getPlaneById(int planeId)
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap != nullptr ? mpCurrentMap->GetPlaneById(planeId)
-                                   : nullptr;
+    return p_activeMap != nullptr ? p_activeMap->getPlaneById(planeId)
+                                  : nullptr;
 }
 
-vs_graphs::core::geometric::Plane *Atlas::GetRoomWallPlaneById(int planeId)
+vs_graphs::core::geometric::Plane *Atlas::getRoomWallPlaneById(int planeId)
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap != nullptr ? mpCurrentMap->GetRoomWallPlaneById(planeId)
-                                   : nullptr;
+    return p_activeMap != nullptr ? p_activeMap->getRoomWallPlaneById(planeId)
+                                  : nullptr;
 }
 
-semantic::Marker *Atlas::GetMarkerById(int markerId)
+semantic::Marker *Atlas::getMarkerById(int markerId)
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap != nullptr ? mpCurrentMap->GetMarkerById(markerId)
-                                   : nullptr;
+    return p_activeMap != nullptr ? p_activeMap->getMarkerById(markerId)
+                                  : nullptr;
 }
 
-std::vector<MapPoint *> Atlas::GetAllMapPoints()
+std::vector<MapPoint *> Atlas::getAllMapPoints()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetAllMapPoints();
+    return p_activeMap->getAllMapPoints();
 }
 
-std::vector<semantic::Marker *> Atlas::GetAllMarkers()
+std::vector<semantic::Marker *> Atlas::getAllMarkers()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetAllMarkers();
+    return p_activeMap->getAllMarkers();
 }
 
-std::vector<vs_graphs::core::geometric::Plane *> Atlas::GetAllPlanes()
+std::vector<vs_graphs::core::geometric::Plane *> Atlas::getAllPlanes()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetAllPlanes();
+    return p_activeMap->getAllPlanes();
 }
 
-std::vector<vs_graphs::core::semantic::Passage *> Atlas::GetAllPassages()
+std::vector<vs_graphs::core::semantic::Passage *> Atlas::getAllPassages()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetAllPassages();
+    return p_activeMap->getAllPassages();
 }
 
-std::vector<semantic::Room *> Atlas::GetAllRooms()
+std::vector<semantic::Room *> Atlas::getAllRooms()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetAllRooms();
+    return p_activeMap->getAllRooms();
 }
 
-std::vector<semantic::Room *> Atlas::GetAllDetectedMapRooms()
+std::vector<semantic::Room *> Atlas::getAllDetectedMapRooms()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetAllDetectedMapRooms();
+    return p_activeMap->getAllDetectedMapRooms();
 }
 
-std::vector<semantic::Room *> Atlas::GetAllMarkerBasedMapRooms()
+std::vector<semantic::Room *> Atlas::getAllMarkerBasedMapRooms()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetAllMarkerBasedMapRooms();
+    return p_activeMap->getAllMarkerBasedMapRooms();
 }
 
-std::vector<semantic::Room *> Atlas::GetAllCandidateMapRooms()
+std::vector<semantic::Room *> Atlas::getAllCandidateMapRooms()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetAllCandidateMapRooms();
+    return p_activeMap->getAllCandidateMapRooms();
 }
 
-std::vector<semantic::Floor *> Atlas::GetAllFloors()
+std::vector<semantic::Floor *> Atlas::getAllFloors()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetAllFloors();
+    return p_activeMap->getAllFloors();
 }
 
-geometric::Plane *Atlas::GetBiggestGroundPlane()
+geometric::Plane *Atlas::getBiggestGroundPlane()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap != nullptr ? mpCurrentMap->GetBiggestGroundPlane()
-                                   : nullptr;
+    return p_activeMap != nullptr ? p_activeMap->getBiggestGroundPlane()
+                                  : nullptr;
 }
 
-std::vector<MapPoint *> Atlas::GetReferenceMapPoints()
+std::vector<MapPoint *> Atlas::getReferenceMapPoints()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetReferenceMapPoints();
+    return p_activeMap->getReferenceMapPoints();
 }
 
-vector<Map *> Atlas::GetAllMaps()
+vector<Map *> Atlas::getAllMaps()
 {
     unique_lock<mutex> lock(mMutexAtlas);
     struct CompFunctor
     {
         inline bool operator()(Map *elem1, Map *elem2)
         {
-            return elem1->GetId() < elem2->GetId();
+            return elem1->getId() < elem2->getId();
         }
     };
-    vector<Map *> vMaps(mspMaps.begin(), mspMaps.end());
+    vector<Map *> vMaps(maps.begin(), maps.end());
     sort(vMaps.begin(), vMaps.end(), CompFunctor());
     return vMaps;
 }
@@ -882,13 +884,13 @@ bool Atlas::isActiveMap(Map *p_map_in)
     }
 
     unique_lock<mutex> lock(mMutexAtlas);
-    return mspMaps.count(p_map_in) > 0 && !p_map_in->IsBad();
+    return maps.count(p_map_in) > 0 && !p_map_in->isBad();
 }
 
-int Atlas::CountMaps()
+int Atlas::countMaps()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mspMaps.size();
+    return maps.size();
 }
 
 void Atlas::clearMap()
@@ -899,32 +901,32 @@ void Atlas::clearMap()
      * the bootstrap recovery path can recreate the same stable identities
      * afterwards; otherwise the next cycle allocates fresh RoomN/FloorM. */
     exportRoomContextFromCurrentMap();
-    mpCurrentMap->clear();
+    p_activeMap->clear();
     /* A same-map clear keeps the map id, so the visualization/voxblox
      * revision token would not observe the reset and stale markers and
      * clouds would persist alongside the fresh map. A clear is at least as
      * big a change as the loop-closure corrections this index exists for. */
-    mpCurrentMap->InformNewBigChange();
+    p_activeMap->informNewBigChange();
 }
 
 void Atlas::clearAtlas()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    mspMaps.clear();
-    mpCurrentMap      = static_cast<Map *>(nullptr);
-    mnLastInitKFidMap = 0;
+    maps.clear();
+    p_activeMap        = static_cast<Map *>(nullptr);
+    lastInitKeyFrameId = 0;
 }
 
-Map *Atlas::GetCurrentMap()
+Map *Atlas::getCurrentMap()
 {
     std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
 
-    if (!mpCurrentMap)
+    if (!p_activeMap)
     {
         createNewMapWhileAtlasLocked();
     }
 
-    while (mpCurrentMap != nullptr && mpCurrentMap->IsBad())
+    while (p_activeMap != nullptr && p_activeMap->isBad())
     {
         /* Allow ChangeMap() to install the merge survivor while waiting. */
         atlasLock.unlock();
@@ -932,12 +934,12 @@ Map *Atlas::GetCurrentMap()
         atlasLock.lock();
     }
 
-    if (mpCurrentMap == nullptr)
+    if (p_activeMap == nullptr)
     {
         createNewMapWhileAtlasLocked();
     }
 
-    return mpCurrentMap;
+    return p_activeMap;
 }
 
 std::unique_lock<std::mutex> Atlas::acquireSemanticUpdateLock()
@@ -945,7 +947,7 @@ std::unique_lock<std::mutex> Atlas::acquireSemanticUpdateLock()
     return std::unique_lock<std::mutex>(mMutexSemanticUpdate);
 }
 
-void Atlas::SetMapBad(Map *p_map_in)
+void Atlas::setMapBad(Map *p_map_in)
 {
     if (p_map_in == nullptr)
     {
@@ -954,19 +956,19 @@ void Atlas::SetMapBad(Map *p_map_in)
 
     std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
 
-    mspMaps.erase(p_map_in);
-    p_map_in->SetBad();
+    maps.erase(p_map_in);
+    p_map_in->setBad();
 
-    mspBadMaps.insert(p_map_in);
+    badMaps.insert(p_map_in);
 }
 
-void Atlas::RemoveBadMaps()
+void Atlas::removeBadMaps()
 {
     std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
 
     /* Preserve ownership until no runtime reader can retain a raw Map*. */
-    mspRetiredMaps.insert(mspBadMaps.begin(), mspBadMaps.end());
-    mspBadMaps.clear();
+    retiredMaps.insert(badMaps.begin(), badMaps.end());
+    badMaps.clear();
 }
 
 /*!
@@ -978,7 +980,7 @@ void Atlas::RemoveBadMaps()
  *               closed-form solution; no g2o types are used. Caller must
  *               already hold the semantic-update lock.
  */
-void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
+void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
 {
     if (p_currentMap_in == nullptr || p_otherMap_in == nullptr)
     {
@@ -994,7 +996,7 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
         return;
     }
 
-    if (p_currentMap_in->IsBad() || p_otherMap_in->IsBad())
+    if (p_currentMap_in->isBad() || p_otherMap_in->isBad())
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: a map is bad."
                   << std::endl;
@@ -1042,10 +1044,10 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
 
     /* Compare floor identities in the surviving map frame without mutating
      * either map. A mismatch rejects the merge before any entity is moved. */
-    semantic::Floor *p_currentFloor =
-        semantic::Floor::selectBestObservedFloor(p_currentMap_in->GetAllFloors());
+    semantic::Floor *p_currentFloor = semantic::Floor::selectBestObservedFloor(
+        p_currentMap_in->getAllFloors());
     semantic::Floor *p_otherFloor =
-        semantic::Floor::selectBestObservedFloor(p_otherMap_in->GetAllFloors());
+        semantic::Floor::selectBestObservedFloor(p_otherMap_in->getAllFloors());
 
     const std::optional<semantic::Floor::PlaneIdentity> currentFloorIdentity =
         p_currentFloor != nullptr ? p_currentFloor->getPlaneIdentity()
@@ -1062,9 +1064,10 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     if (currentFloorIdentity.has_value() && otherFloorIdentity.has_value())
     {
         const std::optional<semantic::Floor::PlaneIdentity>
-            transformedOtherFloorIdentity = semantic::Floor::transformPlaneIdentity(
-                *otherFloorIdentity,
-                floorTransform_otherWorldToCurrentWorld);
+            transformedOtherFloorIdentity =
+                semantic::Floor::transformPlaneIdentity(
+                    *otherFloorIdentity,
+                    floorTransform_otherWorldToCurrentWorld);
 
         double floorNormalAngle_deg = std::numeric_limits<double>::infinity();
         double floorOffset_m        = std::numeric_limits<double>::infinity();
@@ -1079,27 +1082,27 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
                 floorOffset_m))
         {
             std::cerr << "[FloorVerify] Rejecting merge: Map#"
-                      << p_currentMap_in->GetId() << " and Map#"
-                      << p_otherMap_in->GetId()
+                      << p_currentMap_in->getId() << " and Map#"
+                      << p_otherMap_in->getId()
                       << " floor planes mismatch (angle="
                       << floorNormalAngle_deg
-                      << " deg, offset=" << floorOffset_m
-                      << " m; limits=" << semantic::Floor::kMergeMaxPlaneNormalAngle_deg
+                      << " deg, offset=" << floorOffset_m << " m; limits="
+                      << semantic::Floor::kMergeMaxPlaneNormalAngle_deg
                       << " deg/" << semantic::Floor::kMergeMaxPlaneOffset_m
                       << " m). result=REJECTED committed=0" << std::endl;
             return;
         }
 
-        std::cout << "[FloorVerify] Map#" << p_currentMap_in->GetId()
-                  << " and Map#" << p_otherMap_in->GetId()
+        std::cout << "[FloorVerify] Map#" << p_currentMap_in->getId()
+                  << " and Map#" << p_otherMap_in->getId()
                   << " floor planes match (angle=" << floorNormalAngle_deg
                   << " deg, offset=" << floorOffset_m
                   << " m). result=ACCEPTED committed=0" << std::endl;
     }
     else
     {
-        std::cout << "[FloorVerify] Map#" << p_currentMap_in->GetId()
-                  << " and Map#" << p_otherMap_in->GetId()
+        std::cout << "[FloorVerify] Map#" << p_currentMap_in->getId()
+                  << " and Map#" << p_otherMap_in->getId()
                   << " floor verification deferred (current="
                   << (currentFloorIdentity.has_value() ? "valid" : "missing")
                   << ", other="
@@ -1111,19 +1114,21 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     /* Snapshot every source-owned object and preflight destination indexes
      * before changing geometry, ownership, or any externally visible ID. */
     std::vector<KeyFrame *> importedKeyFrames =
-        p_otherMap_in->GetAllKeyFrames();
+        p_otherMap_in->getAllKeyFrames();
     std::vector<MapPoint *> importedMapPoints =
-        p_otherMap_in->GetAllMapPoints();
+        p_otherMap_in->getAllMapPoints();
     std::vector<semantic::Room *> importedDetectedRooms =
-        p_otherMap_in->GetAllDetectedMapRooms();
+        p_otherMap_in->getAllDetectedMapRooms();
     std::vector<semantic::Room *> importedMarkerRooms =
-        p_otherMap_in->GetAllMarkerBasedMapRooms();
-    std::vector<geometric::Plane *> importedPlanes = p_otherMap_in->GetAllPlanes();
+        p_otherMap_in->getAllMarkerBasedMapRooms();
+    std::vector<geometric::Plane *> importedPlanes =
+        p_otherMap_in->getAllPlanes();
     std::vector<vs_graphs::core::semantic::Passage *> importedPassages =
-        p_otherMap_in->GetAllPassages();
+        p_otherMap_in->getAllPassages();
     std::vector<vs_graphs::core::semantic::Floor *> importedFloors =
-        p_otherMap_in->GetAllFloors();
-    std::vector<semantic::Marker *> importedMarkers = p_otherMap_in->GetAllMarkers();
+        p_otherMap_in->getAllFloors();
+    std::vector<semantic::Marker *> importedMarkers =
+        p_otherMap_in->getAllMarkers();
 
     const std::set<semantic::Room *> importedDetectedRoomSet(
         importedDetectedRooms.begin(),
@@ -1144,12 +1149,12 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     { return p_ownerMap == p_otherMap_in; };
 
     const std::vector<KeyFrame *> destinationKeyFrames =
-        p_currentMap_in->GetAllKeyFrames();
+        p_currentMap_in->getAllKeyFrames();
     const std::set<KeyFrame *> destinationKeyFrameSet(
         destinationKeyFrames.begin(),
         destinationKeyFrames.end());
     const std::vector<MapPoint *> destinationMapPoints =
-        p_currentMap_in->GetAllMapPoints();
+        p_currentMap_in->getAllMapPoints();
     const std::set<MapPoint *> destinationMapPointSet(
         destinationMapPoints.begin(),
         destinationMapPoints.end());
@@ -1157,7 +1162,7 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     for (KeyFrame *p_keyFrame : importedKeyFrames)
     {
         if (p_keyFrame == nullptr ||
-            !ownerIsTransferable(p_keyFrame->GetMap()) ||
+            !ownerIsTransferable(p_keyFrame->getMap()) ||
             destinationKeyFrameSet.count(p_keyFrame) > 0U)
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source "
@@ -1167,7 +1172,7 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
         }
 
         KeyFrame *p_indexedKeyFrame =
-            p_currentMap_in->GetKeyFrameById(p_keyFrame->mnId);
+            p_currentMap_in->getKeyFrameById(p_keyFrame->mnId);
         if (p_indexedKeyFrame != nullptr && p_indexedKeyFrame != p_keyFrame)
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: KeyFrame ID "
@@ -1245,29 +1250,29 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
         }
     }
 
-    std::vector<std::pair<geometric::Plane *, int>>   planeIdAssignments;
+    std::vector<std::pair<geometric::Plane *, int>>  planeIdAssignments;
     std::vector<std::pair<semantic::Marker *, int>>  markerIdAssignments;
     std::vector<std::pair<semantic::Passage *, int>> passageIdAssignments;
     std::vector<std::pair<semantic::Room *, int>>    roomIdAssignments;
     std::vector<std::pair<semantic::Floor *, int>>   floorIdAssignments;
 
-    if (!planImportedIds(p_currentMap_in->GetAllPlanes(),
+    if (!planImportedIds(p_currentMap_in->getAllPlanes(),
                          importedPlanes,
                          "plane",
                          planeIdAssignments) ||
-        !planImportedIds(p_currentMap_in->GetAllMarkers(),
+        !planImportedIds(p_currentMap_in->getAllMarkers(),
                          importedMarkers,
                          "marker",
                          markerIdAssignments) ||
-        !planImportedIds(p_currentMap_in->GetAllPassages(),
+        !planImportedIds(p_currentMap_in->getAllPassages(),
                          importedPassages,
                          "passage",
                          passageIdAssignments) ||
-        !planImportedIds(p_currentMap_in->GetAllRooms(),
+        !planImportedIds(p_currentMap_in->getAllRooms(),
                          importedRooms,
                          "room",
                          roomIdAssignments) ||
-        !planImportedIds(p_currentMap_in->GetAllFloors(),
+        !planImportedIds(p_currentMap_in->getAllFloors(),
                          importedFloors,
                          "floor",
                          floorIdAssignments))
@@ -1276,10 +1281,11 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     }
 
     const std::vector<MapPoint *> importedReferenceMapPoints =
-        p_otherMap_in->GetReferenceMapPoints();
+        p_otherMap_in->getReferenceMapPoints();
     const std::vector<KeyFrame *> importedKeyFrameOrigins =
-        p_otherMap_in->mvpKeyFrameOrigins;
-    KeyFrame *p_importedFirstRegionKeyFrame = p_otherMap_in->mpFirstRegionKF;
+        p_otherMap_in->keyFrameOrigins;
+    KeyFrame *p_importedFirstRegionKeyFrame =
+        p_otherMap_in->p_firstRegionKeyFrame;
 
     const Eigen::Matrix3f R = T_otherToCurrent.linear().cast<float>();
     const Eigen::Vector3f t = T_otherToCurrent.translation().cast<float>();
@@ -1289,29 +1295,29 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
         std::scoped_lock mapUpdateLocks(p_currentMap_in->mMutexMapUpdate,
                                         p_otherMap_in->mMutexMapUpdate);
 
-        p_otherMap_in->ApplyScaledRotation(T_otherToCurrent_SE3f, 1.0f, false);
+        p_otherMap_in->applyScaledRotation(T_otherToCurrent_SE3f, 1.0f, false);
 
         for (KeyFrame *p_keyFrame : importedKeyFrames)
         {
-            p_keyFrame->UpdateMap(p_currentMap_in);
-            p_currentMap_in->AddKeyFrame(p_keyFrame);
-            p_otherMap_in->EraseKeyFrame(p_keyFrame);
+            p_keyFrame->updateMap(p_currentMap_in);
+            p_currentMap_in->addKeyFrame(p_keyFrame);
+            p_otherMap_in->eraseKeyFrame(p_keyFrame);
         }
 
         for (MapPoint *p_mapPoint : importedMapPoints)
         {
             p_mapPoint->updateMap(p_currentMap_in);
-            p_currentMap_in->AddMapPoint(p_mapPoint);
-            p_otherMap_in->EraseMapPoint(p_mapPoint);
+            p_currentMap_in->addMapPoint(p_mapPoint);
+            p_otherMap_in->eraseMapPoint(p_mapPoint);
         }
 
         for (const auto &[p_plane, assignedId] : planeIdAssignments)
         {
             p_plane->setId(assignedId);
             p_plane->setMap(p_currentMap_in);
-            p_currentMap_in->AddMapPlane(p_plane);
-            p_otherMap_in->EraseRoomWallPlane(p_plane);
-            p_otherMap_in->EraseMapPlane(p_plane);
+            p_currentMap_in->addMapPlane(p_plane);
+            p_otherMap_in->eraseRoomWallPlane(p_plane);
+            p_otherMap_in->eraseMapPlane(p_plane);
         }
 
         std::unordered_map<int, int> importedMarkerIdRemap;
@@ -1321,8 +1327,8 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
                                                    assignedId);
             p_marker->setId(assignedId);
             p_marker->setMap(p_currentMap_in);
-            p_currentMap_in->AddMapMarker(p_marker);
-            p_otherMap_in->EraseMapMarker(p_marker);
+            p_currentMap_in->addMapMarker(p_marker);
+            p_otherMap_in->eraseMapMarker(p_marker);
         }
 
         for (const auto &[p_passage, assignedId] : passageIdAssignments)
@@ -1332,7 +1338,7 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
              * duplicating the doorway. The transferred object retires with
              * the absorbed map; it never enters the current map. */
             semantic::Passage *p_proxy =
-                p_currentMap_in->GetPassageById(p_passage->getId());
+                p_currentMap_in->getPassageById(p_passage->getId());
             if (p_proxy != nullptr &&
                 resurfaceProxyFromTransferred(p_proxy, p_passage))
             {
@@ -1341,8 +1347,8 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
             }
             p_passage->setId(assignedId);
             p_passage->setMap(p_currentMap_in);
-            p_currentMap_in->AddMapPassage(p_passage);
-            p_otherMap_in->EraseMapPassage(p_passage);
+            p_currentMap_in->addMapPassage(p_passage);
+            p_otherMap_in->eraseMapPassage(p_passage);
         }
 
         for (semantic::Room *p_room : importedRooms)
@@ -1369,26 +1375,26 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
             p_room->setMap(p_currentMap_in);
             if (importedDetectedRoomSet.count(p_room) > 0U)
             {
-                p_currentMap_in->AddDetectedMapRoom(p_room);
+                p_currentMap_in->addDetectedMapRoom(p_room);
             }
             else
             {
-                p_currentMap_in->AddCandidateMapRoom(p_room);
+                p_currentMap_in->addCandidateMapRoom(p_room);
             }
-            p_otherMap_in->EraseDetectedMapRoom(p_room);
-            p_otherMap_in->EraseMarkerBasedMapRoom(p_room);
+            p_otherMap_in->eraseDetectedMapRoom(p_room);
+            p_otherMap_in->eraseMarkerBasedMapRoom(p_room);
         }
 
         for (const auto &[p_floor, assignedId] : floorIdAssignments)
         {
             p_floor->setId(assignedId);
             p_floor->setMap(p_currentMap_in);
-            p_currentMap_in->AddMapFloor(p_floor);
-            p_otherMap_in->EraseMapFloor(p_floor);
+            p_currentMap_in->addMapFloor(p_floor);
+            p_otherMap_in->eraseMapFloor(p_floor);
         }
 
         std::vector<MapPoint *> mergedReferenceMapPoints =
-            p_currentMap_in->GetReferenceMapPoints();
+            p_currentMap_in->getReferenceMapPoints();
         for (MapPoint *p_mapPoint : importedReferenceMapPoints)
         {
             if (p_mapPoint != nullptr &&
@@ -1400,44 +1406,47 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
                 mergedReferenceMapPoints.push_back(p_mapPoint);
             }
         }
-        p_currentMap_in->SetReferenceMapPoints(mergedReferenceMapPoints);
-        p_otherMap_in->SetReferenceMapPoints({});
+        p_currentMap_in->setReferenceMapPoints(mergedReferenceMapPoints);
+        p_otherMap_in->setReferenceMapPoints({});
 
         for (KeyFrame *p_originKeyFrame : importedKeyFrameOrigins)
         {
             if (p_originKeyFrame != nullptr &&
-                p_originKeyFrame->GetMap() == p_currentMap_in &&
-                std::find(p_currentMap_in->mvpKeyFrameOrigins.begin(),
-                          p_currentMap_in->mvpKeyFrameOrigins.end(),
+                p_originKeyFrame->getMap() == p_currentMap_in &&
+                std::find(p_currentMap_in->keyFrameOrigins.begin(),
+                          p_currentMap_in->keyFrameOrigins.end(),
                           p_originKeyFrame) ==
-                    p_currentMap_in->mvpKeyFrameOrigins.end())
+                    p_currentMap_in->keyFrameOrigins.end())
             {
-                p_currentMap_in->mvpKeyFrameOrigins.push_back(p_originKeyFrame);
+                p_currentMap_in->keyFrameOrigins.push_back(p_originKeyFrame);
             }
         }
-        p_otherMap_in->mvpKeyFrameOrigins.clear();
+        p_otherMap_in->keyFrameOrigins.clear();
 
-        if (p_currentMap_in->mpFirstRegionKF == nullptr &&
+        if (p_currentMap_in->p_firstRegionKeyFrame == nullptr &&
             p_importedFirstRegionKeyFrame != nullptr &&
-            p_importedFirstRegionKeyFrame->GetMap() == p_currentMap_in)
+            p_importedFirstRegionKeyFrame->getMap() == p_currentMap_in)
         {
-            p_currentMap_in->mpFirstRegionKF = p_importedFirstRegionKeyFrame;
+            p_currentMap_in->p_firstRegionKeyFrame =
+                p_importedFirstRegionKeyFrame;
         }
-        p_otherMap_in->mpFirstRegionKF = nullptr;
+        p_otherMap_in->p_firstRegionKeyFrame = nullptr;
 
-        p_currentMap_in->SetSkeletonClusterPoints({});
-        p_currentMap_in->SetSkeletonEdges({});
-        p_otherMap_in->SetSkeletonClusterPoints({});
-        p_otherMap_in->SetSkeletonEdges({});
-        p_otherMap_in->ClearTransferredEntityIndexes();
+        p_currentMap_in->setSkeletonClusterPoints({});
+        p_currentMap_in->setSkeletonEdges({});
+        p_otherMap_in->setSkeletonClusterPoints({});
+        p_otherMap_in->setSkeletonEdges({});
+        p_otherMap_in->clearTransferredEntityIndexes();
 
         /* Fuse duplicate floors: keep only one floor per map (system supports
          * single-floor semantics). Reassign rooms from duplicate floors to the
          * primary floor and erase the extras. */
-        std::vector<semantic::Floor *> allFloors = p_currentMap_in->GetAllFloors();
+        std::vector<semantic::Floor *> allFloors =
+            p_currentMap_in->getAllFloors();
         if (allFloors.size() > 1)
         {
-            semantic::Floor *p_keeperFloor = semantic::Floor::selectBestObservedFloor(allFloors);
+            semantic::Floor *p_keeperFloor =
+                semantic::Floor::selectBestObservedFloor(allFloors);
             for (semantic::Floor *p_duplicateFloor : allFloors)
             {
                 if (p_duplicateFloor == nullptr ||
@@ -1454,22 +1463,25 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
                     }
                 }
 
-                p_currentMap_in->EraseMapFloor(p_duplicateFloor);
-                std::cout << "[Atlas::MergeMapPair] Fused duplicate semantic::Floor#"
-                          << p_duplicateFloor->getId() << " into semantic::Floor#"
-                          << p_keeperFloor->getId()
-                          << " and retained the better-observed plane identity."
-                          << std::endl;
+                p_currentMap_in->eraseMapFloor(p_duplicateFloor);
+                std::cout
+                    << "[Atlas::MergeMapPair] Fused duplicate semantic::Floor#"
+                    << p_duplicateFloor->getId() << " into semantic::Floor#"
+                    << p_keeperFloor->getId()
+                    << " and retained the better-observed plane identity."
+                    << std::endl;
             }
         }
 
         Utils::fuseDuplicateRoomsAfterMerge(p_currentMap_in, importedRooms);
 
         semantic::Floor *p_mergedFloor =
-            semantic::Floor::selectBestObservedFloor(p_currentMap_in->GetAllFloors());
+            semantic::Floor::selectBestObservedFloor(
+                p_currentMap_in->getAllFloors());
         if (p_mergedFloor != nullptr)
         {
-            for (semantic::Room *p_room : p_currentMap_in->GetAllDetectedMapRooms())
+            for (semantic::Room *p_room :
+                 p_currentMap_in->getAllDetectedMapRooms())
             {
                 if (p_room != nullptr && !p_room->isBad())
                 {
@@ -1478,7 +1490,7 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
             }
         }
 
-        for (semantic::Room *p_room : p_currentMap_in->GetAllRooms())
+        for (semantic::Room *p_room : p_currentMap_in->getAllRooms())
         {
             if (p_room == nullptr || p_room->isBad())
             {
@@ -1489,7 +1501,7 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
             {
                 if (p_wall != nullptr && !p_wall->isBad())
                 {
-                    p_currentMap_in->AddRoomWallPlane(p_wall);
+                    p_currentMap_in->addRoomWallPlane(p_wall);
                 }
             }
         }
@@ -1498,19 +1510,19 @@ void Atlas::MergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     }
 
     /* Retire the absorbed map while keeping the current map active. */
-    SetMapBad(p_otherMap_in);
-    ChangeMap(p_currentMap_in);
+    setMapBad(p_otherMap_in);
+    changeMap(p_currentMap_in);
 
-    std::cout << "[Atlas::MergeMapPair] Merged map " << p_otherMap_in->GetId()
-              << " into map " << p_currentMap_in->GetId() << " fused "
+    std::cout << "[Atlas::MergeMapPair] Merged map " << p_otherMap_in->getId()
+              << " into map " << p_currentMap_in->getId() << " fused "
               << importedRooms.size() << " rooms into current map."
               << std::endl;
-    std::cout << "[FloorVerify] Map#" << p_currentMap_in->GetId() << " and Map#"
-              << p_otherMap_in->GetId() << " result=ACCEPTED committed=1"
+    std::cout << "[FloorVerify] Map#" << p_currentMap_in->getId() << " and Map#"
+              << p_otherMap_in->getId() << " result=ACCEPTED committed=1"
               << std::endl;
 
     /* Notify downstream consumers that the current map changed. */
-    p_currentMap_in->IncreaseChangeIndex();
+    p_currentMap_in->increaseChangeIndex();
 }
 
 void Atlas::attemptConsecutiveMergeIfGated(void)
@@ -1520,14 +1532,14 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
      * and MergeMapPair takes both maps' mMutexMapUpdate. No path in the
      * codebase acquires these in reverse, so the order
      * semantic-update -> atlas -> map-update is deadlock-free. */
-    Map *p_currentMap = GetCurrentMap();
-    if (p_currentMap == nullptr || p_currentMap->IsBad())
+    Map *p_currentMap = getCurrentMap();
+    if (p_currentMap == nullptr || p_currentMap->isBad())
     {
         return;
     }
 
-    types::SystemParams      *p_params = types::SystemParams::getParams();
-    const unsigned int cooldown_s =
+    types::SystemParams *p_params = types::SystemParams::getParams();
+    const unsigned int   cooldown_s =
         p_params != nullptr ? p_params->mapMerge.mergeCooldown_s : 30U;
     const unsigned int minimumAnchors =
         p_params != nullptr ? p_params->mapMerge.minAnchorRooms : 2U;
@@ -1538,10 +1550,10 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
     const semantic::SemanticVerify::MapMergeConfig mergeConfig =
         semantic::SemanticVerify::mapMergeConfigFromSystemParams();
 
-    for (Map *p_oldMap : GetAllMaps())
+    for (Map *p_oldMap : getAllMaps())
     {
         if (p_oldMap == nullptr || p_oldMap == p_currentMap ||
-            p_oldMap->IsBad())
+            p_oldMap->isBad())
         {
             continue;
         }
@@ -1559,7 +1571,7 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             continue;
         }
 
-        const long unsigned int oldMapId = p_oldMap->GetId();
+        const long unsigned int oldMapId = p_oldMap->getId();
         const std::size_t       contentHash =
             consecutiveContentHash(p_oldMap, p_currentMap);
         const std::chrono::steady_clock::time_point now =
@@ -1567,8 +1579,8 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         MergeAttemptState attemptState;
         {
             std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
-            const auto storedState = mConsecutiveMergeState.find(oldMapId);
-            if (storedState != mConsecutiveMergeState.end())
+            const auto storedState = consecutiveMergeState.find(oldMapId);
+            if (storedState != consecutiveMergeState.end())
             {
                 attemptState = storedState->second;
             }
@@ -1595,13 +1607,13 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             attemptState.contentHashAtLastAttempt = contentHash;
             attemptState.hasEverAttempted         = true;
             std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
-            mConsecutiveMergeState[oldMapId] = attemptState;
+            consecutiveMergeState[oldMapId] = attemptState;
         };
         /* The seed room itself must be anchored: matching side rooms while
          * the prior-link room takes part nowhere would fuse on a
          * coincidental resemblance. Same DEFER as too few anchors. */
-        semantic::Room      *p_oldFinalRoom = p_oldMap->getFinalRoom();
-        const bool seedAnchored =
+        semantic::Room *p_oldFinalRoom = p_oldMap->getFinalRoom();
+        const bool      seedAnchored =
             p_oldFinalRoom != nullptr && p_oldFinalRoom->hasRoomTag() &&
             anchorTags.count(p_oldFinalRoom->getRoomTag()) > 0U;
         if (anchorCount < minimumAnchors || !seedAnchored)
@@ -1609,7 +1621,7 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             recordAttempt();
             std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_"
                          "attempt\",\"old_map_id\":"
-                      << oldMapId << ",\"new_map_id\":" << p_currentMap->GetId()
+                      << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
                       << ",\"anchors\":" << anchorCount
                       << ",\"decision\":\"DEFER\",\"reason\":\""
                          "SHARED_ROOM_IDENTITY_MISSING\"}"
@@ -1629,7 +1641,7 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             recordAttempt();
             std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_"
                          "attempt\",\"old_map_id\":"
-                      << oldMapId << ",\"new_map_id\":" << p_currentMap->GetId()
+                      << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
                       << ",\"anchors\":" << anchorCount
                       << ",\"decision\":\"DEFER\",\"reason\":\""
                          "WALL_EVIDENCE_MISSING\"}"
@@ -1646,7 +1658,7 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             recordAttempt();
             std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_"
                          "attempt\",\"old_map_id\":"
-                      << oldMapId << ",\"new_map_id\":" << p_currentMap->GetId()
+                      << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
                       << ",\"anchors\":" << anchorCount
                       << ",\"decision\":\"DEFER\",\"reason\":\""
                          "WALL_EVIDENCE_MISSING\"}"
@@ -1657,29 +1669,31 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
                                       transformOldToCurrent.translation(),
                                       1.0);
         const semantic::SemanticMergeGateResult gateResult =
-            semantic::SemanticVerify::evaluateConsecutiveMergeGate(p_currentMap,
-                                                         p_oldMap,
-                                                         transformSim3,
-                                                         mergeConfig);
+            semantic::SemanticVerify::evaluateConsecutiveMergeGate(
+                p_currentMap,
+                p_oldMap,
+                transformSim3,
+                mergeConfig);
         recordAttempt();
-        std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_attempt\","
-                     "\"old_map_id\":"
-                  << oldMapId << ",\"new_map_id\":" << p_currentMap->GetId()
-                  << ",\"anchors\":" << anchorCount << ",\"decision\":\""
-                  << semantic::SemanticVerify::mergeDecisionName(gateResult.decision)
-                  << "\",\"reason\":\""
-                  << semantic::SemanticVerify::mergeReasonName(gateResult.reason)
-                  << "\",\"matched_walls\":" << gateResult.matchedWallCount
-                  << ",\"matched_passages\":" << gateResult.matchedPassageCount
-                  << "}" << std::endl;
+        std::cout
+            << "SG_PIPELINE {\"event\":\"consecutive_merge_attempt\","
+               "\"old_map_id\":"
+            << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
+            << ",\"anchors\":" << anchorCount << ",\"decision\":\""
+            << semantic::SemanticVerify::mergeDecisionName(gateResult.decision)
+            << "\",\"reason\":\""
+            << semantic::SemanticVerify::mergeReasonName(gateResult.reason)
+            << "\",\"matched_walls\":" << gateResult.matchedWallCount
+            << ",\"matched_passages\":" << gateResult.matchedPassageCount << "}"
+            << std::endl;
         if (gateResult.decision != semantic::SemanticMergeDecision::ACCEPT)
         {
             continue;
         }
-        MergeMapPair(p_currentMap, p_oldMap);
+        mergeMapPair(p_currentMap, p_oldMap);
         std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_"
                      "committed\",\"old_map_id\":"
-                  << oldMapId << ",\"new_map_id\":" << p_currentMap->GetId()
+                  << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
                   << "}" << std::endl;
         /* One merge per call: the current map changed shape, so remaining
          * pairs re-evaluate from scratch next cycle. */
@@ -1690,135 +1704,136 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
 bool Atlas::isInertial()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->IsInertial();
+    return p_activeMap->isInertial();
 }
 
-void Atlas::SetInertialSensor()
+void Atlas::setInertialSensor()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    mpCurrentMap->SetInertialSensor();
+    p_activeMap->setInertialSensor();
 }
 
-void Atlas::SetImuInitialized()
+void Atlas::setImuInitialized()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    mpCurrentMap->SetImuInitialized();
+    p_activeMap->setImuInitialized();
 }
 
 bool Atlas::isImuInitialized()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->isImuInitialized();
+    return p_activeMap->isImuInitialized();
 }
 
 void Atlas::PreSave()
 {
-    if (mpCurrentMap)
+    if (p_activeMap)
     {
-        if (!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
-            mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() +
-                                1; // The init KF is the next of current maximum
+        if (!maps.empty() &&
+            lastInitKeyFrameId < p_activeMap->getMaxKeyFrameId())
+            lastInitKeyFrameId =
+                p_activeMap->getMaxKeyFrameId() +
+                1; // The init KF is the next of current maximum
     }
 
     struct CompFunctor
     {
         inline bool operator()(Map *elem1, Map *elem2)
         {
-            return elem1->GetId() < elem2->GetId();
+            return elem1->getId() < elem2->getId();
         }
     };
-    std::copy(mspMaps.begin(),
-              mspMaps.end(),
-              std::back_inserter(mvpBackupMaps));
-    sort(mvpBackupMaps.begin(), mvpBackupMaps.end(), CompFunctor());
+    std::copy(maps.begin(), maps.end(), std::back_inserter(backupMaps));
+    sort(backupMaps.begin(), backupMaps.end(), CompFunctor());
 
-    std::set<camera_models::GeometricCamera *> spCams(mvpCameras.begin(), mvpCameras.end());
-    for (Map *pMi : mvpBackupMaps)
+    std::set<camera_models::GeometricCamera *> spCams(cameras.begin(),
+                                                      cameras.end());
+    for (Map *pMi : backupMaps)
     {
-        if (!pMi || pMi->IsBad())
+        if (!pMi || pMi->isBad())
             continue;
 
-        if (pMi->GetAllKeyFrames().size() == 0)
+        if (pMi->getAllKeyFrames().size() == 0)
         {
             // Empty map, erase before of save it.
-            SetMapBad(pMi);
+            setMapBad(pMi);
             continue;
         }
         pMi->PreSave(spCams);
     }
-    RemoveBadMaps();
+    removeBadMaps();
 }
 
 void Atlas::PostLoad()
 {
     map<unsigned int, camera_models::GeometricCamera *> mpCams;
-    for (camera_models::GeometricCamera *pCam : mvpCameras)
+    for (camera_models::GeometricCamera *pCam : cameras)
     {
         mpCams[pCam->getId()] = pCam;
     }
 
-    mspMaps.clear();
+    maps.clear();
     unsigned long int numKF = 0, numMP = 0;
-    for (Map *pMi : mvpBackupMaps)
+    for (Map *pMi : backupMaps)
     {
-        mspMaps.insert(pMi);
-        pMi->PostLoad(mpKeyFrameDB, mpORBVocabulary, mpCams);
-        numKF += pMi->GetAllKeyFrames().size();
-        numMP += pMi->GetAllMapPoints().size();
+        maps.insert(pMi);
+        pMi->PostLoad(p_keyFrameDatabase, p_orbVocabulary, mpCams);
+        numKF += pMi->getAllKeyFrames().size();
+        numMP += pMi->getAllMapPoints().size();
     }
-    mvpBackupMaps.clear();
+    backupMaps.clear();
 }
 
-void Atlas::SetKeyFrameDababase(KeyFrameDatabase *pKFDB)
+void Atlas::setKeyFrameDatabase(KeyFrameDatabase *pKFDB)
 {
-    mpKeyFrameDB = pKFDB;
+    p_keyFrameDatabase = pKFDB;
 }
 
-KeyFrameDatabase *Atlas::GetKeyFrameDatabase()
+KeyFrameDatabase *Atlas::getKeyFrameDatabase()
 {
-    return mpKeyFrameDB;
+    return p_keyFrameDatabase;
 }
 
-void Atlas::SetORBVocabulary(ORBVocabulary *pORBVoc)
+void Atlas::setORBVocabulary(ORBVocabulary *pORBVoc)
 {
-    mpORBVocabulary = pORBVoc;
+    p_orbVocabulary = pORBVoc;
 }
 
-ORBVocabulary *Atlas::GetORBVocabulary()
+ORBVocabulary *Atlas::getORBVocabulary()
 {
-    return mpORBVocabulary;
+    return p_orbVocabulary;
 }
 
-long unsigned int Atlas::GetNumLivedKF()
+long unsigned int Atlas::getLivedKeyFrameCount()
 {
     unique_lock<mutex> lock(mMutexAtlas);
     long unsigned int  num = 0;
-    for (Map *pMap_i : mspMaps)
+    for (Map *pMap_i : maps)
     {
-        num += pMap_i->GetAllKeyFrames().size();
+        num += pMap_i->getAllKeyFrames().size();
     }
 
     return num;
 }
 
-long unsigned int Atlas::GetNumLivedMP()
+long unsigned int Atlas::getLivedMapPointCount()
 {
     unique_lock<mutex> lock(mMutexAtlas);
     long unsigned int  num = 0;
-    for (Map *pMap_i : mspMaps)
+    for (Map *pMap_i : maps)
     {
-        num += pMap_i->GetAllMapPoints().size();
+        num += pMap_i->getAllMapPoints().size();
     }
 
     return num;
 }
 
-map<long unsigned int, KeyFrame *> Atlas::GetAtlasKeyframes()
+map<long unsigned int, KeyFrame *> Atlas::getAtlasKeyFrames()
 {
     map<long unsigned int, KeyFrame *> mpIdKFs;
-    for (Map *pMap_i : mvpBackupMaps)
+    for (Map *pMap_i : backupMaps)
     {
-        vector<KeyFrame *> vpKFs_Mi = pMap_i->GetAllKeyFrames();
+        vector<KeyFrame *> vpKFs_Mi = pMap_i->getAllKeyFrames();
 
         for (KeyFrame *pKF_j_Mi : vpKFs_Mi)
         {
@@ -1831,16 +1846,16 @@ map<long unsigned int, KeyFrame *> Atlas::GetAtlasKeyframes()
 
 void Atlas::exportRoomContextFromCurrentMap()
 {
-    if (!mpCurrentMap)
+    if (!p_activeMap)
         return;
 
     /* Export BOTH confirmed detected rooms AND candidate/marker-based rooms.
      * Candidate rooms (prospective/provisional) may not have full wall loops
      * yet but still carry spatial identity needed for cross-restart matching.
      */
-    std::vector<semantic::Room *> rooms = mpCurrentMap->GetAllDetectedMapRooms();
+    std::vector<semantic::Room *> rooms = p_activeMap->getAllDetectedMapRooms();
     std::vector<semantic::Room *> candidateRooms =
-        mpCurrentMap->GetAllCandidateMapRooms();
+        p_activeMap->getAllCandidateMapRooms();
     rooms.insert(rooms.end(), candidateRooms.begin(), candidateRooms.end());
 
     if (rooms.empty())
@@ -1849,7 +1864,7 @@ void Atlas::exportRoomContextFromCurrentMap()
     std::vector<semantic::RoomContextSnapshot> snapshots;
     snapshots.reserve(rooms.size());
 
-    const long unsigned int mapId = mpCurrentMap->GetId();
+    const long unsigned int mapId = p_activeMap->getId();
 
     for (semantic::Room *room : rooms)
     {
@@ -1857,10 +1872,10 @@ void Atlas::exportRoomContextFromCurrentMap()
             continue;
 
         semantic::RoomContextSnapshot snap;
-        snap.roomId        = room->getId();
+        snap.roomId                  = room->getId();
         semantic::Floor *p_snapFloor = room->getFloor();
-        snap.floorId       = p_snapFloor != nullptr ? p_snapFloor->getId() : -1;
-        snap.centroid      = room->getCentroid();
+        snap.floorId  = p_snapFloor != nullptr ? p_snapFloor->getId() : -1;
+        snap.centroid = room->getCentroid();
         snap.wasConfirmedRoom =
             room->getRoomVariant() == semantic::Room::RoomVariant::ROOM;
         snap.wasPreviouslyVisited = room->hasPreviouslyVisited();
@@ -1972,7 +1987,7 @@ void Atlas::exportRoomContextFromCurrentMap()
     const std::size_t exportedRoomCount = snapshots.size();
     {
         std::lock_guard<std::mutex> contextLock(mRoomContextMutex);
-        mRoomContextHistory[mapId] = std::move(snapshots);
+        roomContextHistory[mapId] = std::move(snapshots);
     }
 
     /* Record the departure room for mission-chain tracing: the room the UAV
@@ -1985,7 +2000,7 @@ void Atlas::exportRoomContextFromCurrentMap()
             if (room != nullptr && !room->isBad() &&
                 room->getId() == departureRoomId)
             {
-                mpCurrentMap->setFinalRoom(room);
+                p_activeMap->setFinalRoom(room);
                 break;
             }
         }
@@ -2014,17 +2029,18 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
         vsGraphsAtlasLockOrderBeforeMapSnapshot();
     }
 #endif
-    const std::vector<Map *> allMaps = GetAllMaps();
+    const std::vector<Map *> allMaps = getAllMaps();
 
     std::unique_lock<std::mutex> lock(mRoomContextMutex);
 
-    if (mRoomContextHistory.empty())
+    if (roomContextHistory.empty())
         return;
 
     /* Match BOTH detected rooms AND candidate/prospective rooms.
      * Candidate rooms need identity tags for cross-restart continuity. */
-    std::vector<semantic::Room *> newRooms       = pNewMap->GetAllDetectedMapRooms();
-    std::vector<semantic::Room *> candidateRooms = pNewMap->GetAllCandidateMapRooms();
+    std::vector<semantic::Room *> newRooms = pNewMap->getAllDetectedMapRooms();
+    std::vector<semantic::Room *> candidateRooms =
+        pNewMap->getAllCandidateMapRooms();
     newRooms.insert(newRooms.end(),
                     candidateRooms.begin(),
                     candidateRooms.end());
@@ -2033,7 +2049,7 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
         return;
 
     std::vector<semantic::RoomContextSnapshot> allContext;
-    for (const auto &entry : mRoomContextHistory)
+    for (const auto &entry : roomContextHistory)
         for (const auto &snap : entry.second)
             allContext.push_back(snap);
 
@@ -2119,7 +2135,7 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
 
             /* Locate the snapshot pointer in the stored history so the
              * room can hold a non-owning reference for WP3. */
-            for (auto &entry : mRoomContextHistory)
+            for (auto &entry : roomContextHistory)
             {
                 for (auto &storedSnap : entry.second)
                 {
@@ -2140,13 +2156,13 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
              * ----------------------------------------------------------- */
 
             /* Find the stored map that contains the prior room. */
-            Map  *p_priorMap  = nullptr;
+            Map            *p_priorMap  = nullptr;
             semantic::Room *p_priorRoom = nullptr;
             for (Map *p_map : allMaps)
             {
-                if (!p_map || p_map->IsBad() || p_map == pNewMap)
+                if (!p_map || p_map->isBad() || p_map == pNewMap)
                     continue;
-                for (semantic::Room *r : p_map->GetAllDetectedMapRooms())
+                for (semantic::Room *r : p_map->getAllDetectedMapRooms())
                 {
                     if (r && !r->isBad() && r->getId() == bestMatch->roomId)
                     {
@@ -2161,9 +2177,10 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
 
             if (p_priorRoom && p_priorMap)
             {
-                std::cout << "[Atlas] Prior semantic::Room#" << p_priorRoom->getId()
-                          << " has " << p_priorRoom->getWalls().size()
-                          << " walls" << std::endl;
+                std::cout << "[Atlas] Prior semantic::Room#"
+                          << p_priorRoom->getId() << " has "
+                          << p_priorRoom->getWalls().size() << " walls"
+                          << std::endl;
 
                 /* Transfer walls from prior room to current room */
                 for (geometric::Plane *p_wall : p_priorRoom->getWalls())
@@ -2176,7 +2193,8 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
                     room->setWalls(p_wall);
 
                     std::cout << "[Atlas] Transferred Wall#" << p_wall->getId()
-                              << " from prior semantic::Room#" << p_priorRoom->getId()
+                              << " from prior semantic::Room#"
+                              << p_priorRoom->getId()
                               << " to matched semantic::Room#" << room->getId()
                               << std::endl;
                 }
@@ -2184,8 +2202,8 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
                 /* Passages will be re-associated by associatePassagesToRooms()
                  */
 
-                std::cout << "[Atlas] semantic::Room#" << room->getId() << " now has "
-                          << room->getWalls().size()
+                std::cout << "[Atlas] semantic::Room#" << room->getId()
+                          << " now has " << room->getWalls().size()
                           << " walls (continuing from prior semantic::Room#"
                           << bestMatch->roomId << ")" << std::endl;
             }
@@ -2210,23 +2228,25 @@ std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
     Atlas::copyRoomContextHistory() const
 {
     std::lock_guard<std::mutex> contextLock(mRoomContextMutex);
-    return mRoomContextHistory;
+    return roomContextHistory;
 }
 
-std::vector<semantic::RoomContextSnapshot> Atlas::copyRoomContextForMap(Map *p_map_in)
+std::vector<semantic::RoomContextSnapshot>
+    Atlas::copyRoomContextForMap(Map *p_map_in)
 {
     std::vector<semantic::RoomContextSnapshot> snapshots;
     if (p_map_in == nullptr)
         return snapshots;
-    std::vector<semantic::Room *> rooms          = p_map_in->GetAllDetectedMapRooms();
-    std::vector<semantic::Room *> candidateRooms = p_map_in->GetAllCandidateMapRooms();
+    std::vector<semantic::Room *> rooms = p_map_in->getAllDetectedMapRooms();
+    std::vector<semantic::Room *> candidateRooms =
+        p_map_in->getAllCandidateMapRooms();
     rooms.insert(rooms.end(), candidateRooms.begin(), candidateRooms.end());
     for (semantic::Room *p_room : rooms)
     {
         if (p_room == nullptr || p_room->isBad())
             continue;
         semantic::RoomContextSnapshot snapshot;
-        snapshot.roomId        = p_room->getId();
+        snapshot.roomId                  = p_room->getId();
         semantic::Floor *p_snapshotFloor = p_room->getFloor();
         snapshot.floorId =
             p_snapshotFloor != nullptr ? p_snapshotFloor->getId() : -1;
@@ -2332,15 +2352,16 @@ std::vector<semantic::RoomContextSnapshot> Atlas::copyRoomContextForMap(Map *p_m
 std::optional<semantic::RoomContextSnapshot>
     Atlas::copyLatestRoomContext(const int roomId_in) const
 {
-    std::lock_guard<std::mutex>        contextLock(mRoomContextMutex);
+    std::lock_guard<std::mutex>                  contextLock(mRoomContextMutex);
     std::optional<semantic::RoomContextSnapshot> latestSnapshot;
 
     for (const std::pair<const long unsigned int,
-                         std::vector<semantic::RoomContextSnapshot>> &historyEntry :
-         mRoomContextHistory)
+                         std::vector<semantic::RoomContextSnapshot>>
+             &historyEntry : roomContextHistory)
     {
         static_cast<void>(historyEntry.first);
-        for (const semantic::RoomContextSnapshot &snapshot : historyEntry.second)
+        for (const semantic::RoomContextSnapshot &snapshot :
+             historyEntry.second)
         {
             if (snapshot.roomId != roomId_in ||
                 (latestSnapshot.has_value() &&
@@ -2394,8 +2415,8 @@ const std::vector<semantic::RoomContextSnapshot> &
     /* Compatibility API: callers requiring synchronization must use the copy
      * API. The historical reference lifetime cannot be made lock-safe. */
     static const std::vector<semantic::RoomContextSnapshot> empty;
-    auto it = mRoomContextHistory.find(mapId);
-    if (it == mRoomContextHistory.end())
+    auto it = roomContextHistory.find(mapId);
+    if (it == roomContextHistory.end())
         return empty;
     return it->second;
 }

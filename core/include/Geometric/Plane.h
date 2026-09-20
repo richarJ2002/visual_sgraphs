@@ -41,7 +41,10 @@ namespace core
 {
 class Map;
 class MapPoint;
-namespace semantic { class Marker; }
+namespace semantic
+{
+class Marker;
+}
 namespace geometric
 {
 
@@ -126,20 +129,20 @@ class Plane
         std::map<PlaneVariant, double> semanticEvidence;
     };
 
-    /** Immutable copy of one generation of finite plane geometry. */
+    /*! Immutable copy of one generation of finite plane geometry. */
     struct GeometrySnapshot
     {
         pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr supportCloud;
         Eigen::Vector4d equation_World{Eigen::Vector4d::Zero()};
         Eigen::Vector3d centroid_World_m{Eigen::Vector3d::Zero()};
-        double minPlaneU_m{0.0};
-        double maxPlaneU_m{0.0};
-        double minPlaneV_m{0.0};
-        double maxPlaneV_m{0.0};
-        std::size_t finiteSupportCount{0U};
-        std::size_t observationCount{0U};
-        std::uint64_t cloudGeneration{0U};
-        std::uint64_t successfulRefitGeneration{0U};
+        double          minPlaneU_m{0.0};
+        double          maxPlaneU_m{0.0};
+        double          minPlaneV_m{0.0};
+        double          maxPlaneV_m{0.0};
+        std::size_t     finiteSupportCount{0U};
+        std::size_t     observationCount{0U};
+        std::uint64_t   cloudGeneration{0U};
+        std::uint64_t   successfulRefitGeneration{0U};
     };
 
     struct ObservationSideSnapshot
@@ -152,9 +155,9 @@ class Plane
             AMBIGUOUS
         };
 
-        Face face{Face::UNKNOWN};
-        std::size_t evidenceCount{0U};
-        double consensusRatio{0.0};
+        Face                  face{Face::UNKNOWN};
+        std::size_t           evidenceCount{0U};
+        double                consensusRatio{0.0};
         std::optional<double> medianSignedDistance_m;
     };
     /* ---------------------------------------------------------------------- *
@@ -165,18 +168,18 @@ class Plane
      * @brief       The first keyframe that observed the plane is the  reference
      *              keyframe
      */
-    KeyFrame *refKeyFrame;
+    KeyFrame *p_refKeyFrame;
 
     /*!
      * @brief       The reference keyframe ID for the Global BA the plane was
      *              part of
      */
-    unsigned long int mnBAGlobalForKF;
+    unsigned long int baGlobalKeyFrameId;
 
     /*!
      * @brief       The plane equation in the global map after the Global BA
      */
-    g2o::Plane3D mPlaneGBA;
+    g2o::Plane3D planeGBA;
 
     /* ---------------------------------------------------------------------- *
      * VARIABLES OF PLANE GEOMETRY
@@ -282,7 +285,7 @@ class Plane
      *              no plausible twin has been found (or a prior one stopped
      *              being plausible, e.g. after a refit).
      */
-    Plane *twinFace_{nullptr};
+    Plane *p_twinFace{nullptr};
 
     /*!
      * @brief       A color devoted for visualization
@@ -346,7 +349,8 @@ class Plane
      */
     void updatePlaneBoundsWithoutLock(void);
 
-    /*! @brief Rebuilds semantic votes from observations with both locks held. */
+    /*! @brief Rebuilds semantic votes from observations with both locks held.
+     */
     void rebuildSemanticVotesWithoutLock(void);
 
   public:
@@ -364,7 +368,7 @@ class Plane
      */
     void applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
 
-    /**
+    /*!
      * @brief Aligns the complete finite plane geometry with an optimized
      *        world-frame equation.
      *
@@ -544,7 +548,7 @@ class Plane
     void addObservation(KeyFrame          *p_keyFrame_in,
                         const Observation &observation_in);
 
-    /** Inserts or fuses a same-keyframe observation and rebuilds semantics. */
+    /*! Inserts or fuses a same-keyframe observation and rebuilds semantics. */
     void mergeObservation(KeyFrame          *p_keyFrame_in,
                           const Observation &observation_in);
 
@@ -577,7 +581,7 @@ class Plane
      */
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr getMapClouds(void);
 
-    /** Returns a deep immutable copy of the current finite geometry. */
+    /*! Returns a deep immutable copy of the current finite geometry. */
     GeometrySnapshot getGeometrySnapshot(void) const;
 
     /*!
@@ -596,7 +600,7 @@ class Plane
      */
     PlaneGeometryMetadataSnapshot getGeometryMetadataSnapshot(void) const;
 
-    /** Applies the association path's 75% observation-side consensus rule. */
+    /*! Applies the association path's 75% observation-side consensus rule. */
     ObservationSideSnapshot getObservationSideSnapshot(
         const Eigen::Vector4d &normalizedEquation_World_in) const;
 
@@ -613,19 +617,19 @@ class Plane
     void replaceMapClouds(
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud_in);
 
-    /** Claims and returns an immutable snapshot of a new cloud generation. */
+    /*! Claims and returns an immutable snapshot of a new cloud generation. */
     std::optional<GeometrySnapshot> beginMapCloudRefit(void);
 
-    /**
+    /*!
      * @brief Publishes geometry from a successful whole-cloud fit.
      *
      * The centroid, equation and finite bounds are updated under one lock so
      * readers cannot observe partially refitted geometry.
      */
-    bool completeMapCloudRefit(std::uint64_t sourceCloudGeneration_in,
+    bool completeMapCloudRefit(std::uint64_t          sourceCloudGeneration_in,
                                const Eigen::Vector3d &centroid_World_m_in,
                                const g2o::Plane3D    &equation_World_in,
-                               std::size_t finitePointCount_in);
+                               std::size_t            finitePointCount_in);
 
     /*!
      * @brief       Tests whether a world-frame point belongs to the plane

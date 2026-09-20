@@ -1,4 +1,4 @@
-/**
+/*!
  * Focused production seam tests for event delivery.
  */
 
@@ -46,8 +46,9 @@ semantic::VerificationVerdict rejectedVerdict()
     return verdict;
 }
 
-std::size_t countAcceptedEvents(const std::vector<semantic::TransitionEvent> &history_in,
-                                semantic::RoomTrackingEvent                   event_in)
+std::size_t countAcceptedEvents(
+    const std::vector<semantic::TransitionEvent> &history_in,
+    semantic::RoomTrackingEvent                   event_in)
 {
     return static_cast<std::size_t>(std::count_if(
         history_in.begin(),
@@ -61,15 +62,15 @@ class ProductionCrossingScene
   public:
     explicit ProductionCrossingScene(unsigned long keyFrameIdBase_in) :
         atlas(0),
-        p_map(atlas.GetCurrentMap()),
+        p_map(atlas.getCurrentMap()),
         manager(&atlas),
         returnKeyFrameAdded(false),
         thirdCrossingKeyFrameAdded(false),
         groundPlaneValid(false)
     {
         static_cast<void>(atlas.consumeNewMapCreatedEvent());
-        atlas.CreateNewMap();
-        p_map = atlas.GetCurrentMap();
+        atlas.createNewMap();
+        p_map = atlas.getCurrentMap();
         static_cast<void>(atlas.consumeNewMapCreatedEvent());
 
         groundPlane.setId(0);
@@ -93,7 +94,7 @@ class ProductionCrossingScene
         groundPlane.setMapClouds(groundCloud);
         groundPlaneValid =
             GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane);
-        p_map->AddMapPlane(&groundPlane);
+        p_map->addMapPlane(&groundPlane);
 
         knownWall.setId(1);
         knownWall.setMap(p_map);
@@ -101,8 +102,8 @@ class ProductionCrossingScene
         farWall.setId(2);
         farWall.setMap(p_map);
         farWall.setPlaneType(geometric::Plane::PlaneVariant::WALL);
-        p_map->AddMapPlane(&knownWall);
-        p_map->AddMapPlane(&farWall);
+        p_map->addMapPlane(&knownWall);
+        p_map->addMapPlane(&farWall);
 
         knownRoom.setId(10);
         knownRoom.setMap(p_map);
@@ -112,8 +113,8 @@ class ProductionCrossingScene
         farRoom.setMap(p_map);
         farRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
         farRoom.setWalls(&farWall);
-        p_map->AddDetectedMapRoom(&knownRoom);
-        p_map->AddDetectedMapRoom(&farRoom);
+        p_map->addDetectedMapRoom(&knownRoom);
+        p_map->addDetectedMapRoom(&farRoom);
 
         passage.setId(20);
         passage.setMap(p_map);
@@ -126,7 +127,7 @@ class ProductionCrossingScene
         passage.setKnownSideRoom(&knownRoom);
         passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0));
         passage.setProspectiveRoom(&farRoom);
-        p_map->AddMapPassage(&passage);
+        p_map->addMapPassage(&passage);
 
         addKeyFrame(knownSideKeyFrame,
                     keyFrameIdBase_in,
@@ -135,11 +136,11 @@ class ProductionCrossingScene
                     keyFrameIdBase_in + 1U,
                     Eigen::Vector3f(1.0F, 0.0F, 1.0F));
         returnSideKeyFrame.mnId = keyFrameIdBase_in + 2U;
-        returnSideKeyFrame.SetPose(
+        returnSideKeyFrame.setPose(
             Sophus::SE3f(Eigen::Matrix3f::Identity(),
                          Eigen::Vector3f(1.0F, 0.0F, -1.0F)));
         thirdCrossingKeyFrame.mnId = keyFrameIdBase_in + 3U;
-        thirdCrossingKeyFrame.SetPose(
+        thirdCrossingKeyFrame.setPose(
             Sophus::SE3f(Eigen::Matrix3f::Identity(),
                          Eigen::Vector3f(-1.0F, 0.0F, 1.0F)));
     }
@@ -159,7 +160,7 @@ class ProductionCrossingScene
     {
         if (!returnKeyFrameAdded)
         {
-            p_map->AddKeyFrame(&returnSideKeyFrame);
+            p_map->addKeyFrame(&returnSideKeyFrame);
             returnKeyFrameAdded = true;
         }
     }
@@ -168,7 +169,7 @@ class ProductionCrossingScene
     {
         if (!thirdCrossingKeyFrameAdded)
         {
-            p_map->AddKeyFrame(&thirdCrossingKeyFrame);
+            p_map->addKeyFrame(&thirdCrossingKeyFrame);
             thirdCrossingKeyFrameAdded = true;
         }
     }
@@ -180,9 +181,9 @@ class ProductionCrossingScene
         const Eigen::Vector3f cameraCenter_World_m =
             farSide_in ? Eigen::Vector3f(1.0F, 0.0F, 1.0F)
                        : Eigen::Vector3f(-1.0F, 0.0F, 1.0F);
-        p_keyFrame->SetPose(
+        p_keyFrame->setPose(
             Sophus::SE3f(Eigen::Matrix3f::Identity(), -cameraCenter_World_m));
-        p_map->AddKeyFrame(p_keyFrame.get());
+        p_map->addKeyFrame(p_keyFrame.get());
         extraCrossingKeyFrames.push_back(std::move(p_keyFrame));
     }
 
@@ -194,12 +195,12 @@ class ProductionCrossingScene
     Atlas                                  atlas;
     Map                                   *p_map;
     SemanticsManager                       manager;
-    geometric::Plane                                  groundPlane;
-    geometric::Plane                                  knownWall;
-    geometric::Plane                                  farWall;
-    semantic::Room                                   knownRoom;
-    semantic::Room                                   farRoom;
-    semantic::Passage                                passage;
+    geometric::Plane                       groundPlane;
+    geometric::Plane                       knownWall;
+    geometric::Plane                       farWall;
+    semantic::Room                         knownRoom;
+    semantic::Room                         farRoom;
+    semantic::Passage                      passage;
     KeyFrame                               knownSideKeyFrame;
     KeyFrame                               farSideKeyFrame;
     KeyFrame                               returnSideKeyFrame;
@@ -212,9 +213,9 @@ class ProductionCrossingScene
                      const Eigen::Vector3f &cameraCenter_World_m_in)
     {
         keyFrame_inout.mnId = keyFrameId_in;
-        keyFrame_inout.SetPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
+        keyFrame_inout.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
                                             -cameraCenter_World_m_in));
-        p_map->AddKeyFrame(&keyFrame_inout);
+        p_map->addKeyFrame(&keyFrame_inout);
     }
 
     bool returnKeyFrameAdded;
@@ -303,7 +304,7 @@ TEST(RoomTrackerProductionIntegration, LossIsOneEventPerRecoveredEpisode)
     EXPECT_EQ(manager.getLastKnownRoomId(), -1);
 
     manager.onTrackingRecovered();
-    atlas.CreateNewMap();
+    atlas.createNewMap();
     manager.submitVerificationVerdict(passVerdict());
     manager.processRoomTrackerPendingForTest(2.0);
     manager.submitVerificationVerdict(passVerdict());
@@ -325,7 +326,7 @@ TEST(RoomTrackerProductionIntegration,
     manager.onTrackingLost();
     manager.processRoomTrackerPendingForTest(1.0);
 
-    atlas.CreateNewMap();
+    atlas.createNewMap();
     manager.processRoomTrackerPendingForTest(2.0);
     EXPECT_EQ(manager.getRoomTrackerEventHistoryForTest().size(), 2U);
 
@@ -350,7 +351,7 @@ TEST(RoomTrackerProductionIntegration, AtlasMapEventIsConsumedExactlyOnce)
 {
     Atlas atlas(0);
     EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
-    atlas.CreateNewMap();
+    atlas.createNewMap();
 
     std::atomic<unsigned int> deliveries{0U};
     std::vector<std::thread>  consumers;
@@ -379,9 +380,11 @@ TEST(RoomTrackerProductionIntegration,
 {
     ProductionCrossingScene scene(100U);
     ASSERT_TRUE(scene.hasValidGroundPlane());
-    const std::vector<Map *>   mapsBefore       = scene.atlas.GetAllMaps();
-    const std::vector<geometric::Plane *> knownWallsBefore = scene.knownRoom.getWalls();
-    const std::vector<geometric::Plane *> farWallsBefore   = scene.farRoom.getWalls();
+    const std::vector<Map *>              mapsBefore = scene.atlas.getAllMaps();
+    const std::vector<geometric::Plane *> knownWallsBefore =
+        scene.knownRoom.getWalls();
+    const std::vector<geometric::Plane *> farWallsBefore =
+        scene.farRoom.getWalls();
 
     scene.confirmFirstRoom(0.0);
     scene.produceTraversalEvidence();
@@ -415,13 +418,14 @@ TEST(RoomTrackerProductionIntegration,
               semantic::RoomTrackingState::CONFIRMED_ROOM);
     const std::vector<semantic::TransitionEvent> &history =
         scene.manager.getRoomTrackerEventHistoryForTest();
-    EXPECT_EQ(countAcceptedEvents(history,
-                                  semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
+    EXPECT_EQ(countAcceptedEvents(
+                  history,
+                  semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
               1U);
-    EXPECT_EQ(
-        countAcceptedEvents(history,
-                            semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
-        1U);
+    EXPECT_EQ(countAcceptedEvents(
+                  history,
+                  semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
+              1U);
     const std::size_t historySizeAfterTraversal = history.size();
     const std::size_t observationsAfterTraversal =
         scene.passage.getTraversalObservationCount();
@@ -434,14 +438,14 @@ TEST(RoomTrackerProductionIntegration,
               historySizeAfterTraversal);
     EXPECT_EQ(scene.passage.getTraversalObservationCount(),
               observationsAfterTraversal);
-    EXPECT_EQ(
-        countAcceptedEvents(scene.manager.getRoomTrackerEventHistoryForTest(),
-                            semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
-        1U);
-    EXPECT_EQ(
-        countAcceptedEvents(scene.manager.getRoomTrackerEventHistoryForTest(),
-                            semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
-        1U);
+    EXPECT_EQ(countAcceptedEvents(
+                  scene.manager.getRoomTrackerEventHistoryForTest(),
+                  semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
+              1U);
+    EXPECT_EQ(countAcceptedEvents(
+                  scene.manager.getRoomTrackerEventHistoryForTest(),
+                  semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
+              1U);
 
     EXPECT_FALSE(scene.knownRoom.hasRoomTag());
     EXPECT_FALSE(scene.farRoom.hasRoomTag());
@@ -449,7 +453,7 @@ TEST(RoomTrackerProductionIntegration,
     EXPECT_EQ(scene.farRoom.getWalls(), farWallsBefore);
     EXPECT_EQ(scene.passage.getKnownSideProvenance().pRoom, &scene.knownRoom);
     EXPECT_EQ(scene.passage.getProspectiveRoom(), &scene.farRoom);
-    EXPECT_EQ(scene.atlas.GetAllMaps(), mapsBefore);
+    EXPECT_EQ(scene.atlas.getAllMaps(), mapsBefore);
     ASSERT_EQ(mapsBefore.size(), 2U);
     for (Map *p_map : mapsBefore)
     {
@@ -520,13 +524,14 @@ TEST(RoomTrackerProductionIntegration,
               semantic::RoomTrackingState::CONFIRMED_ROOM);
     const std::vector<semantic::TransitionEvent> &history =
         scene.manager.getRoomTrackerEventHistoryForTest();
-    EXPECT_EQ(countAcceptedEvents(history,
-                                  semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
+    EXPECT_EQ(countAcceptedEvents(
+                  history,
+                  semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
               1U);
-    EXPECT_EQ(
-        countAcceptedEvents(history,
-                            semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
-        1U);
+    EXPECT_EQ(countAcceptedEvents(
+                  history,
+                  semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
+              1U);
     EXPECT_EQ(scene.passage.getTraversalObservationCount(), 5U);
 }
 
@@ -577,14 +582,14 @@ TEST(RoomTrackerProductionIntegration,
 
         const std::vector<semantic::TransitionEvent> &history =
             scene.manager.getRoomTrackerEventHistoryForTest();
-        EXPECT_EQ(
-            countAcceptedEvents(history,
-                                semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
-            1U);
-        EXPECT_EQ(
-            countAcceptedEvents(history,
-                                semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
-            1U);
+        EXPECT_EQ(countAcceptedEvents(
+                      history,
+                      semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
+                  1U);
+        EXPECT_EQ(countAcceptedEvents(
+                      history,
+                      semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
+                  1U);
         EXPECT_EQ(scene.passage.getTraversalObservationCount(), 3U);
     }
 
@@ -599,8 +604,8 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
 {
     Atlas atlas(0);
     static_cast<void>(atlas.consumeNewMapCreatedEvent());
-    atlas.CreateNewMap();
-    Map *p_map = atlas.GetCurrentMap();
+    atlas.createNewMap();
+    Map *p_map = atlas.getCurrentMap();
     static_cast<void>(atlas.consumeNewMapCreatedEvent());
     SemanticsManager manager(&atlas);
 
@@ -626,7 +631,7 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
     }
     groundPlane.setMapClouds(groundCloud);
     ASSERT_TRUE(GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane));
-    p_map->AddMapPlane(&groundPlane);
+    p_map->addMapPlane(&groundPlane);
 
     /* Known room: entered earlier, so already visited. */
     semantic::Room knownRoom;
@@ -635,7 +640,7 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
     knownRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     knownRoom.setCentroid(Eigen::Vector3d(-1.0, 0.0, 1.0));
     knownRoom.setPreviouslyVisited(true);
-    p_map->AddDetectedMapRoom(&knownRoom);
+    p_map->addDetectedMapRoom(&knownRoom);
 
     /* Prospective far-side room: observed but never entered. */
     semantic::Room farRoom;
@@ -643,7 +648,7 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
     farRoom.setMap(p_map);
     farRoom.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED);
     farRoom.setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0));
-    p_map->AddDetectedMapRoom(&farRoom);
+    p_map->addDetectedMapRoom(&farRoom);
 
     semantic::Passage passage;
     passage.setId(20);
@@ -657,21 +662,21 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
     passage.setKnownSideRoom(&knownRoom);
     passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0));
     passage.setProspectiveRoom(&farRoom);
-    p_map->AddMapPassage(&passage);
+    p_map->addMapPassage(&passage);
 
     /* Camera trajectory crossing the aperture from the known side. SetPose
      * takes world-to-camera, so the translation is the negated center. */
     KeyFrame nearKeyFrame;
     nearKeyFrame.mnId = 0U;
-    nearKeyFrame.SetPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
+    nearKeyFrame.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
                                       Eigen::Vector3f(1.0F, 0.0F, -1.0F)));
-    p_map->AddKeyFrame(&nearKeyFrame);
+    p_map->addKeyFrame(&nearKeyFrame);
 
     KeyFrame farKeyFrame;
     farKeyFrame.mnId = 1U;
-    farKeyFrame.SetPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
+    farKeyFrame.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
                                      Eigen::Vector3f(-1.0F, 0.0F, -1.0F)));
-    p_map->AddKeyFrame(&farKeyFrame);
+    p_map->addKeyFrame(&farKeyFrame);
 
     ASSERT_FALSE(farRoom.hasPreviouslyVisited());
 
@@ -685,7 +690,7 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
 TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
 {
     Atlas            atlas(0);
-    Map             *p_map = atlas.GetCurrentMap();
+    Map             *p_map = atlas.getCurrentMap();
     SemanticsManager manager(&atlas);
 
     semantic::Room room;
@@ -693,7 +698,7 @@ TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
     room.setMap(p_map);
     room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
     room.setCentroid(Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->AddDetectedMapRoom(&room);
+    p_map->addDetectedMapRoom(&room);
 
     manager.setCurrentRoomIdForTest(-1);
     manager.seedCurrentRoomFromActiveMapForTest(p_map);

@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -36,7 +36,8 @@ namespace vs_graphs
 namespace core
 {
 
-bool GeoSemHelpers::refitMappedPlaneFromCloud(vs_graphs::core::geometric::Plane *plane)
+bool GeoSemHelpers::refitMappedPlaneFromCloud(
+    vs_graphs::core::geometric::Plane *plane)
 {
     /* Confirm the mapped plane is valid */
     if (plane == nullptr || plane->isBad())
@@ -164,26 +165,27 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(vs_graphs::core::geometric::Plane 
 }
 
 vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
-    Atlas                                        *p_atlas_inout,
-    vs_graphs::core::KeyFrame                          *pKF,
-    const g2o::Plane3D                            estimatedPlane,
-    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
-    vs_graphs::core::geometric::Plane::PlaneVariant                semanticType,
-    double                                        confidence)
+    Atlas                                          *p_atlas_inout,
+    vs_graphs::core::KeyFrame                      *pKF,
+    const g2o::Plane3D                              estimatedPlane,
+    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr   planeCloud,
+    vs_graphs::core::geometric::Plane::PlaneVariant semanticType,
+    double                                          confidence)
 {
-    vs_graphs::core::Map *p_currentMap = p_atlas_inout->GetCurrentMap();
+    vs_graphs::core::Map *p_currentMap = p_atlas_inout->getCurrentMap();
 
     if (p_currentMap == nullptr)
     {
         return nullptr;
     }
 
-    vs_graphs::core::geometric::Plane *newMapPlane = new vs_graphs::core::geometric::Plane();
+    vs_graphs::core::geometric::Plane *newMapPlane =
+        new vs_graphs::core::geometric::Plane();
     newMapPlane->setColor();
     newMapPlane->setLocalEquation(estimatedPlane);
     newMapPlane->setMap(p_currentMap);
     newMapPlane->setId(p_currentMap->reservePlaneId());
-    newMapPlane->refKeyFrame = pKF;
+    newMapPlane->p_refKeyFrame = pKF;
 
     /* Stamp which face of the physical surface this is, from the camera that
      * observed it. Only the side turned toward a camera can ever be seen, so
@@ -193,7 +195,7 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     if (pKF != nullptr)
     {
         const Eigen::Vector3d observationOrigin_World_m =
-            pKF->GetCameraCenter().cast<double>();
+            pKF->getCameraCenter().cast<double>();
 
         if (observationOrigin_World_m.allFinite())
         {
@@ -259,7 +261,7 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
 
     /* Get the global equation of the plane */
     g2o::Plane3D globalEquation_World =
-        Utils::applyPoseToPlane(pKF->GetPoseInverse().matrix().cast<double>(),
+        Utils::applyPoseToPlane(pKF->getPoseInverse().matrix().cast<double>(),
                                 estimatedPlane);
 
     /* Set the global equation of the plane in the map world plane */
@@ -268,7 +270,7 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     /* Transform the plane cloud to the global frame */
     pcl::transformPointCloud(*planeCloud,
                              *planeCloud,
-                             pKF->GetPoseInverse().matrix().cast<float>());
+                             pKF->getPoseInverse().matrix().cast<float>());
 
     /* Fill the plane with the pointcloud */
     if (!planeCloud->points.empty())
@@ -290,7 +292,7 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     if (types::SystemParams::getParams()->optimization.planeMapPoint.enabled)
     {
         /* Iterate through the orb points (expressed in global frame) */
-        for (const auto &mapPoint : pKF->GetMapPoints())
+        for (const auto &mapPoint : pKF->getMapPoints())
         {
             /* If the orb feature is within the plane, set as map point */
             if (newMapPlane->isPointinPlaneCloud(
@@ -302,25 +304,26 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     }
 
     /* Add the plane to the keyframe */
-    pKF->AddMapPlane(newMapPlane);
+    pKF->addMapPlane(newMapPlane);
 
     /* Add the palne to the current map */
-    p_atlas_inout->AddMapPlane(newMapPlane);
+    p_atlas_inout->addMapPlane(newMapPlane);
 
     return newMapPlane;
 }
 
 void GeoSemHelpers::updateMapPlane(
-    Atlas                                  *p_atlas_in,
-    vs_graphs::core::KeyFrame                    *pKF,
-    const g2o::Plane3D                      estimatedPlane,
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
-    int                                     planeId,
-    vs_graphs::core::geometric::Plane::PlaneVariant          semanticType,
-    double                                  confidence)
+    Atlas                                          *p_atlas_in,
+    vs_graphs::core::KeyFrame                      *pKF,
+    const g2o::Plane3D                              estimatedPlane,
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr         planeCloud,
+    int                                             planeId,
+    vs_graphs::core::geometric::Plane::PlaneVariant semanticType,
+    double                                          confidence)
 {
     // Find the matched plane among all planes of the map
-    vs_graphs::core::geometric::Plane *currentPlane = p_atlas_in->GetPlaneById(planeId);
+    vs_graphs::core::geometric::Plane *currentPlane =
+        p_atlas_in->getPlaneById(planeId);
 
     // The observation of the plane
     vs_graphs::core::geometric::Plane::Observation obs;
@@ -351,12 +354,12 @@ void GeoSemHelpers::updateMapPlane(
     currentPlane->addObservation(pKF, obs);
 
     // Add the plane to the list of planes in the current KeyFrame
-    pKF->AddMapPlane(currentPlane);
+    pKF->addMapPlane(currentPlane);
 
     // transform the plane cloud to the global frame
     pcl::transformPointCloud(*planeCloud,
                              *planeCloud,
-                             pKF->GetPoseInverse().matrix().cast<float>());
+                             pKF->getPoseInverse().matrix().cast<float>());
 
     /* Update the point cloud of the mapped plane */
     if (!planeCloud->empty())
@@ -375,7 +378,7 @@ void GeoSemHelpers::updateMapPlane(
 
     if (types::SystemParams::getParams()->optimization.planeMapPoint.enabled)
     {
-        for (const auto &mapPoint : pKF->GetMapPoints())
+        for (const auto &mapPoint : pKF->getMapPoints())
             if (currentPlane->isPointinPlaneCloud(
                     mapPoint->getWorldPos().cast<double>()))
                 currentPlane->setMapPoints(mapPoint);
@@ -383,7 +386,7 @@ void GeoSemHelpers::updateMapPlane(
 }
 
 std::pair<bool, std::string> GeoSemHelpers::checkIfMarkerIsDoorway(
-    const int                     &markerId,
+    const int                                     &markerId,
     std::vector<vs_graphs::core::semantic::Room *> envRooms)
 {
     bool        isDoorway = true;
@@ -403,64 +406,66 @@ std::pair<bool, std::string> GeoSemHelpers::checkIfMarkerIsDoorway(
 }
 
 void GeoSemHelpers::markerSemanticAnalysis(
-    Atlas                         *p_atlas_inout,
-    vs_graphs::core::KeyFrame           *pKF,
+    Atlas                                         *p_atlas_inout,
+    vs_graphs::core::KeyFrame                     *pKF,
     std::vector<vs_graphs::core::semantic::Room *> envRooms)
 {
     // Get the markers from the current KeyFrame
-    std::vector<semantic::Marker *> mvpMapMarkers = pKF->getCurrentFrameMarkers();
+    std::vector<semantic::Marker *> mapMarkers = pKF->getCurrentFrameMarkers();
 
-    for (semantic::Marker *mCurrentMarker : mvpMapMarkers)
+    for (semantic::Marker *p_currentMarker : mapMarkers)
     {
         // Variables
         vs_graphs::core::semantic::Marker *currentMapMarker;
 
         // Check the type of the marker
         std::pair<bool, std::string> result =
-            checkIfMarkerIsDoorway(mCurrentMarker->getId(), envRooms);
+            checkIfMarkerIsDoorway(p_currentMarker->getId(), envRooms);
         bool        markerIsDoorway = result.first;
         std::string doorwayName     = result.second;
 
         // Change the marker type
-        mCurrentMarker->setMarkerType(
+        p_currentMarker->setMarkerType(
             markerIsDoorway
                 ? vs_graphs::core::semantic::Marker::MarkerVariant::ON_DOOR
                 : vs_graphs::core::semantic::Marker::MarkerVariant::
                       ON_ROOM_CENTER);
 
         // If the marker is not in the map, add it
-        if (!mCurrentMarker->isMarkerInGMap())
+        if (!p_currentMarker->isMarkerInGMap())
         {
-            mCurrentMarker->setMap(p_atlas_inout->GetCurrentMap());
-            mCurrentMarker->setGlobalPose(pKF->GetPoseInverse() *
-                                          mCurrentMarker->getLocalPose());
-            mCurrentMarker->setMarkerInGMap(true);
+            p_currentMarker->setMap(p_atlas_inout->getCurrentMap());
+            p_currentMarker->setGlobalPose(pKF->getPoseInverse() *
+                                           p_currentMarker->getLocalPose());
+            p_currentMarker->setMarkerInGMap(true);
 
             // Creating a new marker in the map
-            currentMapMarker = createMapMarker(p_atlas_inout, pKF, mCurrentMarker);
+            currentMapMarker =
+                createMapMarker(p_atlas_inout, pKF, p_currentMarker);
         }
         // Else, add the observation to the existing marker
         else
-            for (auto mappedMarker : p_atlas_inout->GetAllMarkers())
-                if (mappedMarker->getId() == mCurrentMarker->getId())
+            for (auto mappedMarker : p_atlas_inout->getAllMarkers())
+                if (mappedMarker->getId() == p_currentMarker->getId())
                 {
                     currentMapMarker = mappedMarker;
                     currentMapMarker->addObservation(
                         pKF,
-                        mCurrentMarker->getLocalPose());
+                        p_currentMarker->getLocalPose());
                 }
     }
 }
 
-vs_graphs::core::semantic::Marker *
-    GeoSemHelpers::createMapMarker(Atlas                   *p_atlas_inout,
-                                   vs_graphs::core::KeyFrame     *pKF,
-                                   const vs_graphs::core::semantic::Marker *visitedMarker)
+vs_graphs::core::semantic::Marker *GeoSemHelpers::createMapMarker(
+    Atlas                                   *p_atlas_inout,
+    vs_graphs::core::KeyFrame               *pKF,
+    const vs_graphs::core::semantic::Marker *visitedMarker)
 {
-    vs_graphs::core::semantic::Marker *newMapMarker = new vs_graphs::core::semantic::Marker();
+    vs_graphs::core::semantic::Marker *newMapMarker =
+        new vs_graphs::core::semantic::Marker();
 
     newMapMarker->setId(visitedMarker->getId());
-    newMapMarker->setMap(p_atlas_inout->GetCurrentMap());
+    newMapMarker->setMap(p_atlas_inout->getCurrentMap());
     newMapMarker->setOpId(visitedMarker->getOpId());
     newMapMarker->setTime(visitedMarker->getTime());
     newMapMarker->setLocalPose(visitedMarker->getLocalPose());
@@ -469,17 +474,18 @@ vs_graphs::core::semantic::Marker *
     newMapMarker->setMarkerInGMap(visitedMarker->isMarkerInGMap());
     newMapMarker->addObservation(pKF, visitedMarker->getLocalPose());
 
-    pKF->AddMapMarker(newMapMarker);
-    p_atlas_inout->AddMapMarker(newMapMarker);
+    pKF->addMapMarker(newMapMarker);
+    p_atlas_inout->addMapMarker(newMapMarker);
 
     return newMapMarker;
 }
 
-void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
-                                     vs_graphs::core::geometric::Plane *p_doorPlane_in,
-                                     vs_graphs::core::geometric::Plane *p_wallPlane_in,
-                                     bool              isOpenPassage_in,
-                                     Eigen::Vector3d passageCentroid_World_m_in)
+void GeoSemHelpers::createMapPassage(
+    vs_graphs::core::Atlas            *p_atlas_inout,
+    vs_graphs::core::geometric::Plane *p_doorPlane_in,
+    vs_graphs::core::geometric::Plane *p_wallPlane_in,
+    bool                               isOpenPassage_in,
+    Eigen::Vector3d                    passageCentroid_World_m_in)
 {
     /* ---------------------------------------------------------------------- *
      * VALIDATE REQUIRED INPUTS
@@ -542,7 +548,7 @@ void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
 
     /* Extract all passages */
     const std::vector<vs_graphs::core::semantic::Passage *> allPassages =
-        p_atlas_inout->GetAllPassages();
+        p_atlas_inout->getAllPassages();
 
     /* ---------------------------------------------------------------------- *
      * DETERMINE THE PASSAGE GEOMETRY
@@ -599,8 +605,8 @@ void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
             {
                 height = std::min(
                     measuredHeight,
-                    static_cast<double>(
-                        types::SystemParams::getParams()->semSeg.maxDoorHeight));
+                    static_cast<double>(types::SystemParams::getParams()
+                                            ->semSeg.maxDoorHeight));
             }
         }
     }
@@ -778,8 +784,8 @@ void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
          *     that framed the passage; a downstream mid-plane pass pairs the
          *     two faces and recomputes a stable aperture plane.
          */
-        const std::vector<vs_graphs::core::geometric::Plane *> existingSupportingWalls =
-            p_existingPassage->getAssociateWalls();
+        const std::vector<vs_graphs::core::geometric::Plane *>
+            existingSupportingWalls = p_existingPassage->getAssociateWalls();
         const bool isKnownSupportingFace =
             std::find(existingSupportingWalls.begin(),
                       existingSupportingWalls.end(),
@@ -822,11 +828,12 @@ void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
     const int passageId = p_atlas_inout->reservePassageIdentity();
 
     /* Initialize passage object */
-    vs_graphs::core::semantic::Passage *p_newMapPassage = new vs_graphs::core::semantic::Passage();
+    vs_graphs::core::semantic::Passage *p_newMapPassage =
+        new vs_graphs::core::semantic::Passage();
 
     /* Fill passage object */
     p_newMapPassage->setId(passageId);
-    p_newMapPassage->setMap(p_atlas_inout->GetCurrentMap());
+    p_newMapPassage->setMap(p_atlas_inout->getCurrentMap());
 
     p_newMapPassage->setCentroid(centroid);
     p_newMapPassage->setGlobalEquation(passageEquation);
@@ -869,17 +876,17 @@ void GeoSemHelpers::createMapPassage(vs_graphs::core::Atlas *p_atlas_inout,
     std::cout << " (" << infoStream.str()
               << "), centroid=" << centroid.transpose() << "." << std::endl;
 
-    p_atlas_inout->AddMapPassage(p_newMapPassage);
+    p_atlas_inout->addMapPassage(p_newMapPassage);
 
     std::cout << "[GeoSemHelper] Atlas now contains "
-              << p_atlas_inout->GetAllPassages().size() << " passages."
+              << p_atlas_inout->getAllPassages().size() << " passages."
               << std::endl;
 }
 
-vs_graphs::core::semantic::Room *
-    GeoSemHelpers::createBlankRoomCandidate(vs_graphs::core::Atlas  *p_atlas_inout,
-                                            Eigen::Vector3d    centroid,
-                                            std::optional<int> stableRoomId_in)
+vs_graphs::core::semantic::Room *GeoSemHelpers::createBlankRoomCandidate(
+    vs_graphs::core::Atlas *p_atlas_inout,
+    Eigen::Vector3d         centroid,
+    std::optional<int>      stableRoomId_in)
 {
     /* Confirm that the p_atlas_inout is valid */
     if (p_atlas_inout == nullptr)
@@ -891,17 +898,18 @@ vs_graphs::core::semantic::Room *
     }
 
     /* Extract the existing rooms from the map */
-    const std::vector<vs_graphs::core::semantic::Room *> existingRooms = p_atlas_inout->GetAllRooms();
+    const std::vector<vs_graphs::core::semantic::Room *> existingRooms =
+        p_atlas_inout->getAllRooms();
 
     /*!
      * Hard invariant, enforced at this single room-creation choke point
      * (this is the only call site in the codebase that ever constructs a
-     * new vs_graphs::core::semantic::Room): a map may hold at most one more room than it
-     * has PASSABLE passages. A map's first room is either the mission's cold
-     * bootstrap or the topology-only recovery proxy restored after tracking
-     * loss; it needs no active-map passage yet -- that is the "+1". Every new
-     * semantic room after that must be the confirmed or prospective far side
-     * of a genuine passage.
+     * new vs_graphs::core::semantic::Room): a map may hold at most one more
+     * room than it has PASSABLE passages. A map's first room is either the
+     * mission's cold bootstrap or the topology-only recovery proxy restored
+     * after tracking loss; it needs no active-map passage yet -- that is the
+     * "+1". Every new semantic room after that must be the confirmed or
+     * prospective far side of a genuine passage.
      *
      * Deliberately counts isPassable() passages only, not every registered
      * Passage object: a Passage can also be created "blocked" purely from a
@@ -920,7 +928,7 @@ vs_graphs::core::semantic::Room *
      * passable/blocked state alone.
      */
     const std::vector<vs_graphs::core::semantic::Passage *> currentMapPassages =
-        p_atlas_inout->GetAllPassages();
+        p_atlas_inout->getAllPassages();
     const std::size_t passablePassageCount =
         std::count_if(currentMapPassages.begin(),
                       currentMapPassages.end(),
@@ -952,7 +960,8 @@ vs_graphs::core::semantic::Room *
     p_atlas_inout->observeRoomIdentity(roomId);
 
     /* Create new room */
-    vs_graphs::core::semantic::Room *newRoom = new vs_graphs::core::semantic::Room();
+    vs_graphs::core::semantic::Room *newRoom =
+        new vs_graphs::core::semantic::Room();
 
     /*!
      * Fill the parameters of room. The caller is responsible for inserting it
@@ -962,11 +971,12 @@ vs_graphs::core::semantic::Room *
 
     newRoom->setId(roomId);
     newRoom->setCentroid(centroid);
-    newRoom->setMap(p_atlas_inout->GetCurrentMap());
+    newRoom->setMap(p_atlas_inout->getCurrentMap());
 
     newRoom->setName("SE#" + std::to_string(roomId));
 
-    newRoom->setRoomVariant(vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED);
+    newRoom->setRoomVariant(
+        vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED);
 
     std::cout << "[GeoSemHelper] Created provisional SE#" << newRoom->getId()
               << " at " << newRoom->getCentroid().transpose() << "."
@@ -975,17 +985,20 @@ vs_graphs::core::semantic::Room *
     return newRoom;
 }
 
-void GeoSemHelpers::associateGroundPlaneToRoom(Atlas           *p_atlas_in,
-                                               vs_graphs::core::semantic::Room *givenRoom)
+void GeoSemHelpers::associateGroundPlaneToRoom(
+    Atlas                           *p_atlas_in,
+    vs_graphs::core::semantic::Room *givenRoom)
 {
-    std::vector<vs_graphs::core::geometric::Plane *> allWalls = givenRoom->getWalls();
-    vs_graphs::core::geometric::Plane               *associatedGroundPlane = nullptr;
-    size_t                          maxInliers            = 0;
+    std::vector<vs_graphs::core::geometric::Plane *> allWalls =
+        givenRoom->getWalls();
+    vs_graphs::core::geometric::Plane *associatedGroundPlane = nullptr;
+    size_t                             maxInliers            = 0;
 
     // get the ground planes from the Atlas
     std::vector<vs_graphs::core::geometric::Plane *> groundPlanes;
-    for (const auto &plane : p_atlas_in->GetAllPlanes())
-        if (plane->getPlaneType() == vs_graphs::core::geometric::Plane::PlaneVariant::GROUND)
+    for (const auto &plane : p_atlas_in->getAllPlanes())
+        if (plane->getPlaneType() ==
+            vs_graphs::core::geometric::Plane::PlaneVariant::GROUND)
             groundPlanes.push_back(plane);
 
     if (groundPlanes.empty())
@@ -1014,7 +1027,7 @@ void GeoSemHelpers::associateGroundPlaneToRoom(Atlas           *p_atlas_in,
             // set the biggest ground plane as the ground plane of the room
             // [TODO] - logic for when ground plane is not found within the
             // walls
-            givenRoom->setGroundPlane(p_atlas_in->GetBiggestGroundPlane());
+            givenRoom->setGroundPlane(p_atlas_in->getBiggestGroundPlane());
     }
 }
 
@@ -1067,10 +1080,10 @@ size_t GeoSemHelpers::countGroundPlanePointsWithinWalls(
     return count;
 }
 
-void GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas  *p_atlas_inout,
-                                   std::optional<int> stableFloorId_in)
+void GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas *p_atlas_inout,
+                                   std::optional<int>      stableFloorId_in)
 {
-    vs_graphs::core::Map *p_currentMap = p_atlas_inout->GetCurrentMap();
+    vs_graphs::core::Map *p_currentMap = p_atlas_inout->getCurrentMap();
 
     if (p_currentMap == nullptr)
     {
@@ -1078,8 +1091,9 @@ void GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas  *p_atlas_inout,
     }
 
     // Create a new floor object
-    Eigen::Vector3d   centroid    = Eigen::Vector3d::Zero();
-    vs_graphs::core::semantic::Floor *newMapFloor = new vs_graphs::core::semantic::Floor();
+    Eigen::Vector3d                   centroid = Eigen::Vector3d::Zero();
+    vs_graphs::core::semantic::Floor *newMapFloor =
+        new vs_graphs::core::semantic::Floor();
 
     // Variables
     const int floorId = stableFloorId_in.has_value()
@@ -1096,10 +1110,10 @@ void GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas  *p_atlas_inout,
     newMapFloor->setName("semantic::Floor#" + std::to_string(floorId));
 
     // Add the floor to the map
-    p_atlas_inout->AddMapFloor(newMapFloor);
+    p_atlas_inout->addMapFloor(newMapFloor);
 
-    std::cout << "[GeoSemHelper] Creating semantic::Floor#" << newMapFloor->getId()
-              << " ..." << std::endl;
+    std::cout << "[GeoSemHelper] Creating semantic::Floor#"
+              << newMapFloor->getId() << " ..." << std::endl;
 }
 } // namespace core
 } // namespace vs_graphs
