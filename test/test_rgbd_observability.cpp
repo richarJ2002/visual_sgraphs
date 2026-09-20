@@ -1,4 +1,4 @@
-/**
+/*!
  * @file test_rgbd_observability.cpp
  * @brief Tests deterministic RGB-D accounting and reset attribution strings.
  */
@@ -553,9 +553,9 @@ TEST(ResetCauseTest, FormatsStableCauseAndAction)
     EXPECT_STREQ(vs_graphs::core::resetCauseToString(
                      ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP),
                  "visual_tracking_lost_small_map");
-    EXPECT_STREQ(
-        vs_graphs::core::resetActionToString(ResetAction::RESET_ACTIVE_MAP_REQUEST),
-        "reset_active_map_request");
+    EXPECT_STREQ(vs_graphs::core::resetActionToString(
+                     ResetAction::RESET_ACTIVE_MAP_REQUEST),
+                 "reset_active_map_request");
     EXPECT_EQ(vs_graphs::core::formatResetAttribution(
                   ResetCause::VISUAL_TRACKING_LOST_NEW_MAP,
                   ResetAction::CREATE_MAP_EXECUTION),
@@ -590,7 +590,8 @@ TEST(ResetCauseTest, RetainsCausesPerOwnerWithoutOwnerLayoutChanges)
     const int firstOwner  = 1;
     const int secondOwner = 2;
     vs_graphs::core::retainResetCause(&firstOwner, ResetCause::VIEWER_REQUEST);
-    vs_graphs::core::retainResetCause(&secondOwner, ResetCause::IMU_DELIVERY_GAP);
+    vs_graphs::core::retainResetCause(&secondOwner,
+                                      ResetCause::IMU_DELIVERY_GAP);
 
     EXPECT_EQ(vs_graphs::core::consumeResetCause(&firstOwner),
               ResetCause::VIEWER_REQUEST);

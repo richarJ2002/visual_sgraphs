@@ -35,11 +35,11 @@
 namespace g2o
 {
 
-  /**
-   * \brief Point vertex, XYZ
-   */
-  class VertexSBAPointXYZ : public BaseVertex<3, Vector3d>
-  {
+/*!
+ * \brief Point vertex, XYZ
+ */
+class VertexSBAPointXYZ : public BaseVertex<3, Vector3d>
+{
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     VertexSBAPointXYZ();
@@ -48,16 +48,16 @@ namespace g2o
 
     virtual void setToOriginImpl()
     {
-      _estimate.fill(0.);
+        _estimate.fill(0.);
     }
 
     virtual void oplusImpl(const double *update)
     {
-      Eigen::Map<const Vector3d> v(update);
-      _estimate += v;
+        Eigen::Map<const Vector3d> v(update);
+        _estimate += v;
     }
-  };
+};
 
-} // end namespace
+} // namespace g2o
 
 #endif // SBA_TYPES

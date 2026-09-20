@@ -1,4 +1,4 @@
-/** Declares deterministic, pre-verification semantic room candidates. */
+/*! Declares deterministic, pre-verification semantic room candidates. */
 #ifndef SEMANTIC_CANDIDATES_H
 #define SEMANTIC_CANDIDATES_H
 
@@ -98,15 +98,15 @@ struct SemanticCandidateGeneration
 class SemanticCandidates
 {
   public:
-    /** Validates every candidate-generation field without touching map data. */
+    /*! Validates every candidate-generation field without touching map data. */
     static SemanticCandidateConfigRejectionReason
         validateConfig(const SemanticCandidateConfig &config_in);
 
-    /** Returns a stable diagnostic name for a typed rejection reason. */
+    /*! Returns a stable diagnostic name for a typed rejection reason. */
     static const char *
         rejectionReasonName(SemanticCandidateConfigRejectionReason reason_in);
 
-    /** Generates bounded candidates and reports configuration rejection.
+    /*! Generates bounded candidates and reports configuration rejection.
      *
      *  @param anchorRoomId_in  Optional identity of the last-confirmed
      *  room. When present, room pairs sharing a passage with that room
@@ -122,7 +122,7 @@ class SemanticCandidates
         const SemanticCandidateConfig &config_in = SemanticCandidateConfig(),
         std::optional<int>             anchorRoomId_in = std::nullopt);
 
-    /** Scores copied room snapshots only; no map or transform is touched. */
+    /*! Scores copied room snapshots only; no map or transform is touched. */
     static std::vector<SemanticCandidate> generate(
         const std::map<long unsigned int, std::vector<RoomContextSnapshot>>
                                       &history_in,

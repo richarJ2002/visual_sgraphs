@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -133,16 +133,16 @@ struct RoomRecord
      *  ground plane yet", the ordinary case. */
     RawPlaneRef groundPlaneRef;
 
-/*!
- * @brief        Always NOT_TRACKED_BY_CURRENT_SCHEMA: Room has no
- *               field recording how/why it was created (confirmed by
- *               direct source read of Room.h/Room.cc -- roomTag,
- *               p_matchedContext, and the meta-marker fields record
- *               identity/labelling, not creation provenance). A
- *               future extension that adds a provenance field on
- *               Room is the owner of resolving this to an actual
- *               value.
- */
+    /*!
+     * @brief        Always NOT_TRACKED_BY_CURRENT_SCHEMA: Room has no
+     *               field recording how/why it was created (confirmed by
+     *               direct source read of Room.h/Room.cc -- roomTag,
+     *               p_matchedContext, and the meta-marker fields record
+     *               identity/labelling, not creation provenance). A
+     *               future extension that adds a provenance field on
+     *               Room is the owner of resolving this to an actual
+     *               value.
+     */
     UnavailableReason creationProvenanceReason{
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA};
 };

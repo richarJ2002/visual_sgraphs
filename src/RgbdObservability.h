@@ -1,4 +1,4 @@
-/**
+/*!
  * @file RgbdObservability.h
  * @brief Declares package-private RGB-D callback/worker accounting.
  */
@@ -17,7 +17,7 @@
 namespace vs_graphs::observability
 {
 
-/**
+/*!
  * Cumulative observations at the GrabRGBD callback boundary. Processed-window
  * statistics use one-second, non-overlapping tumbling windows anchored at the
  * first fully processed packet's worker-end time. A window is counted only
@@ -108,7 +108,7 @@ struct RgbdObservabilitySnapshot
     std::int64_t  lastProcessedSensorTimestampNanoseconds{0};
 };
 
-/**
+/*!
  * Thread-safe cumulative accounting for synchronized triples which have
  * entered ImageGrabber::GrabRGBD. DDS and message_filters losses before that
  * function are outside this boundary and remain unknown.
@@ -176,7 +176,7 @@ class RgbdObservability
     std::uint64_t callbackArrivalWindowCount{0U};
 };
 
-/** Formats one stable, single-line, key-value summary. */
+/*! Formats one stable, single-line, key-value summary. */
 [[nodiscard]] std::string
     formatRgbdObservabilitySummary(const RgbdObservabilitySnapshot &snapshot_in,
                                    const std::string               &event_in);

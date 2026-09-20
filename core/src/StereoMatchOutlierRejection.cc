@@ -1,4 +1,4 @@
-/**
+/*!
  * @file StereoMatchOutlierRejection.cc
  * @brief Defines the median-distance outlier rejection step used by
  *        Frame::computeStereoMatches().
@@ -14,8 +14,8 @@ namespace core
 {
 
 void rejectOutlierStereoMatches(std::vector<std::pair<int, int>> &vDistIdx,
-                                std::vector<float>                &mvuRight,
-                                std::vector<float>                &mvDepth)
+                                std::vector<float>               &mvuRight,
+                                std::vector<float>               &mvDepth)
 {
     if (vDistIdx.empty())
     {

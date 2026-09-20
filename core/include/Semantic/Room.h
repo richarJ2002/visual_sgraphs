@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -83,16 +83,16 @@ class Room
         /*!
          * @brief        No wall evidence has been observed yet.
          */
-        UNOBSERVED  = 0,
+        UNOBSERVED = 0,
         /*!
          * @brief        Observed walls do not close the boundary
          *               yet.
          */
-        INCOMPLETE  = 1,
+        INCOMPLETE = 1,
         /*!
          * @brief        Observed walls close a valid boundary loop.
          */
-        COMPLETE    = 2,
+        COMPLETE = 2,
         /*!
          * @brief        Wall evidence contradicts a single closed
          *               boundary.
@@ -606,8 +606,9 @@ class Room
      *
      * @return       True when this room referenced the retired passage.
      */
-    bool replacePassageAssociation(vs_graphs::core::semantic::Passage *p_retiredPassage_in,
-                                   vs_graphs::core::semantic::Passage *p_retainedPassage_in);
+    bool replacePassageAssociation(
+        vs_graphs::core::semantic::Passage *p_retiredPassage_in,
+        vs_graphs::core::semantic::Passage *p_retainedPassage_in);
 
     /*!
      * @brief        Removes every passage association without
@@ -631,7 +632,8 @@ class Room
      *
      * @return       True when the association was present and removed.
      */
-    bool removePassageAssociation(vs_graphs::core::semantic::Passage *p_removedPassage_in);
+    bool removePassageAssociation(
+        vs_graphs::core::semantic::Passage *p_removedPassage_in);
 
     /*!
      * @brief        Adds a non-owning wall-plane association to this

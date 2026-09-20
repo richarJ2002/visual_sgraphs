@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of ORB-SLAM3.
  * Copyright (C) 2014-2021 University of Zaragoza:
  * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,

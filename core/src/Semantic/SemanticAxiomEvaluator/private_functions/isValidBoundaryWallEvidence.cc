@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -145,7 +145,8 @@ RoomBoundaryWallEvidenceStatus
     {
         return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
     }
-    if (!p_wall->isLive || p_wall->planeType != geometric::Plane::PlaneVariant::WALL)
+    if (!p_wall->isLive ||
+        p_wall->planeType != geometric::Plane::PlaneVariant::WALL)
     {
         return RoomBoundaryWallEvidenceStatus::INVALID;
     }

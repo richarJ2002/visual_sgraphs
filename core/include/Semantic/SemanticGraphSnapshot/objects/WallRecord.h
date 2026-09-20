@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -69,7 +69,8 @@ struct WallRecord
     /*! @brief Plane::getPlaneType() at capture time; always WALL for a
      *  record captured through this snapshot's wall-enumeration path,
      *  retained explicitly rather than assumed. */
-    geometric::Plane::PlaneVariant planeType{geometric::Plane::PlaneVariant::WALL};
+    geometric::Plane::PlaneVariant planeType{
+        geometric::Plane::PlaneVariant::WALL};
 
     /*! @brief PlaneGeometryMetadataSnapshot::equation_World. */
     Eigen::Vector4d equation_World{Eigen::Vector4d::Zero()};
@@ -145,36 +146,36 @@ struct WallRecord
      *  instead of losing it. */
     std::vector<EntityRef> ownerRoomRefs;
 
-/*!
- * @brief        Always NOT_TRACKED_BY_CURRENT_SCHEMA: no current
- *               Room/Wall/Passage field records semantic quarantine
- *               state (confirmed by direct source read --
- *               Plane.h/Room.h have no quarantine-flag member).
- *               SemanticsManager (holding
- *               Atlas::acquireSemanticUpdateLock()) would be the
- *               single writer of semantic quarantine state; a
- *               future extension that replaces
- *               suppressUndefendedWalls()'s semantic deletion with
- *               typed quarantine is the owner of resolving this to
- *               an actual value.
- */
+    /*!
+     * @brief        Always NOT_TRACKED_BY_CURRENT_SCHEMA: no current
+     *               Room/Wall/Passage field records semantic quarantine
+     *               state (confirmed by direct source read --
+     *               Plane.h/Room.h have no quarantine-flag member).
+     *               SemanticsManager (holding
+     *               Atlas::acquireSemanticUpdateLock()) would be the
+     *               single writer of semantic quarantine state; a
+     *               future extension that replaces
+     *               suppressUndefendedWalls()'s semantic deletion with
+     *               typed quarantine is the owner of resolving this to
+     *               an actual value.
+     */
     UnavailableReason quarantineReason{
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA};
 
-/*!
- * @brief        Always NOT_TRACKED_BY_CURRENT_SCHEMA: distinct from
- *               observationSideConsensusReason above (the derived
- *               per-keyframe side *consensus*), this covers the
- *               underlying individual observation-ray samples and
- *               their traversal order that would justify it.
- *               Plane::Observation (Plane.h) retains only an
- *               aggregated point-plane constraint matrix and
- *               per-generation counts, never an individual ray
- *               sample or its order (confirmed by direct source
- *               read). A future extension that adds bounded
- *               per-observation ray sampling and ray-parameter
- *               ordering owns resolving this to an actual value.
- */
+    /*!
+     * @brief        Always NOT_TRACKED_BY_CURRENT_SCHEMA: distinct from
+     *               observationSideConsensusReason above (the derived
+     *               per-keyframe side *consensus*), this covers the
+     *               underlying individual observation-ray samples and
+     *               their traversal order that would justify it.
+     *               Plane::Observation (Plane.h) retains only an
+     *               aggregated point-plane constraint matrix and
+     *               per-generation counts, never an individual ray
+     *               sample or its order (confirmed by direct source
+     *               read). A future extension that adds bounded
+     *               per-observation ray sampling and ray-parameter
+     *               ordering owns resolving this to an actual value.
+     */
     UnavailableReason observationRayEvidenceReason{
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA};
 };

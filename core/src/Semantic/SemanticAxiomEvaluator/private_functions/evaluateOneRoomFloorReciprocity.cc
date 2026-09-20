@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -254,11 +254,11 @@ void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
         return;
     }
     /* Multiplicity must count every otherwise-clean match
-     * (confirmed-live or liveness-unavailable alike), not only confirmed-live ones -- a clean-live member plus a
-     * liveness-unavailable duplicate is still ambiguous multiplicity, not a
-     * clean single reciprocal member (mirrors
-     * scanReversePassageEndpoints.cc's own cleanMatchCountThisRoom, which
-     * already counts liveness-unavailable matches toward duplicate
+     * (confirmed-live or liveness-unavailable alike), not only confirmed-live
+     * ones -- a clean-live member plus a liveness-unavailable duplicate is
+     * still ambiguous multiplicity, not a clean single reciprocal member
+     * (mirrors scanReversePassageEndpoints.cc's own cleanMatchCountThisRoom,
+     * which already counts liveness-unavailable matches toward duplicate
      * detection). */
     const std::size_t totalOtherwiseCleanCount =
         reverseMembershipCount + livenessUnavailableMemberCount;

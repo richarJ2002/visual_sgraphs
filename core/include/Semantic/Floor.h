@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -36,7 +36,8 @@ class Room;
 class Floor
 {
   public:
-    /** Comparable, normalized ground-plane identity and its observation quality. */
+    /*! Comparable, normalized ground-plane identity and its observation
+     * quality. */
     struct PlaneIdentity
     {
         Eigen::Vector4d equation_World{Eigen::Vector4d::Zero()};
@@ -53,7 +54,8 @@ class Floor
     int             opIdG;    // Floor's ID in the global optimizer
     std::string     name;     // The name devoted for each room (optional)
     Eigen::Vector3d centroid; // Floor's centroid in the global reference
-    std::vector<vs_graphs::core::semantic::Room *> rooms; // Floor's rooms and corridors
+    std::vector<vs_graphs::core::semantic::Room *>
+                                 rooms; // Floor's rooms and corridors
     std::optional<PlaneIdentity> planeIdentity;
 
     void detachRoom(vs_graphs::core::semantic::Room *p_room_in);
@@ -90,40 +92,44 @@ class Floor
     Eigen::Vector3d getCentroid() const;
     void            setCentroid(Eigen::Vector3d value);
 
-    /** Returns true when a finite normalized ground-plane identity is stored. */
+    /*! Returns true when a finite normalized ground-plane identity is stored.
+     */
     bool hasPlaneIdentity() const;
 
-    /** Returns one atomic snapshot of the equation and its evidence quality. */
+    /*! Returns one atomic snapshot of the equation and its evidence quality. */
     std::optional<PlaneIdentity> getPlaneIdentity() const;
 
-    /**
+    /*!
      * Stores a normalized equation and evidence. Invalid equations are ignored
      * so a previously valid identity is never overwritten by missing data.
      */
     bool setPlaneIdentity(const Eigen::Vector4d &equation_World_in,
-                          std::size_t finiteSupportCount_in,
-                          std::size_t observationCount_in);
+                          std::size_t            finiteSupportCount_in,
+                          std::size_t            observationCount_in);
 
-    /** Marks the current ground-plane identity unavailable. */
+    /*! Marks the current ground-plane identity unavailable. */
     void clearPlaneIdentity(void);
 
-    /** Transforms an identity under the active old-world to new-world Sim3. */
+    /*! Transforms an identity under the active old-world to new-world Sim3. */
     static std::optional<PlaneIdentity> transformPlaneIdentity(
         const PlaneIdentity &identity_OldWorld_in,
-        const g2o::Sim3      &transform_oldWorldToNewWorld_in);
+        const g2o::Sim3     &transform_oldWorldToNewWorld_in);
 
-    /** Compares normalized planes with sign-invariant angle and offset tests. */
+    /*! Compares normalized planes with sign-invariant angle and offset tests.
+     */
     static bool planeIdentitiesMatch(const PlaneIdentity &firstIdentity_in,
                                      const PlaneIdentity &secondIdentity_in,
-                                     double maximumNormalAngle_deg_in,
-                                     double maximumOffset_m_in,
+                                     double  maximumNormalAngle_deg_in,
+                                     double  maximumOffset_m_in,
                                      double &normalAngle_deg_out,
                                      double &offset_m_out);
 
-    /** Selects the valid identity with most finite support, then observations. */
-    static Floor *selectBestObservedFloor(const std::vector<Floor *> &floors_in);
+    /*! Selects the valid identity with most finite support, then observations.
+     */
+    static Floor *
+        selectBestObservedFloor(const std::vector<Floor *> &floors_in);
 
-    void                           addRoom(vs_graphs::core::semantic::Room *value);
+    void addRoom(vs_graphs::core::semantic::Room *value);
     std::vector<vs_graphs::core::semantic::Room *> getRooms() const;
     void setRooms(const std::vector<vs_graphs::core::semantic::Room *> &value);
 

@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -93,8 +93,9 @@ class Utils
      *
      * @return       Absolute distance in the input length units.
      */
-    static double calculateDistancePointToPlane(const Eigen::Vector4d &plane_in,
-                                                const Eigen::Vector3d &point_in);
+    static double
+        calculateDistancePointToPlane(const Eigen::Vector4d &plane_in,
+                                      const Eigen::Vector3d &point_in);
 
     /*!
      * @brief        Calculates the intersection point of a line and a
@@ -109,9 +110,10 @@ class Utils
      *
      * @return       Point where the line meets the plane.
      */
-    static Eigen::Vector3d lineIntersectsPlane(const Eigen::Vector4d &plane_in,
-                                               const Eigen::Vector3d &lineStart_in,
-                                               const Eigen::Vector3d &lineEnd_in);
+    static Eigen::Vector3d
+        lineIntersectsPlane(const Eigen::Vector4d &plane_in,
+                            const Eigen::Vector3d &lineStart_in,
+                            const Eigen::Vector3d &lineEnd_in);
 
     /*!
      * @brief        Checks to see if two planes are apart enough from
@@ -127,9 +129,9 @@ class Utils
      * @return       True when both planes are valid and their
      *               perpendicular separation exceeds the threshold.
      */
-    static bool arePlanesApartEnough(const geometric::Plane  *p_plane1_in,
-                                     const geometric::Plane  *p_plane2_in,
-                                     const double &threshold_in);
+    static bool arePlanesApartEnough(const geometric::Plane *p_plane1_in,
+                                     const geometric::Plane *p_plane2_in,
+                                     const double           &threshold_in);
 
     /*!
      * @brief        Checks to see if two planes are perpendicular to each
@@ -143,8 +145,9 @@ class Utils
      * @return       True when the inter-plane angle is within the
      *               configured threshold of 90 degrees.
      */
-    static bool arePlanesPerpendicular(const vs_graphs::core::geometric::Plane *p_plane1_in,
-                                       const vs_graphs::core::geometric::Plane *p_plane2_in);
+    static bool arePlanesPerpendicular(
+        const vs_graphs::core::geometric::Plane *p_plane1_in,
+        const vs_graphs::core::geometric::Plane *p_plane2_in);
 
     /*!
      * @brief        Checks to see if two planes are parallel to each other
@@ -158,8 +161,9 @@ class Utils
      * @return       True when the plane normals align within the
      *               configured threshold.
      */
-    static bool arePlanesParallel(const vs_graphs::core::geometric::Plane *p_plane1_in,
-                                  const vs_graphs::core::geometric::Plane *p_plane2_in);
+    static bool
+        arePlanesParallel(const vs_graphs::core::geometric::Plane *p_plane1_in,
+                          const vs_graphs::core::geometric::Plane *p_plane2_in);
 
     /*!
      * @brief        Checks to see if two planes are facing each other or
@@ -173,8 +177,9 @@ class Utils
      * @return       True when the two valid planes face each other
      *               across a gap.
      */
-    static bool arePlanesFacingEachOther(const vs_graphs::core::geometric::Plane *p_plane1_in,
-                                         const vs_graphs::core::geometric::Plane *p_plane2_in);
+    static bool arePlanesFacingEachOther(
+        const vs_graphs::core::geometric::Plane *p_plane1_in,
+        const vs_graphs::core::geometric::Plane *p_plane2_in);
 
     /*!
      * @brief        Returns the planes that are facing each other from
@@ -200,7 +205,8 @@ class Utils
      * @return       Plane with negated coefficients when the offset is
      *               positive; unchanged otherwise.
      */
-    static Eigen::Vector4d correctPlaneDirection(const Eigen::Vector4d &plane_in);
+    static Eigen::Vector4d
+        correctPlaneDirection(const Eigen::Vector4d &plane_in);
 
     /*!
      * @brief        Converts the plane equation from local to global.
@@ -223,8 +229,8 @@ class Utils
      *
      * @return       Mean of the points; zero when the input is empty.
      */
-    static Eigen::Vector3d
-        computeCentroidFromPoints(const std::vector<Eigen::Vector3d> &points_in);
+    static Eigen::Vector3d computeCentroidFromPoints(
+        const std::vector<Eigen::Vector3d> &points_in);
 
     /*!
      * @brief        Downsamples the pointclouds based on the given leaf
@@ -241,10 +247,10 @@ class Utils
      * @return       Owning pointer to the new downsampled cloud.
      */
     template <typename PointT>
-    static typename pcl::PointCloud<PointT>::Ptr
-        pointcloudDownsample(const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
-                             const float        leafSize_in,
-                             const unsigned int minPointsPerVoxel_in);
+    static typename pcl::PointCloud<PointT>::Ptr pointcloudDownsample(
+        const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
+        const float                                  leafSize_in,
+        const unsigned int                           minPointsPerVoxel_in);
 
     /*!
      * @brief        Filters the pointclouds based on the given min/max
@@ -290,9 +296,8 @@ class Utils
      *
      * @return       Plane width and height in the cloud's length units.
      */
-    static std::pair<double, double>
-        computePlaneWidthHeight(
-            pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud_in);
+    static std::pair<double, double> computePlaneWidthHeight(
+        pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud_in);
 
     /*!
      * @brief        Performs PCL ransac to get the plane equations from
@@ -322,7 +327,8 @@ class Utils
      * @return       True when the point lies within the configured
      *               distance of the plane.
      */
-    static bool pointOnPlane(Eigen::Vector4d planeEquation_in, MapPoint *p_mapPoint_in);
+    static bool pointOnPlane(Eigen::Vector4d planeEquation_in,
+                             MapPoint       *p_mapPoint_in);
 
     /*!
      * @brief        Associates given planes with the mapped planes.
@@ -349,16 +355,16 @@ class Utils
      *
      * @return       Plane id of the mapped plane.
      */
-    static int
-        associatePlanes(const vector<geometric::Plane *>                  &mappedPlanes_in,
-                        g2o::Plane3D                            observedPlane_in,
-                        pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
-                        const Eigen::Matrix4d                   &keyframePose_in,
-                        const geometric::Plane::PlaneVariant                observedPlaneType_in,
-                        const float                              threshold_in,
-                        const float maximumFiniteCloudDistance_m_in = -1.0F,
-                        const std::optional<Eigen::Vector3d>
-                            &observationOrigin_World_m_in = std::nullopt);
+    static int associatePlanes(
+        const vector<geometric::Plane *>            &mappedPlanes_in,
+        g2o::Plane3D                                 observedPlane_in,
+        pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
+        const Eigen::Matrix4d                       &keyframePose_in,
+        const geometric::Plane::PlaneVariant         observedPlaneType_in,
+        const float                                  threshold_in,
+        const float maximumFiniteCloudDistance_m_in = -1.0F,
+        const std::optional<Eigen::Vector3d> &observationOrigin_World_m_in =
+            std::nullopt);
 
     /*!
      * @brief        Clusters the point cloud into separate clouds based
@@ -369,9 +375,9 @@ class Utils
      * @param[out]   clusterIndices_out
      *               Vector of point indices for each cluster.
      */
-    static void
-        clusterPlaneClouds(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &p_cloud_in,
-                           std::vector<pcl::PointIndices> &clusterIndices_out);
+    static void clusterPlaneClouds(
+        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &p_cloud_in,
+        std::vector<pcl::PointIndices>                &clusterIndices_out);
 
     /*!
      * @brief        Re-associates semantically classified planes if they get
@@ -408,7 +414,7 @@ class Utils
      *               Rooms transferred from the obsolete submap.
      */
     static void fuseDuplicateRoomsAfterMerge(
-        Map                       *p_map_inout,
+        Map                                 *p_map_inout,
         const std::vector<semantic::Room *> &importedRooms_in);
 
     /*!
@@ -461,8 +467,9 @@ class Utils
      * @param[in]    p_atlas_inout
      *               a pointer to the Atlas
      */
-    static void consolidateProvisionalRooms(vs_graphs::core::semantic::Room *p_selectedRoom_inout,
-                                            Atlas           *p_atlas_inout);
+    static void consolidateProvisionalRooms(
+        vs_graphs::core::semantic::Room *p_selectedRoom_inout,
+        Atlas                           *p_atlas_inout);
 
     /*!
      * @brief        Gets the PlaneVariant type from the class id.
@@ -473,7 +480,8 @@ class Utils
      * @return       Ground, wall, door or window type for ids 0 to 3;
      *               UNDEFINED otherwise.
      */
-    static vs_graphs::core::geometric::Plane::PlaneVariant getPlaneTypeFromClassId(int classId_in);
+    static vs_graphs::core::geometric::Plane::PlaneVariant
+        getPlaneTypeFromClassId(int classId_in);
 
     /*!
      * @brief        Gets the class id from the PlaneVariant type.
@@ -483,8 +491,8 @@ class Utils
      *
      * @return       Class id 0 to 3 for known types; -1 otherwise.
      */
-    static int
-        getClassIdFromPlaneType(vs_graphs::core::geometric::Plane::PlaneVariant planeType_in);
+    static int getClassIdFromPlaneType(
+        vs_graphs::core::geometric::Plane::PlaneVariant planeType_in);
 
     /*!
      * @brief        Computes the rigid transform mapping map A into map B
@@ -534,8 +542,8 @@ class Utils
      *               room is null.
      */
     static std::size_t
-        matchWallsBetweenRooms(const semantic::Room                   *p_roomA_in,
-                               const semantic::Room                   *p_roomB_in,
+        matchWallsBetweenRooms(const semantic::Room         *p_roomA_in,
+                               const semantic::Room         *p_roomB_in,
                                std::vector<Eigen::Vector3d> &normalsA_out,
                                std::vector<Eigen::Vector3d> &centroidsA_out,
                                std::vector<Eigen::Vector3d> &normalsB_out,

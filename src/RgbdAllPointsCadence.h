@@ -1,4 +1,4 @@
-/**
+/*!
  * @file RgbdAllPointsCadence.h
  * @brief Package-private simulated-time cadence decision for all map points.
  */
@@ -19,7 +19,7 @@ class AllPointsCadence
     [[nodiscard]] bool shouldPublish(std::int64_t  messageTimeNanoseconds_in,
                                      std::uint64_t mapRevision_in) noexcept;
 
-    /**
+    /*!
      * @brief Commits the currently reserved all-points publication.
      *
      * The reservation becomes the cadence state only after the associated
@@ -27,7 +27,7 @@ class AllPointsCadence
      */
     void commitPublication() noexcept;
 
-    /**
+    /*!
      * @brief Rolls back the currently reserved all-points publication.
      *
      * A rolled-back reservation does not consume cadence, allowing the next

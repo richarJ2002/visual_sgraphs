@@ -1,4 +1,4 @@
-/**
+/*!
  * @file test_GlobalWallMetrics.cpp
  * @brief Self-test for the scoped global-wall-metrics evaluation adapter
  *.
@@ -67,7 +67,7 @@ TEST(GlobalWallMetrics, IdenticalGraphScoresPerfectGlobalMatch)
     EXPECT_DOUBLE_EQ(result.f1, 1.0);
 }
 
-/**
+/*!
  * Toy case proving the G17 fix: truth room 3 has no matching generated room,
  * and generated room 103 has no matching truth room. Both rooms' single
  * walls must surface as, respectively, a false negative and a false
@@ -143,7 +143,7 @@ TEST(GlobalWallMetrics, EmptyGraphsReportZeroRatherThanDivideByZero)
     EXPECT_DOUBLE_EQ(result.f1, 0.0);
 }
 
-/**
+/*!
  * Red-first counterexample (semantic-axiom-reliability-plan.md, plan-owner
  * decision reopening P0.5): nearest-edge greedy room matching and the Python
  * comparator's full-matrix Hungarian assignment accept *different* room
@@ -161,8 +161,8 @@ TEST(GlobalWallMetrics, EmptyGraphsReportZeroRatherThanDivideByZero)
  * room1<->room101 and room2<->room102; only then does the 3 m gate reject
  * room2<->room102 (8.0 m), leaving room1<->room101 as the sole accepted pair.
  *
- * semantic::Room 1 and generated room 101 share the same wall plane (matched); room
- * 2's wall is orthogonal to it. So the two methods disagree not just on
+ * semantic::Room 1 and generated room 101 share the same wall plane (matched);
+ * room 2's wall is orthogonal to it. So the two methods disagree not just on
  * which rooms pair, but on the resulting global wall match count: 1
  * (correct, room1<->room101) versus 0 (greedy's wrong room2<->room101,
  * whose orthogonal walls never satisfy the normal-angle gate).
@@ -277,7 +277,7 @@ TEST(GlobalWallMetrics, AllRoomPairsBeyondGateProduceNoRoomMatches)
     EXPECT_DOUBLE_EQ(result.precision, 0.0);
 }
 
-/**
+/*!
  * A fully symmetric 2x2 room layout: truth rooms at (0,0)/(1,1) and generated
  * rooms at (1,0)/(0,1) are all mutually 1 m apart, so the two disjoint
  * assignments (1<->101,2<->102 or 1<->102,2<->101) tie at the same total
@@ -315,7 +315,7 @@ TEST(GlobalWallMetrics, AssignmentIsDeterministicAcrossRepeatedCalls)
     }
 }
 
-/**
+/*!
  * Mirrors compare_sgraph_to_ground_truth.py's wall_matches(): for each truth
  * wall, in input order, iterate generated walls in input order and keep the
  * first one on an exact score tie (only a strictly lower score replaces the
@@ -351,7 +351,7 @@ TEST(GlobalWallMetrics, WallMatchingRetainsFirstGeneratedWallOnExactScoreTie)
     EXPECT_EQ(result.generated, 2U);
 }
 
-/**
+/*!
  * Every accept/reject gate in this file (`kMaxRoomMatchDistM`,
  * `kMaxNormalAngleDeg`, `kMaxOffsetM`) is a `<=` comparison, matching the
  * comparator's own inclusive gates. None of the other tests in this file
@@ -387,7 +387,7 @@ TEST(GlobalWallMetrics, RoomMatchGateBoundaryIsInclusiveAtExactly3Meters)
     EXPECT_EQ(result.generated, 1U);
 }
 
-/**
+/*!
  * Covers the wall-offset gate: truth offset 0.0 and generated offset 0.35
  * are exactly `kMaxOffsetM` apart, with identical normals (zero angle
  * error, so only the offset gate is exercised). Unlike an angle boundary,
@@ -423,7 +423,7 @@ TEST(GlobalWallMetrics, WallOffsetGateBoundaryIsInclusiveAtExactly035Meters)
     EXPECT_EQ(result.generated, 1U);
 }
 
-/**
+/*!
  * The wall-angle gate (`kMaxNormalAngleDeg`, 10 deg) is deliberately NOT
  * given an exact-boundary test analogous to the two above. Unlike a
  * perfect-square distance or a decimal literal, there is no portable way to

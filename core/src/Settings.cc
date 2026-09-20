@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -279,7 +279,7 @@ void Settings::readCamera1(cv::FileStorage &storage_in)
         float cy     = readParameter<float>(storage_in, "Camera1.cy", found);
         vCalibration = {fx, fy, cx, cy};
 
-        calibration1   = new camera_models::Pinhole(vCalibration);
+        calibration1         = new camera_models::Pinhole(vCalibration);
         originalCalibration1 = new camera_models::Pinhole(vCalibration);
 
         // Check if the Pinhole is distorted
@@ -306,8 +306,7 @@ void Settings::readCamera1(cv::FileStorage &storage_in)
         }
 
         // Check if we need to correct distortion from the images
-        if ((sensor == System::MONOCULAR ||
-             sensor == System::IMU_MONOCULAR) &&
+        if ((sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR) &&
             pinholeDistortion1.size() != 0)
             undistortNeeded = true;
     }
@@ -322,7 +321,7 @@ void Settings::readCamera1(cv::FileStorage &storage_in)
         float cy     = readParameter<float>(storage_in, "Camera1.cy", found);
         vCalibration = {fx, fy, cx, cy};
 
-        calibration1   = new camera_models::Pinhole(vCalibration);
+        calibration1         = new camera_models::Pinhole(vCalibration);
         originalCalibration1 = new camera_models::Pinhole(vCalibration);
     }
     else if (cameraModelName == "camera_models::KannalaBrandt8")
@@ -340,8 +339,8 @@ void Settings::readCamera1(cv::FileStorage &storage_in)
         float k2 = readParameter<float>(storage_in, "Camera1.k3", found);
         float k3 = readParameter<float>(storage_in, "Camera1.k4", found);
 
-        vCalibration    = {fx, fy, cx, cy, k0, k1, k2, k3};
-        calibration1   = new camera_models::KannalaBrandt8(vCalibration);
+        vCalibration         = {fx, fy, cx, cy, k0, k1, k2, k3};
+        calibration1         = new camera_models::KannalaBrandt8(vCalibration);
         originalCalibration1 = new camera_models::KannalaBrandt8(vCalibration);
 
         if (sensor == System::STEREO || sensor == System::IMU_STEREO)
@@ -352,8 +351,8 @@ void Settings::readCamera1(cv::FileStorage &storage_in)
             int colEnd =
                 readParameter<int>(storage_in, "Camera1.overlappingEnd", found);
             std::vector<int> vOverlapping = {colBegin, colEnd};
-            static_cast<camera_models::KannalaBrandt8 *>(calibration1)->lappingArea =
-                vOverlapping;
+            static_cast<camera_models::KannalaBrandt8 *>(calibration1)
+                ->lappingArea = vOverlapping;
         }
     }
     else
@@ -381,7 +380,7 @@ void Settings::readCamera2(cv::FileStorage &storage_in)
 
         vCalibration = {fx, fy, cx, cy};
 
-        calibration2   = new camera_models::Pinhole(vCalibration);
+        calibration2         = new camera_models::Pinhole(vCalibration);
         originalCalibration2 = new camera_models::Pinhole(vCalibration);
 
         // Check if it is a distorted Pinhole
@@ -424,7 +423,7 @@ void Settings::readCamera2(cv::FileStorage &storage_in)
 
         vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
 
-        calibration2   = new camera_models::KannalaBrandt8(vCalibration);
+        calibration2         = new camera_models::KannalaBrandt8(vCalibration);
         originalCalibration2 = new camera_models::KannalaBrandt8(vCalibration);
 
         int colBegin =
@@ -433,15 +432,15 @@ void Settings::readCamera2(cv::FileStorage &storage_in)
             readParameter<int>(storage_in, "Camera2.overlappingEnd", found);
         vector<int> vOverlapping = {colBegin, colEnd};
 
-        static_cast<camera_models::KannalaBrandt8 *>(calibration2)->lappingArea =
-            vOverlapping;
+        static_cast<camera_models::KannalaBrandt8 *>(calibration2)
+            ->lappingArea = vOverlapping;
     }
 
     // Load stereo extrinsic calibration
     if (cameraModel == CameraType::RECTIFIED)
     {
-        stereoBaseline  = readParameter<float>(storage_in, "Stereo.b", found);
-        baselineFocal = stereoBaseline * calibration1->getParameter(0);
+        stereoBaseline = readParameter<float>(storage_in, "Stereo.b", found);
+        baselineFocal  = stereoBaseline * calibration1->getParameter(0);
     }
     else
     {
@@ -451,8 +450,8 @@ void Settings::readCamera2(cv::FileStorage &storage_in)
 
         // TODO: also search for Trl and invert if necessary
 
-        stereoBaseline  = stereoTransform.translation().norm();
-        baselineFocal = stereoBaseline * calibration1->getParameter(0);
+        stereoBaseline = stereoTransform.translation().norm();
+        baselineFocal  = stereoBaseline * calibration1->getParameter(0);
     }
 
     depthThreshold = readParameter<float>(storage_in, "Stereo.ThDepth", found);
@@ -472,7 +471,7 @@ void Settings::readImageInfo(cv::FileStorage &storage_in)
         readParameter<int>(storage_in, "Camera.newHeight", found, false);
     if (found)
     {
-        resize1Needed   = true;
+        resize1Needed       = true;
         newImageSize.height = newHeigh;
 
         if (!rectifyNeeded)
@@ -481,21 +480,21 @@ void Settings::readImageInfo(cv::FileStorage &storage_in)
             float scaleRowFactor =
                 (float)newImageSize.height / (float)originalImageSize.height;
             calibration1->setParameter(calibration1->getParameter(1) *
-                                            scaleRowFactor,
-                                        1);
+                                           scaleRowFactor,
+                                       1);
             calibration1->setParameter(calibration1->getParameter(3) *
-                                            scaleRowFactor,
-                                        3);
+                                           scaleRowFactor,
+                                       3);
 
             if ((sensor == System::STEREO || sensor == System::IMU_STEREO) &&
                 cameraModel != CameraType::RECTIFIED)
             {
                 calibration2->setParameter(calibration2->getParameter(1) *
-                                                scaleRowFactor,
-                                            1);
+                                               scaleRowFactor,
+                                           1);
                 calibration2->setParameter(calibration2->getParameter(3) *
-                                                scaleRowFactor,
-                                            3);
+                                               scaleRowFactor,
+                                           3);
             }
         }
     }
@@ -504,7 +503,7 @@ void Settings::readImageInfo(cv::FileStorage &storage_in)
         readParameter<int>(storage_in, "Camera.newWidth", found, false);
     if (found)
     {
-        resize1Needed  = true;
+        resize1Needed      = true;
         newImageSize.width = newWidth;
 
         if (!rectifyNeeded)
@@ -513,21 +512,21 @@ void Settings::readImageInfo(cv::FileStorage &storage_in)
             float scaleColFactor =
                 (float)newImageSize.width / (float)originalImageSize.width;
             calibration1->setParameter(calibration1->getParameter(0) *
-                                            scaleColFactor,
-                                        0);
+                                           scaleColFactor,
+                                       0);
             calibration1->setParameter(calibration1->getParameter(2) *
-                                            scaleColFactor,
-                                        2);
+                                           scaleColFactor,
+                                       2);
 
             if ((sensor == System::STEREO || sensor == System::IMU_STEREO) &&
                 cameraModel != CameraType::RECTIFIED)
             {
                 calibration2->setParameter(calibration2->getParameter(0) *
-                                                scaleColFactor,
-                                            0);
+                                               scaleColFactor,
+                                           0);
                 calibration2->setParameter(calibration2->getParameter(2) *
-                                                scaleColFactor,
-                                            2);
+                                               scaleColFactor,
+                                           2);
 
                 if (cameraModel == CameraType::KANNALA_BRANDT)
                 {
@@ -545,29 +544,31 @@ void Settings::readImageInfo(cv::FileStorage &storage_in)
         }
     }
 
-    framesPerSecond  = readParameter<int>(storage_in, "Camera.fps", found);
-    rgbEnabled = (bool)readParameter<int>(storage_in, "Camera.RGB", found);
+    framesPerSecond = readParameter<int>(storage_in, "Camera.fps", found);
+    rgbEnabled      = (bool)readParameter<int>(storage_in, "Camera.RGB", found);
 }
 
 void Settings::readIMU(cv::FileStorage &storage_in)
 {
     bool found;
-    accelWalkNoise      = readParameter<float>(storage_in, "IMU.AccWalk", found);
+    accelWalkNoise = readParameter<float>(storage_in, "IMU.AccWalk", found);
     accelNoise     = readParameter<float>(storage_in, "IMU.NoiseAcc", found);
-    gyroWalkNoise     = readParameter<float>(storage_in, "IMU.GyroWalk", found);
-    gyroNoise    = readParameter<float>(storage_in, "IMU.NoiseGyro", found);
-    imuErrorThreshold = readParameter<float>(storage_in, "IMU.Threshold", found);
+    gyroWalkNoise  = readParameter<float>(storage_in, "IMU.GyroWalk", found);
+    gyroNoise      = readParameter<float>(storage_in, "IMU.NoiseGyro", found);
+    imuErrorThreshold =
+        readParameter<float>(storage_in, "IMU.Threshold", found);
     imuSampleRate = readParameter<float>(storage_in, "IMU.Frequency", found);
 
     cv::Mat cvTbc = readParameter<cv::Mat>(storage_in, "IMU.T_b_c1", found);
-    bodyToCamera          = Converter::toSophus(cvTbc);
+    bodyToCamera  = Converter::toSophus(cvTbc);
 
     readParameter<int>(storage_in, "IMU.InsertKFsWhenLost", found, false);
     if (found)
-        insertKeyframesWhenLost = (bool)readParameter<int>(storage_in,
-                                                      "IMU.InsertKFsWhenLost",
-                                                      found,
-                                                      false);
+        insertKeyframesWhenLost =
+            (bool)readParameter<int>(storage_in,
+                                     "IMU.InsertKFsWhenLost",
+                                     found,
+                                     false);
     else
         insertKeyframesWhenLost = true;
 
@@ -581,11 +582,11 @@ void Settings::readRGBD(cv::FileStorage &storage_in)
 
     depthMapScale =
         readParameter<float>(storage_in, "RGBD.DepthMapFactor", found);
-    depthThreshold    = readParameter<float>(storage_in, "Stereo.ThDepth", found);
-    stereoBaseline          = readParameter<float>(storage_in, "Stereo.b", found);
-    baselineFocal         = stereoBaseline * calibration1->getParameter(0);
-    nearThreshold = readParameter<float>(storage_in, "RGBD.NearThresh", found);
-    farThreshold  = readParameter<float>(storage_in, "RGBD.FarThresh", found);
+    depthThreshold = readParameter<float>(storage_in, "Stereo.ThDepth", found);
+    stereoBaseline = readParameter<float>(storage_in, "Stereo.b", found);
+    baselineFocal  = stereoBaseline * calibration1->getParameter(0);
+    nearThreshold  = readParameter<float>(storage_in, "RGBD.NearThresh", found);
+    farThreshold   = readParameter<float>(storage_in, "RGBD.FarThresh", found);
 
     // set distance threshold in the system params
     types::SystemParams::getParams()->pointcloud.distanceThresh =
@@ -596,13 +597,16 @@ void Settings::readORB(cv::FileStorage &storage_in)
 {
     bool found;
 
-    featureCount = readParameter<int>(storage_in, "ORBextractor.nFeatures", found);
+    featureCount =
+        readParameter<int>(storage_in, "ORBextractor.nFeatures", found);
     orbScaleFactor =
         readParameter<float>(storage_in, "ORBextractor.scaleFactor", found);
-    pyramidLevels = readParameter<int>(storage_in, "ORBextractor.nLevels", found);
+    pyramidLevels =
+        readParameter<int>(storage_in, "ORBextractor.nLevels", found);
     initialFastThreshold =
         readParameter<int>(storage_in, "ORBextractor.iniThFAST", found);
-    minimumFastThreshold = readParameter<int>(storage_in, "ORBextractor.minThFAST", found);
+    minimumFastThreshold =
+        readParameter<int>(storage_in, "ORBextractor.minThFAST", found);
 }
 
 void Settings::readViewer(cv::FileStorage &storage_in)
@@ -615,14 +619,20 @@ void Settings::readViewer(cv::FileStorage &storage_in)
         readParameter<float>(storage_in, "Viewer.KeyFrameLineWidth", found);
     viewerGraphLineWidth =
         readParameter<float>(storage_in, "Viewer.GraphLineWidth", found);
-    viewerPointSize  = readParameter<float>(storage_in, "Viewer.PointSize", found);
-    viewerCameraSize = readParameter<float>(storage_in, "Viewer.CameraSize", found);
+    viewerPointSize =
+        readParameter<float>(storage_in, "Viewer.PointSize", found);
+    viewerCameraSize =
+        readParameter<float>(storage_in, "Viewer.CameraSize", found);
     viewerCameraLineWidth =
         readParameter<float>(storage_in, "Viewer.CameraLineWidth", found);
-    viewerViewPointX = readParameter<float>(storage_in, "Viewer.ViewpointX", found);
-    viewerViewPointY = readParameter<float>(storage_in, "Viewer.ViewpointY", found);
-    viewerViewPointZ = readParameter<float>(storage_in, "Viewer.ViewpointZ", found);
-    viewerViewPointF = readParameter<float>(storage_in, "Viewer.ViewpointF", found);
+    viewerViewPointX =
+        readParameter<float>(storage_in, "Viewer.ViewpointX", found);
+    viewerViewPointY =
+        readParameter<float>(storage_in, "Viewer.ViewpointY", found);
+    viewerViewPointZ =
+        readParameter<float>(storage_in, "Viewer.ViewpointZ", found);
+    viewerViewPointF =
+        readParameter<float>(storage_in, "Viewer.ViewpointF", found);
     viewerImageScale =
         readParameter<float>(storage_in, "Viewer.imageViewScale", found, false);
 
@@ -635,13 +645,13 @@ void Settings::readLoadAndSave(cv::FileStorage &storage_in)
     bool found;
 
     atlasLoadPath = readParameter<string>(storage_in,
-                                       "System.LoadAtlasFromFile",
-                                       found,
-                                       false);
-    atlasSavePath   = readParameter<string>(storage_in,
-                                     "System.SaveAtlasToFile",
-                                     found,
-                                     false);
+                                          "System.LoadAtlasFromFile",
+                                          found,
+                                          false);
+    atlasSavePath = readParameter<string>(storage_in,
+                                          "System.SaveAtlasToFile",
+                                          found,
+                                          false);
 }
 
 void Settings::readOtherParameters(cv::FileStorage &storage_in)
@@ -818,16 +828,17 @@ std::ostream &operator<<(std::ostream &output, const Settings &settings)
         settings.sensor == System::IMU_STEREO)
     {
         output << "\t- Stereo baseline: " << settings.stereoBaseline << endl;
-        output << "\t- Stereo depth threshold : " << settings.depthThreshold << endl;
+        output << "\t- Stereo depth threshold : " << settings.depthThreshold
+               << endl;
 
         if (settings.cameraModel == Settings::CameraType::KANNALA_BRANDT)
         {
-            auto vOverlapping1 =
-                static_cast<camera_models::KannalaBrandt8 *>(settings.calibration1)
-                    ->lappingArea;
-            auto vOverlapping2 =
-                static_cast<camera_models::KannalaBrandt8 *>(settings.calibration2)
-                    ->lappingArea;
+            auto vOverlapping1 = static_cast<camera_models::KannalaBrandt8 *>(
+                                     settings.calibration1)
+                                     ->lappingArea;
+            auto vOverlapping2 = static_cast<camera_models::KannalaBrandt8 *>(
+                                     settings.calibration2)
+                                     ->lappingArea;
             output << "\t- Camera 1 overlapping area: [ " << vOverlapping1[0]
                    << " , " << vOverlapping1[1] << " ]" << endl;
             output << "\t- Camera 2 overlapping area: [ " << vOverlapping2[0]
@@ -849,24 +860,26 @@ std::ostream &operator<<(std::ostream &output, const Settings &settings)
     }
 
     // RGB-D parameters
-    if (settings.sensor == System::RGBD ||
-        settings.sensor == System::IMU_RGBD)
+    if (settings.sensor == System::RGBD || settings.sensor == System::IMU_RGBD)
     {
         output << "\t- RGB-D depth map factor: " << settings.depthMapScale
                << endl;
-        output << "\t- Stereo depth threshold: " << settings.depthThreshold << endl;
-        output << "\t- Metric close depth: " << settings.stereoBaseline * settings.depthThreshold
+        output << "\t- Stereo depth threshold: " << settings.depthThreshold
                << endl;
+        output << "\t- Metric close depth: "
+               << settings.stereoBaseline * settings.depthThreshold << endl;
     }
 
     // ORB parameters
     output << "\t- Features per image: " << settings.featureCount << endl;
     output << "\t- ORB scale factor: " << settings.orbScaleFactor << endl;
     output << "\t- ORB number of scales: " << settings.pyramidLevels << endl;
-    output << "\t- Initial FAST threshold: " << settings.initialFastThreshold << endl;
-    output << "\t- Min FAST threshold: " << settings.minimumFastThreshold << endl;
+    output << "\t- Initial FAST threshold: " << settings.initialFastThreshold
+           << endl;
+    output << "\t- Min FAST threshold: " << settings.minimumFastThreshold
+           << endl;
 
     return output;
 }
 } // namespace core
-} // namespace vs_graphs;
+} // namespace vs_graphs

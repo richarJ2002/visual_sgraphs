@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -126,11 +126,11 @@ std::optional<Floor::PlaneIdentity> Floor::getPlaneIdentity() const
 }
 
 bool Floor::setPlaneIdentity(const Eigen::Vector4d &equation_World_in,
-                             const std::size_t finiteSupportCount_in,
-                             const std::size_t observationCount_in)
+                             const std::size_t      finiteSupportCount_in,
+                             const std::size_t      observationCount_in)
 {
     Eigen::Vector4d normalizedEquation_World = equation_World_in;
-    const double normalNorm = normalizedEquation_World.head<3>().norm();
+    const double    normalNorm = normalizedEquation_World.head<3>().norm();
 
     if (!normalizedEquation_World.allFinite() || !std::isfinite(normalNorm) ||
         normalNorm < 1e-8)
@@ -155,10 +155,10 @@ void Floor::clearPlaneIdentity(void)
 
 std::optional<Floor::PlaneIdentity> Floor::transformPlaneIdentity(
     const PlaneIdentity &identity_OldWorld_in,
-    const g2o::Sim3      &transform_oldWorldToNewWorld_in)
+    const g2o::Sim3     &transform_oldWorldToNewWorld_in)
 {
     Eigen::Vector4d equation_OldWorld = identity_OldWorld_in.equation_World;
-    const double oldNormalNorm = equation_OldWorld.head<3>().norm();
+    const double    oldNormalNorm     = equation_OldWorld.head<3>().norm();
 
     if (!equation_OldWorld.allFinite() || !std::isfinite(oldNormalNorm) ||
         oldNormalNorm < 1e-8)
@@ -202,15 +202,15 @@ std::optional<Floor::PlaneIdentity> Floor::transformPlaneIdentity(
 
 bool Floor::planeIdentitiesMatch(const PlaneIdentity &firstIdentity_in,
                                  const PlaneIdentity &secondIdentity_in,
-                                 const double maximumNormalAngle_deg_in,
-                                 const double maximumOffset_m_in,
-                                 double      &normalAngle_deg_out,
-                                 double      &offset_m_out)
+                                 const double         maximumNormalAngle_deg_in,
+                                 const double         maximumOffset_m_in,
+                                 double              &normalAngle_deg_out,
+                                 double              &offset_m_out)
 {
-    Eigen::Vector4d firstEquation  = firstIdentity_in.equation_World;
-    Eigen::Vector4d secondEquation = secondIdentity_in.equation_World;
-    const double firstNormalNorm   = firstEquation.head<3>().norm();
-    const double secondNormalNorm  = secondEquation.head<3>().norm();
+    Eigen::Vector4d firstEquation    = firstIdentity_in.equation_World;
+    Eigen::Vector4d secondEquation   = secondIdentity_in.equation_World;
+    const double    firstNormalNorm  = firstEquation.head<3>().norm();
+    const double    secondNormalNorm = secondEquation.head<3>().norm();
 
     if (!firstEquation.allFinite() || !secondEquation.allFinite() ||
         firstNormalNorm < 1e-8 || secondNormalNorm < 1e-8)
@@ -230,10 +230,9 @@ bool Floor::planeIdentitiesMatch(const PlaneIdentity &firstIdentity_in,
         normalDot      = -normalDot;
     }
 
-    normalDot = std::clamp(normalDot, -1.0, 1.0);
-    normalAngle_deg_out =
-        std::acos(normalDot) * 180.0 / std::acos(-1.0);
-    offset_m_out = std::abs(firstEquation(3) - secondEquation(3));
+    normalDot           = std::clamp(normalDot, -1.0, 1.0);
+    normalAngle_deg_out = std::acos(normalDot) * 180.0 / std::acos(-1.0);
+    offset_m_out        = std::abs(firstEquation(3) - secondEquation(3));
 
     return normalAngle_deg_out <= maximumNormalAngle_deg_in &&
            offset_m_out <= maximumOffset_m_in;
@@ -241,7 +240,7 @@ bool Floor::planeIdentitiesMatch(const PlaneIdentity &firstIdentity_in,
 
 Floor *Floor::selectBestObservedFloor(const std::vector<Floor *> &floors_in)
 {
-    Floor                        *p_bestFloor = nullptr;
+    Floor                       *p_bestFloor = nullptr;
     std::optional<PlaneIdentity> bestIdentity;
 
     for (Floor *p_candidateFloor : floors_in)
@@ -276,7 +275,7 @@ Floor *Floor::selectBestObservedFloor(const std::vector<Floor *> &floors_in)
             (evidenceIsEqual &&
              p_candidateFloor->getId() < p_bestFloor->getId()))
         {
-            p_bestFloor = p_candidateFloor;
+            p_bestFloor  = p_candidateFloor;
             bestIdentity = candidateIdentity;
         }
     }
@@ -305,7 +304,7 @@ void Floor::addRoom(vs_graphs::core::semantic::Room *value)
 
     {
         std::lock_guard<std::mutex> lock(mMutexRooms);
-        const bool alreadyPresent =
+        const bool                  alreadyPresent =
             std::find(rooms.begin(), rooms.end(), value) != rooms.end();
 
         if (!alreadyPresent)
@@ -317,7 +316,8 @@ void Floor::addRoom(vs_graphs::core::semantic::Room *value)
     value->setFloor(this);
 }
 
-void Floor::setRooms(const std::vector<vs_graphs::core::semantic::Room *> &value)
+void Floor::setRooms(
+    const std::vector<vs_graphs::core::semantic::Room *> &value)
 {
     std::vector<Room *> newRooms;
     newRooms.reserve(value.size());
@@ -379,8 +379,7 @@ bool Floor::replaceRoom(Room *p_retiredRoom_in, Room *p_retainedRoom_in)
     }
 
     Floor *p_previousRetainedFloor = p_retainedRoom_in->getFloor();
-    if (p_previousRetainedFloor != nullptr &&
-        p_previousRetainedFloor != this)
+    if (p_previousRetainedFloor != nullptr && p_previousRetainedFloor != this)
     {
         p_previousRetainedFloor->detachRoom(p_retainedRoom_in);
     }

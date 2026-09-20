@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -78,9 +78,9 @@ enum class UnavailableReason : std::uint8_t
     /*! @brief No public Atlas/Map API exposes this state at all. */
     NOT_EXPOSED_BY_CURRENT_API = 4U,
 
-/*!
- * @brief        Deferred to a later extension; not read here.
- */
+    /*!
+     * @brief        Deferred to a later extension; not read here.
+     */
     NOT_CAPTURED_IN_FOUNDATION_SLICE = 5U
 };
 

@@ -109,7 +109,7 @@ bool isValidWallBounds(const WallBounds &bounds_in)
            bounds_in.maxV_m > bounds_in.minV_m;
 }
 
-/** Counts walls whose SAME index has both a valid finite unit-able normal and
+/*! Counts walls whose SAME index has both a valid finite unit-able normal and
  * valid bounds ("walls with valid normals and bounds"). */
 std::size_t validWallEvidenceCount(const RoomContextSnapshot &snapshot_in)
 {
@@ -128,7 +128,7 @@ std::size_t validWallEvidenceCount(const RoomContextSnapshot &snapshot_in)
     return count;
 }
 
-/** Fraction of wallBounds entries that are invalid; 0.0 when there are no
+/*! Fraction of wallBounds entries that are invalid; 0.0 when there are no
  * walls to be missing from (">50% missing bounds" guard). */
 double missingBoundsFraction(const RoomContextSnapshot &snapshot_in)
 {
@@ -208,7 +208,7 @@ std::vector<double> extentSignature(const RoomContextSnapshot &snapshot_in,
     return signature;
 }
 
-/** One (width,height) aperture pair, normalised by the room's valid median
+/*! One (width,height) aperture pair, normalised by the room's valid median
  * extent. Kept paired (not flattened) so lexicographic sort and pairwise
  * Manhattan distance compare a passage's own width against its own height. */
 std::vector<std::pair<double, double>>
@@ -240,7 +240,7 @@ std::vector<std::pair<double, double>>
     return signature;
 }
 
-/** Pads the shorter list of aperture pairs with (penalty,penalty), then sums
+/*! Pads the shorter list of aperture pairs with (penalty,penalty), then sums
  * the pairwise Manhattan error |Δwidth|+|Δheight| divided by the longer
  * length. Mirrors paddedMeanL1's padding rule, generalised to 2D pairs. */
 double pairedManhattanDistance(

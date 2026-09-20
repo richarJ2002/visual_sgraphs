@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -330,7 +330,8 @@ void Room::setWalls(geometric::Plane *p_wall_in)
     }
 }
 
-bool Room::replaceWall(geometric::Plane *p_retiredWall_in, geometric::Plane *p_retainedWall_in)
+bool Room::replaceWall(geometric::Plane *p_retiredWall_in,
+                       geometric::Plane *p_retainedWall_in)
 {
     if (p_retiredWall_in == nullptr || p_retainedWall_in == nullptr ||
         p_retiredWall_in == p_retainedWall_in)
@@ -340,7 +341,7 @@ bool Room::replaceWall(geometric::Plane *p_retiredWall_in, geometric::Plane *p_r
 
     std::lock_guard<std::mutex> lock(wallsMutex);
 
-    bool                 replacedRetiredWall = false;
+    bool                            replacedRetiredWall = false;
     std::vector<geometric::Plane *> rebuiltWalls;
     rebuiltWalls.reserve(walls.size());
 
@@ -469,16 +470,14 @@ void Room::setDoorways(vs_graphs::core::semantic::Passage *p_passage_in)
 
     std::lock_guard<std::mutex> lock(mapMutex);
 
-    const bool alreadyPresent =
-        std::any_of(doorways.begin(),
-                    doorways.end(),
-                    [p_passage_in](
-                        vs_graphs::core::semantic::Passage *existingPassage)
-                    {
-                        return existingPassage != nullptr &&
-                               existingPassage->getId() ==
-                                   p_passage_in->getId();
-                    });
+    const bool alreadyPresent = std::any_of(
+        doorways.begin(),
+        doorways.end(),
+        [p_passage_in](vs_graphs::core::semantic::Passage *existingPassage)
+        {
+            return existingPassage != nullptr &&
+                   existingPassage->getId() == p_passage_in->getId();
+        });
 
     if (!alreadyPresent)
     {
@@ -486,8 +485,9 @@ void Room::setDoorways(vs_graphs::core::semantic::Passage *p_passage_in)
     }
 }
 
-bool Room::replacePassageAssociation(vs_graphs::core::semantic::Passage *p_retiredPassage_in,
-                                     vs_graphs::core::semantic::Passage *p_retainedPassage_in)
+bool Room::replacePassageAssociation(
+    vs_graphs::core::semantic::Passage *p_retiredPassage_in,
+    vs_graphs::core::semantic::Passage *p_retainedPassage_in)
 {
     if (p_retiredPassage_in == nullptr || p_retainedPassage_in == nullptr ||
         p_retiredPassage_in == p_retainedPassage_in)
@@ -497,13 +497,14 @@ bool Room::replacePassageAssociation(vs_graphs::core::semantic::Passage *p_retir
 
     std::lock_guard<std::mutex> lock(mapMutex);
 
-    bool                              replacedAssociation = false;
+    bool replacedAssociation = false;
     std::vector<vs_graphs::core::semantic::Passage *> rebuiltPassages;
     rebuiltPassages.reserve(doorways.size());
 
     for (vs_graphs::core::semantic::Passage *p_existingPassage : doorways)
     {
-        vs_graphs::core::semantic::Passage *p_candidatePassage = p_existingPassage;
+        vs_graphs::core::semantic::Passage *p_candidatePassage =
+            p_existingPassage;
 
         if (p_existingPassage == p_retiredPassage_in)
         {
@@ -536,7 +537,8 @@ void Room::clearPassages()
     doorways.clear();
 }
 
-bool Room::removePassageAssociation(vs_graphs::core::semantic::Passage *p_removedPassage_in)
+bool Room::removePassageAssociation(
+    vs_graphs::core::semantic::Passage *p_removedPassage_in)
 {
     if (p_removedPassage_in == nullptr)
     {

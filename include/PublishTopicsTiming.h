@@ -1,4 +1,4 @@
-/**
+/*!
  * @file PublishTopicsTiming.h
  * @brief Declares the non-owning publication timing diagnostic sink.
  */

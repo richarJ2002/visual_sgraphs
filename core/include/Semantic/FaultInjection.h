@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -132,7 +132,8 @@ class ScopedFault
         {                                                                      \
             return false;                                                      \
         }                                                                      \
-    } while (0)
+    }                                                                          \
+    while (0)
 #define VS_GRAPHS_FAULT_CHECK(name_in)                                         \
     (::vs_graphs::testing::CheckFault(name_in))
 #else

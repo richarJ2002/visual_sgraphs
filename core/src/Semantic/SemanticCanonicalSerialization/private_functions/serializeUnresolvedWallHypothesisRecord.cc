@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -36,10 +36,10 @@ nlohmann::json serializeUnresolvedWallHypothesisRecord(
     const UnresolvedWallHypothesisRecord &value_in)
 {
     nlohmann::json json;
-    json["wallRef"]           = serializeRawPlaneRef(value_in.wallRef);
-    json["unresolvedCycles"]  = value_in.unresolvedCycles;
-    json["cloudPointCount"]   = value_in.cloudPointCount;
-    json["observationCount"]  = value_in.observationCount;
+    json["wallRef"]          = serializeRawPlaneRef(value_in.wallRef);
+    json["unresolvedCycles"] = value_in.unresolvedCycles;
+    json["cloudPointCount"]  = value_in.cloudPointCount;
+    json["observationCount"] = value_in.observationCount;
     return json;
 }
 

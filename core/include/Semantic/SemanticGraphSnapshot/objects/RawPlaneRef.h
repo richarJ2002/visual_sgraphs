@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -83,7 +83,8 @@ struct RawPlaneRef
     /*! @brief The referenced plane's accepted Plane::PlaneVariant at
      *  capture time; meaningful only when reason ==
      *  UnavailableReason::NONE. */
-    geometric::Plane::PlaneVariant planeType{geometric::Plane::PlaneVariant::UNDEFINED};
+    geometric::Plane::PlaneVariant planeType{
+        geometric::Plane::PlaneVariant::UNDEFINED};
 
     /*! @brief UnavailableReason::NONE when a plane was actually referenced;
      *  UnavailableReason::NULL_REFERENCE (the default) when the underlying

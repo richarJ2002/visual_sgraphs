@@ -1,4 +1,4 @@
-/**
+/*!
  * @file classifySparseMarker.cc
  * @brief Implements sparse-graph marker classification.
  */

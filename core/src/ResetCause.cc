@@ -1,4 +1,4 @@
-/**
+/*!
  * @file ResetCause.cc
  * @brief Implements stable internal reset/new-map attribution values.
  */

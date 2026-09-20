@@ -1,4 +1,4 @@
-/**
+/*!
  * @file test_StereoMatchOutlierRejection.cpp
  * @brief B3 regression coverage: Frame::computeStereoMatches()'s extracted
  *        outlier-rejection step must not read past an empty match list.
@@ -35,10 +35,12 @@ TEST(StereoMatchOutlierRejection, RejectsMatchesFarAboveTheMedianDistance)
 {
     /* Three good matches clustered near distance 10, one clear outlier at
      * 1000 -- comfortably past 1.5 * 1.4 * median. */
-    std::vector<std::pair<int, int>> vDistIdx = {
-        {10, 0}, {11, 1}, {1000, 2}, {9, 3}};
-    std::vector<float> mvuRight(4, 5.0f);
-    std::vector<float> mvDepth(4, 2.0f);
+    std::vector<std::pair<int, int>> vDistIdx = {{10, 0},
+                                                 {11, 1},
+                                                 {1000, 2},
+                                                 {9, 3}};
+    std::vector<float>               mvuRight(4, 5.0f);
+    std::vector<float>               mvDepth(4, 2.0f);
 
     rejectOutlierStereoMatches(vDistIdx, mvuRight, mvDepth);
 

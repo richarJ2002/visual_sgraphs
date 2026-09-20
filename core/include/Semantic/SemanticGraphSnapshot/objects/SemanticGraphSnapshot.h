@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -99,10 +99,12 @@ struct SemanticGraphSnapshot
 
     /*! @brief Value-only copy of SemanticsManager::openPassageEvidence_
      *  (SemanticsManager.h), converted and populated by SemanticsManager
-     *  itself at the semantic transaction boundary (captureSemanticGraphSnapshot()
-     *  cannot see this private member); empty and meaningless whenever
-     *  managerPrivateOpenPassageHypothesesReason != NONE. */
-    std::vector<OpenPassageHypothesisRecord> managerPrivateOpenPassageHypotheses;
+     *  itself at the semantic transaction boundary
+     * (captureSemanticGraphSnapshot() cannot see this private member); empty
+     * and meaningless whenever managerPrivateOpenPassageHypothesesReason !=
+     * NONE. */
+    std::vector<OpenPassageHypothesisRecord>
+        managerPrivateOpenPassageHypotheses;
 
     /*! @brief NOT_CAPTURED_IN_FOUNDATION_SLICE for a snapshot built only by
      *  captureSemanticGraphSnapshot() (e.g. a test fixture, or the legacy

@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -111,17 +111,16 @@ void SystemParams::setParams(const std::string &configFilePath_in)
                 .as<bool>();
         seg.planeAssociation.clusterSeparation.tolerance =
             config["seg"]["plane_association"]["cluster_separation"]
-                   ["tolerance"]
-                       .as<float>();
+                  ["tolerance"]
+                      .as<float>();
         seg.planeAssociation.clusterSeparation.downsample.leafSize =
             config["seg"]["plane_association"]["cluster_separation"]
-                   ["downsample"]["leaf_size"]
-                       .as<float>();
-        seg.planeAssociation.clusterSeparation.downsample
-            .minPointsPerVoxel =
+                  ["downsample"]["leaf_size"]
+                      .as<float>();
+        seg.planeAssociation.clusterSeparation.downsample.minPointsPerVoxel =
             config["seg"]["plane_association"]["cluster_separation"]
-                   ["downsample"]["min_points_per_voxel"]
-                       .as<unsigned int>();
+                  ["downsample"]["min_points_per_voxel"]
+                      .as<unsigned int>();
         seg.ransac.maxPlanes =
             config["seg"]["ransac"]["max_planes"].as<unsigned int>();
         seg.ransac.distanceThresh =
@@ -153,27 +152,23 @@ void SystemParams::setParams(const std::string &configFilePath_in)
                 .as<float>();
         geoSeg.pointcloud.downsample.minPointsPerVoxel =
             config["geo_seg"]["pointcloud"]["downsample"]
-                   ["min_points_per_voxel"]
-                       .as<unsigned int>();
+                  ["min_points_per_voxel"]
+                      .as<unsigned int>();
         geoSeg.pointcloud.outlierRemoval.stdThreshold =
             config["geo_seg"]["pointcloud"]["outlier_removal"]["std_threshold"]
                 .as<float>();
         geoSeg.pointcloud.outlierRemoval.meanThreshold =
-            config["geo_seg"]["pointcloud"]["outlier_removal"]
-                   ["mean_threshold"]
-                       .as<unsigned int>();
+            config["geo_seg"]["pointcloud"]["outlier_removal"]["mean_threshold"]
+                .as<unsigned int>();
 
         // Semantic Segmentation Parameters
-        semSeg.minVotes     = config["sem_seg"]["min_votes"].as<float>();
-        semSeg.probThresh   = config["sem_seg"]["prob_thresh"].as<float>();
-        semSeg.confThresh   = config["sem_seg"]["conf_thresh"].as<float>();
-        semSeg.maxTiltWall = config["sem_seg"]["max_tilt_wall"].as<float>();
-        semSeg.maxDoorWidth =
-            config["sem_seg"]["max_door_width"].as<float>();
-        semSeg.maxDoorHeight =
-            config["sem_seg"]["max_door_height"].as<float>();
-        semSeg.maxTiltGround =
-            config["sem_seg"]["max_tilt_ground"].as<float>();
+        semSeg.minVotes      = config["sem_seg"]["min_votes"].as<float>();
+        semSeg.probThresh    = config["sem_seg"]["prob_thresh"].as<float>();
+        semSeg.confThresh    = config["sem_seg"]["conf_thresh"].as<float>();
+        semSeg.maxTiltWall   = config["sem_seg"]["max_tilt_wall"].as<float>();
+        semSeg.maxDoorWidth  = config["sem_seg"]["max_door_width"].as<float>();
+        semSeg.maxDoorHeight = config["sem_seg"]["max_door_height"].as<float>();
+        semSeg.maxTiltGround = config["sem_seg"]["max_tilt_ground"].as<float>();
         semSeg.passageKfWindow =
             config["sem_seg"]["passage_kf_window"].as<int>();
         semSeg.maxStepElevation =
@@ -191,8 +186,8 @@ void SystemParams::setParams(const std::string &configFilePath_in)
                 .as<float>();
         semSeg.passageDetection.minimumEdgeNormalAlignment =
             config["sem_seg"]["passage_detection"]
-                   ["minimum_edge_normal_alignment"]
-                       .as<float>();
+                  ["minimum_edge_normal_alignment"]
+                      .as<float>();
         semSeg.passageDetection.minimumOpeningRadius_m =
             config["sem_seg"]["passage_detection"]["minimum_opening_radius"]
                 .as<float>();
@@ -200,57 +195,54 @@ void SystemParams::setParams(const std::string &configFilePath_in)
             config["sem_seg"]["passage_detection"]["wall_bounds_margin"]
                 .as<float>();
         semSeg.passageDetection.duplicatePassageDistance_m =
-            config["sem_seg"]["passage_detection"]
-                   ["duplicate_passage_distance"]
-                       .as<float>();
+            config["sem_seg"]["passage_detection"]["duplicate_passage_distance"]
+                .as<float>();
         semSeg.passageDetection.duplicateNormalAlignment =
-            config["sem_seg"]["passage_detection"]
-                   ["duplicate_normal_alignment"]
-                       .as<float>();
+            config["sem_seg"]["passage_detection"]["duplicate_normal_alignment"]
+                .as<float>();
         semSeg.passageDetection.ambiguousDuplicateNormalAlignment =
             config["sem_seg"]["passage_detection"]
-                   ["ambiguous_duplicate_normal_alignment"]
-                       .as<float>();
+                  ["ambiguous_duplicate_normal_alignment"]
+                      .as<float>();
         semSeg.passageDetection.ambiguousDuplicatePlaneSeparation_m =
             config["sem_seg"]["passage_detection"]
-                   ["ambiguous_duplicate_plane_separation"]
-                       .as<float>();
+                  ["ambiguous_duplicate_plane_separation"]
+                      .as<float>();
         semSeg.passageDetection.crossingClusterDistance_m =
             config["sem_seg"]["passage_detection"]["crossing_cluster_distance"]
                 .as<float>();
         semSeg.passageDetection.minimumConfirmationSnapshots =
             config["sem_seg"]["passage_detection"]
-                   ["minimum_confirmation_snapshots"]
-                       .as<unsigned int>();
+                  ["minimum_confirmation_snapshots"]
+                      .as<unsigned int>();
         semSeg.passageDetection.minimumCrossingClusterSize =
             config["sem_seg"]["passage_detection"]
-                   ["minimum_crossing_cluster_size"]
-                       .as<unsigned int>();
+                  ["minimum_crossing_cluster_size"]
+                      .as<unsigned int>();
         semSeg.passageDetection.maximumMissedSnapshots =
             config["sem_seg"]["passage_detection"]["maximum_missed_snapshots"]
                 .as<unsigned int>();
         semSeg.passageDetection.minimumHorizontalFlankExtent_m =
             config["sem_seg"]["passage_detection"]
-                   ["minimum_horizontal_flank_extent"]
-                       .as<float>();
+                  ["minimum_horizontal_flank_extent"]
+                      .as<float>();
         semSeg.passageDetection.minimumHorizontalFlankPointCount =
             config["sem_seg"]["passage_detection"]
-                   ["minimum_horizontal_flank_points"]
-                       .as<unsigned int>();
+                  ["minimum_horizontal_flank_points"]
+                      .as<unsigned int>();
         semSeg.pointcloud.downsample.leafSize =
             config["sem_seg"]["pointcloud"]["downsample"]["leaf_size"]
                 .as<float>();
         semSeg.pointcloud.downsample.minPointsPerVoxel =
             config["sem_seg"]["pointcloud"]["downsample"]
-                   ["min_points_per_voxel"]
-                       .as<unsigned int>();
+                  ["min_points_per_voxel"]
+                      .as<unsigned int>();
         semSeg.pointcloud.outlierRemoval.stdThreshold =
             config["sem_seg"]["pointcloud"]["outlier_removal"]["std_threshold"]
                 .as<float>();
         semSeg.pointcloud.outlierRemoval.meanThreshold =
-            config["sem_seg"]["pointcloud"]["outlier_removal"]
-                   ["mean_threshold"]
-                       .as<unsigned int>();
+            config["sem_seg"]["pointcloud"]["outlier_removal"]["mean_threshold"]
+                .as<unsigned int>();
         semSeg.wallCreation.minimumPointCount =
             config["sem_seg"]["wall_creation"]["minimum_point_count"]
                 .as<unsigned int>();
@@ -267,16 +259,16 @@ void SystemParams::setParams(const std::string &configFilePath_in)
                 .as<bool>();
         semSeg.wallCreation.connectivity.clusterTolerance_m =
             config["sem_seg"]["wall_creation"]["connectivity"]
-                   ["cluster_tolerance"]
-                       .as<float>();
+                  ["cluster_tolerance"]
+                      .as<float>();
         semSeg.wallCreation.connectivity.minimumComponentPointCount =
             config["sem_seg"]["wall_creation"]["connectivity"]
-                   ["minimum_component_point_count"]
-                       .as<unsigned int>();
+                  ["minimum_component_point_count"]
+                      .as<unsigned int>();
         semSeg.wallCreation.connectivity.minimumComponentRatio =
             config["sem_seg"]["wall_creation"]["connectivity"]
-                   ["minimum_component_ratio"]
-                       .as<float>();
+                  ["minimum_component_ratio"]
+                      .as<float>();
         semSeg.wallPairing.minimumThickness_m =
             config["sem_seg"]["wall_pairing"]["minimum_thickness"].as<float>();
         semSeg.wallPairing.maximumThickness_m =
@@ -293,12 +285,12 @@ void SystemParams::setParams(const std::string &configFilePath_in)
                 .as<bool>();
         semSeg.reassociate.wallExtension.maximumInPlaneGap_m =
             config["sem_seg"]["reassociate"]["wall_extension"]
-                   ["maximum_in_plane_gap"]
-                       .as<float>();
+                  ["maximum_in_plane_gap"]
+                      .as<float>();
         semSeg.reassociate.wallExtension.minimumOrthogonalOverlap_m =
             config["sem_seg"]["reassociate"]["wall_extension"]
-                   ["minimum_orthogonal_overlap"]
-                       .as<float>();
+                  ["minimum_orthogonal_overlap"]
+                      .as<float>();
 
         // Room Segmentation Parameters
         roomSeg.gnnVersion =
@@ -323,12 +315,12 @@ void SystemParams::setParams(const std::string &configFilePath_in)
                 .as<float>();
         roomSeg.clusterPointWallDistanceThresh =
             config["room_seg"]["skeleton_based"]
-                   ["cluster_point_wall_distance_thresh"]
-                       .as<float>();
+                  ["cluster_point_wall_distance_thresh"]
+                      .as<float>();
         roomSeg.clusterCentroidWallCentroidDistanceThresh =
             config["room_seg"]["skeleton_based"]
-                   ["cluster_centroid_wall_centroid_distance_thresh"]
-                       .as<float>();
+                  ["cluster_centroid_wall_centroid_distance_thresh"]
+                      .as<float>();
         roomSeg.minimumWallSupportPointCount =
             config["room_seg"]["skeleton_based"]["minimum_wall_support_points"]
                 .as<unsigned int>();
@@ -337,8 +329,8 @@ void SystemParams::setParams(const std::string &configFilePath_in)
                 .as<unsigned int>();
         roomSeg.minimumUndefendedWallHoldCycles =
             config["room_seg"]["skeleton_based"]
-                   ["minimum_undefended_wall_hold_cycles"]
-                       .as<unsigned int>();
+                  ["minimum_undefended_wall_hold_cycles"]
+                      .as<unsigned int>();
         roomSeg.minimumWallSupportRatio =
             config["room_seg"]["skeleton_based"]["minimum_wall_support_ratio"]
                 .as<float>();
@@ -361,8 +353,8 @@ void SystemParams::setParams(const std::string &configFilePath_in)
                 .as<float>();
         roomSeg.boundaryTopology.maximumInteriorIntersection_m =
             config["room_seg"]["boundary_topology"]
-                   ["maximum_interior_intersection"]
-                       .as<float>();
+                  ["maximum_interior_intersection"]
+                      .as<float>();
         roomSeg.boundaryTopology.minimumEnclosedArea_m2 =
             config["room_seg"]["boundary_topology"]["minimum_enclosed_area"]
                 .as<float>();
@@ -371,18 +363,18 @@ void SystemParams::setParams(const std::string &configFilePath_in)
                 .as<float>();
         roomSeg.boundaryTopology.decisiveConflictSupportRatio =
             config["room_seg"]["boundary_topology"]
-                   ["decisive_conflict_support_ratio"]
-                       .as<float>();
+                  ["decisive_conflict_support_ratio"]
+                      .as<float>();
         roomSeg.passagePartition.enabled =
             config["room_seg"]["passage_partition"]["enabled"].as<bool>();
         roomSeg.passagePartition.edgeVertexAssociationDistance_m =
             config["room_seg"]["passage_partition"]
-                   ["edge_vertex_association_distance"]
-                       .as<float>();
+                  ["edge_vertex_association_distance"]
+                      .as<float>();
         roomSeg.passagePartition.minimumGraphCoverageRatio =
             config["room_seg"]["passage_partition"]
-                   ["minimum_graph_coverage_ratio"]
-                       .as<float>();
+                  ["minimum_graph_coverage_ratio"]
+                      .as<float>();
         roomSeg.passagePartition.openingMargin_m =
             config["room_seg"]["passage_partition"]["opening_margin"]
                 .as<float>();
@@ -391,12 +383,12 @@ void SystemParams::setParams(const std::string &configFilePath_in)
                 .as<float>();
         roomSeg.passagePartition.detachWallsBeyondPassages =
             config["room_seg"]["passage_partition"]
-                   ["detach_walls_beyond_passages"]
-                       .as<bool>();
+                  ["detach_walls_beyond_passages"]
+                      .as<bool>();
         roomSeg.passagePartition.wallCentroidMinimumSideDistance_m =
             config["room_seg"]["passage_partition"]
-                   ["wall_centroid_minimum_side_distance"]
-                       .as<float>();
+                  ["wall_centroid_minimum_side_distance"]
+                      .as<float>();
 
         // Map-merge and axiom thresholds.
         mapMerge.passageMatchTolerance_m =
@@ -408,8 +400,7 @@ void SystemParams::setParams(const std::string &configFilePath_in)
         mapMerge.floorMatchTolerance_m =
             config["map_merge"]["floor_match_tolerance_m"].as<float>();
         mapMerge.observationRayCheckCap =
-            config["map_merge"]["observation_ray_check_cap"]
-                .as<unsigned int>();
+            config["map_merge"]["observation_ray_check_cap"].as<unsigned int>();
         mapMerge.mergeCooldown_s =
             config["map_merge"]["merge_cooldown_s"].as<unsigned int>();
         mapMerge.minAnchorRooms =
@@ -433,8 +424,7 @@ void SystemParams::setParams(const std::string &configFilePath_in)
         roomTracking.reacquireRetryInterval_s =
             config["room_tracking"]["reacquire_retry_interval_s"].as<float>();
         roomTracking.reacquireMaxRetries =
-            config["room_tracking"]["reacquire_max_retries"]
-                .as<unsigned int>();
+            config["room_tracking"]["reacquire_max_retries"].as<unsigned int>();
         roomTracking.reacquireMinPlanes =
             config["room_tracking"]["reacquire_min_planes"].as<unsigned int>();
 
@@ -470,8 +460,7 @@ void SystemParams::setParams(const std::string &configFilePath_in)
             config["candidate_gen"]["descriptor_elements_cap"]
                 .as<unsigned int>();
         this->candidateGen.topoRefinementIters =
-            config["candidate_gen"]["topo_refinement_iters"]
-                .as<unsigned int>();
+            config["candidate_gen"]["topo_refinement_iters"].as<unsigned int>();
 
         this->verification.maxNormalAngle_deg =
             config["verification"]["max_normal_angle_deg"].as<float>();
@@ -561,8 +550,7 @@ void SystemParams::setParams(const std::string &configFilePath_in)
             this->candidateGen.candidatePairCap < 1U ||
             this->candidateGen.topologyNodesCap < 1U ||
             this->candidateGen.globalFallbackCap < 1U ||
-            this->candidateGen.topK >
-                this->candidateGen.candidatePairCap ||
+            this->candidateGen.topK > this->candidateGen.candidatePairCap ||
             this->candidateGen.globalFallbackCap >
                 this->candidateGen.candidatePairCap ||
             this->candidateGen.descriptorElementsCap < 1U ||

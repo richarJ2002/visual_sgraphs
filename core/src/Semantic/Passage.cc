@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -364,7 +364,8 @@ void Passage::setGlobalEquation(const g2o::Plane3D &value)
     globalEquation = value;
 }
 
-std::vector<vs_graphs::core::geometric::Plane *> Passage::getAssociateWalls() const
+std::vector<vs_graphs::core::geometric::Plane *>
+    Passage::getAssociateWalls() const
 {
     std::lock_guard<std::mutex> lock(mMutexGeometry);
     return associateWalls;
@@ -379,11 +380,11 @@ void Passage::addAssociateWall(vs_graphs::core::geometric::Plane *p_wall_in)
 
     std::lock_guard<std::mutex> lock(mMutexGeometry);
 
-    const bool alreadyPresent =
-        std::any_of(associateWalls.begin(),
-                    associateWalls.end(),
-                    [p_wall_in](vs_graphs::core::geometric::Plane *p_existingWall)
-                    { return p_existingWall == p_wall_in; });
+    const bool alreadyPresent = std::any_of(
+        associateWalls.begin(),
+        associateWalls.end(),
+        [p_wall_in](vs_graphs::core::geometric::Plane *p_existingWall)
+        { return p_existingWall == p_wall_in; });
 
     if (!alreadyPresent)
     {
@@ -482,8 +483,9 @@ bool Passage::hasProspectiveRoom() const
     return prospectiveRoom != nullptr;
 }
 
-bool Passage::replaceProspectiveRoom(vs_graphs::core::semantic::Room *p_retiredRoom_in,
-                                     vs_graphs::core::semantic::Room *p_retainedRoom_in)
+bool Passage::replaceProspectiveRoom(
+    vs_graphs::core::semantic::Room *p_retiredRoom_in,
+    vs_graphs::core::semantic::Room *p_retainedRoom_in)
 {
     if (p_retiredRoom_in == nullptr || p_retainedRoom_in == nullptr ||
         p_retiredRoom_in == p_retainedRoom_in)
@@ -579,14 +581,14 @@ bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
         duplicateUnknownCount    = p_duplicate_in->traversalUnknownCount;
     }
 
-    Eigen::Vector3d      duplicateCentroid = Eigen::Vector3d::Zero();
-    g2o::Plane3D         duplicateEquation;
-    double               duplicateWidth_m  = 0.0;
-    double               duplicateHeight_m = 0.0;
+    Eigen::Vector3d                 duplicateCentroid = Eigen::Vector3d::Zero();
+    g2o::Plane3D                    duplicateEquation;
+    double                          duplicateWidth_m  = 0.0;
+    double                          duplicateHeight_m = 0.0;
     geometric::Plane               *p_duplicateDoor   = nullptr;
     std::vector<geometric::Plane *> duplicateWalls;
-    Room                *p_duplicateProspectiveRoom = nullptr;
-    KnownSideProvenance  duplicateKnownSide;
+    Room                           *p_duplicateProspectiveRoom = nullptr;
+    KnownSideProvenance             duplicateKnownSide;
     {
         std::lock_guard<std::mutex> duplicateGeometryLock(
             p_duplicate_in->mMutexGeometry);

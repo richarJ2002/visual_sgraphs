@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
@@ -65,11 +65,11 @@ class Settings
         /*!
          * @brief        Pinhole camera model.
          */
-        PINHOLE        = 0U,
+        PINHOLE = 0U,
         /*!
          * @brief        Rectified stereo camera model.
          */
-        RECTIFIED      = 1U,
+        RECTIFIED = 1U,
         /*!
          * @brief        Kannala-Brandt fisheye camera model.
          */
@@ -698,15 +698,16 @@ class Settings
     /*!
      * @brief        Owned first and second camera calibrations.
      */
-    camera_models::GeometricCamera    *calibration1, *calibration2; // Camera calibration
+    camera_models::GeometricCamera *calibration1,
+        *calibration2; // Camera calibration
     /*!
      * @brief        Owned pre-rectification camera calibrations.
      */
-    camera_models::GeometricCamera    *originalCalibration1, *originalCalibration2;
+    camera_models::GeometricCamera *originalCalibration1, *originalCalibration2;
     /*!
      * @brief        Pinhole distortion coefficients per camera.
      */
-    std::vector<double> pinholeDistortion1, pinholeDistortion2;
+    std::vector<double>             pinholeDistortion1, pinholeDistortion2;
 
     /*!
      * @brief        Original and undistorted image sizes in pixels.
@@ -856,7 +857,8 @@ class Settings
     /*!
      * @brief        Viewer viewpoint coordinates and focal value.
      */
-    double viewerViewPointX, viewerViewPointY, viewerViewPointZ, viewerViewPointF;
+    double viewerViewPointX, viewerViewPointY, viewerViewPointZ,
+        viewerViewPointF;
     /*!
      * @brief        Image viewer display scale.
      */
@@ -879,6 +881,6 @@ class Settings
     double farPointsThreshold;
 };
 } // namespace core
-} // namespace vs_graphs;
+} // namespace vs_graphs
 
 #endif // VS_GRAPHS_CORE_SETTINGS_H

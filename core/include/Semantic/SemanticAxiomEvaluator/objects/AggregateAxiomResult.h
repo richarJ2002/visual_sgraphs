@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -57,9 +57,9 @@ struct AggregateAxiomResult
     /*! @brief The aggregated tri-state outcome. */
     AxiomResult result{AxiomResult::UNKNOWN};
 
-/*!
- * @brief        Fixed "Class" column value for axiomCode.
- */
+    /*!
+     * @brief        Fixed "Class" column value for axiomCode.
+     */
     AxiomClass classification{AxiomClass::HARD};
 
     /*! @brief How many AxiomEvaluationReport::findings entries have this

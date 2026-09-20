@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -127,7 +127,7 @@ struct VerificationVerdict
     double             angularResidual_rad       = 0.0;
     double             confidence                = 0.0;
 
-    /** Returns true only for a finite, internally consistent PASS. */
+    /*! Returns true only for a finite, internally consistent PASS. */
     bool isPass() const
     {
         return status == VerificationStatus::PASS && pass &&
@@ -194,11 +194,11 @@ struct RoomTrackerConfig
     double       reacquire_retry_interval_s = 5.0;
     /*! Maximum failed reacquire attempts before timeout applies. */
     unsigned int reacquire_max_retries = 3U;
-/*!
- * @brief        Minimum planes required to attempt a reacquire.
- *               Consumed by the verification stub; acceptance
- *               still requires the full verification gates.
- */
+    /*!
+     * @brief        Minimum planes required to attempt a reacquire.
+     *               Consumed by the verification stub; acceptance
+     *               still requires the full verification gates.
+     */
     unsigned int reacquire_min_planes = 3U;
 };
 

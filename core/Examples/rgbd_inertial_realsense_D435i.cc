@@ -1,36 +1,39 @@
-/**
+/*!
  * This file is part of ORB-SLAM3
  *
- * Copyright (C) 2017-2021 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
- * Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
+ * Copyright (C) 2017-2021 Carlos Campos, Richard Elvira, Juan J. Gómez
+ * Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
+ * Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós,
+ * University of Zaragoza.
  *
- * ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
- * License as published by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * ORB-SLAM3 is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
  *
- * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
- * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with ORB-SLAM3.
- * If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * ORB-SLAM3. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <signal.h>
-#include <stdlib.h>
-#include <iostream>
 #include <algorithm>
-#include <fstream>
 #include <chrono>
 #include <ctime>
+#include <fstream>
+#include <iostream>
+#include <signal.h>
 #include <sstream>
+#include <stdlib.h>
 
 #include <condition_variable>
 
 #include <opencv2/core/core.hpp>
 
-#include <librealsense2/rs.hpp>
 #include "librealsense2/rsutil.h"
+#include <librealsense2/rs.hpp>
 
 #include <System.h>
 
@@ -44,24 +47,29 @@ void exit_loop_handler(int s)
     b_continue_session = false;
 }
 
-rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile> &streams);
-bool profile_changed(const std::vector<rs2::stream_profile> &current, const std::vector<rs2::stream_profile> &prev);
+rs2_stream
+     find_stream_to_align(const std::vector<rs2::stream_profile> &streams);
+bool profile_changed(const std::vector<rs2::stream_profile> &current,
+                     const std::vector<rs2::stream_profile> &prev);
 
 void interpolateData(const std::vector<double> &vBase_times,
-                     std::vector<rs2_vector> &vInterp_data, std::vector<double> &vInterp_times,
-                     const rs2_vector &prev_data, const double &prev_time);
+                     std::vector<rs2_vector>   &vInterp_data,
+                     std::vector<double>       &vInterp_times,
+                     const rs2_vector          &prev_data,
+                     const double              &prev_time);
 
-rs2_vector interpolateMeasure(const double target_time,
-                              const rs2_vector current_data, const double current_time,
-                              const rs2_vector prev_data, const double prev_time);
+rs2_vector interpolateMeasure(const double     target_time,
+                              const rs2_vector current_data,
+                              const double     current_time,
+                              const rs2_vector prev_data,
+                              const double     prev_time);
 
 static rs2_option get_sensor_option(const rs2::sensor &sensor)
 {
     // Sensors usually have several options to control their properties
     //  such as Exposure, Brightness etc.
 
-    std::cout << "Sensor supports the following options:\n"
-              << std::endl;
+    std::cout << "Sensor supports the following options:\n" << std::endl;
 
     // The following loop shows how to iterate over all available options
     // Starting from 0 until RS2_OPTION_COUNT (exclusive)
@@ -79,14 +87,17 @@ static rs2_option get_sensor_option(const rs2::sensor &sensor)
             std::cout << std::endl;
 
             // Get a human readable description of the option
-            const char *description = sensor.get_option_description(option_type);
+            const char *description =
+                sensor.get_option_description(option_type);
             std::cout << "       Description   : " << description << std::endl;
 
             // Get the current value of the option
             float current_value = sensor.get_option(option_type);
-            std::cout << "       Current Value : " << current_value << std::endl;
+            std::cout << "       Current Value : " << current_value
+                      << std::endl;
 
-            // To change the value of an option, please follow the change_sensor_option() function
+            // To change the value of an option, please follow the
+            // change_sensor_option() function
         }
         else
         {
@@ -104,7 +115,8 @@ int main(int argc, char **argv)
     if (argc < 3 || argc > 4)
     {
         cerr << endl
-             << "Usage: ./mono_inertial_realsense_D435i path_to_vocabulary path_to_settings (trajectory_file_name)"
+             << "Usage: ./mono_inertial_realsense_D435i path_to_vocabulary "
+                "path_to_settings (trajectory_file_name)"
              << endl;
         return 1;
     }
@@ -127,19 +139,20 @@ int main(int argc, char **argv)
 
     double offset = 0; // ms
 
-    rs2::context ctx;
+    rs2::context     ctx;
     rs2::device_list devices = ctx.query_devices();
-    rs2::device selected_device;
+    rs2::device      selected_device;
     if (devices.size() == 0)
     {
-        std::cerr << "No device connected, please connect a RealSense device" << std::endl;
+        std::cerr << "No device connected, please connect a RealSense device"
+                  << std::endl;
         return 0;
     }
     else
         selected_device = devices[0];
 
     std::vector<rs2::sensor> sensors = selected_device.query_sensors();
-    int index = 0;
+    int                      index   = 0;
     // We can now iterate the sensors and print their names
     for (rs2::sensor sensor : sensors)
         if (sensor.supports(RS2_CAMERA_INFO_NAME))
@@ -149,9 +162,11 @@ int main(int argc, char **argv)
             {
                 sensor.set_option(RS2_OPTION_ENABLE_AUTO_EXPOSURE, 1);
                 // sensor.set_option(RS2_OPTION_AUTO_EXPOSURE_LIMIT,50000);
-                sensor.set_option(RS2_OPTION_EMITTER_ENABLED, 1); // emitter on for depth information
+                sensor.set_option(RS2_OPTION_EMITTER_ENABLED,
+                                  1); // emitter on for depth information
             }
-            // std::cout << "  " << index << " : " << sensor.get_info(RS2_CAMERA_INFO_NAME) << std::endl;
+            // std::cout << "  " << index << " : " <<
+            // sensor.get_info(RS2_CAMERA_INFO_NAME) << std::endl;
             get_sensor_option(sensor);
             if (index == 2)
             {
@@ -170,7 +185,8 @@ int main(int argc, char **argv)
     // Declare RealSense pipeline, encapsulating the actual device and sensors
     rs2::pipeline pipe;
 
-    // Create a configuration for configuring the pipeline with a non default profile
+    // Create a configuration for configuring the pipeline with a non default
+    // profile
     rs2::config cfg;
 
     // RGB stream
@@ -185,26 +201,26 @@ int main(int argc, char **argv)
     cfg.enable_stream(RS2_STREAM_GYRO, RS2_FORMAT_MOTION_XYZ32F);
 
     // IMU callback
-    std::mutex imu_mutex;
+    std::mutex              imu_mutex;
     std::condition_variable cond_image_rec;
 
-    vector<double> v_accel_timestamp;
+    vector<double>     v_accel_timestamp;
     vector<rs2_vector> v_accel_data;
-    vector<double> v_gyro_timestamp;
+    vector<double>     v_gyro_timestamp;
     vector<rs2_vector> v_gyro_data;
 
-    double prev_accel_timestamp = 0;
-    rs2_vector prev_accel_data;
-    double current_accel_timestamp = 0;
-    rs2_vector current_accel_data;
-    vector<double> v_accel_timestamp_sync;
+    double             prev_accel_timestamp = 0;
+    rs2_vector         prev_accel_data;
+    double             current_accel_timestamp = 0;
+    rs2_vector         current_accel_data;
+    vector<double>     v_accel_timestamp_sync;
     vector<rs2_vector> v_accel_data_sync;
 
     cv::Mat imCV, depthCV;
-    int width_img, height_img;
-    double timestamp_image = -1.0;
-    bool image_ready = false;
-    int count_im_buffer = 0; // count dropped frames
+    int     width_img, height_img;
+    double  timestamp_image = -1.0;
+    bool    image_ready     = false;
+    int     count_im_buffer = 0; // count dropped frames
 
     // start and stop just to get necessary profile
     rs2::pipeline_profile pipe_profile = pipe.start(cfg);
@@ -216,9 +232,10 @@ int main(int argc, char **argv)
     rs2_stream align_to = find_stream_to_align(pipe_profile.get_streams());
 
     // Create a rs2::align object.
-    // rs2::align allows us to perform alignment of depth frames to others frames
-    // The "align_to" is the stream type to which we plan to align depth frames.
-    rs2::align align(align_to);
+    // rs2::align allows us to perform alignment of depth frames to others
+    // frames The "align_to" is the stream type to which we plan to align depth
+    // frames.
+    rs2::align    align(align_to);
     rs2::frameset fsSLAM;
 
     auto imu_callback = [&](const rs2::frame &frame)
@@ -236,23 +253,26 @@ int main(int argc, char **argv)
                 return;
             }
 
-            if (profile_changed(pipe.get_active_profile().get_streams(), pipe_profile.get_streams()))
+            if (profile_changed(pipe.get_active_profile().get_streams(),
+                                pipe_profile.get_streams()))
             {
-                // If the profile was changed, update the align object, and also get the new device's depth scale
+                // If the profile was changed, update the align object, and also
+                // get the new device's depth scale
                 pipe_profile = pipe.get_active_profile();
-                align_to = find_stream_to_align(pipe_profile.get_streams());
-                align = rs2::align(align_to);
+                align_to     = find_stream_to_align(pipe_profile.get_streams());
+                align        = rs2::align(align_to);
             }
 
-            // Align depth and rgb takes long time, move it out of the interruption to avoid losing IMU measurements
+            // Align depth and rgb takes long time, move it out of the
+            // interruption to avoid losing IMU measurements
             fsSLAM = fs;
 
             timestamp_image = fs.get_timestamp() * 1e-3;
-            image_ready = true;
+            image_ready     = true;
 
             while (v_gyro_timestamp.size() > v_accel_timestamp_sync.size())
             {
-                int index = v_accel_timestamp_sync.size();
+                int    index       = v_accel_timestamp_sync.size();
                 double target_time = v_gyro_timestamp[index];
 
                 v_accel_data_sync.push_back(current_accel_data);
@@ -268,24 +288,30 @@ int main(int argc, char **argv)
             {
                 // It runs at 200Hz
                 v_gyro_data.push_back(m_frame.get_motion_data());
-                v_gyro_timestamp.push_back((m_frame.get_timestamp() + offset) * 1e-3);
+                v_gyro_timestamp.push_back((m_frame.get_timestamp() + offset) *
+                                           1e-3);
             }
             else if (m_frame.get_profile().stream_name() == "Accel")
             {
                 // It runs at 60Hz
                 prev_accel_timestamp = current_accel_timestamp;
-                prev_accel_data = current_accel_data;
+                prev_accel_data      = current_accel_data;
 
                 current_accel_data = m_frame.get_motion_data();
-                current_accel_timestamp = (m_frame.get_timestamp() + offset) * 1e-3;
+                current_accel_timestamp =
+                    (m_frame.get_timestamp() + offset) * 1e-3;
 
                 while (v_gyro_timestamp.size() > v_accel_timestamp_sync.size())
                 {
-                    int index = v_accel_timestamp_sync.size();
+                    int    index       = v_accel_timestamp_sync.size();
                     double target_time = v_gyro_timestamp[index];
 
-                    rs2_vector interp_data = interpolateMeasure(target_time, current_accel_data, current_accel_timestamp,
-                                                                prev_accel_data, prev_accel_timestamp);
+                    rs2_vector interp_data =
+                        interpolateMeasure(target_time,
+                                           current_accel_data,
+                                           current_accel_timestamp,
+                                           prev_accel_data,
+                                           prev_accel_timestamp);
 
                     v_accel_data_sync.push_back(interp_data);
                     v_accel_timestamp_sync.push_back(target_time);
@@ -300,7 +326,7 @@ int main(int argc, char **argv)
     rs2::stream_profile cam_stream = pipe_profile.get_stream(RS2_STREAM_COLOR);
 
     rs2::stream_profile imu_stream = pipe_profile.get_stream(RS2_STREAM_GYRO);
-    float *Rbc = cam_stream.get_extrinsics_to(imu_stream).rotation;
+    float              *Rbc = cam_stream.get_extrinsics_to(imu_stream).rotation;
     float *tbc = cam_stream.get_extrinsics_to(imu_stream).translation;
     std::cout << "Tbc = " << std::endl;
     for (int i = 0; i < 3; i++)
@@ -310,8 +336,9 @@ int main(int argc, char **argv)
         std::cout << tbc[i] << "\n";
     }
 
-    rs2_intrinsics intrinsics_cam = cam_stream.as<rs2::video_stream_profile>().get_intrinsics();
-    width_img = intrinsics_cam.width;
+    rs2_intrinsics intrinsics_cam =
+        cam_stream.as<rs2::video_stream_profile>().get_intrinsics();
+    width_img  = intrinsics_cam.width;
     height_img = intrinsics_cam.height;
     std::cout << " fx = " << intrinsics_cam.fx << std::endl;
     std::cout << " fy = " << intrinsics_cam.fy << std::endl;
@@ -319,14 +346,23 @@ int main(int argc, char **argv)
     std::cout << " cy = " << intrinsics_cam.ppy << std::endl;
     std::cout << " height = " << intrinsics_cam.height << std::endl;
     std::cout << " width = " << intrinsics_cam.width << std::endl;
-    std::cout << " Coeff = " << intrinsics_cam.coeffs[0] << ", " << intrinsics_cam.coeffs[1] << ", " << intrinsics_cam.coeffs[2] << ", " << intrinsics_cam.coeffs[3] << ", " << intrinsics_cam.coeffs[4] << ", " << std::endl;
+    std::cout << " Coeff = " << intrinsics_cam.coeffs[0] << ", "
+              << intrinsics_cam.coeffs[1] << ", " << intrinsics_cam.coeffs[2]
+              << ", " << intrinsics_cam.coeffs[3] << ", "
+              << intrinsics_cam.coeffs[4] << ", " << std::endl;
     std::cout << " Model = " << intrinsics_cam.model << std::endl;
 
-    // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::IMU_RGBD, true, 0, file_name);
-    float imageScale = SLAM.GetImageScale();
+    // Create SLAM system. It initializes all system threads and gets ready to
+    // process frames.
+    ORB_SLAM3::System SLAM(argv[1],
+                           argv[2],
+                           ORB_SLAM3::System::IMU_RGBD,
+                           true,
+                           0,
+                           file_name);
+    float             imageScale = SLAM.GetImageScale();
 
-    double timestamp;
+    double  timestamp;
     cv::Mat im, depth;
 
     // Clear IMU vectors
@@ -336,24 +372,26 @@ int main(int argc, char **argv)
     v_accel_timestamp_sync.clear();
 
     double t_resize = 0.f;
-    double t_track = 0.f;
+    double t_track  = 0.f;
 
     while (!SLAM.isShutDown())
     {
         std::vector<rs2_vector> vGyro;
-        std::vector<double> vGyro_times;
+        std::vector<double>     vGyro_times;
         std::vector<rs2_vector> vAccel;
-        std::vector<double> vAccel_times;
-        rs2::frameset fs;
+        std::vector<double>     vAccel_times;
+        rs2::frameset           fs;
         {
             std::unique_lock<std::mutex> lk(imu_mutex);
             if (!image_ready)
                 cond_image_rec.wait(lk);
 
 #ifdef COMPILEDWITHC11
-            std::chrono::steady_clock::time_point time_Start_Process = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point time_Start_Process =
+                std::chrono::steady_clock::now();
 #else
-            std::chrono::monotonic_clock::time_point time_Start_Process = std::chrono::monotonic_clock::now();
+            std::chrono::monotonic_clock::time_point time_Start_Process =
+                std::chrono::monotonic_clock::now();
 #endif
 
             fs = fsSLAM;
@@ -364,19 +402,24 @@ int main(int argc, char **argv)
 
             while (v_gyro_timestamp.size() > v_accel_timestamp_sync.size())
             {
-                int index = v_accel_timestamp_sync.size();
+                int    index       = v_accel_timestamp_sync.size();
                 double target_time = v_gyro_timestamp[index];
 
-                rs2_vector interp_data = interpolateMeasure(target_time, current_accel_data, current_accel_timestamp, prev_accel_data, prev_accel_timestamp);
+                rs2_vector interp_data =
+                    interpolateMeasure(target_time,
+                                       current_accel_data,
+                                       current_accel_timestamp,
+                                       prev_accel_data,
+                                       prev_accel_timestamp);
 
                 v_accel_data_sync.push_back(interp_data);
                 v_accel_timestamp_sync.push_back(target_time);
             }
 
             // Copy the IMU data
-            vGyro = v_gyro_data;
-            vGyro_times = v_gyro_timestamp;
-            vAccel = v_accel_data_sync;
+            vGyro        = v_gyro_data;
+            vGyro_times  = v_gyro_timestamp;
+            vAccel       = v_accel_data_sync;
             vAccel_times = v_accel_timestamp_sync;
 
             // Image
@@ -398,8 +441,14 @@ int main(int argc, char **argv)
         rs2::video_frame color_frame = processed.first(align_to);
         rs2::depth_frame depth_frame = processed.get_depth_frame();
 
-        im = cv::Mat(cv::Size(width_img, height_img), CV_8UC3, (void *)(color_frame.get_data()), cv::Mat::AUTO_STEP);
-        depth = cv::Mat(cv::Size(width_img, height_img), CV_16U, (void *)(depth_frame.get_data()), cv::Mat::AUTO_STEP);
+        im    = cv::Mat(cv::Size(width_img, height_img),
+                     CV_8UC3,
+                     (void *)(color_frame.get_data()),
+                     cv::Mat::AUTO_STEP);
+        depth = cv::Mat(cv::Size(width_img, height_img),
+                        CV_16U,
+                        (void *)(depth_frame.get_data()),
+                        cv::Mat::AUTO_STEP);
 
         /*cv::Mat depthCV_8U;
         depthCV.convertTo(depthCV_8U,CV_8U,0.01);
@@ -407,8 +456,12 @@ int main(int argc, char **argv)
 
         for (int i = 0; i < vGyro.size(); ++i)
         {
-            ORB_SLAM3::IMU::Point lastPoint(vAccel[i].x, vAccel[i].y, vAccel[i].z,
-                                            vGyro[i].x, vGyro[i].y, vGyro[i].z,
+            ORB_SLAM3::IMU::Point lastPoint(vAccel[i].x,
+                                            vAccel[i].y,
+                                            vAccel[i].z,
+                                            vGyro[i].x,
+                                            vGyro[i].y,
+                                            vGyro[i].z,
                                             vGyro_times[i]);
             vImuMeas.push_back(lastPoint);
         }
@@ -417,32 +470,41 @@ int main(int argc, char **argv)
         {
 #ifdef REGISTER_TIMES
 #ifdef COMPILEDWITHC11
-            std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point t_Start_Resize =
+                std::chrono::steady_clock::now();
 #else
-            std::chrono::monotonic_clock::time_point t_Start_Resize = std::chrono::monotonic_clock::now();
+            std::chrono::monotonic_clock::time_point t_Start_Resize =
+                std::chrono::monotonic_clock::now();
 #endif
 #endif
-            int width = im.cols * imageScale;
+            int width  = im.cols * imageScale;
             int height = im.rows * imageScale;
             cv::resize(im, im, cv::Size(width, height));
             cv::resize(depth, depth, cv::Size(width, height));
 
 #ifdef REGISTER_TIMES
 #ifdef COMPILEDWITHC11
-            std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point t_End_Resize =
+                std::chrono::steady_clock::now();
 #else
-            std::chrono::monotonic_clock::time_point t_End_Resize = std::chrono::monotonic_clock::now();
+            std::chrono::monotonic_clock::time_point t_End_Resize =
+                std::chrono::monotonic_clock::now();
 #endif
-            t_resize = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t_End_Resize - t_Start_Resize).count();
+            t_resize = std::chrono::duration_cast<
+                           std::chrono::duration<double, std::milli>>(
+                           t_End_Resize - t_Start_Resize)
+                           .count();
             SLAM.InsertResizeTime(t_resize);
 #endif
         }
 
 #ifdef REGISTER_TIMES
 #ifdef COMPILEDWITHC11
-        std::chrono::steady_clock::time_point t_Start_Track = std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point t_Start_Track =
+            std::chrono::steady_clock::now();
 #else
-        std::chrono::monotonic_clock::time_point t_Start_Track = std::chrono::monotonic_clock::now();
+        std::chrono::monotonic_clock::time_point t_Start_Track =
+            std::chrono::monotonic_clock::now();
 #endif
 #endif
         // Pass the image to the SLAM system
@@ -450,11 +512,16 @@ int main(int argc, char **argv)
 
 #ifdef REGISTER_TIMES
 #ifdef COMPILEDWITHC11
-        std::chrono::steady_clock::time_point t_End_Track = std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point t_End_Track =
+            std::chrono::steady_clock::now();
 #else
-        std::chrono::monotonic_clock::time_point t_End_Track = std::chrono::monotonic_clock::now();
+        std::chrono::monotonic_clock::time_point t_End_Track =
+            std::chrono::monotonic_clock::now();
 #endif
-        t_track = t_resize + std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t_End_Track - t_Start_Track).count();
+        t_track = t_resize + std::chrono::duration_cast<
+                                 std::chrono::duration<double, std::milli>>(
+                                 t_End_Track - t_Start_Track)
+                                 .count();
         SLAM.InsertTrackTime(t_track);
 #endif
 
@@ -466,12 +533,13 @@ int main(int argc, char **argv)
 
 rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile> &streams)
 {
-    // Given a vector of streams, we try to find a depth stream and another stream to align depth with.
-    // We prioritize color streams to make the view look better.
-    // If color is not available, we take another stream that (other than depth)
-    rs2_stream align_to = RS2_STREAM_ANY;
-    bool depth_stream_found = false;
-    bool color_stream_found = false;
+    // Given a vector of streams, we try to find a depth stream and another
+    // stream to align depth with. We prioritize color streams to make the view
+    // look better. If color is not available, we take another stream that
+    // (other than depth)
+    rs2_stream align_to           = RS2_STREAM_ANY;
+    bool       depth_stream_found = false;
+    bool       color_stream_found = false;
     for (rs2::stream_profile sp : streams)
     {
         rs2_stream profile_stream = sp.stream_type();
@@ -500,14 +568,19 @@ rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile> &streams)
     return align_to;
 }
 
-bool profile_changed(const std::vector<rs2::stream_profile> &current, const std::vector<rs2::stream_profile> &prev)
+bool profile_changed(const std::vector<rs2::stream_profile> &current,
+                     const std::vector<rs2::stream_profile> &prev)
 {
     for (auto &&sp : prev)
     {
         // If previous profile is in current (maybe just added another)
-        auto itr = std::find_if(std::begin(current), std::end(current), [&sp](const rs2::stream_profile &current_sp)
-                                { return sp.unique_id() == current_sp.unique_id(); });
-        if (itr == std::end(current)) // If it previous stream wasn't found in current
+        auto itr =
+            std::find_if(std::begin(current),
+                         std::end(current),
+                         [&sp](const rs2::stream_profile &current_sp)
+                         { return sp.unique_id() == current_sp.unique_id(); });
+        if (itr ==
+            std::end(current)) // If it previous stream wasn't found in current
         {
             return true;
         }
@@ -515,9 +588,11 @@ bool profile_changed(const std::vector<rs2::stream_profile> &current, const std:
     return false;
 }
 
-rs2_vector interpolateMeasure(const double target_time,
-                              const rs2_vector current_data, const double current_time,
-                              const rs2_vector prev_data, const double prev_time)
+rs2_vector interpolateMeasure(const double     target_time,
+                              const rs2_vector current_data,
+                              const double     current_time,
+                              const rs2_vector prev_data,
+                              const double     prev_time)
 {
 
     // If there are not previous information, the current data is propagated

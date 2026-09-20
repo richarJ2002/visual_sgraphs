@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -88,7 +88,8 @@ EntityRef entityRefForPassage(Passage *p_passage_in);
  *  a null \p p_wall_in appends nothing (Room::setWalls() rejects null
  *  before insertion, so this is not currently reachable, but is handled
  *  safely regardless). Never dereferences a null pointer. */
-void appendWallRef(geometric::Plane *p_wall_in, std::vector<RawPlaneRef> &refs_inout);
+void appendWallRef(geometric::Plane         *p_wall_in,
+                   std::vector<RawPlaneRef> &refs_inout);
 
 /*! @brief Appends entityRefForRoom(\p p_room_in) to \p refs_inout when
  *  non-null (regardless of map/liveness -- see FloorRecord::roomRefs and
@@ -203,10 +204,11 @@ RoomRecord captureRoom(Room             *p_room_in,
  *                                         implementation for how it is
  *                                         built.
  */
-WallRecord captureWall(
-    geometric::Plane                                           *p_wall_in,
-    long unsigned int                                mapId_in,
-    const std::map<geometric::Plane *, std::vector<EntityRef>> &wallOwnersByPointer_in);
+WallRecord
+    captureWall(geometric::Plane *p_wall_in,
+                long unsigned int mapId_in,
+                const std::map<geometric::Plane *, std::vector<EntityRef>>
+                    &wallOwnersByPointer_in);
 
 /*! @brief Captures one PassageRecord. \p p_passage_in must not be null. */
 PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in);

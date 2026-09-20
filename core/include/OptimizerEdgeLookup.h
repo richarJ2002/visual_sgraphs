@@ -1,4 +1,4 @@
-/**
+/*!
  * @file OptimizerEdgeLookup.h
  * @brief Bounds-checked lookup into a bundle-adjustment edge's parallel
  *        keyframe vector.
@@ -15,7 +15,7 @@ namespace vs_graphs
 namespace core
 {
 
-/**
+/*!
  * Returns the pointer at index_in in edgeKeyFrames_in, or nullptr when
  * index_in is out of bounds.
  *
@@ -30,8 +30,9 @@ namespace core
  * each call site and removes the out-of-bounds risk.
  */
 template <typename PointerT>
-inline PointerT edgeSourceKeyFrame(const std::vector<PointerT> &edgeKeyFrames_in,
-                                   std::size_t                  index_in)
+inline PointerT
+    edgeSourceKeyFrame(const std::vector<PointerT> &edgeKeyFrames_in,
+                       std::size_t                  index_in)
 {
     return index_in < edgeKeyFrames_in.size() ? edgeKeyFrames_in[index_in]
                                               : nullptr;

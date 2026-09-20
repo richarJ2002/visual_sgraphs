@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -153,7 +153,7 @@ std::map<core::KeyFrame *, Sophus::SE3f> Marker::getObservations() const
     return observations;
 }
 
-void Marker::addObservation(core::KeyFrame           *p_keyFrame_in,
+void Marker::addObservation(core::KeyFrame     *p_keyFrame_in,
                             const Sophus::SE3f &markerPose_markerToCamera_in)
 {
     if (p_keyFrame_in == nullptr || p_keyFrame_in->isBad())
@@ -189,4 +189,4 @@ void Marker::setMap(core::Map *p_map_in)
 }
 } // namespace semantic
 } // namespace core
-} // namespace vs_graphs;
+} // namespace vs_graphs

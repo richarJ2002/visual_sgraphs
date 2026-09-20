@@ -1,4 +1,4 @@
-/**
+/*!
  * Focused, ROS/Gazebo-free tests for
  * augmentMissionHealthTopologyJsonWithSemantics(), the pure
  * function extending /vs_graphs/get_mission_health's schema-1 topology_json
@@ -179,8 +179,8 @@ TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
         EXPECT_NE(row["missingProofOwner"].get<std::string>().rfind("UNKNOWN_"),
                   0U);
     }
-    /* Sorted by the underlying semantic::AxiomCode enum value, not by name string
-     * (e.g. "AX_WALL_01" == 1 sorts long before "AX_TXN_01" == 13, even
+    /* Sorted by the underlying semantic::AxiomCode enum value, not by name
+     * string (e.g. "AX_WALL_01" == 1 sorts long before "AX_TXN_01" == 13, even
      * though "AX_TXN_01" < "AX_WALL_01" lexicographically) -- matches the
      * fixed declaration order in semantic::AxiomCode.h. */
     static const std::vector<std::string> kExpectedOrder = {"AX_FRAME_01",

@@ -1,4 +1,4 @@
-/**
+/*!
  * Focused, ROS/Gazebo-free tests for the pure
  * buildSemanticDiagnosticUpdate() builder extracted from
  * SemanticsManager::logSemanticDiagnostics().

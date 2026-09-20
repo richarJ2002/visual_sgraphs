@@ -1,23 +1,26 @@
-/**
+/*!
  * This file is a modified version of a file from ORB-SLAM3.
  *
  * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
- * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger Voos
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
  *
  * Original Copyright (C) 2014-2021 University of Zaragoza:
  * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
  * José M.M. Montiel, and Juan D. Tardós.
  *
- * This file is part of vS-Graphs, which is free software: you can redistribute it
- * and/or modify it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
  *
  * vS-Graphs is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with this program.
- * If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 /*!
@@ -32,160 +35,167 @@ namespace vs_graphs
 {
 namespace core
 {
-    bool EdgeSE3ProjectXYZOnlyPose::read(std::istream &is)
-    {
-        for (int i = 0; i < 2; i++)
-            is >> _measurement[i];
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+bool EdgeSE3ProjectXYZOnlyPose::read(std::istream &is)
+{
+    for (int i = 0; i < 2; i++)
+        is >> _measurement[i];
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    bool EdgeSE3ProjectXYZOnlyPose::write(std::ostream &os) const
-    {
-        for (int i = 0; i < 2; i++)
-            os << measurement()[i] << " ";
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+bool EdgeSE3ProjectXYZOnlyPose::write(std::ostream &os) const
+{
+    for (int i = 0; i < 2; i++)
+        os << measurement()[i] << " ";
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    void EdgeSE3ProjectXYZOnlyPose::linearizeOplus()
-    {
-        g2o::VertexSE3Expmap *vi = static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
-        Eigen::Vector3d xyz_trans = vi->estimate().map(Xw);
+void EdgeSE3ProjectXYZOnlyPose::linearizeOplus()
+{
+    g2o::VertexSE3Expmap *vi =
+        static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
+    Eigen::Vector3d xyz_trans = vi->estimate().map(Xw);
 
-        double x = xyz_trans[0];
-        double y = xyz_trans[1];
-        double z = xyz_trans[2];
+    double x = xyz_trans[0];
+    double y = xyz_trans[1];
+    double z = xyz_trans[2];
 
-        Eigen::Matrix<double, 3, 6> SE3deriv;
-        SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f,
-            -z, 0.f, x, 0.f, 1.f, 0.f,
-            y, -x, 0.f, 0.f, 0.f, 1.f;
+    Eigen::Matrix<double, 3, 6> SE3deriv;
+    SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f, -z, 0.f, x, 0.f, 1.f, 0.f, y, -x,
+        0.f, 0.f, 0.f, 1.f;
 
-        _jacobianOplusXi =
-            -pCamera->computeProjectionJacobian(xyz_trans) * SE3deriv;
-    }
+    _jacobianOplusXi =
+        -pCamera->computeProjectionJacobian(xyz_trans) * SE3deriv;
+}
 
-    bool EdgeSE3ProjectXYZOnlyPoseToBody::read(std::istream &is)
-    {
-        for (int i = 0; i < 2; i++)
-            is >> _measurement[i];
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+bool EdgeSE3ProjectXYZOnlyPoseToBody::read(std::istream &is)
+{
+    for (int i = 0; i < 2; i++)
+        is >> _measurement[i];
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    bool EdgeSE3ProjectXYZOnlyPoseToBody::write(std::ostream &os) const
-    {
-        for (int i = 0; i < 2; i++)
-            os << measurement()[i] << " ";
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+bool EdgeSE3ProjectXYZOnlyPoseToBody::write(std::ostream &os) const
+{
+    for (int i = 0; i < 2; i++)
+        os << measurement()[i] << " ";
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    void EdgeSE3ProjectXYZOnlyPoseToBody::linearizeOplus()
-    {
-        g2o::VertexSE3Expmap *vi = static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
-        g2o::SE3Quat T_lw(vi->estimate());
-        Eigen::Vector3d X_l = T_lw.map(Xw);
-        Eigen::Vector3d X_r = mTrl.map(T_lw.map(Xw));
+void EdgeSE3ProjectXYZOnlyPoseToBody::linearizeOplus()
+{
+    g2o::VertexSE3Expmap *vi =
+        static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
+    g2o::SE3Quat    T_lw(vi->estimate());
+    Eigen::Vector3d X_l = T_lw.map(Xw);
+    Eigen::Vector3d X_r = mTrl.map(T_lw.map(Xw));
 
-        double x_w = X_l[0];
-        double y_w = X_l[1];
-        double z_w = X_l[2];
+    double x_w = X_l[0];
+    double y_w = X_l[1];
+    double z_w = X_l[2];
 
-        Eigen::Matrix<double, 3, 6> SE3deriv;
-        SE3deriv << 0.f, z_w, -y_w, 1.f, 0.f, 0.f,
-            -z_w, 0.f, x_w, 0.f, 1.f, 0.f,
-            y_w, -x_w, 0.f, 0.f, 0.f, 1.f;
+    Eigen::Matrix<double, 3, 6> SE3deriv;
+    SE3deriv << 0.f, z_w, -y_w, 1.f, 0.f, 0.f, -z_w, 0.f, x_w, 0.f, 1.f, 0.f,
+        y_w, -x_w, 0.f, 0.f, 0.f, 1.f;
 
-        _jacobianOplusXi = -pCamera->computeProjectionJacobian(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
-    }
+    _jacobianOplusXi = -pCamera->computeProjectionJacobian(X_r) *
+                       mTrl.rotation().toRotationMatrix() * SE3deriv;
+}
 
-    bool EdgeSE3ProjectXYZDepth::read(std::istream &is)
-    {
-        is >> _measurement;
-        is >> information()(0, 0);
-        return true;
-    }
+bool EdgeSE3ProjectXYZDepth::read(std::istream &is)
+{
+    is >> _measurement;
+    is >> information()(0, 0);
+    return true;
+}
 
-    bool EdgeSE3ProjectXYZDepth::write(std::ostream &os) const
-    {
-        os << measurement() << " ";
-        os << " " << information()(0, 0);
-        return os.good();
-    }
+bool EdgeSE3ProjectXYZDepth::write(std::ostream &os) const
+{
+    os << measurement() << " ";
+    os << " " << information()(0, 0);
+    return os.good();
+}
 
-    void EdgeSE3ProjectXYZDepth::linearizeOplus()
-    {
-        g2o::VertexSE3Expmap *vi = static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
-        Eigen::Vector3d xyz_trans = vi->estimate().map(Xw);
+void EdgeSE3ProjectXYZDepth::linearizeOplus()
+{
+    g2o::VertexSE3Expmap *vi =
+        static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
+    Eigen::Vector3d xyz_trans = vi->estimate().map(Xw);
 
-        double x = xyz_trans[0];
-        double y = xyz_trans[1];
-        double z = xyz_trans[2];
+    double x = xyz_trans[0];
+    double y = xyz_trans[1];
+    double z = xyz_trans[2];
 
-        // Derivative of depth (z-coordinate in camera frame) w.r.t SE3 pose
-        Eigen::Matrix<double, 1, 6> SE3deriv_z;
-        SE3deriv_z << y, -x, 0, 0, 0, 1; // d(z)/d(xi) where xi = [rot, trans]
+    // Derivative of depth (z-coordinate in camera frame) w.r.t SE3 pose
+    Eigen::Matrix<double, 1, 6> SE3deriv_z;
+    SE3deriv_z << y, -x, 0, 0, 0, 1; // d(z)/d(xi) where xi = [rot, trans]
 
-        _jacobianOplusXi = -SE3deriv_z;
-    }
+    _jacobianOplusXi = -SE3deriv_z;
+}
 
-    EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ() : BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, g2o::VertexSE3Expmap>()
-    {
-    }
+EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ() :
+    BaseBinaryEdge<2,
+                   Eigen::Vector2d,
+                   g2o::VertexSBAPointXYZ,
+                   g2o::VertexSE3Expmap>()
+{}
 
-    bool EdgeSE3ProjectXYZ::read(std::istream &is)
-    {
-        for (int i = 0; i < 2; i++)
-            is >> _measurement[i];
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+bool EdgeSE3ProjectXYZ::read(std::istream &is)
+{
+    for (int i = 0; i < 2; i++)
+        is >> _measurement[i];
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    bool EdgeSE3ProjectXYZ::write(std::ostream &os) const
-    {
-        for (int i = 0; i < 2; i++)
-            os << measurement()[i] << " ";
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+bool EdgeSE3ProjectXYZ::write(std::ostream &os) const
+{
+    for (int i = 0; i < 2; i++)
+        os << measurement()[i] << " ";
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    void EdgeSE3ProjectXYZ::linearizeOplus()
-    {
-        g2o::VertexSE3Expmap *vj = static_cast<g2o::VertexSE3Expmap *>(_vertices[1]);
-        g2o::SE3Quat T(vj->estimate());
-        g2o::VertexSBAPointXYZ *vi = static_cast<g2o::VertexSBAPointXYZ *>(_vertices[0]);
-        Eigen::Vector3d xyz = vi->estimate();
-        Eigen::Vector3d xyz_trans = T.map(xyz);
+void EdgeSE3ProjectXYZ::linearizeOplus()
+{
+    g2o::VertexSE3Expmap *vj =
+        static_cast<g2o::VertexSE3Expmap *>(_vertices[1]);
+    g2o::SE3Quat            T(vj->estimate());
+    g2o::VertexSBAPointXYZ *vi =
+        static_cast<g2o::VertexSBAPointXYZ *>(_vertices[0]);
+    Eigen::Vector3d xyz       = vi->estimate();
+    Eigen::Vector3d xyz_trans = T.map(xyz);
 
-        double x = xyz_trans[0];
-        double y = xyz_trans[1];
-        double z = xyz_trans[2];
+    double x = xyz_trans[0];
+    double y = xyz_trans[1];
+    double z = xyz_trans[2];
 
     // Materialize eagerly: computeProjectionJacobian() returns by value,
     // so `auto` would capture a lazy expression referencing a dead
@@ -193,452 +203,501 @@ namespace core
     const Eigen::Matrix<double, 2, 3> projectionJacobian =
         -pCamera->computeProjectionJacobian(xyz_trans);
 
-        _jacobianOplusXi = projectionJacobian * T.rotation().toRotationMatrix();
+    _jacobianOplusXi = projectionJacobian * T.rotation().toRotationMatrix();
 
-        Eigen::Matrix<double, 3, 6> SE3deriv;
-        SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f,
-            -z, 0.f, x, 0.f, 1.f, 0.f,
-            y, -x, 0.f, 0.f, 0.f, 1.f;
+    Eigen::Matrix<double, 3, 6> SE3deriv;
+    SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f, -z, 0.f, x, 0.f, 1.f, 0.f, y, -x,
+        0.f, 0.f, 0.f, 1.f;
 
-        _jacobianOplusXj = projectionJacobian * SE3deriv;
-    }
+    _jacobianOplusXj = projectionJacobian * SE3deriv;
+}
 
-    EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody() : BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, g2o::VertexSE3Expmap>()
-    {
-    }
+EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody() :
+    BaseBinaryEdge<2,
+                   Eigen::Vector2d,
+                   g2o::VertexSBAPointXYZ,
+                   g2o::VertexSE3Expmap>()
+{}
 
-    bool EdgeSE3ProjectXYZToBody::read(std::istream &is)
-    {
-        for (int i = 0; i < 2; i++)
-            is >> _measurement[i];
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
-
-    bool EdgeSE3ProjectXYZToBody::write(std::ostream &os) const
-    {
-        for (int i = 0; i < 2; i++)
-            os << measurement()[i] << " ";
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
-
-    void EdgeSE3ProjectXYZToBody::linearizeOplus()
-    {
-        g2o::VertexSE3Expmap *vj = static_cast<g2o::VertexSE3Expmap *>(_vertices[1]);
-        g2o::SE3Quat T_lw(vj->estimate());
-        g2o::SE3Quat T_rw = mTrl * T_lw;
-        g2o::VertexSBAPointXYZ *vi = static_cast<g2o::VertexSBAPointXYZ *>(_vertices[0]);
-        Eigen::Vector3d X_w = vi->estimate();
-        Eigen::Vector3d X_l = T_lw.map(X_w);
-        Eigen::Vector3d X_r = mTrl.map(T_lw.map(X_w));
-
-        _jacobianOplusXi = -pCamera->computeProjectionJacobian(X_r) * T_rw.rotation().toRotationMatrix();
-
-        double x = X_l[0];
-        double y = X_l[1];
-        double z = X_l[2];
-
-        Eigen::Matrix<double, 3, 6> SE3deriv;
-        SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f,
-            -z, 0.f, x, 0.f, 1.f, 0.f,
-            y, -x, 0.f, 0.f, 0.f, 1.f;
-
-        _jacobianOplusXj = -pCamera->computeProjectionJacobian(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
-    }
-
-    VertexSim3Expmap::VertexSim3Expmap() : BaseVertex<7, g2o::Sim3>()
-    {
-        _marginalized = false;
-        _fix_scale = false;
-    }
-
-    bool VertexSim3Expmap::read(std::istream &is)
-    {
-        g2o::Vector7d cam2world;
-        for (int i = 0; i < 6; i++)
-            is >> cam2world[i];
-
-        is >> cam2world[6];
-
-        float nextParam;
-        for (size_t i = 0; i < pCamera1->size(); i++)
+bool EdgeSE3ProjectXYZToBody::read(std::istream &is)
+{
+    for (int i = 0; i < 2; i++)
+        is >> _measurement[i];
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
         {
-            is >> nextParam;
-            pCamera1->setParameter(nextParam, i);
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
         }
+    return true;
+}
 
-        for (size_t i = 0; i < pCamera2->size(); i++)
+bool EdgeSE3ProjectXYZToBody::write(std::ostream &os) const
+{
+    for (int i = 0; i < 2; i++)
+        os << measurement()[i] << " ";
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
+
+void EdgeSE3ProjectXYZToBody::linearizeOplus()
+{
+    g2o::VertexSE3Expmap *vj =
+        static_cast<g2o::VertexSE3Expmap *>(_vertices[1]);
+    g2o::SE3Quat            T_lw(vj->estimate());
+    g2o::SE3Quat            T_rw = mTrl * T_lw;
+    g2o::VertexSBAPointXYZ *vi =
+        static_cast<g2o::VertexSBAPointXYZ *>(_vertices[0]);
+    Eigen::Vector3d X_w = vi->estimate();
+    Eigen::Vector3d X_l = T_lw.map(X_w);
+    Eigen::Vector3d X_r = mTrl.map(T_lw.map(X_w));
+
+    _jacobianOplusXi = -pCamera->computeProjectionJacobian(X_r) *
+                       T_rw.rotation().toRotationMatrix();
+
+    double x = X_l[0];
+    double y = X_l[1];
+    double z = X_l[2];
+
+    Eigen::Matrix<double, 3, 6> SE3deriv;
+    SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f, -z, 0.f, x, 0.f, 1.f, 0.f, y, -x,
+        0.f, 0.f, 0.f, 1.f;
+
+    _jacobianOplusXj = -pCamera->computeProjectionJacobian(X_r) *
+                       mTrl.rotation().toRotationMatrix() * SE3deriv;
+}
+
+VertexSim3Expmap::VertexSim3Expmap() :
+    BaseVertex<7, g2o::Sim3>()
+{
+    _marginalized = false;
+    _fix_scale    = false;
+}
+
+bool VertexSim3Expmap::read(std::istream &is)
+{
+    g2o::Vector7d cam2world;
+    for (int i = 0; i < 6; i++)
+        is >> cam2world[i];
+
+    is >> cam2world[6];
+
+    float nextParam;
+    for (size_t i = 0; i < pCamera1->size(); i++)
+    {
+        is >> nextParam;
+        pCamera1->setParameter(nextParam, i);
+    }
+
+    for (size_t i = 0; i < pCamera2->size(); i++)
+    {
+        is >> nextParam;
+        pCamera2->setParameter(nextParam, i);
+    }
+
+    setEstimate(g2o::Sim3(cam2world).inverse());
+    return true;
+}
+
+bool VertexSim3Expmap::write(std::ostream &os) const
+{
+    g2o::Sim3     cam2world(estimate().inverse());
+    g2o::Vector7d lv = cam2world.log();
+    for (int i = 0; i < 7; i++)
+        os << lv[i] << " ";
+    for (size_t i = 0; i < pCamera1->size(); i++)
+        os << pCamera1->getParameter(i) << " ";
+
+    for (size_t i = 0; i < pCamera2->size(); i++)
+        os << pCamera2->getParameter(i) << " ";
+    return os.good();
+}
+
+EdgeSim3ProjectXYZ::EdgeSim3ProjectXYZ() :
+    g2o::BaseBinaryEdge<2,
+                        Eigen::Vector2d,
+                        g2o::VertexSBAPointXYZ,
+                        VertexSim3Expmap>()
+{}
+
+bool EdgeSim3ProjectXYZ::read(std::istream &is)
+{
+    for (int i = 0; i < 2; i++)
+        is >> _measurement[i];
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
         {
-            is >> nextParam;
-            pCamera2->setParameter(nextParam, i);
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
         }
+    return true;
+}
 
-        setEstimate(g2o::Sim3(cam2world).inverse());
-        return true;
-    }
+bool EdgeSim3ProjectXYZ::write(std::ostream &os) const
+{
+    for (int i = 0; i < 2; i++)
+        os << _measurement[i] << " ";
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
+        {
+            os << " " << information()(i, j);
+        }
+    return os.good();
+}
 
-    bool VertexSim3Expmap::write(std::ostream &os) const
-    {
-        g2o::Sim3 cam2world(estimate().inverse());
-        g2o::Vector7d lv = cam2world.log();
-        for (int i = 0; i < 7; i++)
-            os << lv[i] << " ";
-        for (size_t i = 0; i < pCamera1->size(); i++)
-            os << pCamera1->getParameter(i) << " ";
+EdgeInverseSim3ProjectXYZ::EdgeInverseSim3ProjectXYZ() :
+    g2o::BaseBinaryEdge<2,
+                        Eigen::Vector2d,
+                        g2o::VertexSBAPointXYZ,
+                        VertexSim3Expmap>()
+{}
 
-        for (size_t i = 0; i < pCamera2->size(); i++)
-            os << pCamera2->getParameter(i) << " ";
-        return os.good();
-    }
+bool EdgeInverseSim3ProjectXYZ::read(std::istream &is)
+{
+    for (int i = 0; i < 2; i++)
+        is >> _measurement[i];
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    EdgeSim3ProjectXYZ::EdgeSim3ProjectXYZ() : g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, VertexSim3Expmap>()
-    {
-    }
+bool EdgeInverseSim3ProjectXYZ::write(std::ostream &os) const
+{
+    for (int i = 0; i < 2; i++)
+        os << _measurement[i] << " ";
+    for (int i = 0; i < 2; i++)
+        for (int j = i; j < 2; j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    bool EdgeSim3ProjectXYZ::read(std::istream &is)
-    {
-        for (int i = 0; i < 2; i++)
-            is >> _measurement[i];
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+/*!
+ * 🚀 [vS-Graphs] Edges for Geometric and Semantic Constraints
+ */
 
-    bool EdgeSim3ProjectXYZ::write(std::ostream &os) const
-    {
-        for (int i = 0; i < 2; i++)
-            os << _measurement[i] << " ";
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-            {
-                os << " " << information()(i, j);
-            }
-        return os.good();
-    }
+EdgeSE3ProjectSE3::EdgeSE3ProjectSE3() :
+    g2o::BaseBinaryEdge<6,
+                        g2o::Isometry3D,
+                        g2o::VertexSE3Expmap,
+                        g2o::VertexSE3Expmap>()
+{}
 
-    EdgeInverseSim3ProjectXYZ::EdgeInverseSim3ProjectXYZ() : g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, VertexSim3Expmap>()
-    {
-    }
+bool EdgeSE3ProjectSE3::read(std::istream &is)
+{
+    g2o::Vector7D meas;
+    g2o::internal::readVector(is, meas);
+    g2o::Vector4D::MapType(meas.data() + 3).normalize();
+    setMeasurement(g2o::internal::fromVectorQT(meas));
+    if (is.bad())
+        return false;
+    readInformationMatrix(is);
+    return is.good() || is.eof();
+}
 
-    bool EdgeInverseSim3ProjectXYZ::read(std::istream &is)
-    {
-        for (int i = 0; i < 2; i++)
-            is >> _measurement[i];
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+bool EdgeSE3ProjectSE3::write(std::ostream &os) const
+{
+    g2o::internal::writeVector(os, g2o::internal::toVectorQT(measurement()));
+    return writeInformationMatrix(os);
+}
 
-    bool EdgeInverseSim3ProjectXYZ::write(std::ostream &os) const
-    {
-        for (int i = 0; i < 2; i++)
-            os << _measurement[i] << " ";
-        for (int i = 0; i < 2; i++)
-            for (int j = i; j < 2; j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+EdgeSE3DoorwayProjectSE3Room::EdgeSE3DoorwayProjectSE3Room() :
+    EdgeSE3ProjectSE3()
+{}
 
-    /**
-     * 🚀 [vS-Graphs] Edges for Geometric and Semantic Constraints
-     */
+EdgeVertexPlaneProjectSE3M::EdgeVertexPlaneProjectSE3M() :
+    g2o::BaseBinaryEdge<4,
+                        Eigen::Vector4d,
+                        g2o::VertexSE3Expmap,
+                        g2o::VertexPlane>()
+{}
 
-    EdgeSE3ProjectSE3::EdgeSE3ProjectSE3() : g2o::BaseBinaryEdge<6, g2o::Isometry3D, g2o::VertexSE3Expmap, g2o::VertexSE3Expmap>() {}
+bool EdgeVertexPlaneProjectSE3M::read(std::istream &is)
+{
+    for (int i = 0; i < 4; i++)
+        for (int j = i; j < 4; j++)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    bool EdgeSE3ProjectSE3::read(std::istream &is)
-    {
-        g2o::Vector7D meas;
-        g2o::internal::readVector(is, meas);
-        g2o::Vector4D::MapType(meas.data() + 3).normalize();
-        setMeasurement(g2o::internal::fromVectorQT(meas));
-        if (is.bad())
-            return false;
-        readInformationMatrix(is);
-        return is.good() || is.eof();
-    }
+bool EdgeVertexPlaneProjectSE3M::write(std::ostream &os) const
+{
+    for (int i = 0; i < 4; i++)
+        for (int j = i; j < 4; j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    bool EdgeSE3ProjectSE3::write(std::ostream &os) const
-    {
-        g2o::internal::writeVector(os, g2o::internal::toVectorQT(measurement()));
-        return writeInformationMatrix(os);
-    }
+EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane() :
+    g2o::BaseBinaryEdge<1,
+                        Eigen::Matrix4d,
+                        g2o::VertexSE3Expmap,
+                        g2o::VertexPlane>()
+{}
 
-    EdgeSE3DoorwayProjectSE3Room::EdgeSE3DoorwayProjectSE3Room() : EdgeSE3ProjectSE3() {}
+bool EdgeSE3KFPointToPlane::read(std::istream &is)
+{
+    for (int i = 0; i < information().rows(); ++i)
+        for (int j = i; j < information().cols(); ++j)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    EdgeVertexPlaneProjectSE3M::EdgeVertexPlaneProjectSE3M() : g2o::BaseBinaryEdge<4, Eigen::Vector4d, g2o::VertexSE3Expmap, g2o::VertexPlane>() {}
+bool EdgeSE3KFPointToPlane::write(std::ostream &os) const
+{
+    for (int i = 0; i < information().rows(); ++i)
+        for (int j = i; j < information().cols(); ++j)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    bool EdgeVertexPlaneProjectSE3M::read(std::istream &is)
-    {
-        for (int i = 0; i < 4; i++)
-            for (int j = i; j < 4; j++)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+EdgeVertexPlaneProjectSE3KF::EdgeVertexPlaneProjectSE3KF() :
+    g2o::BaseBinaryEdge<3,
+                        g2o::Plane3D,
+                        g2o::VertexSE3Expmap,
+                        g2o::VertexPlane>()
+{}
 
-    bool EdgeVertexPlaneProjectSE3M::write(std::ostream &os) const
-    {
-        for (int i = 0; i < 4; i++)
-            for (int j = i; j < 4; j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+bool EdgeVertexPlaneProjectSE3KF::read(std::istream &is)
+{
+    for (int i = 0; i < 3; i++)
+        for (int j = i; j < 3; j++)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane() : g2o::BaseBinaryEdge<1, Eigen::Matrix4d, g2o::VertexSE3Expmap, g2o::VertexPlane>() {}
+bool EdgeVertexPlaneProjectSE3KF::write(std::ostream &os) const
+{
+    for (int i = 0; i < 3; i++)
+        for (int j = i; j < 3; j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    bool EdgeSE3KFPointToPlane::read(std::istream &is)
-    {
-        for (int i = 0; i < information().rows(); ++i)
-            for (int j = i; j < information().cols(); ++j)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+EdgeVertexPlaneProjectPointXYZ::EdgeVertexPlaneProjectPointXYZ() :
+    g2o::BaseBinaryEdge<1, double, g2o::VertexSBAPointXYZ, g2o::VertexPlane>()
+{}
 
-    bool EdgeSE3KFPointToPlane::write(std::ostream &os) const
-    {
-        for (int i = 0; i < information().rows(); ++i)
-            for (int j = i; j < information().cols(); ++j)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+// [TODO] - this can be made common for many of the classes
+bool EdgeVertexPlaneProjectPointXYZ::read(std::istream &is)
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); ++j)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    EdgeVertexPlaneProjectSE3KF::EdgeVertexPlaneProjectSE3KF() : g2o::BaseBinaryEdge<3, g2o::Plane3D, g2o::VertexSE3Expmap, g2o::VertexPlane>() {}
+bool EdgeVertexPlaneProjectPointXYZ::write(std::ostream &os) const
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    bool EdgeVertexPlaneProjectSE3KF::read(std::istream &is)
-    {
-        for (int i = 0; i < 3; i++)
-            for (int j = i; j < 3; j++)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+EdgeVertexPlaneParallelism::EdgeVertexPlaneParallelism() :
+    g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>()
+{}
 
-    bool EdgeVertexPlaneProjectSE3KF::write(std::ostream &os) const
-    {
-        for (int i = 0; i < 3; i++)
-            for (int j = i; j < 3; j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+bool EdgeVertexPlaneParallelism::read(std::istream &is)
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); ++j)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    EdgeVertexPlaneProjectPointXYZ::EdgeVertexPlaneProjectPointXYZ() : g2o::BaseBinaryEdge<1, double, g2o::VertexSBAPointXYZ, g2o::VertexPlane>() {}
+bool EdgeVertexPlaneParallelism::write(std::ostream &os) const
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    // [TODO] - this can be made common for many of the classes
-    bool EdgeVertexPlaneProjectPointXYZ::read(std::istream &is)
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); ++j)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+EdgeVertexPlanePerpendicularity::EdgeVertexPlanePerpendicularity() :
+    g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>()
+{}
 
-    bool EdgeVertexPlaneProjectPointXYZ::write(std::ostream &os) const
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+bool EdgeVertexPlanePerpendicularity::read(std::istream &is)
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); ++j)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    EdgeVertexPlaneParallelism::EdgeVertexPlaneParallelism() : g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>() {}
+bool EdgeVertexPlanePerpendicularity::write(std::ostream &os) const
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    bool EdgeVertexPlaneParallelism::read(std::istream &is)
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); ++j)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+// ------ Room-Wall Constraints ------
 
-    bool EdgeVertexPlaneParallelism::write(std::ostream &os) const
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+EdgeVertex2PlaneProjectSE3Room::EdgeVertex2PlaneProjectSE3Room() :
+    g2o::BaseMultiEdge<3, Eigen::Vector3d>()
+{
+    resize(3);
+}
 
-    EdgeVertexPlanePerpendicularity::EdgeVertexPlanePerpendicularity() : g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>() {}
+EdgeVertex2PlaneProjectSE3Room::EdgeVertex2PlaneProjectSE3Room(
+    Eigen::Vector3d position) :
+    g2o::BaseMultiEdge<3, Eigen::Vector3d>()
+{
+    // markerPosition = position;
+    resize(3);
+}
 
-    bool EdgeVertexPlanePerpendicularity::read(std::istream &is)
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); ++j)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+bool EdgeVertex2PlaneProjectSE3Room::read(std::istream &is)
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); ++j)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    bool EdgeVertexPlanePerpendicularity::write(std::ostream &os) const
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+bool EdgeVertex2PlaneProjectSE3Room::write(std::ostream &os) const
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    // ------ Room-Wall Constraints ------
+EdgeVertex4PlaneProjectSE3Room::EdgeVertex4PlaneProjectSE3Room() :
+    g2o::BaseMultiEdge<3, Eigen::Vector3d>()
+{
+    resize(5);
+}
 
-    EdgeVertex2PlaneProjectSE3Room::EdgeVertex2PlaneProjectSE3Room() : g2o::BaseMultiEdge<3, Eigen::Vector3d>()
-    {
-        resize(3);
-    }
+bool EdgeVertex4PlaneProjectSE3Room::read(std::istream &is)
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); ++j)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    EdgeVertex2PlaneProjectSE3Room::EdgeVertex2PlaneProjectSE3Room(Eigen::Vector3d position) : g2o::BaseMultiEdge<3, Eigen::Vector3d>()
-    {
-        // markerPosition = position;
-        resize(3);
-    }
+bool EdgeVertex4PlaneProjectSE3Room::write(std::ostream &os) const
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    bool EdgeVertex2PlaneProjectSE3Room::read(std::istream &is)
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); ++j)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+bool EdgeVertexNPlaneProjectSE3Room::read(std::istream &is)
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); ++j)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    bool EdgeVertex2PlaneProjectSE3Room::write(std::ostream &os) const
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+bool EdgeVertexNPlaneProjectSE3Room::write(std::ostream &os) const
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    EdgeVertex4PlaneProjectSE3Room::EdgeVertex4PlaneProjectSE3Room() : g2o::BaseMultiEdge<3, Eigen::Vector3d>()
-    {
-        resize(5);
-    }
+// ------ Floor-Room Constraints ------
 
-    bool EdgeVertex4PlaneProjectSE3Room::read(std::istream &is)
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); ++j)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+bool EdgeVertexNSE3RoomProjectSE3Floor::read(std::istream &is)
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); ++j)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    bool EdgeVertex4PlaneProjectSE3Room::write(std::ostream &os) const
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+bool EdgeVertexNSE3RoomProjectSE3Floor::write(std::ostream &os) const
+{
+    for (int i = 0; i < information().rows(); i++)
+        for (int j = i; j < information().cols(); j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 
-    bool EdgeVertexNPlaneProjectSE3Room::read(std::istream &is)
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); ++j)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
+// ----- Room-Marker Constraints (deprecated) ------
 
-    bool EdgeVertexNPlaneProjectSE3Room::write(std::ostream &os) const
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+EdgeVertexSE3RoomProjectSE3Marker::EdgeVertexSE3RoomProjectSE3Marker() :
+    g2o::BaseBinaryEdge<4,
+                        Eigen::Vector4d,
+                        g2o::VertexSE3Expmap,
+                        g2o::VertexSE3Expmap>()
+{}
 
-    // ------ Floor-Room Constraints ------
+bool EdgeVertexSE3RoomProjectSE3Marker::read(std::istream &is)
+{
+    for (int i = 0; i < 4; i++)
+        for (int j = i; j < 4; j++)
+        {
+            is >> information()(i, j);
+            if (i != j)
+                information()(j, i) = information()(i, j);
+        }
+    return true;
+}
 
-    bool EdgeVertexNSE3RoomProjectSE3Floor::read(std::istream &is)
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); ++j)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
-
-    bool EdgeVertexNSE3RoomProjectSE3Floor::write(std::ostream &os) const
-    {
-        for (int i = 0; i < information().rows(); i++)
-            for (int j = i; j < information().cols(); j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
-
-    // ----- Room-Marker Constraints (deprecated) ------
-
-    EdgeVertexSE3RoomProjectSE3Marker::EdgeVertexSE3RoomProjectSE3Marker() : g2o::BaseBinaryEdge<4, Eigen::Vector4d, g2o::VertexSE3Expmap, g2o::VertexSE3Expmap>() {}
-
-    bool EdgeVertexSE3RoomProjectSE3Marker::read(std::istream &is)
-    {
-        for (int i = 0; i < 4; i++)
-            for (int j = i; j < 4; j++)
-            {
-                is >> information()(i, j);
-                if (i != j)
-                    information()(j, i) = information()(i, j);
-            }
-        return true;
-    }
-
-    bool EdgeVertexSE3RoomProjectSE3Marker::write(std::ostream &os) const
-    {
-        for (int i = 0; i < 4; i++)
-            for (int j = i; j < 4; j++)
-                os << " " << information()(i, j);
-        return os.good();
-    }
+bool EdgeVertexSE3RoomProjectSE3Marker::write(std::ostream &os) const
+{
+    for (int i = 0; i < 4; i++)
+        for (int j = i; j < 4; j++)
+            os << " " << information()(i, j);
+    return os.good();
+}
 } // namespace core
 } // namespace vs_graphs

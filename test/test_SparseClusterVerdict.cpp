@@ -1,4 +1,4 @@
-/**
+/*!
  * @file test_SparseClusterVerdict.cpp
  * @brief Tests deterministic sparse-graph marker classification.
  */

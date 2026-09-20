@@ -1,4 +1,4 @@
-/**
+/*!
  * Fault-injection example: inject a failure, verify the status path, verify
  * the disabled path. Uses a local strict-status-shaped probe function so no
  * production signature is touched. Test-only; ROS/Gazebo-free.

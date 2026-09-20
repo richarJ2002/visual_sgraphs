@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -46,9 +46,9 @@ namespace semantic
  *              for most of these fields) or at an object this snapshot could
  *              not safely key (a non-null but unmapped referenced object).
  *              Also used as the element type of every one-to-many
- *              Room/Passage/Floor relationship collection (RoomRecord::passageRefs,
- *              FloorRecord::roomRefs, WallRecord::ownerRoomRefs), replacing a
- *              bare std::vector<EntityKey> so a keyed-but-bad or
+ *              Room/Passage/Floor relationship collection
+ * (RoomRecord::passageRefs, FloorRecord::roomRefs, WallRecord::ownerRoomRefs),
+ * replacing a bare std::vector<EntityKey> so a keyed-but-bad or
  *              keyed-but-missing-from-enumeration collection member no
  *              longer loses its own liveness/local-identity evidence.
  *

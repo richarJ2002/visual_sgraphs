@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -42,7 +42,10 @@ class Atlas;
 
 /* Forward declaration only: rawPlaneRef() takes a non-owning Plane pointer
  * purely to read from it into a pointer-free RawPlaneRef value. */
-namespace geometric { class Plane; }
+namespace geometric
+{
+class Plane;
+}
 
 namespace semantic
 {

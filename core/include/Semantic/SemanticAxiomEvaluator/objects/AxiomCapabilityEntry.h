@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -52,21 +52,21 @@ struct AxiomCapabilityEntry
     /*! @brief Which of the sixteen axiom codes this row describes. */
     AxiomCode axiomCode{AxiomCode::AX_FRAME_01};
 
-/*!
- * @brief        Fixed "Class" column value for axiomCode.
- */
+    /*!
+     * @brief        Fixed "Class" column value for axiomCode.
+     */
     AxiomClass classification{AxiomClass::HARD};
 
     /*! @brief How completely this axiom code can be proven from the
      *  current schema. */
     CapabilityLevel capability{CapabilityLevel::FULL};
 
-/*!
- * @brief        MissingProofOwner::NONE when capability == FULL;
- *               otherwise the evidence area (or
- *               SCOPE_DECISION_REQUIRED) that owns the missing
- *               evidence.
- */
+    /*!
+     * @brief        MissingProofOwner::NONE when capability == FULL;
+     *               otherwise the evidence area (or
+     *               SCOPE_DECISION_REQUIRED) that owns the missing
+     *               evidence.
+     */
     MissingProofOwner owner{MissingProofOwner::NONE};
 };
 

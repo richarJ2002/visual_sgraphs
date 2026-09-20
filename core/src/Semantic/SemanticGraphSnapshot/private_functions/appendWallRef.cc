@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -32,7 +32,8 @@ namespace core
 namespace semantic
 {
 
-void appendWallRef(geometric::Plane *p_wall_in, std::vector<RawPlaneRef> &refs_inout)
+void appendWallRef(geometric::Plane         *p_wall_in,
+                   std::vector<RawPlaneRef> &refs_inout)
 {
     if (p_wall_in == nullptr)
     {

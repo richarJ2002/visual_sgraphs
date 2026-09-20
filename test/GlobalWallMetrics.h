@@ -1,4 +1,4 @@
-/**
+/*!
  * @file GlobalWallMetrics.h
  * @brief Scoped evaluation adapter for semantic-axiom-reliability-plan.md
  *        P0.5.
@@ -52,7 +52,7 @@ namespace core
 namespace test
 {
 
-/** Precision/recall/F1 plus raw counts for one entity kind, matching the
+/*! Precision/recall/F1 plus raw counts for one entity kind, matching the
  * comparator's own `prf()` field names. */
 struct WallPrfResult
 {
@@ -64,7 +64,7 @@ struct WallPrfResult
     double      f1          = 0.0;
 };
 
-/**
+/*!
  * @brief   Computes global wall precision/recall/F1 across an entire SGraph
  *          comparison: every truth and every generated wall counts in the
  *          denominator, not only walls inside a matched room pair.

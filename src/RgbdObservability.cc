@@ -1,4 +1,4 @@
-/**
+/*!
  * @file RgbdObservability.cc
  * @brief Implements package-private RGB-D callback/worker accounting.
  */

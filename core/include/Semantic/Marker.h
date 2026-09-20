@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -111,7 +111,7 @@ class Marker
     void addObservation(KeyFrame           *p_keyFrame_in,
                         const Sophus::SE3f &markerPose_markerToCamera_in);
 
-    /**
+    /*!
      * @brief Removes an observation before its keyframe is retired.
      *
      * @param[in] p_keyFrame_in Non-owning observing keyframe pointer.

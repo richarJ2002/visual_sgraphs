@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -31,7 +31,10 @@ namespace vs_graphs
 namespace core
 {
 class Map;
-namespace geometric { class Plane; }
+namespace geometric
+{
+class Plane;
+}
 namespace semantic
 {
 class Marker;
@@ -47,14 +50,14 @@ class Passage
         FAR_TO_KNOWN
     };
 
-    /** Atomic copy of the persistent camera/known-room side of a passage. */
+    /*! Atomic copy of the persistent camera/known-room side of a passage. */
     struct KnownSideProvenance
     {
-        /** Non-owning room known to occupy the observing side, when available.
+        /*! Non-owning room known to occupy the observing side, when available.
          */
         vs_graphs::core::semantic::Room *pRoom{nullptr};
 
-        /**
+        /*!
          * Unit world-frame direction from the passage toward the observing
          * side. It is independent of the arbitrary sign of the plane equation.
          */
@@ -78,18 +81,19 @@ class Passage
     };
 
   private:
-    int                             id;
-    int                             opId;
-    int                             opIdG;
-    double                          width;
-    double                          height;
-    bool                            passable;
-    Eigen::Vector3d                 centroid;
-    PassageVariant                  passageType;
-    g2o::Plane3D                    globalEquation;
+    int                                              id;
+    int                                              opId;
+    int                                              opIdG;
+    double                                           width;
+    double                                           height;
+    bool                                             passable;
+    Eigen::Vector3d                                  centroid;
+    PassageVariant                                   passageType;
+    g2o::Plane3D                                     globalEquation;
     vs_graphs::core::geometric::Plane               *associateDoor;
     std::vector<vs_graphs::core::geometric::Plane *> associateWalls;
-    vs_graphs::core::semantic::Room    *prospectiveRoom; // Stable far-side room handle
+    vs_graphs::core::semantic::Room
+                       *prospectiveRoom; // Stable far-side room handle
     KnownSideProvenance knownSideProvenance;
     bool                mbBad{false};
     bool                recoveryProxy{false};
@@ -141,10 +145,10 @@ class Passage
     bool isBad();
     void setBad();
 
-    /** Marks topology restored without active-map supporting geometry. */
+    /*! Marks topology restored without active-map supporting geometry. */
     void setRecoveryProxy(bool isRecoveryProxy_in);
 
-    /** Returns whether this passage is historical recovery topology only. */
+    /*! Returns whether this passage is historical recovery topology only. */
     bool isRecoveryProxy() const;
 
     /*!
@@ -176,7 +180,7 @@ class Passage
 
     void addTraversalObservation(TraversalDirection direction_in);
 
-    /** Records one trajectory segment once, including during history replay. */
+    /*! Records one trajectory segment once, including during history replay. */
     bool addTraversalObservation(TraversalDirection direction_in,
                                  unsigned long      frameId_in,
                                  unsigned long      keyFrameId_in);
@@ -210,7 +214,7 @@ class Passage
     void         setGlobalEquation(const g2o::Plane3D &value);
 
     vs_graphs::core::geometric::Plane *getAssociateDoor() const;
-    void              setAssociateDoor(vs_graphs::core::geometric::Plane *value);
+    void setAssociateDoor(vs_graphs::core::geometric::Plane *value);
 
     void addAssociateWall(vs_graphs::core::geometric::Plane *p_wall_in);
 
@@ -221,7 +225,7 @@ class Passage
      */
     vs_graphs::core::semantic::Room *getProspectiveRoom() const;
 
-    /** Copies the far-side room ID while holding the passage geometry lock. */
+    /*! Copies the far-side room ID while holding the passage geometry lock. */
     std::optional<int> getProspectiveRoomId() const;
 
     /*!
@@ -247,23 +251,24 @@ class Passage
      *
      * @return      True when this passage referenced the retired room.
      */
-    bool replaceProspectiveRoom(vs_graphs::core::semantic::Room *p_retiredRoom_in,
-                                vs_graphs::core::semantic::Room *p_retainedRoom_in);
+    bool replaceProspectiveRoom(
+        vs_graphs::core::semantic::Room *p_retiredRoom_in,
+        vs_graphs::core::semantic::Room *p_retainedRoom_in);
 
-    /** Returns the non-owning known-side room and sign-stable direction. */
+    /*! Returns the non-owning known-side room and sign-stable direction. */
     KnownSideProvenance getKnownSideProvenance() const;
 
-    /** Stores a normalized, sign-stable observing-side direction. */
+    /*! Stores a normalized, sign-stable observing-side direction. */
     bool setKnownSideDirection(const Eigen::Vector3d &direction_World_in);
 
-    /** Links the persisted known side to a room without changing its direction.
+    /*! Links the persisted known side to a room without changing its direction.
      */
     void setKnownSideRoom(vs_graphs::core::semantic::Room *p_room_in);
 
-    /** Copies missing known-side fields from a duplicate passage. */
+    /*! Copies missing known-side fields from a duplicate passage. */
     void mergeKnownSideProvenance(const KnownSideProvenance &provenance_in);
 
-    /**
+    /*!
      * @brief Reconciles a same-identity duplicate into this canonical passage.
      *
      * A real observed duplicate replaces recovery-proxy geometry and current
@@ -291,8 +296,9 @@ class Passage
      *
      * @return      True when at least one association was replaced.
      */
-    bool replacePlaneAssociation(vs_graphs::core::geometric::Plane *p_retiredPlane_in,
-                                 vs_graphs::core::geometric::Plane *p_retainedPlane_in);
+    bool replacePlaneAssociation(
+        vs_graphs::core::geometric::Plane *p_retiredPlane_in,
+        vs_graphs::core::geometric::Plane *p_retainedPlane_in);
 
     std::vector<vs_graphs::core::geometric::Plane *> getAssociateWalls() const;
 

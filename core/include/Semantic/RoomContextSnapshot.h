@@ -47,7 +47,7 @@ struct PassageContext
 struct RoomContextSnapshot
 {
     int                          roomId{0};
-    /** The room's floor at snapshot time, -1 when the room had no floor
+    /*! The room's floor at snapshot time, -1 when the room had no floor
      *  identity yet. A room is always floor-scoped (Room::getFloor()), so
      *  this is captured alongside roomId rather than re-derived later --
      *  by the time this snapshot is consumed (e.g. reacquisition after a
@@ -67,7 +67,7 @@ struct RoomContextSnapshot
     std::string                  timestampProvenance{"steady_clock"};
     std::string                  roomTag;
     bool                         wasConfirmedRoom{false};
-    /** Whether the UAV had entered the room at snapshot time. Mission truth
+    /*! Whether the UAV had entered the room at snapshot time. Mission truth
      *  restored alongside identity; never consulted by creation, promotion,
      *  retirement, or merge paths. */
     bool                         wasPreviouslyVisited{false};

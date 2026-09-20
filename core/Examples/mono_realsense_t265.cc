@@ -1,29 +1,32 @@
-/**
+/*!
  * This file is part of ORB-SLAM3
  *
- * Copyright (C) 2017-2021 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
- * Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
+ * Copyright (C) 2017-2021 Carlos Campos, Richard Elvira, Juan J. Gómez
+ * Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
+ * Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós,
+ * University of Zaragoza.
  *
- * ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
- * License as published by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * ORB-SLAM3 is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
  *
- * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
- * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with ORB-SLAM3.
- * If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * ORB-SLAM3. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <signal.h>
-#include <stdlib.h>
-#include <iostream>
 #include <algorithm>
-#include <fstream>
 #include <chrono>
 #include <ctime>
+#include <fstream>
+#include <iostream>
+#include <signal.h>
 #include <sstream>
+#include <stdlib.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -47,12 +50,14 @@ int main(int argc, char **argv)
     if (argc < 3 || argc > 4)
     {
         cerr << endl
-             << "Usage: ./mono_realsense_t265 path_to_vocabulary path_to_settings (trajectory_file_name)" << endl;
+             << "Usage: ./mono_realsense_t265 path_to_vocabulary "
+                "path_to_settings (trajectory_file_name)"
+             << endl;
         return 1;
     }
 
     string file_name;
-    bool bFileName = false;
+    bool   bFileName = false;
 
     if (argc == 4)
     {
@@ -71,8 +76,9 @@ int main(int argc, char **argv)
 
     // Declare RealSense pipeline, encapsulating the actual device and sensors
     rs2::pipeline pipe;
-    // Create a configuration for configuring the pipeline with a non default profile
-    rs2::config cfg;
+    // Create a configuration for configuring the pipeline with a non default
+    // profile
+    rs2::config   cfg;
 
     // Enable the left camera
     cfg.enable_stream(RS2_STREAM_FISHEYE, 1, RS2_FORMAT_Y8);
@@ -86,19 +92,25 @@ int main(int argc, char **argv)
     cout << "Images in the sequence: " << nImages << endl;
     cout << "IMU data in the sequence: " << nImu << endl << endl;*/
 
-    // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::MONOCULAR, true);
-    float imageScale = SLAM.GetImageScale();
+    // Create SLAM system. It initializes all system threads and gets ready to
+    // process frames.
+    ORB_SLAM3::System SLAM(argv[1],
+                           argv[2],
+                           ORB_SLAM3::System::MONOCULAR,
+                           true);
+    float             imageScale = SLAM.GetImageScale();
 
     cv::Mat imCV;
 
-    rs2::stream_profile fisheye_stream = pipe_profile.get_stream(RS2_STREAM_FISHEYE, 1);
-    rs2_intrinsics intrinsics = fisheye_stream.as<rs2::video_stream_profile>().get_intrinsics();
-    int width_img = intrinsics.width;
+    rs2::stream_profile fisheye_stream =
+        pipe_profile.get_stream(RS2_STREAM_FISHEYE, 1);
+    rs2_intrinsics intrinsics =
+        fisheye_stream.as<rs2::video_stream_profile>().get_intrinsics();
+    int width_img  = intrinsics.width;
     int height_img = intrinsics.height;
 
     double t_resize = 0.f;
-    double t_track = 0.f;
+    double t_track  = 0.f;
 
     while (b_continue_session)
     {
@@ -106,32 +118,45 @@ int main(int argc, char **argv)
         //  Get the stream from the device
         rs2::frameset frame_set = pipe.wait_for_frames();
 
-        double timestamp_ms = frame_set.get_timestamp(); // RS2_FRAME_METADATA_SENSOR_TIMESTAMP
+        double timestamp_ms =
+            frame_set.get_timestamp(); // RS2_FRAME_METADATA_SENSOR_TIMESTAMP
         // cout << "timestamp: " << timestamp_ms << endl;
 
-        if (rs2::video_frame image_frame = frame_set.first_or_default(RS2_STREAM_FISHEYE))
+        if (rs2::video_frame image_frame =
+                frame_set.first_or_default(RS2_STREAM_FISHEYE))
         {
-            rs2::video_frame frame = frame_set.get_fisheye_frame(1); // Left image
-            imCV = cv::Mat(cv::Size(width_img, height_img), CV_8UC1, (void *)(frame.get_data()), cv::Mat::AUTO_STEP);
+            rs2::video_frame frame =
+                frame_set.get_fisheye_frame(1); // Left image
+            imCV = cv::Mat(cv::Size(width_img, height_img),
+                           CV_8UC1,
+                           (void *)(frame.get_data()),
+                           cv::Mat::AUTO_STEP);
             if (imageScale != 1.f)
             {
 #ifdef REGISTER_TIMES
 #ifdef COMPILEDWITHC11
-                std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
+                std::chrono::steady_clock::time_point t_Start_Resize =
+                    std::chrono::steady_clock::now();
 #else
-                std::chrono::monotonic_clock::time_point t_Start_Resize = std::chrono::monotonic_clock::now();
+                std::chrono::monotonic_clock::time_point t_Start_Resize =
+                    std::chrono::monotonic_clock::now();
 #endif
 #endif
-                int width = imCV.cols * imageScale;
+                int width  = imCV.cols * imageScale;
                 int height = imCV.rows * imageScale;
                 cv::resize(imCV, imCV, cv::Size(width, height));
 #ifdef REGISTER_TIMES
 #ifdef COMPILEDWITHC11
-                std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
+                std::chrono::steady_clock::time_point t_End_Resize =
+                    std::chrono::steady_clock::now();
 #else
-                std::chrono::monotonic_clock::time_point t_End_Resize = std::chrono::monotonic_clock::now();
+                std::chrono::monotonic_clock::time_point t_End_Resize =
+                    std::chrono::monotonic_clock::now();
 #endif
-                t_resize = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t_End_Resize - t_Start_Resize).count();
+                t_resize = std::chrono::duration_cast<
+                               std::chrono::duration<double, std::milli>>(
+                               t_End_Resize - t_Start_Resize)
+                               .count();
                 SLAM.InsertResizeTime(t_resize);
 #endif
             }
@@ -142,9 +167,11 @@ int main(int argc, char **argv)
 
 #ifdef REGISTER_TIMES
 #ifdef COMPILEDWITHC11
-            std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point t1 =
+                std::chrono::steady_clock::now();
 #else
-            std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
+            std::chrono::monotonic_clock::time_point t1 =
+                std::chrono::monotonic_clock::now();
 #endif
 #endif
 
@@ -153,11 +180,16 @@ int main(int argc, char **argv)
 
 #ifdef REGISTER_TIMES
 #ifdef COMPILEDWITHC11
-            std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point t2 =
+                std::chrono::steady_clock::now();
 #else
-            std::chrono::monotonic_clock::time_point t2 = std::chrono::monotonic_clock::now();
+            std::chrono::monotonic_clock::time_point t2 =
+                std::chrono::monotonic_clock::now();
 #endif
-            t_track = t_resize + std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t2 - t1).count();
+            t_track = t_resize +
+                      std::chrono::duration_cast<
+                          std::chrono::duration<double, std::milli>>(t2 - t1)
+                          .count();
             SLAM.InsertTrackTime(t_track);
 #endif
         }

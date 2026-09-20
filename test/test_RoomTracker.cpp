@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -80,12 +80,13 @@ TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromConfirmedRoom)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker  tracker;
-        const double now = 100.0 + run * 1.0;
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                                     now,
-                                     semantic::TraversalGuardValues(),
-                                     passVerdict()),
+        semantic::RoomTracker tracker;
+        const double          now = 100.0 + run * 1.0;
+        EXPECT_EQ(tracker.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict()),
                   semantic::RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
                                      now + run * 0.1,
@@ -100,20 +101,20 @@ TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromCrossingPassage)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker  tracker;
-        const double now = 200.0 + run;
+        semantic::RoomTracker tracker;
+        const double          now = 200.0 + run;
         tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
                            semantic::TraversalGuardValues(),
                            passVerdict());
         semantic::TraversalGuardValues crossing = nominalCrossing();
-        crossing.dwell_s              = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(
-            tracker.applyEvent(semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                               now,
-                               crossing,
-                               passVerdict()),
-            semantic::RoomTrackingState::CROSSING_PASSAGE);
+        crossing.dwell_s = tracker.getConfig().crossing_dwell_s;
+        EXPECT_EQ(tracker.applyEvent(
+                      semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                      now,
+                      crossing,
+                      passVerdict()),
+                  semantic::RoomTrackingState::CROSSING_PASSAGE);
         EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
                                      now + run * 0.1,
                                      semantic::TraversalGuardValues(),
@@ -127,8 +128,8 @@ TEST(RoomTrackerTransitions, UnconditionalLostTimeout)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker  tracker;
-        const double now = 300.0 + run;
+        semantic::RoomTracker tracker;
+        const double          now = 300.0 + run;
         tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
                            semantic::TraversalGuardValues(),
@@ -151,8 +152,8 @@ TEST(RoomTrackerTransitions, UnconditionalReacquireTimeout)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker  tracker;
-        const double now = 400.0 + run;
+        semantic::RoomTracker tracker;
+        const double          now = 400.0 + run;
         tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
                            semantic::TraversalGuardValues(),
@@ -162,16 +163,18 @@ TEST(RoomTrackerTransitions, UnconditionalReacquireTimeout)
                                      semantic::TraversalGuardValues(),
                                      failVerdict()),
                   semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
-                                     now,
-                                     semantic::TraversalGuardValues(),
-                                     passVerdict()),
+        EXPECT_EQ(tracker.applyEvent(
+                      semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict()),
                   semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::REACQUIRE_TIMEOUT,
-                                     now + run * 0.1,
-                                     semantic::TraversalGuardValues(),
-                                     failVerdict()),
-                  semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
+        EXPECT_EQ(
+            tracker.applyEvent(semantic::RoomTrackingEvent::REACQUIRE_TIMEOUT,
+                               now + run * 0.1,
+                               semantic::TraversalGuardValues(),
+                               failVerdict()),
+            semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
         EXPECT_TRUE(tracker.getLastEvent().accepted);
     }
 }
@@ -184,23 +187,25 @@ TEST(RoomTrackerTransitions, GuardedFirstRoomConfirmed)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker  tracker;
-        const double now = 10.0 + run;
+        semantic::RoomTracker tracker;
+        const double          now = 10.0 + run;
         /* Guard satisfied: verification verdict PASS. */
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                                     now,
-                                     semantic::TraversalGuardValues(),
-                                     passVerdict(2U)),
+        EXPECT_EQ(tracker.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(2U)),
                   semantic::RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_TRUE(tracker.getLastEvent().accepted);
 
         /* Guard rejected: reset, verification verdict FAIL. */
         semantic::RoomTracker second;
-        EXPECT_EQ(second.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                                    now + run * 0.1,
-                                    semantic::TraversalGuardValues(),
-                                    failVerdict()),
-                  semantic::RoomTrackingState::UNKNOWN);
+        EXPECT_EQ(
+            second.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                              now + run * 0.1,
+                              semantic::TraversalGuardValues(),
+                              failVerdict()),
+            semantic::RoomTrackingState::UNKNOWN);
         EXPECT_FALSE(second.getLastEvent().accepted);
         EXPECT_EQ(second.getLastEvent().targetState,
                   semantic::RoomTrackingState::UNKNOWN);
@@ -211,8 +216,8 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker  tracker;
-        const double now = 20.0 + run;
+        semantic::RoomTracker tracker;
+        const double          now = 20.0 + run;
         tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
                            semantic::TraversalGuardValues(),
@@ -221,13 +226,13 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
         /* Guard satisfied: passable crossing with dwell and confidence above
          * the configured thresholds. */
         semantic::TraversalGuardValues crossing = nominalCrossing();
-        crossing.dwell_s              = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(
-            tracker.applyEvent(semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                               now,
-                               crossing,
-                               passVerdict()),
-            semantic::RoomTrackingState::CROSSING_PASSAGE);
+        crossing.dwell_s = tracker.getConfig().crossing_dwell_s;
+        EXPECT_EQ(tracker.applyEvent(
+                      semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                      now,
+                      crossing,
+                      passVerdict()),
+                  semantic::RoomTrackingState::CROSSING_PASSAGE);
         EXPECT_TRUE(tracker.getLastEvent().accepted);
 
         /* Guard rejected below dwell threshold. */
@@ -238,12 +243,12 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
                           passVerdict());
         semantic::TraversalGuardValues shortDwell = nominalCrossing();
         shortDwell.dwell_s = tracker.getConfig().crossing_dwell_s / 2.0;
-        EXPECT_EQ(
-            second.applyEvent(semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                              now,
-                              shortDwell,
-                              passVerdict()),
-            semantic::RoomTrackingState::CONFIRMED_ROOM);
+        EXPECT_EQ(second.applyEvent(
+                      semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                      now,
+                      shortDwell,
+                      passVerdict()),
+                  semantic::RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_FALSE(second.getLastEvent().accepted);
 
         /* Guard rejected below confidence threshold. */
@@ -256,10 +261,11 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
         lowConfidence.dwell_s = tracker.getConfig().crossing_dwell_s;
         lowConfidence.confidence =
             tracker.getConfig().crossing_confidence - 0.1;
-        EXPECT_EQ(third.applyEvent(semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                                   now,
-                                   lowConfidence,
-                                   passVerdict()),
+        EXPECT_EQ(third.applyEvent(
+                      semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                      now,
+                      lowConfidence,
+                      passVerdict()),
                   semantic::RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_FALSE(third.getLastEvent().accepted);
 
@@ -270,14 +276,14 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
                           semantic::TraversalGuardValues(),
                           passVerdict());
         semantic::TraversalGuardValues blocked = nominalCrossing();
-        blocked.passable             = false;
-        blocked.dwell_s              = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(
-            fourth.applyEvent(semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                              now,
-                              blocked,
-                              passVerdict()),
-            semantic::RoomTrackingState::CONFIRMED_ROOM);
+        blocked.passable                       = false;
+        blocked.dwell_s = tracker.getConfig().crossing_dwell_s;
+        EXPECT_EQ(fourth.applyEvent(
+                      semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                      now,
+                      blocked,
+                      passVerdict()),
+                  semantic::RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_FALSE(fourth.getLastEvent().accepted);
     }
 }
@@ -286,31 +292,31 @@ TEST(RoomTrackerTransitions, GuardedPassageTraversalComplete)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker  tracker;
-        const double now = 30.0 + run;
+        semantic::RoomTracker tracker;
+        const double          now = 30.0 + run;
         tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
                            semantic::TraversalGuardValues(),
                            passVerdict());
         semantic::TraversalGuardValues crossed = nominalCrossing();
-        crossed.dwell_s              = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(
-            tracker.applyEvent(semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                               now,
-                               crossed,
-                               passVerdict()),
-            semantic::RoomTrackingState::CROSSING_PASSAGE);
+        crossed.dwell_s = tracker.getConfig().crossing_dwell_s;
+        EXPECT_EQ(tracker.applyEvent(
+                      semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                      now,
+                      crossed,
+                      passVerdict()),
+                  semantic::RoomTrackingState::CROSSING_PASSAGE);
 
         /* Guard satisfied: both sides observed, dwell elapsed, verdict PASS. */
         semantic::TraversalGuardValues complete = nominalCrossing();
-        complete.bothSidesObserved    = true;
-        complete.dwell_s              = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(
-            tracker.applyEvent(semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
-                               now,
-                               complete,
-                               passVerdict()),
-            semantic::RoomTrackingState::CONFIRMED_ROOM);
+        complete.bothSidesObserved              = true;
+        complete.dwell_s = tracker.getConfig().crossing_dwell_s;
+        EXPECT_EQ(tracker.applyEvent(
+                      semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
+                      now,
+                      complete,
+                      passVerdict()),
+                  semantic::RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_TRUE(tracker.getLastEvent().accepted);
 
         /* Guard rejected: traversal complete verdict FAILS verification. */
@@ -320,16 +326,17 @@ TEST(RoomTrackerTransitions, GuardedPassageTraversalComplete)
                           semantic::TraversalGuardValues(),
                           passVerdict());
         crossed.dwell_s = second.getConfig().crossing_dwell_s;
-        second.applyEvent(semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                          now,
-                          crossed,
-                          passVerdict());
-        EXPECT_EQ(
-            second.applyEvent(semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
-                              now,
-                              complete,
-                              failVerdict()),
-            semantic::RoomTrackingState::CROSSING_PASSAGE);
+        second.applyEvent(
+            semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+            now,
+            crossed,
+            passVerdict());
+        EXPECT_EQ(second.applyEvent(
+                      semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
+                      now,
+                      complete,
+                      failVerdict()),
+                  semantic::RoomTrackingState::CROSSING_PASSAGE);
         EXPECT_FALSE(second.getLastEvent().accepted);
 
         /* Guard rejected: neither side observed. */
@@ -344,14 +351,14 @@ TEST(RoomTrackerTransitions, GuardedPassageTraversalComplete)
                          crossed,
                          passVerdict());
         semantic::TraversalGuardValues oneSided = nominalCrossing();
-        oneSided.bothSidesObserved    = false;
-        oneSided.dwell_s              = third.getConfig().crossing_dwell_s;
-        EXPECT_EQ(
-            third.applyEvent(semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
-                             now,
-                             oneSided,
-                             passVerdict()),
-            semantic::RoomTrackingState::CROSSING_PASSAGE);
+        oneSided.bothSidesObserved              = false;
+        oneSided.dwell_s = third.getConfig().crossing_dwell_s;
+        EXPECT_EQ(third.applyEvent(
+                      semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
+                      now,
+                      oneSided,
+                      passVerdict()),
+                  semantic::RoomTrackingState::CROSSING_PASSAGE);
         EXPECT_FALSE(third.getLastEvent().accepted);
     }
 }
@@ -360,8 +367,8 @@ TEST(RoomTrackerTransitions, GuardedRoomReacquired)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker  tracker;
-        const double now = 40.0 + run;
+        semantic::RoomTracker tracker;
+        const double          now = 40.0 + run;
         tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
                            semantic::TraversalGuardValues(),
@@ -377,11 +384,12 @@ TEST(RoomTrackerTransitions, GuardedRoomReacquired)
                   semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
 
         /* Guard satisfied: verification PASS reacquires the room. */
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::ROOM_REACQUIRED,
-                                     now,
-                                     semantic::TraversalGuardValues(),
-                                     passVerdict(4U)),
-                  semantic::RoomTrackingState::CONFIRMED_ROOM);
+        EXPECT_EQ(
+            tracker.applyEvent(semantic::RoomTrackingEvent::ROOM_REACQUIRED,
+                               now,
+                               semantic::TraversalGuardValues(),
+                               passVerdict(4U)),
+            semantic::RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_TRUE(tracker.getLastEvent().accepted);
 
         /* Guard rejected: verification FAIL keeps the lost state. */
@@ -399,11 +407,12 @@ TEST(RoomTrackerTransitions, GuardedRoomReacquired)
                                     semantic::TraversalGuardValues(),
                                     failVerdict()),
                   semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
-        EXPECT_EQ(second.applyEvent(semantic::RoomTrackingEvent::ROOM_REACQUIRED,
-                                    now + run * 0.1,
-                                    semantic::TraversalGuardValues(),
-                                    failVerdict()),
-                  semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
+        EXPECT_EQ(
+            second.applyEvent(semantic::RoomTrackingEvent::ROOM_REACQUIRED,
+                              now + run * 0.1,
+                              semantic::TraversalGuardValues(),
+                              failVerdict()),
+            semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
         EXPECT_FALSE(second.getLastEvent().accepted);
     }
 }
@@ -412,8 +421,8 @@ TEST(RoomTrackerTransitions, GuardedNewMapWithRoomMatch)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker  tracker;
-        const double now = 50.0 + run;
+        semantic::RoomTracker tracker;
+        const double          now = 50.0 + run;
         tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
                            semantic::TraversalGuardValues(),
@@ -425,10 +434,11 @@ TEST(RoomTrackerTransitions, GuardedNewMapWithRoomMatch)
                   semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
 
         /* Guard satisfied: verification PASS on a new-map match. */
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
-                                     now,
-                                     semantic::TraversalGuardValues(),
-                                     passVerdict(3U)),
+        EXPECT_EQ(tracker.applyEvent(
+                      semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(3U)),
                   semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
         EXPECT_TRUE(tracker.getLastEvent().accepted);
 
@@ -442,10 +452,11 @@ TEST(RoomTrackerTransitions, GuardedNewMapWithRoomMatch)
                           now,
                           semantic::TraversalGuardValues(),
                           failVerdict());
-        EXPECT_EQ(second.applyEvent(semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
-                                    now + run * 0.1,
-                                    semantic::TraversalGuardValues(),
-                                    failVerdict()),
+        EXPECT_EQ(second.applyEvent(
+                      semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
+                      now + run * 0.1,
+                      semantic::TraversalGuardValues(),
+                      failVerdict()),
                   semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
         EXPECT_FALSE(second.getLastEvent().accepted);
     }
@@ -455,8 +466,8 @@ TEST(RoomTrackerTransitions, GuardedVerifiedMatchToLastRoom)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker  tracker;
-        const double now = 60.0 + run;
+        semantic::RoomTracker tracker;
+        const double          now = 60.0 + run;
         tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            now,
                            semantic::TraversalGuardValues(),
@@ -465,19 +476,20 @@ TEST(RoomTrackerTransitions, GuardedVerifiedMatchToLastRoom)
                            now,
                            semantic::TraversalGuardValues(),
                            failVerdict());
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
-                                     now,
-                                     semantic::TraversalGuardValues(),
-                                     passVerdict()),
+        EXPECT_EQ(tracker.applyEvent(
+                      semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict()),
                   semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
 
         /* Guard satisfied: full verification gates PASS. */
-        EXPECT_EQ(
-            tracker.applyEvent(semantic::RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
-                               now,
-                               semantic::TraversalGuardValues(),
-                               passVerdict(6U)),
-            semantic::RoomTrackingState::CONFIRMED_ROOM);
+        EXPECT_EQ(tracker.applyEvent(
+                      semantic::RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(6U)),
+                  semantic::RoomTrackingState::CONFIRMED_ROOM);
         EXPECT_TRUE(tracker.getLastEvent().accepted);
 
         /* Guard rejected: verification FAIL stays in reacquire. */
@@ -494,12 +506,12 @@ TEST(RoomTrackerTransitions, GuardedVerifiedMatchToLastRoom)
                           now,
                           semantic::TraversalGuardValues(),
                           passVerdict());
-        EXPECT_EQ(
-            second.applyEvent(semantic::RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
-                              now + run * 0.1,
-                              semantic::TraversalGuardValues(),
-                              failVerdict()),
-            semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
+        EXPECT_EQ(second.applyEvent(
+                      semantic::RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
+                      now + run * 0.1,
+                      semantic::TraversalGuardValues(),
+                      failVerdict()),
+                  semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
         EXPECT_FALSE(second.getLastEvent().accepted);
     }
 }
@@ -522,14 +534,16 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
         semantic::RoomTrackingEvent::REACQUIRE_TIMEOUT,
     };
 
-    const std::vector<std::pair<semantic::RoomTrackingState, std::vector<std::string>>>
+    const std::vector<
+        std::pair<semantic::RoomTrackingState, std::vector<std::string>>>
         definedRows = {
             {semantic::RoomTrackingState::UNKNOWN, {"FIRST_ROOM_CONFIRMED"}},
             {semantic::RoomTrackingState::CONFIRMED_ROOM,
              {"PASSAGE_CROSSING_DETECTED", "TRACKING_LOST"}},
             {semantic::RoomTrackingState::CROSSING_PASSAGE,
              {"PASSAGE_TRAVERSAL_COMPLETE", "TRACKING_LOST"}},
-            {semantic::RoomTrackingState::LOST_WITHOUT_ROOM, {"ROOM_REACQUIRED"}},
+            {semantic::RoomTrackingState::LOST_WITHOUT_ROOM,
+             {"ROOM_REACQUIRED"}},
             {semantic::RoomTrackingState::LOST_WITH_LAST_ROOM,
              {"NEW_MAP_WITH_ROOM_MATCH", "LOST_TIMEOUT"}},
             {semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP,
@@ -549,21 +563,23 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
                 continue; /* Defined for this source state. */
             }
 
-            semantic::RoomTracker  tracker;
-            const double now = 700.0;
+            semantic::RoomTracker tracker;
+            const double          now = 700.0;
 
             if (sourceState != semantic::RoomTrackingState::UNKNOWN)
             {
                 /* Drive to the source state along a valid path. */
-                tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                                   now,
-                                   semantic::TraversalGuardValues(),
-                                   passVerdict());
+                tracker.applyEvent(
+                    semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                    now,
+                    semantic::TraversalGuardValues(),
+                    passVerdict());
                 if (sourceState == semantic::RoomTrackingState::CONFIRMED_ROOM)
                 {
                     /* Already reached. */
                 }
-                else if (sourceState == semantic::RoomTrackingState::CROSSING_PASSAGE)
+                else if (sourceState ==
+                         semantic::RoomTrackingState::CROSSING_PASSAGE)
                 {
                     semantic::TraversalGuardValues crossed = nominalCrossing();
                     crossed.dwell_s = tracker.getConfig().crossing_dwell_s;
@@ -573,31 +589,37 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
                         crossed,
                         passVerdict());
                 }
-                else if (sourceState == semantic::RoomTrackingState::LOST_WITH_LAST_ROOM)
+                else if (sourceState ==
+                         semantic::RoomTrackingState::LOST_WITH_LAST_ROOM)
                 {
-                    tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                                       now,
-                                       semantic::TraversalGuardValues(),
-                                       failVerdict());
+                    tracker.applyEvent(
+                        semantic::RoomTrackingEvent::TRACKING_LOST,
+                        now,
+                        semantic::TraversalGuardValues(),
+                        failVerdict());
                 }
-                else if (sourceState == semantic::RoomTrackingState::LOST_WITHOUT_ROOM)
+                else if (sourceState ==
+                         semantic::RoomTrackingState::LOST_WITHOUT_ROOM)
                 {
-                    tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                                       now,
-                                       semantic::TraversalGuardValues(),
-                                       failVerdict());
-                    tracker.applyEvent(semantic::RoomTrackingEvent::LOST_TIMEOUT,
-                                       now,
-                                       semantic::TraversalGuardValues(),
-                                       failVerdict());
+                    tracker.applyEvent(
+                        semantic::RoomTrackingEvent::TRACKING_LOST,
+                        now,
+                        semantic::TraversalGuardValues(),
+                        failVerdict());
+                    tracker.applyEvent(
+                        semantic::RoomTrackingEvent::LOST_TIMEOUT,
+                        now,
+                        semantic::TraversalGuardValues(),
+                        failVerdict());
                 }
                 else if (sourceState ==
                          semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP)
                 {
-                    tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                                       now,
-                                       semantic::TraversalGuardValues(),
-                                       failVerdict());
+                    tracker.applyEvent(
+                        semantic::RoomTrackingEvent::TRACKING_LOST,
+                        now,
+                        semantic::TraversalGuardValues(),
+                        failVerdict());
                     tracker.applyEvent(
                         semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
                         now,
@@ -614,7 +636,8 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
                                          nominalCrossing(),
                                          passVerdict()),
                       sourceState)
-                << "undefined event " << semantic::RoomTracker::eventToString(event)
+                << "undefined event "
+                << semantic::RoomTracker::eventToString(event)
                 << " must not change state "
                 << semantic::RoomTracker::stateToString(sourceState);
             EXPECT_FALSE(tracker.getLastEvent().accepted);
@@ -631,8 +654,8 @@ TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker  tracker;
-        const double t0 = 1000.0 + run * 100.0;
+        semantic::RoomTracker tracker;
+        const double          t0 = 1000.0 + run * 100.0;
 
         /* UNKNOWN -> CONFIRMED_ROOM once a room is confirmed. */
         EXPECT_EQ(tracker.step(t0,
@@ -643,7 +666,7 @@ TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
 
         /* Crossing guard holds; the dwell has not yet elapsed. */
         semantic::TraversalGuardValues crossing = nominalCrossing();
-        const double         t1       = t0 + 1.0; /* < crossing_dwell_s */
+        const double                   t1 = t0 + 1.0; /* < crossing_dwell_s */
         EXPECT_EQ(tracker.step(t1, crossing, passVerdict(), nominalTracking()),
                   semantic::RoomTrackingState::CONFIRMED_ROOM);
 
@@ -654,7 +677,7 @@ TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
 
         /* Traversal completion needs both sides + dwell + verdict PASS. */
         semantic::TraversalGuardValues complete = nominalCrossing();
-        complete.bothSidesObserved    = true;
+        complete.bothSidesObserved              = true;
         const double t3 = t2 + tracker.getConfig().crossing_dwell_s;
         EXPECT_EQ(tracker.step(t3, complete, passVerdict(), nominalTracking()),
                   semantic::RoomTrackingState::CROSSING_PASSAGE);
@@ -669,19 +692,22 @@ TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
 
 TEST(RoomTrackerStep, HysteresisResetsDwellOnGuardFailure)
 {
-    semantic::RoomTracker  tracker;
-    const double t0 = 0.0;
-    tracker.step(t0, semantic::TraversalGuardValues(), passVerdict(), nominalTracking());
+    semantic::RoomTracker tracker;
+    const double          t0 = 0.0;
+    tracker.step(t0,
+                 semantic::TraversalGuardValues(),
+                 passVerdict(),
+                 nominalTracking());
 
     semantic::TraversalGuardValues crossing = nominalCrossing();
-    const double         t1       = t0 + 1.0;
+    const double                   t1       = t0 + 1.0;
     EXPECT_EQ(tracker.step(t1, crossing, passVerdict(), nominalTracking()),
               semantic::RoomTrackingState::CONFIRMED_ROOM);
 
     /* Guard fails (confidence drops below threshold); dwell must reset. */
     semantic::TraversalGuardValues weak = crossing;
-    weak.confidence           = 0.0;
-    const double t2           = t1 + 1.0;
+    weak.confidence                     = 0.0;
+    const double t2                     = t1 + 1.0;
     EXPECT_EQ(tracker.step(t2, weak, passVerdict(), nominalTracking()),
               semantic::RoomTrackingState::CONFIRMED_ROOM);
 
@@ -703,7 +729,7 @@ TEST(RoomTrackerStep, InvalidCrossingGuardsFailClosed)
                  nominalTracking());
 
     semantic::TraversalGuardValues invalid = nominalCrossing();
-    invalid.confidence           = std::numeric_limits<double>::quiet_NaN();
+    invalid.confidence = std::numeric_limits<double>::quiet_NaN();
     EXPECT_EQ(tracker.step(11.0, invalid, passVerdict(), nominalTracking()),
               semantic::RoomTrackingState::CONFIRMED_ROOM);
 
@@ -728,7 +754,7 @@ TEST(RoomTrackerStep, BothSidesAndDwellAccumulateAcrossCycles)
               semantic::RoomTrackingState::CROSSING_PASSAGE);
 
     semantic::TraversalGuardValues oneSide = nominalCrossing();
-    oneSide.bothSidesObserved    = true;
+    oneSide.bothSidesObserved              = true;
     EXPECT_EQ(tracker.step(104.0, oneSide, passVerdict(), nominalTracking()),
               semantic::RoomTrackingState::CROSSING_PASSAGE);
     EXPECT_EQ(tracker.step(105.0,
@@ -765,7 +791,10 @@ TEST(RoomTrackerStep, SteadyDomainInputIgnoresTimestampDiscontinuity)
 TEST(RoomTrackerStep, TrackingLossIsConsumedOncePerEpisode)
 {
     semantic::RoomTracker tracker;
-    tracker.step(1.0, semantic::TraversalGuardValues(), passVerdict(), nominalTracking());
+    tracker.step(1.0,
+                 semantic::TraversalGuardValues(),
+                 passVerdict(),
+                 nominalTracking());
 
     semantic::TrackingStatusInput lost;
     lost.lost = true;
@@ -777,22 +806,29 @@ TEST(RoomTrackerStep, TrackingLossIsConsumedOncePerEpisode)
 
 TEST(RoomTrackerStep, TimeoutDecaysToLostWithoutRoom)
 {
-    semantic::RoomTracker  tracker;
-    const double t0 = 2000.0;
-    tracker.step(t0, semantic::TraversalGuardValues(), passVerdict(), nominalTracking());
+    semantic::RoomTracker tracker;
+    const double          t0 = 2000.0;
+    tracker.step(t0,
+                 semantic::TraversalGuardValues(),
+                 passVerdict(),
+                 nominalTracking());
 
     /* Tracking is lost once: CONFIRMED_ROOM -> LOST_WITH_LAST_ROOM. */
     semantic::TrackingStatusInput lost;
     lost.lost = true;
-    EXPECT_EQ(
-        tracker.step(t0 + 1.0, semantic::TraversalGuardValues(), failVerdict(), lost),
-        semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
+    EXPECT_EQ(tracker.step(t0 + 1.0,
+                           semantic::TraversalGuardValues(),
+                           failVerdict(),
+                           lost),
+              semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
 
     /* Loss persists; the lost_timeout decays to LOST_WITHOUT_ROOM. */
     const double tExpire = t0 + 1.0 + tracker.getConfig().lost_timeout_s;
-    EXPECT_EQ(
-        tracker.step(tExpire, semantic::TraversalGuardValues(), failVerdict(), lost),
-        semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
+    EXPECT_EQ(tracker.step(tExpire,
+                           semantic::TraversalGuardValues(),
+                           failVerdict(),
+                           lost),
+              semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
     EXPECT_TRUE(tracker.getLastEvent().accepted);
 }
 
@@ -801,10 +837,14 @@ TEST(RoomTrackerStep, UndefinedTrackingLossFromUnknownIsRejected)
     semantic::RoomTracker         tracker;
     semantic::TrackingStatusInput lost;
     lost.lost = true;
-    EXPECT_EQ(tracker.step(0.0, semantic::TraversalGuardValues(), failVerdict(), lost),
+    EXPECT_EQ(tracker.step(0.0,
+                           semantic::TraversalGuardValues(),
+                           failVerdict(),
+                           lost),
               semantic::RoomTrackingState::UNKNOWN);
     EXPECT_FALSE(tracker.getLastEvent().accepted);
-    EXPECT_EQ(tracker.getLastEvent().event, semantic::RoomTrackingEvent::TRACKING_LOST);
+    EXPECT_EQ(tracker.getLastEvent().event,
+              semantic::RoomTrackingEvent::TRACKING_LOST);
 }
 
 TEST(RoomTrackerStep, UnavailableVerificationCannotConfirmOrMutateState)
@@ -823,7 +863,7 @@ TEST(RoomTrackerStep, UnavailableVerificationCannotConfirmOrMutateState)
 TEST(RoomTrackerStep, MalformedPassVerdictFailsClosed)
 {
     semantic::VerificationVerdict malformed = passVerdict();
-    malformed.inlierRatio         = std::numeric_limits<double>::infinity();
+    malformed.inlierRatio = std::numeric_limits<double>::infinity();
     EXPECT_FALSE(malformed.isPass());
 
     malformed            = passVerdict();
@@ -841,23 +881,30 @@ TEST(RoomTrackerStep, MalformedPassVerdictFailsClosed)
 
 TEST(RoomTrackerStep, ReacquireRetriesThenTimeouts)
 {
-    semantic::RoomTracker  tracker;
-    const double t0 = 3000.0;
-    tracker.step(t0, semantic::TraversalGuardValues(), passVerdict(), nominalTracking());
+    semantic::RoomTracker tracker;
+    const double          t0 = 3000.0;
+    tracker.step(t0,
+                 semantic::TraversalGuardValues(),
+                 passVerdict(),
+                 nominalTracking());
 
     semantic::TrackingStatusInput lost;
     lost.lost = true;
-    EXPECT_EQ(
-        tracker.step(t0 + 1.0, semantic::TraversalGuardValues(), failVerdict(), lost),
-        semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
+    EXPECT_EQ(tracker.step(t0 + 1.0,
+                           semantic::TraversalGuardValues(),
+                           failVerdict(),
+                           lost),
+              semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
 
     /* New map (still lost) with a verified match -> REACQUIRING. */
     semantic::TrackingStatusInput newMap;
     newMap.lost          = true;
     newMap.newMapCreated = true;
-    EXPECT_EQ(
-        tracker.step(t0 + 2.0, semantic::TraversalGuardValues(), passVerdict(), newMap),
-        semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
+    EXPECT_EQ(tracker.step(t0 + 2.0,
+                           semantic::TraversalGuardValues(),
+                           passVerdict(),
+                           newMap),
+              semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
 
     /* Failed verification retries at the configured interval; after the
      * configured max retries the reacquire is retired. */
@@ -869,13 +916,18 @@ TEST(RoomTrackerStep, ReacquireRetriesThenTimeouts)
     {
         t += tracker.getConfig().reacquire_retry_interval_s;
         const semantic::RoomTrackingState state =
-            tracker.step(t, semantic::TraversalGuardValues(), failVerdict(), newMap);
+            tracker.step(t,
+                         semantic::TraversalGuardValues(),
+                         failVerdict(),
+                         newMap);
         if (attempt < expectedRetries)
         {
-            EXPECT_EQ(state, semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
+            EXPECT_EQ(state,
+                      semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
         }
     }
-    EXPECT_EQ(tracker.getState(), semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
+    EXPECT_EQ(tracker.getState(),
+              semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
     EXPECT_TRUE(tracker.getLastEvent().accepted);
     EXPECT_EQ(tracker.getLastEvent().event,
               semantic::RoomTrackingEvent::REACQUIRE_TIMEOUT);

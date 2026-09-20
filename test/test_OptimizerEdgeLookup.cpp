@@ -1,4 +1,4 @@
-/**
+/*!
  * @file test_OptimizerEdgeLookup.cpp
  * @brief B4 regression coverage: edgeSourceKeyFrame() must not read past the
  *        end of a shorter parallel edge-keyframe vector.
@@ -22,9 +22,9 @@ TEST(OptimizerEdgeLookup, ReturnsThePointerAtAnInBoundsIndex)
     std::vector<int *> edgeKeyFrames = {&a, &b, &c};
 
     EXPECT_EQ(edgeSourceKeyFrame(edgeKeyFrames, static_cast<std::size_t>(0)),
-             &a);
+              &a);
     EXPECT_EQ(edgeSourceKeyFrame(edgeKeyFrames, static_cast<std::size_t>(2)),
-             &c);
+              &c);
 }
 
 TEST(OptimizerEdgeLookup, ReturnsNullptrForAnOutOfBoundsIndex)

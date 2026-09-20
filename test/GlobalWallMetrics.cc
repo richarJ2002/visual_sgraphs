@@ -1,4 +1,4 @@
-/**
+/*!
  * @file GlobalWallMetrics.cc
  * @brief Implementation of the global wall precision/recall/F1 adapter
  *        declared in GlobalWallMetrics.h (semantic-axiom-reliability-plan.md,
@@ -74,7 +74,7 @@ std::vector<WallRecord> parseWalls(const nlohmann::json &sgraph_in)
     return walls;
 }
 
-/**
+/*!
  * @brief   Solves the rectangular minimum-total-cost one-to-one assignment
  *          problem for `rowCount <= colCount`: assigns every row to a
  *          distinct column so the sum of assigned costs is minimal.
@@ -179,7 +179,7 @@ std::vector<std::size_t>
     return rowToCol;
 }
 
-/** Matches truth rooms to generated rooms by minimum-total-cost one-to-one
+/*! Matches truth rooms to generated rooms by minimum-total-cost one-to-one
  * centroid-distance assignment (see `solveAssignmentRowsLeqCols`), gating
  * each assigned pair by `kMaxRoomMatchDistM` only after the full assignment
  * is solved -- exactly mirroring `match_rooms()` in
@@ -257,7 +257,7 @@ std::vector<std::pair<std::size_t, std::size_t>>
     return pairs;
 }
 
-/** Mirrors wall_matches() from compare_sgraph_to_ground_truth.py: for each
+/*! Mirrors wall_matches() from compare_sgraph_to_ground_truth.py: for each
  * truth wall, greedily takes the best-scoring still-unused generated wall
  * that clears both gates. Returns the matched truth-wall indices (within
  * truthWalls_in) and generated-wall indices (within genWalls_in). */

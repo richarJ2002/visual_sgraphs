@@ -1,4 +1,4 @@
-/**
+/*!
  * @file SparseClusterVerdict.h
  * @brief Declares dependency-free classification of sparse-graph markers.
  */

@@ -1,4 +1,4 @@
-/**
+/*!
  * @file StereoMatchOutlierRejection.h
  * @brief Declares the median-distance outlier rejection step used by
  *        Frame::computeStereoMatches(), isolated for direct unit testing.
@@ -15,7 +15,7 @@ namespace vs_graphs
 namespace core
 {
 
-/**
+/*!
  * Rejects stereo matches whose ORB descriptor distance is far from the
  * median of all accepted matches (Frame::computeStereoMatches()'s original
  * 1.5 * 1.4 * median threshold).
@@ -33,8 +33,8 @@ namespace core
  *       vDistIdx[vDistIdx.size() / 2] (out of bounds on an empty vector).
  */
 void rejectOutlierStereoMatches(std::vector<std::pair<int, int>> &vDistIdx,
-                                std::vector<float>                &mvuRight,
-                                std::vector<float>                &mvDepth);
+                                std::vector<float>               &mvuRight,
+                                std::vector<float>               &mvDepth);
 
 } // namespace core
 } // namespace vs_graphs

@@ -1,4 +1,4 @@
-/**
+/*!
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
@@ -51,12 +51,12 @@ class SystemParams
     // Common struct definitions
     struct Constraint
     {
-        bool  enabled          = false;
+        bool  enabled         = false;
         float informationGain = 0.1f;
     };
     struct Downsample
     {
-        float        leafSize            = 0.03f;
+        float        leafSize          = 0.03f;
         unsigned int minPointsPerVoxel = 5;
     };
     struct OutlierRemoval
@@ -76,7 +76,7 @@ class SystemParams
             GEO     = 2U
         };
         ModeOfOperation modeOfOperation = ModeOfOperation::SEM_GEO;
-        std::string     envDatabase      = "";
+        std::string     envDatabase     = "";
     } general;
 
     struct Markers
@@ -99,11 +99,11 @@ class SystemParams
 
     struct RefineMapPoints
     {
-        bool  enabled                 = false;
+        bool  enabled              = false;
         float maxDistanceForDelete = 0.5f;
         struct Octree
         {
-            float        resolution    = 0.1f;
+            float        resolution   = 0.1f;
             float        searchRadius = 0.5f;
             unsigned int minNeighbors = 2;
         } octree;
@@ -111,14 +111,14 @@ class SystemParams
 
     struct PlaneBasedCovisibility
     {
-        bool         enabled         = true;
-        unsigned int maxKeyframes   = 75;
+        bool         enabled       = true;
+        unsigned int maxKeyframes  = 75;
         unsigned int scorePerPlane = 60;
     } planeBasedCovisibility;
 
     struct Seg
     {
-        unsigned int pointcloudsThresh      = 200;
+        unsigned int pointcloudsThresh    = 200;
         float        planePointDistThresh = 0.2f;
 
         struct PlaneAssociation
@@ -179,19 +179,19 @@ class SystemParams
 
     struct SemSeg
     {
-        float minVotes          = 1.0f;
-        float probThresh        = 0.5f;
-        float confThresh        = 0.5f;
+        float minVotes         = 1.0f;
+        float probThresh       = 0.5f;
+        float confThresh       = 0.5f;
         float maxTiltWall      = 0.3f;
         float maxTiltGround    = 0.2f;
         float maxStepElevation = 0.2f;
 
-        int   passageKfWindow                = 7;
-        float maxDoorWidth                   = 1.5f;
-        float maxDoorHeight                  = 2.0f;
+        int   passageKfWindow               = 7;
+        float maxDoorWidth                  = 1.5f;
+        float maxDoorHeight                 = 2.0f;
         float maxWallDoorDistance           = 0.5f;
         float maxKfPassageDistance          = 1.0f;
-        bool  enablePassageDetection         = true;
+        bool  enablePassageDetection        = true;
         float passageCentroidDistanceThresh = 1.0f;
 
         /*!
@@ -306,7 +306,7 @@ class SystemParams
 
         struct Reassociate
         {
-            bool  enabled            = false;
+            bool  enabled           = false;
             float associationThresh = 0.2f;
 
             /*!
@@ -336,14 +336,14 @@ class SystemParams
         Method method = Method::FREE_SPACE;
 
         float centerDistanceThresh        = 1.5f;
-        float planeFacingDotThresh       = -0.8f;
-        float minWallDistanceThresh      = 1.0f;
+        float planeFacingDotThresh        = -0.8f;
+        float minWallDistanceThresh       = 1.0f;
         float wallsParallelismThresh      = 10.0f;
         float wallsPerpendicularityThresh = 10.0f;
 
-        unsigned int minClusterVertices                           = 5;
-        float        markerWallDistanceThresh                    = 3.0f;
-        float        clusterPointWallDistanceThresh             = 0.5f;
+        unsigned int minClusterVertices                        = 5;
+        float        markerWallDistanceThresh                  = 3.0f;
+        float        clusterPointWallDistanceThresh            = 0.5f;
         float        clusterCentroidWallCentroidDistanceThresh = 5.0f;
 
         unsigned int minimumWallSupportPointCount    = 2;
@@ -426,43 +426,43 @@ class SystemParams
 
     struct CandidateGen
     {
-        unsigned int topK                    = 10U;
+        unsigned int topK                   = 10U;
         unsigned int candidatePairCap       = 1000U;
         unsigned int topologyNodesCap       = 128U;
         unsigned int globalFallbackCap      = 1000U;
-        float        weightAngle             = 1.0F;
-        float        weightExtent            = 1.0F;
-        float        weightAperture          = 1.0F;
-        float        weightTopology          = 1.0F;
+        float        weightAngle            = 1.0F;
+        float        weightExtent           = 1.0F;
+        float        weightAperture         = 1.0F;
+        float        weightTopology         = 1.0F;
         float        angleMissingPenalty    = 1.0F;
         float        extentMissingPenalty   = 1.0F;
         float        apertureMissingPenalty = 1.0F;
-        float        ambiguityMargin         = 0.05F;
-        float        angleTolerance_rad      = 1.0e-9F;
-        float        runtimeBudget_ms        = 0.0F;
+        float        ambiguityMargin        = 0.05F;
+        float        angleTolerance_rad     = 1.0e-9F;
+        float        runtimeBudget_ms       = 0.0F;
         unsigned int descriptorElementsCap  = 4096U;
         unsigned int topoRefinementIters    = 3U;
     } candidateGen;
 
-    /** Plane-gated geometric verification gates. Initial values are
+    /*! Plane-gated geometric verification gates. Initial values are
      * explicit figures; all calibration-dependent. */
     struct Verification
     {
-        float        maxNormalAngle_deg        = 10.0F;
-        float        maxOffset_m                = 0.35F;
-        float        maxSupportDist_m          = 0.25F;
-        float        minInlierRatio            = 0.6F;
-        float        maxConditionNumber        = 100.0F;
-        unsigned int ambiguityMarginInliers    = 1U;
-        unsigned int maxWallsPerRoom          = 16U;
-        unsigned int maxHypotheses              = 2000U;
+        float        maxNormalAngle_deg      = 10.0F;
+        float        maxOffset_m             = 0.35F;
+        float        maxSupportDist_m        = 0.25F;
+        float        minInlierRatio          = 0.6F;
+        float        maxConditionNumber      = 100.0F;
+        unsigned int ambiguityMarginInliers  = 1U;
+        unsigned int maxWallsPerRoom         = 16U;
+        unsigned int maxHypotheses           = 2000U;
         unsigned int maxSupportSamplePerWall = 64U;
-        /** Explicit |cos(theta)| gate, distinct from
+        /*! Explicit |cos(theta)| gate, distinct from
          * maxNormalAngle_deg above. */
         float        minAbsCosNormalAngle = 0.85F;
     } verification;
 
-    /** EdgePlaneTransformSE3 factor noise model and robust threshold.
+    /*! EdgePlaneTransformSE3 factor noise model and robust threshold.
      * No given initial values beyond the Huber constant; the sigma
      * defaults below are conservative literal choices,
      * calibration-dependent like the rest of this section. */
