@@ -135,7 +135,7 @@ class EdgeSim3
     }
 };
 
-/*!/
+/**/
   class EdgeSim3ProjectXYZ : public BaseBinaryEdge<2, Vector2d, VertexSBAPointXYZ, VertexSim3Expmap>
   {
   public:
@@ -156,7 +156,7 @@ class EdgeSim3
     // virtual void linearizeOplus();
   };
 
-  /*!/
+  /**/
   class EdgeInverseSim3ProjectXYZ : public BaseBinaryEdge<2, Vector2d, VertexSBAPointXYZ, VertexSim3Expmap>
   {
   public:
