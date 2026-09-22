@@ -192,6 +192,9 @@ include(${PROJECT_SOURCE_DIR}/core/src/Map/CMakeLists.txt)
 # Frame object sources (single object, SCC construct/ out-of-line, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/Frame/CMakeLists.txt)
 
+# KeyFrame object sources (single object, SCC construct/ out-of-line, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/KeyFrame/CMakeLists.txt)
+
 # OptimizableTypes module sources (g2o edge objects, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/OptimizableTypes/CMakeLists.txt)
 
@@ -213,7 +216,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   ${VS_GRAPHS_ORBMATCHER_SOURCES}
   ${VS_GRAPHS_FRAMEDRAWER_SOURCES}
   ${VS_GRAPHS_MAPPOINT_SOURCES}
-  core/src/KeyFrame.cc
+  ${VS_GRAPHS_KEYFRAME_SOURCES}
   core/src/Atlas.cc
   ${VS_GRAPHS_MAP_SOURCES}
   ${VS_GRAPHS_MAPDRAWER_SOURCES}

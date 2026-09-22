@@ -16,15 +16,32 @@ set(VS_GRAPHS_KEYFRAME_SOURCES
   core/src/KeyFrame/methods/eraseChild.cc
   core/src/KeyFrame/methods/eraseConnection.cc
   core/src/KeyFrame/methods/getAccBias.cc
+  core/src/KeyFrame/methods/getBestCovisibilityKeyFrames.cc
   core/src/KeyFrame/methods/getCameraCenter.cc
+  core/src/KeyFrame/methods/getChilds.cc
+  core/src/KeyFrame/methods/getClsCloudPtrs.cc
+  core/src/KeyFrame/methods/getConnectedKeyFrames.cc
+  core/src/KeyFrame/methods/getCovisiblesByWeight.cc
   core/src/KeyFrame/methods/getCurrentFrameMapPoints.cc
   core/src/KeyFrame/methods/getCurrentFrameMarkers.cc
+  core/src/KeyFrame/methods/getCurrentFramePointCloud.cc
+  core/src/KeyFrame/methods/getFeaturesInArea.cc
   core/src/KeyFrame/methods/getGyroBias.cc
   core/src/KeyFrame/methods/getImuBias.cc
   core/src/KeyFrame/methods/getImuPose.cc
   core/src/KeyFrame/methods/getImuPosition.cc
   core/src/KeyFrame/methods/getImuRotation.cc
+  core/src/KeyFrame/methods/getLoopEdges.cc
+  core/src/KeyFrame/methods/getMap.cc
+  core/src/KeyFrame/methods/getMapMarkers.cc
+  core/src/KeyFrame/methods/getMapPassages.cc
+  core/src/KeyFrame/methods/getMapPlanes.cc
+  core/src/KeyFrame/methods/getMapPoint.cc
   core/src/KeyFrame/methods/getMapPointCount.cc
+  core/src/KeyFrame/methods/getMapPointMatches.cc
+  core/src/KeyFrame/methods/getMapPoints.cc
+  core/src/KeyFrame/methods/getMergeEdges.cc
+  core/src/KeyFrame/methods/getParent.cc
   core/src/KeyFrame/methods/getPose.cc
   core/src/KeyFrame/methods/getPoseInverse.cc
   core/src/KeyFrame/methods/getRelativePoseTlr.cc
@@ -37,6 +54,7 @@ set(VS_GRAPHS_KEYFRAME_SOURCES
   core/src/KeyFrame/methods/getRotation.cc
   core/src/KeyFrame/methods/getTrackedMapPointCount.cc
   core/src/KeyFrame/methods/getTranslation.cc
+  core/src/KeyFrame/methods/getVectorCovisibleKeyFrames.cc
   core/src/KeyFrame/methods/getVelocity.cc
   core/src/KeyFrame/methods/getWeight.cc
   core/src/KeyFrame/methods/hasChild.cc
