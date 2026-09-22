@@ -1,0 +1,20 @@
+# ORBmatcher object sources: exactly this object's translation units.
+set(VS_GRAPHS_ORBMATCHER_SOURCES
+  core/src/ORBmatcher/methods/static_members.cc
+  core/src/ORBmatcher/methods/searchByProjection/fromMapPoints.cc
+  core/src/ORBmatcher/methods/searchByProjectionWithDepth.cc
+  core/src/ORBmatcher/methods/radiusByViewingCos.cc
+  core/src/ORBmatcher/methods/searchByBoW/withFrame.cc
+  core/src/ORBmatcher/methods/searchByProjection/withSim3.cc
+  core/src/ORBmatcher/methods/searchByProjection/withSim3AndKeyFrames.cc
+  core/src/ORBmatcher/methods/searchForInitialization.cc
+  core/src/ORBmatcher/methods/searchByBoW/withKeyFrame.cc
+  core/src/ORBmatcher/methods/searchForTriangulation.cc
+  core/src/ORBmatcher/methods/fuse/intoKeyFrame.cc
+  core/src/ORBmatcher/methods/fuse/withSim3Replacement.cc
+  core/src/ORBmatcher/methods/searchBySim3.cc
+  core/src/ORBmatcher/methods/searchByProjection/fromLastFrame.cc
+  core/src/ORBmatcher/methods/searchByProjection/withKeyFrameExcludingFound.cc
+  core/src/ORBmatcher/methods/computeThreeMaxima.cc
+  core/src/ORBmatcher/methods/computeDescriptorDistance.cc
+)

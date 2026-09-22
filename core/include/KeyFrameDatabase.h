@@ -64,7 +64,11 @@ class KeyFrameDatabase
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     KeyFrameDatabase() {}
-    KeyFrameDatabase(const ORBVocabulary &voc);
+    KeyFrameDatabase(const ORBVocabulary &voc) :
+        p_vocabulary(&voc)
+    {
+        invertedFile.resize(voc.size());
+    }
 
     void add(KeyFrame *pKF);
 

@@ -32,6 +32,7 @@
 #include "System.h"
 #include "Tracking.h"
 
+#include <iostream>
 #include <mutex>
 
 namespace vs_graphs
@@ -53,7 +54,44 @@ class Viewer
            MapDrawer    *pMapDrawer,
            Tracking     *pTracking,
            const string &strSettingPath,
-           utils::settings::Settings *settings);
+           utils::settings::Settings *settings) :
+        both(false),
+        p_system(pSystem),
+        p_frameDrawer(pFrameDrawer),
+        p_mapDrawer(pMapDrawer),
+        p_tracker(pTracking),
+        finishRequested(false),
+        finished(true),
+        stopped(true),
+        stopRequestedFlag(false)
+    {
+        if (settings)
+        {
+            newParameterLoader(settings);
+        }
+        else
+        {
+
+            cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+
+            bool is_correct = parseViewerParamFile(fSettings);
+
+            if (!is_correct)
+            {
+                std::cerr
+                    << "**ERROR in the config file, the format is not correct**"
+                    << std::endl;
+                try
+                {
+                    throw -1;
+                }
+                catch (exception &e)
+                {}
+            }
+        }
+
+        stopTrack = false;
+    }
 
     void newParameterLoader(utils::settings::Settings *settings);
 

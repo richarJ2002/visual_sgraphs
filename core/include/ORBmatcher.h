@@ -55,7 +55,11 @@ class ORBmatcher
      *               True to enforce rotation-histogram
      *               consistency.
      */
-    ORBmatcher(float nnRatio_in = 0.6, bool checkOrientation_in = true);
+    ORBmatcher(float nnRatio_in = 0.6, bool checkOrientation_in = true) :
+        mfNNratio(nnRatio_in),
+        mbCheckOrientation(checkOrientation_in)
+    {
+    }
 
     /*!
      * @brief        Computes the Hamming distance between two

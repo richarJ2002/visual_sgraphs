@@ -170,7 +170,12 @@ class EdgeSE3ProjectXYZ : public g2o::BaseBinaryEdge<2,
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeSE3ProjectXYZ();
+    EdgeSE3ProjectXYZ() :
+    BaseBinaryEdge<2,
+                   Eigen::Vector2d,
+                   g2o::VertexSBAPointXYZ,
+                   g2o::VertexSE3Expmap>()
+{}
 
     bool read(std::istream &is);
 
@@ -213,7 +218,12 @@ class EdgeSE3ProjectXYZToBody
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeSE3ProjectXYZToBody();
+    EdgeSE3ProjectXYZToBody() :
+    BaseBinaryEdge<2,
+                   Eigen::Vector2d,
+                   g2o::VertexSBAPointXYZ,
+                   g2o::VertexSE3Expmap>()
+{}
 
     bool read(std::istream &is);
 
@@ -254,7 +264,12 @@ class VertexSim3Expmap : public g2o::BaseVertex<7, g2o::Sim3>
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    VertexSim3Expmap();
+    VertexSim3Expmap() :
+    BaseVertex<7, g2o::Sim3>()
+{
+    _marginalized = false;
+    _fix_scale    = false;
+}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
 
@@ -287,7 +302,12 @@ class EdgeSim3ProjectXYZ
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    EdgeSim3ProjectXYZ();
+    EdgeSim3ProjectXYZ() :
+    g2o::BaseBinaryEdge<2,
+                        Eigen::Vector2d,
+                        g2o::VertexSBAPointXYZ,
+                        VertexSim3Expmap>()
+{}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
 
@@ -313,7 +333,12 @@ class EdgeInverseSim3ProjectXYZ
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    EdgeInverseSim3ProjectXYZ();
+    EdgeInverseSim3ProjectXYZ() :
+    g2o::BaseBinaryEdge<2,
+                        Eigen::Vector2d,
+                        g2o::VertexSBAPointXYZ,
+                        VertexSim3Expmap>()
+{}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
 
@@ -344,7 +369,12 @@ class EdgeSE3ProjectSE3 : public g2o::BaseBinaryEdge<6,
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    EdgeSE3ProjectSE3();
+    EdgeSE3ProjectSE3() :
+    g2o::BaseBinaryEdge<6,
+                        g2o::Isometry3D,
+                        g2o::VertexSE3Expmap,
+                        g2o::VertexSE3Expmap>()
+{}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
     virtual void setMeasurement(const g2o::Isometry3D &m) override
@@ -384,7 +414,9 @@ class EdgeSE3DoorwayProjectSE3Room : public EdgeSE3ProjectSE3
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    EdgeSE3DoorwayProjectSE3Room();
+    EdgeSE3DoorwayProjectSE3Room() :
+    EdgeSE3ProjectSE3()
+{}
 
     void computeError()
     {
@@ -423,7 +455,12 @@ class EdgeSE3KFPointToPlane : public g2o::BaseBinaryEdge<1,
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeSE3KFPointToPlane();
+    EdgeSE3KFPointToPlane() :
+    g2o::BaseBinaryEdge<1,
+                        Eigen::Matrix4d,
+                        g2o::VertexSE3Expmap,
+                        g2o::VertexPlane>()
+{}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
 
@@ -474,7 +511,12 @@ class EdgeVertexPlaneProjectSE3KF
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeVertexPlaneProjectSE3KF();
+    EdgeVertexPlaneProjectSE3KF() :
+    g2o::BaseBinaryEdge<3,
+                        g2o::Plane3D,
+                        g2o::VertexSE3Expmap,
+                        g2o::VertexPlane>()
+{}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
 
@@ -527,7 +569,9 @@ class EdgeVertexPlaneProjectPointXYZ
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeVertexPlaneProjectPointXYZ();
+    EdgeVertexPlaneProjectPointXYZ() :
+    g2o::BaseBinaryEdge<1, double, g2o::VertexSBAPointXYZ, g2o::VertexPlane>()
+{}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
 
@@ -562,7 +606,12 @@ class EdgeVertexPlaneProjectSE3M
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeVertexPlaneProjectSE3M();
+    EdgeVertexPlaneProjectSE3M() :
+    g2o::BaseBinaryEdge<4,
+                        Eigen::Vector4d,
+                        g2o::VertexSE3Expmap,
+                        g2o::VertexPlane>()
+{}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
 
@@ -614,7 +663,9 @@ class EdgeVertexPlaneParallelism
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeVertexPlaneParallelism();
+    EdgeVertexPlaneParallelism() :
+    g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>()
+{}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
 
@@ -646,7 +697,9 @@ class EdgeVertexPlanePerpendicularity
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeVertexPlanePerpendicularity();
+    EdgeVertexPlanePerpendicularity() :
+    g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>()
+{}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
 
@@ -678,8 +731,18 @@ class EdgeVertex2PlaneProjectSE3Room
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeVertex2PlaneProjectSE3Room();
-    EdgeVertex2PlaneProjectSE3Room(Eigen::Vector3d position);
+    EdgeVertex2PlaneProjectSE3Room() :
+    g2o::BaseMultiEdge<3, Eigen::Vector3d>()
+{
+    resize(3);
+}
+    EdgeVertex2PlaneProjectSE3Room(
+    Eigen::Vector3d position) :
+    g2o::BaseMultiEdge<3, Eigen::Vector3d>()
+{
+    // markerPosition = position;
+    resize(3);
+}
 
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
@@ -740,7 +803,11 @@ class EdgeVertex4PlaneProjectSE3Room
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeVertex4PlaneProjectSE3Room();
+    EdgeVertex4PlaneProjectSE3Room() :
+    g2o::BaseMultiEdge<3, Eigen::Vector3d>()
+{
+    resize(5);
+}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
 
@@ -925,7 +992,12 @@ class EdgeVertexSE3RoomProjectSE3Marker
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeVertexSE3RoomProjectSE3Marker();
+    EdgeVertexSE3RoomProjectSE3Marker() :
+    g2o::BaseBinaryEdge<4,
+                        Eigen::Vector4d,
+                        g2o::VertexSE3Expmap,
+                        g2o::VertexSE3Expmap>()
+{}
     virtual bool read(std::istream &is);
     virtual bool write(std::ostream &os) const;
 

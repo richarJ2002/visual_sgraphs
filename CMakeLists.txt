@@ -168,6 +168,36 @@ include(${PROJECT_SOURCE_DIR}/core/src/Sim3Solver/CMakeLists.txt)
 # G2oTypes module sources (g2o vertex/edge objects + SO(3) helpers, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/G2oTypes/CMakeLists.txt)
 
+# KeyFrameDatabase module sources (single KeyFrameDatabase object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/KeyFrameDatabase/CMakeLists.txt)
+
+# TwoViewReconstruction object sources (single object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/TwoViewReconstruction/CMakeLists.txt)
+
+# MLPnPsolver object sources (single object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/MLPnPsolver/CMakeLists.txt)
+
+# ORBextractor module sources (single object + internal helpers, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/ORBextractor/CMakeLists.txt)
+
+# ORBmatcher object sources (single object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/ORBmatcher/CMakeLists.txt)
+
+# MapPoint object sources (single object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/MapPoint/CMakeLists.txt)
+
+# Map object sources (single object, SCC construct/ out-of-line, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/Map/CMakeLists.txt)
+
+# Frame object sources (single object, SCC construct/ out-of-line, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/Frame/CMakeLists.txt)
+
+# OptimizableTypes module sources (g2o edge objects, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/OptimizableTypes/CMakeLists.txt)
+
+# Viewer object sources (single Viewer object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/Viewer/CMakeLists.txt)
+
 # Set library output directory
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/core/lib)
 
@@ -179,28 +209,28 @@ add_library(${PROJECT_NAME}_lib SHARED
   ${VS_GRAPHS_RESETCAUSE_SOURCES}
   core/src/LocalMapping.cc
   core/src/LoopClosing.cc
-  core/src/ORBextractor.cc
-  core/src/ORBmatcher.cc
+  ${VS_GRAPHS_ORBEXTRACTOR_SOURCES}
+  ${VS_GRAPHS_ORBMATCHER_SOURCES}
   ${VS_GRAPHS_FRAMEDRAWER_SOURCES}
-  core/src/MapPoint.cc
+  ${VS_GRAPHS_MAPPOINT_SOURCES}
   core/src/KeyFrame.cc
   core/src/Atlas.cc
-  core/src/Map.cc
+  ${VS_GRAPHS_MAP_SOURCES}
   ${VS_GRAPHS_MAPDRAWER_SOURCES}
   core/src/Optimizer.cc
-  core/src/Frame.cc
+  ${VS_GRAPHS_FRAME_SOURCES}
   ${VS_GRAPHS_STEREOMATCHOUTLIERREJECTION_SOURCES}
-  core/src/KeyFrameDatabase.cc
+  ${VS_GRAPHS_KEYFRAMEDATABASE_SOURCES}
   ${VS_GRAPHS_SIM3SOLVER_SOURCES}
-  core/src/Viewer.cc
+  ${VS_GRAPHS_VIEWER_SOURCES}
   ${VS_GRAPHS_IMUTYPES_SOURCES}
   ${VS_GRAPHS_G2OTYPES_SOURCES}
   ${VS_GRAPHS_CAMERAMODELS_CAMERAMODELS_SOURCES}
-  core/src/OptimizableTypes.cc
-  core/src/MLPnPsolver.cc
+  ${VS_GRAPHS_OPTIMIZABLETYPES_SOURCES}
+  ${VS_GRAPHS_MLPNPSOLVER_SOURCES}
   ${VS_GRAPHS_GEOMETRIC_GEOMETRIC_SOURCES}
   ${VS_GRAPHS_GEOMETRIC_GEOMETRICTOOLS_SOURCES}
-  core/src/TwoViewReconstruction.cc
+  ${VS_GRAPHS_TWOVIEWRECONSTRUCTION_SOURCES}
   ${VS_GRAPHS_UTILS_SOURCES}
   
   core/src/Semantic/Room.cc

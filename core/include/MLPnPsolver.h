@@ -63,7 +63,58 @@ class MLPnPsolver
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    MLPnPsolver(const Frame &F, const vector<MapPoint *> &vpMapPointMatches);
+    MLPnPsolver(const Frame &F, const vector<MapPoint *> &vpMapPointMatches) :
+        inlierCount(0),
+        iterationCount(0),
+        bestInlierCount(0),
+        N(0),
+        p_camera(F.p_camera)
+    {
+        mapPointMatches = vpMapPointMatches;
+        bearingVectors.reserve(F.mapPoints.size());
+        points2D.reserve(F.mapPoints.size());
+        sigmaSquared.reserve(F.mapPoints.size());
+        points3Dw.reserve(F.mapPoints.size());
+        keypointIndices.reserve(F.mapPoints.size());
+        allIndices.reserve(F.mapPoints.size());
+
+        int idx = 0;
+        for (size_t i = 0, iend = mapPointMatches.size(); i < iend; i++)
+        {
+            MapPoint *pMP = vpMapPointMatches[i];
+
+            if (pMP)
+            {
+                if (!pMP->isBad())
+                {
+                    if (i >= F.keyPointsUndistorted.size())
+                        continue;
+                    const cv::KeyPoint &kp = F.keyPointsUndistorted[i];
+
+                    points2D.push_back(kp.pt);
+                    sigmaSquared.push_back(F.levelSigmaSquared[kp.octave]);
+
+                    // Bearing vector should be normalized
+                    cv::Point3f cv_br = p_camera->unproject(kp.pt);
+                    cv_br /= cv_br.z;
+                    bearingVector_t br(cv_br.x, cv_br.y, cv_br.z);
+                    bearingVectors.push_back(br);
+
+                    // 3D coordinates
+                    Eigen::Matrix<float, 3, 1> posEig = pMP->getWorldPos();
+                    point_t                    pos(posEig(0), posEig(1), posEig(2));
+                    points3Dw.push_back(pos);
+
+                    keypointIndices.push_back(i);
+                    allIndices.push_back(idx);
+
+                    idx++;
+                }
+            }
+        }
+
+        setRansacParameters();
+    }
 
     ~MLPnPsolver();
 

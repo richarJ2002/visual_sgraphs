@@ -1,0 +1,38 @@
+# MapPoint object sources: exactly this object's translation units.
+set(VS_GRAPHS_MAPPOINT_SOURCES
+  core/src/MapPoint/methods/addObservation.cc
+  core/src/MapPoint/methods/computeDistinctiveDescriptors.cc
+  core/src/MapPoint/methods/eraseObservation.cc
+  core/src/MapPoint/methods/getDescriptor.cc
+  core/src/MapPoint/methods/getFoundRatio.cc
+  core/src/MapPoint/methods/getIndexInKeyFrame.cc
+  core/src/MapPoint/methods/getMap.cc
+  core/src/MapPoint/methods/getMaxDistanceInvariance.cc
+  core/src/MapPoint/methods/getMinDistanceInvariance.cc
+  core/src/MapPoint/methods/getNormal.cc
+  core/src/MapPoint/methods/getObservationCount.cc
+  core/src/MapPoint/methods/getObservations.cc
+  core/src/MapPoint/methods/getReferenceKeyFrame.cc
+  core/src/MapPoint/methods/getReplaced.cc
+  core/src/MapPoint/methods/getWorldPos.cc
+  core/src/MapPoint/methods/increaseFound.cc
+  core/src/MapPoint/methods/increaseVisible.cc
+  core/src/MapPoint/methods/isBad.cc
+  core/src/MapPoint/methods/isInKeyFrame.cc
+  core/src/MapPoint/methods/postLoad.cc
+  core/src/MapPoint/methods/preSave.cc
+  core/src/MapPoint/methods/printObservations.cc
+  core/src/MapPoint/methods/replace.cc
+  core/src/MapPoint/methods/setBadFlag.cc
+  core/src/MapPoint/methods/setNormalVector.cc
+  core/src/MapPoint/methods/setWorldPos.cc
+  core/src/MapPoint/methods/static_members.cc
+  core/src/MapPoint/methods/updateMap.cc
+  core/src/MapPoint/methods/updateNormalAndDepth.cc
+  core/src/MapPoint/methods/construct/default.cc
+  core/src/MapPoint/methods/construct/fromFrame.cc
+  core/src/MapPoint/methods/construct/fromReferenceKeyFrame.cc
+  core/src/MapPoint/methods/construct/withInverseDepth.cc
+  core/src/MapPoint/methods/predictScale/withFrame.cc
+  core/src/MapPoint/methods/predictScale/withKeyFrame.cc
+)
