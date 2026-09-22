@@ -35,9 +35,9 @@ namespace core
 {
 
 template <class Archive>
-void serializeSophusSE3(Archive           &ar,
-                        Sophus::SE3f      &T,
-                        const unsigned int version)
+void serializeSophusSE3(Archive                            &ar,
+                        Sophus::SE3f                       &T,
+                        [[maybe_unused]] const unsigned int version)
 {
     Eigen::Vector4f quat;
     Eigen::Vector3f transl;
@@ -78,7 +78,9 @@ const unsigned int version)
 }*/
 
 template <class Archive>
-void serializeMatrix(Archive &ar, cv::Mat &mat, const unsigned int version)
+void serializeMatrix(Archive                            &ar,
+                     cv::Mat                            &mat,
+                     [[maybe_unused]] const unsigned int version)
 {
     int  cols, rows, type;
     bool continuous;
@@ -129,9 +131,9 @@ void serializeMatrix(Archive           &ar,
 }
 
 template <class Archive>
-void serializeVectorKeyPoints(Archive                         &ar,
-                              const std::vector<cv::KeyPoint> &vKP,
-                              const unsigned int               version)
+void serializeVectorKeyPoints(Archive                            &ar,
+                              const std::vector<cv::KeyPoint>    &vKP,
+                              [[maybe_unused]] const unsigned int version)
 {
     int NumEl;
 

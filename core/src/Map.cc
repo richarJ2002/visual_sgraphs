@@ -1047,7 +1047,8 @@ void Map::setLastMapChange(int currentChangeId)
     mapChangeNotified = currentChangeId;
 }
 
-void Map::PreSave(std::set<camera_models::GeometricCamera *> &spCams)
+void Map::PreSave(
+    std::set<camera_models::geometriccamera::GeometricCamera *> &spCams)
 {
     int nMPWithoutObs = 0;
 
@@ -1129,7 +1130,8 @@ void Map::PostLoad(
     KeyFrameDatabase *pKFDB,
     ORBVocabulary
         *pORBVoc /*, map<long unsigned int, KeyFrame*>& mpKeyFrameId*/,
-    map<unsigned int, camera_models::GeometricCamera *> &mpCams)
+    map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
+        &mpCams)
 {
     std::copy(backupMapPoints.begin(),
               backupMapPoints.end(),
@@ -1190,7 +1192,7 @@ void Map::PostLoad(
 
     keyFrameOrigins.clear();
     keyFrameOrigins.reserve(backupKeyFrameOriginIds.size());
-    for (int i = 0; i < backupKeyFrameOriginIds.size(); ++i)
+    for (std::size_t i = 0; i < backupKeyFrameOriginIds.size(); ++i)
     {
         keyFrameOrigins.push_back(mpKeyFrameId[backupKeyFrameOriginIds[i]]);
     }

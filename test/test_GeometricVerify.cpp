@@ -13,8 +13,8 @@
 #include "OptimizableTypes.h"
 #include "Semantic/Floor.h"
 #include "Semantic/Room.h"
-#include "Types/SystemParams.h"
-#include "Utils.h"
+#include "Types/objects/SystemParams.h"
+#include "Utils/Utils/objects/Utils.h"
 
 #include <gtest/gtest.h>
 
@@ -515,7 +515,7 @@ TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
     map.addDetectedMapRoom(&roomZero);
     map.addDetectedMapRoom(&roomTwo);
 
-    Utils::fuseDuplicateRoomsAfterMerge(&map, {&roomTwo});
+    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map, {&roomTwo});
 
     EXPECT_FALSE(roomZero.isBad());
     EXPECT_FALSE(roomTwo.isBad());
@@ -538,7 +538,7 @@ TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
     map.addDetectedMapRoom(&retainedRoom);
     map.addDetectedMapRoom(&importedRoom);
 
-    Utils::fuseDuplicateRoomsAfterMerge(&map, {&importedRoom});
+    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map, {&importedRoom});
 
     EXPECT_FALSE(retainedRoom.isBad());
     EXPECT_TRUE(importedRoom.isBad());
@@ -566,7 +566,7 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
     map.addDetectedMapRoom(&retainedRoom);
     map.addDetectedMapRoom(&importedRoom);
 
-    Utils::fuseDuplicateRoomsAfterMerge(&map, {&importedRoom});
+    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map, {&importedRoom});
 
     EXPECT_TRUE(importedRoom.isBad());
     EXPECT_TRUE(retainedRoom.hasPreviouslyVisited());
@@ -584,7 +584,8 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
     map.addDetectedMapRoom(&retainedUnvisited);
     map.addDetectedMapRoom(&importedUnvisited);
 
-    Utils::fuseDuplicateRoomsAfterMerge(&map, {&importedUnvisited});
+    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map,
+                                                      {&importedUnvisited});
 
     EXPECT_TRUE(importedUnvisited.isBad());
     EXPECT_FALSE(retainedUnvisited.hasPreviouslyVisited());

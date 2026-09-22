@@ -57,9 +57,9 @@
 #include "Semantic/SemanticReportCache/objects/SemanticReportCacheEntry.h"
 #include "SemanticSegmentation.h"
 #include "SemanticsManager.h"
-#include "Settings.h"
+#include "Utils/Settings/objects/Settings.h"
 #include "Tracking.h"
-#include "Types/SystemParams.h"
+#include "Types/objects/SystemParams.h"
 #include "Viewer.h"
 
 namespace vs_graphs
@@ -230,7 +230,13 @@ class Atlas;
 class Tracking;
 class LocalMapping;
 class LoopClosing;
+namespace utils
+{
+namespace settings
+{
 class Settings;
+} // namespace settings
+} // namespace utils
 class SemanticSegmentation;
 class SemanticsManager;
 
@@ -1929,7 +1935,7 @@ class System
      * @brief       Settings object. Contains all configuration parameters for
      * the SLAM system, read from the YAML settings file.
      */
-    Settings *settings_;
+    utils::settings::Settings *settings_;
 };
 
 } // namespace core

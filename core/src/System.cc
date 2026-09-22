@@ -29,7 +29,7 @@
  * @brief        Implements System declared in System.h.
  */
 
-#include "Converter.h"
+#include "Utils/Converter/objects/Converter.h"
 #include "ResetCause.h"
 #include "System.h"
 #include <boost/archive/binary_iarchive.hpp>
@@ -41,7 +41,8 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/string.hpp>
 #include <iomanip>
-#include <openssl/md5.h>
+#include <memory>
+#include <openssl/evp.h>
 #include <pangolin/pangolin.h>
 #include <thread>
 
@@ -126,7 +127,7 @@ System::System(const string         &strVocFile,
     cv::FileNode node = fsSettings["File.version"];
     if (!node.empty() && node.isString() && node.string() == "1.0")
     {
-        settings_     = new Settings(strSettingsFile, sensor);
+        settings_     = new utils::settings::Settings(strSettingsFile, sensor);
         loadAtlasFile = settings_->atlasLoadFile();
         saveAtlasFile = settings_->atlasSaveFile();
         std::cout << (*settings_) << std::endl;
@@ -174,9 +175,6 @@ System::System(const string         &strVocFile,
     /* Create keyframe database */
     p_keyFrameDatabase = new KeyFrameDatabase(*p_vocabulary);
 
-    /* Init flag to indicate if a previous map is loaded */
-    bool loadedAtlas;
-
     /* Check to see if there is a string to an Atlas map file to load */
     if (loadAtlasFile.empty())
     {
@@ -185,9 +183,6 @@ System::System(const string         &strVocFile,
 
         std::cout << "[System] Initializing Atlas from scratch in 'mpAtlas'"
                   << std::endl;
-
-        /* Set flag to indcate that an Atlas map was not previously loaded */
-        loadedAtlas = false;
     }
     else
     {
@@ -204,8 +199,6 @@ System::System(const string         &strVocFile,
                       << std::endl;
             exit(-1);
         }
-
-        loadedAtlas = true;
 
         p_atlas->createNewMap();
     }
@@ -489,7 +482,8 @@ void System::setSkeletonEdges(
 }
 
 void System::setGNNRoomCandidates(
-    const std::vector<vs_graphs::core::semantic::Room *> &gnnRoomCandidates)
+    [[maybe_unused]] const std::vector<vs_graphs::core::semantic::Room *>
+        &gnnRoomCandidates)
 {
     // [TODO] Add the GNN room candidates to the SemanticsManager
 }
@@ -1452,8 +1446,6 @@ void System::saveTrajectoryEuRoC(const string &filename, Map *pMap)
          << "Saving trajectory of map " << pMap->getId() << " to " << filename
          << " ..." << endl;
 
-    int numMaxKFs = 0;
-
     vector<KeyFrame *> vpKFs = pMap->getAllKeyFrames();
     sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
 
@@ -2029,8 +2021,6 @@ string System::calculateCheckSum(string filename, int type)
 {
     string checksum = "";
 
-    unsigned char c[MD5_DIGEST_LENGTH];
-
     std::ios_base::openmode flags = std::ios::in;
     if (type == BINARY_FILE) // Binary file
         flags = std::ios::in | std::ios::binary;
@@ -2043,23 +2033,60 @@ string System::calculateCheckSum(string filename, int type)
         return checksum;
     }
 
-    MD5_CTX md5Context;
-    char    buffer[1024];
+    /*
+     * OpenSSL 3 deprecates the MD5_* calls, so the identical MD5 digest is
+     * taken through the EVP interface. The context is owned for the whole
+     * scope so that every early return releases it.
+     */
+    const std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)>
+        p_digestContext(EVP_MD_CTX_new(), &EVP_MD_CTX_free);
 
-    MD5_Init(&md5Context);
+    if (!p_digestContext)
+    {
+        cout << "[E] Unable to allocate the Md5 context for " << filename
+             << "." << endl;
+        return checksum;
+    }
+
+    if (EVP_DigestInit_ex(p_digestContext.get(), EVP_md5(), nullptr) != 1)
+    {
+        cout << "[E] Unable to start the Md5 hash of " << filename << "."
+             << endl;
+        return checksum;
+    }
+
+    char buffer[1024];
+
     while (int count = f.readsome(buffer, sizeof(buffer)))
     {
-        MD5_Update(&md5Context, buffer, count);
+        if (EVP_DigestUpdate(p_digestContext.get(),
+                             buffer,
+                             static_cast<std::size_t>(count)) != 1)
+        {
+            cout << "[E] Unable to hash the contents of " << filename << "."
+                 << endl;
+            return checksum;
+        }
     }
 
     f.close();
 
-    MD5_Final(c, &md5Context);
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int  digestLength_bytes = 0U;
 
-    for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
+    if (EVP_DigestFinal_ex(p_digestContext.get(),
+                           digest,
+                           &digestLength_bytes) != 1)
+    {
+        cout << "[E] Unable to finish the Md5 hash of " << filename << "."
+             << endl;
+        return checksum;
+    }
+
+    for (unsigned int i = 0; i < digestLength_bytes; i++)
     {
         char aux[10];
-        sprintf(aux, "%02x", c[i]);
+        sprintf(aux, "%02x", digest[i]);
         checksum = checksum + aux;
     }
 

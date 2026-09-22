@@ -1344,7 +1344,7 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
         return false;
     }
 
-    if (!Utils::arePlanesParallel(p_first_in, p_second_in))
+    if (!utils::utils::Utils::arePlanesParallel(p_first_in, p_second_in))
     {
         return false;
     }
@@ -1963,7 +1963,7 @@ void SemanticsManager::run(void)
          */
         if (p_sysParams->semSeg.reassociate.enabled)
         {
-            Utils::reAssociateSemanticPlanes(p_atlas);
+            utils::utils::Utils::reAssociateSemanticPlanes(p_atlas);
         }
 
         /*  Detect/update passage GEOMETRY before any wall-to-room admission
@@ -2006,14 +2006,14 @@ void SemanticsManager::run(void)
         associateAllWallsToRooms();
 
         /* Consolidate only redundant single-wall provisional structures. */
-        Utils::reAssociateRooms(p_atlas);
+        utils::utils::Utils::reAssociateRooms(p_atlas);
 
         /*  Room-dependent passage steps: geometry was already refreshed
          * above, ahead of this cycle's wall admission. */
         if (p_sysParams->semSeg.enablePassageDetection)
         {
             updateTraversalEvidence(p_atlas);
-            Utils::reAssociatePassages(p_atlas);
+            utils::utils::Utils::reAssociatePassages(p_atlas);
             associatePassagesToRooms();
             detachWallsBeyondConfirmedPassages();
 
@@ -3719,13 +3719,13 @@ void SemanticsManager::detectDoorsAndDoorways(vs_graphs::core::Atlas *pAtlas)
             }
 
             /* Door and wall must be parallel */
-            if (!Utils::arePlanesParallel(door, wall))
+            if (!utils::utils::Utils::arePlanesParallel(door, wall))
             {
                 continue;
             }
 
             /* Door must lie close to the supporting wall */
-            if (Utils::arePlanesApartEnough(
+            if (utils::utils::Utils::arePlanesApartEnough(
                     door,
                     wall,
                     p_sysParams->semSeg.maxWallDoorDistance))
@@ -3783,7 +3783,7 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *pAtlas)
 
             /* Extract width height supple of door */
             std::pair<double, double> widthHeight =
-                Utils::computePlaneWidthHeight(
+                utils::utils::Utils::computePlaneWidthHeight(
                     doorPlane->getGeometrySnapshot().supportCloud);
 
             /* Extract the measured height and width */
@@ -3929,7 +3929,8 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *pAtlas)
                 vs_graphs::core::geometric::Plane passagePlane;
                 passagePlane.setGlobalEquation(g2o::Plane3D(midPlaneEquation));
 
-                if (Utils::arePlanesPerpendicular(&passagePlane, groundPlane))
+                if (utils::utils::Utils::arePlanesPerpendicular(&passagePlane,
+                                                                groundPlane))
                 {
                     passage->setGlobalEquation(g2o::Plane3D(midPlaneEquation));
                 }
@@ -3974,7 +3975,8 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *pAtlas)
 
             vs_graphs::core::geometric::Plane passagePlane;
             passagePlane.setGlobalEquation(passage->getGlobalEquation());
-            if (!Utils::arePlanesPerpendicular(&passagePlane, groundPlane))
+            if (!utils::utils::Utils::arePlanesPerpendicular(&passagePlane,
+                                                             groundPlane))
             {
                 // Project the passage normal onto the horizontal plane to
                 // remove tilt
@@ -5604,8 +5606,9 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
     }
 
     /* Matches the resolvable-side floor already used by the association path
-     * (Utils::associatePlanes) and Plane::getObservationSideSnapshot(): a
-     * position essentially ON the plane does not identify a side. */
+     * (utils::utils::Utils::associatePlanes) and
+     * Plane::getObservationSideSnapshot(): a position essentially ON the plane
+     * does not identify a side. */
     constexpr double minimumResolvableSide_m = 0.10;
 
     if (std::abs(observedSide_m) < minimumResolvableSide_m ||
@@ -6105,7 +6108,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
         /* Extract the cluster centroid */
         const Eigen::Vector3d clusterCentroid =
-            Utils::computeCentroidFromPoints(cluster);
+            utils::utils::Utils::computeCentroidFromPoints(cluster);
 
         /* Initialize a list of planes to track the closest walls */
         std::vector<vs_graphs::core::geometric::Plane *> closestWalls;
@@ -7100,7 +7103,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
          * @note        This is deliberately more restrictive than the old
          *              centroid-only reAssociateRooms() implementation.
          */
-        Utils::consolidateProvisionalRooms(room, p_atlas);
+        utils::utils::Utils::consolidateProvisionalRooms(room, p_atlas);
 
         /* Remove invalid relationships from the room's persistent graph. */
         room->removeInvalidWalls();
@@ -7385,7 +7388,7 @@ void SemanticsManager::getUpdatedFloors(void)
 
     /* Find the floor centroid from the confirmed room centroids */
     const Eigen::Vector3d floorCentroid =
-        Utils::computeCentroidFromPoints(roomCentroids);
+        utils::utils::Utils::computeCentroidFromPoints(roomCentroids);
 
     p_keeperFloor->setRooms(confirmedRooms);
     p_keeperFloor->setCentroid(floorCentroid);
@@ -8367,7 +8370,7 @@ void SemanticsManager::suppressUndefendedWalls(void)
                     continue;
                 }
                 const Eigen::Vector3d clusterCentroid_World_m =
-                    Utils::computeCentroidFromPoints(cluster);
+                    utils::utils::Utils::computeCentroidFromPoints(cluster);
                 if (!clusterCentroid_World_m.allFinite() ||
                     (clusterCentroid_World_m - wallGeometry.centroid_World_m)
                             .norm() > maximumCentroidDistance_m)

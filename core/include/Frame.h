@@ -36,8 +36,8 @@
 #include "ImuTypes.h"
 #include "ORBVocabulary.h"
 
-#include "Converter.h"
-#include "Settings.h"
+#include "Utils/Converter/objects/Converter.h"
+#include "Utils/Settings/objects/Settings.h"
 
 #include <mutex>
 #include <opencv2/opencv.hpp>
@@ -95,7 +95,7 @@ class Frame
           cv::Mat                        &distCoef,
           const float                    &bf,
           const float                    &thDepth,
-          camera_models::GeometricCamera *pCamera,
+          camera_models::geometriccamera::GeometricCamera *pCamera,
           Frame            *pPrevF   = static_cast<Frame *>(nullptr),
           const IMU::Calib &ImuCalib = IMU::Calib(),
           const std::vector<semantic::Marker *> markers =
@@ -113,8 +113,8 @@ class Frame
           cv::Mat                        &distCoef,
           const float                    &bf,
           const float                    &thDepth,
-          camera_models::GeometricCamera *pCamera,
-          camera_models::GeometricCamera *pCamera2,
+          camera_models::geometriccamera::GeometricCamera *pCamera,
+          camera_models::geometriccamera::GeometricCamera *pCamera2,
           Sophus::SE3f                   &Tlr,
           Frame            *pPrevF   = static_cast<Frame *>(nullptr),
           const IMU::Calib &ImuCalib = IMU::Calib(),
@@ -133,7 +133,7 @@ class Frame
           cv::Mat                                      &distCoef,
           const float                                  &bf,
           const float                                  &thDepth,
-          camera_models::GeometricCamera               *pCamera,
+          camera_models::geometriccamera::GeometricCamera               *pCamera,
           Frame            *pPrevF   = static_cast<Frame *>(nullptr),
           const IMU::Calib &ImuCalib = IMU::Calib(),
           const std::vector<semantic::Marker *> markers =
@@ -145,7 +145,7 @@ class Frame
           const double                   &timeStamp,
           ORBextractor                   *extractor,
           ORBVocabulary                  *voc,
-          camera_models::GeometricCamera *pCamera,
+          camera_models::geometriccamera::GeometricCamera *pCamera,
           cv::Mat                        &distCoef,
           const float                    &bf,
           const float                    &thDepth,
@@ -454,7 +454,7 @@ class Frame
     std::shared_ptr<std::mutex> p_imuMutex = std::make_shared<std::mutex>();
 
   public:
-    camera_models::GeometricCamera *p_camera, *p_camera2;
+    camera_models::geometriccamera::GeometricCamera *p_camera, *p_camera2;
 
     // Number of KeyPoints extracted in the left and right images
     int Nleft = -1, Nright = -1;

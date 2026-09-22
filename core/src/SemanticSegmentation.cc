@@ -282,8 +282,9 @@ void SemanticSegmentation::run()
          * past an empty/undersized class cloud with no trace anywhere. That
          * made "the segmenter found nothing this frame" indistinguishable
          * from "there was nothing to find" in every existing log. Class
-         * index 1 is WALL (Utils::getPlaneTypeFromClassId). Gate on a small
-         * count, not just empty, so this stays quiet on ordinary frames.
+         * index 1 is WALL (utils::utils::Utils::getPlaneTypeFromClassId). Gate
+         * on a small count, not just empty, so this stays quiet on ordinary
+         * frames.
          */
         constexpr std::size_t kWallClassIndex          = 1U;
         constexpr std::size_t kWallSilentDropLogThresh = 50U;
@@ -694,19 +695,22 @@ std::vector<std::vector<
          *              `visual_sgraphs/core/include/Types/SystemParams.h`
          */
         filteredCloud =
-            Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(clsCloudPtrs[i]);
+            utils::utils::Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(
+                clsCloudPtrs[i]);
 
         /* Downsample points into grid based on points within voxel grid */
-        filteredCloud = Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
-            filteredCloud,
-            p_sysParams->semSeg.pointcloud.downsample.leafSize,
-            p_sysParams->semSeg.pointcloud.downsample.minPointsPerVoxel);
+        filteredCloud =
+            utils::utils::Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
+                filteredCloud,
+                p_sysParams->semSeg.pointcloud.downsample.leafSize,
+                p_sysParams->semSeg.pointcloud.downsample.minPointsPerVoxel);
 
         /* Remove points that are statically isolated from neighbors */
-        filteredCloud = Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(
-            filteredCloud,
-            p_sysParams->semSeg.pointcloud.outlierRemoval.stdThreshold,
-            p_sysParams->semSeg.pointcloud.outlierRemoval.meanThreshold);
+        filteredCloud =
+            utils::utils::Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(
+                filteredCloud,
+                p_sysParams->semSeg.pointcloud.outlierRemoval.stdThreshold,
+                p_sysParams->semSeg.pointcloud.outlierRemoval.meanThreshold);
 
         /*!
          * Filtering removes arbitrary points, so the result is no longer an
@@ -739,10 +743,9 @@ std::vector<std::vector<
          */
         if (filteredCloud->points.size() > p_sysParams->seg.pointcloudsThresh)
         {
-            extractedPlanes =
-                Utils::ransacPlaneFitting<pcl::PointXYZRGBA,
-                                          pcl::WeightedSACSegmentation>(
-                    filteredCloud);
+            extractedPlanes = utils::utils::Utils::ransacPlaneFitting<
+                pcl::PointXYZRGBA,
+                pcl::WeightedSACSegmentation>(filteredCloud);
         }
         clsPlanes.push_back(extractedPlanes);
     }
@@ -767,7 +770,7 @@ void SemanticSegmentation::updatePlaneData(
             g2o::Plane3D detectedPlane(estimatedPlane);
 
             /* Convert the given plane to global coordinates */
-            g2o::Plane3D globalEquation = Utils::applyPoseToPlane(
+            g2o::Plane3D globalEquation = utils::utils::Utils::applyPoseToPlane(
                 pKF->getPoseInverse().matrix().cast<double>(),
                 detectedPlane);
 
@@ -796,7 +799,7 @@ void SemanticSegmentation::updatePlaneData(
              *
              *                  use softmin when dealing with semantic
              *                  confidences double conf =
-             *                  Utils::calcSoftMin(confidences);
+             *                  utils::utils::Utils::calcSoftMin(confidences);
              *
              *                  use average when dealing with geometric (in this
              *                  case depth) confidences
@@ -824,7 +827,7 @@ void SemanticSegmentation::updatePlaneData(
 
             /* Get the semantic type of the observation */
             vs_graphs::core::geometric::Plane::PlaneVariant semanticType =
-                Utils::getPlaneTypeFromClassId(clsId);
+                utils::utils::Utils::getPlaneTypeFromClassId(clsId);
 
             /*!
              * Associate the observation using the global plane equation and
@@ -834,7 +837,7 @@ void SemanticSegmentation::updatePlaneData(
              *              frame avoids inconsistencies between plane
              *              equations, centroids and point clouds.
              */
-            int matchedPlaneId = Utils::associatePlanes(
+            int matchedPlaneId = utils::utils::Utils::associatePlanes(
                 p_atlas->getAllPlanes(),
                 globalEquation,
                 globalPlaneCloud,
@@ -941,7 +944,7 @@ void SemanticSegmentation::updatePlaneData(
 
                         /* Compute finite dimensions from connected support. */
                         const std::pair<double, double> wallDimensions =
-                            Utils::computePlaneWidthHeight(
+                            utils::utils::Utils::computePlaneWidthHeight(
                                 p_connectedGlobalWallCloud);
 
                         /* Extract the larger planar dimension */
@@ -1089,7 +1092,7 @@ void SemanticSegmentation::updatePlaneSemantics(int    planeId,
 
     // plane type compatible with the Plane class
     vs_graphs::core::geometric::Plane::PlaneVariant planeType =
-        Utils::getPlaneTypeFromClassId(clsId);
+        utils::utils::Utils::getPlaneTypeFromClassId(clsId);
 
     // cast a vote for the plane semantics
     matchedPlane->castWeightedVote(planeType, confidence);

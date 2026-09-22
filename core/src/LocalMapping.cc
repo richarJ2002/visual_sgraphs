@@ -29,9 +29,9 @@
  * @brief        Implements LocalMapping declared in LocalMapping.h.
  */
 
-#include "Converter.h"
-#include "GeometricTools.h"
 #include "LocalMapping.h"
+#include "Utils/Converter/objects/Converter.h"
+#include "GeometricTools.h"
 #include "LoopClosing.h"
 #include "ORBmatcher.h"
 #include "Optimizer.h"
@@ -44,11 +44,17 @@ namespace vs_graphs
 namespace core
 {
 
-LocalMapping::LocalMapping(System       *pSys,
-                           Atlas        *pAtlas,
-                           const float   bMonocular,
-                           bool          bInertial,
-                           const string &_strSeqName) :
+LocalMapping::LocalMapping(System                        *pSys,
+                           Atlas                         *pAtlas,
+                           const float                    bMonocular,
+                           bool                           bInertial,
+                           [[maybe_unused]] const string &_strSeqName) :
+    scale(1.0),
+    initSection(0),
+    initIndex(0),
+    iterationIndex(0),
+    notBA1(true),
+    notBA2(true),
     p_system(pSys),
     monocular(bMonocular),
     inertial(bInertial),
@@ -57,18 +63,12 @@ LocalMapping::LocalMapping(System       *pSys,
     finishRequested(false),
     finished(true),
     p_atlas(pAtlas),
-    bInitializing(false),
     abortBA(false),
     stopped(false),
     stopRequestedFlag(false),
     notStop(false),
     acceptKeyFrames(true),
-    initIndex(0),
-    scale(1.0),
-    initSection(0),
-    notBA1(true),
-    notBA2(true),
-    iterationIndex(0),
+    bInitializing(false),
     infoInertial(Eigen::MatrixXd::Zero(9, 9))
 {
     localMappingCount       = 0;
@@ -164,11 +164,13 @@ void LocalMapping::run()
             vdMPCreation_ms.push_back(timeMPCreation);
 #endif
 
-            bool b_doneLBA      = false;
-            int  num_FixedKF_BA = 0;
-            int  num_OptKF_BA   = 0;
-            int  num_MPs_BA     = 0;
-            int  num_edges_BA   = 0;
+            // Only consumed by the REGISTER_TIMES statistics block below.
+            [[maybe_unused]] bool b_doneLBA = false;
+
+            int num_FixedKF_BA = 0;
+            int num_OptKF_BA   = 0;
+            int num_MPs_BA     = 0;
+            int num_edges_BA   = 0;
 
             if (!checkNewKeyFrames() && !stopRequested())
             {
@@ -511,7 +513,10 @@ void LocalMapping::createNewMapPoints()
     {
         KeyFrame *pKF   = p_currentKeyFrame;
         int       count = 0;
-        while ((vpNeighKFs.size() <= nn) && (pKF->p_prevKF) && (count++ < nn))
+        // nn is the fixed covisibility budget set above (10, or 30 when
+        // monocular), so it is always positive here.
+        while ((vpNeighKFs.size() <= static_cast<std::size_t>(nn)) &&
+               (pKF->p_prevKF) && (count++ < nn))
         {
             vector<KeyFrame *>::iterator it =
                 std::find(vpNeighKFs.begin(), vpNeighKFs.end(), pKF->p_prevKF);
@@ -532,12 +537,10 @@ void LocalMapping::createNewMapPoints()
     Eigen::Vector3f            tcw1     = sophTcw1.translation();
     Eigen::Vector3f            Ow1      = p_currentKeyFrame->getCameraCenter();
 
-    const float &fx1    = p_currentKeyFrame->fx;
-    const float &fy1    = p_currentKeyFrame->fy;
-    const float &cx1    = p_currentKeyFrame->cx;
-    const float &cy1    = p_currentKeyFrame->cy;
-    const float &invfx1 = p_currentKeyFrame->invfx;
-    const float &invfy1 = p_currentKeyFrame->invfy;
+    const float &fx1 = p_currentKeyFrame->fx;
+    const float &fy1 = p_currentKeyFrame->fy;
+    const float &cx1 = p_currentKeyFrame->cx;
+    const float &cy1 = p_currentKeyFrame->cy;
 
     const float ratioFactor         = 1.5f * p_currentKeyFrame->scaleFactor;
     int         countStereo         = 0;
@@ -552,8 +555,9 @@ void LocalMapping::createNewMapPoints()
 
         KeyFrame *pKF2 = vpNeighKFs[i];
 
-        camera_models::GeometricCamera *pCamera1 = p_currentKeyFrame->p_camera,
-                                       *pCamera2 = pKF2->p_camera;
+        camera_models::geometriccamera::GeometricCamera
+            *pCamera1 = p_currentKeyFrame->p_camera,
+            *pCamera2 = pKF2->p_camera;
 
         // Check first that baseline is not too short
         Eigen::Vector3f Ow2       = pKF2->getCameraCenter();
@@ -592,12 +596,10 @@ void LocalMapping::createNewMapPoints()
         Eigen::Matrix<float, 3, 3> Rwc2     = Rcw2.transpose();
         Eigen::Vector3f            tcw2     = sophTcw2.translation();
 
-        const float &fx2    = pKF2->fx;
-        const float &fy2    = pKF2->fy;
-        const float &cx2    = pKF2->cx;
-        const float &cy2    = pKF2->cy;
-        const float &invfx2 = pKF2->invfx;
-        const float &invfy2 = pKF2->invfy;
+        const float &fx2 = pKF2->fx;
+        const float &fy2 = pKF2->fy;
+        const float &cx2 = pKF2->cx;
+        const float &cy2 = pKF2->cy;
 
         // Triangulate each match
         const int nmatches = vMatchedIndices.size();
@@ -1144,11 +1146,14 @@ void LocalMapping::keyFrameCulling()
                     nMPs++;
                     if (pMP->getObservationCount() > thObs)
                     {
+                        // Reached only when Nleft != -1, i.e. the fisheye
+                        // stereo case, where Nleft is a keypoint count >= 0.
                         const int &scaleLevel =
                             (pKF->Nleft == -1)
                                 ? pKF->keyPointsUndistorted[i].octave
-                            : (i < pKF->Nleft) ? pKF->keyPoints[i].octave
-                                               : pKF->keyPointsRight[i].octave;
+                            : (i < static_cast<std::size_t>(pKF->Nleft))
+                                ? pKF->keyPoints[i].octave
+                                : pKF->keyPointsRight[i].octave;
                         const map<KeyFrame *, tuple<int, int>> observations =
                             pMP->getObservations();
                         int nObs = 0;
@@ -1303,13 +1308,10 @@ void LocalMapping::requestResetActiveMap(Map *pMap)
 
 void LocalMapping::resetIfRequested()
 {
-    bool executed_reset = false;
     {
         unique_lock<mutex> lock(mMutexReset);
         if (resetRequested)
         {
-            executed_reset = true;
-
             cout << "[Mapping] Reseting Atlas in 'LocalMapping' ..." << endl;
             newKeyFrames.clear();
             mlpRecentAddedMapPoints.clear();
@@ -1326,7 +1328,6 @@ void LocalMapping::resetIfRequested()
 
         if (resetActiveMapRequested)
         {
-            executed_reset = true;
             cout << "[Mapping] Reseting the Current Map in 'LocalMapping' ..."
                  << endl;
 
@@ -1375,8 +1376,8 @@ void LocalMapping::initializeIMU(float priorG, float priorA, bool bFIBA)
     if (resetRequested)
         return;
 
-    float minTime;
-    int   nMinKF;
+    float       minTime;
+    std::size_t nMinKF;
     if (monocular)
     {
         minTime = 2.0;
@@ -1482,7 +1483,6 @@ void LocalMapping::initializeIMU(float priorG, float priorA, bool bFIBA)
 
     initTime = p_tracker->lastFrame.timeStamp - vpKF.front()->timeStamp;
 
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
     Optimizer::inertialOptimization(p_atlas->getCurrentMap(),
                                     mRwg,
                                     scale,
@@ -1494,8 +1494,6 @@ void LocalMapping::initializeIMU(float priorG, float priorA, bool bFIBA)
                                     false,
                                     priorG,
                                     priorA);
-
-    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
     if (scale < 1e-1)
     {
@@ -1545,7 +1543,6 @@ void LocalMapping::initializeIMU(float priorG, float priorA, bool bFIBA)
         p_currentKeyFrame->isImu = true;
     }
 
-    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
     if (bFIBA)
     {
         if (priorA != 0.f)
@@ -1565,8 +1562,6 @@ void LocalMapping::initializeIMU(float priorG, float priorA, bool bFIBA)
                                       nullptr,
                                       false);
     }
-
-    std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now();
 
     Verbose::printMess("Global Bundle Adjustment finished\nUpdating map ...",
                        Verbose::VERBOSITY_NORMAL);
@@ -1728,14 +1723,10 @@ void LocalMapping::scaleRefinement()
         lpKF.push_back(p_currentKeyFrame);
     }
 
-    const int N = vpKF.size();
-
     mRwg  = Eigen::Matrix3d::Identity();
     scale = 1.0;
 
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
     Optimizer::inertialOptimization(p_atlas->getCurrentMap(), mRwg, scale);
-    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
     if (scale < 1e-1) // 1e-1
     {
@@ -1756,8 +1747,7 @@ void LocalMapping::scaleRefinement()
         return;
     }
 
-    unique_lock<mutex>                    lock(p_activeMap->mMutexMapUpdate);
-    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    unique_lock<mutex> lock(p_activeMap->mMutexMapUpdate);
     if ((fabs(scale - 1.f) > 0.002) || !monocular)
     {
         Sophus::SE3f Tgw(mRwg.cast<float>().transpose(),
@@ -1767,7 +1757,6 @@ void LocalMapping::scaleRefinement()
                                   p_currentKeyFrame->getImuBias(),
                                   p_currentKeyFrame);
     }
-    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
 
     for (list<KeyFrame *>::iterator lit  = newKeyFrames.begin(),
                                     lend = newKeyFrames.end();
@@ -1778,10 +1767,6 @@ void LocalMapping::scaleRefinement()
         delete *lit;
     }
     newKeyFrames.clear();
-
-    double t_inertial_only =
-        std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0)
-            .count();
 
     // To perform pose-inertial opt w.r.t. last keyframe
     p_currentKeyFrame->getMap()->increaseChangeIndex();

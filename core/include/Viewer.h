@@ -28,7 +28,7 @@
 
 #include "FrameDrawer.h"
 #include "MapDrawer.h"
-#include "Settings.h"
+#include "Utils/Settings/objects/Settings.h"
 #include "System.h"
 #include "Tracking.h"
 
@@ -43,7 +43,6 @@ class Tracking;
 class FrameDrawer;
 class MapDrawer;
 class System;
-class Settings;
 
 class Viewer
 {
@@ -54,9 +53,9 @@ class Viewer
            MapDrawer    *pMapDrawer,
            Tracking     *pTracking,
            const string &strSettingPath,
-           Settings     *settings);
+           utils::settings::Settings *settings);
 
-    void newParameterLoader(Settings *settings);
+    void newParameterLoader(utils::settings::Settings *settings);
 
     // Main thread function. Draw points, keyframes, the current camera pose and
     // the last processed frame. Drawing is refreshed according to the camera

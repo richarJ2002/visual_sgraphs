@@ -11,7 +11,7 @@
 #include "Thirdparty/g2o/g2o/core/sparse_optimizer.h"
 #include "Thirdparty/g2o/g2o/solvers/linear_solver_eigen.h"
 #include "Thirdparty/g2o/g2o/types/sim3.h"
-#include "Types/SystemParams.h"
+#include "Types/objects/SystemParams.h"
 
 #include <algorithm>
 #include <cmath>

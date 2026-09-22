@@ -1,0 +1,118 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            passageOpening.cc
+ *
+ * @brief           Implements crossesPassablePassageOpening(), declared
+ *                  in Utils/Utils/private_functions.h.
+ */
+
+#include "Utils/Utils/private_functions.h"
+
+#include <cmath>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace utils
+{
+namespace utils
+{
+
+bool crossesPassablePassageOpening(
+    const Eigen::Vector3d              &segmentStart_World_m_in,
+    const Eigen::Vector3d              &segmentEnd_World_m_in,
+    vs_graphs::core::semantic::Passage *p_passage_in,
+    const Eigen::Vector3d              &groundNormal_World_in,
+    const double                        openingMargin_m_in,
+    const double                        minimumSideDistance_m_in)
+{
+    if (p_passage_in == nullptr || !p_passage_in->isPassable() ||
+        !segmentStart_World_m_in.allFinite() ||
+        !segmentEnd_World_m_in.allFinite())
+    {
+        return false;
+    }
+
+    Eigen::Vector4d passageEquation_World =
+        p_passage_in->getGlobalEquation().coeffs();
+    const double passageNormalNorm = passageEquation_World.head<3>().norm();
+
+    if (!passageEquation_World.allFinite() || passageNormalNorm < 1e-8)
+    {
+        return false;
+    }
+
+    passageEquation_World /= passageNormalNorm;
+    const Eigen::Vector3d passageNormal_World = passageEquation_World.head<3>();
+    const double          startSide_m =
+        passageNormal_World.dot(segmentStart_World_m_in) +
+        passageEquation_World(3);
+    const double endSide_m = passageNormal_World.dot(segmentEnd_World_m_in) +
+                             passageEquation_World(3);
+
+    if (startSide_m * endSide_m >= 0.0 ||
+        std::abs(startSide_m) < minimumSideDistance_m_in ||
+        std::abs(endSide_m) < minimumSideDistance_m_in)
+    {
+        return false;
+    }
+
+    const double interpolation = startSide_m / (startSide_m - endSide_m);
+
+    if (!std::isfinite(interpolation) || interpolation < 0.0 ||
+        interpolation > 1.0)
+    {
+        return false;
+    }
+
+    const Eigen::Vector3d intersection_World_m =
+        segmentStart_World_m_in +
+        interpolation * (segmentEnd_World_m_in - segmentStart_World_m_in);
+    const Eigen::Vector3d passageCentroid_World_m = p_passage_in->getCentroid();
+
+    if (!passageCentroid_World_m.allFinite())
+    {
+        return false;
+    }
+
+    Eigen::Vector3d apertureOffset_World_m =
+        intersection_World_m - passageCentroid_World_m;
+    apertureOffset_World_m -=
+        apertureOffset_World_m.dot(passageNormal_World) * passageNormal_World;
+
+    const double verticalOffset_m =
+        std::abs(apertureOffset_World_m.dot(groundNormal_World_in));
+    const Eigen::Vector3d horizontalOffset_World_m =
+        apertureOffset_World_m -
+        apertureOffset_World_m.dot(groundNormal_World_in) *
+            groundNormal_World_in;
+    const double horizontalOffset_m = horizontalOffset_World_m.norm();
+
+    return horizontalOffset_m <=
+               0.5 * p_passage_in->getWidth() + openingMargin_m_in &&
+           verticalOffset_m <=
+               0.5 * p_passage_in->getHeight() + openingMargin_m_in;
+}
+
+} // namespace utils
+} // namespace utils
+} // namespace core
+} // namespace vs_graphs

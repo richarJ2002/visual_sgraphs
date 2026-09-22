@@ -256,7 +256,7 @@ class MLPnPsolver
     // th*th*sigma(level)*sigma(level)
     vector<float> maxError;
 
-    camera_models::GeometricCamera *p_camera;
+    camera_models::geometriccamera::GeometricCamera *p_camera;
 };
 
 } // namespace core

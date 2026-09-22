@@ -25,7 +25,7 @@
 #include "Semantic/SemanticCandidates.h"
 #include "Semantic/SemanticDiagnostics.h"
 #include "Semantic/SemanticReportCache.h"
-#include "Utils.h"
+#include "Utils/Utils/objects/Utils.h"
 
 #include <cstdint>
 #ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK

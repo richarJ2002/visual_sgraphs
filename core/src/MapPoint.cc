@@ -74,6 +74,7 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, KeyFrame *pRefKF, Map *pMap) :
     correctedByKeyFrameId(0),
     correctedReferenceKeyFrameId(0),
     baGlobalKeyFrameId(0),
+    originMapId(pMap->getId()),
     p_referenceKeyFrame(pRefKF),
     visibleCount(1),
     foundCount(1),
@@ -81,8 +82,7 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, KeyFrame *pRefKF, Map *pMap) :
     p_replaced(static_cast<MapPoint *>(nullptr)),
     minDistance(0),
     maxDistance(0),
-    p_map(pMap),
-    originMapId(pMap->getId())
+    p_map(pMap)
 {
     setWorldPos(Pos);
 
@@ -113,6 +113,7 @@ MapPoint::MapPoint(const double invDepth,
     correctedByKeyFrameId(0),
     correctedReferenceKeyFrameId(0),
     baGlobalKeyFrameId(0),
+    originMapId(pMap->getId()),
     p_referenceKeyFrame(pRefKF),
     visibleCount(1),
     foundCount(1),
@@ -120,8 +121,7 @@ MapPoint::MapPoint(const double invDepth,
     p_replaced(static_cast<MapPoint *>(nullptr)),
     minDistance(0),
     maxDistance(0),
-    p_map(pMap),
-    originMapId(pMap->getId())
+    p_map(pMap)
 {
     inverseDepth = invDepth;
     initU        = (double)uv_init.x;
@@ -152,13 +152,13 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos,
     correctedByKeyFrameId(0),
     correctedReferenceKeyFrameId(0),
     baGlobalKeyFrameId(0),
+    originMapId(pMap->getId()),
     p_referenceKeyFrame(static_cast<KeyFrame *>(nullptr)),
     visibleCount(1),
     foundCount(1),
     mbBad(false),
     p_replaced(nullptr),
-    p_map(pMap),
-    originMapId(pMap->getId())
+    p_map(pMap)
 {
     setWorldPos(Pos);
 
@@ -497,16 +497,18 @@ void MapPoint::computeDistinctiveDescriptors()
     // Compute distances between them
     const size_t N = vDescriptors.size();
 
-    float Distances[N][N];
+    // Symmetric N x N distance matrix held row-major, so row i occupies the
+    // contiguous range [i * N, i * N + N).
+    std::vector<float> Distances(N * N);
     for (size_t i = 0; i < N; i++)
     {
-        Distances[i][i] = 0;
+        Distances[i * N + i] = 0;
         for (size_t j = i + 1; j < N; j++)
         {
             int distij = ORBmatcher::computeDescriptorDistance(vDescriptors[i],
                                                                vDescriptors[j]);
-            Distances[i][j] = distij;
-            Distances[j][i] = distij;
+            Distances[i * N + j] = distij;
+            Distances[j * N + i] = distij;
         }
     }
 
@@ -515,7 +517,8 @@ void MapPoint::computeDistinctiveDescriptors()
     int BestIdx    = 0;
     for (size_t i = 0; i < N; i++)
     {
-        vector<int> vDists(Distances[i], Distances[i] + N);
+        const float *p_row = &Distances[i * N];
+        vector<int>  vDists(p_row, p_row + N);
         sort(vDists.begin(), vDists.end());
         int median = vDists[0.5 * (N - 1)];
 

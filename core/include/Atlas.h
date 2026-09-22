@@ -28,12 +28,12 @@
 
 #include "AtlasCurrentMapStatus.h"
 #include "Geometric/Plane.h"
-#include "GeometricCamera.h"
-#include "KannalaBrandt8.h"
+#include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
+#include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"
 #include "KeyFrame.h"
 #include "Map.h"
 #include "MapPoint.h"
-#include "Pinhole.h"
+#include "CameraModels/Pinhole/objects/Pinhole.h"
 #include "Semantic/Floor.h"
 #include "Semantic/Marker.h"
 #include "Semantic/Passage.h"
@@ -78,8 +78,11 @@ class Marker;
 }
 namespace camera_models
 {
+namespace pinhole
+{
 class Pinhole;
-}
+} // namespace pinhole
+} // namespace camera_models
 namespace semantic
 {
 class Passage;
@@ -88,8 +91,11 @@ class MapPoint;
 class KeyFrame;
 namespace camera_models
 {
+namespace kannalabrandt8
+{
 class KannalaBrandt8;
-}
+} // namespace kannalabrandt8
+} // namespace camera_models
 class KeyFrameDatabase;
 
 /*!
@@ -124,8 +130,9 @@ class Atlas
     template <class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-        ar.template register_type<camera_models::Pinhole>();
-        ar.template register_type<camera_models::KannalaBrandt8>();
+        ar.template register_type<camera_models::pinhole::Pinhole>();
+        ar.template register_type<
+            camera_models::kannalabrandt8::KannalaBrandt8>();
 
         // Save/load a set structure, the set structure is broken in
         // libboost 1.58 for ubuntu 16.04, a vector is serializated ar &
@@ -138,7 +145,7 @@ class Atlas
         ar &Frame::nNextId;
         ar &KeyFrame::nNextId;
         ar &MapPoint::nNextId;
-        ar &camera_models::GeometricCamera::nextId;
+        ar &camera_models::geometriccamera::GeometricCamera::nextId;
         ar & lastInitKeyFrameId;
     }
 
@@ -204,9 +211,9 @@ class Atlas
      */
     int getCurrentSemanticRoomIdentity(void) const;
 
-    std::vector<camera_models::GeometricCamera *> getAllCameras();
-    camera_models::GeometricCamera *
-        addCamera(camera_models::GeometricCamera *pCam);
+    std::vector<camera_models::geometriccamera::GeometricCamera *> getAllCameras();
+    camera_models::geometriccamera::GeometricCamera *
+        addCamera(camera_models::geometriccamera::GeometricCamera *pCam);
 
     /* All methods without Map pointer work on current map */
     void informNewBigChange();
@@ -497,7 +504,7 @@ class Atlas
 
     Map *p_activeMap;
 
-    std::vector<camera_models::GeometricCamera *> cameras;
+    std::vector<camera_models::geometriccamera::GeometricCamera *> cameras;
 
     unsigned long int lastInitKeyFrameId;
 

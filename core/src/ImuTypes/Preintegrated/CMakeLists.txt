@@ -1,0 +1,22 @@
+# Preintegrated object sources: exactly this object's translation units.
+set(VS_GRAPHS_IMUTYPES_PREINTEGRATED_SOURCES
+  core/src/ImuTypes/Preintegrated/methods/copyFrom.cc
+  core/src/ImuTypes/Preintegrated/methods/initialize.cc
+  core/src/ImuTypes/Preintegrated/methods/reintegrate.cc
+  core/src/ImuTypes/Preintegrated/methods/integrateNewMeasurement.cc
+  core/src/ImuTypes/Preintegrated/methods/mergePrevious.cc
+  core/src/ImuTypes/Preintegrated/methods/setNewBias.cc
+  core/src/ImuTypes/Preintegrated/methods/getDeltaBias/withBias.cc
+  core/src/ImuTypes/Preintegrated/methods/getDeltaBias/stored.cc
+  core/src/ImuTypes/Preintegrated/methods/getDeltaRotation.cc
+  core/src/ImuTypes/Preintegrated/methods/getDeltaVelocity.cc
+  core/src/ImuTypes/Preintegrated/methods/getDeltaPosition.cc
+  core/src/ImuTypes/Preintegrated/methods/getUpdatedDeltaRotation.cc
+  core/src/ImuTypes/Preintegrated/methods/getUpdatedDeltaVelocity.cc
+  core/src/ImuTypes/Preintegrated/methods/getUpdatedDeltaPosition.cc
+  core/src/ImuTypes/Preintegrated/methods/getOriginalDeltaRotation.cc
+  core/src/ImuTypes/Preintegrated/methods/getOriginalDeltaVelocity.cc
+  core/src/ImuTypes/Preintegrated/methods/getOriginalDeltaPosition.cc
+  core/src/ImuTypes/Preintegrated/methods/getOriginalBias.cc
+  core/src/ImuTypes/Preintegrated/methods/getUpdatedBias.cc
+)

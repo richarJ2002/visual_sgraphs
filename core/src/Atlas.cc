@@ -30,16 +30,16 @@
  */
 
 #include "Atlas.h"
-#include "Utils.h"
+#include "Utils/Utils/objects/Utils.h"
 #include "Viewer.h"
 
+#include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
+#include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"
+#include "CameraModels/Pinhole/objects/Pinhole.h"
 #include "Geometric/Plane.h"
-#include "GeometricCamera.h"
-#include "KannalaBrandt8.h"
-#include "Pinhole.h"
 #include "Semantic/Room.h"
 #include "Semantic/SemanticVerify.h"
-#include "Types/SystemParams.h"
+#include "Types/objects/SystemParams.h"
 
 #include <algorithm>
 #include <chrono>
@@ -616,15 +616,15 @@ int Atlas::getCurrentSemanticRoomIdentity(void) const
     return currentSemanticRoomIdentity_.load(std::memory_order_acquire);
 }
 
-camera_models::GeometricCamera *
-    Atlas::addCamera(camera_models::GeometricCamera *pCam)
+camera_models::geometriccamera::GeometricCamera *
+    Atlas::addCamera(camera_models::geometriccamera::GeometricCamera *pCam)
 {
     // Check if the camera already exists
     bool bAlreadyInMap = false;
     int  index_cam     = -1;
     for (size_t i = 0; i < cameras.size(); ++i)
     {
-        camera_models::GeometricCamera *pCam_i = cameras[i];
+        camera_models::geometriccamera::GeometricCamera *pCam_i = cameras[i];
         if (!pCam)
             std::cout << "Not pCam" << std::endl;
         if (!pCam_i)
@@ -632,17 +632,20 @@ camera_models::GeometricCamera *
         if (pCam->getType() != pCam_i->getType())
             continue;
 
-        if (pCam->getType() == camera_models::GeometricCamera::CAM_PINHOLE)
+        if (pCam->getType() ==
+            camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE)
         {
-            if (((camera_models::Pinhole *)pCam_i)->isEqual(pCam))
+            if (((camera_models::pinhole::Pinhole *)pCam_i)->isEqual(pCam))
             {
                 bAlreadyInMap = true;
                 index_cam     = i;
             }
         }
-        else if (pCam->getType() == camera_models::GeometricCamera::CAM_FISHEYE)
+        else if (pCam->getType() ==
+                 camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE)
         {
-            if (((camera_models::KannalaBrandt8 *)pCam_i)->isEqual(pCam))
+            if (((camera_models::kannalabrandt8::KannalaBrandt8 *)pCam_i)
+                    ->isEqual(pCam))
             {
                 bAlreadyInMap = true;
                 index_cam     = i;
@@ -661,7 +664,8 @@ camera_models::GeometricCamera *
     }
 }
 
-std::vector<camera_models::GeometricCamera *> Atlas::getAllCameras()
+std::vector<camera_models::geometriccamera::GeometricCamera *>
+    Atlas::getAllCameras()
 {
     return cameras;
 }
@@ -1014,12 +1018,12 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     std::vector<Eigen::Vector3d> normalsCurrent, centroidsCurrent;
     std::vector<Eigen::Vector3d> normalsOther, centroidsOther;
 
-    if (!Utils::collectCorrespondingWalls(p_currentMap_in,
-                                          p_otherMap_in,
-                                          normalsCurrent,
-                                          centroidsCurrent,
-                                          normalsOther,
-                                          centroidsOther))
+    if (!utils::utils::Utils::collectCorrespondingWalls(p_currentMap_in,
+                                                        p_otherMap_in,
+                                                        normalsCurrent,
+                                                        centroidsCurrent,
+                                                        normalsOther,
+                                                        centroidsOther))
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: fewer than three "
                      "wall correspondences."
@@ -1030,10 +1034,10 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     /* Horn's closed-form transform maps other-frame points into current frame.
      */
     const Eigen::Isometry3d T_otherToCurrent =
-        Utils::computeMapTransform_Horn(normalsOther,
-                                        centroidsOther,
-                                        normalsCurrent,
-                                        centroidsCurrent);
+        utils::utils::Utils::computeMapTransform_Horn(normalsOther,
+                                                      centroidsOther,
+                                                      normalsCurrent,
+                                                      centroidsCurrent);
 
     if (!T_otherToCurrent.matrix().allFinite())
     {
@@ -1473,7 +1477,8 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
             }
         }
 
-        Utils::fuseDuplicateRoomsAfterMerge(p_currentMap_in, importedRooms);
+        utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap_in,
+                                                          importedRooms);
 
         semantic::Floor *p_mergedFloor =
             semantic::Floor::selectBestObservedFloor(
@@ -1506,7 +1511,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
             }
         }
 
-        Utils::reAssociatePassages(this);
+        utils::utils::Utils::reAssociatePassages(this);
     }
 
     /* Retire the absorbed map while keeping the current map active. */
@@ -1631,12 +1636,12 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
 
         std::vector<Eigen::Vector3d> normalsCurrent, centroidsCurrent;
         std::vector<Eigen::Vector3d> normalsOld, centroidsOld;
-        if (!Utils::collectCorrespondingWalls(p_currentMap,
-                                              p_oldMap,
-                                              normalsCurrent,
-                                              centroidsCurrent,
-                                              normalsOld,
-                                              centroidsOld))
+        if (!utils::utils::Utils::collectCorrespondingWalls(p_currentMap,
+                                                            p_oldMap,
+                                                            normalsCurrent,
+                                                            centroidsCurrent,
+                                                            normalsOld,
+                                                            centroidsOld))
         {
             recordAttempt();
             std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_"
@@ -1649,10 +1654,10 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             continue;
         }
         const Eigen::Isometry3d transformOldToCurrent =
-            Utils::computeMapTransform_Horn(normalsOld,
-                                            centroidsOld,
-                                            normalsCurrent,
-                                            centroidsCurrent);
+            utils::utils::Utils::computeMapTransform_Horn(normalsOld,
+                                                          centroidsOld,
+                                                          normalsCurrent,
+                                                          centroidsCurrent);
         if (!transformOldToCurrent.matrix().allFinite())
         {
             recordAttempt();
@@ -1746,8 +1751,9 @@ void Atlas::PreSave()
     std::copy(maps.begin(), maps.end(), std::back_inserter(backupMaps));
     sort(backupMaps.begin(), backupMaps.end(), CompFunctor());
 
-    std::set<camera_models::GeometricCamera *> spCams(cameras.begin(),
-                                                      cameras.end());
+    std::set<camera_models::geometriccamera::GeometricCamera *> spCams(
+        cameras.begin(),
+        cameras.end());
     for (Map *pMi : backupMaps)
     {
         if (!pMi || pMi->isBad())
@@ -1766,8 +1772,8 @@ void Atlas::PreSave()
 
 void Atlas::PostLoad()
 {
-    map<unsigned int, camera_models::GeometricCamera *> mpCams;
-    for (camera_models::GeometricCamera *pCam : cameras)
+    map<unsigned int, camera_models::geometriccamera::GeometricCamera *> mpCams;
+    for (camera_models::geometriccamera::GeometricCamera *pCam : cameras)
     {
         mpCams[pCam->getId()] = pCam;
     }

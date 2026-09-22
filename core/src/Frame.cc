@@ -31,17 +31,17 @@
 
 #include "Frame.h"
 
-#include "Converter.h"
+#include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
+#include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"
+#include "CameraModels/Pinhole/objects/Pinhole.h"
 #include "G2oTypes.h"
-#include "GeometricCamera.h"
 #include "KeyFrame.h"
 #include "MapPoint.h"
 #include "ORBextractor.h"
 #include "ORBmatcher.h"
 #include "StereoMatchOutlierRejection.h"
+#include "Utils/Converter/objects/Converter.h"
 
-#include <include/CameraModels/KannalaBrandt8.h>
-#include <include/CameraModels/Pinhole.h>
 #include <thread>
 
 namespace vs_graphs
@@ -60,14 +60,14 @@ cv::BFMatcher Frame::bfMatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
 Frame::Frame() :
     p_poseImuConstraint(nullptr),
+    poseAvailable(false),
+    velocityAvailable(false),
     p_imuPreintegrated(nullptr),
     p_previousFrame(nullptr),
     p_imuPreintegratedFrame(nullptr),
     p_referenceKeyFrame(static_cast<KeyFrame *>(nullptr)),
     isFrameSet(false),
-    imuPreintegrated(false),
-    poseAvailable(false),
-    velocityAvailable(false)
+    imuPreintegrated(false)
 {
 #ifdef REGISTER_TIMES
     stereoMatchTime   = 0;
@@ -78,12 +78,20 @@ Frame::Frame() :
 // Copy Constructor
 Frame::Frame(const Frame &frame) :
     p_poseImuConstraint(frame.p_poseImuConstraint),
+    poseTcw(frame.poseTcw),
+    poseAvailable(false),
+    poseTlr(frame.poseTlr),
+    poseTrl(frame.poseTrl),
+    rotationRlr(frame.rotationRlr),
+    translationTlr(frame.translationTlr),
+    velocityAvailable(false),
     p_orbVocabulary(frame.p_orbVocabulary),
     p_orbExtractorLeft(frame.p_orbExtractorLeft),
     p_orbExtractorRight(frame.p_orbExtractorRight),
     timeStamp(frame.timeStamp),
     calibrationMatrix(frame.calibrationMatrix.clone()),
-    calibrationMatrixEigen(Converter::toMatrix3f(frame.calibrationMatrix)),
+    calibrationMatrixEigen(
+        utils::converter::Converter::toMatrix3f(frame.calibrationMatrix)),
     distortionCoefficients(frame.distortionCoefficients.clone()),
     mbf(frame.mbf),
     mb(frame.mb),
@@ -92,19 +100,21 @@ Frame::Frame(const Frame &frame) :
     keyPoints(frame.keyPoints),
     keyPointsRight(frame.keyPointsRight),
     keyPointsUndistorted(frame.keyPointsUndistorted),
+    mapPoints(frame.mapPoints),
     uRight(frame.uRight),
     depths(frame.depths),
     bowVector(frame.bowVector),
     featureVector(frame.featureVector),
     descriptors(frame.descriptors.clone()),
     descriptorsRight(frame.descriptorsRight.clone()),
-    mapPoints(frame.mapPoints),
     outlierFlags(frame.outlierFlags),
-    imuCalibration(frame.imuCalibration),
     closeMapPointCount(frame.closeMapPointCount),
-    p_imuPreintegrated(frame.p_imuPreintegrated),
-    p_imuPreintegratedFrame(frame.p_imuPreintegratedFrame),
     imuBias(frame.imuBias),
+    imuCalibration(frame.imuCalibration),
+    p_imuPreintegrated(frame.p_imuPreintegrated),
+    p_lastKeyFrame(frame.p_lastKeyFrame),
+    p_previousFrame(frame.p_previousFrame),
+    p_imuPreintegratedFrame(frame.p_imuPreintegratedFrame),
     mnId(frame.mnId),
     p_referenceKeyFrame(frame.p_referenceKeyFrame),
     scaleLevelCount(frame.scaleLevelCount),
@@ -112,12 +122,10 @@ Frame::Frame(const Frame &frame) :
     logScaleFactor(frame.logScaleFactor),
     scaleFactors(frame.scaleFactors),
     invScaleFactors(frame.invScaleFactors),
-    fileName(frame.fileName),
-    datasetId(frame.datasetId),
     levelSigmaSquared(frame.levelSigmaSquared),
     invLevelSigmaSquared(frame.invLevelSigmaSquared),
-    p_previousFrame(frame.p_previousFrame),
-    p_lastKeyFrame(frame.p_lastKeyFrame),
+    fileName(frame.fileName),
+    datasetId(frame.datasetId),
     isFrameSet(frame.isFrameSet),
     imuPreintegrated(frame.imuPreintegrated),
     p_imuMutex(frame.p_imuMutex),
@@ -129,14 +137,7 @@ Frame::Frame(const Frame &frame) :
     monoRight(frame.monoRight),
     leftToRightMatches(frame.leftToRightMatches),
     rightToLeftMatches(frame.rightToLeftMatches),
-    stereoPoints3D(frame.stereoPoints3D),
-    poseTlr(frame.poseTlr),
-    rotationRlr(frame.rotationRlr),
-    translationTlr(frame.translationTlr),
-    poseTrl(frame.poseTrl),
-    poseTcw(frame.poseTcw),
-    poseAvailable(false),
-    velocityAvailable(false)
+    stereoPoints3D(frame.stereoPoints3D)
 {
     for (int i = 0; i < FRAME_GRID_COLS; i++)
         for (int j = 0; j < FRAME_GRID_ROWS; j++)
@@ -166,28 +167,30 @@ Frame::Frame(const Frame &frame) :
 }
 
 // Stereo Frames Processing #1
-Frame::Frame(const cv::Mat                        &imColor,
-             const cv::Mat                        &imLeft,
-             const cv::Mat                        &imRight,
-             const double                         &timeStamp,
-             ORBextractor                         *extractorLeft,
-             ORBextractor                         *extractorRight,
-             ORBVocabulary                        *voc,
-             cv::Mat                              &K,
-             cv::Mat                              &distCoef,
-             const float                          &bf,
-             const float                          &thDepth,
-             camera_models::GeometricCamera       *pCamera,
-             Frame                                *pPrevF,
-             const IMU::Calib                     &ImuCalib,
-             const std::vector<semantic::Marker *> markers) :
+Frame::Frame(const cv::Mat                                   &imColor,
+             const cv::Mat                                   &imLeft,
+             const cv::Mat                                   &imRight,
+             const double                                    &timeStamp,
+             ORBextractor                                    *extractorLeft,
+             ORBextractor                                    *extractorRight,
+             ORBVocabulary                                   *voc,
+             cv::Mat                                         &K,
+             cv::Mat                                         &distCoef,
+             const float                                     &bf,
+             const float                                     &thDepth,
+             camera_models::geometriccamera::GeometricCamera *pCamera,
+             Frame                                           *pPrevF,
+             const IMU::Calib                                &ImuCalib,
+             const std::vector<semantic::Marker *>            markers) :
     p_poseImuConstraint(nullptr),
+    poseAvailable(false),
+    velocityAvailable(false),
     p_orbVocabulary(voc),
     p_orbExtractorLeft(extractorLeft),
     p_orbExtractorRight(extractorRight),
     timeStamp(timeStamp),
     calibrationMatrix(K.clone()),
-    calibrationMatrixEigen(Converter::toMatrix3f(K)),
+    calibrationMatrixEigen(utils::converter::Converter::toMatrix3f(K)),
     distortionCoefficients(distCoef.clone()),
     mbf(bf),
     depthThreshold(thDepth),
@@ -199,9 +202,7 @@ Frame::Frame(const cv::Mat                        &imColor,
     isFrameSet(false),
     imuPreintegrated(false),
     p_camera(pCamera),
-    p_camera2(nullptr),
-    poseAvailable(false),
-    velocityAvailable(false)
+    p_camera2(nullptr)
 {
     // Setting the color image for Semantic Segmentation
     colorImg = imColor.clone();
@@ -315,30 +316,32 @@ Frame::Frame(const cv::Mat                        &imColor,
 }
 
 // Stereo Frames Processing #2
-Frame::Frame(const cv::Mat                        &imColor,
-             const cv::Mat                        &imLeft,
-             const cv::Mat                        &imRight,
-             const double                         &timeStamp,
-             ORBextractor                         *extractorLeft,
-             ORBextractor                         *extractorRight,
-             ORBVocabulary                        *voc,
-             cv::Mat                              &K,
-             cv::Mat                              &distCoef,
-             const float                          &bf,
-             const float                          &thDepth,
-             camera_models::GeometricCamera       *pCamera,
-             camera_models::GeometricCamera       *pCamera2,
-             Sophus::SE3f                         &Tlr,
-             Frame                                *pPrevF,
-             const IMU::Calib                     &ImuCalib,
-             const std::vector<semantic::Marker *> markers) :
+Frame::Frame(const cv::Mat                                   &imColor,
+             const cv::Mat                                   &imLeft,
+             const cv::Mat                                   &imRight,
+             const double                                    &timeStamp,
+             ORBextractor                                    *extractorLeft,
+             ORBextractor                                    *extractorRight,
+             ORBVocabulary                                   *voc,
+             cv::Mat                                         &K,
+             cv::Mat                                         &distCoef,
+             const float                                     &bf,
+             const float                                     &thDepth,
+             camera_models::geometriccamera::GeometricCamera *pCamera,
+             camera_models::geometriccamera::GeometricCamera *pCamera2,
+             Sophus::SE3f                                    &Tlr,
+             Frame                                           *pPrevF,
+             const IMU::Calib                                &ImuCalib,
+             const std::vector<semantic::Marker *>            markers) :
     p_poseImuConstraint(nullptr),
+    poseAvailable(false),
+    velocityAvailable(false),
     p_orbVocabulary(voc),
     p_orbExtractorLeft(extractorLeft),
     p_orbExtractorRight(extractorRight),
     timeStamp(timeStamp),
     calibrationMatrix(K.clone()),
-    calibrationMatrixEigen(Converter::toMatrix3f(K)),
+    calibrationMatrixEigen(utils::converter::Converter::toMatrix3f(K)),
     distortionCoefficients(distCoef.clone()),
     mbf(bf),
     depthThreshold(thDepth),
@@ -349,9 +352,7 @@ Frame::Frame(const cv::Mat                        &imColor,
     p_referenceKeyFrame(static_cast<KeyFrame *>(nullptr)),
     imuPreintegrated(false),
     p_camera(pCamera),
-    p_camera2(pCamera2),
-    poseAvailable(false),
-    velocityAvailable(false)
+    p_camera2(pCamera2)
 
 {
     imgLeft  = imLeft.clone();
@@ -382,15 +383,18 @@ Frame::Frame(const cv::Mat                        &imColor,
         this,
         0,
         imLeft,
-        static_cast<camera_models::KannalaBrandt8 *>(p_camera)->lappingArea[0],
-        static_cast<camera_models::KannalaBrandt8 *>(p_camera)->lappingArea[1]);
+        static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(p_camera)
+            ->lappingArea[0],
+        static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(p_camera)
+            ->lappingArea[1]);
     thread threadRight(
         &Frame::extractOrbFeatures,
         this,
         1,
         imRight,
-        static_cast<camera_models::KannalaBrandt8 *>(p_camera2)->lappingArea[0],
-        static_cast<camera_models::KannalaBrandt8 *>(p_camera2)
+        static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(p_camera2)
+            ->lappingArea[0],
+        static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(p_camera2)
             ->lappingArea[1]);
     threadLeft.join();
     threadRight.join();
@@ -472,28 +476,30 @@ Frame::Frame(const cv::Mat                        &imColor,
 }
 
 // RGB-D and RGBD-Inertial Frames Processing
-Frame::Frame(const cv::Mat                                &imColor,
-             const cv::Mat                                &imGray,
-             const cv::Mat                                &imDepth,
-             const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &pointcloud,
-             const double                                 &timeStamp,
-             ORBextractor                                 *extractor,
-             ORBVocabulary                                *voc,
-             cv::Mat                                      &K,
-             cv::Mat                                      &distCoef,
-             const float                                  &bf,
-             const float                                  &thDepth,
-             camera_models::GeometricCamera               *pCamera,
-             Frame                                        *pPrevF,
-             const IMU::Calib                             &ImuCalib,
-             const std::vector<semantic::Marker *>         markers) :
+Frame::Frame(const cv::Mat                                   &imColor,
+             const cv::Mat                                   &imGray,
+             const cv::Mat                                   &imDepth,
+             const pcl::PointCloud<pcl::PointXYZRGB>::Ptr    &pointcloud,
+             const double                                    &timeStamp,
+             ORBextractor                                    *extractor,
+             ORBVocabulary                                   *voc,
+             cv::Mat                                         &K,
+             cv::Mat                                         &distCoef,
+             const float                                     &bf,
+             const float                                     &thDepth,
+             camera_models::geometriccamera::GeometricCamera *pCamera,
+             Frame                                           *pPrevF,
+             const IMU::Calib                                &ImuCalib,
+             const std::vector<semantic::Marker *>            markers) :
     p_poseImuConstraint(nullptr),
+    poseAvailable(false),
+    velocityAvailable(false),
     p_orbVocabulary(voc),
     p_orbExtractorLeft(extractor),
     p_orbExtractorRight(static_cast<ORBextractor *>(nullptr)),
     timeStamp(timeStamp),
     calibrationMatrix(K.clone()),
-    calibrationMatrixEigen(Converter::toMatrix3f(K)),
+    calibrationMatrixEigen(utils::converter::Converter::toMatrix3f(K)),
     distortionCoefficients(distCoef.clone()),
     mbf(bf),
     depthThreshold(thDepth),
@@ -505,9 +511,7 @@ Frame::Frame(const cv::Mat                                &imColor,
     isFrameSet(false),
     imuPreintegrated(false),
     p_camera(pCamera),
-    p_camera2(nullptr),
-    poseAvailable(false),
-    velocityAvailable(false)
+    p_camera2(nullptr)
 {
     // Setting the color image for Semantic Segmentation
     colorImg = imColor.clone();
@@ -586,10 +590,12 @@ Frame::Frame(const cv::Mat                                &imColor,
     mb = mbf / fx;
 
     if (pPrevF)
+    {
         if (pPrevF->hasVelocity())
             setVelocity(pPrevF->getVelocity());
         else
             velocityVw.setZero();
+    }
 
     // Set no stereo fisheye information
     Nleft              = -1;
@@ -604,26 +610,29 @@ Frame::Frame(const cv::Mat                                &imColor,
 }
 
 // Monocular Frames Processing
-Frame::Frame(const cv::Mat                        &imColor,
-             const cv::Mat                        &imGray,
-             const double                         &timeStamp,
-             ORBextractor                         *extractor,
-             ORBVocabulary                        *voc,
-             camera_models::GeometricCamera       *pCamera,
-             cv::Mat                              &distCoef,
-             const float                          &bf,
-             const float                          &thDepth,
-             Frame                                *pPrevF,
-             const IMU::Calib                     &ImuCalib,
-             const std::vector<semantic::Marker *> markers) :
+Frame::Frame(const cv::Mat                                   &imColor,
+             const cv::Mat                                   &imGray,
+             const double                                    &timeStamp,
+             ORBextractor                                    *extractor,
+             ORBVocabulary                                   *voc,
+             camera_models::geometriccamera::GeometricCamera *pCamera,
+             cv::Mat                                         &distCoef,
+             const float                                     &bf,
+             const float                                     &thDepth,
+             Frame                                           *pPrevF,
+             const IMU::Calib                                &ImuCalib,
+             const std::vector<semantic::Marker *>            markers) :
     p_poseImuConstraint(nullptr),
+    poseAvailable(false),
+    velocityAvailable(false),
     p_orbVocabulary(voc),
     p_orbExtractorLeft(extractor),
     p_orbExtractorRight(static_cast<ORBextractor *>(nullptr)),
     timeStamp(timeStamp),
-    calibrationMatrix(static_cast<camera_models::Pinhole *>(pCamera)->toK()),
+    calibrationMatrix(
+        static_cast<camera_models::pinhole::Pinhole *>(pCamera)->toK()),
     calibrationMatrixEigen(
-        static_cast<camera_models::Pinhole *>(pCamera)->toK_()),
+        static_cast<camera_models::pinhole::Pinhole *>(pCamera)->toK_()),
     distortionCoefficients(distCoef.clone()),
     mbf(bf),
     depthThreshold(thDepth),
@@ -635,9 +644,7 @@ Frame::Frame(const cv::Mat                        &imColor,
     isFrameSet(false),
     imuPreintegrated(false),
     p_camera(pCamera),
-    p_camera2(nullptr),
-    poseAvailable(false),
-    velocityAvailable(false)
+    p_camera2(nullptr)
 {
     // Setting the color image for Semantic Segmentation
     colorImg = imColor.clone();
@@ -704,18 +711,18 @@ Frame::Frame(const cv::Mat                        &imColor,
         gridElementHeightInverse = static_cast<float>(FRAME_GRID_ROWS) /
                                    static_cast<float>(gridMaxY - gridMinY);
 
-        fx =
-            static_cast<camera_models::Pinhole *>(p_camera)->toK().at<float>(0,
-                                                                             0);
-        fy =
-            static_cast<camera_models::Pinhole *>(p_camera)->toK().at<float>(1,
-                                                                             1);
-        cx =
-            static_cast<camera_models::Pinhole *>(p_camera)->toK().at<float>(0,
-                                                                             2);
-        cy =
-            static_cast<camera_models::Pinhole *>(p_camera)->toK().at<float>(1,
-                                                                             2);
+        fx = static_cast<camera_models::pinhole::Pinhole *>(p_camera)
+                 ->toK()
+                 .at<float>(0, 0);
+        fy = static_cast<camera_models::pinhole::Pinhole *>(p_camera)
+                 ->toK()
+                 .at<float>(1, 1);
+        cx = static_cast<camera_models::pinhole::Pinhole *>(p_camera)
+                 ->toK()
+                 .at<float>(0, 2);
+        cy = static_cast<camera_models::pinhole::Pinhole *>(p_camera)
+                 ->toK()
+                 .at<float>(1, 2);
         invfx = 1.0f / fx;
         invfy = 1.0f / fy;
 
@@ -1145,7 +1152,7 @@ void Frame::computeBagOfWords()
     if (bowVector.empty())
     {
         vector<cv::Mat> vCurrentDesc =
-            Converter::toDescriptorVector(descriptors);
+            utils::converter::Converter::toDescriptorVector(descriptors);
         p_orbVocabulary->transform(vCurrentDesc, bowVector, featureVector, 4);
     }
 }
@@ -1169,12 +1176,13 @@ void Frame::undistortKeyPoints()
 
     // Undistort points
     mat = mat.reshape(2);
-    cv::undistortPoints(mat,
-                        mat,
-                        static_cast<camera_models::Pinhole *>(p_camera)->toK(),
-                        distortionCoefficients,
-                        cv::Mat(),
-                        calibrationMatrix);
+    cv::undistortPoints(
+        mat,
+        mat,
+        static_cast<camera_models::pinhole::Pinhole *>(p_camera)->toK(),
+        distortionCoefficients,
+        cv::Mat(),
+        calibrationMatrix);
     mat = mat.reshape(1);
 
     // Fill undistorted keypoint vector
@@ -1206,7 +1214,7 @@ void Frame::computeImageBounds(const cv::Mat &imLeft)
         cv::undistortPoints(
             mat,
             mat,
-            static_cast<camera_models::Pinhole *>(p_camera)->toK(),
+            static_cast<camera_models::pinhole::Pinhole *>(p_camera)->toK(),
             distortionCoefficients,
             cv::Mat(),
             calibrationMatrix);
@@ -1489,16 +1497,18 @@ void Frame::computeStereoFishEyeMatches()
                                             .octave],
                   sigma2 = levelSigmaSquared
                       [keyPointsRight[(*it)[0].trainIdx + monoRight].octave];
-            float depth = static_cast<camera_models::KannalaBrandt8 *>(p_camera)
-                              ->triangulateMatches(
-                                  p_camera2,
-                                  keyPoints[(*it)[0].queryIdx + monoLeft],
-                                  keyPointsRight[(*it)[0].trainIdx + monoRight],
-                                  rotationRlr,
-                                  translationTlr,
-                                  sigma1,
-                                  sigma2,
-                                  p3D);
+            float depth =
+                static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
+                    p_camera)
+                    ->triangulateMatches(
+                        p_camera2,
+                        keyPoints[(*it)[0].queryIdx + monoLeft],
+                        keyPointsRight[(*it)[0].trainIdx + monoRight],
+                        rotationRlr,
+                        translationTlr,
+                        sigma1,
+                        sigma2,
+                        p3D);
             if (depth > 0.0001f)
             {
                 leftToRightMatches[(*it)[0].queryIdx + monoLeft] =

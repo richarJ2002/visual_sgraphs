@@ -1,0 +1,18 @@
+# Pinhole object sources: exactly this object's translation units.
+set(VS_GRAPHS_CAMERAMODELS_PINHOLE_SOURCES
+  core/src/CameraModels/Pinhole/methods/computeProjectionJacobian.cc
+  core/src/CameraModels/Pinhole/methods/epipolarConstrain.cc
+  core/src/CameraModels/Pinhole/methods/isEqual.cc
+  core/src/CameraModels/Pinhole/methods/operators/streamInput/readCalibration.cc
+  core/src/CameraModels/Pinhole/methods/operators/streamOutput/writeCalibration.cc
+  core/src/CameraModels/Pinhole/methods/project/fromCvPoint3f.cc
+  core/src/CameraModels/Pinhole/methods/project/fromEigenVector3d.cc
+  core/src/CameraModels/Pinhole/methods/project/fromEigenVector3f.cc
+  core/src/CameraModels/Pinhole/methods/projectMat.cc
+  core/src/CameraModels/Pinhole/methods/reconstructWithTwoViews.cc
+  core/src/CameraModels/Pinhole/methods/toK.cc
+  core/src/CameraModels/Pinhole/methods/toK_.cc
+  core/src/CameraModels/Pinhole/methods/uncertainty2.cc
+  core/src/CameraModels/Pinhole/methods/unproject.cc
+  core/src/CameraModels/Pinhole/methods/unprojectEig.cc
+)

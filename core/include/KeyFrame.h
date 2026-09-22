@@ -38,7 +38,7 @@
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
-#include "GeometricCamera.h"
+#include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
 #include "SerializationUtils.h"
 
 #include <mutex>
@@ -382,10 +382,10 @@ class KeyFrame
 
     void PreSave(set<KeyFrame *>                       &spKF,
                  set<MapPoint *>                       &spMP,
-                 set<camera_models::GeometricCamera *> &spCam);
+                 set<camera_models::geometriccamera::GeometricCamera *> &spCam);
     void PostLoad(map<long unsigned int, KeyFrame *>                  &mpKFid,
                   map<long unsigned int, MapPoint *>                  &mpMPid,
-                  map<unsigned int, camera_models::GeometricCamera *> &mpCamId);
+                  map<unsigned int, camera_models::geometriccamera::GeometricCamera *> &mpCamId);
 
     void setORBVocabulary(ORBVocabulary *pORBVoc);
     void setKeyFrameDatabase(KeyFrameDatabase *pKFDB);
@@ -614,7 +614,7 @@ class KeyFrame
     std::mutex mMutexMap;
 
   public:
-    camera_models::GeometricCamera *p_camera, *p_camera2;
+    camera_models::geometriccamera::GeometricCamera *p_camera, *p_camera2;
 
     // Indexes of stereo observations correspondences
     std::vector<int> leftToRightMatches, rightToLeftMatches;

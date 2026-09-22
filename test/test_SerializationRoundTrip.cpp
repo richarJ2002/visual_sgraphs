@@ -4,8 +4,7 @@
  * Covers all Boost sites: Map, MapPoint, Atlas, ImuTypes (Bias/Calib/
  * Preintegrated), KeyFrameDatabase, KeyFrame, SerializationUtils
  * (Sophus SE3, cv::Mat, vector<KeyPoint>) + 3 CameraModels
- * (camera_models::Pinhole/camera_models::KannalaBrandt8/camera_models::GeometricCamera
- * base).
+ * (Pinhole, KannalaBrandt8, GeometricCamera base).
  *
  * Scope: self-consistency only (save HEAD, load HEAD, compare). No
  * cross-version support (see docs/deviations/serialization_versioning.md).
@@ -44,9 +43,9 @@
 #include <boost/serialization/vector.hpp>
 
 #include "Atlas.h"
-#include "CameraModels/GeometricCamera.h"
-#include "CameraModels/KannalaBrandt8.h"
-#include "CameraModels/Pinhole.h"
+#include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
+#include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"
+#include "CameraModels/Pinhole/objects/Pinhole.h"
 #include "ImuTypes.h"
 #include "KeyFrame.h"
 #include "KeyFrameDatabase.h"
@@ -414,28 +413,29 @@ TEST(SerializationImu, PreintegratedRoundTrip)
 
 TEST(SerializationCamera, PinholeRoundTrip)
 {
-    camera_models::Pinhole original(
+    camera_models::pinhole::Pinhole original(
         std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
-    const unsigned int      original_id = original.getId();
-    // Heap leak intentional: camera_models::Pinhole default ctor leaves tvr
-    // uninitialised and serialize() never touches it, so a stack-loaded object
-    // could destroy garbage. Leaking mirrors Atlas (which never deletes
-    // cameras).
-    camera_models::Pinhole *loaded_ptr =
-        new camera_models::Pinhole(std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F});
+    const unsigned int               original_id = original.getId();
+    // Heap leak intentional: camera_models::pinhole::Pinhole
+    // default ctor leaves tvr uninitialised and serialize() never touches it,
+    // so a stack-loaded object could destroy garbage. Leaking mirrors Atlas
+    // (which never deletes cameras).
+    camera_models::pinhole::Pinhole *loaded_ptr =
+        new camera_models::pinhole::Pinhole(
+            std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F});
     RoundTripBinaryInto(original, *loaded_ptr);
-    camera_models::Pinhole &loaded = *loaded_ptr;
+    camera_models::pinhole::Pinhole &loaded = *loaded_ptr;
     EXPECT_EQ(original_id, loaded.getId());
     // NB: compare by value (== 0U) not EXPECT_EQ(CAM_*): CAM_* has no
     // out-of-line definition, EXPECT_EQ would ODR-use and fail to link.
     EXPECT_TRUE(loaded.getType() ==
-                camera_models::GeometricCamera::CAM_PINHOLE);
+                camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE);
     EXPECT_EQ(0U, loaded.getType());
     EXPECT_EQ(4U, loaded.size());
     EXPECT_FLOAT_EQ(500.0F, loaded.getParameter(0));
     EXPECT_FLOAT_EQ(240.0F, loaded.getParameter(3));
-    EXPECT_TRUE(
-        loaded.isEqual(const_cast<camera_models::Pinhole *>(&original)));
+    EXPECT_TRUE(loaded.isEqual(
+        const_cast<camera_models::pinhole::Pinhole *>(&original)));
     // SKIP tvr raw pointer: not serialized by design; no assertion.
 }
 
@@ -443,19 +443,19 @@ TEST(SerializationCamera, KannalaBrandt8RoundTrip)
 {
     const std::vector<float>
         params{500.0F, 500.0F, 320.0F, 240.0F, 0.1F, 0.01F, 0.001F, 0.0001F};
-    camera_models::KannalaBrandt8  original(params, 1.0e-5F);
-    const unsigned int             original_id = original.getId();
+    camera_models::kannalabrandt8::KannalaBrandt8 original(params, 1.0e-5F);
+    const unsigned int original_id = original.getId();
     // Heap leak intentional (see PinholeRoundTrip): default-constructed
     // tvr is untouched by serialize().
-    camera_models::KannalaBrandt8 *loaded_ptr =
-        new camera_models::KannalaBrandt8(
+    camera_models::kannalabrandt8::KannalaBrandt8 *loaded_ptr =
+        new camera_models::kannalabrandt8::KannalaBrandt8(
             std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F});
     RoundTripBinaryInto(original, *loaded_ptr);
-    camera_models::KannalaBrandt8 &loaded = *loaded_ptr;
+    camera_models::kannalabrandt8::KannalaBrandt8 &loaded = *loaded_ptr;
     EXPECT_EQ(original_id, loaded.getId());
     // NB: see PinholeRoundTrip: avoid ODR-use of CAM_* (no definition).
     EXPECT_TRUE(loaded.getType() ==
-                camera_models::GeometricCamera::CAM_FISHEYE);
+                camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE);
     EXPECT_EQ(1U, loaded.getType());
     EXPECT_EQ(8U, loaded.size());
     for (std::size_t index = 0; index < params.size(); ++index)
@@ -463,34 +463,37 @@ TEST(SerializationCamera, KannalaBrandt8RoundTrip)
         EXPECT_FLOAT_EQ(params[index], loaded.getParameter(index));
     }
     EXPECT_FLOAT_EQ(original.getPrecision(), loaded.getPrecision());
-    EXPECT_TRUE(
-        loaded.isEqual(const_cast<camera_models::KannalaBrandt8 *>(&original)));
+    EXPECT_TRUE(loaded.isEqual(
+        const_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
+            &original)));
 }
 
 TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
 {
-    camera_models::Pinhole *original_camera = new camera_models::Pinhole(
-        std::vector<float>{400.0F, 400.0F, 300.0F, 200.0F});
-    std::vector<camera_models::GeometricCamera *> original_ptrs{
-        original_camera,
-        original_camera};
+    camera_models::pinhole::Pinhole *original_camera =
+        new camera_models::pinhole::Pinhole(
+            std::vector<float>{400.0F, 400.0F, 300.0F, 200.0F});
+    std::vector<camera_models::geometriccamera::GeometricCamera *>
+        original_ptrs{original_camera, original_camera};
 
-    std::vector<camera_models::GeometricCamera *> loaded_ptrs;
+    std::vector<camera_models::geometriccamera::GeometricCamera *> loaded_ptrs;
     {
         std::stringstream stream(std::ios::in | std::ios::out |
                                  std::ios::binary);
         {
             boost::archive::binary_oarchive output_archive(stream);
-            output_archive.template register_type<camera_models::Pinhole>();
             output_archive
-                .template register_type<camera_models::KannalaBrandt8>();
+                .template register_type<camera_models::pinhole::Pinhole>();
+            output_archive.template register_type<
+                camera_models::kannalabrandt8::KannalaBrandt8>();
             output_archive << original_ptrs;
         }
         {
             boost::archive::binary_iarchive input_archive(stream);
-            input_archive.template register_type<camera_models::Pinhole>();
             input_archive
-                .template register_type<camera_models::KannalaBrandt8>();
+                .template register_type<camera_models::pinhole::Pinhole>();
+            input_archive.template register_type<
+                camera_models::kannalabrandt8::KannalaBrandt8>();
             input_archive >> loaded_ptrs;
         }
     }
@@ -500,11 +503,12 @@ TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
     EXPECT_NE(original_camera, loaded_ptrs[0]);
     EXPECT_EQ(original_camera->getId(), loaded_ptrs[0]->getId());
     EXPECT_TRUE(loaded_ptrs[0]->getType() ==
-                camera_models::GeometricCamera::CAM_PINHOLE);
+                camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE);
 
     delete original_camera;
-    // Intentional leak: loaded camera_models::Pinhole tvr is untouched by
-    // serialize() (see PinholeRoundTrip); deleting would free garbage.
+    // Intentional leak: loaded camera_models::pinhole::Pinhole
+    // tvr is untouched by serialize() (see PinholeRoundTrip); deleting would
+    // free garbage.
 }
 
 TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
@@ -586,9 +590,9 @@ TEST(SerializationKeyFrame, DefaultRoundTrip)
     original.setVelocity(Eigen::Vector3f(0.1F, 0.2F, 0.3F));
     original.setNewBias(IMU::Bias(0.01F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F));
 
-    std::set<KeyFrame *>                       keyframe_set;
-    std::set<MapPoint *>                       mappoint_set;
-    std::set<camera_models::GeometricCamera *> camera_set;
+    std::set<KeyFrame *>                                        keyframe_set;
+    std::set<MapPoint *>                                        mappoint_set;
+    std::set<camera_models::geometriccamera::GeometricCamera *> camera_set;
     original.PreSave(keyframe_set, mappoint_set, camera_set);
 
     KeyFrame loaded;
@@ -649,8 +653,9 @@ TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
 {
     Atlas original(0);
     EXPECT_EQ(1, original.countMaps());
-    camera_models::Pinhole *camera = new camera_models::Pinhole(
-        std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
+    camera_models::pinhole::Pinhole *camera =
+        new camera_models::pinhole::Pinhole(
+            std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
     original.addCamera(camera);
     ASSERT_EQ(1U, original.getAllCameras().size());
 
@@ -675,7 +680,7 @@ TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
     ASSERT_EQ(1U, loaded.getAllCameras().size());
     EXPECT_EQ(camera->getId(), loaded.getAllCameras()[0]->getId());
     EXPECT_TRUE(loaded.getAllCameras()[0]->getType() ==
-                camera_models::GeometricCamera::CAM_PINHOLE);
+                camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE);
     // SKIP mutex/atomic/thread handles: loaded atlas must stay queryable.
     EXPECT_NO_THROW(loaded.getAllMaps());
 }

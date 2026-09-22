@@ -37,7 +37,95 @@ class Sim3Solver
         KeyFrame                      *pKF2,
         const std::vector<MapPoint *> &vpMatched12,
         const bool                     bFixScale     = true,
-        const vector<KeyFrame *> vpKeyFrameMatchedMP = vector<KeyFrame *>());
+        vector<KeyFrame *> vpKeyFrameMatchedMP = vector<KeyFrame *>()) :
+        iterationCount(0),
+        bestInlierCount(0),
+        fixScale(bFixScale),
+        pCamera1(pKF1->p_camera),
+        pCamera2(pKF2->p_camera)
+    {
+        bool bDifferentKFs = false;
+        if (vpKeyFrameMatchedMP.empty())
+        {
+            bDifferentKFs       = true;
+            vpKeyFrameMatchedMP = vector<KeyFrame *>(vpMatched12.size(), pKF2);
+        }
+
+        p_keyFrame1 = pKF1;
+        p_keyFrame2 = pKF2;
+
+        vector<MapPoint *> vpKeyFrameMP1 = pKF1->getMapPointMatches();
+
+        mN1 = vpMatched12.size();
+
+        mapPoints1.reserve(mN1);
+        mapPoints2.reserve(mN1);
+        mapPointMatches12 = vpMatched12;
+        indices1.reserve(mN1);
+        points3Dc1.reserve(mN1);
+        points3Dc2.reserve(mN1);
+
+        Eigen::Matrix3f Rcw1 = pKF1->getRotation();
+        Eigen::Vector3f tcw1 = pKF1->getTranslation();
+        Eigen::Matrix3f Rcw2 = pKF2->getRotation();
+        Eigen::Vector3f tcw2 = pKF2->getTranslation();
+
+        allIndices.reserve(mN1);
+
+        size_t idx = 0;
+
+        KeyFrame *pKFm = pKF2; // Default variable
+        for (int i1 = 0; i1 < mN1; i1++)
+        {
+            if (vpMatched12[i1])
+            {
+                MapPoint *pMP1 = vpKeyFrameMP1[i1];
+                MapPoint *pMP2 = vpMatched12[i1];
+
+                if (!pMP1)
+                    continue;
+
+                if (pMP1->isBad() || pMP2->isBad())
+                    continue;
+
+                if (bDifferentKFs)
+                    pKFm = vpKeyFrameMatchedMP[i1];
+
+                int indexKF1 = get<0>(pMP1->getIndexInKeyFrame(pKF1));
+                int indexKF2 = get<0>(pMP2->getIndexInKeyFrame(pKFm));
+
+                if (indexKF1 < 0 || indexKF2 < 0)
+                    continue;
+
+                const cv::KeyPoint &kp1 = pKF1->keyPointsUndistorted[indexKF1];
+                const cv::KeyPoint &kp2 = pKFm->keyPointsUndistorted[indexKF2];
+
+                const float sigmaSquare1 = pKF1->levelSigmaSquared[kp1.octave];
+                const float sigmaSquare2 = pKFm->levelSigmaSquared[kp2.octave];
+
+                maxError1.push_back(9.210 * sigmaSquare1);
+                maxError2.push_back(9.210 * sigmaSquare2);
+
+                mapPoints1.push_back(pMP1);
+                mapPoints2.push_back(pMP2);
+                indices1.push_back(i1);
+
+                Eigen::Vector3f X3D1w = pMP1->getWorldPos();
+                points3Dc1.push_back(Rcw1 * X3D1w + tcw1);
+
+                Eigen::Vector3f X3D2w = pMP2->getWorldPos();
+                points3Dc2.push_back(Rcw2 * X3D2w + tcw2);
+
+                allIndices.push_back(idx);
+                idx++;
+            }
+        }
+
+        fromCameraToImage(points3Dc1, points1im1, pCamera1);
+        fromCameraToImage(points3Dc2, points2im2, pCamera2);
+
+        setRansacParameters();
+    }
 
     void setRansacParameters(double probability   = 0.99,
                              int    minInliers    = 6,
@@ -69,13 +157,14 @@ class Sim3Solver
 
     void checkInliers();
 
-    void project(const std::vector<Eigen::Vector3f> &vP3Dw,
-                 std::vector<Eigen::Vector2f>       &vP2D,
-                 Eigen::Matrix4f                     Tcw,
-                 camera_models::GeometricCamera     *pCamera);
-    void fromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc,
-                           std::vector<Eigen::Vector2f>       &vP2D,
-                           camera_models::GeometricCamera     *pCamera);
+    void project(const std::vector<Eigen::Vector3f>              &vP3Dw,
+                 std::vector<Eigen::Vector2f>                    &vP2D,
+                 Eigen::Matrix4f                                  Tcw,
+                 camera_models::geometriccamera::GeometricCamera *pCamera);
+    void fromCameraToImage(
+        const std::vector<Eigen::Vector3f>              &vP3Dc,
+        std::vector<Eigen::Vector2f>                    &vP2D,
+        camera_models::geometriccamera::GeometricCamera *pCamera);
 
   protected:
     // KeyFrames and matches
@@ -141,7 +230,7 @@ class Sim3Solver
     // cv::Mat mK1;
     // cv::Mat mK2;
 
-    camera_models::GeometricCamera *pCamera1, *pCamera2;
+    camera_models::geometriccamera::GeometricCamera *pCamera1, *pCamera2;
 };
 
 } // namespace core

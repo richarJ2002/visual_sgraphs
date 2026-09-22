@@ -30,9 +30,9 @@
 #include "KeyFrame.h"
 #include "KeyFrameDatabase.h"
 #include "LoopClosing.h"
-#include "Settings.h"
+#include "Utils/Settings/objects/Settings.h"
 #include "Tracking.h"
-#include "Types/SystemParams.h"
+#include "Types/objects/SystemParams.h"
 
 #include <mutex>
 

@@ -23,9 +23,9 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Converter.h"
-#include "ImuTypes.h"
 #include "KeyFrame.h"
+#include "ImuTypes.h"
+#include "Utils/Converter/objects/Converter.h"
 #include <mutex>
 
 namespace vs_graphs
@@ -46,23 +46,26 @@ KeyFrame::KeyFrame() :
     fuseTargetKeyFrameId(0),
     baLocalKeyFrameId(0),
     baFixedKeyFrameId(0),
-    baLocalMergeId(0),
+    optimizationCount(0),
     loopQuery(0),
     loopWords(0),
     relocQuery(0),
     relocWords(0),
     mergeQuery(0),
     mergeWords(0),
+    placeRecognitionQuery(0),
+    placeRecognitionWords(0),
+    placeRecognitionScore(0),
+    currentPlaceRecognition(false),
     baGlobalKeyFrameId(0),
+    mergeCorrectedKeyFrameId(0),
+    baLocalMergeId(0),
     fx(0),
     fy(0),
     cx(0),
     cy(0),
     invfx(0),
     invfy(0),
-    placeRecognitionQuery(0),
-    placeRecognitionWords(0),
-    placeRecognitionScore(0),
     mbf(0),
     mb(0),
     depthThreshold(0),
@@ -83,18 +86,15 @@ KeyFrame::KeyFrame() :
     gridMaxY(0),
     p_prevKF(static_cast<KeyFrame *>(nullptr)),
     p_nextKF(static_cast<KeyFrame *>(nullptr)),
+    velocityAvailable(false),
     firstConnection(true),
     p_parent(nullptr),
     notErase(false),
     toBeErased(false),
     mbBad(false),
     halfBaseline(0),
-    currentPlaceRecognition(false),
-    mergeCorrectedKeyFrameId(0),
     Nleft(0),
-    Nright(0),
-    optimizationCount(0),
-    velocityAvailable(false)
+    Nright(0)
 {}
 
 KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
@@ -109,15 +109,18 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     fuseTargetKeyFrameId(0),
     baLocalKeyFrameId(0),
     baFixedKeyFrameId(0),
-    baLocalMergeId(0),
+    optimizationCount(0),
     loopQuery(0),
     loopWords(0),
     relocQuery(0),
     relocWords(0),
-    baGlobalKeyFrameId(0),
     placeRecognitionQuery(0),
     placeRecognitionWords(0),
     placeRecognitionScore(0),
+    currentPlaceRecognition(false),
+    baGlobalKeyFrameId(0),
+    mergeCorrectedKeyFrameId(0),
+    baLocalMergeId(0),
     fx(F.fx),
     fy(F.fy),
     cx(F.cx),
@@ -127,6 +130,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     mbf(F.mbf),
     mb(F.mb),
     depthThreshold(F.depthThreshold),
+    distortionCoefficients(F.distortionCoefficients),
     N(F.N),
     keyPoints(F.keyPoints),
     keyPointsUndistorted(F.keyPointsUndistorted),
@@ -145,42 +149,38 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     gridMinY(F.gridMinY),
     gridMaxX(F.gridMaxX),
     gridMaxY(F.gridMaxY),
-    calibrationMatrixEigen(F.calibrationMatrixEigen),
     p_prevKF(nullptr),
     p_nextKF(nullptr),
     p_imuPreintegrated(F.p_imuPreintegrated),
     imuCalibration(F.imuCalibration),
+    fileName(F.fileName),
+    datasetId(F.datasetId),
+    colorImg(F.colorImg),
+    isPublished(false),
+    velocityAvailable(false),
+    poseTlr(F.getRelativePoseTlr()),
+    poseTrl(F.getRelativePoseTrl()),
     mapPoints(F.mapPoints),
     p_keyFrameDatabase(pKFDB),
     p_orbVocabulary(F.p_orbVocabulary),
     firstConnection(true),
     p_parent(nullptr),
-    distortionCoefficients(F.distortionCoefficients),
     notErase(false),
-    datasetId(F.datasetId),
     toBeErased(false),
     mbBad(false),
     halfBaseline(F.mb / 2),
+    currentFrameMarkers(F.mapMarkers),
+    currentFrameMapPoints(F.mapPoints),
+    currentFramePointClouds(F.pointClouds),
     p_map(pMap),
-    currentPlaceRecognition(false),
-    fileName(F.fileName),
-    mergeCorrectedKeyFrameId(0),
+    calibrationMatrixEigen(F.calibrationMatrixEigen),
     p_camera(F.p_camera),
     p_camera2(F.p_camera2),
     leftToRightMatches(F.leftToRightMatches),
     rightToLeftMatches(F.rightToLeftMatches),
-    poseTlr(F.getRelativePoseTlr()),
     keyPointsRight(F.keyPointsRight),
     Nleft(F.Nleft),
-    Nright(F.Nright),
-    poseTrl(F.getRelativePoseTrl()),
-    optimizationCount(0),
-    velocityAvailable(false),
-    currentFrameMarkers(F.mapMarkers),
-    currentFrameMapPoints(F.mapPoints),
-    currentFramePointClouds(F.pointClouds),
-    colorImg(F.colorImg),
-    isPublished(false)
+    Nright(F.Nright)
 {
     mnId = nNextId++;
 
@@ -224,7 +224,7 @@ void KeyFrame::computeBagOfWords()
     if (bowVector.empty() || featureVector.empty())
     {
         vector<cv::Mat> vCurrentDesc =
-            Converter::toDescriptorVector(descriptors);
+            utils::converter::Converter::toDescriptorVector(descriptors);
         // Feature vector associate features with nodes in the 4th level (from
         // leaves up) We assume the vocabulary tree has 6 levels, change the 4
         // otherwise
@@ -639,8 +639,8 @@ void KeyFrame::eraseMapPointMatch(const int &idx)
 
 void KeyFrame::eraseMapPointMatch(MapPoint *pMP)
 {
-    tuple<size_t, size_t> indexes = pMP->getIndexInKeyFrame(this);
-    size_t leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+    tuple<int, int> indexes   = pMP->getIndexInKeyFrame(this);
+    int             leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
     if (leftIndex != -1)
         mapPoints[leftIndex] = static_cast<MapPoint *>(nullptr);
     if (rightIndex != -1)
@@ -1310,9 +1310,10 @@ void KeyFrame::updateMap(Map *pMap)
     p_map = pMap;
 }
 
-void KeyFrame::PreSave(set<KeyFrame *>                       &spKF,
-                       set<MapPoint *>                       &spMP,
-                       set<camera_models::GeometricCamera *> &spCam)
+void KeyFrame::PreSave(
+    set<KeyFrame *>                                        &spKF,
+    set<MapPoint *>                                        &spMP,
+    set<camera_models::geometriccamera::GeometricCamera *> &spCam)
 {
     // Save the id of each MapPoint in this KF, there can be null pointer in the
     // vector
@@ -1395,9 +1396,10 @@ void KeyFrame::PreSave(set<KeyFrame *>                       &spKF,
 }
 
 void KeyFrame::PostLoad(
-    map<long unsigned int, KeyFrame *>                  &mpKFid,
-    map<long unsigned int, MapPoint *>                  &mpMPid,
-    map<unsigned int, camera_models::GeometricCamera *> &mpCamId)
+    map<long unsigned int, KeyFrame *> &mpKFid,
+    map<long unsigned int, MapPoint *> &mpMPid,
+    map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
+        &mpCamId)
 {
     // Rebuild the empty variables
 

@@ -1,0 +1,62 @@
+/*!
+ * This file is part of ORB-SLAM3.
+ * Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * ORB-SLAM3 is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details:
+ * https://www.gnu.org/licenses/
+ */
+
+#include "Sim3Solver.h"
+
+#include <cmath>
+#include <opencv2/core/core.hpp>
+#include <vector>
+
+#include "KeyFrame.h"
+#include "ORBmatcher.h"
+
+#include "Thirdparty/DBoW2/DUtils/Random.h"
+
+
+namespace vs_graphs
+{
+namespace core
+{
+
+void Sim3Solver::checkInliers()
+{
+    vector<Eigen::Vector2f> vP1im2, vP2im1;
+    project(points3Dc2, vP2im1, mT12i, pCamera1);
+    project(points3Dc1, vP1im2, mT21i, pCamera2);
+
+    inlierCount = 0;
+
+    for (size_t i = 0; i < points1im1.size(); i++)
+    {
+        Eigen::Vector2f dist1 = points1im1[i] - vP2im1[i];
+        Eigen::Vector2f dist2 = vP1im2[i] - points2im2[i];
+
+        const float err1 = dist1.dot(dist1);
+        const float err2 = dist2.dot(dist2);
+
+        if (err1 < maxError1[i] && err2 < maxError2[i])
+        {
+            inlierFlags[i] = true;
+            inlierCount++;
+        }
+        else
+            inlierFlags[i] = false;
+    }
+}
+
+} // namespace core
+} // namespace vs_graphs

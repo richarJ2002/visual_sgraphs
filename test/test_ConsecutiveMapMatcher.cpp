@@ -26,7 +26,7 @@
 #include "Semantic/Room.h"
 #include "Semantic/RoomContextSnapshot.h"
 #include "Semantic/SemanticVerify.h"
-#include "Types/SystemParams.h"
+#include "Types/objects/SystemParams.h"
 
 #include <gtest/gtest.h>
 
@@ -41,7 +41,6 @@ using namespace vs_graphs::core;
 using namespace vs_graphs::core::semantic;
 using namespace vs_graphs::core::geometric;
 using namespace vs_graphs::core::types;
-using namespace vs_graphs::core::camera_models;
 using namespace std;
 
 // ----------------------------------------------------------------------------
@@ -996,15 +995,17 @@ TEST_F(ConsecutiveMapMatcherTest, TC13_proxyReunionOnMerge)
     r0_1->getPassages()[0]->addTraversalObservation(
         Passage::TraversalDirection::KNOWN_TO_FAR);
     EXPECT_NE(addFloor(p_map0, 0, FLOOR_EQ), nullptr);
-    Room    *r1_2    = addRoomWithWallsAndPassage(p_map1,
-                                            2,
-                                            "room_2",
-                                            ROOM2_CENTROID,
-                                            Eigen::Vector3d(4.5, 0.0, 1.0),
-                                            12,
-                                            11,
-                                            nullptr,
-                                            false);
+    /* Room 2 only has to exist in the new map; TC13 links room 1 through the
+     * recovery proxies below rather than through a real passage. */
+    addRoomWithWallsAndPassage(p_map1,
+                               2,
+                               "room_2",
+                               ROOM2_CENTROID,
+                               Eigen::Vector3d(4.5, 0.0, 1.0),
+                               12,
+                               11,
+                               nullptr,
+                               false);
     Room    *r1_1    = addRoomWithWallsAndPassage(p_map1,
                                             1,
                                             "room_1",

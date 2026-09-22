@@ -52,6 +52,12 @@ namespace IMU
 const float GRAVITY_VALUE = 9.81;
 
 /*!
+ * @brief        Singularity threshold shared by the SO(3)
+ *               Jacobian helpers and IntegratedRotation.
+ */
+const float eps = 1e-4;
+
+/*!
  * @brief        Single IMU sample with accelerometer,
  *               gyroscope and timestamp.
  */
@@ -142,7 +148,7 @@ class Bias
      *               Archive version; currently unused.
      */
     template <class Archive>
-    void serialize(Archive &ar, const unsigned int version)
+    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
     {
         ar & bax;
         ar & bay;
@@ -286,7 +292,31 @@ class Calib
      * @param[in]    calib
      *               Source calibration.
      */
-    Calib(const Calib &calib);
+    Calib(const Calib &calib)
+    {
+        mbIsSet = calib.mbIsSet;
+        // Sophus/Eigen parameters
+        mTbc    = calib.mTbc;
+        mTcb    = calib.mTcb;
+        Cov     = calib.Cov;
+        CovWalk = calib.CovWalk;
+    }
+    /*!
+     * @brief        Copies every member from another
+     *               calibration.
+     *
+     *               Declared explicitly because the
+     *               user-provided copy constructor suppresses
+     *               the implicit declaration; the copy
+     *               constructor is memberwise, so the
+     *               defaulted assignment matches it.
+     *
+     * @param[in]    calib
+     *               Source calibration.
+     *
+     * @return       Reference to this calibration.
+     */
+    Calib &operator=(const Calib &calib) = default;
     /*!
      * @brief        Creates an unset calibration.
      */
@@ -361,7 +391,31 @@ class IntegratedRotation
      */
     IntegratedRotation(const Eigen::Vector3f &angVel,
                        const Bias            &imuBias,
-                       const float           &time);
+                       const float           &time)
+    {
+        const float x = (angVel(0) - imuBias.bwx) * time;
+        const float y = (angVel(1) - imuBias.bwy) * time;
+        const float z = (angVel(2) - imuBias.bwz) * time;
+
+        const float d2 = x * x + y * y + z * z;
+        const float d  = sqrt(d2);
+
+        Eigen::Vector3f v;
+        v << x, y, z;
+        Eigen::Matrix3f W = Sophus::SO3f::hat(v);
+        if (d < eps)
+        {
+            deltaR = Eigen::Matrix3f::Identity() + W;
+            rightJ = Eigen::Matrix3f::Identity();
+        }
+        else
+        {
+            deltaR = Eigen::Matrix3f::Identity() + W * sin(d) / d +
+                     W * W * (1.0f - cos(d)) / d2;
+            rightJ = Eigen::Matrix3f::Identity() - W * (1.0f - cos(d)) / d2 +
+                     W * W * (d - sin(d)) / (d2 * d);
+        }
+    }
 
   public:
     /*!
@@ -400,7 +454,7 @@ class Preintegrated
      *               Archive version; currently unused.
      */
     template <class Archive>
-    void serialize(Archive &ar, const unsigned int version)
+    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
     {
         ar & dT;
         ar &boost::serialization::make_array(C.data(), C.size());
@@ -437,14 +491,41 @@ class Preintegrated
      * @param[in]    calib
      *               Calibration supplying the noise models.
      */
-    Preintegrated(const Bias &b_, const Calib &calib);
+    Preintegrated(const Bias &b_, const Calib &calib)
+    {
+        Nga     = calib.Cov;
+        NgaWalk = calib.CovWalk;
+        initialize(b_);
+    }
     /*!
      * @brief        Copies another preintegration.
      *
      * @param[in]    pImuPre
      *               Non-owning source; shall be non-null.
      */
-    Preintegrated(Preintegrated *pImuPre);
+    // Copy constructor
+    Preintegrated(Preintegrated *pImuPre) :
+        dT(pImuPre->dT),
+        C(pImuPre->C),
+        Info(pImuPre->Info),
+        Nga(pImuPre->Nga),
+        NgaWalk(pImuPre->NgaWalk),
+        b(pImuPre->b),
+        dR(pImuPre->dR),
+        dV(pImuPre->dV),
+        dP(pImuPre->dP),
+        JRg(pImuPre->JRg),
+        JVg(pImuPre->JVg),
+        JVa(pImuPre->JVa),
+        JPg(pImuPre->JPg),
+        JPa(pImuPre->JPa),
+        avgA(pImuPre->avgA),
+        avgW(pImuPre->avgW),
+        bu(pImuPre->bu),
+        db(pImuPre->db),
+        mvMeasurements(pImuPre->mvMeasurements)
+    {
+    }
     /*!
      * @brief        Creates an empty preintegration.
      */
@@ -731,7 +812,7 @@ class Preintegrated
          *               Archive version; currently unused.
          */
         template <class Archive>
-        void serialize(Archive &ar, const unsigned int version)
+        void serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
         {
             ar &boost::serialization::make_array(a.data(), a.size());
             ar &boost::serialization::make_array(w.data(), w.size());

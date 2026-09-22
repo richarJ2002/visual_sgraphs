@@ -23,12 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Converter.h"
+#include "Optimizer.h"
 #include "G2oTypes.h"
 #include "OptimizableTypes.h"
-#include "Optimizer.h"
 #include "OptimizerEdgeLookup.h"
-#include "Utils.h"
+#include "Utils/Converter/objects/Converter.h"
+#include "Utils/Utils/objects/Utils.h"
 
 #include "Thirdparty/g2o/g2o/core/block_solver.h"
 #include "Thirdparty/g2o/g2o/core/optimization_algorithm_gauss_newton.h"
@@ -354,7 +354,9 @@ void Optimizer::bundleAdjustment(
             {
                 int rightIndex = get<1>(mit->second);
 
-                if (rightIndex != -1 && rightIndex < pKF->keyPointsRight.size())
+                if (rightIndex != -1 &&
+                    static_cast<size_t>(rightIndex) <
+                        pKF->keyPointsRight.size())
                 {
                     rightIndex -= pKF->Nleft;
 
@@ -504,7 +506,8 @@ void Optimizer::bundleAdjustment(
                 {
                     // get the class index of the plane
                     int clsCloudIdx =
-                        Utils::getClassIdFromPlaneType(vpPlane->getPlaneType());
+                        utils::utils::Utils::getClassIdFromPlaneType(
+                            vpPlane->getPlaneType());
                     if (clsCloudIdx != -1)
                     {
                         // add the plane-point constraint
@@ -608,11 +611,13 @@ void Optimizer::bundleAdjustment(
                         continue;
 
                     // Check if the walls are parallel
-                    if (Utils::arePlanesParallel(wall1, wall2))
+                    if (utils::utils::Utils::arePlanesParallel(wall1, wall2))
                     {
                         // If they are parallel, check if they are facing each
                         // other
-                        if (Utils::arePlanesFacingEachOther(wall1, wall2))
+                        if (utils::utils::Utils::arePlanesFacingEachOther(
+                                wall1,
+                                wall2))
                         {
                             // Variables
                             int opId1 = wall1->getOpIdG();
@@ -661,7 +666,8 @@ void Optimizer::bundleAdjustment(
                     }
 
                     // Check if the walls are perpendicular
-                    if (Utils::arePlanesPerpendicular(wall1, wall2))
+                    if (utils::utils::Utils::arePlanesPerpendicular(wall1,
+                                                                    wall2))
                     {
                         // Variables
                         int opId1 = wall1->getOpIdG();
@@ -1051,8 +1057,8 @@ void Optimizer::fullInertialBA(Map                    *pMap,
                                bool                    bInit,
                                float                   priorG,
                                float                   priorA,
-                               Eigen::VectorXd        *vSingVal,
-                               bool                   *bHess,
+                               [[maybe_unused]] Eigen::VectorXd *vSingVal,
+                               [[maybe_unused]] bool            *bHess,
                                const std::atomic_bool *pStopRequested_in)
 {
     long unsigned int        maxKFid = pMap->getMaxKeyFrameId();
@@ -1417,7 +1423,8 @@ void Optimizer::fullInertialBA(Map                    *pMap,
                     int rightIndex = get<1>(mit->second);
 
                     if (rightIndex != -1 &&
-                        rightIndex < pKFi->keyPointsRight.size())
+                        static_cast<size_t>(rightIndex) <
+                            pKFi->keyPointsRight.size())
                     {
                         rightIndex -= pKFi->Nleft;
 
@@ -1911,7 +1918,7 @@ int Optimizer::poseOptimization(Frame *pFrame)
                     continue;
 
                 // for each map point in the frame, check if it is on the plane
-                for (size_t j = 0; j < pFrame->N; j++)
+                for (size_t j = 0; j < static_cast<size_t>(pFrame->N); j++)
                 {
                     MapPoint *pMP = pFrame->mapPoints[j];
                     if (!pMP || pMP->isBad())
@@ -1926,9 +1933,9 @@ int Optimizer::poseOptimization(Frame *pFrame)
                         // get the intersection point of the line joining the
                         // camera center and the map point with the plane
                         Eigen::Vector3d intersect =
-                            Utils::lineIntersectsPlane(planeEq,
-                                                       camCenter,
-                                                       pMPw);
+                            utils::utils::Utils::lineIntersectsPlane(planeEq,
+                                                                     camCenter,
+                                                                     pMPw);
 
                         // check if the map point is in the plane cloud
                         if (pPlane->isPointinPlaneCloud(intersect))
@@ -2875,8 +2882,9 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                 if (p_sysParams->optimization.planePoint.enabled)
                 {
                     // Get the class index of the plane
-                    int clsCloudIdx = Utils::getClassIdFromPlaneType(
-                        pMapPlane->getPlaneType());
+                    int clsCloudIdx =
+                        utils::utils::Utils::getClassIdFromPlaneType(
+                            pMapPlane->getPlaneType());
                     if (clsCloudIdx != -1)
                     {
                         // Add the plane-point constraint
@@ -2965,11 +2973,13 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                         continue;
 
                     // Check if the walls are parallel
-                    if (Utils::arePlanesParallel(wall1, wall2))
+                    if (utils::utils::Utils::arePlanesParallel(wall1, wall2))
                     {
                         // If they are parallel, check if they are facing each
                         // other
-                        if (Utils::arePlanesFacingEachOther(wall1, wall2))
+                        if (utils::utils::Utils::arePlanesFacingEachOther(
+                                wall1,
+                                wall2))
                         {
                             // Variables
                             int opId1 = wall1->getOpId();
@@ -3012,7 +3022,8 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                     }
 
                     // Check if the walls are perpendicular
-                    if (Utils::arePlanesPerpendicular(wall1, wall2))
+                    if (utils::utils::Utils::arePlanesPerpendicular(wall1,
+                                                                    wall2))
                     {
                         // Variables
                         int opId1 = wall1->getOpId();
@@ -4156,8 +4167,8 @@ void Optimizer::optimizeEssentialGraph(
      * planes from receiving a local correction while their rooms, passages,
      * floors, and topology receive only the coarse map transform.
      */
-    Utils::KeyFramePoseMap keyFramePosesBefore_WorldToCamera;
-    Utils::KeyFramePoseMap keyFramePosesAfter_WorldToCamera;
+    utils::utils::Utils::KeyFramePoseMap keyFramePosesBefore_WorldToCamera;
+    utils::utils::Utils::KeyFramePoseMap keyFramePosesAfter_WorldToCamera;
 
     const auto appendSemanticDeformationNodes =
         [&keyFramePosesBefore_WorldToCamera, &keyFramePosesAfter_WorldToCamera](
@@ -4193,7 +4204,7 @@ void Optimizer::optimizeEssentialGraph(
 
     if (p_sourceMap_inout != nullptr)
     {
-        Utils::propagateSemanticPoseCorrections(
+        utils::utils::Utils::propagateSemanticPoseCorrections(
             p_sourceMap_inout,
             keyFramePosesBefore_WorldToCamera,
             keyFramePosesAfter_WorldToCamera,
@@ -4644,8 +4655,6 @@ void Optimizer::localInertialBA(KeyFrame *pKF,
         if (lFixedKeyFrames.size() >= maxFixKF)
             break;
     }
-
-    bool bNonFixed = (lFixedKeyFrames.size() == 0);
 
     // Setup optimizer
     g2o::SparseOptimizer                 optimizer;
@@ -5286,9 +5295,10 @@ void Optimizer::inertialOptimization(Map             *pMap,
                                      Eigen::Vector3d &bg,
                                      Eigen::Vector3d &ba,
                                      bool             bMono,
-                                     Eigen::MatrixXd &covInertial,
+                                     [[maybe_unused]] Eigen::MatrixXd
+                                                     &covInertial,
                                      bool             bFixedVel,
-                                     bool             bGauss,
+                                     [[maybe_unused]] bool bGauss,
                                      float            priorG,
                                      float            priorA)
 {
@@ -5460,7 +5470,7 @@ void Optimizer::inertialOptimization(Map             *pMap,
     Rwg = VGDir->estimate().Rwg;
 
     // Keyframes velocities and biases
-    const int N = vpKFs.size();
+    const size_t N = vpKFs.size();
     for (size_t i = 0; i < N; i++)
     {
         KeyFrame *pKFi = vpKFs[i];
@@ -5638,7 +5648,7 @@ void Optimizer::inertialOptimization(Map             *pMap,
     IMU::Bias b(vb[3], vb[4], vb[5], vb[0], vb[1], vb[2]);
 
     // Keyframes velocities and biases
-    const int N = vpKFs.size();
+    const size_t N = vpKFs.size();
     for (size_t i = 0; i < N; i++)
     {
         KeyFrame *pKFi = vpKFs[i];
@@ -5784,10 +5794,12 @@ void Optimizer::inertialOptimization(Map             *pMap,
     optimizer.setVerbose(false);
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
-    float err = optimizer.activeRobustChi2();
+    /* Kept as bare calls: the chi2 readings had no consumer, but
+     * computeActiveErrors() updates the edge error state. */
+    optimizer.activeRobustChi2();
     optimizer.optimize(its);
     optimizer.computeActiveErrors();
-    float err_end = optimizer.activeRobustChi2();
+    optimizer.activeRobustChi2();
     // Recover optimized data
     scale = VS->estimate();
     Rwg   = VGDir->estimate().Rwg;
@@ -6385,6 +6397,7 @@ void Optimizer::mergeInertialBA(KeyFrame                     *pCurrKF,
             MapPoint *pMP = *vit;
             if (pMP)
                 if (!pMP->isBad())
+                {
                     if (pMP->baLocalKeyFrameId != pCurrKF->mnId)
                     {
                         localObservationCounts[pMP] = 1;
@@ -6395,6 +6408,7 @@ void Optimizer::mergeInertialBA(KeyFrame                     *pCurrKF,
                     {
                         localObservationCounts[pMP]++;
                     }
+                }
         }
     }
 
@@ -7774,8 +7788,6 @@ void Optimizer::optimizeEssentialGraph4DoF(
     const LoopClosing::KeyFrameAndPose     &CorrectedSim3,
     const map<KeyFrame *, set<KeyFrame *>> &LoopConnections)
 {
-    typedef g2o::BlockSolver<g2o::BlockSolverTraits<4, 4>> BlockSolver_4_4;
-
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
     optimizer.setVerbose(false);
@@ -7851,7 +7863,6 @@ void Optimizer::optimizeEssentialGraph4DoF(
     matLambda(0, 0) = 1e3;
 
     // Set Loop edges
-    Edge4DoF *e_loop;
     for (map<KeyFrame *, set<KeyFrame *>>::const_iterator
              mit  = LoopConnections.begin(),
              mend = LoopConnections.end();
@@ -7889,7 +7900,6 @@ void Optimizer::optimizeEssentialGraph4DoF(
                              optimizer.vertex(nIDi)));
 
             e->information() = matLambda;
-            e_loop           = e;
             optimizer.addEdge(e);
 
             sInsertedEdges.insert(make_pair(min(nIDi, nIDj), max(nIDi, nIDj)));

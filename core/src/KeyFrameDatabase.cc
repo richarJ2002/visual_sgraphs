@@ -838,11 +838,14 @@ void KeyFrameDatabase::detectNBestCandidates(KeyFrame           *pKF,
     vpLoopCand.reserve(nNumCandidates);
     vpMergeCand.reserve(nNumCandidates);
     set<KeyFrame *>                         spAlreadyAddedKF;
-    int                                     i  = 0;
+    std::size_t                             i  = 0;
     list<pair<float, KeyFrame *>>::iterator it = lAccScoreAndMatch.begin();
+    // reserve() above already rejects a negative request, so nNumCandidates is
+    // a non-negative candidate budget by the time it is used as a size here.
+    const std::size_t candidateBudget = static_cast<std::size_t>(nNumCandidates);
     while (i < lAccScoreAndMatch.size() &&
-           (vpLoopCand.size() < nNumCandidates ||
-            vpMergeCand.size() < nNumCandidates))
+           (vpLoopCand.size() < candidateBudget ||
+            vpMergeCand.size() < candidateBudget))
     {
         KeyFrame *pKFi = it->second;
         if (pKFi->isBad())
@@ -855,12 +858,12 @@ void KeyFrameDatabase::detectNBestCandidates(KeyFrame           *pKF,
         if (!spAlreadyAddedKF.count(pKFi))
         {
             if (pKF->getMap() == pKFi->getMap() &&
-                vpLoopCand.size() < nNumCandidates)
+                vpLoopCand.size() < candidateBudget)
             {
                 vpLoopCand.push_back(pKFi);
             }
             else if (pKF->getMap() != pKFi->getMap() &&
-                     vpMergeCand.size() < nNumCandidates &&
+                     vpMergeCand.size() < candidateBudget &&
                      !pKFi->getMap()->isBad())
             {
                 vpMergeCand.push_back(pKFi);

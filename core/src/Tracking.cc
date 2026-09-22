@@ -31,15 +31,15 @@
 
 #include "Tracking.h"
 
-#include "Converter.h"
+#include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"
+#include "CameraModels/Pinhole/objects/Pinhole.h"
+#include "Utils/Converter/objects/Converter.h"
 #include "FrameDrawer.h"
 #include "G2oTypes.h"
 #include "GeometricTools.h"
-#include "KannalaBrandt8.h"
 #include "MLPnPsolver.h"
 #include "ORBmatcher.h"
 #include "Optimizer.h"
-#include "Pinhole.h"
 #include "ResetCause.h"
 
 #include <cmath>
@@ -62,7 +62,7 @@ Tracking::Tracking(System           *pSys,
                    KeyFrameDatabase *pKFDB,
                    const string     &strSettingPath,
                    const int         sensorType,
-                   Settings         *settings,
+                   utils::settings::Settings *settings,
                    const string     &_nameSeq) :
     state(NO_IMAGES_YET),
     sensor(sensorType),
@@ -195,15 +195,19 @@ Tracking::Tracking(System           *pSys,
     initWith3KFs = false;
     numDataset   = 0;
 
-    vector<camera_models::GeometricCamera *> vpCams = p_atlas->getAllCameras();
+    vector<camera_models::geometriccamera::GeometricCamera *>
+        vpCams = p_atlas->getAllCameras();
     std::cout << "\n[Tracking] Found " << vpCams.size()
               << " camera(s) in Atlas!" << std::endl;
-    for (camera_models::GeometricCamera *pCam : vpCams)
+    for (camera_models::geometriccamera::GeometricCamera *pCam : vpCams)
     {
         std::cout << "- Camera " << pCam->getId();
-        if (pCam->getType() == camera_models::GeometricCamera::CAM_PINHOLE)
+        if (pCam->getType() == camera_models::geometriccamera::
+                                   GeometricCamera::CAM_PINHOLE)
             std::cout << " is a pinhole!" << std::endl;
-        else if (pCam->getType() == camera_models::GeometricCamera::CAM_FISHEYE)
+        else if (pCam->getType() ==
+                 camera_models::geometriccamera::GeometricCamera::
+                     CAM_FISHEYE)
             std::cout << " is a fisheye!" << std::endl;
         else
             std::cout << " is unknown!" << std::endl;
@@ -678,7 +682,7 @@ void Tracking::printTimeStats()
 
 Tracking::~Tracking() {}
 
-void Tracking::newParameterLoader(Settings *settings)
+void Tracking::newParameterLoader(utils::settings::Settings *settings)
 {
     p_camera = settings->camera1();
     p_camera = p_atlas->addCamera(p_camera);
@@ -709,7 +713,8 @@ void Tracking::newParameterLoader(Settings *settings)
 
     if ((sensor == System::STEREO || sensor == System::IMU_STEREO ||
          sensor == System::IMU_RGBD) &&
-        settings->cameraType() == Settings::CameraType::KANNALA_BRANDT)
+        settings->cameraType() ==
+        utils::settings::Settings::CameraType::KANNALA_BRANDT)
     {
         p_camera2 = settings->camera2();
         p_camera2 = p_atlas->addCamera(p_camera2);
@@ -1142,7 +1147,7 @@ bool Tracking::parseCamParamFile(cv::FileStorage &fSettings)
 
         vector<float> vCamCalib{fx, fy, cx, cy};
 
-        p_camera = new camera_models::Pinhole(vCamCalib);
+        p_camera = new camera_models::pinhole::Pinhole(vCamCalib);
 
         p_camera = p_atlas->addCamera(p_camera);
 
@@ -1312,7 +1317,9 @@ bool Tracking::parseCamParamFile(cv::FileStorage &fSettings)
             }
 
             vector<float> vCamCalib{fx, fy, cx, cy, k1, k2, k3, k4};
-            p_camera = new camera_models::KannalaBrandt8(vCamCalib);
+            p_camera =
+                new camera_models::kannalabrandt8::KannalaBrandt8(
+                    vCamCalib);
             p_camera = p_atlas->addCamera(p_camera);
             std::cout << "- Camera: Fisheye" << std::endl;
             std::cout << "- Image scale: " << imageScale << std::endl;
@@ -1530,22 +1537,27 @@ bool Tracking::parseCamParamFile(cv::FileStorage &fSettings)
                     rightLappingEnd   = rightLappingEnd * imageScale;
                 }
 
-                static_cast<camera_models::KannalaBrandt8 *>(p_camera)
+                static_cast<camera_models::kannalabrandt8::
+                                KannalaBrandt8 *>(p_camera)
                     ->lappingArea[0] = leftLappingBegin;
-                static_cast<camera_models::KannalaBrandt8 *>(p_camera)
+                static_cast<camera_models::kannalabrandt8::
+                                KannalaBrandt8 *>(p_camera)
                     ->lappingArea[1] = leftLappingEnd;
 
                 p_frameDrawer->both = true;
 
                 vector<float> vCamCalib2{fx, fy, cx, cy, k1, k2, k3, k4};
-                p_camera2 = new camera_models::KannalaBrandt8(vCamCalib2);
+                p_camera2 = new camera_models::kannalabrandt8::
+                    KannalaBrandt8(vCamCalib2);
                 p_camera2 = p_atlas->addCamera(p_camera2);
 
-                poseTlr = Converter::toSophus(cvTlr);
+                poseTlr = utils::converter::Converter::toSophus(cvTlr);
 
-                static_cast<camera_models::KannalaBrandt8 *>(p_camera2)
+                static_cast<camera_models::kannalabrandt8::
+                                KannalaBrandt8 *>(p_camera2)
                     ->lappingArea[0] = rightLappingBegin;
-                static_cast<camera_models::KannalaBrandt8 *>(p_camera2)
+                static_cast<camera_models::kannalabrandt8::
+                                KannalaBrandt8 *>(p_camera2)
                     ->lappingArea[1] = rightLappingEnd;
 
                 std::cout << "- Camera1 Lapping: " << leftLappingBegin << ", "
@@ -5313,7 +5325,8 @@ std::vector<MapPoint *>
     for (MapPoint *point : points)
     {
         double distance =
-            Utils::calculateEuclideanDistance(point->getWorldPos(), location);
+            utils::utils::Utils::calculateEuclideanDistance(
+                point->getWorldPos(), location);
         if (distance <= distanceThreshold)
         {
             closePoints.push_back(point);

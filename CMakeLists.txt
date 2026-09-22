@@ -101,15 +101,23 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 include_directories(
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_SOURCE_DIR}/core
   ${PROJECT_SOURCE_DIR}/core/include
   ${PROJECT_SOURCE_DIR}/core/include/CameraModels
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty/Sophus
   ${EIGEN3_INCLUDE_DIR}
   ${Pangolin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${segmenter_ros_INCLUDE_DIRS}
+)
+
+# Vendored code is not project-owned (CPP_CODING_STANDARD.md sections 1.2 and
+# 15.3), so it is exposed as SYSTEM: diagnostics raised inside its headers
+# (e.g. g2o's use of the deprecated Eigen::AlignedBit) are not reported.
+# Only these roots are affected; project-owned headers under core/include keep
+# the full warning set. `core` is the root of the `Thirdparty/...` includes.
+include_directories(SYSTEM
+  ${PROJECT_SOURCE_DIR}/core
+  ${PROJECT_SOURCE_DIR}/core/Thirdparty
+  ${PROJECT_SOURCE_DIR}/core/Thirdparty/Sophus
 )
 include_directories(${OPENGL_INCLUDE_DIRS})
 
@@ -121,47 +129,83 @@ add_definitions(${PCL_DEFINITIONS})
 include(${PROJECT_SOURCE_DIR}/core/Thirdparty/DBoW2/CMakeLists.txt)
 include(${PROJECT_SOURCE_DIR}/core/Thirdparty/g2o/CMakeLists.txt)
 
+# Types module sources (objects/methods layout)
+include(${PROJECT_SOURCE_DIR}/cmake/auto_sources_Types_Types.cmake)
+
+# CameraModels module sources (object-subpackage layout)
+include(${PROJECT_SOURCE_DIR}/core/src/CameraModels/CMakeLists.txt)
+
+# Utils module sources (object-subpackage layout)
+include(${PROJECT_SOURCE_DIR}/core/src/Utils/CMakeLists.txt)
+
+# GeometricTools object sources (split from GeometricTools.cc)
+include(${PROJECT_SOURCE_DIR}/core/src/Geometric/methods/GeometricTools/CMakeLists.txt)
+
+# StereoMatchOutlierRejection module sources (single free function, §5.4)
+include(${PROJECT_SOURCE_DIR}/core/src/StereoMatchOutlierRejection/CMakeLists.txt)
+
+# DatabaseParser module sources (single DBParser object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/DatabaseParser/CMakeLists.txt)
+
+# MissionHealthTopologyJson module sources (free functions, §5.4)
+include(${PROJECT_SOURCE_DIR}/core/src/MissionHealthTopologyJson/CMakeLists.txt)
+
+# ImuTypes module sources (Bias/Calib/IntegratedRotation/Preintegrated, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/ImuTypes/CMakeLists.txt)
+
+# MapDrawer object sources (single MapDrawer object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/MapDrawer/CMakeLists.txt)
+
+# FrameDrawer object sources (single FrameDrawer object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/FrameDrawer/CMakeLists.txt)
+
+# ResetCause module sources (ResetCauseRetention object + free functions)
+include(${PROJECT_SOURCE_DIR}/core/src/ResetCause/CMakeLists.txt)
+
+# Sim3Solver object sources (single Sim3Solver object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/Sim3Solver/CMakeLists.txt)
+
+# G2oTypes module sources (g2o vertex/edge objects + SO(3) helpers, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/G2oTypes/CMakeLists.txt)
+
 # Set library output directory
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/core/lib)
 
 # Create the main library
 add_library(${PROJECT_NAME}_lib SHARED
   core/src/System.cc
-  core/src/MissionHealthTopologyJson.cc
+  ${VS_GRAPHS_MISSIONHEALTHTOPOLOGYJSON_SOURCES}
   core/src/Tracking.cc
-  core/src/ResetCause.cc
+  ${VS_GRAPHS_RESETCAUSE_SOURCES}
   core/src/LocalMapping.cc
   core/src/LoopClosing.cc
   core/src/ORBextractor.cc
   core/src/ORBmatcher.cc
-  core/src/FrameDrawer.cc
-  core/src/Converter.cc
+  ${VS_GRAPHS_FRAMEDRAWER_SOURCES}
   core/src/MapPoint.cc
   core/src/KeyFrame.cc
   core/src/Atlas.cc
   core/src/Map.cc
-  core/src/MapDrawer.cc
+  ${VS_GRAPHS_MAPDRAWER_SOURCES}
   core/src/Optimizer.cc
   core/src/Frame.cc
-  core/src/StereoMatchOutlierRejection.cc
+  ${VS_GRAPHS_STEREOMATCHOUTLIERREJECTION_SOURCES}
   core/src/KeyFrameDatabase.cc
-  core/src/Sim3Solver.cc
+  ${VS_GRAPHS_SIM3SOLVER_SOURCES}
   core/src/Viewer.cc
-  core/src/ImuTypes.cc
-  core/src/G2oTypes.cc
-  core/src/CameraModels/Pinhole.cc
-  core/src/CameraModels/KannalaBrandt8.cc
+  ${VS_GRAPHS_IMUTYPES_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_SOURCES}
+  ${VS_GRAPHS_CAMERAMODELS_CAMERAMODELS_SOURCES}
   core/src/OptimizableTypes.cc
   core/src/MLPnPsolver.cc
-  core/src/GeometricTools.cc
+  ${VS_GRAPHS_GEOMETRIC_GEOMETRIC_SOURCES}
+  ${VS_GRAPHS_GEOMETRIC_GEOMETRICTOOLS_SOURCES}
   core/src/TwoViewReconstruction.cc
-  core/src/Utils.cc
-  core/src/Config.cc
-  core/src/Settings.cc
-  core/src/GeoSemHelpers.cc
+  ${VS_GRAPHS_UTILS_SOURCES}
+  
   core/src/Semantic/Room.cc
   core/src/Semantic/Floor.cc
-  core/src/DatabaseParser.cc
+  ${VS_GRAPHS_DATABASEPARSER_SOURCES}
   core/src/Semantic/Marker.cc
   core/src/Geometric/Plane.cc
   core/src/Geometric/methods/Plane/getGeometryMetadataSnapshot.cc
@@ -308,7 +352,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeSnapshotFullGeometry.cc
   core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeEvaluationReport.cc
   core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeMapCompletenessResults.cc
-  core/src/Types/SystemParams.cc
+  ${VS_GRAPHS_TYPES_TYPES_SOURCES}
   core/src/SemanticSegmentation.cc
   core/src/SemanticsManager.cc
   core/src/Semantic/RoomTracker.cc
@@ -321,7 +365,6 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/include/ORBextractor.h
   core/include/ORBmatcher.h
   core/include/FrameDrawer.h
-  core/include/Converter.h
   core/include/MapPoint.h
   core/include/KeyFrame.h
   core/include/Atlas.h
@@ -335,17 +378,13 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/include/Viewer.h
   core/include/ImuTypes.h
   core/include/G2oTypes.h
-  core/include/CameraModels/GeometricCamera.h
-  core/include/CameraModels/Pinhole.h
-  core/include/CameraModels/KannalaBrandt8.h
+  ${VS_GRAPHS_CAMERAMODELS_CAMERAMODELS_OBJECT_HEADERS}
   core/include/OptimizableTypes.h
   core/include/MLPnPsolver.h
   core/include/GeometricTools.h
   core/include/TwoViewReconstruction.h
   core/include/SerializationUtils.h
-  core/include/Config.h
-  core/include/Utils.h
-  core/include/Settings.h
+  ${VS_GRAPHS_UTILS_OBJECT_HEADERS}
   core/include/GeoSemHelpers.h
   core/include/Semantic/Room.h
   core/include/Semantic/Floor.h
@@ -354,7 +393,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/include/Geometric/Plane.h
   core/include/Geometric/PlaneGeometryMetadataSnapshot.h
   core/include/Semantic/Passage.h
-  core/include/Types/SystemParams.h
+  ${VS_GRAPHS_TYPES_TYPES_OBJECT_HEADERS}
   core/include/SemanticSegmentation.h
   core/include/SemanticsManager.h
   core/include/Semantic/RoomTracker.h
@@ -730,7 +769,7 @@ if(BUILD_TESTING)
     test/test_rgbd_observability.cpp
     src/RgbdObservability.cc
     src/RgbdAllPointsCadence.cc
-    core/src/ResetCause.cc
+    ${VS_GRAPHS_RESETCAUSE_SOURCES}
   )
   target_include_directories(test_rgbd_observability PRIVATE
     ${PROJECT_SOURCE_DIR}/src
@@ -760,7 +799,7 @@ if(BUILD_TESTING)
   # isolation, without pulling in Frame's full ORB-SLAM3 dependency chain.
   ament_add_gtest(test_StereoMatchOutlierRejection
     test/test_StereoMatchOutlierRejection.cpp
-    core/src/StereoMatchOutlierRejection.cc
+    ${VS_GRAPHS_STEREOMATCHOUTLIERREJECTION_SOURCES}
   )
   target_include_directories(test_StereoMatchOutlierRejection PRIVATE
     ${PROJECT_SOURCE_DIR}/core/include
@@ -773,6 +812,19 @@ if(BUILD_TESTING)
   )
   target_include_directories(test_OptimizerEdgeLookup PRIVATE
     ${PROJECT_SOURCE_DIR}/core/include
+  )
+
+  # Regression test: TwoViewReconstruction::reconstructH() computed the
+  # triangulated structure of its winning hypothesis but never published it
+  # through vP3D, unlike its sibling reconstructF(). The test drives
+  # reconstructH() on a synthetic tilted-plane scene and needs the production
+  # TwoViewReconstruction and GeometricTools code, so it links the plain
+  # production library.
+  ament_add_gtest(test_TwoViewReconstruction
+    test/test_TwoViewReconstruction.cpp
+  )
+  target_link_libraries(test_TwoViewReconstruction
+    ${PROJECT_NAME}_lib
   )
 
   # Deterministic, ROS/Gazebo-free fixture builders shared by later

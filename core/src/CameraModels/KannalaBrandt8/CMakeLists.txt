@@ -1,0 +1,21 @@
+# KannalaBrandt8 object sources: exactly this object's translation units.
+set(VS_GRAPHS_CAMERAMODELS_KANNALABRANDT8_SOURCES
+  core/src/CameraModels/KannalaBrandt8/methods/computeProjectionJacobian.cc
+  core/src/CameraModels/KannalaBrandt8/methods/epipolarConstrain.cc
+  core/src/CameraModels/KannalaBrandt8/methods/isEqual.cc
+  core/src/CameraModels/KannalaBrandt8/methods/matchAndTriangulate.cc
+  core/src/CameraModels/KannalaBrandt8/methods/operators/streamInput/readCalibration.cc
+  core/src/CameraModels/KannalaBrandt8/methods/operators/streamOutput/writeCalibration.cc
+  core/src/CameraModels/KannalaBrandt8/methods/project/fromCvPoint3f.cc
+  core/src/CameraModels/KannalaBrandt8/methods/project/fromEigenVector3d.cc
+  core/src/CameraModels/KannalaBrandt8/methods/project/fromEigenVector3f.cc
+  core/src/CameraModels/KannalaBrandt8/methods/projectMat.cc
+  core/src/CameraModels/KannalaBrandt8/methods/reconstructWithTwoViews.cc
+  core/src/CameraModels/KannalaBrandt8/methods/toK.cc
+  core/src/CameraModels/KannalaBrandt8/methods/toK_.cc
+  core/src/CameraModels/KannalaBrandt8/methods/triangulate.cc
+  core/src/CameraModels/KannalaBrandt8/methods/triangulateMatches.cc
+  core/src/CameraModels/KannalaBrandt8/methods/uncertainty2.cc
+  core/src/CameraModels/KannalaBrandt8/methods/unproject.cc
+  core/src/CameraModels/KannalaBrandt8/methods/unprojectEig.cc
+)

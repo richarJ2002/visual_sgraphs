@@ -143,7 +143,6 @@ void EdgeSE3ProjectXYZDepth::linearizeOplus()
 
     double x = xyz_trans[0];
     double y = xyz_trans[1];
-    double z = xyz_trans[2];
 
     // Derivative of depth (z-coordinate in camera frame) w.r.t SE3 pose
     Eigen::Matrix<double, 1, 6> SE3deriv_z;

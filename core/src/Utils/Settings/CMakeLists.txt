@@ -1,0 +1,19 @@
+# Settings object sources: exactly this object's translation units.
+set(VS_GRAPHS_UTILS_SETTINGS_SOURCES
+  core/src/Utils/Settings/methods/constructor.cc
+  core/src/Utils/Settings/methods/operators/streamOutput/writeSettings.cc
+  core/src/Utils/Settings/methods/precomputeRectificationMaps.cc
+  core/src/Utils/Settings/methods/readCamera1.cc
+  core/src/Utils/Settings/methods/readCamera2.cc
+  core/src/Utils/Settings/methods/readImageInfo.cc
+  core/src/Utils/Settings/methods/readIMU.cc
+  core/src/Utils/Settings/methods/readLoadAndSave.cc
+  core/src/Utils/Settings/methods/readORB.cc
+  core/src/Utils/Settings/methods/readOtherParameters.cc
+  core/src/Utils/Settings/methods/readParameter/fromCvMat.cc
+  core/src/Utils/Settings/methods/readParameter/fromFloat.cc
+  core/src/Utils/Settings/methods/readParameter/fromInt.cc
+  core/src/Utils/Settings/methods/readParameter/fromString.cc
+  core/src/Utils/Settings/methods/readRGBD.cc
+  core/src/Utils/Settings/methods/readViewer.cc
+)

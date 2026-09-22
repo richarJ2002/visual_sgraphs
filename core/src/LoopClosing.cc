@@ -25,7 +25,7 @@
 
 #include "LoopClosing.h"
 
-#include "Converter.h"
+#include "Utils/Converter/objects/Converter.h"
 #include "G2oTypes.h"
 #include "ORBmatcher.h"
 #include "Optimizer.h"
@@ -1496,7 +1496,7 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                     1.0);
                 g2o::Sim3 gScw = gScm * gSmw; // Similarity matrix of current
                                               // from the world position
-                Sophus::Sim3f correctedPose = Converter::toSophus(gScw);
+                Sophus::Sim3f correctedPose = utils::converter::Converter::toSophus(gScw);
 
                 vector<MapPoint *> vpMatchedMP;
                 vpMatchedMP.resize(p_currentKF->getMapPointMatches().size(),
@@ -1543,7 +1543,7 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                         g2o::Sim3 gScw =
                             gScm * gSmw; // Similarity matrix of current from
                                          // the world position
-                        Sophus::Sim3f correctedPose = Converter::toSophus(gScw);
+                        Sophus::Sim3f correctedPose = utils::converter::Converter::toSophus(gScw);
 
                         vector<MapPoint *> vpMatchedMP;
                         vpMatchedMP.resize(
@@ -1770,7 +1770,7 @@ int LoopClosing::findMatchesByProjection(KeyFrame        *pCurrentKF,
         }
     }
 
-    Sophus::Sim3f correctedPose = Converter::toSophus(g2oScw);
+    Sophus::Sim3f correctedPose = utils::converter::Converter::toSophus(g2oScw);
     ORBmatcher    matcher(0.9, true);
 
     vpMatchedMapPoints.resize(pCurrentKF->getMapPointMatches().size(),
@@ -3130,7 +3130,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                           poseAfterScale));
         }
 
-        Utils::propagateSemanticPoseCorrections(
+        utils::utils::Utils::propagateSemanticPoseCorrections(
             pMergeMap,
             vNonCorrectedSim3,
             finalKeyFramePoses_WorldToCamera,
@@ -3471,7 +3471,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         /* Fuse only after every semantic relationship is visible. */
         if (p_sysParams->semSeg.reassociate.enabled)
         {
-            Utils::reAssociateSemanticPlanes(p_atlas);
+            utils::utils::Utils::reAssociateSemanticPlanes(p_atlas);
         }
 
         std::vector<semantic::Room *> importedRooms = vpCurrentDetectedMapRooms;
@@ -3481,12 +3481,12 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
 
         /* Stable semantic identity reconciliation is a merge invariant, not
          * an optional geometry-reassociation feature. */
-        Utils::fuseDuplicateRoomsAfterMerge(pCurrentMap, importedRooms);
+        utils::utils::Utils::fuseDuplicateRoomsAfterMerge(pCurrentMap, importedRooms);
 
         if (p_sysParams->semSeg.reassociate.enabled)
         {
-            Utils::reAssociateRooms(p_atlas);
-            Utils::reAssociatePassages(p_atlas);
+            utils::utils::Utils::reAssociateRooms(p_atlas);
+            utils::utils::Utils::reAssociatePassages(p_atlas);
         }
     }
 
@@ -4053,7 +4053,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             Eigen::Vector3d::Zero(),
             1.0);
 
-        Utils::propagateSemanticPoseCorrections(pCurrentMap,
+        utils::utils::Utils::propagateSemanticPoseCorrections(pCurrentMap,
                                                 NonCorrectedSim3,
                                                 CorrectedSim3,
                                                 identityTransform_WorldToWorld);
@@ -4063,17 +4063,17 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
      */
     if (types::SystemParams::getParams()->semSeg.reassociate.enabled)
     {
-        Utils::reAssociateSemanticPlanes(p_atlas);
+        utils::utils::Utils::reAssociateSemanticPlanes(p_atlas);
     }
 
     /* Matching stable room identities must collapse even when optional
      * geometry reassociation is disabled. */
-    Utils::fuseDuplicateRoomsAfterMerge(pCurrentMap, importedRooms);
+    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(pCurrentMap, importedRooms);
 
     if (types::SystemParams::getParams()->semSeg.reassociate.enabled)
     {
-        Utils::reAssociateRooms(p_atlas);
-        Utils::reAssociatePassages(p_atlas);
+        utils::utils::Utils::reAssociateRooms(p_atlas);
+        utils::utils::Utils::reAssociatePassages(p_atlas);
     }
 
     finalizeInertialMerge();
@@ -4182,7 +4182,7 @@ void LoopClosing::searchAndFuse(const KeyFrameAndPose &CorrectedPosesMap,
         Map      *pMap         = pKFi->getMap();
 
         g2o::Sim3     g2oScw = mit->second;
-        Sophus::Sim3f Scw    = Converter::toSophus(g2oScw);
+        Sophus::Sim3f Scw    = utils::converter::Converter::toSophus(g2oScw);
 
         vector<MapPoint *> vpReplacePoints(vpMapPoints.size(),
                                            static_cast<MapPoint *>(nullptr));
@@ -4589,7 +4589,7 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *pActiveMap,
                 1.0);
 
             /* Keep every semantic entity aligned with the corrected cameras. */
-            Utils::propagateSemanticPoseCorrections(
+            utils::utils::Utils::propagateSemanticPoseCorrections(
                 pActiveMap,
                 keyFramePosesBefore_WorldToCamera,
                 keyFramePosesAfter_WorldToCamera,

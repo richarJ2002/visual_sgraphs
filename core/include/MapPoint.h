@@ -26,7 +26,7 @@
 #ifndef MAPPOINT_H
 #define MAPPOINT_H
 
-#include "Converter.h"
+#include "Utils/Converter/objects/Converter.h"
 #include "Frame.h"
 #include "KeyFrame.h"
 #include "Map.h"

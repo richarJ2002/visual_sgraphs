@@ -26,6 +26,7 @@
 #ifndef VS_GRAPHS_CORE_OPTIMIZABLETYPES_H
 #define VS_GRAPHS_CORE_OPTIMIZABLETYPES_H
 
+#include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
 #include "Thirdparty/g2o/g2o/core/base_multi_edge.h"
 #include "Thirdparty/g2o/g2o/core/base_unary_edge.h"
 #include "Thirdparty/g2o/g2o/types/isometry3d_mappings.h"
@@ -34,7 +35,6 @@
 #include <Thirdparty/g2o/g2o/types/sim3.h>
 #include <Thirdparty/g2o/g2o/types/types_six_dof_expmap.h>
 #include <Thirdparty/g2o/g2o/types/vertex_plane.h>
-#include <include/CameraModels/GeometricCamera.h>
 
 namespace vs_graphs
 {
@@ -73,8 +73,8 @@ class EdgeSE3ProjectXYZOnlyPose
 
     virtual void linearizeOplus();
 
-    Eigen::Vector3d                 Xw;
-    camera_models::GeometricCamera *pCamera;
+    Eigen::Vector3d                                  Xw;
+    camera_models::geometriccamera::GeometricCamera *pCamera;
 };
 
 /*!
@@ -115,8 +115,8 @@ class EdgeSE3ProjectXYZDepth
 
     virtual void linearizeOplus();
 
-    Eigen::Vector3d                 Xw;
-    camera_models::GeometricCamera *pCamera;
+    Eigen::Vector3d                                  Xw;
+    camera_models::geometriccamera::GeometricCamera *pCamera;
 };
 
 /*!
@@ -152,8 +152,8 @@ class EdgeSE3ProjectXYZOnlyPoseToBody
 
     virtual void linearizeOplus();
 
-    Eigen::Vector3d                 Xw;
-    camera_models::GeometricCamera *pCamera;
+    Eigen::Vector3d                                  Xw;
+    camera_models::geometriccamera::GeometricCamera *pCamera;
 
     g2o::SE3Quat mTrl;
 };
@@ -197,7 +197,7 @@ class EdgeSE3ProjectXYZ : public g2o::BaseBinaryEdge<2,
 
     virtual void linearizeOplus();
 
-    camera_models::GeometricCamera *pCamera;
+    camera_models::geometriccamera::GeometricCamera *pCamera;
 };
 
 /*!
@@ -241,8 +241,8 @@ class EdgeSE3ProjectXYZToBody
 
     virtual void linearizeOplus();
 
-    camera_models::GeometricCamera *pCamera;
-    g2o::SE3Quat                    mTrl;
+    camera_models::geometriccamera::GeometricCamera *pCamera;
+    g2o::SE3Quat                                     mTrl;
 };
 
 /*!
@@ -274,7 +274,7 @@ class VertexSim3Expmap : public g2o::BaseVertex<7, g2o::Sim3>
         setEstimate(s * estimate());
     }
 
-    camera_models::GeometricCamera *pCamera1, *pCamera2;
+    camera_models::geometriccamera::GeometricCamera *pCamera1, *pCamera2;
 
     bool _fix_scale;
 };
@@ -994,11 +994,11 @@ class EdgePlaneTransformSE3
 
     EdgePlaneTransformSE3() {}
 
-    bool read(std::istream &is)
+    bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    bool write(std::ostream &os) const
+    bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }

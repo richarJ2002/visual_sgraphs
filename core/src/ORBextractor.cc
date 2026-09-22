@@ -590,7 +590,7 @@ vector<cv::KeyPoint> ORBextractor::distributeOctTree(
     const int                  &minY_in,
     const int                  &maxY_in,
     const int                  &featureCount_in,
-    const int                  &level_in)
+    [[maybe_unused]] const int &level_in)
 {
     // Compute how many initial nodes
     const int nIni =
@@ -1175,9 +1175,9 @@ static void computeDescriptors(const Mat           &image,
                              descriptors.ptr((int)i));
 }
 
-int ORBextractor::operator()(InputArray        image_in,
-                             InputArray        mask_in,
-                             vector<KeyPoint> &keypoints_out,
+int ORBextractor::operator()(InputArray                       image_in,
+                             [[maybe_unused]] InputArray      mask_in,
+                             vector<KeyPoint>                &keypoints_out,
                              OutputArray       descriptors_out,
                              std::vector<int> &lappingArea_in)
 {

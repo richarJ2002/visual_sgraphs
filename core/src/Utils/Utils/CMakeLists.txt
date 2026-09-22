@@ -1,0 +1,37 @@
+# Utils object sources: exactly this object's translation units.
+set(VS_GRAPHS_UTILS_UTILS_SOURCES
+  core/src/Utils/Utils/methods/applyPoseToPlane.cc
+  core/src/Utils/Utils/methods/arePlanesApartEnough.cc
+  core/src/Utils/Utils/methods/arePlanesFacingEachOther.cc
+  core/src/Utils/Utils/methods/arePlanesParallel.cc
+  core/src/Utils/Utils/methods/arePlanesPerpendicular.cc
+  core/src/Utils/Utils/methods/associatePlanes.cc
+  core/src/Utils/Utils/methods/calcSoftMin.cc
+  core/src/Utils/Utils/methods/calculateDistancePointToPlane.cc
+  core/src/Utils/Utils/methods/calculateEuclideanDistance.cc
+  core/src/Utils/Utils/methods/clusterPlaneClouds.cc
+  core/src/Utils/Utils/methods/collectCorrespondingWalls.cc
+  core/src/Utils/Utils/methods/computeCentroidFromPoints.cc
+  core/src/Utils/Utils/methods/computeMapTransform_Horn.cc
+  core/src/Utils/Utils/methods/computePlaneWidthHeight.cc
+  core/src/Utils/Utils/methods/consolidateProvisionalRooms.cc
+  core/src/Utils/Utils/methods/correctPlaneDirection.cc
+  core/src/Utils/Utils/methods/fuseDuplicateRoomsAfterMerge.cc
+  core/src/Utils/Utils/methods/getClassIdFromPlaneType.cc
+  core/src/Utils/Utils/methods/getFacingPlanes.cc
+  core/src/Utils/Utils/methods/getPlaneTypeFromClassId.cc
+  core/src/Utils/Utils/methods/lineIntersectsPlane.cc
+  core/src/Utils/Utils/methods/matchWallsBetweenRooms.cc
+  core/src/Utils/Utils/methods/pointOnPlane.cc
+  core/src/Utils/Utils/methods/pointcloudDistanceFilter.cc
+  core/src/Utils/Utils/methods/pointcloudDownsample.cc
+  core/src/Utils/Utils/methods/pointcloudOutlierRemoval.cc
+  core/src/Utils/Utils/methods/propagateSemanticPoseCorrections.cc
+  core/src/Utils/Utils/methods/ransacPlaneFitting.cc
+  core/src/Utils/Utils/methods/reAssociatePassages.cc
+  core/src/Utils/Utils/methods/reAssociateRooms.cc
+  core/src/Utils/Utils/methods/reAssociateSemanticPlanes.cc
+  core/src/Utils/Utils/private_functions/observationSide.cc
+  core/src/Utils/Utils/private_functions/planeBounds.cc
+  core/src/Utils/Utils/private_functions/passageOpening.cc
+)

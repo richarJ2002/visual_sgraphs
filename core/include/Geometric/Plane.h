@@ -24,7 +24,7 @@
 #include "MapPoint.h"
 #include "Semantic/Marker.h"
 #include "Thirdparty/g2o/g2o/types/plane3d.h"
-#include "Types/SystemParams.h"
+#include "Types/objects/SystemParams.h"
 
 #include <boost/shared_ptr.hpp>
 #include <cstddef>

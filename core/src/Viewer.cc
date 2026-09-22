@@ -40,12 +40,12 @@ namespace vs_graphs
 namespace core
 {
 
-Viewer::Viewer(System       *pSystem,
-               FrameDrawer  *pFrameDrawer,
-               MapDrawer    *pMapDrawer,
-               Tracking     *pTracking,
-               const string &strSettingPath,
-               Settings     *settings) :
+Viewer::Viewer(System                    *pSystem,
+               FrameDrawer               *pFrameDrawer,
+               MapDrawer                 *pMapDrawer,
+               Tracking                  *pTracking,
+               const string              &strSettingPath,
+               utils::settings::Settings *settings) :
     both(false),
     p_system(pSystem),
     p_frameDrawer(pFrameDrawer),
@@ -84,7 +84,7 @@ Viewer::Viewer(System       *pSystem,
     stopTrack = false;
 }
 
-void Viewer::newParameterLoader(Settings *settings)
+void Viewer::newParameterLoader(utils::settings::Settings *settings)
 {
     imageViewerScale = 1.f;
 

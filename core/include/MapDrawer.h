@@ -29,9 +29,10 @@
 #include "Atlas.h"
 #include "KeyFrame.h"
 #include "MapPoint.h"
-#include "Settings.h"
+#include "Utils/Settings/objects/Settings.h"
 #include <pangolin/pangolin.h>
 
+#include <iostream>
 #include <mutex>
 
 namespace vs_graphs
@@ -39,15 +40,40 @@ namespace vs_graphs
 namespace core
 {
 
-class Settings;
-
 class MapDrawer
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    MapDrawer(Atlas *pAtlas, const string &strSettingPath, Settings *settings);
+    MapDrawer(Atlas                      *pAtlas,
+              const string               &strSettingPath,
+              utils::settings::Settings *settings) :
+        p_atlas(pAtlas)
+    {
+        if (settings)
+        {
+            newParameterLoader(settings);
+        }
+        else
+        {
+            cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+            bool            is_correct = parseViewerParamFile(fSettings);
 
-    void newParameterLoader(Settings *settings);
+            if (!is_correct)
+            {
+                std::cerr
+                    << "**ERROR in the config file, the format is not correct**"
+                    << std::endl;
+                try
+                {
+                    throw -1;
+                }
+                catch (exception &e)
+                {}
+            }
+        }
+    }
+
+    void newParameterLoader(utils::settings::Settings *settings);
 
     Atlas *p_atlas;
 

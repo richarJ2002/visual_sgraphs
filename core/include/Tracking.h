@@ -30,10 +30,10 @@
 #include <opencv2/features2d/features2d.hpp>
 
 #include "Atlas.h"
+#include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
 #include "Frame.h"
 #include "FrameDrawer.h"
 #include "Geometric/Plane.h"
-#include "GeometricCamera.h"
 #include "ImuTypes.h"
 #include "KeyFrameDatabase.h"
 #include "LocalMapping.h"
@@ -44,9 +44,9 @@
 #include "Semantic/Marker.h"
 #include "Semantic/Passage.h"
 #include "Semantic/Room.h"
-#include "Settings.h"
+#include "Utils/Settings/objects/Settings.h"
 #include "System.h"
-#include "Utils.h"
+#include "Utils/Utils/objects/Utils.h"
 #include "Viewer.h"
 
 #include <pcl/filters/extract_indices.h>
@@ -67,7 +67,13 @@ class Atlas;
 class LocalMapping;
 class LoopClosing;
 class System;
+namespace utils
+{
+namespace settings
+{
 class Settings;
+} // namespace settings
+} // namespace utils
 
 class Tracking
 {
@@ -86,7 +92,7 @@ class Tracking
              KeyFrameDatabase *pKFDB,
              const string     &strSettingPath,
              const int         sensorType,
-             Settings         *settings,
+             utils::settings::Settings *settings,
              const string     &_nameSeq = std::string());
 
     ~Tracking();
@@ -470,13 +476,14 @@ class Tracking
     int baseInitialFastThreshold;
     int baseMinimumFastThreshold;
 
-    camera_models::GeometricCamera *p_camera, *p_camera2;
+    camera_models::geometriccamera::GeometricCamera *p_camera,
+        *p_camera2;
 
     int initId, lastId;
 
     Sophus::SE3f poseTlr;
 
-    void newParameterLoader(Settings *settings);
+    void newParameterLoader(utils::settings::Settings *settings);
     void loadTrackingParameters(const string &strSettingPath);
     void adjustFASTThreshold(); // Adaptive threshold based on tracking
                                 // quality

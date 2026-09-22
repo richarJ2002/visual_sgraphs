@@ -41,7 +41,7 @@
 #include <Frame.h>
 #include <KeyFrame.h>
 
-#include "Converter.h"
+#include "Utils/Converter/objects/Converter.h"
 #include <math.h>
 
 namespace vs_graphs
@@ -53,8 +53,11 @@ class KeyFrame;
 class Frame;
 namespace camera_models
 {
+namespace geometriccamera
+{
 class GeometricCamera;
-}
+} // namespace geometriccamera
+} // namespace camera_models
 
 typedef Eigen::Matrix<double, 6, 1>   Vector6d;
 typedef Eigen::Matrix<double, 9, 1>   Vector9d;
@@ -92,9 +95,129 @@ class ImuCamPose
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     ImuCamPose() {}
-    ImuCamPose(KeyFrame *pKF);
-    ImuCamPose(Frame *pF);
-    ImuCamPose(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, KeyFrame *pKF);
+    ImuCamPose(KeyFrame *pKF) :
+        its(0)
+    {
+        // Load IMU pose
+        twb = pKF->getImuPosition().cast<double>();
+        Rwb = pKF->getImuRotation().cast<double>();
+
+        // Load camera poses
+        int num_cams;
+        if (pKF->p_camera2)
+            num_cams = 2;
+        else
+            num_cams = 1;
+
+        tcw.resize(num_cams);
+        Rcw.resize(num_cams);
+        tcb.resize(num_cams);
+        Rcb.resize(num_cams);
+        Rbc.resize(num_cams);
+        tbc.resize(num_cams);
+        pCamera.resize(num_cams);
+
+        // Left camera
+        tcw[0]     = pKF->getTranslation().cast<double>();
+        Rcw[0]     = pKF->getRotation().cast<double>();
+        tcb[0]     = pKF->imuCalibration.mTcb.translation().cast<double>();
+        Rcb[0]     = pKF->imuCalibration.mTcb.rotationMatrix().cast<double>();
+        Rbc[0]     = Rcb[0].transpose();
+        tbc[0]     = pKF->imuCalibration.mTbc.translation().cast<double>();
+        pCamera[0] = pKF->p_camera;
+        bf         = pKF->mbf;
+
+        if (num_cams > 1)
+        {
+            Eigen::Matrix4d Trl = pKF->getRelativePoseTrl().matrix().cast<double>();
+            Rcw[1]              = Trl.block<3, 3>(0, 0) * Rcw[0];
+            tcw[1]     = Trl.block<3, 3>(0, 0) * tcw[0] + Trl.block<3, 1>(0, 3);
+            tcb[1]     = Trl.block<3, 3>(0, 0) * tcb[0] + Trl.block<3, 1>(0, 3);
+            Rcb[1]     = Trl.block<3, 3>(0, 0) * Rcb[0];
+            Rbc[1]     = Rcb[1].transpose();
+            tbc[1]     = -Rbc[1] * tcb[1];
+            pCamera[1] = pKF->p_camera2;
+        }
+
+        // For posegraph 4DoF
+        Rwb0 = Rwb;
+        DR.setIdentity();
+    }
+    ImuCamPose(Frame *pF) :
+        its(0)
+    {
+        // Load IMU pose
+        twb = pF->getImuPosition().cast<double>();
+        Rwb = pF->getImuRotation().cast<double>();
+
+        // Load camera poses
+        int num_cams;
+        if (pF->p_camera2)
+            num_cams = 2;
+        else
+            num_cams = 1;
+
+        tcw.resize(num_cams);
+        Rcw.resize(num_cams);
+        tcb.resize(num_cams);
+        Rcb.resize(num_cams);
+        Rbc.resize(num_cams);
+        tbc.resize(num_cams);
+        pCamera.resize(num_cams);
+
+        // Left camera
+        tcw[0]     = pF->getPose().translation().cast<double>();
+        Rcw[0]     = pF->getPose().rotationMatrix().cast<double>();
+        tcb[0]     = pF->imuCalibration.mTcb.translation().cast<double>();
+        Rcb[0]     = pF->imuCalibration.mTcb.rotationMatrix().cast<double>();
+        Rbc[0]     = Rcb[0].transpose();
+        tbc[0]     = pF->imuCalibration.mTbc.translation().cast<double>();
+        pCamera[0] = pF->p_camera;
+        bf         = pF->mbf;
+
+        if (num_cams > 1)
+        {
+            Eigen::Matrix4d Trl = pF->getRelativePoseTrl().matrix().cast<double>();
+            Rcw[1]              = Trl.block<3, 3>(0, 0) * Rcw[0];
+            tcw[1]     = Trl.block<3, 3>(0, 0) * tcw[0] + Trl.block<3, 1>(0, 3);
+            tcb[1]     = Trl.block<3, 3>(0, 0) * tcb[0] + Trl.block<3, 1>(0, 3);
+            Rcb[1]     = Trl.block<3, 3>(0, 0) * Rcb[0];
+            Rbc[1]     = Rbc[1].transpose();
+            tbc[1]     = -Rbc[1] * tcb[1];
+            pCamera[1] = pF->p_camera2;
+        }
+
+        // For posegraph 4DoF
+        Rwb0 = Rwb;
+        DR.setIdentity();
+    }
+    ImuCamPose(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, KeyFrame *pKF) :
+        its(0)
+    {
+        // This is only for posegrpah, we do not care about multicamera
+        tcw.resize(1);
+        Rcw.resize(1);
+        tcb.resize(1);
+        Rcb.resize(1);
+        Rbc.resize(1);
+        tbc.resize(1);
+        pCamera.resize(1);
+
+        tcb[0]     = pKF->imuCalibration.mTcb.translation().cast<double>();
+        Rcb[0]     = pKF->imuCalibration.mTcb.rotationMatrix().cast<double>();
+        Rbc[0]     = Rcb[0].transpose();
+        tbc[0]     = pKF->imuCalibration.mTbc.translation().cast<double>();
+        twb        = _Rwc * tcb[0] + _twc;
+        Rwb        = _Rwc * Rcb[0];
+        Rcw[0]     = _Rwc.transpose();
+        tcw[0]     = -Rcw[0] * _twc;
+        pCamera[0] = pKF->p_camera;
+        bf         = pKF->mbf;
+
+        // For posegraph 4DoF
+        Rwb0 = Rwb;
+        DR.setIdentity();
+    }
 
     void setParam(const std::vector<Eigen::Matrix3d> &_Rcw,
                   const std::vector<Eigen::Vector3d> &_tcw,
@@ -116,12 +239,12 @@ class ImuCamPose
     Eigen::Vector3d twb;
 
     // For set of cameras
-    std::vector<Eigen::Matrix3d>                  Rcw;
-    std::vector<Eigen::Vector3d>                  tcw;
-    std::vector<Eigen::Matrix3d>                  Rcb, Rbc;
-    std::vector<Eigen::Vector3d>                  tcb, tbc;
-    double                                        bf;
-    std::vector<camera_models::GeometricCamera *> pCamera;
+    std::vector<Eigen::Matrix3d>                                   Rcw;
+    std::vector<Eigen::Vector3d>                                   tcw;
+    std::vector<Eigen::Matrix3d>                                   Rcb, Rbc;
+    std::vector<Eigen::Vector3d>                                   tcb, tbc;
+    double                                                         bf;
+    std::vector<camera_models::geometriccamera::GeometricCamera *> pCamera;
 
     // For posegraph 4DoF
     Eigen::Matrix3d Rwb0;
@@ -135,7 +258,20 @@ class InvDepthPoint
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     InvDepthPoint() {}
-    InvDepthPoint(double _rho, double _u, double _v, KeyFrame *pHostKF);
+    InvDepthPoint(double    _rho,
+                  double    _u,
+                  double    _v,
+                  KeyFrame *pHostKF) :
+        rho(_rho),
+        u(_u),
+        v(_v),
+        fx(pHostKF->fx),
+        fy(pHostKF->fy),
+        cx(pHostKF->cx),
+        cy(pHostKF->cy),
+        bf(pHostKF->mbf)
+    {
+    }
 
     void update(const double *pu);
 
@@ -194,11 +330,11 @@ class VertexPose4DoF : public g2o::BaseVertex<4, ImuCamPose>
         setEstimate(ImuCamPose(_Rwc, _twc, pKF));
     }
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -224,14 +360,20 @@ class VertexVelocity : public g2o::BaseVertex<3, Eigen::Vector3d>
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     VertexVelocity() {}
-    VertexVelocity(KeyFrame *pKF);
-    VertexVelocity(Frame *pF);
+    VertexVelocity(KeyFrame *pKF)
+    {
+        setEstimate(pKF->getVelocity().cast<double>());
+    }
+    VertexVelocity(Frame *pF)
+    {
+        setEstimate(pF->getVelocity().cast<double>());
+    }
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -251,14 +393,22 @@ class VertexGyroBias : public g2o::BaseVertex<3, Eigen::Vector3d>
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     VertexGyroBias() {}
-    VertexGyroBias(KeyFrame *pKF);
-    VertexGyroBias(Frame *pF);
+    VertexGyroBias(KeyFrame *pKF)
+    {
+        setEstimate(pKF->getGyroBias().cast<double>());
+    }
+    VertexGyroBias(Frame *pF)
+    {
+        Eigen::Vector3d bg;
+        bg << pF->imuBias.bwx, pF->imuBias.bwy, pF->imuBias.bwz;
+        setEstimate(bg);
+    }
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -278,14 +428,22 @@ class VertexAccBias : public g2o::BaseVertex<3, Eigen::Vector3d>
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     VertexAccBias() {}
-    VertexAccBias(KeyFrame *pKF);
-    VertexAccBias(Frame *pF);
+    VertexAccBias(KeyFrame *pKF)
+    {
+        setEstimate(pKF->getAccBias().cast<double>());
+    }
+    VertexAccBias(Frame *pF)
+    {
+        Eigen::Vector3d ba;
+        ba << pF->imuBias.bax, pF->imuBias.bay, pF->imuBias.baz;
+        setEstimate(ba);
+    }
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -338,11 +496,11 @@ class VertexGDir : public g2o::BaseVertex<2, GDirection>
         setEstimate(GDirection(pRwg));
     }
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -370,11 +528,11 @@ class VertexScale : public g2o::BaseVertex<1, double>
         setEstimate(ps);
     }
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -401,11 +559,11 @@ class VertexInvDepth : public g2o::BaseVertex<1, InvDepthPoint>
         setEstimate(InvDepthPoint(invDepth, u, v, pHostKF));
     }
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -430,11 +588,11 @@ class EdgeMono
         cam_idx(cam_idx_)
     {}
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -491,11 +649,11 @@ class EdgeMonoOnlyPose
         cam_idx(cam_idx_)
     {}
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -537,11 +695,11 @@ class EdgeStereo
         cam_idx(cam_idx_)
     {}
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -591,11 +749,11 @@ class EdgeStereoOnlyPose
         cam_idx(cam_idx_)
     {}
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -625,13 +783,36 @@ class EdgeInertial : public g2o::BaseMultiEdge<9, Vector9d>
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeInertial(IMU::Preintegrated *pInt);
+    EdgeInertial(IMU::Preintegrated *pInt) :
+        JRg(pInt->JRg.cast<double>()),
+        JVg(pInt->JVg.cast<double>()),
+        JPg(pInt->JPg.cast<double>()),
+        JVa(pInt->JVa.cast<double>()),
+        JPa(pInt->JPa.cast<double>()),
+        p_preintegrated(pInt),
+        dt(pInt->dT)
+    {
+        // This edge links 6 vertices
+        resize(6);
+        g << 0, 0, -IMU::GRAVITY_VALUE;
 
-    virtual bool read(std::istream &is)
+        Matrix9d Info = pInt->C.block<9, 9>(0, 0).cast<double>().inverse();
+        Info          = (Info + Info.transpose()) / 2;
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, 9, 9>> es(Info);
+        Eigen::Matrix<double, 9, 1> eigs = es.eigenvalues();
+        for (int i = 0; i < 9; i++)
+            if (eigs[i] < 1e-12)
+                eigs[i] = 0;
+        Info =
+            es.eigenvectors() * eigs.asDiagonal() * es.eigenvectors().transpose();
+        setInformation(Info);
+    }
+
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -688,13 +869,36 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     // EdgeInertialGS(IMU::Preintegrated* pInt);
-    EdgeInertialGS(IMU::Preintegrated *pInt);
+    EdgeInertialGS(IMU::Preintegrated *pInt) :
+        JRg(pInt->JRg.cast<double>()),
+        JVg(pInt->JVg.cast<double>()),
+        JPg(pInt->JPg.cast<double>()),
+        JVa(pInt->JVa.cast<double>()),
+        JPa(pInt->JPa.cast<double>()),
+        p_preintegrated(pInt),
+        dt(pInt->dT)
+    {
+        // This edge links 8 vertices
+        resize(8);
+        gI << 0, 0, -IMU::GRAVITY_VALUE;
 
-    virtual bool read(std::istream &is)
+        Matrix9d Info = pInt->C.block<9, 9>(0, 0).cast<double>().inverse();
+        Info          = (Info + Info.transpose()) / 2;
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, 9, 9>> es(Info);
+        Eigen::Matrix<double, 9, 1> eigs = es.eigenvalues();
+        for (int i = 0; i < 9; i++)
+            if (eigs[i] < 1e-12)
+                eigs[i] = 0;
+        Info =
+            es.eigenvectors() * eigs.asDiagonal() * es.eigenvectors().transpose();
+        setInformation(Info);
+    }
+
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -787,11 +991,11 @@ class EdgeGyroRW
 
     EdgeGyroRW() {}
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -836,11 +1040,11 @@ class EdgeAccRW
 
     EdgeAccRW() {}
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -916,13 +1120,22 @@ class EdgePriorPoseImu : public g2o::BaseMultiEdge<15, Vector15d>
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    EdgePriorPoseImu(ConstraintPoseImu *c);
+    EdgePriorPoseImu(ConstraintPoseImu *c)
+    {
+        resize(4);
+        Rwb = c->Rwb;
+        twb = c->twb;
+        vwb = c->vwb;
+        bg  = c->bg;
+        ba  = c->ba;
+        setInformation(c->H);
+    }
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -966,11 +1179,11 @@ class EdgePriorAcc
         bprior(bprior_.cast<double>())
     {}
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -1002,11 +1215,11 @@ class EdgePriorGyro
         bprior(bprior_.cast<double>())
     {}
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }
@@ -1041,11 +1254,11 @@ class Edge4DoF
         dtij = deltaT.block<3, 1>(0, 3);
     }
 
-    virtual bool read(std::istream &is)
+    virtual bool read([[maybe_unused]] std::istream &is)
     {
         return false;
     }
-    virtual bool write(std::ostream &os) const
+    virtual bool write([[maybe_unused]] std::ostream &os) const
     {
         return false;
     }

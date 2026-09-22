@@ -23,8 +23,8 @@
 
 #include "TwoViewReconstruction.h"
 
-#include "Converter.h"
 #include "GeometricTools.h"
+#include "Utils/Converter/objects/Converter.h"
 
 #include "Thirdparty/DBoW2/DUtils/Random.h"
 
@@ -853,7 +853,13 @@ bool TwoViewReconstruction::reconstructH(vector<bool>        &vbMatchesInliers,
     if (secondBestGood < 0.75 * bestGood && bestParallax >= minParallax &&
         bestGood > minTriangulated && bestGood > 0.9 * N)
     {
-        T21            = Sophus::SE3f(vR[bestSolutionIdx], vt[bestSolutionIdx]);
+        T21 = Sophus::SE3f(vR[bestSolutionIdx], vt[bestSolutionIdx]);
+
+        // Publish the winning hypothesis' structure, matching the output
+        // contract reconstructF() honours: the monocular initializer reads
+        // vP3D straight after Reconstruct() returns, so leaving it untouched
+        // on this branch would hand it stale or empty map points.
+        vP3D           = bestP3D;
         vbTriangulated = bestTriangulated;
 
         return true;

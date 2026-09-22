@@ -199,8 +199,10 @@ bool MLPnPsolver::iterate(int              nIterations,
                 Rcw.convertTo(Rcw, CV_32F);
                 tcw.convertTo(tcw, CV_32F);
                 mBestTcw.setIdentity();
-                mBestTcw.block<3, 3>(0, 0) = Converter::toMatrix3f(Rcw);
-                mBestTcw.block<3, 1>(0, 3) = Converter::toVector3f(tcw);
+                mBestTcw.block<3, 3>(0, 0) =
+                    utils::converter::Converter::toMatrix3f(Rcw);
+                mBestTcw.block<3, 1>(0, 3) =
+                    utils::converter::Converter::toVector3f(tcw);
 
                 Eigen::Matrix<double, 3, 3, Eigen::RowMajor> eigRcw(mRi[0]);
                 Eigen::Vector3d                              eigtcw(mti);
@@ -373,8 +375,10 @@ bool MLPnPsolver::refine()
         tcw.convertTo(tcw, CV_32F);
         mRefinedTcw.setIdentity();
 
-        mRefinedTcw.block<3, 3>(0, 0) = Converter::toMatrix3f(Rcw);
-        mRefinedTcw.block<3, 1>(0, 3) = Converter::toVector3f(tcw);
+        mRefinedTcw.block<3, 3>(0, 0) =
+            utils::converter::Converter::toMatrix3f(Rcw);
+        mRefinedTcw.block<3, 1>(0, 3) =
+            utils::converter::Converter::toVector3f(tcw);
 
         Eigen::Matrix<double, 3, 3, Eigen::RowMajor> eigRcw(mRi[0]);
         Eigen::Vector3d                              eigtcw(mti);
@@ -849,7 +853,7 @@ void MLPnPsolver::mlpnp_residuals_and_jacs(
 
     Eigen::MatrixXd jacs(2, 6);
 
-    for (int i = 0; i < pts.size(); ++i)
+    for (size_t i = 0; i < pts.size(); ++i)
     {
         Eigen::Vector3d ptCam = R * pts[i] + T;
         ptCam /= ptCam.norm();
