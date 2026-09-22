@@ -195,7 +195,7 @@
 
 #include "ImuTypes.h"
 #include "System.h"
-#include "Types/SystemParams.h"
+#include "Types/objects/SystemParams.h"
 
 /* -------------------------------------------------------------------------- *
  * SEMANTIC ELEMENTS

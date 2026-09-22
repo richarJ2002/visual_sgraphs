@@ -6346,15 +6346,6 @@ void setVoxbloxSkeletonCluster(
             skeletonMarker.type == visualization_msgs::msg::Marker::CUBE_LIST &&
             skeletonMarker.ns.rfind("connected_vertices_", 0) == 0;
 
-        /*!
-         * The raw "edges" marker is used instead of connected_edges_* because
-         * connected edge markers may have already been clearance filtered at
-         * narrow passages.
-         */
-        const bool isRawEdgeMarker =
-            skeletonMarker.type == visualization_msgs::msg::Marker::LINE_LIST &&
-            skeletonMarker.ns == "edges";
-
         /* Ignore marker types that are not required by this pipeline */
         if (markerVerdict == SparseMarkerVerdict::SPARSE_MARKER_IGNORED)
         {
@@ -6450,6 +6441,11 @@ void setVoxbloxSkeletonCluster(
          * ------------------------------------------------------------------ */
 
         /*!
+         * Everything reaching this point was classified as a raw "edges"
+         * LINE_LIST marker by classifySparseMarker(). The raw marker is used
+         * instead of connected_edges_* because connected edge markers may
+         * have already been clearance filtered at narrow passages.
+         *
          * Each consecutive pair of LINE_LIST points represents one independent
          * edge.
          */
