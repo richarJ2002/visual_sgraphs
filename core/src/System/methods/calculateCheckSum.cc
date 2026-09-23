@@ -1,0 +1,114 @@
+/*!
+ * This file is a modified version of a file from ORB-SLAM3.
+ *
+ * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
+ *
+ * Original Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * vS-Graphs is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "System.h"
+
+#include <iomanip>
+#include <memory>
+#include <openssl/evp.h>
+
+namespace vs_graphs
+{
+namespace core
+{
+
+string System::calculateCheckSum(string filename, int type)
+{
+    string checksum = "";
+
+    std::ios_base::openmode flags = std::ios::in;
+    if (type == BINARY_FILE) // Binary file
+        flags = std::ios::in | std::ios::binary;
+
+    ifstream f(filename.c_str(), flags);
+    if (!f.is_open())
+    {
+        cout << "[E] Unable to open the in file " << filename
+             << " for Md5 hash." << endl;
+        return checksum;
+    }
+
+    /*
+     * OpenSSL 3 deprecates the MD5_* calls, so the identical MD5 digest is
+     * taken through the EVP interface. The context is owned for the whole
+     * scope so that every early return releases it.
+     */
+    const std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)>
+        p_digestContext(EVP_MD_CTX_new(), &EVP_MD_CTX_free);
+
+    if (!p_digestContext)
+    {
+        cout << "[E] Unable to allocate the Md5 context for " << filename << "."
+             << endl;
+        return checksum;
+    }
+
+    if (EVP_DigestInit_ex(p_digestContext.get(), EVP_md5(), nullptr) != 1)
+    {
+        cout << "[E] Unable to start the Md5 hash of " << filename << "."
+             << endl;
+        return checksum;
+    }
+
+    char buffer[1024];
+
+    while (int count = f.readsome(buffer, sizeof(buffer)))
+    {
+        if (EVP_DigestUpdate(p_digestContext.get(),
+                             buffer,
+                             static_cast<std::size_t>(count)) != 1)
+        {
+            cout << "[E] Unable to hash the contents of " << filename << "."
+                 << endl;
+            return checksum;
+        }
+    }
+
+    f.close();
+
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int  digestLength_bytes = 0U;
+
+    if (EVP_DigestFinal_ex(p_digestContext.get(),
+                           digest,
+                           &digestLength_bytes) != 1)
+    {
+        cout << "[E] Unable to finish the Md5 hash of " << filename << "."
+             << endl;
+        return checksum;
+    }
+
+    for (unsigned int i = 0; i < digestLength_bytes; i++)
+    {
+        char aux[10];
+        sprintf(aux, "%02x", digest[i]);
+        checksum = checksum + aux;
+    }
+
+    return checksum;
+}
+
+} // namespace core
+} // namespace vs_graphs
