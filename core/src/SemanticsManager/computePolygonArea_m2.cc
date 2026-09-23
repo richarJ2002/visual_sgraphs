@@ -1,0 +1,56 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+#include "SemanticsManager.h"
+
+#include "private_functions.h"
+
+#include <cmath>
+
+namespace vs_graphs
+{
+namespace core
+{
+
+double computePolygonArea_m2(
+    const std::vector<Eigen::Vector2d> &polygonVertices_World_m_in)
+{
+    if (polygonVertices_World_m_in.size() < 3U)
+    {
+        return 0.0;
+    }
+
+    double signedTwiceArea_m2 = 0.0;
+
+    for (std::size_t vertexIndex = 0U;
+         vertexIndex < polygonVertices_World_m_in.size();
+         ++vertexIndex)
+    {
+        const Eigen::Vector2d &currentVertex =
+            polygonVertices_World_m_in[vertexIndex];
+        const Eigen::Vector2d &nextVertex =
+            polygonVertices_World_m_in[(vertexIndex + 1U) %
+                                       polygonVertices_World_m_in.size()];
+        signedTwiceArea_m2 += crossProduct2d(currentVertex, nextVertex);
+    }
+
+    return 0.5 * std::abs(signedTwiceArea_m2);
+}
+
+} // namespace core
+} // namespace vs_graphs

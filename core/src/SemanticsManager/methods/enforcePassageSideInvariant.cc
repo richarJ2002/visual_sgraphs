@@ -1,0 +1,151 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+#include "SemanticsManager.h"
+
+#include "../private_functions.h"
+
+namespace vs_graphs
+{
+namespace core
+{
+
+void SemanticsManager::enforcePassageSideInvariant(void)
+{
+    /* "Continuously checking the current state of the sgraph to make sure
+     * the rules are followed" (as opposed to only at the moment a wall is
+     * newly admitted): associateAllWallsToRooms() only ever revisits ORPHAN
+     * walls (a wall that already has a room is skipped outright), so a wall
+     * admitted before a relevant passage's aperture became confidently
+     * resolvable would otherwise never be re-examined again. This sweep
+     * re-applies both the passage-aperture backstop and the wall-face
+     * ownership rule to every wall every room currently owns, every cycle.
+     *
+     * Note the two are re-checked here for different reasons.
+     * isWallFaceForeignToRoom() is itself stable -- face identity is stamped
+     * at observation and does not drift -- but the ROOM side of the
+     * comparison does move: a FREE_SPACE room's centroid is recomputed every
+     * cycle as its wall-centroid mean, so a room that grows walls can
+     * migrate across a face it once legitimately sat beside. The aperture
+     * backstop is re-checked because passage geometry itself sharpens over
+     * time. */
+    geometric::Plane *p_groundPlane      = p_atlas->getBiggestGroundPlane();
+    Eigen::Vector3d   groundNormal_World = Eigen::Vector3d::Zero();
+    if (p_groundPlane != nullptr && !p_groundPlane->isBad())
+    {
+        const Eigen::Vector4d groundEq =
+            p_groundPlane->getGlobalEquation().coeffs();
+        const double groundNorm = groundEq.head<3>().norm();
+        if (groundEq.allFinite() && groundNorm > 1e-8)
+        {
+            groundNormal_World = groundEq.head<3>() / groundNorm;
+        }
+    }
+
+    const std::vector<semantic::Passage *> allPassages =
+        p_atlas->getAllPassages();
+
+    for (semantic::Room *p_room : p_atlas->getAllRooms())
+    {
+        if (p_room == nullptr || p_room->isBad())
+        {
+            continue;
+        }
+
+        /* Copy: both backstops below may call Room::removeWall(), which
+         * would invalidate an in-progress iteration over the room's own
+         * live wall vector. */
+        const std::vector<geometric::Plane *> roomWalls = p_room->getWalls();
+        for (geometric::Plane *p_wall : roomWalls)
+        {
+            if (p_wall == nullptr || p_wall->isBad())
+            {
+                continue;
+            }
+
+            /* Prospective-placement exemption: a far-side wall that the
+             * aperture backstop deliberately routed into this prospective
+             * room must not be evicted from it by the face check below
+             * (live-observed churn: remove-then-reroute every cycle). The
+             * exemption is earned only when the same aperture test that
+             * routes the wall still places it here, synthesized from the
+             * passage's known near-side direction exactly as the backstop
+             * does. */
+            bool wallRoutedToProspective = false;
+            for (semantic::Passage *p_exemptPassage : allPassages)
+            {
+                if (p_exemptPassage == nullptr || p_exemptPassage->isBad() ||
+                    p_exemptPassage->getProspectiveRoom() != p_room)
+                {
+                    continue;
+                }
+                const semantic::Passage::KnownSideProvenance knownSide =
+                    p_exemptPassage->getKnownSideProvenance();
+                if (!knownSide.hasDirection())
+                {
+                    continue;
+                }
+                const double minimumSideDistance_m =
+                    static_cast<double>(p_sysParams->roomSeg.passagePartition
+                                            .minimumSideDistance_m);
+                const Eigen::Vector3d knownSidePoint_World_m =
+                    p_exemptPassage->getCentroid() +
+                    (minimumSideDistance_m * 2.0) * knownSide.direction_World;
+                if (segmentCrossesPassageOpening(
+                        knownSidePoint_World_m,
+                        p_wall->getCentroid().cast<double>(),
+                        p_exemptPassage,
+                        groundNormal_World,
+                        static_cast<double>(
+                            p_sysParams->roomSeg.passagePartition
+                                .openingMargin_m),
+                        minimumSideDistance_m))
+                {
+                    wallRoutedToProspective = true;
+                    break;
+                }
+            }
+            if (wallRoutedToProspective)
+            {
+                continue;
+            }
+
+            if (isWallFaceForeignToRoom(p_room, p_wall))
+            {
+                p_room->removeWall(p_wall);
+                std::cout << "[SemMgr] Wall#" << p_wall->getId()
+                          << " removed from semantic::Room#" << p_room->getId()
+                          << ": this face was observed from the opposite side, "
+                             "so it bounds the neighbouring room."
+                          << std::endl;
+                continue;
+            }
+
+            if (!allPassages.empty())
+            {
+                enforcePassageApertureBackstop(p_room,
+                                               p_wall,
+                                               allPassages,
+                                               groundNormal_World);
+            }
+        }
+    }
+}
+
+} // namespace core
+} // namespace vs_graphs

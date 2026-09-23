@@ -1,0 +1,203 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+#include "SemanticsManager.h"
+
+#include "private_functions.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
+namespace vs_graphs
+{
+namespace core
+{
+
+/*!
+ * @brief           TODO
+ *
+ * @param[in]       p_wall_in
+ *                  TODO
+ *
+ * @param[in]       p_systemParams_in
+ *                  TODO
+ *
+ * @param[in]       groundNormal_World_in
+ *                  TODO
+ *
+ * @return          TODO
+ */
+WallAdmissionEvidence
+    evaluateWallAdmissionEvidence(geometric::Plane          *p_wall_in,
+                                  const types::SystemParams *p_systemParams_in,
+                                  const Eigen::Vector3d &groundNormal_World_in)
+{
+    WallAdmissionEvidence evidence;
+
+    if (p_wall_in == nullptr || p_wall_in->isBad() ||
+        p_systemParams_in == nullptr)
+    {
+        return evidence;
+    }
+
+    evidence.observationCount = p_wall_in->getObservationCount();
+
+    const geometric::Plane::GeometrySnapshot geometry =
+        p_wall_in->getGeometrySnapshot();
+    Eigen::Vector4d equation_World = geometry.equation_World;
+    const double    normalNorm     = equation_World.head<3>().norm();
+
+    if (!equation_World.allFinite() || !std::isfinite(normalNorm) ||
+        normalNorm < 1e-8)
+    {
+        return evidence;
+    }
+
+    equation_World /= normalNorm;
+    const Eigen::Vector3d normal_World = equation_World.head<3>();
+
+    if (!equation_World.allFinite() ||
+        std::abs(normal_World.norm() - 1.0) > 1e-6)
+    {
+        return evidence;
+    }
+
+    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud =
+        geometry.supportCloud;
+
+    if (p_cloud == nullptr)
+    {
+        return evidence;
+    }
+
+    /*!
+     * Ground-aligned in-plane axes so the two extents below correspond to
+     * physical horizontal width and vertical height, not an arbitrary
+     * in-plane rotation. A door-frame post rotated relative to an arbitrary
+     * unitOrthogonal() axis can inflate BOTH bounding-box extents past a
+     * width/height threshold even though its true width is a few
+     * centimetres -- ground-anchoring the axes removes that degree of
+     * freedom. axisHorizontal is the wall's own horizontal (along-wall)
+     * direction: orthogonal to both the ground normal and the wall normal.
+     * Falls back to the previous arbitrary-orthogonal axes when no ground
+     * plane is available yet (early in a mission) or the wall is itself
+     * near-horizontal (groundNormal parallel to normal_World).
+     */
+    const double    groundNormalNorm = groundNormal_World_in.norm();
+    Eigen::Vector3d axisU_World      = Eigen::Vector3d::Zero();
+    Eigen::Vector3d axisV_World      = Eigen::Vector3d::Zero();
+    if (std::isfinite(groundNormalNorm) && groundNormalNorm > 1e-8)
+    {
+        const Eigen::Vector3d unitGroundNormal_World =
+            groundNormal_World_in / groundNormalNorm;
+        const Eigen::Vector3d horizontalCandidate_World =
+            unitGroundNormal_World.cross(normal_World);
+        const double horizontalNorm = horizontalCandidate_World.norm();
+        if (std::isfinite(horizontalNorm) && horizontalNorm > 1e-3)
+        {
+            axisU_World = horizontalCandidate_World / horizontalNorm;
+            axisV_World = axisU_World.cross(normal_World).normalized();
+        }
+    }
+    if (axisU_World.squaredNorm() < 0.5 || axisV_World.squaredNorm() < 0.5)
+    {
+        axisU_World = normal_World.unitOrthogonal().normalized();
+        axisV_World = normal_World.cross(axisU_World).normalized();
+    }
+    double minimumU_m = std::numeric_limits<double>::infinity();
+    double maximumU_m = -std::numeric_limits<double>::infinity();
+    double minimumV_m = std::numeric_limits<double>::infinity();
+    double maximumV_m = -std::numeric_limits<double>::infinity();
+
+    for (const pcl::PointXYZRGBA &point : p_cloud->points)
+    {
+        if (!pcl::isFinite(point))
+        {
+            continue;
+        }
+
+        const Eigen::Vector3d point_World_m(point.x, point.y, point.z);
+        evidence.finitePointCount++;
+
+        const double fitDistance_m =
+            std::abs(normal_World.dot(point_World_m) + equation_World(3));
+
+        if (fitDistance_m > p_systemParams_in->seg.ransac.distanceThresh)
+        {
+            continue;
+        }
+
+        const double pointU_m = point_World_m.dot(axisU_World);
+        const double pointV_m = point_World_m.dot(axisV_World);
+        minimumU_m            = std::min(minimumU_m, pointU_m);
+        maximumU_m            = std::max(maximumU_m, pointU_m);
+        minimumV_m            = std::min(minimumV_m, pointV_m);
+        maximumV_m            = std::max(maximumV_m, pointV_m);
+        evidence.fittedPointCount++;
+    }
+
+    const double extentU_m     = maximumU_m - minimumU_m;
+    const double extentV_m     = maximumV_m - minimumV_m;
+    const double majorExtent_m = std::max(extentU_m, extentV_m);
+    const double minorExtent_m = std::min(extentU_m, extentV_m);
+    const double area_m2       = majorExtent_m * minorExtent_m;
+    const types::SystemParams::SemSeg::WallCreation &wallCreation =
+        p_systemParams_in->semSeg.wallCreation;
+    const double fitSupportRatio =
+        evidence.finitePointCount > 0U
+            ? static_cast<double>(evidence.fittedPointCount) /
+                  static_cast<double>(evidence.finitePointCount)
+            : 0.0;
+
+    evidence.adequateFiniteFit =
+        evidence.fittedPointCount >= 20U &&
+        fitSupportRatio >= p_systemParams_in->roomSeg.minimumWallSupportRatio &&
+        std::isfinite(majorExtent_m) && std::isfinite(minorExtent_m) &&
+        std::isfinite(area_m2) &&
+        majorExtent_m >= wallCreation.minimumMajorExtent_m &&
+        minorExtent_m >= wallCreation.minimumMinorExtent_m &&
+        area_m2 >= wallCreation.minimumArea_m2;
+
+    const std::size_t strongObservationPointCount =
+        wallCreation.connectivity.enabled
+            ? std::max<std::size_t>(
+                  wallCreation.minimumPointCount,
+                  wallCreation.connectivity.minimumComponentPointCount)
+            : wallCreation.minimumPointCount;
+    const bool strongFirstObservationEvidence =
+        evidence.adequateFiniteFit &&
+        evidence.fittedPointCount >= strongObservationPointCount;
+    const bool repeatedObservationEvidence =
+        evidence.observationCount >=
+        std::max<std::size_t>(
+            p_systemParams_in->roomSeg.minimumWallObservationCount,
+            1U);
+    const bool wallDominatesSemantics =
+        p_wall_in->getPlaneType() == geometric::Plane::PlaneVariant::WALL &&
+        p_wall_in->getExpectedPlaneType() ==
+            geometric::Plane::PlaneVariant::WALL;
+
+    evidence.admissible =
+        wallDominatesSemantics && evidence.adequateFiniteFit &&
+        (repeatedObservationEvidence || strongFirstObservationEvidence);
+    return evidence;
+}
+
+} // namespace core
+} // namespace vs_graphs
