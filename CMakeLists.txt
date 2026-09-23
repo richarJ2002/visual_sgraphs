@@ -206,6 +206,9 @@ include(${PROJECT_SOURCE_DIR}/core/src/LocalMapping/CMakeLists.txt)
 
 # LoopClosing object sources (single LoopClosing object, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/LoopClosing/CMakeLists.txt)
+
+# Optimizer module sources (static methods + internal helpers, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/Optimizer/CMakeLists.txt)
 # OptimizableTypes module sources (g2o edge objects, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/OptimizableTypes/CMakeLists.txt)
 
@@ -231,7 +234,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/src/Atlas.cc
   ${VS_GRAPHS_MAP_SOURCES}
   ${VS_GRAPHS_MAPDRAWER_SOURCES}
-  core/src/Optimizer.cc
+  ${VS_GRAPHS_OPTIMIZER_SOURCES}
   ${VS_GRAPHS_FRAME_SOURCES}
   ${VS_GRAPHS_STEREOMATCHOUTLIERREJECTION_SOURCES}
   ${VS_GRAPHS_KEYFRAMEDATABASE_SOURCES}
