@@ -215,6 +215,9 @@ include(${PROJECT_SOURCE_DIR}/core/src/SemanticSegmentation/CMakeLists.txt)
 
 # SemanticsManager object sources (single object + internal helpers, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/SemanticsManager/CMakeLists.txt)
+
+# Atlas object sources (single Atlas object + internal helpers, §4.5, LAST)
+include(${PROJECT_SOURCE_DIR}/core/src/Atlas/CMakeLists.txt)
 # OptimizableTypes module sources (g2o edge objects, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/OptimizableTypes/CMakeLists.txt)
 
@@ -237,7 +240,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   ${VS_GRAPHS_MAPPOINT_SOURCES}
   ${VS_GRAPHS_KEYFRAME_SOURCES}
   ${VS_GRAPHS_SYSTEM_SOURCES}
-  core/src/Atlas.cc
+  ${VS_GRAPHS_ATLAS_SOURCES}
   ${VS_GRAPHS_MAP_SOURCES}
   ${VS_GRAPHS_MAPDRAWER_SOURCES}
   ${VS_GRAPHS_OPTIMIZER_SOURCES}
