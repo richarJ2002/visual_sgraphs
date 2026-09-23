@@ -197,6 +197,9 @@ include(${PROJECT_SOURCE_DIR}/core/src/KeyFrame/CMakeLists.txt)
 
 # System object sources (single System object, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/System/CMakeLists.txt)
+
+# Tracking object sources (single Tracking object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/Tracking/CMakeLists.txt)
 # OptimizableTypes module sources (g2o edge objects, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/OptimizableTypes/CMakeLists.txt)
 
@@ -209,7 +212,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/core/lib)
 # Create the main library
 add_library(${PROJECT_NAME}_lib SHARED
   ${VS_GRAPHS_MISSIONHEALTHTOPOLOGYJSON_SOURCES}
-  core/src/Tracking.cc
+  ${VS_GRAPHS_TRACKING_SOURCES}
   ${VS_GRAPHS_RESETCAUSE_SOURCES}
   core/src/LocalMapping.cc
   core/src/LoopClosing.cc
