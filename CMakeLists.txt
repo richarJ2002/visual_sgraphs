@@ -209,6 +209,9 @@ include(${PROJECT_SOURCE_DIR}/core/src/LoopClosing/CMakeLists.txt)
 
 # Optimizer module sources (static methods + internal helpers, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/Optimizer/CMakeLists.txt)
+
+# SemanticSegmentation object sources (single object + internal helpers, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/SemanticSegmentation/CMakeLists.txt)
 # OptimizableTypes module sources (g2o edge objects, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/OptimizableTypes/CMakeLists.txt)
 
@@ -400,7 +403,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeEvaluationReport.cc
   core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeMapCompletenessResults.cc
   ${VS_GRAPHS_TYPES_TYPES_SOURCES}
-  core/src/SemanticSegmentation.cc
+  ${VS_GRAPHS_SEMANTICSEGMENTATION_SOURCES}
   core/src/SemanticsManager.cc
   core/src/Semantic/RoomTracker.cc
   core/src/Semantic/SemanticCandidates.cc
