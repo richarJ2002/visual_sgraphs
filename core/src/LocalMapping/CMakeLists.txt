@@ -1,0 +1,36 @@
+# LocalMapping object sources: per-method translation units, §4.5
+set(VS_GRAPHS_LOCALMAPPING_SOURCES
+  core/src/LocalMapping/methods/checkFinish.cc
+  core/src/LocalMapping/methods/checkNewKeyFrames.cc
+  core/src/LocalMapping/methods/construct/localmapping.cc
+  core/src/LocalMapping/methods/createNewMapPoints.cc
+  core/src/LocalMapping/methods/emptyQueue.cc
+  core/src/LocalMapping/methods/getCurrentKeyFrame.cc
+  core/src/LocalMapping/methods/getCurrentKeyFrameTime.cc
+  core/src/LocalMapping/methods/initializeIMU.cc
+  core/src/LocalMapping/methods/insertKeyFrame.cc
+  core/src/LocalMapping/methods/interruptBA.cc
+  core/src/LocalMapping/methods/isAcceptingKeyFrames.cc
+  core/src/LocalMapping/methods/isFinished.cc
+  core/src/LocalMapping/methods/isInitializing.cc
+  core/src/LocalMapping/methods/isStopped.cc
+  core/src/LocalMapping/methods/keyFrameCulling.cc
+  core/src/LocalMapping/methods/mapPointCulling.cc
+  core/src/LocalMapping/methods/processNewKeyFrame.cc
+  core/src/LocalMapping/methods/release.cc
+  core/src/LocalMapping/methods/requestFinish.cc
+  core/src/LocalMapping/methods/requestReset.cc
+  core/src/LocalMapping/methods/requestResetActiveMap.cc
+  core/src/LocalMapping/methods/requestStop.cc
+  core/src/LocalMapping/methods/resetIfRequested.cc
+  core/src/LocalMapping/methods/run.cc
+  core/src/LocalMapping/methods/scaleRefinement.cc
+  core/src/LocalMapping/methods/searchInNeighbors.cc
+  core/src/LocalMapping/methods/setAcceptKeyFrames.cc
+  core/src/LocalMapping/methods/setFinish.cc
+  core/src/LocalMapping/methods/setLoopCloser.cc
+  core/src/LocalMapping/methods/setNotStop.cc
+  core/src/LocalMapping/methods/setTracker.cc
+  core/src/LocalMapping/methods/stop.cc
+  core/src/LocalMapping/methods/stopRequested.cc
+)
