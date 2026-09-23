@@ -1,0 +1,37 @@
+# LoopClosing object sources: per-method translation units, §4.5
+set(VS_GRAPHS_LOOPCLOSING_SOURCES
+  core/src/LoopClosing/collapseMergedFloors.cc
+  core/src/LoopClosing/mergeFloorEvidenceAndRooms.cc
+  core/src/LoopClosing/methods/checkFinish.cc
+  core/src/LoopClosing/methods/checkNewKeyFrames.cc
+  core/src/LoopClosing/methods/checkObservations.cc
+  core/src/LoopClosing/methods/construct/loopclosing.cc
+  core/src/LoopClosing/methods/correctLoop.cc
+  core/src/LoopClosing/methods/detectAndReffineSim3FromLastKF.cc
+  core/src/LoopClosing/methods/detectCommonRegionsFromBoW.cc
+  core/src/LoopClosing/methods/detectCommonRegionsFromLastKF.cc
+  core/src/LoopClosing/methods/findMatchesByProjection.cc
+  core/src/LoopClosing/methods/getLoopCorrectionStatus.cc
+  core/src/LoopClosing/methods/insertKeyFrame.cc
+  core/src/LoopClosing/methods/isFinished.cc
+  core/src/LoopClosing/methods/isMergeInProgress.cc
+  core/src/LoopClosing/methods/mergeLocal.cc
+  core/src/LoopClosing/methods/mergeLocalInertial.cc
+  core/src/LoopClosing/methods/newDetectCommonRegions.cc
+  core/src/LoopClosing/methods/recordLoopCorrectionEvent.cc
+  core/src/LoopClosing/methods/relaunchGlobalBundleAdjustment.cc
+  core/src/LoopClosing/methods/requestFinish.cc
+  core/src/LoopClosing/methods/requestReset.cc
+  core/src/LoopClosing/methods/requestResetActiveMap.cc
+  core/src/LoopClosing/methods/resetIfRequested.cc
+  core/src/LoopClosing/methods/run.cc
+  core/src/LoopClosing/methods/runGlobalBundleAdjustment.cc
+  core/src/LoopClosing/methods/searchAndFuse/withKeyFrameAndPose.cc
+  core/src/LoopClosing/methods/searchAndFuse/withKeyFrameVector.cc
+  core/src/LoopClosing/methods/setFinish.cc
+  core/src/LoopClosing/methods/setLocalMapper.cc
+  core/src/LoopClosing/methods/setMergeStatus.cc
+  core/src/LoopClosing/methods/setTracker.cc
+  core/src/LoopClosing/methods/stopGlobalBundleAdjustment.cc
+  core/src/LoopClosing/verifyLoopMergeFloors.cc
+)

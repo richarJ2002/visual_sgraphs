@@ -1,0 +1,108 @@
+/*!
+ * This file is a modified version of a file from ORB-SLAM3.
+ *
+ * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
+ *
+ * Original Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * vS-Graphs is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "LoopClosing.h"
+
+#include <limits>
+
+namespace vs_graphs
+{
+namespace core
+{
+
+/* Declared in LoopClosing.h: shared with SemanticVerify. */
+bool verifyLoopMergeFloors(
+    Map             *p_survivingMap_in,
+    Map             *p_absorbedMap_in,
+    const g2o::Sim3 &transform_absorbedWorldToSurvivingWorld_in,
+    std::string     &result_out)
+{
+    semantic::Floor *p_survivingFloor =
+        semantic::Floor::selectBestObservedFloor(
+            p_survivingMap_in->getAllFloors());
+    semantic::Floor *p_absorbedFloor = semantic::Floor::selectBestObservedFloor(
+        p_absorbedMap_in->getAllFloors());
+
+    const std::optional<semantic::Floor::PlaneIdentity> survivingIdentity =
+        p_survivingFloor != nullptr ? p_survivingFloor->getPlaneIdentity()
+                                    : std::nullopt;
+    const std::optional<semantic::Floor::PlaneIdentity> absorbedIdentity =
+        p_absorbedFloor != nullptr ? p_absorbedFloor->getPlaneIdentity()
+                                   : std::nullopt;
+
+    if (!survivingIdentity.has_value() || !absorbedIdentity.has_value())
+    {
+        result_out = "DEFERRED";
+        std::cout << "[FloorVerify] Map#" << p_survivingMap_in->getId()
+                  << " and Map#" << p_absorbedMap_in->getId()
+                  << " floor verification deferred (current="
+                  << (survivingIdentity.has_value() ? "valid" : "missing")
+                  << ", merge="
+                  << (absorbedIdentity.has_value() ? "valid" : "missing")
+                  << "); result=DEFERRED committed=0" << std::endl;
+        return false;
+    }
+
+    const std::optional<semantic::Floor::PlaneIdentity>
+        transformedAbsorbedIdentity = semantic::Floor::transformPlaneIdentity(
+            *absorbedIdentity,
+            transform_absorbedWorldToSurvivingWorld_in);
+    double floorNormalAngle_deg = std::numeric_limits<double>::infinity();
+    double floorOffset_m        = std::numeric_limits<double>::infinity();
+
+    const bool floorsMatch = transformedAbsorbedIdentity.has_value() &&
+                             semantic::Floor::planeIdentitiesMatch(
+                                 *survivingIdentity,
+                                 *transformedAbsorbedIdentity,
+                                 semantic::Floor::kMergeMaxPlaneNormalAngle_deg,
+                                 semantic::Floor::kMergeMaxPlaneOffset_m,
+                                 floorNormalAngle_deg,
+                                 floorOffset_m);
+
+    if (!floorsMatch)
+    {
+        result_out = "REJECTED";
+        std::cerr << "[FloorVerify] Rejecting loop merge: Map#"
+                  << p_survivingMap_in->getId() << " and Map#"
+                  << p_absorbedMap_in->getId()
+                  << " floor planes mismatch (angle=" << floorNormalAngle_deg
+                  << " deg, offset=" << floorOffset_m << " m; limits="
+                  << semantic::Floor::kMergeMaxPlaneNormalAngle_deg << " deg/"
+                  << semantic::Floor::kMergeMaxPlaneOffset_m
+                  << " m). result=REJECTED committed=0" << std::endl;
+        return false;
+    }
+
+    std::cout << "[FloorVerify] Map#" << p_survivingMap_in->getId()
+              << " and Map#" << p_absorbedMap_in->getId()
+              << " floor planes match (angle=" << floorNormalAngle_deg
+              << " deg, offset=" << floorOffset_m
+              << " m). result=ACCEPTED committed=0" << std::endl;
+    result_out = "ACCEPTED";
+    return true;
+}
+
+} // namespace core
+} // namespace vs_graphs

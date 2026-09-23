@@ -203,6 +203,9 @@ include(${PROJECT_SOURCE_DIR}/core/src/Tracking/CMakeLists.txt)
 
 # LocalMapping object sources (single LocalMapping object, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/LocalMapping/CMakeLists.txt)
+
+# LoopClosing object sources (single LoopClosing object, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/LoopClosing/CMakeLists.txt)
 # OptimizableTypes module sources (g2o edge objects, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/OptimizableTypes/CMakeLists.txt)
 
@@ -218,7 +221,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   ${VS_GRAPHS_TRACKING_SOURCES}
   ${VS_GRAPHS_RESETCAUSE_SOURCES}
   ${VS_GRAPHS_LOCALMAPPING_SOURCES}
-  core/src/LoopClosing.cc
+  ${VS_GRAPHS_LOOPCLOSING_SOURCES}
   ${VS_GRAPHS_ORBEXTRACTOR_SOURCES}
   ${VS_GRAPHS_ORBMATCHER_SOURCES}
   ${VS_GRAPHS_FRAMEDRAWER_SOURCES}
