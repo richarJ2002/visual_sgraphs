@@ -15,7 +15,7 @@ namespace core
 {
 
 /* Shared with retainResetCause.cc (registry home). */
-extern std::mutex resetCauseMutex;
+extern std::mutex                                            resetCauseMutex;
 extern std::unordered_map<const void *, ResetCauseRetention> resetCausesByOwner;
 
 ResetCause consumeResetCause(const void *const p_owner_in)

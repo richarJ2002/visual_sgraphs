@@ -57,9 +57,9 @@
 #include "Semantic/SemanticReportCache/objects/SemanticReportCacheEntry.h"
 #include "SemanticSegmentation.h"
 #include "SemanticsManager.h"
-#include "Utils/Settings/objects/Settings.h"
 #include "Tracking.h"
 #include "Types/objects/SystemParams.h"
+#include "Utils/Settings/objects/Settings.h"
 #include "Viewer.h"
 
 namespace vs_graphs

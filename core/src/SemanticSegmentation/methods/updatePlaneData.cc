@@ -16,12 +16,6 @@
  * details: https://www.gnu.org/licenses/
  */
 
-/*!
- * @file         SemanticSegmentation.cc
- *
- * @brief        Implements segmentation in SemanticSegmentation.h.
- */
-
 #include "SemanticSegmentation.h"
 
 #include "../private_functions.h"

@@ -27,13 +27,13 @@
 #define ATLAS_H
 
 #include "AtlasCurrentMapStatus.h"
-#include "Geometric/Plane.h"
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
 #include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"
+#include "CameraModels/Pinhole/objects/Pinhole.h"
+#include "Geometric/Plane.h"
 #include "KeyFrame.h"
 #include "Map.h"
 #include "MapPoint.h"
-#include "CameraModels/Pinhole/objects/Pinhole.h"
 #include "Semantic/Floor.h"
 #include "Semantic/Marker.h"
 #include "Semantic/Passage.h"
@@ -211,7 +211,8 @@ class Atlas
      */
     int getCurrentSemanticRoomIdentity(void) const;
 
-    std::vector<camera_models::geometriccamera::GeometricCamera *> getAllCameras();
+    std::vector<camera_models::geometriccamera::GeometricCamera *>
+        getAllCameras();
     camera_models::geometriccamera::GeometricCamera *
         addCamera(camera_models::geometriccamera::GeometricCamera *pCam);
 

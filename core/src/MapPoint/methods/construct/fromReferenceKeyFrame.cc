@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-/* NOTE: out-of-line per the WP-02 cycle-break policy (KeyFrame<->MapPoint SCC):
+/* NOTE: out-of-line to break the KeyFrame<->MapPoint include cycle:
  * MapPoint.h cannot see complete KeyFrame/Map from every include order. */
 
 MapPoint::MapPoint(const Eigen::Vector3f &Pos, KeyFrame *pRefKF, Map *pMap) :

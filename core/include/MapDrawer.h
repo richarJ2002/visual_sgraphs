@@ -44,8 +44,8 @@ class MapDrawer
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    MapDrawer(Atlas                      *pAtlas,
-              const string               &strSettingPath,
+    MapDrawer(Atlas                     *pAtlas,
+              const string              &strSettingPath,
               utils::settings::Settings *settings) :
         p_atlas(pAtlas)
     {

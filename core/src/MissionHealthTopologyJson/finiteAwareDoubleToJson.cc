@@ -1,7 +1,8 @@
 /*!
  * @file         finiteAwareDoubleToJson.cc
  *
- * @brief        Implements finiteAwareDoubleToJson declared in MissionHealthTopologyJson.cc.
+ * @brief        Implements finiteAwareDoubleToJson declared in
+ *               private_functions.h.
  */
 
 #include "MissionHealthTopologyJson.h"

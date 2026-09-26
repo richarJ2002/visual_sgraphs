@@ -7,7 +7,7 @@
  * @note            These helpers were file-scope free functions inside the
  *                  REGISTER_TIMES region of Tracking.cc; external linkage
  *                  here is module-internal only. Names are kept verbatim
- *                  (WP-01C renaming is a separate step).
+ *                  (identifier renaming is a separate step).
  */
 
 #ifndef VS_GRAPHS_CORE_TRACKING_PRIVATE_FUNCTIONS_H

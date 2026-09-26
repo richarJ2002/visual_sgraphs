@@ -34,7 +34,8 @@ namespace vs_graphs
 namespace core
 {
 
-/* NOTE: out-of-line per the WP-02 cycle-break policy (Map<->Atlas/KeyFrame/MapPoint SCC). */
+/* NOTE: out-of-line to break the Map<->Atlas/KeyFrame/MapPoint include
+ * cycle. */
 
 Map::~Map()
 {

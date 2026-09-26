@@ -1,7 +1,8 @@
 /*!
  * @file         newParameterLoader.cc
  *
- * @brief        Implements MapDrawer::newParameterLoader declared in MapDrawer.h.
+ * @brief        Implements MapDrawer::newParameterLoader declared in
+ *               MapDrawer.h.
  */
 
 #include "MapDrawer.h"

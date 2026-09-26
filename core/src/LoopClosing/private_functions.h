@@ -7,7 +7,7 @@
  * @note            These helpers were file-scope functions inside the
  *                  anonymous namespace of LoopClosing.cc; external linkage
  *                  here is module-internal only. Names are kept verbatim
- *                  (WP-01C renaming is a separate step).
+ *                  (identifier renaming is a separate step).
  */
 
 #ifndef VS_GRAPHS_CORE_LOOPCLOSING_PRIVATE_FUNCTIONS_H

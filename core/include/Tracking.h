@@ -44,8 +44,8 @@
 #include "Semantic/Marker.h"
 #include "Semantic/Passage.h"
 #include "Semantic/Room.h"
-#include "Utils/Settings/objects/Settings.h"
 #include "System.h"
+#include "Utils/Settings/objects/Settings.h"
 #include "Utils/Utils/objects/Utils.h"
 #include "Viewer.h"
 
@@ -84,16 +84,16 @@ class Tracking
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Tracking(System           *pSys,
-             ORBVocabulary    *pVoc,
-             FrameDrawer      *pFrameDrawer,
-             MapDrawer        *pMapDrawer,
-             Atlas            *pAtlas,
-             KeyFrameDatabase *pKFDB,
-             const string     &strSettingPath,
-             const int         sensorType,
+    Tracking(System                    *pSys,
+             ORBVocabulary             *pVoc,
+             FrameDrawer               *pFrameDrawer,
+             MapDrawer                 *pMapDrawer,
+             Atlas                     *pAtlas,
+             KeyFrameDatabase          *pKFDB,
+             const string              &strSettingPath,
+             const int                  sensorType,
              utils::settings::Settings *settings,
-             const string     &_nameSeq = std::string());
+             const string              &_nameSeq = std::string());
 
     ~Tracking();
 
@@ -476,8 +476,7 @@ class Tracking
     int baseInitialFastThreshold;
     int baseMinimumFastThreshold;
 
-    camera_models::geometriccamera::GeometricCamera *p_camera,
-        *p_camera2;
+    camera_models::geometriccamera::GeometricCamera *p_camera, *p_camera2;
 
     int initId, lastId;
 

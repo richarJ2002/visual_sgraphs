@@ -30,7 +30,6 @@ namespace vs_graphs
 namespace core
 {
 
-
 Eigen::Matrix3f
     TwoViewReconstruction::computeH21(const vector<cv::Point2f> &vP1,
                                       const vector<cv::Point2f> &vP2)

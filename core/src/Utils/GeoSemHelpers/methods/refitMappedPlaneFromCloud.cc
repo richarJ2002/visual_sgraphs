@@ -40,7 +40,8 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(
         return false;
     }
 
-    /* Claim one immutable generation; fitting never observes concurrent growth. */
+    /* Claim one immutable generation; fitting never observes concurrent growth.
+     */
     const std::optional<geometric::Plane::GeometrySnapshot> geometrySnapshot =
         plane->beginMapCloudRefit();
 

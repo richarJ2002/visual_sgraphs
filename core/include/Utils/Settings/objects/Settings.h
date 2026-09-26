@@ -708,8 +708,7 @@ class Settings
     /*!
      * @brief        Owned pre-rectification camera calibrations.
      */
-    camera_models::geometriccamera::GeometricCamera
-        *originalCalibration1,
+    camera_models::geometriccamera::GeometricCamera *originalCalibration1,
         *originalCalibration2;
     /*!
      * @brief        Pinhole distortion coefficients per camera.
@@ -910,11 +909,10 @@ int Settings::readParameter<int>(cv::FileStorage   &storage_in,
                                  const bool         required_in);
 
 template <>
-std::string Settings::readParameter<std::string>(
-    cv::FileStorage   &storage_in,
-    const std::string &name_in,
-    bool              &found_out,
-    const bool         required_in);
+std::string Settings::readParameter<std::string>(cv::FileStorage   &storage_in,
+                                                 const std::string &name_in,
+                                                 bool              &found_out,
+                                                 const bool required_in);
 
 template <>
 cv::Mat Settings::readParameter<cv::Mat>(cv::FileStorage   &storage_in,

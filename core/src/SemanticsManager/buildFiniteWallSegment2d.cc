@@ -28,6 +28,33 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief           Builds a robust finite wall segment on the horizontal ground
+ *                  plane.
+ *
+ * @param[in]       p_wall_in
+ *                  Wall whose observed cloud defines the finite extent.
+ *
+ * @param[in]       groundNormal_World_in
+ *                  Unit ground normal in the world frame.
+ *
+ * @param[in]       groundAxisU_World_in
+ *                  First horizontal ground axis.
+ *
+ * @param[in]       groundAxisV_World_in
+ *                  Second horizontal ground axis.
+ *
+ * @param[in]       endpointTrimRatio_in
+ *                  Fraction trimmed from both extent tails.
+ *
+ * @param[in]       minimumWallLength_m_in
+ *                  Minimum accepted horizontal length.
+ *
+ * @param[out]      segment_out
+ *                  Resulting finite horizontal segment.
+ *
+ * @return          True when the wall provides a valid finite segment.
+ */
 bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
                               const Eigen::Vector3d &groundNormal_World_in,
                               const Eigen::Vector3d &groundAxisU_World_in,

@@ -26,13 +26,14 @@ namespace vs_graphs
 namespace core
 {
 
-void GeoSemHelpers::updateMapPlane(Atlas                                          *p_atlas_in,
-                                    vs_graphs::core::KeyFrame                    *pKF,
-                                    const g2o::Plane3D                      estimatedPlane,
-                                    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
-                                    int                                     planeId,
-                                    vs_graphs::core::geometric::Plane::PlaneVariant          semanticType,
-                                    double confidence)
+void GeoSemHelpers::updateMapPlane(
+    Atlas                                          *p_atlas_in,
+    vs_graphs::core::KeyFrame                      *pKF,
+    const g2o::Plane3D                              estimatedPlane,
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr         planeCloud,
+    int                                             planeId,
+    vs_graphs::core::geometric::Plane::PlaneVariant semanticType,
+    double                                          confidence)
 {
     // Find the matched plane among all planes of the map
     vs_graphs::core::geometric::Plane *currentPlane =

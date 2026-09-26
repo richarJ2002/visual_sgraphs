@@ -124,11 +124,10 @@ int ORBmatcher::searchForTriangulation(
                         ? pKF1->keyPoints[idx1]
                         : pKF1->keyPointsRight[idx1 - pKF1->Nleft];
 
-                const bool bRight1 =
-                    (pKF1->Nleft == -1 ||
-                     idx1 < static_cast<size_t>(pKF1->Nleft))
-                        ? false
-                        : true;
+                const bool bRight1 = (pKF1->Nleft == -1 ||
+                                      idx1 < static_cast<size_t>(pKF1->Nleft))
+                                         ? false
+                                         : true;
 
                 const cv::Mat &d1 = pKF1->descriptors.row(idx1);
 

@@ -70,9 +70,9 @@ namespace core
 {
 
 void computeOrbDescriptor(const KeyPoint &kpt,
-                                 const Mat      &img,
-                                 const Point    *briefPattern,
-                                 uchar          *desc)
+                          const Mat      &img,
+                          const Point    *briefPattern,
+                          uchar          *desc)
 {
     float angle = (float)kpt.angle * factorPI;
     float a = (float)cos(angle), b = (float)sin(angle);

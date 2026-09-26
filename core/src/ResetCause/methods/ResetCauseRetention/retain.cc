@@ -1,7 +1,8 @@
 /*!
  * @file         retain.cc
  *
- * @brief        Implements ResetCauseRetention::retain declared in ResetCause.h.
+ * @brief        Implements ResetCauseRetention::retain declared in
+ *               ResetCause.h.
  */
 
 #include "ResetCause.h"

@@ -28,6 +28,23 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief Computes the unsigned area of an ordered horizontal polygon.
+ */
+/*!
+ * @brief Finds the angular sectors (from roomCentroid_Ground_m_in) with no
+ *        wall evidence -- the "where is this room still unobserved" signal
+ *        (user rule: track and expose incomplete-room state, not just a
+ *        pass/fail boundary status).
+ *
+ *        Deliberately coarser than the corner-closing algorithm above: each
+ *        wall is reduced to its 2D midpoint angle from the centroid, not its
+ *        true angular extent, trading a small amount of precision (a wide
+ *        wall's own angular span isn't subtracted from a neighbouring gap)
+ *        for a computation that stays meaningful at any wall count,
+ *        including 0 or 1 -- the boundary-loop algorithm's own machinery
+ *        only starts producing useful output once minimumWallCount is met.
+ */
 std::vector<semantic::Room::ObservationGap> computeRoomObservationGaps(
     const std::vector<FiniteWallSegment2d> &wallSegments_in,
     const Eigen::Vector2d                  &roomCentroid_Ground_m_in,

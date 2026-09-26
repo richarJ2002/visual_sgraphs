@@ -26,7 +26,6 @@
 
 #include "Thirdparty/DBoW2/DUtils/Random.h"
 
-
 namespace vs_graphs
 {
 namespace core

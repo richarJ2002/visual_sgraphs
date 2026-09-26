@@ -68,7 +68,7 @@ namespace core
 {
 
 bool compareNodes(pair<int, ExtractorNode *> &e1,
-                         pair<int, ExtractorNode *> &e2)
+                  pair<int, ExtractorNode *> &e2)
 {
     if (e1.first < e2.first)
     {

@@ -27,13 +27,13 @@ namespace vs_graphs
 namespace core
 {
 
-vs_graphs::core::geometric::Plane *
-GeoSemHelpers::createMapPlane(Atlas               *p_atlas_inout,
-                               vs_graphs::core::KeyFrame *pKF,
-                               const g2o::Plane3D   estimatedPlane,
-                               const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
-                                vs_graphs::core::geometric::Plane::PlaneVariant semanticType,
-                                double confidence)
+vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
+    Atlas                                          *p_atlas_inout,
+    vs_graphs::core::KeyFrame                      *pKF,
+    const g2o::Plane3D                              estimatedPlane,
+    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr   planeCloud,
+    vs_graphs::core::geometric::Plane::PlaneVariant semanticType,
+    double                                          confidence)
 {
     vs_graphs::core::Map *p_currentMap = p_atlas_inout->getCurrentMap();
 

@@ -66,8 +66,7 @@ void Settings::readCamera2(cv::FileStorage &storage_in)
 
         vCalibration = {fx, fy, cx, cy};
 
-        calibration2 =
-            new camera_models::pinhole::Pinhole(vCalibration);
+        calibration2 = new camera_models::pinhole::Pinhole(vCalibration);
         originalCalibration2 =
             new camera_models::pinhole::Pinhole(vCalibration);
 
@@ -112,11 +111,9 @@ void Settings::readCamera2(cv::FileStorage &storage_in)
         vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
 
         calibration2 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(
-                vCalibration);
+            new camera_models::kannalabrandt8::KannalaBrandt8(vCalibration);
         originalCalibration2 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(
-                vCalibration);
+            new camera_models::kannalabrandt8::KannalaBrandt8(vCalibration);
 
         int colBegin =
             readParameter<int>(storage_in, "Camera2.overlappingBegin", found);
@@ -124,8 +121,7 @@ void Settings::readCamera2(cv::FileStorage &storage_in)
             readParameter<int>(storage_in, "Camera2.overlappingEnd", found);
         vector<int> vOverlapping = {colBegin, colEnd};
 
-        static_cast<
-            camera_models::kannalabrandt8::KannalaBrandt8 *>(
+        static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
             calibration2)
             ->lappingArea = vOverlapping;
     }

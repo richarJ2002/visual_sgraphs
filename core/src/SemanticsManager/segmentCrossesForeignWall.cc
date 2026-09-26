@@ -25,6 +25,44 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief       Tests whether a straight segment between two points is
+ *              blocked by a wall belonging to a room other than the ones
+ *              the segment is meant to connect.
+ *
+ *              Threading one passage's own bounded aperture is necessary
+ *              but not sufficient proof that two points are the direct two
+ *              sides of THAT passage: in a corridor with several rooms and
+ *              doors in a row, a straight line can thread one passage's
+ *              opening while still passing directly through an
+ *              intervening room's own wall. When it does, something else
+ *              -- a wall, and by implication a room -- provably sits
+ *              between the two points, so they are not each other's
+ *              direct neighbour through this passage.
+ *
+ * @param[in]   segmentStart_World_m_in
+ *              One endpoint of the candidate segment.
+ * @param[in]   segmentEnd_World_m_in
+ *              The other endpoint of the candidate segment.
+ * @param[in]   excludedRooms_in
+ *              Rooms whose own walls are not "foreign" -- typically the
+ *              rooms/placeholders the segment itself is testing.
+ * @param[in]   allRooms_in
+ *              Every currently known room to search for a blocking wall.
+ * @param[in]   groundAxisU_World_in
+ *              First horizontal ground axis (matches buildFiniteWallSegment2d).
+ * @param[in]   groundAxisV_World_in
+ *              Second horizontal ground axis.
+ * @param[in]   groundNormal_World_in
+ *              Unit ground normal in the world frame.
+ * @param[in]   endpointTrimRatio_in
+ *              Forwarded to buildFiniteWallSegment2d.
+ * @param[in]   minimumWallLength_m_in
+ *              Forwarded to buildFiniteWallSegment2d.
+ *
+ * @return      True when a foreign room's own finite wall extent blocks
+ *              the segment.
+ */
 bool segmentCrossesForeignWall(
     const Eigen::Vector3d &segmentStart_World_m_in,
     const Eigen::Vector3d &segmentEnd_World_m_in,

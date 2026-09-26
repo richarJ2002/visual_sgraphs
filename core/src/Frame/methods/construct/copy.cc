@@ -43,7 +43,7 @@ namespace vs_graphs
 namespace core
 {
 
-/* NOTE: out-of-line per the WP-02 cycle-break policy (Frame<->KeyFrame/MapPoint SCC). */
+/* NOTE: out-of-line to break the Frame<->KeyFrame/MapPoint include cycle. */
 
 Frame::Frame(const Frame &frame) :
     p_poseImuConstraint(frame.p_poseImuConstraint),

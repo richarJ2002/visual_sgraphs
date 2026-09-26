@@ -274,10 +274,13 @@ class Map
 
     unsigned int getLowerKeyFrameId();
 
-    void PreSave(std::set<camera_models::geometriccamera::GeometricCamera *> &spCams);
-    void PostLoad(KeyFrameDatabase                                    *pKFDB,
-                  ORBVocabulary                                       *pORBVoc,
-                  map<unsigned int, camera_models::geometriccamera::GeometricCamera *> &mpCams);
+    void PreSave(
+        std::set<camera_models::geometriccamera::GeometricCamera *> &spCams);
+    void PostLoad(
+        KeyFrameDatabase *pKFDB,
+        ORBVocabulary    *pORBVoc,
+        map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
+            &mpCams);
 
     KeyFrame                 *p_firstRegionKeyFrame;
     std::mutex                mMutexMapUpdate;

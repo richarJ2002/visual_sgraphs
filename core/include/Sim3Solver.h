@@ -32,12 +32,11 @@ class Sim3Solver
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Sim3Solver(
-        KeyFrame                      *pKF1,
-        KeyFrame                      *pKF2,
-        const std::vector<MapPoint *> &vpMatched12,
-        const bool                     bFixScale     = true,
-        vector<KeyFrame *> vpKeyFrameMatchedMP = vector<KeyFrame *>()) :
+    Sim3Solver(KeyFrame                      *pKF1,
+               KeyFrame                      *pKF2,
+               const std::vector<MapPoint *> &vpMatched12,
+               const bool                     bFixScale = true,
+               vector<KeyFrame *> vpKeyFrameMatchedMP = vector<KeyFrame *>()) :
         iterationCount(0),
         bestInlierCount(0),
         fixScale(bFixScale),

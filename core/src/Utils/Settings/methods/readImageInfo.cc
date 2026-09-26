@@ -120,18 +120,22 @@ void Settings::readImageInfo(cv::FileStorage &storage_in)
 
                 if (cameraModel == CameraType::KANNALA_BRANDT)
                 {
-                    static_cast<camera_models::kannalabrandt8::
-                                    KannalaBrandt8 *>(calibration1)
+                    static_cast<
+                        camera_models::kannalabrandt8::KannalaBrandt8 *>(
+                        calibration1)
                         ->lappingArea[0] *= scaleColFactor;
-                    static_cast<camera_models::kannalabrandt8::
-                                    KannalaBrandt8 *>(calibration1)
+                    static_cast<
+                        camera_models::kannalabrandt8::KannalaBrandt8 *>(
+                        calibration1)
                         ->lappingArea[1] *= scaleColFactor;
 
-                    static_cast<camera_models::kannalabrandt8::
-                                    KannalaBrandt8 *>(calibration2)
+                    static_cast<
+                        camera_models::kannalabrandt8::KannalaBrandt8 *>(
+                        calibration2)
                         ->lappingArea[0] *= scaleColFactor;
-                    static_cast<camera_models::kannalabrandt8::
-                                    KannalaBrandt8 *>(calibration2)
+                    static_cast<
+                        camera_models::kannalabrandt8::KannalaBrandt8 *>(
+                        calibration2)
                         ->lappingArea[1] *= scaleColFactor;
                 }
             }

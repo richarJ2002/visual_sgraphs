@@ -29,6 +29,25 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief       Tests whether an observed finite wall separates two positions.
+ *
+ *              The infinite plane performs the side test, while the mapped
+ *              cloud bounds reject unrelated coplanar wall segments. This is
+ *              used as a veto when connected free-space evidence suggests two
+ *              room hypotheses may describe the same physical room.
+ *
+ * @param[in]   wallList_World_in
+ *              Candidate wall surfaces expressed in the active map frame.
+ * @param[in]   firstPoint_World_m_in
+ *              First position expressed in the active map frame, in metres.
+ * @param[in]   secondPoint_World_m_in
+ *              Second position expressed in the active map frame, in metres.
+ * @param[in]   finiteBoundsMargin_m_in
+ *              Margin applied around the observed wall-cloud bounds.
+ *
+ * @return      True when the segment crosses an observed finite wall patch.
+ */
 bool hasSeparatingFiniteWall(
     const std::vector<geometric::Plane *> &wallList_World_in,
     const Eigen::Vector3d                 &firstPoint_World_m_in,

@@ -102,7 +102,7 @@ class MLPnPsolver
 
                     // 3D coordinates
                     Eigen::Matrix<float, 3, 1> posEig = pMP->getWorldPos();
-                    point_t                    pos(posEig(0), posEig(1), posEig(2));
+                    point_t pos(posEig(0), posEig(1), posEig(2));
                     points3Dw.push_back(pos);
 
                     keypointIndices.push_back(i);

@@ -7,16 +7,19 @@
  * @note            These helpers were file-scope entities inside the
  *                  anonymous namespace of Atlas.cc; external linkage here
  *                  is module-internal only. Names are kept verbatim
- *                  (WP-01C renaming is a separate step).
+ *                  (identifier renaming is a separate step).
  */
 
 #ifndef VS_GRAPHS_CORE_ATLAS_PRIVATE_FUNCTIONS_H
 #define VS_GRAPHS_CORE_ATLAS_PRIVATE_FUNCTIONS_H
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
+#include <iostream>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace vs_graphs
@@ -134,16 +137,14 @@ std::size_t countLivePassages(Map *p_map_in);
 
 std::size_t countLiveFloors(Map *p_map_in);
 
-std::size_t consecutiveContentHash(Map *p_oldMap_in,
-                                          Map *p_currentMap_in);
+std::size_t consecutiveContentHash(Map *p_oldMap_in, Map *p_currentMap_in);
 
 bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in);
 
-std::set<std::string> collectAnchorTags(Map *p_oldMap_in,
-                                               Map *p_currentMap_in);
+std::set<std::string> collectAnchorTags(Map *p_oldMap_in, Map *p_currentMap_in);
 
 bool resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
-                                          semantic::Passage *p_transferred_in);
+                                   semantic::Passage *p_transferred_in);
 
 } // namespace core
 } // namespace vs_graphs

@@ -70,9 +70,9 @@ namespace core
 {
 
 void computeDescriptors(const Mat           &image,
-                               vector<KeyPoint>    &keypoints,
-                               Mat                 &descriptors,
-                               const vector<Point> &briefPattern)
+                        vector<KeyPoint>    &keypoints,
+                        Mat                 &descriptors,
+                        const vector<Point> &briefPattern)
 {
     descriptors = Mat::zeros((int)keypoints.size(), 32, CV_8UC1);
 

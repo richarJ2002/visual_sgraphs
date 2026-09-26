@@ -524,8 +524,7 @@ class Preintegrated
         bu(pImuPre->bu),
         db(pImuPre->db),
         mvMeasurements(pImuPre->mvMeasurements)
-    {
-    }
+    {}
     /*!
      * @brief        Creates an empty preintegration.
      */

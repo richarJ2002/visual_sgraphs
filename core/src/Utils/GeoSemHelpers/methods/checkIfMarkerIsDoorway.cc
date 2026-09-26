@@ -23,8 +23,7 @@ namespace vs_graphs
 namespace core
 {
 
-std::pair<bool, std::string>
-GeoSemHelpers::checkIfMarkerIsDoorway(
+std::pair<bool, std::string> GeoSemHelpers::checkIfMarkerIsDoorway(
     const int                                     &markerId,
     std::vector<vs_graphs::core::semantic::Room *> envRooms)
 {

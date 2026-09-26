@@ -158,7 +158,8 @@ void KeyFrameDatabase::detectNBestCandidates(KeyFrame           *pKF,
     list<pair<float, KeyFrame *>>::iterator it = lAccScoreAndMatch.begin();
     // reserve() above already rejects a negative request, so nNumCandidates is
     // a non-negative candidate budget by the time it is used as a size here.
-    const std::size_t candidateBudget = static_cast<std::size_t>(nNumCandidates);
+    const std::size_t                       candidateBudget =
+        static_cast<std::size_t>(nNumCandidates);
     while (i < lAccScoreAndMatch.size() &&
            (vpLoopCand.size() < candidateBudget ||
             vpMergeCand.size() < candidateBudget))

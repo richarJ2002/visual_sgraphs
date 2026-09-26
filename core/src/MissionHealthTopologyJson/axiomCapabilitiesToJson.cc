@@ -1,7 +1,8 @@
 /*!
  * @file         axiomCapabilitiesToJson.cc
  *
- * @brief        Implements axiomCapabilitiesToJson declared in MissionHealthTopologyJson.cc.
+ * @brief        Implements axiomCapabilitiesToJson declared in
+ *               private_functions.h.
  */
 
 #include "MissionHealthTopologyJson.h"

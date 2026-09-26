@@ -23,10 +23,10 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::Marker *GeoSemHelpers::createMapMarker(
-    Atlas                                   *p_atlas_inout,
-    vs_graphs::core::KeyFrame               *pKF,
-    const semantic::Marker *visitedMarker)
+semantic::Marker *
+    GeoSemHelpers::createMapMarker(Atlas                     *p_atlas_inout,
+                                   vs_graphs::core::KeyFrame *pKF,
+                                   const semantic::Marker    *visitedMarker)
 {
     vs_graphs::core::semantic::Marker *newMapMarker =
         new vs_graphs::core::semantic::Marker();

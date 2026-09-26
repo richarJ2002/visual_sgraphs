@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-/* NOTE: out-of-line per the WP-02 cycle-break policy (KeyFrame<->MapPoint/Map SCC). */
+/* NOTE: out-of-line to break the KeyFrame<->MapPoint/Map include cycle. */
 
 KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     isImu(pMap->isImuInitialized()),

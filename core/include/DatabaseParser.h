@@ -56,15 +56,11 @@ class DBParser
     /*!
      * @brief        Creates an empty parser.
      */
-    DBParser()
-    {
-    }
+    DBParser() {}
     /*!
      * @brief        Destroys the parser.
      */
-    ~DBParser()
-    {
-    }
+    ~DBParser() {}
 
     /*!
      * @brief        Loads and parses the JSON file at the given path.

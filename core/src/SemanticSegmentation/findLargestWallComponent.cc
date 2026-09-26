@@ -16,12 +16,6 @@
  * details: https://www.gnu.org/licenses/
  */
 
-/*!
- * @file         SemanticSegmentation.cc
- *
- * @brief        Implements segmentation in SemanticSegmentation.h.
- */
-
 #include "SemanticSegmentation.h"
 
 #include "private_functions.h"
@@ -35,6 +29,22 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief        Finds the largest Euclidean component of a proposed wall
+ *               plane.
+ *
+ *               The returned indices refer to the input cloud, allowing
+ *               the same support to be selected in both camera and map
+ *               frames. Invalid depth samples are excluded before
+ *               building the search tree.
+ *
+ * @param[in]    p_wallCloud_in
+ *               Proposed wall support cloud.
+ * @param[in]    clusterTolerance_m_in
+ *               Maximum Euclidean neighbour separation in metres.
+ *
+ * @return       Largest connected component and its support statistics.
+ */
 WallComponentSupport findLargestWallComponent(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_wallCloud_in,
     const double                                        clusterTolerance_m_in)

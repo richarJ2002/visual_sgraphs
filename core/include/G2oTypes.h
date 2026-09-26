@@ -129,8 +129,9 @@ class ImuCamPose
 
         if (num_cams > 1)
         {
-            Eigen::Matrix4d Trl = pKF->getRelativePoseTrl().matrix().cast<double>();
-            Rcw[1]              = Trl.block<3, 3>(0, 0) * Rcw[0];
+            Eigen::Matrix4d Trl =
+                pKF->getRelativePoseTrl().matrix().cast<double>();
+            Rcw[1]     = Trl.block<3, 3>(0, 0) * Rcw[0];
             tcw[1]     = Trl.block<3, 3>(0, 0) * tcw[0] + Trl.block<3, 1>(0, 3);
             tcb[1]     = Trl.block<3, 3>(0, 0) * tcb[0] + Trl.block<3, 1>(0, 3);
             Rcb[1]     = Trl.block<3, 3>(0, 0) * Rcb[0];
@@ -177,8 +178,9 @@ class ImuCamPose
 
         if (num_cams > 1)
         {
-            Eigen::Matrix4d Trl = pF->getRelativePoseTrl().matrix().cast<double>();
-            Rcw[1]              = Trl.block<3, 3>(0, 0) * Rcw[0];
+            Eigen::Matrix4d Trl =
+                pF->getRelativePoseTrl().matrix().cast<double>();
+            Rcw[1]     = Trl.block<3, 3>(0, 0) * Rcw[0];
             tcw[1]     = Trl.block<3, 3>(0, 0) * tcw[0] + Trl.block<3, 1>(0, 3);
             tcb[1]     = Trl.block<3, 3>(0, 0) * tcb[0] + Trl.block<3, 1>(0, 3);
             Rcb[1]     = Trl.block<3, 3>(0, 0) * Rcb[0];
@@ -258,10 +260,7 @@ class InvDepthPoint
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     InvDepthPoint() {}
-    InvDepthPoint(double    _rho,
-                  double    _u,
-                  double    _v,
-                  KeyFrame *pHostKF) :
+    InvDepthPoint(double _rho, double _u, double _v, KeyFrame *pHostKF) :
         rho(_rho),
         u(_u),
         v(_v),
@@ -270,8 +269,7 @@ class InvDepthPoint
         cx(pHostKF->cx),
         cy(pHostKF->cy),
         bf(pHostKF->mbf)
-    {
-    }
+    {}
 
     void update(const double *pu);
 
@@ -803,8 +801,8 @@ class EdgeInertial : public g2o::BaseMultiEdge<9, Vector9d>
         for (int i = 0; i < 9; i++)
             if (eigs[i] < 1e-12)
                 eigs[i] = 0;
-        Info =
-            es.eigenvectors() * eigs.asDiagonal() * es.eigenvectors().transpose();
+        Info = es.eigenvectors() * eigs.asDiagonal() *
+               es.eigenvectors().transpose();
         setInformation(Info);
     }
 
@@ -889,8 +887,8 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
         for (int i = 0; i < 9; i++)
             if (eigs[i] < 1e-12)
                 eigs[i] = 0;
-        Info =
-            es.eigenvectors() * eigs.asDiagonal() * es.eigenvectors().transpose();
+        Info = es.eigenvectors() * eigs.asDiagonal() *
+               es.eigenvectors().transpose();
         setInformation(Info);
     }
 

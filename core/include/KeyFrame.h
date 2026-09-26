@@ -380,12 +380,14 @@ class KeyFrame
                                float       &u,
                                float       &v);
 
-    void PreSave(set<KeyFrame *>                       &spKF,
-                 set<MapPoint *>                       &spMP,
+    void PreSave(set<KeyFrame *>                                        &spKF,
+                 set<MapPoint *>                                        &spMP,
                  set<camera_models::geometriccamera::GeometricCamera *> &spCam);
-    void PostLoad(map<long unsigned int, KeyFrame *>                  &mpKFid,
-                  map<long unsigned int, MapPoint *>                  &mpMPid,
-                  map<unsigned int, camera_models::geometriccamera::GeometricCamera *> &mpCamId);
+    void PostLoad(
+        map<long unsigned int, KeyFrame *> &mpKFid,
+        map<long unsigned int, MapPoint *> &mpMPid,
+        map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
+            &mpCamId);
 
     void setORBVocabulary(ORBVocabulary *pORBVoc);
     void setKeyFrameDatabase(KeyFrameDatabase *pKFDB);

@@ -159,8 +159,8 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
                         const cv::KeyPoint &kp =
                             (!pKF->p_camera2)
                                 ? pKF->keyPointsUndistorted[realIdxKF]
-                            : (realIdxKF >= static_cast<unsigned int>(
-                                                pKF->Nleft))
+                            : (realIdxKF >=
+                               static_cast<unsigned int>(pKF->Nleft))
                                 ? pKF->keyPointsRight[realIdxKF - pKF->Nleft]
                                 : pKF->keyPoints[realIdxKF];
 
@@ -196,8 +196,8 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
                             const cv::KeyPoint &kp =
                                 (!pKF->p_camera2)
                                     ? pKF->keyPointsUndistorted[realIdxKF]
-                                : (realIdxKF >= static_cast<unsigned int>(
-                                                    pKF->Nleft))
+                                : (realIdxKF >=
+                                   static_cast<unsigned int>(pKF->Nleft))
                                     ? pKF->keyPointsRight[realIdxKF -
                                                           pKF->Nleft]
                                     : pKF->keyPoints[realIdxKF];

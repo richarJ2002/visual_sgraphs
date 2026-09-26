@@ -28,9 +28,9 @@
 
 #include "FrameDrawer.h"
 #include "MapDrawer.h"
-#include "Utils/Settings/objects/Settings.h"
 #include "System.h"
 #include "Tracking.h"
+#include "Utils/Settings/objects/Settings.h"
 
 #include <iostream>
 #include <mutex>
@@ -49,11 +49,11 @@ class Viewer
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Viewer(System       *pSystem,
-           FrameDrawer  *pFrameDrawer,
-           MapDrawer    *pMapDrawer,
-           Tracking     *pTracking,
-           const string &strSettingPath,
+    Viewer(System                    *pSystem,
+           FrameDrawer               *pFrameDrawer,
+           MapDrawer                 *pMapDrawer,
+           Tracking                  *pTracking,
+           const string              &strSettingPath,
            utils::settings::Settings *settings) :
         both(false),
         p_system(pSystem),

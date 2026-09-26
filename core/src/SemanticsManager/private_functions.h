@@ -7,7 +7,7 @@
  * @note            These helpers were file-scope entities inside the
  *                  anonymous namespace of SemanticsManager.cc; external
  *                  linkage here is module-internal only. Names are kept
- *                  verbatim (WP-01C renaming is a separate step).
+ *                  verbatim (identifier renaming is a separate step).
  */
 
 #ifndef VS_GRAPHS_CORE_SEMANTICSMANAGER_PRIVATE_FUNCTIONS_H
@@ -163,10 +163,11 @@ bool intersectSupportingLines(const FiniteWallSegment2d &firstSegment_in,
 double pointToSegmentDistance_m(const Eigen::Vector2d     &point_World_m_in,
                                 const FiniteWallSegment2d &segment_in);
 
-WallLoopClosure tryCloseWallLoop(
-    std::vector<FiniteWallSegment2d> wallSegments_in,
-    const Eigen::Vector2d           &roomCentroid_Ground_m_in,
-    const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters_in);
+WallLoopClosure
+    tryCloseWallLoop(std::vector<FiniteWallSegment2d> wallSegments_in,
+                     const Eigen::Vector2d           &roomCentroid_Ground_m_in,
+                     const types::SystemParams::RoomSeg::BoundaryTopology
+                         &topologyParameters_in);
 
 std::vector<semantic::Room::ObservationGap> computeRoomObservationGaps(
     const std::vector<FiniteWallSegment2d> &wallSegments_in,
@@ -181,16 +182,15 @@ std::vector<semantic::Room::ObservationGap> computeRoomObservationGaps(
 double computePolygonArea_m2(
     const std::vector<Eigen::Vector2d> &polygonVertices_World_m_in);
 
-bool
-    segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,
-                           const Eigen::Vector3d &segmentEnd_World_m_in,
-                           const Eigen::Vector4d &apertureEquation_World_in,
-                           const Eigen::Vector3d &apertureCentroid_World_m_in,
-                           const double           apertureWidth_m_in,
-                           const double           apertureHeight_m_in,
-                           const Eigen::Vector3d &groundNormal_World_in,
-                           const double           openingMargin_m_in,
-                           const double           minimumSideDistance_m_in);
+bool segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,
+                            const Eigen::Vector3d &segmentEnd_World_m_in,
+                            const Eigen::Vector4d &apertureEquation_World_in,
+                            const Eigen::Vector3d &apertureCentroid_World_m_in,
+                            const double           apertureWidth_m_in,
+                            const double           apertureHeight_m_in,
+                            const Eigen::Vector3d &groundNormal_World_in,
+                            const double           openingMargin_m_in,
+                            const double           minimumSideDistance_m_in);
 
 bool segmentCrossesPassageOpening(
     const Eigen::Vector3d &segmentStart_World_m_in,

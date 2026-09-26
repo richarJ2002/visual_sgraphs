@@ -69,11 +69,11 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBextractor::operator()(InputArray                       image_in,
-                             [[maybe_unused]] InputArray      mask_in,
-                             vector<KeyPoint>                &keypoints_out,
-                             OutputArray       descriptors_out,
-                             std::vector<int> &lappingArea_in)
+int ORBextractor::operator()(InputArray                  image_in,
+                             [[maybe_unused]] InputArray mask_in,
+                             vector<KeyPoint>           &keypoints_out,
+                             OutputArray                 descriptors_out,
+                             std::vector<int>           &lappingArea_in)
 {
     // cout << "[ORBextractor]: Max Features: " << featureCount << endl;
     if (image_in.empty())

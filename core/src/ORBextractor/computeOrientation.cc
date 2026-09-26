@@ -70,8 +70,8 @@ namespace core
 {
 
 void computeOrientation(const Mat         &image,
-                               vector<KeyPoint>  &keypoints,
-                               const vector<int> &orientationMaxOffset)
+                        vector<KeyPoint>  &keypoints,
+                        const vector<int> &orientationMaxOffset)
 {
     for (vector<KeyPoint>::iterator keypoint    = keypoints.begin(),
                                     keypointEnd = keypoints.end();

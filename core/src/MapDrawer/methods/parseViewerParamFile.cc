@@ -1,7 +1,8 @@
 /*!
  * @file         parseViewerParamFile.cc
  *
- * @brief        Implements MapDrawer::parseViewerParamFile declared in MapDrawer.h.
+ * @brief        Implements MapDrawer::parseViewerParamFile declared in
+ *               MapDrawer.h.
  */
 
 #include "MapDrawer.h"
@@ -25,7 +26,7 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
     else
     {
         std::cerr << "*Viewer.KeyFrameSize parameter doesn't exist or is not a "
-                  "real number*"
+                     "real number*"
                   << std::endl;
         b_miss_params = true;
     }
@@ -37,9 +38,10 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
     }
     else
     {
-        std::cerr << "*Viewer.KeyFrameLineWidth parameter doesn't exist or is not "
-                  "a real number*"
-                  << std::endl;
+        std::cerr
+            << "*Viewer.KeyFrameLineWidth parameter doesn't exist or is not "
+               "a real number*"
+            << std::endl;
         b_miss_params = true;
     }
 
@@ -51,7 +53,7 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
     else
     {
         std::cerr << "*Viewer.GraphLineWidth parameter doesn't exist or is not "
-                  "a real number*"
+                     "a real number*"
                   << std::endl;
         b_miss_params = true;
     }
@@ -64,7 +66,7 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
     else
     {
         std::cerr << "*Viewer.PointSize parameter doesn't exist or is not a "
-                  "real number*"
+                     "real number*"
                   << std::endl;
         b_miss_params = true;
     }
@@ -77,7 +79,7 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
     else
     {
         std::cerr << "*Viewer.CameraSize parameter doesn't exist or is not a "
-                  "real number*"
+                     "real number*"
                   << std::endl;
         b_miss_params = true;
     }
@@ -89,9 +91,10 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
     }
     else
     {
-        std::cerr << "*Viewer.CameraLineWidth parameter doesn't exist or is not "
-                  "a real number*"
-                  << std::endl;
+        std::cerr
+            << "*Viewer.CameraLineWidth parameter doesn't exist or is not "
+               "a real number*"
+            << std::endl;
         b_miss_params = true;
     }
 

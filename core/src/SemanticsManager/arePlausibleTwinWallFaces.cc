@@ -28,6 +28,12 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief Decides whether two WALL Planes are plausibly the two opposite
+ *        faces of the same physical wall (axiom (e)): parallel, a plausible
+ *        wall thickness apart, observed from opposite exterior sides, and
+ *        overlapping in-plane footprint.
+ */
 bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
                                geometric::Plane      *p_second_in,
                                double                 minimumThickness_m_in,

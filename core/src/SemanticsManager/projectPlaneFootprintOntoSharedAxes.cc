@@ -29,6 +29,14 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief Projects a WALL Plane's finite support cloud onto a shared in-plane
+ *        tangent frame, returning the resulting axis-aligned interval.
+ *
+ * @return false when the plane has no usable geometry (null/empty cloud, or
+ *         a degenerate equation); the caller must treat that as "cannot
+ *         claim overlap" rather than as a zero-size interval.
+ */
 bool projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
                                          const Eigen::Vector3d &axisU_World_in,
                                          const Eigen::Vector3d &axisV_World_in,

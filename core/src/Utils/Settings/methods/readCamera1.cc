@@ -72,8 +72,7 @@ void Settings::readCamera1(cv::FileStorage &storage_in)
         float cy     = readParameter<float>(storage_in, "Camera1.cy", found);
         vCalibration = {fx, fy, cx, cy};
 
-        calibration1 =
-            new camera_models::pinhole::Pinhole(vCalibration);
+        calibration1 = new camera_models::pinhole::Pinhole(vCalibration);
         originalCalibration1 =
             new camera_models::pinhole::Pinhole(vCalibration);
 
@@ -116,8 +115,7 @@ void Settings::readCamera1(cv::FileStorage &storage_in)
         float cy     = readParameter<float>(storage_in, "Camera1.cy", found);
         vCalibration = {fx, fy, cx, cy};
 
-        calibration1 =
-            new camera_models::pinhole::Pinhole(vCalibration);
+        calibration1 = new camera_models::pinhole::Pinhole(vCalibration);
         originalCalibration1 =
             new camera_models::pinhole::Pinhole(vCalibration);
     }
@@ -138,11 +136,9 @@ void Settings::readCamera1(cv::FileStorage &storage_in)
 
         vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
         calibration1 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(
-                vCalibration);
+            new camera_models::kannalabrandt8::KannalaBrandt8(vCalibration);
         originalCalibration1 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(
-                vCalibration);
+            new camera_models::kannalabrandt8::KannalaBrandt8(vCalibration);
 
         if (sensor == System::STEREO || sensor == System::IMU_STEREO)
         {
@@ -152,8 +148,7 @@ void Settings::readCamera1(cv::FileStorage &storage_in)
             int colEnd =
                 readParameter<int>(storage_in, "Camera1.overlappingEnd", found);
             std::vector<int> vOverlapping = {colBegin, colEnd};
-            static_cast<
-                camera_models::kannalabrandt8::KannalaBrandt8 *>(
+            static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
                 calibration1)
                 ->lappingArea = vOverlapping;
         }

@@ -7,7 +7,7 @@
  * @note            These helpers were file-scope entities inside the
  *                  anonymous namespace of Optimizer.cc; external linkage
  *                  here is module-internal only. Names are kept verbatim
- *                  (WP-01C renaming is a separate step).
+ *                  (identifier renaming is a separate step).
  */
 
 #ifndef VS_GRAPHS_CORE_OPTIMIZER_PRIVATE_FUNCTIONS_H

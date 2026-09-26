@@ -26,10 +26,10 @@ namespace core
 {
 
 bool GeometricTools::triangulate(Eigen::Vector3f            &x_c1,
-                                  Eigen::Vector3f            &x_c2,
-                                  Eigen::Matrix<float, 3, 4> &Tc1w,
-                                  Eigen::Matrix<float, 3, 4> &Tc2w,
-                                  Eigen::Vector3f            &x3D)
+                                 Eigen::Vector3f            &x_c2,
+                                 Eigen::Matrix<float, 3, 4> &Tc1w,
+                                 Eigen::Matrix<float, 3, 4> &Tc2w,
+                                 Eigen::Vector3f            &x3D)
 {
     Eigen::Matrix4f A;
     A.block<1, 4>(0, 0) =

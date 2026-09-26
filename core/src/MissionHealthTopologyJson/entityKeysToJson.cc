@@ -1,7 +1,8 @@
 /*!
  * @file         entityKeysToJson.cc
  *
- * @brief        Implements entityKeysToJson declared in MissionHealthTopologyJson.h.
+ * @brief        Implements entityKeysToJson declared in
+ *               private_functions.h.
  */
 
 #include "MissionHealthTopologyJson.h"

@@ -147,12 +147,12 @@ std::ostream &operator<<(std::ostream &output, const Settings &settings)
         if (settings.cameraModel == Settings::CameraType::KANNALA_BRANDT)
         {
             auto vOverlapping1 =
-                static_cast<camera_models::kannalabrandt8::
-                                KannalaBrandt8 *>(settings.calibration1)
+                static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
+                    settings.calibration1)
                     ->lappingArea;
             auto vOverlapping2 =
-                static_cast<camera_models::kannalabrandt8::
-                                KannalaBrandt8 *>(settings.calibration2)
+                static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
+                    settings.calibration2)
                     ->lappingArea;
             output << "\t- Camera 1 overlapping area: [ " << vOverlapping1[0]
                    << " , " << vOverlapping1[1] << " ]" << endl;
