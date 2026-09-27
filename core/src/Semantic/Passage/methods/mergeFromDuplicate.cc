@@ -1,0 +1,180 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+#include "Semantic/Passage.h"
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
+{
+
+bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
+{
+    if (p_duplicate_in == nullptr || p_duplicate_in == this ||
+        p_duplicate_in->getId() != getId())
+    {
+        return false;
+    }
+
+    bool canonicalIsRecoveryProxy = false;
+    {
+        std::lock_guard<std::mutex> typeLock(mMutexType);
+        canonicalIsRecoveryProxy = recoveryProxy;
+    }
+
+    bool           duplicateIsRecoveryProxy = false;
+    bool           duplicateIsPassable      = false;
+    PassageVariant duplicatePassageType     = PassageVariant::UNDEFINED;
+    std::size_t    duplicateKnownToFarCount = 0U;
+    std::size_t    duplicateFarToKnownCount = 0U;
+    std::size_t    duplicateUnknownCount    = 0U;
+    {
+        std::lock_guard<std::mutex> duplicateTypeLock(
+            p_duplicate_in->mMutexType);
+        duplicateIsRecoveryProxy = p_duplicate_in->recoveryProxy;
+        duplicateIsPassable      = p_duplicate_in->passable;
+        duplicatePassageType     = p_duplicate_in->passageType;
+        duplicateKnownToFarCount = p_duplicate_in->traversalKnownToFarCount;
+        duplicateFarToKnownCount = p_duplicate_in->traversalFarToKnownCount;
+        duplicateUnknownCount    = p_duplicate_in->traversalUnknownCount;
+    }
+
+    Eigen::Vector3d                 duplicateCentroid = Eigen::Vector3d::Zero();
+    g2o::Plane3D                    duplicateEquation;
+    double                          duplicateWidth_m  = 0.0;
+    double                          duplicateHeight_m = 0.0;
+    geometric::Plane               *p_duplicateDoor   = nullptr;
+    std::vector<geometric::Plane *> duplicateWalls;
+    Room                           *p_duplicateProspectiveRoom = nullptr;
+    KnownSideProvenance             duplicateKnownSide;
+    {
+        std::lock_guard<std::mutex> duplicateGeometryLock(
+            p_duplicate_in->mMutexGeometry);
+        duplicateCentroid          = p_duplicate_in->centroid;
+        duplicateEquation          = p_duplicate_in->globalEquation;
+        duplicateWidth_m           = p_duplicate_in->width;
+        duplicateHeight_m          = p_duplicate_in->height;
+        p_duplicateDoor            = p_duplicate_in->associateDoor;
+        duplicateWalls             = p_duplicate_in->associateWalls;
+        p_duplicateProspectiveRoom = p_duplicate_in->prospectiveRoom;
+        duplicateKnownSide         = p_duplicate_in->knownSideProvenance;
+    }
+
+    const Eigen::Vector4d duplicateEquationCoefficients =
+        duplicateEquation.coeffs();
+    const double duplicateNormalNorm =
+        duplicateEquationCoefficients.head<3>().norm();
+    const bool duplicateHasValidObservedGeometry =
+        !duplicateIsRecoveryProxy && duplicateCentroid.allFinite() &&
+        duplicateEquationCoefficients.allFinite() &&
+        std::isfinite(duplicateNormalNorm) && duplicateNormalNorm > 1e-8 &&
+        std::isfinite(duplicateWidth_m) && duplicateWidth_m > 0.0 &&
+        std::isfinite(duplicateHeight_m) && duplicateHeight_m > 0.0;
+
+    bool replacedGeometry = false;
+    {
+        std::lock_guard<std::mutex> geometryLock(mMutexGeometry);
+        const Eigen::Vector4d       canonicalEquationCoefficients =
+            globalEquation.coeffs();
+        const double canonicalNormalNorm =
+            canonicalEquationCoefficients.head<3>().norm();
+        const bool canonicalHasValidGeometry =
+            centroid.allFinite() && canonicalEquationCoefficients.allFinite() &&
+            std::isfinite(canonicalNormalNorm) && canonicalNormalNorm > 1e-8 &&
+            std::isfinite(width) && width > 0.0 && std::isfinite(height) &&
+            height > 0.0;
+
+        replacedGeometry =
+            duplicateHasValidObservedGeometry &&
+            (canonicalIsRecoveryProxy || !canonicalHasValidGeometry);
+        if (replacedGeometry)
+        {
+            centroid       = duplicateCentroid;
+            globalEquation = duplicateEquation;
+            width          = duplicateWidth_m;
+            height         = duplicateHeight_m;
+            associateDoor  = p_duplicateDoor;
+        }
+        else if (associateDoor == nullptr)
+        {
+            associateDoor = p_duplicateDoor;
+        }
+
+        for (geometric::Plane *p_duplicateWall : duplicateWalls)
+        {
+            if (p_duplicateWall != nullptr &&
+                std::find(associateWalls.begin(),
+                          associateWalls.end(),
+                          p_duplicateWall) == associateWalls.end())
+            {
+                associateWalls.push_back(p_duplicateWall);
+            }
+        }
+
+        if (prospectiveRoom == nullptr)
+        {
+            prospectiveRoom = p_duplicateProspectiveRoom;
+        }
+        if (knownSideProvenance.pRoom == nullptr)
+        {
+            knownSideProvenance.pRoom = duplicateKnownSide.pRoom;
+        }
+        if (replacedGeometry)
+        {
+            knownSideProvenance.direction_World =
+                duplicateKnownSide.direction_World;
+        }
+        else if (!knownSideProvenance.hasDirection() &&
+                 duplicateKnownSide.hasDirection())
+        {
+            knownSideProvenance.direction_World =
+                duplicateKnownSide.direction_World;
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> typeLock(mMutexType);
+        traversalKnownToFarCount =
+            std::max(traversalKnownToFarCount, duplicateKnownToFarCount);
+        traversalFarToKnownCount =
+            std::max(traversalFarToKnownCount, duplicateFarToKnownCount);
+        traversalUnknownCount =
+            std::max(traversalUnknownCount, duplicateUnknownCount);
+        if (replacedGeometry)
+        {
+            passable      = duplicateIsPassable;
+            passageType   = duplicatePassageType;
+            recoveryProxy = false;
+        }
+        else if (passageType == PassageVariant::UNDEFINED)
+        {
+            passageType = duplicatePassageType;
+        }
+    }
+
+    return replacedGeometry;
+}
+
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs

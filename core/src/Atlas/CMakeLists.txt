@@ -52,6 +52,7 @@ set(VS_GRAPHS_ATLAS_SOURCES
   core/src/Atlas/methods/getAllRooms.cc
   core/src/Atlas/methods/getAtlasKeyFrames.cc
   core/src/Atlas/methods/getBiggestGroundPlane.cc
+  core/src/Atlas/methods/getCoherentMapView.cc
   core/src/Atlas/methods/getCurrentMap.cc
   core/src/Atlas/methods/getCurrentSemanticRoomIdentity.cc
   core/src/Atlas/methods/getFloorById.cc

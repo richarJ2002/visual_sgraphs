@@ -257,12 +257,12 @@ class Room
     /*!
      * @brief        Constructs an unassigned room with default semantic state.
      */
-    Room();
+    Room() = default;
 
     /*!
      * @brief        Destroys the room without deleting non-owning map elements.
      */
-    ~Room();
+    ~Room() = default;
 
     /*!
      * @brief        Apply a rigid/similarity transform to the plane

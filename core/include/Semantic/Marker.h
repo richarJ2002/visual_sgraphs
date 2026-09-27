@@ -64,8 +64,18 @@ class Marker
         observations; // Marker's observations in KeyFrames
 
   public:
-    Marker();
-    ~Marker();
+    Marker() :
+        id(-1),
+        opId(-1),
+        opIdG(-1),
+        time(0.0),
+        markerInGMap(false),
+        localPose(Sophus::SE3f()),
+        globalPose(Sophus::SE3f()),
+        markerType(MarkerVariant::UNKNOWN),
+        p_map(nullptr)
+    {}
+    ~Marker() {}
 
     /*!
      * @brief       Applies a map-frame similarity transform to the marker.

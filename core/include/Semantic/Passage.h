@@ -111,8 +111,23 @@ class Passage
     std::deque<std::pair<unsigned long, unsigned long>> traversalSegmentHistory;
 
   public:
-    Passage();
-    ~Passage();
+    Passage() :
+        id(-1),
+        opId(-1),
+        opIdG(-1),
+        width(0.0),
+        height(0.0),
+        passable(false),
+        centroid(Eigen::Vector3d::Zero()),
+        passageType(Passage::PassageVariant::UNDEFINED),
+        associateDoor(nullptr),
+        prospectiveRoom(nullptr),
+        traversalKnownToFarCount(0U),
+        traversalFarToKnownCount(0U),
+        traversalUnknownCount(0U),
+        p_map(nullptr)
+    {}
+    ~Passage() {}
 
     /*!
      * @brief       Apply a rigid/similarity transform to the plane geometry.

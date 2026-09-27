@@ -1,0 +1,31 @@
+# SemanticVerify object sources: exactly this object's translation units.
+set(VS_GRAPHS_SEMANTIC_SEMANTICVERIFY_SOURCES
+  core/src/Semantic/SemanticVerify/methods/collectWallObservations.cc
+  core/src/Semantic/SemanticVerify/methods/configFromSystemParams.cc
+  core/src/Semantic/SemanticVerify/methods/evaluateConsecutiveMergeGate.cc
+  core/src/Semantic/SemanticVerify/methods/evaluateMapMergeGate.cc
+  core/src/Semantic/SemanticVerify/methods/evaluateMergeAlignment.cc
+  core/src/Semantic/SemanticVerify/methods/mapMergeConfigFromSystemParams.cc
+  core/src/Semantic/SemanticVerify/methods/mergeDecisionName.cc
+  core/src/Semantic/SemanticVerify/methods/mergeReasonName.cc
+  core/src/Semantic/SemanticVerify/methods/runFloorGate.cc
+  core/src/Semantic/SemanticVerify/methods/verify.cc
+  core/src/Semantic/SemanticVerify/private_functions/angleBetween_rad.cc
+  core/src/Semantic/SemanticVerify/private_functions/checkAnchorRoomCentroids.cc
+  core/src/Semantic/SemanticVerify/private_functions/checkConsecutiveFloors.cc
+  core/src/Semantic/SemanticVerify/private_functions/checkConsecutivePassageTopology.cc
+  core/src/Semantic/SemanticVerify/private_functions/checkConsecutiveWallEdgeOverlap.cc
+  core/src/Semantic/SemanticVerify/private_functions/checkFixedTransformWalls.cc
+  core/src/Semantic/SemanticVerify/private_functions/checkPassageTopology.cc
+  core/src/Semantic/SemanticVerify/private_functions/collectConsecutiveAnchors.cc
+  core/src/Semantic/SemanticVerify/private_functions/copyMergeRoomEvidence.cc
+  core/src/Semantic/SemanticVerify/private_functions/findByWallId.cc
+  core/src/Semantic/SemanticVerify/private_functions/fitRotationFromNormals.cc
+  core/src/Semantic/SemanticVerify/private_functions/fitTranslation.cc
+  core/src/Semantic/SemanticVerify/private_functions/isFiniteVector.cc
+  core/src/Semantic/SemanticVerify/private_functions/passageGeometryIsUsable.cc
+  core/src/Semantic/SemanticVerify/private_functions/stableRoomIdentity.cc
+  core/src/Semantic/SemanticVerify/private_functions/symmetricSupportDistance.cc
+  core/src/Semantic/SemanticVerify/private_functions/transformAbsorbedPoint.cc
+  core/src/Semantic/SemanticVerify/private_functions/wallSamplesSpanInterval.cc
+)

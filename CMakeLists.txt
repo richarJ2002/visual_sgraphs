@@ -138,8 +138,11 @@ include(${PROJECT_SOURCE_DIR}/core/src/CameraModels/CMakeLists.txt)
 # Utils module sources (object-subpackage layout)
 include(${PROJECT_SOURCE_DIR}/core/src/Utils/CMakeLists.txt)
 
-# GeometricTools object sources (split from GeometricTools.cc)
-include(${PROJECT_SOURCE_DIR}/core/src/Geometric/methods/GeometricTools/CMakeLists.txt)
+# Geometric module sources (Plane + GeometricTools object packages, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/Geometric/CMakeLists.txt)
+
+# Semantic object packages (Room/Passage/Floor/Marker/RoomTracker/…, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/Semantic/CMakeLists.txt)
 
 # StereoMatchOutlierRejection module sources (single free function, §5.4)
 include(${PROJECT_SOURCE_DIR}/core/src/StereoMatchOutlierRejection/CMakeLists.txt)
@@ -254,19 +257,12 @@ add_library(${PROJECT_NAME}_lib SHARED
   ${VS_GRAPHS_CAMERAMODELS_CAMERAMODELS_SOURCES}
   ${VS_GRAPHS_OPTIMIZABLETYPES_SOURCES}
   ${VS_GRAPHS_MLPNPSOLVER_SOURCES}
-  ${VS_GRAPHS_GEOMETRIC_GEOMETRIC_SOURCES}
-  ${VS_GRAPHS_GEOMETRIC_GEOMETRICTOOLS_SOURCES}
+  ${VS_GRAPHS_GEOMETRIC_SOURCES}
+  ${VS_GRAPHS_SEMANTIC_OBJECTS_SOURCES}
   ${VS_GRAPHS_TWOVIEWRECONSTRUCTION_SOURCES}
   ${VS_GRAPHS_UTILS_SOURCES}
 
-  core/src/Semantic/Room.cc
-  core/src/Semantic/Floor.cc
   ${VS_GRAPHS_DATABASEPARSER_SOURCES}
-  core/src/Semantic/Marker.cc
-  core/src/Geometric/Plane.cc
-  core/src/Geometric/methods/Plane/getGeometryMetadataSnapshot.cc
-  core/src/methods/Atlas/getCoherentMapView.cc
-  core/src/Semantic/Passage.cc
   core/src/Semantic/SemanticGraphSnapshot/objects/EntityKey/operators/equality.cc
   core/src/Semantic/SemanticGraphSnapshot/objects/EntityKey/operators/inequality.cc
   core/src/Semantic/SemanticGraphSnapshot/objects/EntityKey/operators/lessThan.cc
@@ -362,7 +358,6 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/src/Semantic/SemanticAxiomEvaluator/EnumNames/unavailableReasonName.cc
   core/src/Semantic/SemanticAxiomEvaluator/EnumNames/capabilityLevelName.cc
   core/src/Semantic/SemanticAxiomEvaluator/EnumNames/missingProofOwnerName.cc
-  core/src/Semantic/Sha256Digest.cc
   core/src/Semantic/SemanticReportCache/update.cc
   core/src/Semantic/SemanticReportCache/getLatest.cc
   core/src/Semantic/SemanticReportCache/isAvailable.cc
@@ -411,9 +406,6 @@ add_library(${PROJECT_NAME}_lib SHARED
   ${VS_GRAPHS_TYPES_TYPES_SOURCES}
   ${VS_GRAPHS_SEMANTICSEGMENTATION_SOURCES}
   ${VS_GRAPHS_SEMANTICSMANAGER_SOURCES}
-  core/src/Semantic/RoomTracker.cc
-  core/src/Semantic/SemanticCandidates.cc
-  core/src/Semantic/SemanticVerify.cc
   core/include/System.h
   core/include/Tracking.h
   core/include/LocalMapping.h
@@ -628,17 +620,17 @@ if(BUILD_TESTING)
 
   ament_add_gtest(test_unit_skeleton
     test/test_unit_skeleton.cpp
-    core/src/Semantic/RoomTracker.cc
+    ${VS_GRAPHS_SEMANTIC_ROOMTRACKER_SOURCES}
   )
 
   ament_add_gtest(test_RoomTracker
     test/test_RoomTracker.cpp
-    core/src/Semantic/RoomTracker.cc
+    ${VS_GRAPHS_SEMANTIC_ROOMTRACKER_SOURCES}
   )
 
   ament_add_gtest(test_CandidateGen
     test/test_CandidateGen.cpp
-    core/src/Semantic/SemanticCandidates.cc
+    ${VS_GRAPHS_SEMANTIC_SEMANTICCANDIDATES_SOURCES}
   )
 
   ament_add_gtest(test_atlas_lock_order
@@ -1027,7 +1019,7 @@ if(BUILD_TESTING)
   # this target only so production builds keep zero-cost disabled probes.
   ament_add_gtest(test_FaultInjection
     test/test_FaultInjection.cpp
-    core/src/Semantic/FaultInjection.cc
+    ${VS_GRAPHS_SEMANTIC_FAULTINJECTION_SOURCES}
   )
   target_compile_definitions(test_FaultInjection PRIVATE
     VS_GRAPHS_ENABLE_FAULT_INJECTION=1

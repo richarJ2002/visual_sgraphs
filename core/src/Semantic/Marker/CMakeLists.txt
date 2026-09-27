@@ -1,0 +1,25 @@
+# Marker object sources: exactly this object's translation units.
+set(VS_GRAPHS_SEMANTIC_MARKER_SOURCES
+  core/src/Semantic/Marker/methods/addObservation.cc
+  core/src/Semantic/Marker/methods/applyTransform.cc
+  core/src/Semantic/Marker/methods/eraseObservation.cc
+  core/src/Semantic/Marker/methods/getGlobalPose.cc
+  core/src/Semantic/Marker/methods/getId.cc
+  core/src/Semantic/Marker/methods/getLocalPose.cc
+  core/src/Semantic/Marker/methods/getMap.cc
+  core/src/Semantic/Marker/methods/getMarkerType.cc
+  core/src/Semantic/Marker/methods/getObservations.cc
+  core/src/Semantic/Marker/methods/getOpId.cc
+  core/src/Semantic/Marker/methods/getOpIdG.cc
+  core/src/Semantic/Marker/methods/getTime.cc
+  core/src/Semantic/Marker/methods/isMarkerInGMap.cc
+  core/src/Semantic/Marker/methods/setGlobalPose.cc
+  core/src/Semantic/Marker/methods/setId.cc
+  core/src/Semantic/Marker/methods/setLocalPose.cc
+  core/src/Semantic/Marker/methods/setMap.cc
+  core/src/Semantic/Marker/methods/setMarkerInGMap.cc
+  core/src/Semantic/Marker/methods/setMarkerType.cc
+  core/src/Semantic/Marker/methods/setOpId.cc
+  core/src/Semantic/Marker/methods/setOpIdG.cc
+  core/src/Semantic/Marker/methods/setTime.cc
+)

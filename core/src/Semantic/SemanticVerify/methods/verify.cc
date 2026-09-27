@@ -1,0 +1,513 @@
+
+
+#include "Semantic/SemanticVerify.h"
+
+#include "Geometric/Plane.h"
+#include "LoopClosing.h"
+#include "Map.h"
+#include "OptimizableTypes.h"
+#include "Semantic/Room.h"
+#include "Thirdparty/g2o/g2o/core/block_solver.h"
+#include "Thirdparty/g2o/g2o/core/optimization_algorithm_levenberg.h"
+#include "Thirdparty/g2o/g2o/core/robust_kernel_impl.h"
+#include "Thirdparty/g2o/g2o/core/sparse_optimizer.h"
+#include "Thirdparty/g2o/g2o/solvers/linear_solver_eigen.h"
+#include "Thirdparty/g2o/g2o/types/sim3.h"
+#include "Types/objects/SystemParams.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <set>
+
+#include "../private_functions.h"
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
+{
+
+SemanticVerifyResult
+    SemanticVerify::verify(const std::vector<VerifyWallObservation> &wallsA_in,
+                           const std::vector<VerifyWallObservation> &wallsB_in,
+                           const SemanticVerifyConfig               &config_in)
+{
+    SemanticVerifyResult result;
+    result.candidateWallPairCount = wallsA_in.size() * wallsB_in.size();
+
+    /* Minimal sample: 3 planes for full SE(3). Fewer than
+     * 3 walls on either side can never form a full-rank hypothesis. */
+    if (wallsA_in.size() < 3U || wallsB_in.size() < 3U)
+    {
+        result.status       = VerificationStatus::REJECTED;
+        result.rejectReason = VerifyRejectReason::TOO_FEW_WALLS;
+        return result;
+    }
+
+    /* Full cross-product candidate set. No pre-filtering by raw normal
+     * similarity here: the two rooms are in different, as-yet-unrelated map
+     * frames, so a candidate pair's normals cannot be compared directly
+     * before a hypothesis rotation exists. Robustness to wrong candidate
+     * pairs comes from the 3-subset hypothesis + inlier-count step below. */
+    std::vector<CandidatePair> candidatePairs;
+    candidatePairs.reserve(wallsA_in.size() * wallsB_in.size());
+    for (std::size_t indexA = 0U; indexA < wallsA_in.size(); ++indexA)
+    {
+        for (std::size_t indexB = 0U; indexB < wallsB_in.size(); ++indexB)
+        {
+            candidatePairs.push_back({indexA, indexB});
+        }
+    }
+
+    struct Hypothesis
+    {
+        Eigen::Matrix3d             rotation{Eigen::Matrix3d::Identity()};
+        Eigen::Vector3d             translation{Eigen::Vector3d::Zero()};
+        std::size_t                 rank{0U};
+        double                      conditionNumber{0.0};
+        std::vector<WallInlierPair> inliers;
+    };
+
+    const double maxNormalAngle_rad =
+        config_in.maxNormalAngle_deg * M_PI / 180.0;
+
+    /* All hypotheses passing the rank/condition-number gates. Deduplicated
+     * by inlier-set signature after enumeration: distinct minimal (3-wall)
+     * samples routinely rediscover the exact same correct solution on
+     * well-conditioned, noise-free data, and that must not look like two
+     * competing hypotheses to the ambiguity-rejection step below. */
+    std::vector<Hypothesis> allHypotheses;
+    std::size_t             hypothesesEvaluated = 0U;
+    const std::size_t       pairCount           = candidatePairs.size();
+
+    for (std::size_t i = 0U;
+         i < pairCount && hypothesesEvaluated < config_in.maxHypotheses;
+         ++i)
+    {
+        for (std::size_t j = i + 1U;
+             j < pairCount && hypothesesEvaluated < config_in.maxHypotheses;
+             ++j)
+        {
+            for (std::size_t k = j + 1U;
+                 k < pairCount && hypothesesEvaluated < config_in.maxHypotheses;
+                 ++k)
+            {
+                const CandidatePair &pair0 = candidatePairs[i];
+                const CandidatePair &pair1 = candidatePairs[j];
+                const CandidatePair &pair2 = candidatePairs[k];
+
+                /* One-to-one constraint: 3 distinct A-walls, 3 distinct
+                 * B-walls (an injective partial matching of size 3). */
+                if (pair0.indexA == pair1.indexA ||
+                    pair0.indexA == pair2.indexA ||
+                    pair1.indexA == pair2.indexA)
+                {
+                    continue;
+                }
+                if (pair0.indexB == pair1.indexB ||
+                    pair0.indexB == pair2.indexB ||
+                    pair1.indexB == pair2.indexB)
+                {
+                    continue;
+                }
+
+                ++hypothesesEvaluated;
+
+                const std::vector<Eigen::Vector3d> normalsA = {
+                    wallsA_in[pair0.indexA].normal_World,
+                    wallsA_in[pair1.indexA].normal_World,
+                    wallsA_in[pair2.indexA].normal_World};
+                const std::vector<Eigen::Vector3d> normalsB = {
+                    wallsB_in[pair0.indexB].normal_World,
+                    wallsB_in[pair1.indexB].normal_World,
+                    wallsB_in[pair2.indexB].normal_World};
+
+                const RotationFit rotationFit =
+                    fitRotationFromNormals(normalsA, normalsB);
+                if (!rotationFit.valid)
+                {
+                    continue;
+                }
+
+                std::vector<Eigen::Vector3d> rotatedNormalsA;
+                rotatedNormalsA.reserve(3U);
+                for (const Eigen::Vector3d &normal : normalsA)
+                {
+                    rotatedNormalsA.push_back(rotationFit.rotation * normal);
+                }
+                const std::vector<double> offsetsA = {
+                    wallsA_in[pair0.indexA].d,
+                    wallsA_in[pair1.indexA].d,
+                    wallsA_in[pair2.indexA].d};
+                const std::vector<double> offsetsB = {
+                    wallsB_in[pair0.indexB].d,
+                    wallsB_in[pair1.indexB].d,
+                    wallsB_in[pair2.indexB].d};
+
+                const TranslationFit translationFit =
+                    fitTranslation(rotationFit.rotation,
+                                   rotatedNormalsA,
+                                   offsetsA,
+                                   normalsB,
+                                   offsetsB);
+                if (!translationFit.valid || translationFit.rank < 3U)
+                {
+                    continue;
+                }
+                if (!std::isfinite(translationFit.conditionNumber) ||
+                    translationFit.conditionNumber >
+                        config_in.maxConditionNumber)
+                {
+                    continue;
+                }
+
+                /* Inlier classification over the full candidate set. */
+                struct PassingPair
+                {
+                    std::size_t indexA{0U};
+                    std::size_t indexB{0U};
+                    double      normalAngle_rad{0.0};
+                    double      offset_m{0.0};
+                    double      supportDist_m{0.0};
+                    double      combined{0.0};
+                };
+                std::vector<PassingPair> passing;
+                for (const CandidatePair &candidate : candidatePairs)
+                {
+                    const VerifyWallObservation &wallA =
+                        wallsA_in[candidate.indexA];
+                    const VerifyWallObservation &wallB =
+                        wallsB_in[candidate.indexB];
+                    const Eigen::Vector3d predictedNormal =
+                        rotationFit.rotation * wallA.normal_World;
+                    const double predictedOffset =
+                        wallA.d -
+                        predictedNormal.dot(translationFit.translation);
+                    const double normalAngle_rad =
+                        angleBetween_rad(predictedNormal, wallB.normal_World);
+                    const double offsetResidual_m =
+                        std::abs(predictedOffset - wallB.d);
+
+                    if (normalAngle_rad > maxNormalAngle_rad)
+                    {
+                        continue;
+                    }
+                    if (offsetResidual_m > config_in.maxOffset_m)
+                    {
+                        continue;
+                    }
+                    /* Explicit |cos(theta)| gate, distinct
+                     * from the angle gate above. */
+                    if (std::abs(std::cos(normalAngle_rad)) <=
+                        config_in.minAbsCosNormalAngle)
+                    {
+                        continue;
+                    }
+                    const double supportDist_m =
+                        symmetricSupportDistance(wallA,
+                                                 wallB,
+                                                 rotationFit.rotation,
+                                                 translationFit.translation);
+                    if (supportDist_m > config_in.maxSupportDist_m)
+                    {
+                        continue;
+                    }
+
+                    passing.push_back({candidate.indexA,
+                                       candidate.indexB,
+                                       normalAngle_rad,
+                                       offsetResidual_m,
+                                       supportDist_m,
+                                       normalAngle_rad + offsetResidual_m});
+                }
+
+                /* Greedy one-to-one dedup: best (lowest combined residual)
+                 * correspondence wins each wall. */
+                std::sort(
+                    passing.begin(),
+                    passing.end(),
+                    [](const PassingPair &left_in, const PassingPair &right_in)
+                    { return left_in.combined < right_in.combined; });
+                std::vector<bool>           usedA(wallsA_in.size(), false);
+                std::vector<bool>           usedB(wallsB_in.size(), false);
+                std::vector<WallInlierPair> inliers;
+                for (const PassingPair &candidate : passing)
+                {
+                    if (usedA[candidate.indexA] || usedB[candidate.indexB])
+                    {
+                        continue;
+                    }
+                    usedA[candidate.indexA] = true;
+                    usedB[candidate.indexB] = true;
+                    WallInlierPair inlierPair;
+                    inlierPair.wallIdA = wallsA_in[candidate.indexA].wallId;
+                    inlierPair.wallIdB = wallsB_in[candidate.indexB].wallId;
+                    inlierPair.normalAngleResidual_rad =
+                        candidate.normalAngle_rad;
+                    inlierPair.offsetResidual_m      = candidate.offset_m;
+                    inlierPair.supportDistResidual_m = candidate.supportDist_m;
+                    inliers.push_back(inlierPair);
+                }
+
+                Hypothesis hypothesis;
+                hypothesis.rotation        = rotationFit.rotation;
+                hypothesis.translation     = translationFit.translation;
+                hypothesis.rank            = translationFit.rank;
+                hypothesis.conditionNumber = translationFit.conditionNumber;
+                hypothesis.inliers         = std::move(inliers);
+                allHypotheses.push_back(std::move(hypothesis));
+            }
+        }
+    }
+
+    if (allHypotheses.empty())
+    {
+        result.status       = VerificationStatus::REJECTED;
+        result.rejectReason = VerifyRejectReason::NO_VALID_HYPOTHESIS;
+        return result;
+    }
+
+    const auto signatureOf = [](const Hypothesis &hypothesis_in)
+    {
+        std::vector<std::pair<int, int>> signature;
+        signature.reserve(hypothesis_in.inliers.size());
+        for (const WallInlierPair &inlier : hypothesis_in.inliers)
+        {
+            signature.emplace_back(inlier.wallIdA, inlier.wallIdB);
+        }
+        std::sort(signature.begin(), signature.end());
+        return signature;
+    };
+
+    /* Deduplicate by inlier-set signature, keeping the best-conditioned
+     * representative per distinct signature, then rank the distinct
+     * solutions by inlier count (ties by lower condition number). */
+    std::vector<Hypothesis> distinctHypotheses;
+    for (Hypothesis &candidate : allHypotheses)
+    {
+        const std::vector<std::pair<int, int>> candidateSignature =
+            signatureOf(candidate);
+        const auto existing =
+            std::find_if(distinctHypotheses.begin(),
+                         distinctHypotheses.end(),
+                         [&](const Hypothesis &entry_in) {
+                             return signatureOf(entry_in) == candidateSignature;
+                         });
+        if (existing == distinctHypotheses.end())
+        {
+            distinctHypotheses.push_back(std::move(candidate));
+        }
+        else if (candidate.conditionNumber < existing->conditionNumber)
+        {
+            *existing = std::move(candidate);
+        }
+    }
+    std::sort(distinctHypotheses.begin(),
+              distinctHypotheses.end(),
+              [](const Hypothesis &left_in, const Hypothesis &right_in)
+              {
+                  if (left_in.inliers.size() != right_in.inliers.size())
+                  {
+                      return left_in.inliers.size() > right_in.inliers.size();
+                  }
+                  return left_in.conditionNumber < right_in.conditionNumber;
+              });
+
+    const std::vector<Hypothesis> best = std::move(distinctHypotheses);
+
+    const std::size_t topInliers = best[0].inliers.size();
+    const std::size_t runnerUpInliers =
+        best.size() > 1U ? best[1].inliers.size() : 0U;
+
+    /* Computed and attached to the result unconditionally from here on --
+     * every remaining exit path (ambiguous, below-threshold, unobservable
+     * refined fit, or PASS) has a genuine topInliers/runnerUp/ratio to
+     * report, not the struct's zero default. */
+    const double inlierRatio =
+        static_cast<double>(topInliers) /
+        static_cast<double>(std::min(wallsA_in.size(), wallsB_in.size()));
+    result.topInlierCount      = topInliers;
+    result.runnerUpInlierCount = runnerUpInliers;
+    result.inlierRatio         = inlierRatio;
+
+    if (topInliers < runnerUpInliers + config_in.ambiguityMarginInliers)
+    {
+        /* Insufficient discrimination between the top two DISTINCT
+         * hypotheses. */
+        result.status       = VerificationStatus::REJECTED;
+        result.rejectReason = VerifyRejectReason::AMBIGUOUS_TOP_HYPOTHESES;
+        return result;
+    }
+
+    if (inlierRatio < config_in.minInlierRatio)
+    {
+        result.status       = VerificationStatus::REJECTED;
+        result.rejectReason = VerifyRejectReason::BELOW_MIN_INLIER_RATIO;
+        return result;
+    }
+
+    const Hypothesis &seed = best[0];
+
+    /* Nonlinear refinement: one EdgePlaneTransformSE3 unary
+     * factor per accepted inlier wall pair, Huber-robustified. */
+    g2o::SparseOptimizer                 optimizer;
+    g2o::BlockSolverX::LinearSolverType *linearSolver =
+        new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
+    g2o::BlockSolverX *solverPtr = new g2o::BlockSolverX(linearSolver);
+    g2o::OptimizationAlgorithmLevenberg *algorithm =
+        new g2o::OptimizationAlgorithmLevenberg(solverPtr);
+    optimizer.setAlgorithm(algorithm);
+    optimizer.setVerbose(false);
+
+    g2o::VertexSE3Expmap *vertex = new g2o::VertexSE3Expmap();
+    vertex->setEstimate(g2o::SE3Quat(seed.rotation, seed.translation));
+    vertex->setId(0);
+    vertex->setFixed(false);
+    optimizer.addVertex(vertex);
+
+    const double omegaTheta =
+        1.0 / (config_in.sigmaTheta_rad * config_in.sigmaTheta_rad);
+    const double omegaOffset =
+        1.0 / (config_in.sigmaOffset_m * config_in.sigmaOffset_m);
+    Eigen::Matrix3d information = Eigen::Matrix3d::Zero();
+    information(0, 0)           = omegaTheta;
+    information(1, 1)           = omegaTheta;
+    information(2, 2)           = omegaOffset;
+
+    for (const WallInlierPair &inlier : seed.inliers)
+    {
+        const VerifyWallObservation *observationA =
+            findByWallId(wallsA_in, inlier.wallIdA);
+        const VerifyWallObservation *observationB =
+            findByWallId(wallsB_in, inlier.wallIdB);
+        if (observationA == nullptr || observationB == nullptr)
+        {
+            continue;
+        }
+
+        PlanePairMeasurement measurement;
+        measurement.n_A   = observationA->normal_World;
+        measurement.d_A   = observationA->d;
+        measurement.n_B   = observationB->normal_World;
+        measurement.d_B   = observationB->d;
+        measurement.sigma = 1;
+
+        EdgePlaneTransformSE3 *edge = new EdgePlaneTransformSE3();
+        edge->setVertex(0, vertex);
+        edge->setMeasurement(measurement);
+        edge->setInformation(information);
+        g2o::RobustKernelHuber *kernel = new g2o::RobustKernelHuber();
+        kernel->setDelta(config_in.huberDelta);
+        edge->setRobustKernel(kernel);
+        optimizer.addEdge(edge);
+    }
+
+    optimizer.initializeOptimization();
+    optimizer.optimize(static_cast<int>(config_in.optimizerIterations));
+
+    const g2o::SE3Quat    refinedEstimate = vertex->estimate();
+    const Eigen::Matrix3d refinedRotation =
+        refinedEstimate.rotation().toRotationMatrix();
+    const Eigen::Vector3d refinedTranslation = refinedEstimate.translation();
+
+    /* Observability re-check on the refined transform: full
+     * translational rank via N_B over the inlier set (as above), full
+     * rotational rank via >=2 nonparallel inlier normal directions in the
+     * surviving (B) frame (the stated equivalence). A complete
+     * 6x6 Hessian SVD inspection is not extracted from g2o's internal
+     * solver state here -- this is a documented simplification, not a
+     * silent one. */
+    std::vector<Eigen::Vector3d> inlierRotatedNormalsA;
+    std::vector<double>          inlierOffsetsA;
+    std::vector<Eigen::Vector3d> inlierNormalsB;
+    std::vector<double>          inlierOffsetsB;
+    double                       angularResidualSum = 0.0;
+    std::vector<double>          angularResiduals;
+    for (const WallInlierPair &inlier : seed.inliers)
+    {
+        const VerifyWallObservation *observationA =
+            findByWallId(wallsA_in, inlier.wallIdA);
+        const VerifyWallObservation *observationB =
+            findByWallId(wallsB_in, inlier.wallIdB);
+        if (observationA == nullptr || observationB == nullptr)
+        {
+            continue;
+        }
+        inlierRotatedNormalsA.push_back(refinedRotation *
+                                        observationA->normal_World);
+        inlierOffsetsA.push_back(observationA->d);
+        inlierNormalsB.push_back(observationB->normal_World);
+        inlierOffsetsB.push_back(observationB->d);
+        angularResiduals.push_back(inlier.normalAngleResidual_rad);
+        angularResidualSum += inlier.normalAngleResidual_rad;
+    }
+
+    const TranslationFit refinedFit = fitTranslation(refinedRotation,
+                                                     inlierRotatedNormalsA,
+                                                     inlierOffsetsA,
+                                                     inlierNormalsB,
+                                                     inlierOffsetsB);
+
+    bool rotationObservable = false;
+    for (std::size_t indexA = 0U;
+         indexA < inlierNormalsB.size() && !rotationObservable;
+         ++indexA)
+    {
+        for (std::size_t indexB = indexA + 1U; indexB < inlierNormalsB.size();
+             ++indexB)
+        {
+            if (inlierNormalsB[indexA].cross(inlierNormalsB[indexB]).norm() >
+                1e-3)
+            {
+                rotationObservable = true;
+                break;
+            }
+        }
+    }
+
+    if (refinedFit.rank < 3U || !rotationObservable)
+    {
+        result.status          = VerificationStatus::REJECTED;
+        result.rejectReason    = VerifyRejectReason::REFINED_FIT_NOT_OBSERVABLE;
+        result.rank            = refinedFit.rank;
+        result.conditionNumber = refinedFit.conditionNumber;
+        return result;
+    }
+
+    std::sort(angularResiduals.begin(), angularResiduals.end());
+    const double medianAngularResidual_rad =
+        angularResiduals.empty()
+            ? 0.0
+            : angularResiduals[angularResiduals.size() / 2U];
+    static_cast<void>(angularResidualSum);
+
+    result.status                       = VerificationStatus::PASS;
+    result.pass                         = true;
+    result.transform_AToB               = Eigen::Isometry3d::Identity();
+    result.transform_AToB.linear()      = refinedRotation;
+    result.transform_AToB.translation() = refinedTranslation;
+    result.inliers                      = seed.inliers;
+    result.rank                         = refinedFit.rank;
+    result.conditionNumber              = refinedFit.conditionNumber;
+    result.normalisedConditionNumber =
+        std::isfinite(refinedFit.conditionNumber)
+            ? std::min(1.0,
+                       refinedFit.conditionNumber /
+                           config_in.maxConditionNumber)
+            : 1.0;
+    result.inlierRatio         = inlierRatio;
+    result.angularResidual_rad = medianAngularResidual_rad;
+    result.confidence =
+        std::clamp(inlierRatio * (1.0 - 0.5 * result.normalisedConditionNumber),
+                   0.0,
+                   1.0);
+
+    return result;
+}
+
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs

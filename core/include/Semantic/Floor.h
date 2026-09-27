@@ -63,8 +63,15 @@ class Floor
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    Floor();
-    ~Floor();
+    Floor() :
+        id(-1),
+        opId(-1),
+        opIdG(-1),
+        name(""),
+        centroid(Eigen::Vector3d::Zero()),
+        p_map(nullptr)
+    {}
+    ~Floor() {}
 
     /*!
      * @brief       Apply a rigid/similarity transform to the plane geometry.

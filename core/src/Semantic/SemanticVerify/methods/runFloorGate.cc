@@ -1,0 +1,53 @@
+
+
+#include "Semantic/SemanticVerify.h"
+
+#include "Geometric/Plane.h"
+#include "LoopClosing.h"
+#include "Map.h"
+#include "OptimizableTypes.h"
+#include "Semantic/Room.h"
+#include "Thirdparty/g2o/g2o/core/block_solver.h"
+#include "Thirdparty/g2o/g2o/core/optimization_algorithm_levenberg.h"
+#include "Thirdparty/g2o/g2o/core/robust_kernel_impl.h"
+#include "Thirdparty/g2o/g2o/core/sparse_optimizer.h"
+#include "Thirdparty/g2o/g2o/solvers/linear_solver_eigen.h"
+#include "Thirdparty/g2o/g2o/types/sim3.h"
+#include "Types/objects/SystemParams.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <set>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
+{
+
+bool SemanticVerify::runFloorGate(
+    SemanticVerifyResult    &result_inout,
+    core::Map               *p_survivingMap_in,
+    core::Map               *p_absorbedMap_in,
+    const Eigen::Isometry3d &transform_absorbedToSurviving_in)
+{
+    const g2o::Sim3 transform(transform_absorbedToSurviving_in.linear(),
+                              transform_absorbedToSurviving_in.translation(),
+                              1.0);
+    std::string     resultText;
+    const bool      passed       = verifyLoopMergeFloors(p_survivingMap_in,
+                                              p_absorbedMap_in,
+                                              transform,
+                                              resultText);
+    result_inout.floorGateRan    = true;
+    result_inout.floorGatePassed = passed;
+    result_inout.floorGateResult = resultText;
+    return passed;
+}
+
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs

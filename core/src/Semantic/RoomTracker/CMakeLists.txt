@@ -1,0 +1,20 @@
+# RoomTracker object sources: exactly this object's translation units.
+set(VS_GRAPHS_SEMANTIC_ROOMTRACKER_SOURCES
+  core/src/Semantic/RoomTracker/methods/accumulateDwell.cc
+  core/src/Semantic/RoomTracker/methods/applyEvent.cc
+  core/src/Semantic/RoomTracker/methods/applyRow.cc
+  core/src/Semantic/RoomTracker/methods/commit.cc
+  core/src/Semantic/RoomTracker/methods/computeConfidence.cc
+  core/src/Semantic/RoomTracker/methods/eventToJSON.cc
+  core/src/Semantic/RoomTracker/methods/eventToString.cc
+  core/src/Semantic/RoomTracker/methods/getConfig.cc
+  core/src/Semantic/RoomTracker/methods/getEventHistory.cc
+  core/src/Semantic/RoomTracker/methods/getLastEvent.cc
+  core/src/Semantic/RoomTracker/methods/getState.cc
+  core/src/Semantic/RoomTracker/methods/reset.cc
+  core/src/Semantic/RoomTracker/methods/stateToString.cc
+  core/src/Semantic/RoomTracker/methods/step.cc
+  core/src/Semantic/RoomTracker/private_functions/eventLiteral.cc
+  core/src/Semantic/RoomTracker/private_functions/formatDouble.cc
+  core/src/Semantic/RoomTracker/private_functions/stateLiteral.cc
+)

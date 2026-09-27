@@ -26,9 +26,11 @@
 #include "Thirdparty/g2o/g2o/types/plane3d.h"
 #include "Types/objects/SystemParams.h"
 
+#include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <pcl/common/centroid.h>
 #include <pcl/common/io.h>
@@ -354,8 +356,35 @@ class Plane
     void rebuildSemanticVotesWithoutLock(void);
 
   public:
-    Plane(void);
-    ~Plane(void);
+    Plane(void)
+    {
+        id    = -1;
+        opId  = -1;
+        opIdG = -1;
+
+        mbBad     = false;
+        planeType = Plane::PlaneVariant::UNDEFINED;
+
+        centroid.setZero();
+
+        p_map = nullptr;
+
+        p_refKeyFrame      = nullptr;
+        baGlobalKeyFrameId = 0;
+
+        planeCloud = std::make_shared<pcl::PointCloud<pcl::PointXYZRGBA>>();
+
+        octree = boost::make_shared<
+            pcl::octree::OctreePointCloudSearch<pcl::PointXYZRGBA>>(
+            types::SystemParams::getParams()
+                ->refineMapPoints.octree.resolution);
+
+        minPlaneU = std::numeric_limits<double>::max();
+        maxPlaneU = std::numeric_limits<double>::lowest();
+        minPlaneV = std::numeric_limits<double>::max();
+        maxPlaneV = std::numeric_limits<double>::lowest();
+    }
+    ~Plane() {}
 
     /*!
      * @brief       Apply a rigid/similarity transform to the plane geometry.

@@ -32,6 +32,7 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   core/src/Utils/Utils/methods/reAssociateRooms.cc
   core/src/Utils/Utils/methods/reAssociateSemanticPlanes.cc
   core/src/Utils/Utils/private_functions/observationSide.cc
-  core/src/Utils/Utils/private_functions/planeBounds.cc
+  core/src/Utils/Utils/private_functions/finiteWallExtentsAreCompatible.cc
+  core/src/Utils/Utils/private_functions/projectPlaneBounds.cc
   core/src/Utils/Utils/private_functions/passageOpening.cc
 )

@@ -1,0 +1,20 @@
+# SemanticCandidates object sources: exactly this object's translation units.
+set(VS_GRAPHS_SEMANTIC_SEMANTICCANDIDATES_SOURCES
+  core/src/Semantic/SemanticCandidates/methods/generate.cc
+  core/src/Semantic/SemanticCandidates/methods/generateWithStatus.cc
+  core/src/Semantic/SemanticCandidates/methods/rejectionReasonName.cc
+  core/src/Semantic/SemanticCandidates/methods/validateConfig.cc
+  core/src/Semantic/SemanticCandidates/private_functions/angleSignature.cc
+  core/src/Semantic/SemanticCandidates/private_functions/apertureSignature.cc
+  core/src/Semantic/SemanticCandidates/private_functions/extentSignature.cc
+  core/src/Semantic/SemanticCandidates/private_functions/finiteNonnegative.cc
+  core/src/Semantic/SemanticCandidates/private_functions/isValidWallBounds.cc
+  core/src/Semantic/SemanticCandidates/private_functions/medianExtent.cc
+  core/src/Semantic/SemanticCandidates/private_functions/missingBoundsFraction.cc
+  core/src/Semantic/SemanticCandidates/private_functions/paddedMeanL1.cc
+  core/src/Semantic/SemanticCandidates/private_functions/pairedManhattanDistance.cc
+  core/src/Semantic/SemanticCandidates/private_functions/stringDistance.cc
+  core/src/Semantic/SemanticCandidates/private_functions/topologySignature.cc
+  core/src/Semantic/SemanticCandidates/private_functions/validNormalCount.cc
+  core/src/Semantic/SemanticCandidates/private_functions/validWallEvidenceCount.cc
+)

@@ -1,0 +1,28 @@
+# Floor object sources: exactly this object's translation units.
+set(VS_GRAPHS_SEMANTIC_FLOOR_SOURCES
+  core/src/Semantic/Floor/methods/addRoom.cc
+  core/src/Semantic/Floor/methods/applyTransform.cc
+  core/src/Semantic/Floor/methods/clearPlaneIdentity.cc
+  core/src/Semantic/Floor/methods/detachRoom.cc
+  core/src/Semantic/Floor/methods/getCentroid.cc
+  core/src/Semantic/Floor/methods/getId.cc
+  core/src/Semantic/Floor/methods/getMap.cc
+  core/src/Semantic/Floor/methods/getName.cc
+  core/src/Semantic/Floor/methods/getOpId.cc
+  core/src/Semantic/Floor/methods/getOpIdG.cc
+  core/src/Semantic/Floor/methods/getPlaneIdentity.cc
+  core/src/Semantic/Floor/methods/getRooms.cc
+  core/src/Semantic/Floor/methods/hasPlaneIdentity.cc
+  core/src/Semantic/Floor/methods/planeIdentitiesMatch.cc
+  core/src/Semantic/Floor/methods/replaceRoom.cc
+  core/src/Semantic/Floor/methods/selectBestObservedFloor.cc
+  core/src/Semantic/Floor/methods/setCentroid.cc
+  core/src/Semantic/Floor/methods/setId.cc
+  core/src/Semantic/Floor/methods/setMap.cc
+  core/src/Semantic/Floor/methods/setName.cc
+  core/src/Semantic/Floor/methods/setOpId.cc
+  core/src/Semantic/Floor/methods/setOpIdG.cc
+  core/src/Semantic/Floor/methods/setPlaneIdentity.cc
+  core/src/Semantic/Floor/methods/setRooms.cc
+  core/src/Semantic/Floor/methods/transformPlaneIdentity.cc
+)

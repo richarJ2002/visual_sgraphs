@@ -218,7 +218,9 @@ class RoomTracker
      * @brief       Constructs a tracker with the given configuration.
      */
     explicit RoomTracker(
-        const RoomTrackerConfig &config_in = RoomTrackerConfig());
+        const RoomTrackerConfig &config_in = RoomTrackerConfig()) :
+        config_(config_in)
+    {}
 
     /*!
      * @brief       Resets state, timers, retry counters and event history.
