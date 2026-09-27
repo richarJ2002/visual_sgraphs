@@ -25,7 +25,6 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 int SemanticsManager::getPendingWallAgeForTest(int wallId_in) const
 {
     const std::unordered_map<int, UndefendedWallState>::const_iterator found =
@@ -34,7 +33,6 @@ int SemanticsManager::getPendingWallAgeForTest(int wallId_in) const
                ? -1
                : static_cast<int>(found->second.unresolvedCycles);
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs

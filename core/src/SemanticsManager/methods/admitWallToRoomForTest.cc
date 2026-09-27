@@ -23,14 +23,12 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 bool SemanticsManager::admitWallToRoomForTest(
     semantic::Room   *p_room_inout,
     geometric::Plane *p_candidateWall_in)
 {
     return admitWallToRoom(p_room_inout, p_candidateWall_in);
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs

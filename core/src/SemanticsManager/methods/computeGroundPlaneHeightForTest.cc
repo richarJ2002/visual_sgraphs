@@ -23,13 +23,11 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 std::optional<float> SemanticsManager::computeGroundPlaneHeightForTest(
     geometric::Plane *p_groundPlane_in)
 {
     return computeGroundPlaneHeight(p_groundPlane_in);
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs

@@ -28,10 +28,7 @@
 #include "Utils/Utils/objects/Utils.h"
 
 #include <cstdint>
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 #include <functional>
-#include <utility>
-#endif
 #include <optional>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/common/transforms.h>
@@ -40,6 +37,7 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 namespace vs_graphs
 {
@@ -122,15 +120,16 @@ class SemanticsManager
     bool crossingEventPending_     = false;
     bool crossingBothSidesPending_ = false;
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
     /*
-     * Test-only seam. The callback is deliberately invoked while
-     * mMutexCurrentRoom is held so the integration test proves real producer
-     * and consumer contention; it must not call back into this manager except
-     * through the non-blocking contention probe.
+     * Test-only seam, always declared so production and test builds share one
+     * object layout; it stays empty outside tests, where
+     * updateTraversalEvidence() only moves an empty std::function. The
+     * callback is deliberately invoked while mMutexCurrentRoom is held so the
+     * integration test proves real producer and consumer contention; it must
+     * not call back into this manager except through the non-blocking
+     * contention probe.
      */
     std::function<void()> roomTrackerPendingPublishHook_;
-#endif
 
     /*!
      * @brief       Set by onTrackingLost() (once per loss episode) and
@@ -914,7 +913,6 @@ class SemanticsManager
     void submitVerificationVerdict(
         const semantic::VerificationVerdict &verdict_in);
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
     /*! Test-only deterministic drain of the production event seam. */
     void processRoomTrackerPendingForTest(double now_s);
 
@@ -1007,7 +1005,6 @@ class SemanticsManager
      *  pruning). Callers inspect the result via Room::getBoundaryStatus(),
      *  Room::getBoundaryCorners_World_m(), and Room::getWalls(). */
     void validateRoomBoundariesForTest(void);
-#endif
 
     /*!
      * @brief       True once the semantic manager thread has exited Run().

@@ -23,14 +23,12 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 void SemanticsManager::setCurrentRoomIdForTest(const int roomId_in)
 {
     std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
     currentRoomId_ = roomId_in;
     p_atlas->setCurrentSemanticRoomIdentity(roomId_in);
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs

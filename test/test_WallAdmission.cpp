@@ -23,8 +23,8 @@
  * read-only diagnostic logging, now also a gate).
  *
  * Both fixes are exercised through SemanticsManager's private production
- * methods via the existing VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
- * test-only wrappers, not by reconstructing the logic by hand.
+ * methods via the *ForTest wrappers of the test-only SemanticsManager
+ * library, not by reconstructing the logic by hand.
  */
 
 #include "Atlas.h"

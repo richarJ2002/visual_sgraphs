@@ -23,14 +23,12 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 void SemanticsManager::setRoomTrackerPendingPublishHookForTest(
     std::function<void()> hook_in)
 {
     std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
     roomTrackerPendingPublishHook_ = std::move(hook_in);
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs

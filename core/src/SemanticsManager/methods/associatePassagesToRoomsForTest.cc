@@ -23,12 +23,10 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 void SemanticsManager::associatePassagesToRoomsForTest(void)
 {
     associatePassagesToRooms();
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs

@@ -8,8 +8,8 @@
 - **Toggle:** `VS_GRAPHS_ENABLE_FAULT_INJECTION` (CMake option, default
   `OFF`). Production builds compile hooks out entirely. Test builds pass
   `-DVS_GRAPHS_ENABLE_FAULT_INJECTION=1` for the fault-injection gtests
-  only (same pattern as `VS_GRAPHS_ENABLE_ATLAS_LOCK_ORDER_TEST_HOOK` /
-  `VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK` in `CMakeLists.txt`).
+  only (same pattern as `VS_GRAPHS_ENABLE_ATLAS_LOCK_ORDER_TEST_HOOK` in
+  `CMakeLists.txt`).
 - **Macro:** `VS_GRAPHS_FAULT_INJECT(name_in)` — single probe point.
   Disabled build expands to `((void)0)` (zero cost: no branch, no TLS
   access, no function call; compiler eliminates it). Enabled build expands

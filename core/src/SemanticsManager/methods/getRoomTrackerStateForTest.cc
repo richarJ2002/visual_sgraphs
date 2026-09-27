@@ -23,12 +23,10 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 semantic::RoomTrackingState SemanticsManager::getRoomTrackerStateForTest() const
 {
     return roomTracker_.getState();
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs

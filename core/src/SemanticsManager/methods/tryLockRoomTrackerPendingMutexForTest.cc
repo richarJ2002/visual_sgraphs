@@ -23,14 +23,12 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 bool SemanticsManager::tryLockRoomTrackerPendingMutexForTest() const
 {
     std::unique_lock<std::mutex> currentRoomLock(mMutexCurrentRoom,
                                                  std::try_to_lock);
     return currentRoomLock.owns_lock();
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs

@@ -658,30 +658,14 @@ if(BUILD_TESTING)
     test/test_room_tracker_integration.cpp
   )
 
-  # The RoomTracker contention seam changes SemanticsManager's declaration and
-  # object layout. Keep it out of the installed production library and compile
-  # a complete, consistently instrumented library only for this integration
-  # test. Reusing the production source list preserves the genuine
-  # updateTraversalEvidence() path without duplicating its implementation.
-  get_target_property(VS_GRAPHS_LIBRARY_SOURCES
-    ${PROJECT_NAME}_lib SOURCES
-  )
+  # Test-only SemanticsManager methods (*ForTest) live in their own small
+  # library on top of the production library; SemanticsManager's layout is the
+  # same in both, so the production sources are compiled once.
   add_library(${PROJECT_NAME}_room_tracker_test_lib SHARED
-    ${VS_GRAPHS_LIBRARY_SOURCES}
-  )
-  target_compile_definitions(${PROJECT_NAME}_room_tracker_test_lib PRIVATE
-    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+    ${VS_GRAPHS_SEMANTICSMANAGER_TEST_HOOK_SOURCES}
   )
   target_link_libraries(${PROJECT_NAME}_room_tracker_test_lib
-    ${OpenCV_LIBS}
-    ${EIGEN3_LIBS}
-    ${Pangolin_LIBRARIES}
-    ${PCL_LIBRARIES}
-    ${PROJECT_SOURCE_DIR}/core/Thirdparty/DBoW2/lib/libDBoW2.so
-    ${PROJECT_SOURCE_DIR}/core/Thirdparty/g2o/lib/libg2o.so
-    -lboost_system
-    -lboost_serialization
-    -lcrypto
+    ${PROJECT_NAME}_lib
   )
   ament_target_dependencies(${PROJECT_NAME}_room_tracker_test_lib
     rclcpp
@@ -702,9 +686,6 @@ if(BUILD_TESTING)
   set_target_properties(${PROJECT_NAME}_room_tracker_test_lib PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   )
-  target_compile_definitions(test_room_tracker_integration PRIVATE
-    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
-  )
   target_link_libraries(test_room_tracker_integration
     ${PROJECT_NAME}_room_tracker_test_lib
   )
@@ -713,14 +694,10 @@ if(BUILD_TESTING)
   )
 
   # Exercises SemanticsManager::evaluateTopCandidateVerification
-  # against real Atlas/Map/Room/Plane/Floor objects. Reuses the same
-  # VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK-instrumented production library as
-  # test_room_tracker_integration above (built once, above).
+  # against real Atlas/Map/Room/Plane/Floor objects, through the same
+  # test-only SemanticsManager library as test_room_tracker_integration.
   ament_add_gtest(test_verification_wiring_integration
     test/test_verification_wiring_integration.cpp
-  )
-  target_compile_definitions(test_verification_wiring_integration PRIVATE
-    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
   )
   target_link_libraries(test_verification_wiring_integration
     ${PROJECT_NAME}_room_tracker_test_lib
@@ -732,18 +709,12 @@ if(BUILD_TESTING)
   ament_add_gtest(test_WallAdmission
     test/test_WallAdmission.cpp
   )
-  target_compile_definitions(test_WallAdmission PRIVATE
-    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
-  )
   target_link_libraries(test_WallAdmission
     ${PROJECT_NAME}_room_tracker_test_lib
   )
 
   ament_add_gtest(test_SemanticBootstrapPhase1
     test/test_SemanticBootstrapPhase1.cpp
-  )
-  target_compile_definitions(test_SemanticBootstrapPhase1 PRIVATE
-    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
   )
   target_link_libraries(test_SemanticBootstrapPhase1
     ${PROJECT_NAME}_room_tracker_test_lib
@@ -755,9 +726,6 @@ if(BUILD_TESTING)
   ament_add_gtest(test_WallPairing
     test/test_WallPairing.cpp
   )
-  target_compile_definitions(test_WallPairing PRIVATE
-    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
-  )
   target_link_libraries(test_WallPairing
     ${PROJECT_NAME}_room_tracker_test_lib
   )
@@ -767,9 +735,6 @@ if(BUILD_TESTING)
   # library as test_WallAdmission above.
   ament_add_gtest(test_FloorFlatness
     test/test_FloorFlatness.cpp
-  )
-  target_compile_definitions(test_FloorFlatness PRIVATE
-    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
   )
   target_link_libraries(test_FloorFlatness
     ${PROJECT_NAME}_room_tracker_test_lib
@@ -793,9 +758,6 @@ if(BUILD_TESTING)
   ament_add_gtest(test_BoundaryLoopOutlierPruning
     test/test_BoundaryLoopOutlierPruning.cpp
   )
-  target_compile_definitions(test_BoundaryLoopOutlierPruning PRIVATE
-    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
-  )
   target_link_libraries(test_BoundaryLoopOutlierPruning
     ${PROJECT_NAME}_room_tracker_test_lib
   )
@@ -805,9 +767,6 @@ if(BUILD_TESTING)
   # test hook.
   ament_add_gtest(test_RoomObservationGaps
     test/test_RoomObservationGaps.cpp
-  )
-  target_compile_definitions(test_RoomObservationGaps PRIVATE
-    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
   )
   target_link_libraries(test_RoomObservationGaps
     ${PROJECT_NAME}_room_tracker_test_lib
@@ -834,9 +793,6 @@ if(BUILD_TESTING)
   # production library as test_WallAdmission above.
   ament_add_gtest(test_GroundPlaneFilter
     test/test_GroundPlaneFilter.cpp
-  )
-  target_compile_definitions(test_GroundPlaneFilter PRIVATE
-    VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
   )
   target_link_libraries(test_GroundPlaneFilter
     ${PROJECT_NAME}_room_tracker_test_lib

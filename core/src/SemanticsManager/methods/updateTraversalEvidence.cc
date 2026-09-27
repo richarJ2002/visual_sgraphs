@@ -286,14 +286,13 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
                     crossingBothSidesPending_ =
                         crossingBothSidesPending_ ||
                         p_passage->hasBidirectionalTraversalEvidence();
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
+                    /* Test seam: empty outside tests (SemanticsManager.h). */
                     std::function<void()> publishHook =
                         std::move(roomTrackerPendingPublishHook_);
                     if (publishHook)
                     {
                         publishHook();
                     }
-#endif
                 }
 
                 if (addedTraversal && !wasSettled)

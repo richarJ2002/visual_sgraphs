@@ -23,13 +23,11 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 const std::vector<semantic::TransitionEvent> &
     SemanticsManager::getRoomTrackerEventHistoryForTest() const
 {
     return roomTracker_.getEventHistory();
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs

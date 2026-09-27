@@ -23,7 +23,6 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 int SemanticsManager::ensureActiveMapBootstrapHierarchyForTest(
     const Eigen::Vector3d &cameraPosition_World_m_in)
 {
@@ -31,7 +30,6 @@ int SemanticsManager::ensureActiveMapBootstrapHierarchyForTest(
     return static_cast<int>(
         ensureActiveMapBootstrapHierarchy(cameraPosition_World_m_in));
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs

@@ -25,7 +25,6 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 bool SemanticsManager::evaluateWallAdmissionEvidenceAdmissibleForTest(
     geometric::Plane      *p_wall_in,
     const Eigen::Vector3d &groundNormal_World_in) const
@@ -35,7 +34,6 @@ bool SemanticsManager::evaluateWallAdmissionEvidenceAdmissibleForTest(
                                          groundNormal_World_in)
         .admissible;
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs

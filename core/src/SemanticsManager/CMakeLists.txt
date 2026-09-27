@@ -9,17 +9,13 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   core/src/SemanticsManager/hasSeparatingFiniteWall.cc
   core/src/SemanticsManager/intersectSupportingLines.cc
   core/src/SemanticsManager/methods/admitWallToRoom.cc
-  core/src/SemanticsManager/methods/admitWallToRoomForTest.cc
   core/src/SemanticsManager/methods/associateAllWallsToRooms.cc
-  core/src/SemanticsManager/methods/associateAllWallsToRoomsForTest.cc
   core/src/SemanticsManager/methods/associatePassagesToRooms.cc
-  core/src/SemanticsManager/methods/associatePassagesToRoomsForTest.cc
   core/src/SemanticsManager/methods/associateRooms.cc
   core/src/SemanticsManager/methods/captureOpenPassageHypotheses.cc
   core/src/SemanticsManager/methods/captureUnresolvedWallHypotheses.cc
   core/src/SemanticsManager/methods/checkFinish.cc
   core/src/SemanticsManager/methods/computeGroundPlaneHeight.cc
-  core/src/SemanticsManager/methods/computeGroundPlaneHeightForTest.cc
   core/src/SemanticsManager/methods/computePlaneToHorizontal.cc
   core/src/SemanticsManager/methods/consolidateRoomsInFreeSpaceCluster.cc
   core/src/SemanticsManager/methods/construct/semanticsmanager.cc
@@ -29,26 +25,17 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   core/src/SemanticsManager/methods/detectRoom_FreeSpaceCluster.cc
   core/src/SemanticsManager/methods/enforcePassageApertureBackstop.cc
   core/src/SemanticsManager/methods/enforcePassageSideInvariant.cc
-  core/src/SemanticsManager/methods/enforcePassageSideInvariantForTest.cc
   core/src/SemanticsManager/methods/enforceUniqueWallOwnership.cc
   core/src/SemanticsManager/methods/ensureActiveMapBootstrapHierarchy.cc
-  core/src/SemanticsManager/methods/ensureActiveMapBootstrapHierarchyForTest.cc
   core/src/SemanticsManager/methods/evaluateTopCandidateVerification.cc
-  core/src/SemanticsManager/methods/evaluateTopCandidateVerificationForTest.cc
-  core/src/SemanticsManager/methods/evaluateWallAdmissionEvidenceAdmissibleForTest.cc
   core/src/SemanticsManager/methods/filterGroundPlanes.cc
   core/src/SemanticsManager/methods/filterWallPlanes.cc
   core/src/SemanticsManager/methods/findRoomByMapAndId.cc
   core/src/SemanticsManager/methods/getCurrentRoomId.cc
   core/src/SemanticsManager/methods/getLastKnownRoomId.cc
   core/src/SemanticsManager/methods/getLatestSkeletonCluster.cc
-  core/src/SemanticsManager/methods/getPendingWallAgeForTest.cc
-  core/src/SemanticsManager/methods/getRoomTrackerEventHistoryForTest.cc
-  core/src/SemanticsManager/methods/getRoomTrackerPendingForTest.cc
-  core/src/SemanticsManager/methods/getRoomTrackerStateForTest.cc
   core/src/SemanticsManager/methods/getSemanticReportCacheEntry.cc
   core/src/SemanticsManager/methods/getUpdatedFloors.cc
-  core/src/SemanticsManager/methods/getUpdatedFloorsForTest.cc
   core/src/SemanticsManager/methods/isFinished.cc
   core/src/SemanticsManager/methods/isSemanticReportCacheAvailable.cc
   core/src/SemanticsManager/methods/isWallFaceForeignToRoom.cc
@@ -57,30 +44,21 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   core/src/SemanticsManager/methods/onTrackingLost.cc
   core/src/SemanticsManager/methods/onTrackingRecovered.cc
   core/src/SemanticsManager/methods/partitionFreeSpaceAtPassages.cc
-  core/src/SemanticsManager/methods/processRoomTrackerPendingForTest.cc
   core/src/SemanticsManager/methods/recomputeRoomCentroidsFromWalls.cc
   core/src/SemanticsManager/methods/reconcileRoomGroundPlanes.cc
-  core/src/SemanticsManager/methods/reconcileRoomGroundPlanesForTest.cc
   core/src/SemanticsManager/methods/reconcileWallFacePairs.cc
-  core/src/SemanticsManager/methods/reconcileWallFacePairsForTest.cc
   core/src/SemanticsManager/methods/requestFinish.cc
   core/src/SemanticsManager/methods/resetTemporalStateForMap.cc
   core/src/SemanticsManager/methods/run.cc
   core/src/SemanticsManager/methods/seedCurrentRoomFromActiveMap.cc
-  core/src/SemanticsManager/methods/seedCurrentRoomFromActiveMapForTest.cc
-  core/src/SemanticsManager/methods/setCurrentRoomIdForTest.cc
   core/src/SemanticsManager/methods/setFinish.cc
-  core/src/SemanticsManager/methods/setRoomTrackerPendingPublishHookForTest.cc
   core/src/SemanticsManager/methods/submitVerificationVerdict.cc
   core/src/SemanticsManager/methods/suppressUndefendedWalls.cc
-  core/src/SemanticsManager/methods/suppressUndefendedWallsForTest.cc
   core/src/SemanticsManager/methods/transformPlaneEqToGroundReference.cc
-  core/src/SemanticsManager/methods/tryLockRoomTrackerPendingMutexForTest.cc
   core/src/SemanticsManager/methods/updatePassages.cc
   core/src/SemanticsManager/methods/updateRoomTrackerState.cc
   core/src/SemanticsManager/methods/updateTraversalEvidence.cc
   core/src/SemanticsManager/methods/validateRoomBoundaries.cc
-  core/src/SemanticsManager/methods/validateRoomBoundariesForTest.cc
   core/src/SemanticsManager/pointToSegmentDistance_m.cc
   core/src/SemanticsManager/projectPlaneFootprintOntoSharedAxes.cc
   core/src/SemanticsManager/segmentCrossesAperture.cc
@@ -89,4 +67,31 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   core/src/SemanticsManager/segmentCrossesPassageOpening.cc
   core/src/SemanticsManager/sharesRoomNameTag.cc
   core/src/SemanticsManager/tryCloseWallLoop.cc
+)
+
+# Test-only SemanticsManager definitions (declared unconditionally in
+# SemanticsManager.h); linked only into vs_graphs_room_tracker_test_lib.
+set(VS_GRAPHS_SEMANTICSMANAGER_TEST_HOOK_SOURCES
+  core/src/SemanticsManager/methods/admitWallToRoomForTest.cc
+  core/src/SemanticsManager/methods/associateAllWallsToRoomsForTest.cc
+  core/src/SemanticsManager/methods/associatePassagesToRoomsForTest.cc
+  core/src/SemanticsManager/methods/computeGroundPlaneHeightForTest.cc
+  core/src/SemanticsManager/methods/enforcePassageSideInvariantForTest.cc
+  core/src/SemanticsManager/methods/ensureActiveMapBootstrapHierarchyForTest.cc
+  core/src/SemanticsManager/methods/evaluateTopCandidateVerificationForTest.cc
+  core/src/SemanticsManager/methods/evaluateWallAdmissionEvidenceAdmissibleForTest.cc
+  core/src/SemanticsManager/methods/getPendingWallAgeForTest.cc
+  core/src/SemanticsManager/methods/getRoomTrackerEventHistoryForTest.cc
+  core/src/SemanticsManager/methods/getRoomTrackerPendingForTest.cc
+  core/src/SemanticsManager/methods/getRoomTrackerStateForTest.cc
+  core/src/SemanticsManager/methods/getUpdatedFloorsForTest.cc
+  core/src/SemanticsManager/methods/processRoomTrackerPendingForTest.cc
+  core/src/SemanticsManager/methods/reconcileRoomGroundPlanesForTest.cc
+  core/src/SemanticsManager/methods/reconcileWallFacePairsForTest.cc
+  core/src/SemanticsManager/methods/seedCurrentRoomFromActiveMapForTest.cc
+  core/src/SemanticsManager/methods/setCurrentRoomIdForTest.cc
+  core/src/SemanticsManager/methods/setRoomTrackerPendingPublishHookForTest.cc
+  core/src/SemanticsManager/methods/suppressUndefendedWallsForTest.cc
+  core/src/SemanticsManager/methods/tryLockRoomTrackerPendingMutexForTest.cc
+  core/src/SemanticsManager/methods/validateRoomBoundariesForTest.cc
 )

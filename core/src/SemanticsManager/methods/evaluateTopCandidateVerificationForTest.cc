@@ -23,13 +23,11 @@ namespace vs_graphs
 namespace core
 {
 
-#ifdef VS_GRAPHS_ENABLE_ROOM_TRACKER_TEST_HOOK
 void SemanticsManager::evaluateTopCandidateVerificationForTest(
     const std::vector<semantic::SemanticCandidate> &candidates_in)
 {
     evaluateTopCandidateVerification(candidates_in);
 }
-#endif
 
 } // namespace core
 } // namespace vs_graphs
