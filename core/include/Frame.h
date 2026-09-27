@@ -40,7 +40,8 @@
 #include "Utils/Settings/objects/Settings.h"
 
 #include <mutex>
-#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/features2d.hpp>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -48,7 +49,6 @@
 #include "Eigen/Core"
 #include "sophus/se3.hpp"
 
-#include "Geometric/Plane.h"
 #include "Semantic/Marker.h"
 
 namespace vs_graphs

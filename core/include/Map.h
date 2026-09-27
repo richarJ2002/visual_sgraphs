@@ -35,7 +35,6 @@
 #include <atomic>
 #include <boost/serialization/base_object.hpp>
 #include <mutex>
-#include <pangolin/pangolin.h>
 #include <set>
 #include <unordered_map>
 #include <utility>
@@ -374,7 +373,7 @@ class Map
     int bigChangeIndex;
 
     // View of the map in aerial sight (for the AtlasViewer)
-    GLubyte *p_thumbnail;
+    unsigned char *p_thumbnail;
 
     bool             inUse;
     bool             hasThumbnail;

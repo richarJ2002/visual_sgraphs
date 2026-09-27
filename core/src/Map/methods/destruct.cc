@@ -57,7 +57,7 @@ Map::~Map()
 
     if (p_thumbnail)
         delete p_thumbnail;
-    p_thumbnail = static_cast<GLubyte *>(nullptr);
+    p_thumbnail = nullptr;
 
     referenceMapPoints.clear();
     keyFrameOrigins.clear();

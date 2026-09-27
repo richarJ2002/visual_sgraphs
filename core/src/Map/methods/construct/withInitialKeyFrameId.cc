@@ -55,7 +55,7 @@ Map::Map(int initKFid) :
     hasInertialBA2(false)
 {
     mnId        = nNextId++;
-    p_thumbnail = static_cast<GLubyte *>(nullptr);
+    p_thumbnail = nullptr;
 }
 
 } // namespace core

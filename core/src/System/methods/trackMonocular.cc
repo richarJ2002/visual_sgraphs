@@ -25,6 +25,8 @@
 
 #include "System.h"
 
+#include <opencv2/imgproc.hpp>
+
 namespace vs_graphs
 {
 namespace core

@@ -28,6 +28,8 @@
 #include <pangolin/pangolin.h>
 
 #include <mutex>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 namespace vs_graphs
 {

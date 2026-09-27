@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <opencv2/calib3d.hpp>
 #include <thread>
 
 namespace vs_graphs
