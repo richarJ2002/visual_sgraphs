@@ -36,10 +36,10 @@ namespace semantic
 
 EntityRef entityRefForFloor(Floor *p_floor_in)
 {
-    EntityRef ref;
+    EntityRef reference;
     if (p_floor_in == nullptr)
     {
-        return ref;
+        return reference;
     }
     /* Floor has no isBad()/setBad() in the current model (confirmed by
      * direct source read of Floor.h): a Floor has no liveness concept to
@@ -50,19 +50,20 @@ EntityRef entityRefForFloor(Floor *p_floor_in)
      * exists even though its liveness cannot be read -- unlike
      * entityRefForRoom()'s explicit isBad() read, unknown liveness must
      * never be encoded as true. */
-    ref.localId = p_floor_in->getId();
-    ref.livenessUnavailableReason =
+    reference.localId = p_floor_in->getId();
+    reference.livenessUnavailableReason =
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA;
 
     core::Map *p_map = p_floor_in->getMap();
     if (p_map == nullptr)
     {
-        ref.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
-        return ref;
+        reference.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
+        return reference;
     }
-    ref.key = makeKey(EntityKind::FLOOR, p_map->getId(), p_floor_in->getId());
-    ref.reason = UnavailableReason::NONE;
-    return ref;
+    reference.key =
+        makeKey(EntityKind::FLOOR, p_map->getId(), p_floor_in->getId());
+    reference.reason = UnavailableReason::NONE;
+    return reference;
 }
 
 } // namespace semantic

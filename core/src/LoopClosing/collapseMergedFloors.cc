@@ -30,15 +30,15 @@ namespace vs_graphs
 namespace core
 {
 
-void collapseMergedFloors(Map *p_survivingMap_in)
+void collapseMergedFloors(Map *p_survivingMap_inout)
 {
-    if (p_survivingMap_in == nullptr)
+    if (p_survivingMap_inout == nullptr)
     {
         return;
     }
 
     const std::vector<semantic::Floor *> allFloors =
-        p_survivingMap_in->getAllFloors();
+        p_survivingMap_inout->getAllFloors();
     if (allFloors.size() <= 1U)
     {
         return;
@@ -66,7 +66,7 @@ void collapseMergedFloors(Map *p_survivingMap_in)
             }
         }
 
-        p_survivingMap_in->eraseMapFloor(p_duplicateFloor);
+        p_survivingMap_inout->eraseMapFloor(p_duplicateFloor);
         std::cout << "[LoopClosing] Fused duplicate semantic::Floor#"
                   << p_duplicateFloor->getId() << " into semantic::Floor#"
                   << p_keeperFloor->getId()
@@ -74,7 +74,8 @@ void collapseMergedFloors(Map *p_survivingMap_in)
                   << std::endl;
     }
 
-    for (semantic::Room *p_room : p_survivingMap_in->getAllDetectedMapRooms())
+    for (semantic::Room *p_room :
+         p_survivingMap_inout->getAllDetectedMapRooms())
     {
         if (p_room != nullptr && !p_room->isBad())
         {

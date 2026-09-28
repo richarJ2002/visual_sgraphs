@@ -34,45 +34,45 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::applyScaledRotation(const Sophus::SE3f &T,
-                              const float         s,
-                              const bool          bScaledVel)
+void Map::applyScaledRotation(const Sophus::SE3f &T_in,
+                              const float         s_in,
+                              const bool          isScaledVelocity_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
 
     // Body position (IMU) of first keyframe is fixed to (0,0,0)
-    Sophus::SE3f    Tyw = T;
+    Sophus::SE3f    Tyw = T_in;
     Eigen::Matrix3f Ryw = Tyw.rotationMatrix();
     Eigen::Vector3f tyw = Tyw.translation();
 
     const g2o::Sim3 transform_oldWorldToNewWorld(Ryw.cast<double>(),
                                                  tyw.cast<double>(),
-                                                 static_cast<double>(s));
+                                                 static_cast<double>(s_in));
 
     for (set<KeyFrame *>::iterator sit = keyFrames.begin();
          sit != keyFrames.end();
          sit++)
     {
-        KeyFrame    *pKF = *sit;
-        Sophus::SE3f Twc = pKF->getPoseInverse();
-        Twc.translation() *= s;
+        KeyFrame    *p_keyFrame = *sit;
+        Sophus::SE3f Twc        = p_keyFrame->getPoseInverse();
+        Twc.translation() *= s_in;
         Sophus::SE3f Tyc = Tyw * Twc;
         Sophus::SE3f Tcy = Tyc.inverse();
-        pKF->setPose(Tcy);
-        Eigen::Vector3f Vw = pKF->getVelocity();
-        if (!bScaledVel)
-            pKF->setVelocity(Ryw * Vw);
+        p_keyFrame->setPose(Tcy);
+        Eigen::Vector3f Vw = p_keyFrame->getVelocity();
+        if (!isScaledVelocity_in)
+            p_keyFrame->setVelocity(Ryw * Vw);
         else
-            pKF->setVelocity(Ryw * Vw * s);
+            p_keyFrame->setVelocity(Ryw * Vw * s_in);
     }
 
     for (set<MapPoint *>::iterator sit = mapPoints.begin();
          sit != mapPoints.end();
          sit++)
     {
-        MapPoint *pMP = *sit;
-        pMP->setWorldPos(s * Ryw * pMP->getWorldPos() + tyw);
-        pMP->updateNormalAndDepth();
+        MapPoint *p_mapPoint = *sit;
+        p_mapPoint->setWorldPos(s_in * Ryw * p_mapPoint->getWorldPos() + tyw);
+        p_mapPoint->updateNormalAndDepth();
     }
 
     for (geometric::Plane *p_plane : planes)

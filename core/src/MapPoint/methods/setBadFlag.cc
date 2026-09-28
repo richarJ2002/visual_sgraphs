@@ -36,28 +36,28 @@ namespace core
 
 void MapPoint::setBadFlag()
 {
-    map<KeyFrame *, tuple<int, int>> obs;
+    map<KeyFrame *, tuple<int, int>> observation;
     {
-        unique_lock<mutex> lock1(mMutexFeatures);
-        unique_lock<mutex> lock2(mMutexPos);
-        mbBad = true;
-        obs   = observations;
+        unique_lock<mutex> lock1(featuresMutex);
+        unique_lock<mutex> lock2(positionMutex);
+        isFlaggedBad = true;
+        observation  = observations;
         observations.clear();
     }
-    for (map<KeyFrame *, tuple<int, int>>::iterator mit  = obs.begin(),
-                                                    mend = obs.end();
+    for (map<KeyFrame *, tuple<int, int>>::iterator mit  = observation.begin(),
+                                                    mend = observation.end();
          mit != mend;
          mit++)
     {
-        KeyFrame *pKF = mit->first;
+        KeyFrame *p_keyFrame = mit->first;
         int leftIndex = get<0>(mit->second), rightIndex = get<1>(mit->second);
         if (leftIndex != -1)
         {
-            pKF->eraseMapPointMatch(leftIndex);
+            p_keyFrame->eraseMapPointMatch(leftIndex);
         }
         if (rightIndex != -1)
         {
-            pKF->eraseMapPointMatch(rightIndex);
+            p_keyFrame->eraseMapPointMatch(rightIndex);
         }
     }
 

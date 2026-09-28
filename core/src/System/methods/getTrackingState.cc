@@ -32,7 +32,7 @@ namespace core
 
 int System::getTrackingState()
 {
-    unique_lock<mutex> lock(mMutexState);
+    unique_lock<mutex> lock(stateMutex);
     return trackingState;
 }
 

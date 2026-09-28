@@ -36,8 +36,8 @@ namespace core
 
 bool Viewer::isStopped()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    return stopped;
+    unique_lock<mutex> lock(stopMutex);
+    return hasStopped;
 }
 
 } // namespace core

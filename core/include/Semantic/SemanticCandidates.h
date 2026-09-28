@@ -23,9 +23,9 @@ struct CandidateCueBreakdown
     double extentDistance{0.0};
     double apertureDistance{0.0};
     double topologyDistance{0.0};
-    bool   topologyAvailable{false};
-    bool   truncated{false};
-    bool   runtimeBudgetExceeded{false};
+    bool   isTopologyAvailable{false};
+    bool   isTruncated{false};
+    bool   isRuntimeBudgetExceeded{false};
     double weightedNumerator{0.0};
     double weightDenominator{0.0};
 };
@@ -38,9 +38,9 @@ struct SemanticCandidate
     int                   roomBId{0};
     double                distance{0.0};
     CandidateCueBreakdown cues;
-    bool                  lowConfidence{false};
-    bool                  ambiguous{false};
-    bool                  minimumEvidenceSatisfied{false};
+    bool                  hasLowConfidence{false};
+    bool                  isAmbiguous{false};
+    bool                  isMinimumEvidenceSatisfied{false};
 };
 
 struct SemanticCandidateConfig
@@ -100,7 +100,7 @@ class SemanticCandidates
   public:
     /*! Validates every candidate-generation field without touching map data. */
     static SemanticCandidateConfigRejectionReason
-        validateConfig(const SemanticCandidateConfig &config_in);
+        validateConfig(const SemanticCandidateConfig &configuration_in);
 
     /*! Returns a stable diagnostic name for a typed rejection reason. */
     static const char *
@@ -119,15 +119,17 @@ class SemanticCandidates
     static SemanticCandidateGeneration generateWithStatus(
         const std::map<long unsigned int, std::vector<RoomContextSnapshot>>
                                       &history_in,
-        const SemanticCandidateConfig &config_in = SemanticCandidateConfig(),
-        std::optional<int>             anchorRoomId_in = std::nullopt);
+        const SemanticCandidateConfig &configuration_in =
+            SemanticCandidateConfig(),
+        std::optional<int> anchorRoomId_in = std::nullopt);
 
     /*! Scores copied room snapshots only; no map or transform is touched. */
     static std::vector<SemanticCandidate> generate(
         const std::map<long unsigned int, std::vector<RoomContextSnapshot>>
                                       &history_in,
-        const SemanticCandidateConfig &config_in = SemanticCandidateConfig(),
-        std::optional<int>             anchorRoomId_in = std::nullopt);
+        const SemanticCandidateConfig &configuration_in =
+            SemanticCandidateConfig(),
+        std::optional<int> anchorRoomId_in = std::nullopt);
 };
 
 } // namespace semantic

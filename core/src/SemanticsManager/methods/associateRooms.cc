@@ -42,8 +42,8 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
     constexpr double sideEpsilon = 0.20;
 
     /* Init list variables of nearest room and best shared room */
-    vs_graphs::core::semantic::Room *bestSharedRoom = nullptr;
-    vs_graphs::core::semantic::Room *nearestRoom    = nullptr;
+    vs_graphs::core::semantic::Room *p_bestSharedRoom = nullptr;
+    vs_graphs::core::semantic::Room *p_nearestRoom    = nullptr;
 
     /* Init a counter to track the number of best same side matches */
     std::size_t bestSameSideMatches = 0;
@@ -57,22 +57,22 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
         p_atlas->getAllRooms();
 
     /* Evaluate every room once against the complete cluster wall set. */
-    for (vs_graphs::core::semantic::Room *room_World : allRooms_World)
+    for (vs_graphs::core::semantic::Room *p_room_World : allRooms_World)
     {
         /* Skip room if invalid */
-        if (room_World == nullptr || room_World->isBad())
+        if (p_room_World == nullptr || p_room_World->isBad())
         {
             continue;
         }
 
         /* Skip rooms already matched to another cluster in this cycle */
-        if (excludedRoomIds_in.count(room_World->getId()) > 0)
+        if (excludedRoomIds_in.count(p_room_World->getId()) > 0)
         {
             continue;
         }
 
         /* Extract room centroid */
-        const Eigen::Vector3d roomCenter_World = room_World->getCentroid();
+        const Eigen::Vector3d roomCenter_World = p_room_World->getCentroid();
 
         /* Find the distance from the cluster center to the room center */
         const double roomCenterRelClusterCenterDistance =
@@ -86,7 +86,7 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
 
         /* Extract the walls from the room */
         const std::vector<vs_graphs::core::geometric::Plane *> roomWallsList =
-            room_World->getWalls();
+            p_room_World->getWalls();
 
         /* Init a list to track the room wall ids */
         std::unordered_set<int> roomWallIds;
@@ -95,12 +95,12 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
         roomWallIds.reserve(roomWallsList.size());
 
         /* Iterate through room walls to extract ids of room */
-        for (vs_graphs::core::geometric::Plane *roomWall : roomWallsList)
+        for (vs_graphs::core::geometric::Plane *p_roomWall : roomWallsList)
         {
             /* Skip invalid walls */
-            if (roomWall != nullptr && !roomWall->isBad())
+            if (p_roomWall != nullptr && !p_roomWall->isBad())
             {
-                roomWallIds.insert(roomWall->getId());
+                roomWallIds.insert(p_roomWall->getId());
             }
         }
 
@@ -112,17 +112,17 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
         bool sharesAnyWall = false;
 
         /* Iterate through walls in room and see if they share walls */
-        for (vs_graphs::core::geometric::Plane *candidateWall :
+        for (vs_graphs::core::geometric::Plane *p_candidateWall :
              wallList_World_in)
         {
             /* Skip invalid walls */
-            if (candidateWall == nullptr || candidateWall->isBad())
+            if (p_candidateWall == nullptr || p_candidateWall->isBad())
             {
                 continue;
             }
 
             /* If wall is not linked to room, skip */
-            if (roomWallIds.count(candidateWall->getId()) == 0)
+            if (roomWallIds.count(p_candidateWall->getId()) == 0)
             {
                 continue;
             }
@@ -131,11 +131,11 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
             sharesAnyWall = true;
 
             /* Extract plane equation */
-            Eigen::Vector4d equation =
-                candidateWall->getGlobalEquation().coeffs();
+            Eigen::Vector4d candidateWallEquation =
+                p_candidateWall->getGlobalEquation().coeffs();
 
             /* Find plane normal magnitude */
-            const double normalNorm = equation.head<3>().norm();
+            const double normalNorm = candidateWallEquation.head<3>().norm();
 
             /* If magnitude is invalud, skip wall */
             if (!std::isfinite(normalNorm) || normalNorm < 1e-8)
@@ -144,15 +144,17 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
             }
 
             /* Find unit vector of plane norm */
-            equation /= normalNorm;
+            candidateWallEquation /= normalNorm;
 
             /* Caldaulte the side of the cluster */
             const double clusterSide =
-                equation.head<3>().dot(clusterCentroid_World_in) + equation(3);
+                candidateWallEquation.head<3>().dot(clusterCentroid_World_in) +
+                candidateWallEquation(3);
 
             /* Caldaulte the side of the room */
             const double roomSide =
-                equation.head<3>().dot(roomCenter_World) + equation(3);
+                candidateWallEquation.head<3>().dot(roomCenter_World) +
+                candidateWallEquation(3);
 
             /*!
              * A provisional room may initially have its centroid
@@ -188,7 +190,7 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
 
                 bestSharedDistance = roomCenterRelClusterCenterDistance;
 
-                bestSharedRoom = room_World;
+                p_bestSharedRoom = p_room_World;
             }
         }
 
@@ -229,14 +231,14 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
         {
             nearestDistance = roomCenterRelClusterCenterDistance;
 
-            nearestRoom = room_World;
+            p_nearestRoom = p_room_World;
         }
     }
 
-    vs_graphs::core::semantic::Room *result =
-        bestSharedRoom != nullptr ? bestSharedRoom : nearestRoom;
+    vs_graphs::core::semantic::Room *p_selectedRoom =
+        p_bestSharedRoom != nullptr ? p_bestSharedRoom : p_nearestRoom;
 
-    return result;
+    return p_selectedRoom;
 }
 
 } // namespace core

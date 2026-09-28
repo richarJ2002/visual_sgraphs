@@ -54,12 +54,12 @@ std::pair<double, double> Utils::computePlaneWidthHeight(
     pca.project(*p_cloud_in, projected);
 
     // Find min/max along each principal axis
-    pcl::PointXYZRGBA minPt, maxPt;
-    pcl::getMinMax3D(projected, minPt, maxPt);
+    pcl::PointXYZRGBA minimumPoint, maximumPoint;
+    pcl::getMinMax3D(projected, minimumPoint, maximumPoint);
 
     // Axis 0 = largest variance (width), Axis 1 = second (height)
-    double width  = static_cast<double>(maxPt.y - minPt.y);
-    double height = static_cast<double>(maxPt.x - minPt.x);
+    double width  = static_cast<double>(maximumPoint.y - minimumPoint.y);
+    double height = static_cast<double>(maximumPoint.x - minimumPoint.x);
 
     return std::make_pair(width, height);
 }

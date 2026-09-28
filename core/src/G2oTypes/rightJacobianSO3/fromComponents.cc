@@ -32,21 +32,28 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3d RightJacobianSO3(const double x, const double y, const double z)
+Eigen::Matrix3d rightJacobianSO3(const double angleAxisX_in,
+                                 const double angleAxisY_in,
+                                 const double angleAxisZ_in)
 {
-    const double d2 = x * x + y * y + z * z;
-    const double d  = sqrt(d2);
+    const double angleSquared = angleAxisX_in * angleAxisX_in +
+                                angleAxisY_in * angleAxisY_in +
+                                angleAxisZ_in * angleAxisZ_in;
+    const double angle = sqrt(angleSquared);
 
-    Eigen::Matrix3d W;
-    W << 0.0, -z, y, z, 0.0, -x, -y, x, 0.0;
-    if (d < 1e-5)
+    Eigen::Matrix3d skewMatrix;
+    skewMatrix << 0.0, -angleAxisZ_in, angleAxisY_in, angleAxisZ_in, 0.0,
+        -angleAxisX_in, -angleAxisY_in, angleAxisX_in, 0.0;
+    if (angle < 1e-5)
     {
         return Eigen::Matrix3d::Identity();
     }
     else
     {
-        return Eigen::Matrix3d::Identity() - W * (1.0 - cos(d)) / d2 +
-               W * W * (d - sin(d)) / (d2 * d);
+        return Eigen::Matrix3d::Identity() -
+               skewMatrix * (1.0 - cos(angle)) / angleSquared +
+               skewMatrix * skewMatrix * (angle - sin(angle)) /
+                   (angleSquared * angle);
     }
 }
 

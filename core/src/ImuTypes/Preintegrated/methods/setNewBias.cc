@@ -26,17 +26,17 @@ namespace core
 namespace IMU
 {
 
-void Preintegrated::setNewBias(const Bias &bu_)
+void Preintegrated::setNewBias(const Bias &updatedBias_in)
 {
-    std::unique_lock<std::mutex> lock(mMutex);
-    bu = bu_;
+    std::unique_lock<std::mutex> lock(preintegrationMutex);
+    bu = updatedBias_in;
 
-    db(0) = bu_.bwx - b.bwx;
-    db(1) = bu_.bwy - b.bwy;
-    db(2) = bu_.bwz - b.bwz;
-    db(3) = bu_.bax - b.bax;
-    db(4) = bu_.bay - b.bay;
-    db(5) = bu_.baz - b.baz;
+    db(0) = updatedBias_in.bwx - b.bwx;
+    db(1) = updatedBias_in.bwy - b.bwy;
+    db(2) = updatedBias_in.bwz - b.bwz;
+    db(3) = updatedBias_in.bax - b.bax;
+    db(4) = updatedBias_in.bay - b.bay;
+    db(5) = updatedBias_in.baz - b.baz;
 }
 
 } // namespace IMU

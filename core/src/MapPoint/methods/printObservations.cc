@@ -36,18 +36,18 @@ namespace core
 
 void MapPoint::printObservations()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
-    cout << "MP_OBS: MP " << mnId << endl;
+    unique_lock<mutex> lock(featuresMutex);
+    cout << "MP_OBS: MP " << id << endl;
     for (map<KeyFrame *, tuple<int, int>>::iterator mit  = observations.begin(),
                                                     mend = observations.end();
          mit != mend;
          mit++)
     {
-        KeyFrame       *pKFi    = mit->first;
-        tuple<int, int> indexes = mit->second;
+        KeyFrame       *p_keyFrame = mit->first;
+        tuple<int, int> indexes    = mit->second;
         int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
-        cout << "--OBS in KF " << pKFi->mnId << " in map "
-             << pKFi->getMap()->getId() << endl;
+        cout << "--OBS in KF " << p_keyFrame->id << " in map "
+             << p_keyFrame->getMap()->getId() << endl;
     }
 }
 

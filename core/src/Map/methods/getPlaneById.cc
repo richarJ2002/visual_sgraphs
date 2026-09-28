@@ -34,10 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-geometric::Plane *Map::getPlaneById(int planeId)
+geometric::Plane *Map::getPlaneById(int planeId_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    const auto         planeIterator = planeIndex.find(planeId);
+    unique_lock<mutex> lock(mapMutex);
+    const auto         planeIterator = planeIndex.find(planeId_in);
     return planeIterator != planeIndex.end() ? planeIterator->second : nullptr;
 }
 

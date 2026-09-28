@@ -29,12 +29,12 @@
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
-Eigen::Vector2f KannalaBrandt8::projectMat(const cv::Point3f &point3D_in)
+Eigen::Vector2f KannalaBrandt8::projectMat(const cv::Point3f &point3d_in)
 {
     /* Find the 3D point in the 2D camera projection frame */
-    cv::Point2f point = this->project(point3D_in);
+    cv::Point2f projectedPoint = this->project(point3d_in);
 
     /* Return a 2D vector of point in camera projection frame */
-    return Eigen::Vector2f(point.x, point.y);
+    return Eigen::Vector2f(projectedPoint.x, projectedPoint.y);
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

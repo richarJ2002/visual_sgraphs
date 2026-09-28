@@ -64,7 +64,7 @@ namespace semantic
 {
 
 ResolvedRoomEndpoint
-    resolveRoomEndpoint(const EntityRef             &ref_in,
+    resolveRoomEndpoint(const EntityRef             &reference_in,
                         long unsigned int            expectedMapId_in,
                         const SemanticGraphSnapshot &snapshot_in)
 {
@@ -81,34 +81,35 @@ ResolvedRoomEndpoint
      * isLiveAvailable is recorded independently so a caller can
      * distinguish "genuinely unproven" from "known false" instead of
      * treating isLive's own false default as a known-bad fact. */
-    if (ref_in.isLive.has_value())
+    if (reference_in.isLive.has_value())
     {
-        resolved.isLive          = *ref_in.isLive;
+        resolved.isLive          = *reference_in.isLive;
         resolved.isLiveAvailable = true;
     }
 
-    resolved.referencePresent = ref_in.key.has_value();
-    if (!resolved.referencePresent)
+    resolved.isReferencePresent = reference_in.key.has_value();
+    if (!resolved.isReferencePresent)
     {
         /* A non-null underlying pointer with no key formable
          * (UnavailableReason::ENTITY_HAS_NO_MAP) is the only case with
          * localId present but no key; a genuinely absent reference
          * (UnavailableReason::NULL_REFERENCE) leaves both absent. */
-        resolved.referenceUnresolvable = ref_in.localId.has_value();
+        resolved.isReferenceUnresolvable = reference_in.localId.has_value();
         return resolved;
     }
 
-    resolved.key         = ref_in.key;
-    resolved.isCrossMap  = (ref_in.key->mapId != expectedMapId_in);
-    resolved.isWrongKind = (ref_in.key->kind != EntityKind::ROOM);
+    resolved.key         = reference_in.key;
+    resolved.isCrossMap  = (reference_in.key->mapId != expectedMapId_in);
+    resolved.isWrongKind = (reference_in.key->kind != EntityKind::ROOM);
     /* EntityRef documents
      * key.has_value() <=> reason == NONE as an invariant, but this
      * snapshot's records are adversarial value inputs -- do not assume
      * capture made them coherent. A keyed reference whose own reason is
      * not NONE is a known contradiction. */
-    resolved.isReasonInconsistent = (ref_in.reason != UnavailableReason::NONE);
+    resolved.isReasonInconsistent =
+        (reference_in.reason != UnavailableReason::NONE);
 
-    if (countMapSnapshotsWithId(snapshot_in, ref_in.key->mapId) > 1U)
+    if (countMapSnapshotsWithId(snapshot_in, reference_in.key->mapId) > 1U)
     {
         /* Which MapSnapshot is actually
          * authoritative for this map id is itself ambiguous, so no
@@ -119,11 +120,11 @@ ResolvedRoomEndpoint
 
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
     {
-        if (mapSnapshot.mapId != ref_in.key->mapId)
+        if (mapSnapshot.mapId != reference_in.key->mapId)
         {
             continue;
         }
-        if (countRoomRecordsWithKey(snapshot_in, *ref_in.key) > 1U)
+        if (countRoomRecordsWithKey(snapshot_in, *reference_in.key) > 1U)
         {
             /* More than one
              * distinct RoomRecord shares this exact key -- which room
@@ -134,7 +135,7 @@ ResolvedRoomEndpoint
             break;
         }
         const RoomRecord *p_foundRoom =
-            findRecordByKey(mapSnapshot.rooms, *ref_in.key);
+            findRecordByKey(mapSnapshot.rooms, *reference_in.key);
         if (p_foundRoom != nullptr)
         {
             resolved.isFoundInSnapshot = true;

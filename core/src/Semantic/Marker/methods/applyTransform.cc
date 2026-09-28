@@ -27,7 +27,7 @@ namespace semantic
 
 void Marker::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
 
     const Eigen::Matrix3f rotation_oldWorldToNewWorld =
         transform_oldWorldToNewWorld_in.rotation()

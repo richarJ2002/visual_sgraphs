@@ -23,12 +23,12 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticSegmentation::recordTerminalOutcome(std::uint64_t   keyFrameId,
-                                                 TerminalOutcome outcome)
+void SemanticSegmentation::recordTerminalOutcome(std::uint64_t   keyFrameId_in,
+                                                 TerminalOutcome outcome_in)
 {
     terminalCount.fetch_add(1U, std::memory_order_relaxed);
-    lastTerminalKeyFrameId.store(keyFrameId, std::memory_order_relaxed);
-    switch (outcome)
+    lastTerminalKeyFrameId.store(keyFrameId_in, std::memory_order_relaxed);
+    switch (outcome_in)
     {
     case TerminalOutcome::ACCEPTED:
         acceptedCount.fetch_add(1U, std::memory_order_relaxed);

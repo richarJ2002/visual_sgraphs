@@ -35,80 +35,80 @@ namespace vs_graphs
 namespace core
 {
 
-int Optimizer::poseOptimization(Frame *pFrame)
+int Optimizer::poseOptimization(Frame *p_frame_inout)
 {
     types::SystemParams *p_sysParams = types::SystemParams::getParams();
 
     g2o::SparseOptimizer                    optimizer;
-    g2o::BlockSolver_6_3::LinearSolverType *linearSolver;
+    g2o::BlockSolver_6_3::LinearSolverType *p_linearSolver;
 
-    linearSolver =
+    p_linearSolver =
         new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
 
-    g2o::BlockSolver_6_3 *solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
+    g2o::BlockSolver_6_3 *solver_ptr = new g2o::BlockSolver_6_3(p_linearSolver);
 
-    g2o::OptimizationAlgorithmLevenberg *solver =
+    g2o::OptimizationAlgorithmLevenberg *p_solver =
         new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
-    optimizer.setAlgorithm(solver);
+    optimizer.setAlgorithm(p_solver);
 
-    int nInitialCorrespondences = 0;
+    int initialCorrespondenceCount = 0;
 
     // Set Frame vertex
-    g2o::VertexSE3Expmap *vSE3 = new g2o::VertexSE3Expmap();
-    Sophus::SE3<float>    Tcw  = pFrame->getPose();
-    vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                                   Tcw.translation().cast<double>()));
-    vSE3->setId(0);
-    vSE3->setFixed(false);
-    optimizer.addVertex(vSE3);
+    g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
+    Sophus::SE3<float>    Tcw         = p_frame_inout->getPose();
+    p_se3Vertex->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
+                                          Tcw.translation().cast<double>()));
+    p_se3Vertex->setId(0);
+    p_se3Vertex->setFixed(false);
+    optimizer.addVertex(p_se3Vertex);
 
     // Set MapPoint vertices
-    const int N = pFrame->N;
+    const int N = p_frame_inout->keyPointCount;
 
-    vector<vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *>       vpEdgesMono;
-    vector<vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody *> vpEdgesMono_FHR;
-    vector<size_t> vnIndexEdgeMono, vnIndexEdgeRight;
-    vpEdgesMono.reserve(N);
-    vpEdgesMono_FHR.reserve(N);
-    vnIndexEdgeMono.reserve(N);
-    vnIndexEdgeRight.reserve(N);
+    vector<vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *>       edgesMonos;
+    vector<vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody *> vpEdgesMonoFhr;
+    vector<size_t> monoEdgeIndices, rightEdgeIndices;
+    edgesMonos.reserve(N);
+    vpEdgesMonoFhr.reserve(N);
+    monoEdgeIndices.reserve(N);
+    rightEdgeIndices.reserve(N);
 
-    vector<g2o::EdgeStereoSE3ProjectXYZOnlyPose *> vpEdgesStereo;
-    vector<size_t>                                 vnIndexEdgeStereo;
-    vpEdgesStereo.reserve(N);
-    vnIndexEdgeStereo.reserve(N);
+    vector<g2o::EdgeStereoSE3ProjectXYZOnlyPose *> edgesStereos;
+    vector<size_t>                                 stereoEdgeIndices;
+    edgesStereos.reserve(N);
+    stereoEdgeIndices.reserve(N);
 
     // DEPTH-AIDED TRACKING: For RGB-D, add depth residuals
-    vector<vs_graphs::core::EdgeSE3ProjectXYZDepth *> vpEdgesDepth;
-    vector<size_t>                                    vnIndexEdgeDepth;
-    vpEdgesDepth.reserve(N);
-    vnIndexEdgeDepth.reserve(N);
+    vector<vs_graphs::core::EdgeSE3ProjectXYZDepth *> edgesDepths;
+    vector<size_t>                                    depthEdgeIndices;
+    edgesDepths.reserve(N);
+    depthEdgeIndices.reserve(N);
 
     const float deltaMono   = sqrt(5.991);
     const float deltaStereo = sqrt(7.815);
     const float deltaDepth  = sqrt(3.841); // chi2 for 1 DoF at 95%
 
     {
-        unique_lock<mutex> lock(MapPoint::mGlobalMutex);
+        unique_lock<mutex> lock(MapPoint::globalMutex);
 
-        for (int i = 0; i < N; i++)
+        for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
         {
-            MapPoint *pMP = pFrame->mapPoints[i];
-            if (pMP)
+            MapPoint *p_mapPoint = p_frame_inout->mapPoints[keyPointIndex];
+            if (p_mapPoint)
             {
                 // Conventional SLAM
-                if (!pFrame->p_camera2)
+                if (!p_frame_inout->p_camera2)
                 {
                     // Monocular observation
-                    if (pFrame->uRight[i] < 0)
+                    if (p_frame_inout->uRight[keyPointIndex] < 0)
                     {
-                        nInitialCorrespondences++;
-                        pFrame->outlierFlags[i] = false;
+                        initialCorrespondenceCount++;
+                        p_frame_inout->outlierFlags[keyPointIndex] = false;
 
-                        Eigen::Matrix<double, 2, 1> obs;
-                        const cv::KeyPoint         &kpUn =
-                            pFrame->keyPointsUndistorted[i];
-                        obs << kpUn.pt.x, kpUn.pt.y;
+                        Eigen::Matrix<double, 2, 1> observation;
+                        const cv::KeyPoint         &keyPointUn =
+                            p_frame_inout->keyPointsUndistorted[keyPointIndex];
+                        observation << keyPointUn.pt.x, keyPointUn.pt.y;
 
                         vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *e =
                             new vs_graphs::core::EdgeSE3ProjectXYZOnlyPose();
@@ -117,34 +117,38 @@ int Optimizer::poseOptimization(Frame *pFrame)
                             0,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                 optimizer.vertex(0)));
-                        e->setMeasurement(obs);
+                        e->setMeasurement(observation);
                         const float invSigma2 =
-                            pFrame->invLevelSigmaSquared[kpUn.octave];
+                            p_frame_inout
+                                ->invLevelSigmaSquared[keyPointUn.octave];
                         e->setInformation(Eigen::Matrix2d::Identity() *
                                           invSigma2);
 
-                        g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-                        e->setRobustKernel(rk);
-                        rk->setDelta(deltaMono);
+                        g2o::RobustKernelHuber *p_robustKernel =
+                            new g2o::RobustKernelHuber;
+                        e->setRobustKernel(p_robustKernel);
+                        p_robustKernel->setDelta(deltaMono);
 
-                        e->pCamera = pFrame->p_camera;
-                        e->Xw      = pMP->getWorldPos().cast<double>();
+                        e->p_camera = p_frame_inout->p_camera;
+                        e->Xw       = p_mapPoint->getWorldPos().cast<double>();
 
                         optimizer.addEdge(e);
 
-                        vpEdgesMono.push_back(e);
-                        vnIndexEdgeMono.push_back(i);
+                        edgesMonos.push_back(e);
+                        monoEdgeIndices.push_back(keyPointIndex);
                     }
                     else // Stereo observation
                     {
-                        nInitialCorrespondences++;
-                        pFrame->outlierFlags[i] = false;
+                        initialCorrespondenceCount++;
+                        p_frame_inout->outlierFlags[keyPointIndex] = false;
 
-                        Eigen::Matrix<double, 3, 1> obs;
-                        const cv::KeyPoint         &kpUn =
-                            pFrame->keyPointsUndistorted[i];
-                        const float &kp_ur = pFrame->uRight[i];
-                        obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
+                        Eigen::Matrix<double, 3, 1> observation;
+                        const cv::KeyPoint         &keyPointUn =
+                            p_frame_inout->keyPointsUndistorted[keyPointIndex];
+                        const float &rightKeyPointU =
+                            p_frame_inout->uRight[keyPointIndex];
+                        observation << keyPointUn.pt.x, keyPointUn.pt.y,
+                            rightKeyPointU;
 
                         g2o::EdgeStereoSE3ProjectXYZOnlyPose *e =
                             new g2o::EdgeStereoSE3ProjectXYZOnlyPose();
@@ -153,45 +157,47 @@ int Optimizer::poseOptimization(Frame *pFrame)
                             0,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                 optimizer.vertex(0)));
-                        e->setMeasurement(obs);
+                        e->setMeasurement(observation);
                         const float invSigma2 =
-                            pFrame->invLevelSigmaSquared[kpUn.octave];
+                            p_frame_inout
+                                ->invLevelSigmaSquared[keyPointUn.octave];
                         Eigen::Matrix3d Info =
                             Eigen::Matrix3d::Identity() * invSigma2;
                         e->setInformation(Info);
 
-                        g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-                        e->setRobustKernel(rk);
-                        rk->setDelta(deltaStereo);
+                        g2o::RobustKernelHuber *p_robustKernel =
+                            new g2o::RobustKernelHuber;
+                        e->setRobustKernel(p_robustKernel);
+                        p_robustKernel->setDelta(deltaStereo);
 
-                        e->fx = pFrame->fx;
-                        e->fy = pFrame->fy;
-                        e->cx = pFrame->cx;
-                        e->cy = pFrame->cy;
-                        e->bf = pFrame->mbf;
-                        e->Xw = pMP->getWorldPos().cast<double>();
+                        e->fx = p_frame_inout->fx;
+                        e->fy = p_frame_inout->fy;
+                        e->cx = p_frame_inout->cx;
+                        e->cy = p_frame_inout->cy;
+                        e->bf = p_frame_inout->mbf;
+                        e->Xw = p_mapPoint->getWorldPos().cast<double>();
 
                         optimizer.addEdge(e);
 
-                        vpEdgesStereo.push_back(e);
-                        vnIndexEdgeStereo.push_back(i);
+                        edgesStereos.push_back(e);
+                        stereoEdgeIndices.push_back(keyPointIndex);
                     }
                 }
                 // SLAM with respect a rigid body
                 else
                 {
-                    nInitialCorrespondences++;
+                    initialCorrespondenceCount++;
 
-                    cv::KeyPoint kpUn;
+                    cv::KeyPoint keyPointUn;
 
-                    if (i < pFrame->Nleft)
+                    if (keyPointIndex < p_frame_inout->leftKeyPointCount)
                     { // Left camera observation
-                        kpUn = pFrame->keyPoints[i];
+                        keyPointUn = p_frame_inout->keyPoints[keyPointIndex];
 
-                        pFrame->outlierFlags[i] = false;
+                        p_frame_inout->outlierFlags[keyPointIndex] = false;
 
-                        Eigen::Matrix<double, 2, 1> obs;
-                        obs << kpUn.pt.x, kpUn.pt.y;
+                        Eigen::Matrix<double, 2, 1> observation;
+                        observation << keyPointUn.pt.x, keyPointUn.pt.y;
 
                         vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *e =
                             new vs_graphs::core::EdgeSE3ProjectXYZOnlyPose();
@@ -200,32 +206,36 @@ int Optimizer::poseOptimization(Frame *pFrame)
                             0,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                 optimizer.vertex(0)));
-                        e->setMeasurement(obs);
+                        e->setMeasurement(observation);
                         const float invSigma2 =
-                            pFrame->invLevelSigmaSquared[kpUn.octave];
+                            p_frame_inout
+                                ->invLevelSigmaSquared[keyPointUn.octave];
                         e->setInformation(Eigen::Matrix2d::Identity() *
                                           invSigma2);
 
-                        g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-                        e->setRobustKernel(rk);
-                        rk->setDelta(deltaMono);
+                        g2o::RobustKernelHuber *p_robustKernel =
+                            new g2o::RobustKernelHuber;
+                        e->setRobustKernel(p_robustKernel);
+                        p_robustKernel->setDelta(deltaMono);
 
-                        e->pCamera = pFrame->p_camera;
-                        e->Xw      = pMP->getWorldPos().cast<double>();
+                        e->p_camera = p_frame_inout->p_camera;
+                        e->Xw       = p_mapPoint->getWorldPos().cast<double>();
 
                         optimizer.addEdge(e);
 
-                        vpEdgesMono.push_back(e);
-                        vnIndexEdgeMono.push_back(i);
+                        edgesMonos.push_back(e);
+                        monoEdgeIndices.push_back(keyPointIndex);
                     }
                     else
                     {
-                        kpUn = pFrame->keyPointsRight[i - pFrame->Nleft];
+                        keyPointUn = p_frame_inout->keyPointsRight
+                                         [keyPointIndex -
+                                          p_frame_inout->leftKeyPointCount];
 
-                        Eigen::Matrix<double, 2, 1> obs;
-                        obs << kpUn.pt.x, kpUn.pt.y;
+                        Eigen::Matrix<double, 2, 1> observation;
+                        observation << keyPointUn.pt.x, keyPointUn.pt.y;
 
-                        pFrame->outlierFlags[i] = false;
+                        p_frame_inout->outlierFlags[keyPointIndex] = false;
 
                         vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody *e =
                             new vs_graphs::core::
@@ -235,30 +245,33 @@ int Optimizer::poseOptimization(Frame *pFrame)
                             0,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                 optimizer.vertex(0)));
-                        e->setMeasurement(obs);
+                        e->setMeasurement(observation);
                         const float invSigma2 =
-                            pFrame->invLevelSigmaSquared[kpUn.octave];
+                            p_frame_inout
+                                ->invLevelSigmaSquared[keyPointUn.octave];
                         e->setInformation(Eigen::Matrix2d::Identity() *
                                           invSigma2);
 
-                        g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-                        e->setRobustKernel(rk);
-                        rk->setDelta(deltaMono);
+                        g2o::RobustKernelHuber *p_robustKernel =
+                            new g2o::RobustKernelHuber;
+                        e->setRobustKernel(p_robustKernel);
+                        p_robustKernel->setDelta(deltaMono);
 
-                        e->pCamera = pFrame->p_camera2;
-                        e->Xw      = pMP->getWorldPos().cast<double>();
+                        e->p_camera = p_frame_inout->p_camera2;
+                        e->Xw       = p_mapPoint->getWorldPos().cast<double>();
 
-                        e->mTrl = g2o::SE3Quat(pFrame->getRelativePoseTrl()
-                                                   .unit_quaternion()
-                                                   .cast<double>(),
-                                               pFrame->getRelativePoseTrl()
-                                                   .translation()
-                                                   .cast<double>());
+                        e->mTrl =
+                            g2o::SE3Quat(p_frame_inout->getRelativePoseTrl()
+                                             .unit_quaternion()
+                                             .cast<double>(),
+                                         p_frame_inout->getRelativePoseTrl()
+                                             .translation()
+                                             .cast<double>());
 
                         optimizer.addEdge(e);
 
-                        vpEdgesMono_FHR.push_back(e);
-                        vnIndexEdgeRight.push_back(i);
+                        vpEdgesMonoFhr.push_back(e);
+                        rightEdgeIndices.push_back(keyPointIndex);
                     }
                 }
             }
@@ -267,23 +280,24 @@ int Optimizer::poseOptimization(Frame *pFrame)
 
     // DEPTH-AIDED TRACKING: Add depth residuals for RGB-D frames
     // This provides additional constraints from depth measurements
-    bool isRGBD = (pFrame->depths.size() > 0 && !pFrame->p_camera2);
-    if (isRGBD)
+    bool isRgbd =
+        (p_frame_inout->depths.size() > 0 && !p_frame_inout->p_camera2);
+    if (isRgbd)
     {
-        unique_lock<mutex> lock(MapPoint::mGlobalMutex);
-        for (int i = 0; i < N; i++)
+        unique_lock<mutex> lock(MapPoint::globalMutex);
+        for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
         {
-            MapPoint *pMP = pFrame->mapPoints[i];
-            if (pMP && !pFrame->outlierFlags[i] &&
-                i < (int)pFrame->depths.size())
+            MapPoint *p_mapPoint = p_frame_inout->mapPoints[keyPointIndex];
+            if (p_mapPoint && !p_frame_inout->outlierFlags[keyPointIndex] &&
+                keyPointIndex < (int)p_frame_inout->depths.size())
             {
-                float depth = pFrame->depths[i];
+                float depth = p_frame_inout->depths[keyPointIndex];
                 if (depth > 0 &&
                     depth <
-                        pFrame
+                        p_frame_inout
                             ->depthThreshold) // Only use reliable close depths
                 {
-                    nInitialCorrespondences++;
+                    initialCorrespondenceCount++;
 
                     vs_graphs::core::EdgeSE3ProjectXYZDepth *e =
                         new vs_graphs::core::EdgeSE3ProjectXYZDepth();
@@ -302,23 +316,24 @@ int Optimizer::poseOptimization(Frame *pFrame)
                     e->setInformation(Eigen::Matrix<double, 1, 1>::Identity() *
                                       invSigma2);
 
-                    g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-                    e->setRobustKernel(rk);
-                    rk->setDelta(deltaDepth);
+                    g2o::RobustKernelHuber *p_robustKernel =
+                        new g2o::RobustKernelHuber;
+                    e->setRobustKernel(p_robustKernel);
+                    p_robustKernel->setDelta(deltaDepth);
 
-                    e->pCamera = pFrame->p_camera;
-                    e->Xw      = pMP->getWorldPos().cast<double>();
+                    e->p_camera = p_frame_inout->p_camera;
+                    e->Xw       = p_mapPoint->getWorldPos().cast<double>();
 
                     optimizer.addEdge(e);
 
-                    vpEdgesDepth.push_back(e);
-                    vnIndexEdgeDepth.push_back(i);
+                    edgesDepths.push_back(e);
+                    depthEdgeIndices.push_back(keyPointIndex);
                 }
             }
         }
     }
 
-    if (nInitialCorrespondences < 3)
+    if (initialCorrespondenceCount < 3)
         return 0;
 
     // We perform 4 optimizations, after each optimization we classify
@@ -328,31 +343,33 @@ int Optimizer::poseOptimization(Frame *pFrame)
     const float chi2Stereo[4] = {7.815, 7.815, 7.815, 7.815};
     const int   its[4]        = {10, 10, 10, 10};
 
-    int nBad = 0;
-    for (size_t it = 0; it < 4; it++)
+    int badCount = 0;
+    for (size_t iterationIndex = 0; iterationIndex < 4; iterationIndex++)
     {
-        Tcw = pFrame->getPose();
-        vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                                       Tcw.translation().cast<double>()));
+        Tcw = p_frame_inout->getPose();
+        p_se3Vertex->setEstimate(
+            g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
+                         Tcw.translation().cast<double>()));
 
         optimizer.initializeOptimization(0);
-        optimizer.optimize(its[it]);
+        optimizer.optimize(its[iterationIndex]);
 
         // before the last step, remove bad map points
-        KeyFrame *refKF = pFrame->p_referenceKeyFrame;
-        if (p_sysParams->refineMapPoints.enabled && refKF && it == 2)
+        KeyFrame *p_referenceKeyFrame = p_frame_inout->p_referenceKeyFrame;
+        if (p_sysParams->refineMapPoints.enabled && p_referenceKeyFrame &&
+            iterationIndex == 2)
         {
-            vector<geometric::Plane *>    vpPlanes;
+            vector<geometric::Plane *>    planes;
             std::unordered_map<int, bool> planeCheck;
 
             // populate the vector of planes using the covisibility graph of the
             // reference keyframe
-            vector<KeyFrame *> vpRefCovKFs =
-                refKF->getBestCovisibilityKeyFrames(25);
-            vpRefCovKFs.push_back(refKF);
-            for (const auto &pKFi : vpRefCovKFs)
+            vector<KeyFrame *> referenceCovisibleKeyFrames =
+                p_referenceKeyFrame->getBestCovisibilityKeyFrames(25);
+            referenceCovisibleKeyFrames.push_back(p_referenceKeyFrame);
+            for (const auto &keyFrame : referenceCovisibleKeyFrames)
             {
-                for (const auto &plane : pKFi->getMapPlanes())
+                for (const auto &plane : keyFrame->getMapPlanes())
                 {
                     if (!plane)
                         continue;
@@ -361,38 +378,42 @@ int Optimizer::poseOptimization(Frame *pFrame)
                     {
                         if (planeCheck.find(plane->getId()) == planeCheck.end())
                         {
-                            vpPlanes.push_back(plane);
+                            planes.push_back(plane);
                             planeCheck[plane->getId()] = true;
                         }
                     }
                 }
             }
 
-            g2o::VertexSE3Expmap *vSE3_recov =
+            g2o::VertexSE3Expmap *p_recoveredPoseVertex =
                 static_cast<g2o::VertexSE3Expmap *>(optimizer.vertex(0));
-            Eigen::Isometry3d framePose = vSE3_recov->estimate();
-            Eigen::Vector3d   camCenter = framePose.inverse().translation();
-            for (const auto &pPlane : vpPlanes)
+            Eigen::Isometry3d framePose    = p_recoveredPoseVertex->estimate();
+            Eigen::Vector3d   cameraCenter = framePose.inverse().translation();
+            for (const auto &candidatePlane : planes)
             {
-                if (pPlane->getPlaneType() ==
+                if (candidatePlane->getPlaneType() ==
                     geometric::Plane::PlaneVariant::UNDEFINED)
                     continue;
 
-                Eigen::Vector4d planeEq = pPlane->getGlobalEquation().coeffs();
+                Eigen::Vector4d planeEq =
+                    candidatePlane->getGlobalEquation().coeffs();
 
                 // if the camera center is behind the plane, skip the plane
-                if (planeEq.head<3>().dot(camCenter) + planeEq(3) < 0)
+                if (planeEq.head<3>().dot(cameraCenter) + planeEq(3) < 0)
                     continue;
 
                 // for each map point in the frame, check if it is on the plane
-                for (size_t j = 0; j < static_cast<size_t>(pFrame->N); j++)
+                for (size_t j = 0;
+                     j < static_cast<size_t>(p_frame_inout->keyPointCount);
+                     j++)
                 {
-                    MapPoint *pMP = pFrame->mapPoints[j];
-                    if (!pMP || pMP->isBad())
+                    MapPoint *p_mapPoint = p_frame_inout->mapPoints[j];
+                    if (!p_mapPoint || p_mapPoint->isBad())
                         continue;
 
                     // calculate distance from the map point to the plane
-                    Eigen::Vector3d pMPw = pMP->getWorldPos().cast<double>();
+                    Eigen::Vector3d pMPw =
+                        p_mapPoint->getWorldPos().cast<double>();
                     double distance = planeEq.head<3>().dot(pMPw) + planeEq(3);
                     if (distance <
                         -p_sysParams->refineMapPoints.maxDistanceForDelete)
@@ -400,38 +421,42 @@ int Optimizer::poseOptimization(Frame *pFrame)
                         // get the intersection point of the line joining the
                         // camera center and the map point with the plane
                         Eigen::Vector3d intersect =
-                            utils::utils::Utils::lineIntersectsPlane(planeEq,
-                                                                     camCenter,
-                                                                     pMPw);
+                            utils::utils::Utils::lineIntersectsPlane(
+                                planeEq,
+                                cameraCenter,
+                                pMPw);
 
                         // check if the map point is in the plane cloud
-                        if (pPlane->isPointinPlaneCloud(intersect))
+                        if (candidatePlane->isPointinPlaneCloud(intersect))
                         {
-                            pFrame->mapPoints[j]->setBadFlag();
-                            pFrame->mapPoints[j] =
+                            p_frame_inout->mapPoints[j]->setBadFlag();
+                            p_frame_inout->mapPoints[j] =
                                 static_cast<MapPoint *>(nullptr);
-                            pFrame->outlierFlags[j] = true;
+                            p_frame_inout->outlierFlags[j] = true;
                         }
                     }
                 }
             }
         }
 
-        nBad = 0;
-        for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++)
+        badCount = 0;
+        for (size_t keyPointIndex = 0, iend = edgesMonos.size();
+             keyPointIndex < iend;
+             keyPointIndex++)
         {
-            vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *e = vpEdgesMono[i];
+            vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *e =
+                edgesMonos[keyPointIndex];
 
-            const size_t idx = vnIndexEdgeMono[i];
-            if (it == 2)
+            const size_t featureIndex = monoEdgeIndices[keyPointIndex];
+            if (iterationIndex == 2)
                 e->setRobustKernel(0);
 
-            if (pFrame->outlierFlags[idx])
+            if (p_frame_inout->outlierFlags[featureIndex])
             {
-                if (!pFrame->mapPoints[idx])
+                if (!p_frame_inout->mapPoints[featureIndex])
                 {
                     optimizer.removeEdge(e);
-                    nBad++;
+                    badCount++;
                     continue;
                 }
                 e->computeError();
@@ -439,34 +464,36 @@ int Optimizer::poseOptimization(Frame *pFrame)
 
             const float chi2 = e->chi2();
 
-            if (chi2 > chi2Mono[it])
+            if (chi2 > chi2Mono[iterationIndex])
             {
-                pFrame->outlierFlags[idx] = true;
+                p_frame_inout->outlierFlags[featureIndex] = true;
                 e->setLevel(1);
-                nBad++;
+                badCount++;
             }
             else
             {
-                pFrame->outlierFlags[idx] = false;
+                p_frame_inout->outlierFlags[featureIndex] = false;
                 e->setLevel(0);
             }
         }
 
-        for (size_t i = 0, iend = vpEdgesMono_FHR.size(); i < iend; i++)
+        for (size_t keyPointIndex = 0, iend = vpEdgesMonoFhr.size();
+             keyPointIndex < iend;
+             keyPointIndex++)
         {
             vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody *e =
-                vpEdgesMono_FHR[i];
+                vpEdgesMonoFhr[keyPointIndex];
 
-            const size_t idx = vnIndexEdgeRight[i];
-            if (it == 2)
+            const size_t featureIndex = rightEdgeIndices[keyPointIndex];
+            if (iterationIndex == 2)
                 e->setRobustKernel(0);
 
-            if (pFrame->outlierFlags[idx])
+            if (p_frame_inout->outlierFlags[featureIndex])
             {
-                if (!pFrame->mapPoints[idx])
+                if (!p_frame_inout->mapPoints[featureIndex])
                 {
                     optimizer.removeEdge(e);
-                    nBad++;
+                    badCount++;
                     continue;
                 }
                 e->computeError();
@@ -474,33 +501,36 @@ int Optimizer::poseOptimization(Frame *pFrame)
 
             const float chi2 = e->chi2();
 
-            if (chi2 > chi2Mono[it])
+            if (chi2 > chi2Mono[iterationIndex])
             {
-                pFrame->outlierFlags[idx] = true;
+                p_frame_inout->outlierFlags[featureIndex] = true;
                 e->setLevel(1);
-                nBad++;
+                badCount++;
             }
             else
             {
-                pFrame->outlierFlags[idx] = false;
+                p_frame_inout->outlierFlags[featureIndex] = false;
                 e->setLevel(0);
             }
         }
 
-        for (size_t i = 0, iend = vpEdgesStereo.size(); i < iend; i++)
+        for (size_t keyPointIndex = 0, iend = edgesStereos.size();
+             keyPointIndex < iend;
+             keyPointIndex++)
         {
-            g2o::EdgeStereoSE3ProjectXYZOnlyPose *e = vpEdgesStereo[i];
+            g2o::EdgeStereoSE3ProjectXYZOnlyPose *e =
+                edgesStereos[keyPointIndex];
 
-            const size_t idx = vnIndexEdgeStereo[i];
-            if (it == 2)
+            const size_t featureIndex = stereoEdgeIndices[keyPointIndex];
+            if (iterationIndex == 2)
                 e->setRobustKernel(0);
 
-            if (pFrame->outlierFlags[idx])
+            if (p_frame_inout->outlierFlags[featureIndex])
             {
-                if (!pFrame->mapPoints[idx])
+                if (!p_frame_inout->mapPoints[featureIndex])
                 {
                     optimizer.removeEdge(e);
-                    nBad++;
+                    badCount++;
                     continue;
                 }
                 e->computeError();
@@ -508,34 +538,37 @@ int Optimizer::poseOptimization(Frame *pFrame)
 
             const float chi2 = e->chi2();
 
-            if (chi2 > chi2Stereo[it])
+            if (chi2 > chi2Stereo[iterationIndex])
             {
-                pFrame->outlierFlags[idx] = true;
+                p_frame_inout->outlierFlags[featureIndex] = true;
                 e->setLevel(1);
-                nBad++;
+                badCount++;
             }
             else
             {
                 e->setLevel(0);
-                pFrame->outlierFlags[idx] = false;
+                p_frame_inout->outlierFlags[featureIndex] = false;
             }
         }
 
         // DEPTH-AIDED TRACKING: Process depth edges
-        for (size_t i = 0, iend = vpEdgesDepth.size(); i < iend; i++)
+        for (size_t keyPointIndex = 0, iend = edgesDepths.size();
+             keyPointIndex < iend;
+             keyPointIndex++)
         {
-            vs_graphs::core::EdgeSE3ProjectXYZDepth *e = vpEdgesDepth[i];
+            vs_graphs::core::EdgeSE3ProjectXYZDepth *e =
+                edgesDepths[keyPointIndex];
 
-            const size_t idx = vnIndexEdgeDepth[i];
-            if (it == 2)
+            const size_t featureIndex = depthEdgeIndices[keyPointIndex];
+            if (iterationIndex == 2)
                 e->setRobustKernel(0);
 
-            if (pFrame->outlierFlags[idx])
+            if (p_frame_inout->outlierFlags[featureIndex])
             {
-                if (!pFrame->mapPoints[idx])
+                if (!p_frame_inout->mapPoints[featureIndex])
                 {
                     optimizer.removeEdge(e);
-                    nBad++;
+                    badCount++;
                     continue;
                 }
                 e->computeError();
@@ -545,14 +578,14 @@ int Optimizer::poseOptimization(Frame *pFrame)
 
             if (chi2 > deltaDepth)
             {
-                pFrame->outlierFlags[idx] = true;
+                p_frame_inout->outlierFlags[featureIndex] = true;
                 e->setLevel(1);
-                nBad++;
+                badCount++;
             }
             else
             {
                 e->setLevel(0);
-                pFrame->outlierFlags[idx] = false;
+                p_frame_inout->outlierFlags[featureIndex] = false;
             }
         }
 
@@ -561,14 +594,14 @@ int Optimizer::poseOptimization(Frame *pFrame)
     }
 
     // Recover optimized pose and return number of inliers
-    g2o::VertexSE3Expmap *vSE3_recov =
+    g2o::VertexSE3Expmap *p_recoveredPoseVertex =
         static_cast<g2o::VertexSE3Expmap *>(optimizer.vertex(0));
-    g2o::SE3Quat       SE3quat_recov = vSE3_recov->estimate();
-    Sophus::SE3<float> pose(SE3quat_recov.rotation().cast<float>(),
-                            SE3quat_recov.translation().cast<float>());
-    pFrame->setPose(pose);
+    g2o::SE3Quat       recoveredPose = p_recoveredPoseVertex->estimate();
+    Sophus::SE3<float> pose(recoveredPose.rotation().cast<float>(),
+                            recoveredPose.translation().cast<float>());
+    p_frame_inout->setPose(pose);
 
-    return nInitialCorrespondences - nBad;
+    return initialCorrespondenceCount - badCount;
 }
 
 } // namespace core

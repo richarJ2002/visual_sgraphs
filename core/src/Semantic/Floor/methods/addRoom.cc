@@ -28,31 +28,31 @@ namespace core
 namespace semantic
 {
 
-void Floor::addRoom(vs_graphs::core::semantic::Room *value)
+void Floor::addRoom(vs_graphs::core::semantic::Room *p_value_inout)
 {
-    if (value == nullptr)
+    if (p_value_inout == nullptr)
     {
         return;
     }
 
-    Floor *p_previousFloor = value->getFloor();
+    Floor *p_previousFloor = p_value_inout->getFloor();
     if (p_previousFloor != nullptr && p_previousFloor != this)
     {
-        p_previousFloor->detachRoom(value);
+        p_previousFloor->detachRoom(p_value_inout);
     }
 
     {
-        std::lock_guard<std::mutex> lock(mMutexRooms);
+        std::lock_guard<std::mutex> lock(roomsMutex);
         const bool                  alreadyPresent =
-            std::find(rooms.begin(), rooms.end(), value) != rooms.end();
+            std::find(rooms.begin(), rooms.end(), p_value_inout) != rooms.end();
 
         if (!alreadyPresent)
         {
-            rooms.push_back(value);
+            rooms.push_back(p_value_inout);
         }
     }
 
-    value->setFloor(this);
+    p_value_inout->setFloor(this);
 }
 
 } // namespace semantic

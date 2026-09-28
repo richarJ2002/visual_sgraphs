@@ -32,7 +32,7 @@ namespace vs_graphs
 namespace core
 {
 
-bool VertexPose::write(std::ostream &os) const
+bool VertexPose::write(std::ostream &outputStream_out) const
 {
     std::vector<Eigen::Matrix<double, 3, 3>> Rcw = _estimate.Rcw;
     std::vector<Eigen::Matrix<double, 3, 1>> tcw = _estimate.tcw;
@@ -40,39 +40,45 @@ bool VertexPose::write(std::ostream &os) const
     std::vector<Eigen::Matrix<double, 3, 3>> Rbc = _estimate.Rbc;
     std::vector<Eigen::Matrix<double, 3, 1>> tbc = _estimate.tbc;
 
-    const int num_cams = tcw.size();
+    const int cameraCount = tcw.size();
 
-    for (int idx = 0; idx < num_cams; idx++)
+    for (int cameraIndex = 0; cameraIndex < cameraCount; cameraIndex++)
     {
-        for (int i = 0; i < 3; i++)
+        for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
-            for (int j = 0; j < 3; j++)
-                os << Rcw[idx](i, j) << " ";
+            for (int columnIndex = 0; columnIndex < 3; columnIndex++)
+                outputStream_out
+                    << Rcw[cameraIndex](componentIndex, columnIndex) << " ";
         }
-        for (int i = 0; i < 3; i++)
+        for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
-            os << tcw[idx](i) << " ";
-        }
-
-        for (int i = 0; i < 3; i++)
-        {
-            for (int j = 0; j < 3; j++)
-                os << Rbc[idx](i, j) << " ";
-        }
-        for (int i = 0; i < 3; i++)
-        {
-            os << tbc[idx](i) << " ";
+            outputStream_out << tcw[cameraIndex](componentIndex) << " ";
         }
 
-        for (size_t i = 0; i < _estimate.pCamera[idx]->size(); i++)
+        for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
-            os << _estimate.pCamera[idx]->getParameter(i) << " ";
+            for (int columnIndex = 0; columnIndex < 3; columnIndex++)
+                outputStream_out
+                    << Rbc[cameraIndex](componentIndex, columnIndex) << " ";
+        }
+        for (int componentIndex = 0; componentIndex < 3; componentIndex++)
+        {
+            outputStream_out << tbc[cameraIndex](componentIndex) << " ";
+        }
+
+        for (size_t componentIndex = 0;
+             componentIndex < _estimate.pCamera[cameraIndex]->size();
+             componentIndex++)
+        {
+            outputStream_out
+                << _estimate.pCamera[cameraIndex]->getParameter(componentIndex)
+                << " ";
         }
     }
 
-    os << _estimate.bf << " ";
+    outputStream_out << _estimate.bf << " ";
 
-    return os.good();
+    return outputStream_out.good();
 }
 
 } // namespace core

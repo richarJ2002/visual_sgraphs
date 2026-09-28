@@ -31,40 +31,51 @@
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
-cv::Point3f KannalaBrandt8::unproject(const cv::Point2f &point2D_in)
+cv::Point3f KannalaBrandt8::unproject(const cv::Point2f &point2d_in)
 {
     // Use Newthon method to solve for theta with good precision (err ~ e-6)
-    cv::Point2f pw((point2D_in.x - parameters[2]) / parameters[0],
-                   (point2D_in.y - parameters[3]) / parameters[1]);
-    float       scale   = 1.f;
-    float       theta_d = sqrtf(pw.x * pw.x + pw.y * pw.y);
-    theta_d             = fminf(fmaxf(-CV_PI / 2.f, theta_d), CV_PI / 2.f);
+    cv::Point2f normalizedImagePoint(
+        (point2d_in.x - parameters[2]) / parameters[0],
+        (point2d_in.y - parameters[3]) / parameters[1]);
+    float rayScale = 1.f;
+    float distortedIncidenceAngle =
+        sqrtf(normalizedImagePoint.x * normalizedImagePoint.x +
+              normalizedImagePoint.y * normalizedImagePoint.y);
+    distortedIncidenceAngle =
+        fminf(fmaxf(-CV_PI / 2.f, distortedIncidenceAngle), CV_PI / 2.f);
 
-    if (theta_d > 1e-8)
+    if (distortedIncidenceAngle > 1e-8)
     {
         // Compensate distortion iteratively
-        float theta = theta_d;
+        float incidenceAngle = distortedIncidenceAngle;
 
-        for (int j = 0; j < 10; j++)
+        for (int iterationIndex = 0; iterationIndex < 10; iterationIndex++)
         {
-            float theta2 = theta * theta, theta4 = theta2 * theta2,
-                  theta6 = theta4 * theta2, theta8 = theta4 * theta4;
-            float k0_theta2 = parameters[4] * theta2,
-                  k1_theta4 = parameters[5] * theta4;
-            float k2_theta6 = parameters[6] * theta6,
-                  k3_theta8 = parameters[7] * theta8;
-            float theta_fix =
-                (theta * (1 + k0_theta2 + k1_theta4 + k2_theta6 + k3_theta8) -
-                 theta_d) /
-                (1 + 3 * k0_theta2 + 5 * k1_theta4 + 7 * k2_theta6 +
-                 9 * k3_theta8);
-            theta = theta - theta_fix;
-            if (fabsf(theta_fix) < precision)
+            float incidenceAngleSquared = incidenceAngle * incidenceAngle,
+                  incidenceAnglePow4 =
+                      incidenceAngleSquared * incidenceAngleSquared,
+                  incidenceAnglePow6 =
+                      incidenceAnglePow4 * incidenceAngleSquared,
+                  incidenceAnglePow8 = incidenceAnglePow4 * incidenceAnglePow4;
+            float distortionTermPow2 = parameters[4] * incidenceAngleSquared,
+                  distortionTermPow4 = parameters[5] * incidenceAnglePow4;
+            float distortionTermPow6 = parameters[6] * incidenceAnglePow6,
+                  distortionTermPow8 = parameters[7] * incidenceAnglePow8;
+            float thetaCorrection =
+                (incidenceAngle * (1 + distortionTermPow2 + distortionTermPow4 +
+                                   distortionTermPow6 + distortionTermPow8) -
+                 distortedIncidenceAngle) /
+                (1 + 3 * distortionTermPow2 + 5 * distortionTermPow4 +
+                 7 * distortionTermPow6 + 9 * distortionTermPow8);
+            incidenceAngle = incidenceAngle - thetaCorrection;
+            if (fabsf(thetaCorrection) < precision)
                 break;
         }
-        scale = std::tan(theta) / theta_d;
+        rayScale = std::tan(incidenceAngle) / distortedIncidenceAngle;
     }
 
-    return cv::Point3f(pw.x * scale, pw.y * scale, 1.f);
+    return cv::Point3f(normalizedImagePoint.x * rayScale,
+                       normalizedImagePoint.y * rayScale,
+                       1.f);
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

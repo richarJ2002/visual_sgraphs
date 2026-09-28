@@ -37,27 +37,29 @@ namespace core
 
 set<MapPoint *> KeyFrame::getMapPoints()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
 
     /* Init vector of map points */
     set<MapPoint *> s;
 
     /* Iterate through map points and move them over to list if valid */
-    for (size_t i = 0, iend = mapPoints.size(); i < iend; i++)
+    for (size_t mapPointIndex = 0, iend = mapPoints.size();
+         mapPointIndex < iend;
+         mapPointIndex++)
     {
         /* If map point is invalid, skip */
-        if (!mapPoints[i])
+        if (!mapPoints[mapPointIndex])
         {
             continue;
         }
 
         /* Extract map point from list */
-        MapPoint *pMP = mapPoints[i];
+        MapPoint *p_mapPoint = mapPoints[mapPointIndex];
 
         /* If point is determined to be bad, skip */
-        if (!pMP->isBad())
+        if (!p_mapPoint->isBad())
         {
-            s.insert(pMP);
+            s.insert(p_mapPoint);
         }
     }
 

@@ -30,7 +30,7 @@ namespace semantic
 
 double Passage::getHeight() const
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
     return height;
 }
 

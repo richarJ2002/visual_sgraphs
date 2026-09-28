@@ -46,30 +46,30 @@ namespace core
  *               closed-form solution; no g2o types are used. Caller must
  *               already hold the semantic-update lock.
  */
-void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
+void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 {
-    if (p_currentMap_in == nullptr || p_otherMap_in == nullptr)
+    if (p_currentMap_inout == nullptr || p_otherMap_inout == nullptr)
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: null map pointer."
                   << std::endl;
         return;
     }
 
-    if (p_currentMap_in == p_otherMap_in)
+    if (p_currentMap_inout == p_otherMap_inout)
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: identical maps."
                   << std::endl;
         return;
     }
 
-    if (p_currentMap_in->isBad() || p_otherMap_in->isBad())
+    if (p_currentMap_inout->isBad() || p_otherMap_inout->isBad())
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: a map is bad."
                   << std::endl;
         return;
     }
 
-    if (!isActiveMap(p_currentMap_in) || !isActiveMap(p_otherMap_in))
+    if (!isActiveMap(p_currentMap_inout) || !isActiveMap(p_otherMap_inout))
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: map not active."
                   << std::endl;
@@ -80,8 +80,8 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     std::vector<Eigen::Vector3d> normalsCurrent, centroidsCurrent;
     std::vector<Eigen::Vector3d> normalsOther, centroidsOther;
 
-    if (!utils::utils::Utils::collectCorrespondingWalls(p_currentMap_in,
-                                                        p_otherMap_in,
+    if (!utils::utils::Utils::collectCorrespondingWalls(p_currentMap_inout,
+                                                        p_otherMap_inout,
                                                         normalsCurrent,
                                                         centroidsCurrent,
                                                         normalsOther,
@@ -111,9 +111,9 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     /* Compare floor identities in the surviving map frame without mutating
      * either map. A mismatch rejects the merge before any entity is moved. */
     semantic::Floor *p_currentFloor = semantic::Floor::selectBestObservedFloor(
-        p_currentMap_in->getAllFloors());
-    semantic::Floor *p_otherFloor =
-        semantic::Floor::selectBestObservedFloor(p_otherMap_in->getAllFloors());
+        p_currentMap_inout->getAllFloors());
+    semantic::Floor *p_otherFloor = semantic::Floor::selectBestObservedFloor(
+        p_otherMap_inout->getAllFloors());
 
     const std::optional<semantic::Floor::PlaneIdentity> currentFloorIdentity =
         p_currentFloor != nullptr ? p_currentFloor->getPlaneIdentity()
@@ -148,8 +148,8 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
                 floorOffset_m))
         {
             std::cerr << "[FloorVerify] Rejecting merge: Map#"
-                      << p_currentMap_in->getId() << " and Map#"
-                      << p_otherMap_in->getId()
+                      << p_currentMap_inout->getId() << " and Map#"
+                      << p_otherMap_inout->getId()
                       << " floor planes mismatch (angle="
                       << floorNormalAngle_deg
                       << " deg, offset=" << floorOffset_m << " m; limits="
@@ -159,16 +159,16 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
             return;
         }
 
-        std::cout << "[FloorVerify] Map#" << p_currentMap_in->getId()
-                  << " and Map#" << p_otherMap_in->getId()
+        std::cout << "[FloorVerify] Map#" << p_currentMap_inout->getId()
+                  << " and Map#" << p_otherMap_inout->getId()
                   << " floor planes match (angle=" << floorNormalAngle_deg
                   << " deg, offset=" << floorOffset_m
                   << " m). result=ACCEPTED committed=0" << std::endl;
     }
     else
     {
-        std::cout << "[FloorVerify] Map#" << p_currentMap_in->getId()
-                  << " and Map#" << p_otherMap_in->getId()
+        std::cout << "[FloorVerify] Map#" << p_currentMap_inout->getId()
+                  << " and Map#" << p_otherMap_inout->getId()
                   << " floor verification deferred (current="
                   << (currentFloorIdentity.has_value() ? "valid" : "missing")
                   << ", other="
@@ -180,21 +180,21 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     /* Snapshot every source-owned object and preflight destination indexes
      * before changing geometry, ownership, or any externally visible ID. */
     std::vector<KeyFrame *> importedKeyFrames =
-        p_otherMap_in->getAllKeyFrames();
+        p_otherMap_inout->getAllKeyFrames();
     std::vector<MapPoint *> importedMapPoints =
-        p_otherMap_in->getAllMapPoints();
+        p_otherMap_inout->getAllMapPoints();
     std::vector<semantic::Room *> importedDetectedRooms =
-        p_otherMap_in->getAllDetectedMapRooms();
+        p_otherMap_inout->getAllDetectedMapRooms();
     std::vector<semantic::Room *> importedMarkerRooms =
-        p_otherMap_in->getAllMarkerBasedMapRooms();
+        p_otherMap_inout->getAllMarkerBasedMapRooms();
     std::vector<geometric::Plane *> importedPlanes =
-        p_otherMap_in->getAllPlanes();
+        p_otherMap_inout->getAllPlanes();
     std::vector<vs_graphs::core::semantic::Passage *> importedPassages =
-        p_otherMap_in->getAllPassages();
+        p_otherMap_inout->getAllPassages();
     std::vector<vs_graphs::core::semantic::Floor *> importedFloors =
-        p_otherMap_in->getAllFloors();
+        p_otherMap_inout->getAllFloors();
     std::vector<semantic::Marker *> importedMarkers =
-        p_otherMap_in->getAllMarkers();
+        p_otherMap_inout->getAllMarkers();
 
     const std::set<semantic::Room *> importedDetectedRoomSet(
         importedDetectedRooms.begin(),
@@ -211,16 +211,16 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
                          importedMarkerRooms.begin(),
                          importedMarkerRooms.end());
 
-    const auto ownerIsTransferable = [p_otherMap_in](Map *p_ownerMap)
-    { return p_ownerMap == p_otherMap_in; };
+    const auto ownerIsTransferable = [p_otherMap_inout](Map *p_ownerMap)
+    { return p_ownerMap == p_otherMap_inout; };
 
     const std::vector<KeyFrame *> destinationKeyFrames =
-        p_currentMap_in->getAllKeyFrames();
+        p_currentMap_inout->getAllKeyFrames();
     const std::set<KeyFrame *> destinationKeyFrameSet(
         destinationKeyFrames.begin(),
         destinationKeyFrames.end());
     const std::vector<MapPoint *> destinationMapPoints =
-        p_currentMap_in->getAllMapPoints();
+        p_currentMap_inout->getAllMapPoints();
     const std::set<MapPoint *> destinationMapPointSet(
         destinationMapPoints.begin(),
         destinationMapPoints.end());
@@ -238,11 +238,11 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
         }
 
         KeyFrame *p_indexedKeyFrame =
-            p_currentMap_in->getKeyFrameById(p_keyFrame->mnId);
+            p_currentMap_inout->getKeyFrameById(p_keyFrame->id);
         if (p_indexedKeyFrame != nullptr && p_indexedKeyFrame != p_keyFrame)
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: KeyFrame ID "
-                      << p_keyFrame->mnId << " collides in destination map."
+                      << p_keyFrame->id << " collides in destination map."
                       << std::endl;
             return;
         }
@@ -322,23 +322,23 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     std::vector<std::pair<semantic::Room *, int>>    roomIdAssignments;
     std::vector<std::pair<semantic::Floor *, int>>   floorIdAssignments;
 
-    if (!planImportedIds(p_currentMap_in->getAllPlanes(),
+    if (!planImportedIds(p_currentMap_inout->getAllPlanes(),
                          importedPlanes,
                          "plane",
                          planeIdAssignments) ||
-        !planImportedIds(p_currentMap_in->getAllMarkers(),
+        !planImportedIds(p_currentMap_inout->getAllMarkers(),
                          importedMarkers,
                          "marker",
                          markerIdAssignments) ||
-        !planImportedIds(p_currentMap_in->getAllPassages(),
+        !planImportedIds(p_currentMap_inout->getAllPassages(),
                          importedPassages,
                          "passage",
                          passageIdAssignments) ||
-        !planImportedIds(p_currentMap_in->getAllRooms(),
+        !planImportedIds(p_currentMap_inout->getAllRooms(),
                          importedRooms,
                          "room",
                          roomIdAssignments) ||
-        !planImportedIds(p_currentMap_in->getAllFloors(),
+        !planImportedIds(p_currentMap_inout->getAllFloors(),
                          importedFloors,
                          "floor",
                          floorIdAssignments))
@@ -347,43 +347,45 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     }
 
     const std::vector<MapPoint *> importedReferenceMapPoints =
-        p_otherMap_in->getReferenceMapPoints();
+        p_otherMap_inout->getReferenceMapPoints();
     const std::vector<KeyFrame *> importedKeyFrameOrigins =
-        p_otherMap_in->keyFrameOrigins;
+        p_otherMap_inout->keyFrameOrigins;
     KeyFrame *p_importedFirstRegionKeyFrame =
-        p_otherMap_in->p_firstRegionKeyFrame;
+        p_otherMap_inout->p_firstRegionKeyFrame;
 
     const Eigen::Matrix3f R = T_otherToCurrent.linear().cast<float>();
     const Eigen::Vector3f t = T_otherToCurrent.translation().cast<float>();
     const Sophus::SE3f    T_otherToCurrent_SE3f(R, t);
 
     {
-        std::scoped_lock mapUpdateLocks(p_currentMap_in->mMutexMapUpdate,
-                                        p_otherMap_in->mMutexMapUpdate);
+        std::scoped_lock mapUpdateLocks(p_currentMap_inout->mapUpdateMutex,
+                                        p_otherMap_inout->mapUpdateMutex);
 
-        p_otherMap_in->applyScaledRotation(T_otherToCurrent_SE3f, 1.0f, false);
+        p_otherMap_inout->applyScaledRotation(T_otherToCurrent_SE3f,
+                                              1.0f,
+                                              false);
 
         for (KeyFrame *p_keyFrame : importedKeyFrames)
         {
-            p_keyFrame->updateMap(p_currentMap_in);
-            p_currentMap_in->addKeyFrame(p_keyFrame);
-            p_otherMap_in->eraseKeyFrame(p_keyFrame);
+            p_keyFrame->updateMap(p_currentMap_inout);
+            p_currentMap_inout->addKeyFrame(p_keyFrame);
+            p_otherMap_inout->eraseKeyFrame(p_keyFrame);
         }
 
         for (MapPoint *p_mapPoint : importedMapPoints)
         {
-            p_mapPoint->updateMap(p_currentMap_in);
-            p_currentMap_in->addMapPoint(p_mapPoint);
-            p_otherMap_in->eraseMapPoint(p_mapPoint);
+            p_mapPoint->updateMap(p_currentMap_inout);
+            p_currentMap_inout->addMapPoint(p_mapPoint);
+            p_otherMap_inout->eraseMapPoint(p_mapPoint);
         }
 
         for (const auto &[p_plane, assignedId] : planeIdAssignments)
         {
             p_plane->setId(assignedId);
-            p_plane->setMap(p_currentMap_in);
-            p_currentMap_in->addMapPlane(p_plane);
-            p_otherMap_in->eraseRoomWallPlane(p_plane);
-            p_otherMap_in->eraseMapPlane(p_plane);
+            p_plane->setMap(p_currentMap_inout);
+            p_currentMap_inout->addMapPlane(p_plane);
+            p_otherMap_inout->eraseRoomWallPlane(p_plane);
+            p_otherMap_inout->eraseMapPlane(p_plane);
         }
 
         std::unordered_map<int, int> importedMarkerIdRemap;
@@ -392,9 +394,9 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
             importedMarkerIdRemap.insert_or_assign(p_marker->getId(),
                                                    assignedId);
             p_marker->setId(assignedId);
-            p_marker->setMap(p_currentMap_in);
-            p_currentMap_in->addMapMarker(p_marker);
-            p_otherMap_in->eraseMapMarker(p_marker);
+            p_marker->setMap(p_currentMap_inout);
+            p_currentMap_inout->addMapMarker(p_marker);
+            p_otherMap_inout->eraseMapMarker(p_marker);
         }
 
         for (const auto &[p_passage, assignedId] : passageIdAssignments)
@@ -404,7 +406,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
              * duplicating the doorway. The transferred object retires with
              * the absorbed map; it never enters the current map. */
             semantic::Passage *p_proxy =
-                p_currentMap_in->getPassageById(p_passage->getId());
+                p_currentMap_inout->getPassageById(p_passage->getId());
             if (p_proxy != nullptr &&
                 resurfaceProxyFromTransferred(p_proxy, p_passage))
             {
@@ -412,9 +414,9 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
                 continue;
             }
             p_passage->setId(assignedId);
-            p_passage->setMap(p_currentMap_in);
-            p_currentMap_in->addMapPassage(p_passage);
-            p_otherMap_in->eraseMapPassage(p_passage);
+            p_passage->setMap(p_currentMap_inout);
+            p_currentMap_inout->addMapPassage(p_passage);
+            p_otherMap_inout->eraseMapPassage(p_passage);
         }
 
         for (semantic::Room *p_room : importedRooms)
@@ -438,33 +440,33 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
         for (const auto &[p_room, assignedId] : roomIdAssignments)
         {
             p_room->setId(assignedId);
-            p_room->setMap(p_currentMap_in);
+            p_room->setMap(p_currentMap_inout);
             if (importedDetectedRoomSet.count(p_room) > 0U)
             {
-                p_currentMap_in->addDetectedMapRoom(p_room);
+                p_currentMap_inout->addDetectedMapRoom(p_room);
             }
             else
             {
-                p_currentMap_in->addCandidateMapRoom(p_room);
+                p_currentMap_inout->addCandidateMapRoom(p_room);
             }
-            p_otherMap_in->eraseDetectedMapRoom(p_room);
-            p_otherMap_in->eraseMarkerBasedMapRoom(p_room);
+            p_otherMap_inout->eraseDetectedMapRoom(p_room);
+            p_otherMap_inout->eraseMarkerBasedMapRoom(p_room);
         }
 
         for (const auto &[p_floor, assignedId] : floorIdAssignments)
         {
             p_floor->setId(assignedId);
-            p_floor->setMap(p_currentMap_in);
-            p_currentMap_in->addMapFloor(p_floor);
-            p_otherMap_in->eraseMapFloor(p_floor);
+            p_floor->setMap(p_currentMap_inout);
+            p_currentMap_inout->addMapFloor(p_floor);
+            p_otherMap_inout->eraseMapFloor(p_floor);
         }
 
         std::vector<MapPoint *> mergedReferenceMapPoints =
-            p_currentMap_in->getReferenceMapPoints();
+            p_currentMap_inout->getReferenceMapPoints();
         for (MapPoint *p_mapPoint : importedReferenceMapPoints)
         {
             if (p_mapPoint != nullptr &&
-                p_mapPoint->getMap() == p_currentMap_in &&
+                p_mapPoint->getMap() == p_currentMap_inout &&
                 std::find(mergedReferenceMapPoints.begin(),
                           mergedReferenceMapPoints.end(),
                           p_mapPoint) == mergedReferenceMapPoints.end())
@@ -472,43 +474,43 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
                 mergedReferenceMapPoints.push_back(p_mapPoint);
             }
         }
-        p_currentMap_in->setReferenceMapPoints(mergedReferenceMapPoints);
-        p_otherMap_in->setReferenceMapPoints({});
+        p_currentMap_inout->setReferenceMapPoints(mergedReferenceMapPoints);
+        p_otherMap_inout->setReferenceMapPoints({});
 
         for (KeyFrame *p_originKeyFrame : importedKeyFrameOrigins)
         {
             if (p_originKeyFrame != nullptr &&
-                p_originKeyFrame->getMap() == p_currentMap_in &&
-                std::find(p_currentMap_in->keyFrameOrigins.begin(),
-                          p_currentMap_in->keyFrameOrigins.end(),
+                p_originKeyFrame->getMap() == p_currentMap_inout &&
+                std::find(p_currentMap_inout->keyFrameOrigins.begin(),
+                          p_currentMap_inout->keyFrameOrigins.end(),
                           p_originKeyFrame) ==
-                    p_currentMap_in->keyFrameOrigins.end())
+                    p_currentMap_inout->keyFrameOrigins.end())
             {
-                p_currentMap_in->keyFrameOrigins.push_back(p_originKeyFrame);
+                p_currentMap_inout->keyFrameOrigins.push_back(p_originKeyFrame);
             }
         }
-        p_otherMap_in->keyFrameOrigins.clear();
+        p_otherMap_inout->keyFrameOrigins.clear();
 
-        if (p_currentMap_in->p_firstRegionKeyFrame == nullptr &&
+        if (p_currentMap_inout->p_firstRegionKeyFrame == nullptr &&
             p_importedFirstRegionKeyFrame != nullptr &&
-            p_importedFirstRegionKeyFrame->getMap() == p_currentMap_in)
+            p_importedFirstRegionKeyFrame->getMap() == p_currentMap_inout)
         {
-            p_currentMap_in->p_firstRegionKeyFrame =
+            p_currentMap_inout->p_firstRegionKeyFrame =
                 p_importedFirstRegionKeyFrame;
         }
-        p_otherMap_in->p_firstRegionKeyFrame = nullptr;
+        p_otherMap_inout->p_firstRegionKeyFrame = nullptr;
 
-        p_currentMap_in->setSkeletonClusterPoints({});
-        p_currentMap_in->setSkeletonEdges({});
-        p_otherMap_in->setSkeletonClusterPoints({});
-        p_otherMap_in->setSkeletonEdges({});
-        p_otherMap_in->clearTransferredEntityIndexes();
+        p_currentMap_inout->setSkeletonClusterPoints({});
+        p_currentMap_inout->setSkeletonEdges({});
+        p_otherMap_inout->setSkeletonClusterPoints({});
+        p_otherMap_inout->setSkeletonEdges({});
+        p_otherMap_inout->clearTransferredEntityIndexes();
 
         /* Fuse duplicate floors: keep only one floor per map (system supports
          * single-floor semantics). Reassign rooms from duplicate floors to the
          * primary floor and erase the extras. */
         std::vector<semantic::Floor *> allFloors =
-            p_currentMap_in->getAllFloors();
+            p_currentMap_inout->getAllFloors();
         if (allFloors.size() > 1)
         {
             semantic::Floor *p_keeperFloor =
@@ -529,7 +531,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
                     }
                 }
 
-                p_currentMap_in->eraseMapFloor(p_duplicateFloor);
+                p_currentMap_inout->eraseMapFloor(p_duplicateFloor);
                 std::cout
                     << "[Atlas::MergeMapPair] Fused duplicate semantic::Floor#"
                     << p_duplicateFloor->getId() << " into semantic::Floor#"
@@ -539,16 +541,16 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
             }
         }
 
-        utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap_in,
+        utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap_inout,
                                                           importedRooms);
 
         semantic::Floor *p_mergedFloor =
             semantic::Floor::selectBestObservedFloor(
-                p_currentMap_in->getAllFloors());
+                p_currentMap_inout->getAllFloors());
         if (p_mergedFloor != nullptr)
         {
             for (semantic::Room *p_room :
-                 p_currentMap_in->getAllDetectedMapRooms())
+                 p_currentMap_inout->getAllDetectedMapRooms())
             {
                 if (p_room != nullptr && !p_room->isBad())
                 {
@@ -557,7 +559,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
             }
         }
 
-        for (semantic::Room *p_room : p_currentMap_in->getAllRooms())
+        for (semantic::Room *p_room : p_currentMap_inout->getAllRooms())
         {
             if (p_room == nullptr || p_room->isBad())
             {
@@ -568,7 +570,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
             {
                 if (p_wall != nullptr && !p_wall->isBad())
                 {
-                    p_currentMap_in->addRoomWallPlane(p_wall);
+                    p_currentMap_inout->addRoomWallPlane(p_wall);
                 }
             }
         }
@@ -577,19 +579,20 @@ void Atlas::mergeMapPair(Map *p_currentMap_in, Map *p_otherMap_in)
     }
 
     /* Retire the absorbed map while keeping the current map active. */
-    setMapBad(p_otherMap_in);
-    changeMap(p_currentMap_in);
+    setMapBad(p_otherMap_inout);
+    changeMap(p_currentMap_inout);
 
-    std::cout << "[Atlas::MergeMapPair] Merged map " << p_otherMap_in->getId()
-              << " into map " << p_currentMap_in->getId() << " fused "
+    std::cout << "[Atlas::MergeMapPair] Merged map "
+              << p_otherMap_inout->getId() << " into map "
+              << p_currentMap_inout->getId() << " fused "
               << importedRooms.size() << " rooms into current map."
               << std::endl;
-    std::cout << "[FloorVerify] Map#" << p_currentMap_in->getId() << " and Map#"
-              << p_otherMap_in->getId() << " result=ACCEPTED committed=1"
-              << std::endl;
+    std::cout << "[FloorVerify] Map#" << p_currentMap_inout->getId()
+              << " and Map#" << p_otherMap_inout->getId()
+              << " result=ACCEPTED committed=1" << std::endl;
 
     /* Notify downstream consumers that the current map changed. */
-    p_currentMap_in->increaseChangeIndex();
+    p_currentMap_inout->increaseChangeIndex();
 }
 
 } // namespace core

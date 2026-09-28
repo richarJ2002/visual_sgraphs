@@ -35,19 +35,19 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::eraseConnection(KeyFrame *pKF)
+void KeyFrame::eraseConnection(KeyFrame *p_keyFrame_in)
 {
-    bool bUpdate = false;
+    bool shouldUpdate = false;
     {
-        unique_lock<mutex> lock(mMutexConnections);
-        if (connectedKeyFrameWeights.count(pKF))
+        unique_lock<mutex> lock(connectionsMutex);
+        if (connectedKeyFrameWeights.count(p_keyFrame_in))
         {
-            connectedKeyFrameWeights.erase(pKF);
-            bUpdate = true;
+            connectedKeyFrameWeights.erase(p_keyFrame_in);
+            shouldUpdate = true;
         }
     }
 
-    if (bUpdate)
+    if (shouldUpdate)
         updateBestCovisibles();
 }
 

@@ -35,21 +35,22 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::PreSave(
-    set<KeyFrame *>                                        &spKF,
-    set<MapPoint *>                                        &spMP,
-    set<camera_models::geometriccamera::GeometricCamera *> &spCam)
+void KeyFrame::preSave(
+    set<KeyFrame *>                                        &keyFrames_in,
+    set<MapPoint *>                                        &mapPoints_in,
+    set<camera_models::geometriccamera::GeometricCamera *> &cameras_in)
 {
     // Save the id of each MapPoint in this KF, there can be null pointer in the
     // vector
     backupMapPointsId.clear();
-    backupMapPointsId.reserve(N);
-    for (int i = 0; i < N; ++i)
+    backupMapPointsId.reserve(keyPointCount);
+    for (int keyPointIndex = 0; keyPointIndex < keyPointCount; ++keyPointIndex)
     {
 
-        if (mapPoints[i] && spMP.find(mapPoints[i]) !=
-                                spMP.end()) // Checks if the element is not null
-            backupMapPointsId.push_back(mapPoints[i]->mnId);
+        if (mapPoints[keyPointIndex] &&
+            mapPoints_in.find(mapPoints[keyPointIndex]) !=
+                mapPoints_in.end()) // Checks if the element is not null
+            backupMapPointsId.push_back(mapPoints[keyPointIndex]->id);
         else // If the element is null his value is -1 because all the id are
              // positives
             backupMapPointsId.push_back(-1);
@@ -57,64 +58,65 @@ void KeyFrame::PreSave(
     // Save the id of each connected KF with it weight
     backupConnectedKeyFrameIdWeights.clear();
     for (std::map<KeyFrame *, int>::const_iterator
-             it  = connectedKeyFrameWeights.begin(),
-             end = connectedKeyFrameWeights.end();
-         it != end;
-         ++it)
+             connectionWeightIt = connectedKeyFrameWeights.begin(),
+             end                = connectedKeyFrameWeights.end();
+         connectionWeightIt != end;
+         ++connectionWeightIt)
     {
-        if (spKF.find(it->first) != spKF.end())
-            backupConnectedKeyFrameIdWeights[it->first->mnId] = it->second;
+        if (keyFrames_in.find(connectionWeightIt->first) != keyFrames_in.end())
+            backupConnectedKeyFrameIdWeights[connectionWeightIt->first->id] =
+                connectionWeightIt->second;
     }
 
     // Save the parent id
     backupParentId = -1;
-    if (p_parent && spKF.find(p_parent) != spKF.end())
-        backupParentId = p_parent->mnId;
+    if (p_parent && keyFrames_in.find(p_parent) != keyFrames_in.end())
+        backupParentId = p_parent->id;
 
     // Save the id of the childrens KF
     backupChildrensId.clear();
     backupChildrensId.reserve(childrens.size());
-    for (KeyFrame *pKFi : childrens)
+    for (KeyFrame *p_keyFrame : childrens)
     {
-        if (spKF.find(pKFi) != spKF.end())
-            backupChildrensId.push_back(pKFi->mnId);
+        if (keyFrames_in.find(p_keyFrame) != keyFrames_in.end())
+            backupChildrensId.push_back(p_keyFrame->id);
     }
 
     // Save the id of the loop edge KF
     backupLoopEdgesId.clear();
     backupLoopEdgesId.reserve(loopEdges.size());
-    for (KeyFrame *pKFi : loopEdges)
+    for (KeyFrame *p_keyFrame : loopEdges)
     {
-        if (spKF.find(pKFi) != spKF.end())
-            backupLoopEdgesId.push_back(pKFi->mnId);
+        if (keyFrames_in.find(p_keyFrame) != keyFrames_in.end())
+            backupLoopEdgesId.push_back(p_keyFrame->id);
     }
 
     // Save the id of the merge edge KF
     backupMergeEdgesId.clear();
     backupMergeEdgesId.reserve(mergeEdges.size());
-    for (KeyFrame *pKFi : mergeEdges)
+    for (KeyFrame *p_keyFrame : mergeEdges)
     {
-        if (spKF.find(pKFi) != spKF.end())
-            backupMergeEdgesId.push_back(pKFi->mnId);
+        if (keyFrames_in.find(p_keyFrame) != keyFrames_in.end())
+            backupMergeEdgesId.push_back(p_keyFrame->id);
     }
 
     // Camera data
     backupCameraId = -1;
-    if (p_camera && spCam.find(p_camera) != spCam.end())
+    if (p_camera && cameras_in.find(p_camera) != cameras_in.end())
         backupCameraId = p_camera->getId();
 
     backupCamera2Id = -1;
-    if (p_camera2 && spCam.find(p_camera2) != spCam.end())
+    if (p_camera2 && cameras_in.find(p_camera2) != cameras_in.end())
         backupCamera2Id = p_camera2->getId();
 
     // Inertial data
     backupPrevKFId = -1;
-    if (p_prevKF && spKF.find(p_prevKF) != spKF.end())
-        backupPrevKFId = p_prevKF->mnId;
+    if (p_prevKF && keyFrames_in.find(p_prevKF) != keyFrames_in.end())
+        backupPrevKFId = p_prevKF->id;
 
     backupNextKFId = -1;
-    if (p_nextKF && spKF.find(p_nextKF) != spKF.end())
-        backupNextKFId = p_nextKF->mnId;
+    if (p_nextKF && keyFrames_in.find(p_nextKF) != keyFrames_in.end())
+        backupNextKFId = p_nextKF->id;
 
     if (p_imuPreintegrated)
         backupImuPreintegrated.copyFrom(p_imuPreintegrated);

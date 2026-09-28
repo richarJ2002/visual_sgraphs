@@ -36,7 +36,7 @@ namespace core
 
 vector<semantic::Floor *> Map::getAllFloors()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return vector<semantic::Floor *>(floors.begin(), floors.end());
 }
 

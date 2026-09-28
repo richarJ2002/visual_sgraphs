@@ -36,13 +36,13 @@ namespace core
 
 void Map::setSkeletonEdges(
     const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-        &newSkeletonEdges)
+        &newSkeletonEdges_in)
 {
     /* Lock access to the map data */
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
 
     /* Replace the previous connected skeleton edge collection */
-    skeletonEdges = newSkeletonEdges;
+    skeletonEdges = newSkeletonEdges_in;
 }
 
 } // namespace core

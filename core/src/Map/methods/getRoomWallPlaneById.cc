@@ -34,10 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-vs_graphs::core::geometric::Plane *Map::getRoomWallPlaneById(int planeId)
+vs_graphs::core::geometric::Plane *Map::getRoomWallPlaneById(int planeId_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    const auto         wallIterator = roomWallPlaneIndex.find(planeId);
+    unique_lock<mutex> lock(mapMutex);
+    const auto         wallIterator = roomWallPlaneIndex.find(planeId_in);
     return wallIterator != roomWallPlaneIndex.end() ? wallIterator->second
                                                     : nullptr;
 }

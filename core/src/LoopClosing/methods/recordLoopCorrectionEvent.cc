@@ -36,11 +36,11 @@ void LoopClosing::recordLoopCorrectionEvent(bool               accepted_in,
                                             const std::string &reason_in)
 {
     {
-        std::lock_guard<std::mutex> lock(mMutexLoopCorrectionStatus);
+        std::lock_guard<std::mutex> lock(loopCorrectionStatusMutex);
         ++loopCorrectionStatus.sequence;
-        loopCorrectionStatus.hasEvent     = true;
-        loopCorrectionStatus.lastAccepted = accepted_in;
-        loopCorrectionStatus.lastReason   = reason_in;
+        loopCorrectionStatus.hasEvent        = true;
+        loopCorrectionStatus.wasLastAccepted = accepted_in;
+        loopCorrectionStatus.lastReason      = reason_in;
 
         if (accepted_in)
         {
@@ -53,7 +53,7 @@ void LoopClosing::recordLoopCorrectionEvent(bool               accepted_in,
 
         if (p_currentKF != nullptr)
         {
-            loopCorrectionStatus.lastCurrentKeyFrameId = p_currentKF->mnId;
+            loopCorrectionStatus.lastCurrentKeyFrameId = p_currentKF->id;
             loopCorrectionStatus.lastCurrentTimestamp  = p_currentKF->timeStamp;
             if (p_currentKF->getMap() != nullptr)
             {
@@ -62,7 +62,7 @@ void LoopClosing::recordLoopCorrectionEvent(bool               accepted_in,
         }
         if (p_loopMatchedKF != nullptr)
         {
-            loopCorrectionStatus.lastMatchedKeyFrameId = p_loopMatchedKF->mnId;
+            loopCorrectionStatus.lastMatchedKeyFrameId = p_loopMatchedKF->id;
             loopCorrectionStatus.lastMatchedTimestamp =
                 p_loopMatchedKF->timeStamp;
         }

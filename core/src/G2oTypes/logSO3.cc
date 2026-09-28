@@ -32,21 +32,23 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3d LogSO3(const Eigen::Matrix3d &R)
+Eigen::Vector3d logSO3(const Eigen::Matrix3d &rotationMatrix_in)
 {
-    const double    tr = R(0, 0) + R(1, 1) + R(2, 2);
-    Eigen::Vector3d w;
-    w << (R(2, 1) - R(1, 2)) / 2, (R(0, 2) - R(2, 0)) / 2,
-        (R(1, 0) - R(0, 1)) / 2;
-    const double costheta = (tr - 1.0) * 0.5f;
-    if (costheta > 1 || costheta < -1)
-        return w;
-    const double theta = acos(costheta);
-    const double s     = sin(theta);
-    if (fabs(s) < 1e-5)
-        return w;
+    const double trace = rotationMatrix_in(0, 0) + rotationMatrix_in(1, 1) +
+                         rotationMatrix_in(2, 2);
+    Eigen::Vector3d rotationVector;
+    rotationVector << (rotationMatrix_in(2, 1) - rotationMatrix_in(1, 2)) / 2,
+        (rotationMatrix_in(0, 2) - rotationMatrix_in(2, 0)) / 2,
+        (rotationMatrix_in(1, 0) - rotationMatrix_in(0, 1)) / 2;
+    const double cosAngle = (trace - 1.0) * 0.5f;
+    if (cosAngle > 1 || cosAngle < -1)
+        return rotationVector;
+    const double angle    = acos(cosAngle);
+    const double sinAngle = sin(angle);
+    if (fabs(sinAngle) < 1e-5)
+        return rotationVector;
     else
-        return theta * w / s;
+        return angle * rotationVector / sinAngle;
 }
 
 } // namespace core

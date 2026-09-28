@@ -32,20 +32,22 @@ namespace core
 
 void EdgeSE3ProjectXYZOnlyPose::linearizeOplus()
 {
-    g2o::VertexSE3Expmap *vi =
+    g2o::VertexSE3Expmap *p_poseVertex =
         static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
-    Eigen::Vector3d xyz_trans = vi->estimate().map(Xw);
+    Eigen::Vector3d transformedPointPosition = p_poseVertex->estimate().map(Xw);
 
-    double x = xyz_trans[0];
-    double y = xyz_trans[1];
-    double z = xyz_trans[2];
+    double transformedX = transformedPointPosition[0];
+    double transformedY = transformedPointPosition[1];
+    double transformedZ = transformedPointPosition[2];
 
-    Eigen::Matrix<double, 3, 6> SE3deriv;
-    SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f, -z, 0.f, x, 0.f, 1.f, 0.f, y, -x,
-        0.f, 0.f, 0.f, 1.f;
+    Eigen::Matrix<double, 3, 6> se3Derivative;
+    se3Derivative << 0.f, transformedZ, -transformedY, 1.f, 0.f, 0.f,
+        -transformedZ, 0.f, transformedX, 0.f, 1.f, 0.f, transformedY,
+        -transformedX, 0.f, 0.f, 0.f, 1.f;
 
     _jacobianOplusXi =
-        -pCamera->computeProjectionJacobian(xyz_trans) * SE3deriv;
+        -p_camera->computeProjectionJacobian(transformedPointPosition) *
+        se3Derivative;
 }
 
 } // namespace core

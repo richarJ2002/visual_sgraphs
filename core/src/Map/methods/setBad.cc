@@ -36,7 +36,7 @@ namespace core
 
 void Map::setBad()
 {
-    mbBad.store(true, std::memory_order_release);
+    isFlaggedBad.store(true, std::memory_order_release);
 }
 
 } // namespace core

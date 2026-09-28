@@ -25,7 +25,7 @@ namespace core
 
 bool SemanticsManager::isSemanticReportCacheAvailable(void) const
 {
-    return mSemanticReportCache.isAvailable();
+    return semanticReportCache.isAvailable();
 }
 
 } // namespace core

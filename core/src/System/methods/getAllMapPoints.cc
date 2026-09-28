@@ -32,8 +32,8 @@ namespace core
 
 vector<MapPoint *> System::getAllMapPoints()
 {
-    Map *pActiveMap = p_atlas->getCurrentMap();
-    return pActiveMap->getAllMapPoints();
+    Map *p_activeMap = p_atlas->getCurrentMap();
+    return p_activeMap->getAllMapPoints();
 }
 
 } // namespace core

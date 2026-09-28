@@ -29,12 +29,17 @@
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
-std::ostream &operator<<(std::ostream &os, const KannalaBrandt8 &kannala_in)
+std::ostream &operator<<(std::ostream         &outputStream_inout,
+                         const KannalaBrandt8 &kannala_in)
 {
-    os << kannala_in.parameters[0] << " " << kannala_in.parameters[1] << " "
-       << kannala_in.parameters[2] << " " << kannala_in.parameters[3] << " "
-       << kannala_in.parameters[4] << " " << kannala_in.parameters[5] << " "
-       << kannala_in.parameters[6] << " " << kannala_in.parameters[7];
-    return os;
+    outputStream_inout << kannala_in.parameters[0] << " "
+                       << kannala_in.parameters[1] << " "
+                       << kannala_in.parameters[2] << " "
+                       << kannala_in.parameters[3] << " "
+                       << kannala_in.parameters[4] << " "
+                       << kannala_in.parameters[5] << " "
+                       << kannala_in.parameters[6] << " "
+                       << kannala_in.parameters[7];
+    return outputStream_inout;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

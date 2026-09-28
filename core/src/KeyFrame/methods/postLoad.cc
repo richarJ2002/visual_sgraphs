@@ -35,11 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::PostLoad(
-    map<long unsigned int, KeyFrame *> &mpKFid,
-    map<long unsigned int, MapPoint *> &mpMPid,
+void KeyFrame::postLoad(
+    map<long unsigned int, KeyFrame *> &keyFrameId_in,
+    map<long unsigned int, MapPoint *> &mapPointId_in,
     map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
-        &mpCamId)
+        &cameraId_in)
 {
     // Rebuild the empty variables
 
@@ -51,86 +51,87 @@ void KeyFrame::PostLoad(
     // Reference reconstruction
     // Each MapPoint sight from this KeyFrame
     mapPoints.clear();
-    mapPoints.resize(N);
-    for (int i = 0; i < N; ++i)
+    mapPoints.resize(keyPointCount);
+    for (int keyPointIndex = 0; keyPointIndex < keyPointCount; ++keyPointIndex)
     {
-        if (backupMapPointsId[i] != -1)
-            mapPoints[i] = mpMPid[backupMapPointsId[i]];
+        if (backupMapPointsId[keyPointIndex] != -1)
+            mapPoints[keyPointIndex] =
+                mapPointId_in[backupMapPointsId[keyPointIndex]];
         else
-            mapPoints[i] = static_cast<MapPoint *>(nullptr);
+            mapPoints[keyPointIndex] = static_cast<MapPoint *>(nullptr);
     }
 
     // Conected KeyFrames with him weight
     connectedKeyFrameWeights.clear();
     for (map<long unsigned int, int>::const_iterator
-             it  = backupConnectedKeyFrameIdWeights.begin(),
-             end = backupConnectedKeyFrameIdWeights.end();
-         it != end;
-         ++it)
+             mergeEdgeIdIt = backupConnectedKeyFrameIdWeights.begin(),
+             end           = backupConnectedKeyFrameIdWeights.end();
+         mergeEdgeIdIt != end;
+         ++mergeEdgeIdIt)
     {
-        KeyFrame *pKFi                 = mpKFid[it->first];
-        connectedKeyFrameWeights[pKFi] = it->second;
+        KeyFrame *p_keyFrame = keyFrameId_in[mergeEdgeIdIt->first];
+        connectedKeyFrameWeights[p_keyFrame] = mergeEdgeIdIt->second;
     }
 
     // Restore parent KeyFrame
     if (backupParentId >= 0)
-        p_parent = mpKFid[backupParentId];
+        p_parent = keyFrameId_in[backupParentId];
 
     // KeyFrame childrens
     childrens.clear();
     for (vector<long unsigned int>::const_iterator
-             it  = backupChildrensId.begin(),
-             end = backupChildrensId.end();
-         it != end;
-         ++it)
+             mergeEdgeIdIt = backupChildrensId.begin(),
+             end           = backupChildrensId.end();
+         mergeEdgeIdIt != end;
+         ++mergeEdgeIdIt)
     {
-        childrens.insert(mpKFid[*it]);
+        childrens.insert(keyFrameId_in[*mergeEdgeIdIt]);
     }
 
     // Loop edge KeyFrame
     loopEdges.clear();
     for (vector<long unsigned int>::const_iterator
-             it  = backupLoopEdgesId.begin(),
-             end = backupLoopEdgesId.end();
-         it != end;
-         ++it)
+             mergeEdgeIdIt = backupLoopEdgesId.begin(),
+             end           = backupLoopEdgesId.end();
+         mergeEdgeIdIt != end;
+         ++mergeEdgeIdIt)
     {
-        loopEdges.insert(mpKFid[*it]);
+        loopEdges.insert(keyFrameId_in[*mergeEdgeIdIt]);
     }
 
     // Merge edge KeyFrame
     mergeEdges.clear();
     for (vector<long unsigned int>::const_iterator
-             it  = backupMergeEdgesId.begin(),
-             end = backupMergeEdgesId.end();
-         it != end;
-         ++it)
+             mergeEdgeIdIt = backupMergeEdgesId.begin(),
+             end           = backupMergeEdgesId.end();
+         mergeEdgeIdIt != end;
+         ++mergeEdgeIdIt)
     {
-        mergeEdges.insert(mpKFid[*it]);
+        mergeEdges.insert(keyFrameId_in[*mergeEdgeIdIt]);
     }
 
     // Camera data
     if (backupCameraId >= 0)
     {
-        p_camera = mpCamId[backupCameraId];
+        p_camera = cameraId_in[backupCameraId];
     }
     else
     {
-        cout << "ERROR: There is not a main camera in KF " << mnId << endl;
+        cout << "ERROR: There is not a main camera in KF " << id << endl;
     }
     if (backupCamera2Id >= 0)
     {
-        p_camera2 = mpCamId[backupCamera2Id];
+        p_camera2 = cameraId_in[backupCamera2Id];
     }
 
     // Inertial data
     if (backupPrevKFId != -1)
     {
-        p_prevKF = mpKFid[backupPrevKFId];
+        p_prevKF = keyFrameId_in[backupPrevKFId];
     }
     if (backupNextKFId != -1)
     {
-        p_nextKF = mpKFid[backupNextKFId];
+        p_nextKF = keyFrameId_in[backupNextKFId];
     }
     p_imuPreintegrated = &backupImuPreintegrated;
 

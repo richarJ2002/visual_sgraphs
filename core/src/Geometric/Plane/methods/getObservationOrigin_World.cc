@@ -34,7 +34,7 @@ namespace geometric
 
 std::optional<Eigen::Vector3d> Plane::getObservationOrigin_World(void) const
 {
-    unique_lock<mutex> lock(mMutexPos);
+    unique_lock<mutex> lock(positionMutex);
     return observationOrigin_World_m;
 }
 

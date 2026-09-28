@@ -26,21 +26,21 @@ namespace core
 namespace semantic
 {
 
-void RoomTracker::reset(double now_s)
+void RoomTracker::reset(double now_s_in)
 {
-    state_ = RoomTrackingState::UNKNOWN;
-    eventHistory_.clear();
-    lastEvent_                = TransitionEvent();
-    lastReceivedTime_s_       = 0.0;
-    lastEnterStateTime_s_     = 0.0;
-    crossingDwellStartTime_s_ = -1.0;
-    reacquireRetryCount_      = 0U;
-    reacquireLastRetryTime_s_ = -1.0;
-    hasObservedBothSides_     = false;
-    wasTrackingLost_          = false;
-    if (now_s > 0.0)
+    trackingState = RoomTrackingState::UNKNOWN;
+    eventHistory.clear();
+    lastEvent                = TransitionEvent();
+    lastReceivedTime_s       = 0.0;
+    lastEnterStateTime_s     = 0.0;
+    crossingDwellStartTime_s = -1.0;
+    reacquireRetryCount      = 0U;
+    reacquireLastRetryTime_s = -1.0;
+    hasObservedBothSides     = false;
+    wasTrackingLost          = false;
+    if (now_s_in > 0.0)
     {
-        lastReceivedTime_s_ = now_s;
+        lastReceivedTime_s = now_s_in;
     }
 }
 

@@ -28,17 +28,17 @@ nlohmann::json axiomCapabilitiesToJson()
                  const semantic::AxiomCapabilityEntry &rhs_in)
               { return lhs_in.axiomCode < rhs_in.axiomCode; });
 
-    nlohmann::json json = nlohmann::json::array();
+    nlohmann::json capabilitiesJson = nlohmann::json::array();
     for (const semantic::AxiomCapabilityEntry &row : table)
     {
-        json.push_back(
+        capabilitiesJson.push_back(
             {{"axiomCode", semantic::axiomCodeName(row.axiomCode)},
              {"classification", semantic::axiomClassName(row.classification)},
              {"capability", semantic::capabilityLevelName(row.capability)},
              {"missingProofOwner",
               semantic::missingProofOwnerName(row.owner)}});
     }
-    return json;
+    return capabilitiesJson;
 }
 
 } // namespace core

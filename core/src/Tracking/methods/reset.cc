@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::reset(bool bLocMap)
+void Tracking::reset(bool isRequestedByLocalMapping_in)
 {
     Verbose::printMess("System Reseting", Verbose::VERBOSITY_NORMAL);
 
@@ -42,7 +42,7 @@ void Tracking::reset(bool bLocMap)
     }
 
     // Reset Local Mapping
-    if (!bLocMap)
+    if (!isRequestedByLocalMapping_in)
     {
         Verbose::printMess("Reseting Local Mapper...",
                            Verbose::VERBOSITY_NORMAL);
@@ -68,17 +68,17 @@ void Tracking::reset(bool bLocMap)
         p_atlas->setInertialSensor();
     initialFrameId = 0;
 
-    KeyFrame::nNextId = 0;
-    Frame::nNextId    = 0;
-    state             = NO_IMAGES_YET;
+    KeyFrame::nextId = 0;
+    Frame::nextId    = 0;
+    state            = NO_IMAGES_YET;
 
-    readyToInitialize = false;
-    isInitSet         = false;
+    isReadyToInitialize = false;
+    isInitSet           = false;
 
     relativeFramePoses.clear();
-    mlpReferences.clear();
+    referenceKeyFrames.clear();
     frameTimes.clear();
-    mlbLost.clear();
+    lostFlags.clear();
     currentFrame     = Frame();
     lastRelocFrameId = 0;
     lastFrame        = Frame();

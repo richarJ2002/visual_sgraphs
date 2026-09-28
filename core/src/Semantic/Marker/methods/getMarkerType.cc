@@ -27,7 +27,7 @@ namespace semantic
 
 Marker::MarkerVariant Marker::getMarkerType() const
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
+    std::lock_guard<std::mutex> lock(stateMutex);
     return markerType;
 }
 

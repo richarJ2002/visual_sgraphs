@@ -99,19 +99,20 @@ class Settings
      * @param[in]    sensor_in
      *               Sensor type; selects stereo-only sections.
      */
-    Settings(const std::string &configFilePath_in, const int &sensor_in);
+    Settings(const std::string &configurationFilePath_in, const int &sensor_in);
 
     /*!
      * @brief        Appends the settings dump to the stream.
      *
-     * @param[in,out] output
+     * @param[in,out] output_inout
      *                Stream receiving the dump.
-     * @param[in]    s
+     * @param[in]    s_in
      *               Settings to dump.
      *
      * @return       The output stream.
      */
-    friend std::ostream &operator<<(std::ostream &output, const Settings &s);
+    friend std::ostream &operator<<(std::ostream   &output_inout,
+                                    const Settings &s_in);
 
     /*!
      * @brief        Returns the configured camera type.
@@ -129,7 +130,7 @@ class Settings
      */
     camera_models::geometriccamera::GeometricCamera *camera1()
     {
-        return calibration1;
+        return p_calibration1;
     }
     /*!
      * @brief        Returns the second calibrated camera.
@@ -138,7 +139,7 @@ class Settings
      */
     camera_models::geometriccamera::GeometricCamera *camera2()
     {
-        return calibration2;
+        return p_calibration2;
     }
     /*!
      * @brief        Returns the first-camera distortion header.
@@ -211,7 +212,7 @@ class Settings
      */
     bool needToUndistort()
     {
-        return undistortNeeded;
+        return isUndistortionNeeded;
     }
 
     /*!
@@ -239,7 +240,7 @@ class Settings
      */
     bool isRgbEnabled()
     {
-        return rgbEnabled;
+        return isRgbInputEnabled;
     }
     /*!
      * @brief        Reports whether frames need resizing.
@@ -248,7 +249,7 @@ class Settings
      */
     bool needToResize()
     {
-        return resize1Needed;
+        return isFirstResizeNeeded;
     }
     /*!
      * @brief        Reports whether frames need rectification.
@@ -257,7 +258,7 @@ class Settings
      */
     bool needToRectify()
     {
-        return rectifyNeeded;
+        return isRectificationNeeded;
     }
 
     // IMU parameters
@@ -332,7 +333,7 @@ class Settings
      */
     bool insertKFsWhenLost()
     {
-        return insertKeyframesWhenLost;
+        return shouldInsertKeyFramesWhenLost;
     }
     /*!
      * @brief        Reports whether fast IMU initialization is
@@ -342,7 +343,7 @@ class Settings
      */
     bool fastInit() const
     {
-        return fastInitEnabled;
+        return isFastInitEnabled;
     }
 
     /*!
@@ -621,66 +622,66 @@ class Settings
     /*!
      * @brief        Reads the first-camera section.
      *
-     * @param[in]    storage_in
+     * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readCamera1(cv::FileStorage &storage_in);
+    void readCamera1(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the second-camera section.
      *
-     * @param[in]    storage_in
+     * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readCamera2(cv::FileStorage &storage_in);
+    void readCamera2(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the image-size and frame-rate section.
      *
-     * @param[in]    storage_in
+     * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readImageInfo(cv::FileStorage &storage_in);
+    void readImageInfo(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the inertial section.
      *
-     * @param[in]    storage_in
+     * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readIMU(cv::FileStorage &storage_in);
+    void readIMU(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the RGB-D section.
      *
-     * @param[in]    storage_in
+     * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readRGBD(cv::FileStorage &storage_in);
+    void readRGBD(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the ORB extractor section.
      *
-     * @param[in]    storage_in
+     * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readORB(cv::FileStorage &storage_in);
+    void readORB(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the viewer section.
      *
-     * @param[in]    storage_in
+     * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readViewer(cv::FileStorage &storage_in);
+    void readViewer(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the map load and save section.
      *
-     * @param[in]    storage_in
+     * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readLoadAndSave(cv::FileStorage &storage_in);
+    void readLoadAndSave(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the remaining miscellaneous parameters.
      *
-     * @param[in]    storage_in
+     * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readOtherParameters(cv::FileStorage &storage_in);
+    void readOtherParameters(cv::FileStorage &storage_inout);
 
     /*!
      * @brief        Precomputes the undistortion and rectification
@@ -703,13 +704,13 @@ class Settings
     /*!
      * @brief        Owned first and second camera calibrations.
      */
-    camera_models::geometriccamera::GeometricCamera *calibration1,
-        *calibration2; // Camera calibration
+    camera_models::geometriccamera::GeometricCamera *p_calibration1,
+        *p_calibration2; // Camera calibration
     /*!
      * @brief        Owned pre-rectification camera calibrations.
      */
-    camera_models::geometriccamera::GeometricCamera *originalCalibration1,
-        *originalCalibration2;
+    camera_models::geometriccamera::GeometricCamera *p_originalCalibration1,
+        *p_originalCalibration2;
     /*!
      * @brief        Pinhole distortion coefficients per camera.
      */
@@ -726,20 +727,20 @@ class Settings
     /*!
      * @brief        True for RGB input.
      */
-    bool     rgbEnabled;
+    bool     isRgbInputEnabled;
 
     /*!
      * @brief        Processing steps required by the calibration.
      */
-    bool undistortNeeded;
+    bool isUndistortionNeeded;
     /*!
      * @brief        True when rectification maps were precomputed.
      */
-    bool rectifyNeeded;
+    bool isRectificationNeeded;
     /*!
      * @brief        True when a resize step is configured.
      */
-    bool resize1Needed, resize2Needed;
+    bool isFirstResizeNeeded, isSecondResizeNeeded;
 
     /*!
      * @brief        Left-to-right stereo transform.
@@ -794,11 +795,11 @@ class Settings
     /*!
      * @brief        True to insert keyframes while lost.
      */
-    bool         insertKeyframesWhenLost;
+    bool         shouldInsertKeyFramesWhenLost;
     /*!
      * @brief        True when fast IMU initialization is enabled.
      */
-    bool         fastInitEnabled{false};
+    bool         isFastInitEnabled{false};
 
     /*
      * RGBD stuff

@@ -25,8 +25,8 @@ namespace core
 
 int SemanticsManager::getLastKnownRoomId() const
 {
-    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-    return lastKnownRoomId_;
+    std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+    return lastKnownRoomId;
 }
 
 } // namespace core

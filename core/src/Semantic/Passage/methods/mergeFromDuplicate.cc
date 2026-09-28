@@ -28,18 +28,18 @@ namespace core
 namespace semantic
 {
 
-bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
+bool Passage::mergeFromDuplicate(Passage *p_duplicate_inout)
 {
-    if (p_duplicate_in == nullptr || p_duplicate_in == this ||
-        p_duplicate_in->getId() != getId())
+    if (p_duplicate_inout == nullptr || p_duplicate_inout == this ||
+        p_duplicate_inout->getId() != getId())
     {
         return false;
     }
 
     bool canonicalIsRecoveryProxy = false;
     {
-        std::lock_guard<std::mutex> typeLock(mMutexType);
-        canonicalIsRecoveryProxy = recoveryProxy;
+        std::lock_guard<std::mutex> typeLock(typeMutex);
+        canonicalIsRecoveryProxy = isMarkedRecoveryProxy;
     }
 
     bool           duplicateIsRecoveryProxy = false;
@@ -50,13 +50,13 @@ bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
     std::size_t    duplicateUnknownCount    = 0U;
     {
         std::lock_guard<std::mutex> duplicateTypeLock(
-            p_duplicate_in->mMutexType);
-        duplicateIsRecoveryProxy = p_duplicate_in->recoveryProxy;
-        duplicateIsPassable      = p_duplicate_in->passable;
-        duplicatePassageType     = p_duplicate_in->passageType;
-        duplicateKnownToFarCount = p_duplicate_in->traversalKnownToFarCount;
-        duplicateFarToKnownCount = p_duplicate_in->traversalFarToKnownCount;
-        duplicateUnknownCount    = p_duplicate_in->traversalUnknownCount;
+            p_duplicate_inout->typeMutex);
+        duplicateIsRecoveryProxy = p_duplicate_inout->isMarkedRecoveryProxy;
+        duplicateIsPassable      = p_duplicate_inout->isMarkedPassable;
+        duplicatePassageType     = p_duplicate_inout->passageType;
+        duplicateKnownToFarCount = p_duplicate_inout->traversalKnownToFarCount;
+        duplicateFarToKnownCount = p_duplicate_inout->traversalFarToKnownCount;
+        duplicateUnknownCount    = p_duplicate_inout->traversalUnknownCount;
     }
 
     Eigen::Vector3d                 duplicateCentroid = Eigen::Vector3d::Zero();
@@ -69,15 +69,15 @@ bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
     KnownSideProvenance             duplicateKnownSide;
     {
         std::lock_guard<std::mutex> duplicateGeometryLock(
-            p_duplicate_in->mMutexGeometry);
-        duplicateCentroid          = p_duplicate_in->centroid;
-        duplicateEquation          = p_duplicate_in->globalEquation;
-        duplicateWidth_m           = p_duplicate_in->width;
-        duplicateHeight_m          = p_duplicate_in->height;
-        p_duplicateDoor            = p_duplicate_in->associateDoor;
-        duplicateWalls             = p_duplicate_in->associateWalls;
-        p_duplicateProspectiveRoom = p_duplicate_in->prospectiveRoom;
-        duplicateKnownSide         = p_duplicate_in->knownSideProvenance;
+            p_duplicate_inout->geometryMutex);
+        duplicateCentroid          = p_duplicate_inout->centroid;
+        duplicateEquation          = p_duplicate_inout->globalEquation;
+        duplicateWidth_m           = p_duplicate_inout->width;
+        duplicateHeight_m          = p_duplicate_inout->height;
+        p_duplicateDoor            = p_duplicate_inout->p_associatedDoor;
+        duplicateWalls             = p_duplicate_inout->associateWalls;
+        p_duplicateProspectiveRoom = p_duplicate_inout->p_prospectiveRoom;
+        duplicateKnownSide         = p_duplicate_inout->knownSideProvenance;
     }
 
     const Eigen::Vector4d duplicateEquationCoefficients =
@@ -93,7 +93,7 @@ bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
 
     bool replacedGeometry = false;
     {
-        std::lock_guard<std::mutex> geometryLock(mMutexGeometry);
+        std::lock_guard<std::mutex> geometryLock(geometryMutex);
         const Eigen::Vector4d       canonicalEquationCoefficients =
             globalEquation.coeffs();
         const double canonicalNormalNorm =
@@ -109,15 +109,15 @@ bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
             (canonicalIsRecoveryProxy || !canonicalHasValidGeometry);
         if (replacedGeometry)
         {
-            centroid       = duplicateCentroid;
-            globalEquation = duplicateEquation;
-            width          = duplicateWidth_m;
-            height         = duplicateHeight_m;
-            associateDoor  = p_duplicateDoor;
+            centroid         = duplicateCentroid;
+            globalEquation   = duplicateEquation;
+            width            = duplicateWidth_m;
+            height           = duplicateHeight_m;
+            p_associatedDoor = p_duplicateDoor;
         }
-        else if (associateDoor == nullptr)
+        else if (p_associatedDoor == nullptr)
         {
-            associateDoor = p_duplicateDoor;
+            p_associatedDoor = p_duplicateDoor;
         }
 
         for (geometric::Plane *p_duplicateWall : duplicateWalls)
@@ -131,13 +131,13 @@ bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
             }
         }
 
-        if (prospectiveRoom == nullptr)
+        if (p_prospectiveRoom == nullptr)
         {
-            prospectiveRoom = p_duplicateProspectiveRoom;
+            p_prospectiveRoom = p_duplicateProspectiveRoom;
         }
-        if (knownSideProvenance.pRoom == nullptr)
+        if (knownSideProvenance.p_room == nullptr)
         {
-            knownSideProvenance.pRoom = duplicateKnownSide.pRoom;
+            knownSideProvenance.p_room = duplicateKnownSide.p_room;
         }
         if (replacedGeometry)
         {
@@ -153,7 +153,7 @@ bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
     }
 
     {
-        std::lock_guard<std::mutex> typeLock(mMutexType);
+        std::lock_guard<std::mutex> typeLock(typeMutex);
         traversalKnownToFarCount =
             std::max(traversalKnownToFarCount, duplicateKnownToFarCount);
         traversalFarToKnownCount =
@@ -162,9 +162,9 @@ bool Passage::mergeFromDuplicate(Passage *p_duplicate_in)
             std::max(traversalUnknownCount, duplicateUnknownCount);
         if (replacedGeometry)
         {
-            passable      = duplicateIsPassable;
-            passageType   = duplicatePassageType;
-            recoveryProxy = false;
+            isMarkedPassable      = duplicateIsPassable;
+            passageType           = duplicatePassageType;
+            isMarkedRecoveryProxy = false;
         }
         else if (passageType == PassageVariant::UNDEFINED)
         {

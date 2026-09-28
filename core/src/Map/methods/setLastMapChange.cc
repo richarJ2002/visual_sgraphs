@@ -34,10 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::setLastMapChange(int currentChangeId)
+void Map::setLastMapChange(int currentChangeId_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    mapChangeNotified = currentChangeId;
+    unique_lock<mutex> lock(mapMutex);
+    mapChangeNotified = currentChangeId_in;
 }
 
 } // namespace core

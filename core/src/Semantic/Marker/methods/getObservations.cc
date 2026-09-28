@@ -27,7 +27,7 @@ namespace semantic
 
 std::map<core::KeyFrame *, Sophus::SE3f> Marker::getObservations() const
 {
-    std::lock_guard<std::mutex> lock(mMutexObservations);
+    std::lock_guard<std::mutex> lock(observationsMutex);
     return observations;
 }
 

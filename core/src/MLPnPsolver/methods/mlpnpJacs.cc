@@ -54,32 +54,32 @@ namespace vs_graphs
 namespace core
 {
 
-void MLPnPsolver::mlpnpJacs(const point_t         &pt,
-                            const Eigen::Vector3d &nullspace_r,
-                            const Eigen::Vector3d &nullspace_s,
-                            const rodrigues_t     &w,
-                            const translation_t   &t,
-                            Eigen::MatrixXd       &jacs)
+void MLPnPsolver::mlpnpJacs(const Point3            &point_in,
+                            const Eigen::Vector3d   &nullspace_r,
+                            const Eigen::Vector3d   &nullspace_s_in,
+                            const RodriguesVector   &w_in,
+                            const TranslationVector &t_in,
+                            Eigen::MatrixXd         &jacs_in)
 {
     double r1 = nullspace_r[0];
     double r2 = nullspace_r[1];
     double r3 = nullspace_r[2];
 
-    double s1 = nullspace_s[0];
-    double s2 = nullspace_s[1];
-    double s3 = nullspace_s[2];
+    double s1 = nullspace_s_in[0];
+    double s2 = nullspace_s_in[1];
+    double s3 = nullspace_s_in[2];
 
-    double X1 = pt[0];
-    double Y1 = pt[1];
-    double Z1 = pt[2];
+    double X1 = point_in[0];
+    double Y1 = point_in[1];
+    double Z1 = point_in[2];
 
-    double w1 = w[0];
-    double w2 = w[1];
-    double w3 = w[2];
+    double w1 = w_in[0];
+    double w2 = w_in[1];
+    double w3 = w_in[2];
 
-    double t1 = t[0];
-    double t2 = t[1];
-    double t3 = t[2];
+    double t1 = t_in[0];
+    double t2 = t_in[1];
+    double t3 = t_in[2];
 
     double t5   = w1 * w1;
     double t6   = w2 * w2;
@@ -299,7 +299,7 @@ void MLPnPsolver::mlpnpJacs(const point_t         &pt,
     double t214 = Y1 * t40 * 2.0;
     double t215 = Z1 * t43 * 2.0;
     double t216 = t213 + t214 + t215 - X1 * t38 * 2.0;
-    jacs(0, 0) =
+    jacs_in(0, 0) =
         t14 * t65 *
             (X1 * r1 * w1 * 2.0 + X1 * r2 * w2 + X1 * r3 * w3 + Y1 * r1 * w2 +
              Z1 * r1 * w3 + r1 * t1 * w1 * 2.0 + r2 * t2 * w1 * 2.0 +
@@ -333,7 +333,7 @@ void MLPnPsolver::mlpnpJacs(const point_t         &pt,
              t18 * (t135 + t137 - Y1 * (t132 + t133 - t13 * t14 * w1 * 2.0)) *
                  2.0) *
             (1.0 / 2.0);
-    jacs(0, 1) =
+    jacs_in(0, 1) =
         t14 * t65 *
             (X1 * r2 * w1 + Y1 * r1 * w1 + Y1 * r2 * w2 * 2.0 + Y1 * r3 * w3 +
              Z1 * r2 * w3 + r1 * t1 * w2 * 2.0 + r2 * t2 * w2 * 2.0 +
@@ -368,7 +368,7 @@ void MLPnPsolver::mlpnpJacs(const point_t         &pt,
                   Z1 * t173) *
                  2.0) *
             (1.0 / 2.0);
-    jacs(0, 2) =
+    jacs_in(0, 2) =
         t14 * t65 *
             (X1 * r3 * w1 + Y1 * r3 * w2 + Z1 * r1 * w1 + Z1 * r2 * w2 +
              Z1 * r3 * w3 * 2.0 + r1 * t1 * w3 * 2.0 + r2 * t2 * w3 * 2.0 +
@@ -405,10 +405,10 @@ void MLPnPsolver::mlpnpJacs(const point_t         &pt,
                   X1 * (t201 + t202 - t13 * t14 * w3 * 2.0)) *
                  2.0) *
             (1.0 / 2.0);
-    jacs(0, 3) = r1 * t65 - t14 * t93 * t101 * t208 * (1.0 / 2.0);
-    jacs(0, 4) = r2 * t65 - t14 * t93 * t101 * t212 * (1.0 / 2.0);
-    jacs(0, 5) = r3 * t65 - t14 * t93 * t101 * t216 * (1.0 / 2.0);
-    jacs(1, 0) =
+    jacs_in(0, 3) = r1 * t65 - t14 * t93 * t101 * t208 * (1.0 / 2.0);
+    jacs_in(0, 4) = r2 * t65 - t14 * t93 * t101 * t212 * (1.0 / 2.0);
+    jacs_in(0, 5) = r3 * t65 - t14 * t93 * t101 * t216 * (1.0 / 2.0);
+    jacs_in(1, 0) =
         t14 * t65 *
             (X1 * s1 * w1 * 2.0 + X1 * s2 * w2 + X1 * s3 * w3 + Y1 * s1 * w2 +
              Z1 * s1 * w3 + s1 * t1 * w1 * 2.0 + s2 * t2 * w1 * 2.0 +
@@ -438,7 +438,7 @@ void MLPnPsolver::mlpnpJacs(const point_t         &pt,
              t18 * (t135 + t137 - Y1 * (-t131 + t132 + t133)) * 2.0) *
             (1.0 / 2.0) -
         t26 * t65 * t167 * w1 * 2.0;
-    jacs(1, 1) =
+    jacs_in(1, 1) =
         t14 * t65 *
             (X1 * s2 * w1 + Y1 * s1 * w1 + Y1 * s2 * w2 * 2.0 + Y1 * s3 * w3 +
              Z1 * s2 * w3 + s1 * t1 * w2 * 2.0 + s2 * t2 * w2 * 2.0 +
@@ -469,7 +469,7 @@ void MLPnPsolver::mlpnpJacs(const point_t         &pt,
              t23 * (t175 + Y1 * (t35 - t94 + t95 + t96 - t139) - Z1 * t173) *
                  2.0) *
             (1.0 / 2.0);
-    jacs(1, 2) =
+    jacs_in(1, 2) =
         t14 * t65 *
             (X1 * s3 * w1 + Y1 * s3 * w2 + Z1 * s1 * w1 + Z1 * s2 * w2 +
              Z1 * s3 * w3 * 2.0 + s1 * t1 * w3 * 2.0 + s2 * t2 * w3 * 2.0 +
@@ -505,9 +505,9 @@ void MLPnPsolver::mlpnpJacs(const point_t         &pt,
                   X1 * (-t200 + t201 + t202)) *
                  2.0) *
             (1.0 / 2.0);
-    jacs(1, 3) = s1 * t65 - t14 * t101 * t167 * t208 * (1.0 / 2.0);
-    jacs(1, 4) = s2 * t65 - t14 * t101 * t167 * t212 * (1.0 / 2.0);
-    jacs(1, 5) = s3 * t65 - t14 * t101 * t167 * t216 * (1.0 / 2.0);
+    jacs_in(1, 3) = s1 * t65 - t14 * t101 * t167 * t208 * (1.0 / 2.0);
+    jacs_in(1, 4) = s2 * t65 - t14 * t101 * t167 * t212 * (1.0 / 2.0);
+    jacs_in(1, 5) = s3 * t65 - t14 * t101 * t167 * t216 * (1.0 / 2.0);
 }
 
 } // namespace core

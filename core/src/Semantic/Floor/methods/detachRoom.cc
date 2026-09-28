@@ -28,22 +28,22 @@ namespace core
 namespace semantic
 {
 
-void Floor::detachRoom(Room *p_room_in)
+void Floor::detachRoom(Room *p_room_inout)
 {
-    if (p_room_in == nullptr)
+    if (p_room_inout == nullptr)
     {
         return;
     }
 
     {
-        std::lock_guard<std::mutex> lock(mMutexRooms);
-        rooms.erase(std::remove(rooms.begin(), rooms.end(), p_room_in),
+        std::lock_guard<std::mutex> lock(roomsMutex);
+        rooms.erase(std::remove(rooms.begin(), rooms.end(), p_room_inout),
                     rooms.end());
     }
 
-    if (p_room_in->getFloor() == this)
+    if (p_room_inout->getFloor() == this)
     {
-        p_room_in->setFloor(nullptr);
+        p_room_inout->setFloor(nullptr);
     }
 }
 

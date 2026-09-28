@@ -39,26 +39,27 @@ void LocalMapping::scaleRefinement()
     // Minimum number of keyframes to compute a solution
     // Minimum time (seconds) between first and last keyframe to compute a
     // solution. Make the difference between monocular and stereo
-    // unique_lock<mutex> lock0(mMutexImuInit);
-    if (resetRequested)
+    // unique_lock<mutex> lock0(imuInitMutex);
+    if (isResetRequested)
         return;
 
     // Retrieve all keyframes in temporal order
-    list<KeyFrame *> lpKF;
-    KeyFrame        *pKF = p_currentKeyFrame;
-    while (pKF->p_prevKF)
+    list<KeyFrame *> temporalKeyFrames;
+    KeyFrame        *p_walkKeyFrame = p_currentKeyFrame;
+    while (p_walkKeyFrame->p_prevKF)
     {
-        lpKF.push_front(pKF);
-        pKF = pKF->p_prevKF;
+        temporalKeyFrames.push_front(p_walkKeyFrame);
+        p_walkKeyFrame = p_walkKeyFrame->p_prevKF;
     }
-    lpKF.push_front(pKF);
-    vector<KeyFrame *> vpKF(lpKF.begin(), lpKF.end());
+    temporalKeyFrames.push_front(p_walkKeyFrame);
+    vector<KeyFrame *> orderedKeyFrames(temporalKeyFrames.begin(),
+                                        temporalKeyFrames.end());
 
     while (checkNewKeyFrames())
     {
         processNewKeyFrame();
-        vpKF.push_back(p_currentKeyFrame);
-        lpKF.push_back(p_currentKeyFrame);
+        orderedKeyFrames.push_back(p_currentKeyFrame);
+        temporalKeyFrames.push_back(p_currentKeyFrame);
     }
 
     mRwg  = Eigen::Matrix3d::Identity();
@@ -69,7 +70,7 @@ void LocalMapping::scaleRefinement()
     if (scale < 1e-1) // 1e-1
     {
         cout << "scale too small" << endl;
-        bInitializing = false;
+        isInitializationInProgress = false;
         return;
     }
 
@@ -81,12 +82,12 @@ void LocalMapping::scaleRefinement()
 
     if (p_activeMap == nullptr)
     {
-        bInitializing = false;
+        isInitializationInProgress = false;
         return;
     }
 
-    unique_lock<mutex> lock(p_activeMap->mMutexMapUpdate);
-    if ((fabs(scale - 1.f) > 0.002) || !monocular)
+    unique_lock<mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
+    if ((fabs(scale - 1.f) > 0.002) || !isMonocular)
     {
         Sophus::SE3f Tgw(mRwg.cast<float>().transpose(),
                          Eigen::Vector3f::Zero());
@@ -96,13 +97,13 @@ void LocalMapping::scaleRefinement()
                                   p_currentKeyFrame);
     }
 
-    for (list<KeyFrame *>::iterator lit  = newKeyFrames.begin(),
-                                    lend = newKeyFrames.end();
-         lit != lend;
-         lit++)
+    for (list<KeyFrame *>::iterator newKeyFrameIt  = newKeyFrames.begin(),
+                                    newKeyFrameEnd = newKeyFrames.end();
+         newKeyFrameIt != newKeyFrameEnd;
+         newKeyFrameIt++)
     {
-        (*lit)->setBadFlag();
-        delete *lit;
+        (*newKeyFrameIt)->setBadFlag();
+        delete *newKeyFrameIt;
     }
     newKeyFrames.clear();
 

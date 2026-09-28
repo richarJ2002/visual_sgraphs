@@ -44,25 +44,25 @@ typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDownsample(
     const unsigned int                           minPointsPerVoxel_in)
 {
     // The filtered point p_cloud_in object
-    typename pcl::PointCloud<PointT>::Ptr filteredCloud(
+    typename pcl::PointCloud<PointT>::Ptr p_filteredCloud(
         new pcl::PointCloud<PointT>());
 
     // Define the downsampling filter
-    typename pcl::VoxelGrid<PointT>::Ptr downsampleFilter(
+    typename pcl::VoxelGrid<PointT>::Ptr p_downsampleFilter(
         new pcl::VoxelGrid<PointT>());
 
     // Set the parameters of the downsampling filter
-    downsampleFilter->setLeafSize(leafSize_in, leafSize_in, leafSize_in);
-    downsampleFilter->setMinimumPointsNumberPerVoxel(minPointsPerVoxel_in);
-    downsampleFilter->setInputCloud(p_cloud_in);
+    p_downsampleFilter->setLeafSize(leafSize_in, leafSize_in, leafSize_in);
+    p_downsampleFilter->setMinimumPointsNumberPerVoxel(minPointsPerVoxel_in);
+    p_downsampleFilter->setInputCloud(p_cloud_in);
 
     // Apply the downsampling filter
-    downsampleFilter->filter(*filteredCloud);
-    filteredCloud->header = p_cloud_in->header;
-    filteredCloud->width  = filteredCloud->size();
-    filteredCloud->height = 1;
+    p_downsampleFilter->filter(*p_filteredCloud);
+    p_filteredCloud->header = p_cloud_in->header;
+    p_filteredCloud->width  = p_filteredCloud->size();
+    p_filteredCloud->height = 1;
 
-    return filteredCloud;
+    return p_filteredCloud;
 }
 template pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
     Utils::pointcloudDownsample<pcl::PointXYZRGBA>(

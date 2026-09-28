@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addMapMarker(semantic::Marker *marker)
+void Atlas::addMapMarker(semantic::Marker *p_marker_in)
 {
-    Map *pMapMP = marker->getMap();
-    pMapMP->addMapMarker(marker);
+    Map *p_ownerMap = p_marker_in->getMap();
+    p_ownerMap->addMapMarker(p_marker_in);
 }
 
 } // namespace core

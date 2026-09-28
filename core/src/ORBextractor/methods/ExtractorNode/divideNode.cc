@@ -67,64 +67,65 @@ namespace vs_graphs
 namespace core
 {
 
-void ExtractorNode::divideNode(ExtractorNode &node1_out,
-                               ExtractorNode &node2_out,
-                               ExtractorNode &node3_out,
-                               ExtractorNode &node4_out)
+void ExtractorNode::divideNode(ExtractorNode &node1_inout,
+                               ExtractorNode &node2_inout,
+                               ExtractorNode &node3_inout,
+                               ExtractorNode &node4_inout)
 {
     const int halfX = ceil(static_cast<float>(topRight.x - topLeft.x) / 2);
     const int halfY = ceil(static_cast<float>(bottomRight.y - topLeft.y) / 2);
 
     // Define boundaries of childs
-    node1_out.topLeft     = topLeft;
-    node1_out.topRight    = cv::Point2i(topLeft.x + halfX, topLeft.y);
-    node1_out.bottomLeft  = cv::Point2i(topLeft.x, topLeft.y + halfY);
-    node1_out.bottomRight = cv::Point2i(topLeft.x + halfX, topLeft.y + halfY);
-    node1_out.keys.reserve(keys.size());
+    node1_inout.topLeft     = topLeft;
+    node1_inout.topRight    = cv::Point2i(topLeft.x + halfX, topLeft.y);
+    node1_inout.bottomLeft  = cv::Point2i(topLeft.x, topLeft.y + halfY);
+    node1_inout.bottomRight = cv::Point2i(topLeft.x + halfX, topLeft.y + halfY);
+    node1_inout.keys.reserve(keys.size());
 
-    node2_out.topLeft     = node1_out.topRight;
-    node2_out.topRight    = topRight;
-    node2_out.bottomLeft  = node1_out.bottomRight;
-    node2_out.bottomRight = cv::Point2i(topRight.x, topLeft.y + halfY);
-    node2_out.keys.reserve(keys.size());
+    node2_inout.topLeft     = node1_inout.topRight;
+    node2_inout.topRight    = topRight;
+    node2_inout.bottomLeft  = node1_inout.bottomRight;
+    node2_inout.bottomRight = cv::Point2i(topRight.x, topLeft.y + halfY);
+    node2_inout.keys.reserve(keys.size());
 
-    node3_out.topLeft     = node1_out.bottomLeft;
-    node3_out.topRight    = node1_out.bottomRight;
-    node3_out.bottomLeft  = bottomLeft;
-    node3_out.bottomRight = cv::Point2i(node1_out.bottomRight.x, bottomLeft.y);
-    node3_out.keys.reserve(keys.size());
+    node3_inout.topLeft    = node1_inout.bottomLeft;
+    node3_inout.topRight   = node1_inout.bottomRight;
+    node3_inout.bottomLeft = bottomLeft;
+    node3_inout.bottomRight =
+        cv::Point2i(node1_inout.bottomRight.x, bottomLeft.y);
+    node3_inout.keys.reserve(keys.size());
 
-    node4_out.topLeft     = node3_out.topRight;
-    node4_out.topRight    = node2_out.bottomRight;
-    node4_out.bottomLeft  = node3_out.bottomRight;
-    node4_out.bottomRight = bottomRight;
-    node4_out.keys.reserve(keys.size());
+    node4_inout.topLeft     = node3_inout.topRight;
+    node4_inout.topRight    = node2_inout.bottomRight;
+    node4_inout.bottomLeft  = node3_inout.bottomRight;
+    node4_inout.bottomRight = bottomRight;
+    node4_inout.keys.reserve(keys.size());
 
     // Associate points to childs
-    for (size_t i = 0; i < keys.size(); i++)
+    for (size_t keyIndex = 0; keyIndex < keys.size(); keyIndex++)
     {
-        const cv::KeyPoint &kp = keys[i];
-        if (kp.pt.x < node1_out.topRight.x)
+        const cv::KeyPoint &keyPoint = keys[keyIndex];
+        if (keyPoint.pt.x < node1_inout.topRight.x)
         {
-            if (kp.pt.y < node1_out.bottomRight.y)
-                node1_out.keys.push_back(kp);
+            if (keyPoint.pt.y < node1_inout.bottomRight.y)
+                node1_inout.keys.push_back(keyPoint);
             else
-                node3_out.keys.push_back(kp);
+                node3_inout.keys.push_back(keyPoint);
         }
-        else if (kp.pt.y < node1_out.bottomRight.y)
-            node2_out.keys.push_back(kp);
+        else if (keyPoint.pt.y < node1_inout.bottomRight.y)
+            node2_inout.keys.push_back(keyPoint);
         else
-            node4_out.keys.push_back(kp);
+            node4_inout.keys.push_back(keyPoint);
     }
 
-    if (node1_out.keys.size() == 1)
-        node1_out.isExhausted = true;
-    if (node2_out.keys.size() == 1)
-        node2_out.isExhausted = true;
-    if (node3_out.keys.size() == 1)
-        node3_out.isExhausted = true;
-    if (node4_out.keys.size() == 1)
-        node4_out.isExhausted = true;
+    if (node1_inout.keys.size() == 1)
+        node1_inout.isExhausted = true;
+    if (node2_inout.keys.size() == 1)
+        node2_inout.isExhausted = true;
+    if (node3_inout.keys.size() == 1)
+        node3_inout.isExhausted = true;
+    if (node4_inout.keys.size() == 1)
+        node4_inout.isExhausted = true;
 }
 
 } // namespace core

@@ -42,29 +42,29 @@ class GeoSemHelpers
      * @param[in,out] p_atlas_inout
      *                Atlas which owns the active semantic map.
      *
-     * @param       pKF
+     * @param       p_keyFrame_inout
      *              The address of the current keyframe
      *
-     * @param       estimatedPlane
+     * @param       estimatedPlane_in
      *              The estimated plane
      *
-     * @param       planeCloud
+     * @param       p_planeCloud_in
      *              The plane point cloud
      *
-     * @param       semanticType
+     * @param       semanticType_in
      *              The semantic type of the plane observation
      *
-     * @param       confidence
+     * @param       confidence_in
      *              The confidence of the plane observation
      */
     static vs_graphs::core::geometric::Plane *
         createMapPlane(Atlas               *p_atlas_inout,
-                       vs_graphs::core::KeyFrame *pKF,
-                       const g2o::Plane3D   estimatedPlane,
-                       const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
-                       vs_graphs::core::geometric::Plane::PlaneVariant semanticType =
+                       vs_graphs::core::KeyFrame *p_keyFrame_inout,
+                       const g2o::Plane3D   estimatedPlane_in,
+                       const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud_in,
+                       vs_graphs::core::geometric::Plane::PlaneVariant semanticType_in =
                            vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED,
-                       double confidence = 1.0);
+                       double confidence_in = 1.0);
 
     /*!
      * @brief       Updates the map plane
@@ -72,65 +72,65 @@ class GeoSemHelpers
      * @param[in] p_atlas_in
      *              The current map in Atlas
      *
-     * @param       pKF
+     * @param       p_keyFrame_inout
      *              The current keyframe
      *
-     * @param       estimatedPlane
+     * @param       estimatedPlane_in
      *              The estimated plane
      *
-     * @param       planeCloud
+     * @param       p_planeCloud_in
      *              The plane point cloud
      *
-     * @param       planeId
+     * @param       planeId_in
      *              The plane id
      *
-     * @param       semanticType
+     * @param       semanticType_in
      *              The semantic type of the plane observation
      *
-     * @param       confidence
+     * @param       confidence_in
      *              The confidence of the plane observation
      */
     static void
         updateMapPlane(Atlas                                  *p_atlas_in,
-                       vs_graphs::core::KeyFrame                    *pKF,
-                       const g2o::Plane3D                      estimatedPlane,
-                       pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud,
-                       int                                     planeId,
-                       vs_graphs::core::geometric::Plane::PlaneVariant          semanticType =
+                       vs_graphs::core::KeyFrame                    *p_keyFrame_inout,
+                       const g2o::Plane3D                      estimatedPlane_in,
+                       pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud_in,
+                       int                                     planeId_in,
+                       vs_graphs::core::geometric::Plane::PlaneVariant          semanticType_in =
                            vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED,
-                       double confidence = 1.0);
+                       double confidence_in = 1.0);
 
     /*!
      * @brief       Checks to see if the marker is attached to a doorway or not
      *              (e.g., a window) and returns the name of it if exists (only
      *              valid for doors)
      *
-     * @param       markerId
+     * @param       markerId_in
      *              The id of the marker
      *
      * @param       envDoorways
      *              The list of doorways in the environment
      */
     static std::pair<bool, std::string>
-        checkIfMarkerIsDoorway(const int                     &markerId,
-                               std::vector<vs_graphs::core::semantic::Room *> envRooms);
+        checkIfMarkerIsDoorway(const int                     &markerId_in,
+                               std::vector<vs_graphs::core::semantic::Room *> envRooms_in);
 
     /*!
      * @brief       Uses the detected markers to detect and map semantic
      *              objects, e.g., planes and doors
      *
-     * @param[in,out] p_atlas_inout
+     * @param[in]     p_atlas_in
      *              The current map in Atlas
      *
-     * @param       pKF
+     * @param       p_keyFrame_in
      *              The current keyframe in which the detection took place
      *
-     * @param       envRooms
+     * @param       envRooms_in
      *              The list of rooms in the environment
      */
-    static void markerSemanticAnalysis(Atlas                         *p_atlas_inout,
-                                       vs_graphs::core::KeyFrame           *pKF,
-                                       std::vector<vs_graphs::core::semantic::Room *> envRooms);
+    static void markerSemanticAnalysis(Atlas                         *p_atlas_in,
+                                       vs_graphs::core::KeyFrame           *p_keyFrame_in,
+                                       std::vector<vs_graphs::core::semantic::Room *> envRooms_in);
 
     /*!
      * @brief       Creates a new marker object to be added to the map
@@ -138,15 +138,15 @@ class GeoSemHelpers
      * @param[in,out] p_atlas_inout
      *              The current map in Atlas
      *
-     * @param       pKF
+     * @param       p_keyFrame_inout
      *              The address of the current keyframe
      *
-     * @param       visitedMarker
+     * @param       p_visitedMarker_in
      *              The address of the visited marker
      */
     static semantic::Marker *createMapMarker(Atlas        *p_atlas_inout,
-                                   KeyFrame     *pKF,
-                                   const semantic::Marker *visitedMarker);
+                                   KeyFrame     *p_keyFrame_inout,
+                                   const semantic::Marker *p_visitedMarker_in);
 
     /*!
      * @brief       Creates a new passage object to be added to the map
@@ -181,12 +181,12 @@ class GeoSemHelpers
      * @param[in,out] p_atlas_inout
      *              The current map in Atlas
      *
-     * @param       centroid
+     * @param       centroid_in
      *              The centroid of the room (optional)
      */
     static vs_graphs::core::semantic::Room *createBlankRoomCandidate(
         Atlas             *p_atlas_inout,
-        Eigen::Vector3d    centroid        = Eigen::Vector3d::Zero(),
+        Eigen::Vector3d    centroid_in        = Eigen::Vector3d::Zero(),
         std::optional<int> stableRoomId_in = std::nullopt);
 
     /*!
@@ -196,25 +196,25 @@ class GeoSemHelpers
      * @param[in] p_atlas_in
      *              The current map in Atlas
      *
-     * @param       givenRoom
+     * @param       p_givenRoom_inout
      *              The address of the detected room
      */
     static void associateGroundPlaneToRoom(Atlas           *p_atlas_in,
-                                           vs_graphs::core::semantic::Room *givenRoom);
+                                           vs_graphs::core::semantic::Room *p_givenRoom_inout);
 
     /*!
      * @brief       Counts the number of points in the ground plane that are
      *              within the walls of the room
      *
-     * @param       roomWalls
+     * @param       roomWalls_in
      *              The vector of walls detected in the room
      *
-     * @param       groundPlane
+     * @param       p_groundPlane_in
      *              The ground plane associated with the room
      */
     static size_t countGroundPlanePointsWithinWalls(
-        std::vector<vs_graphs::core::geometric::Plane *> &roomWalls,
-        vs_graphs::core::geometric::Plane                *groundPlane);
+        std::vector<vs_graphs::core::geometric::Plane *> &roomWalls_in,
+        vs_graphs::core::geometric::Plane                *p_groundPlane_in);
 
     /*!
      * @brief       Creates a new floor object to be added to the map
@@ -230,10 +230,10 @@ class GeoSemHelpers
      * @brief       Refits a mapped plane equation from its accumulated global
      *              point cloud.
      *
-     * @param[in]   plane
+     * @param[in,out] p_plane_inout
      *              Mapped plane which will be refitted.
      */
-    static bool refitMappedPlaneFromCloud(vs_graphs::core::geometric::Plane *plane);
+    static bool refitMappedPlaneFromCloud(vs_graphs::core::geometric::Plane *p_plane_inout);
 };
 } // namespace core
 } // namespace vs_graphs

@@ -32,9 +32,9 @@ namespace core
 namespace geometric
 {
 
-void Plane::setOpId(int value)
+void Plane::setOpId(int opId_in)
 {
-    opId = value;
+    opId = opId_in;
 }
 
 } // namespace geometric

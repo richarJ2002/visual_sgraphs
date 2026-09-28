@@ -132,7 +132,7 @@ TEST(SemanticFixtures, MakePassageWiresKnownAndFarSide)
     EXPECT_EQ(passage.getId(), 9);
     /* makePassage never claims traversal evidence on the caller's behalf. */
     EXPECT_FALSE(passage.getTraversalEvidence());
-    EXPECT_EQ(passage.getKnownSideProvenance().pRoom, &knownRoom);
+    EXPECT_EQ(passage.getKnownSideProvenance().p_room, &knownRoom);
     EXPECT_TRUE(passage.getKnownSideProvenance().direction_World.isApprox(
         Eigen::Vector3d(-1.0, 0.0, 0.0)));
     EXPECT_EQ(passage.getProspectiveRoom(), &farRoom);
@@ -165,7 +165,7 @@ TEST(SemanticFixtures, MakeKeyFrameAtRegistersWithMapAndCameraCenter)
     KeyFrame keyFrame;
     makeKeyFrameAt(keyFrame, 42U, p_map, Eigen::Vector3f(1.0F, 2.0F, 3.0F));
 
-    EXPECT_EQ(keyFrame.mnId, 42U);
+    EXPECT_EQ(keyFrame.id, 42U);
     EXPECT_TRUE(
         keyFrame.getCameraCenter().isApprox(Eigen::Vector3f(1.0F, 2.0F, 3.0F)));
     const auto allKeyFrames = p_map->getAllKeyFrames();
@@ -177,7 +177,7 @@ TEST(SemanticFixtures, MakeKeyFrameAtSkipsRegistrationWhenMapIsNull)
 {
     KeyFrame keyFrame;
     makeKeyFrameAt(keyFrame, 1U, nullptr, Eigen::Vector3f::Zero());
-    EXPECT_EQ(keyFrame.mnId, 1U);
+    EXPECT_EQ(keyFrame.id, 1U);
 }
 
 TEST(SemanticFixtures, NonTrivialSim3IsInvertibleAndNonIdentity)

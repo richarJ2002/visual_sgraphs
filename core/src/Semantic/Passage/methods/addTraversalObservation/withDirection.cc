@@ -30,7 +30,7 @@ namespace semantic
 
 void Passage::addTraversalObservation(TraversalDirection direction_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexType);
+    std::lock_guard<std::mutex> lock(typeMutex);
 
     std::size_t *p_counter = &traversalUnknownCount;
     if (direction_in == TraversalDirection::KNOWN_TO_FAR)

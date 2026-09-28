@@ -36,7 +36,7 @@ namespace core
 
 long unsigned int Map::getMaxKeyFrameId()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return maxKeyFrameId;
 }
 

@@ -30,7 +30,7 @@ namespace semantic
 
 Passage::KnownSideProvenance Passage::getKnownSideProvenance() const
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
     return knownSideProvenance;
 }
 

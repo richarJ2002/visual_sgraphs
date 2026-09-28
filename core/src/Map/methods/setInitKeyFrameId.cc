@@ -34,10 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::setInitKeyFrameId(long unsigned int initKFif)
+void Map::setInitKeyFrameId(long unsigned int initialKFif_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    initKeyFrameId = initKFif;
+    unique_lock<mutex> lock(mapMutex);
+    initKeyFrameId = initialKFif_in;
 }
 
 } // namespace core

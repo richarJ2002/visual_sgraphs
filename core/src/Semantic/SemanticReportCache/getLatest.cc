@@ -34,8 +34,8 @@ namespace semantic
 
 SemanticReportCacheEntry SemanticReportCache::getLatest() const
 {
-    std::lock_guard<std::mutex> lock(mMutex);
-    return mLatest;
+    std::lock_guard<std::mutex> lock(cacheMutex);
+    return latestEntry;
 }
 
 } // namespace semantic

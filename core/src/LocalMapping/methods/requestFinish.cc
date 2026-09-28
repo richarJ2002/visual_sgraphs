@@ -34,8 +34,8 @@ namespace core
 
 void LocalMapping::requestFinish()
 {
-    unique_lock<mutex> lock(mMutexFinish);
-    finishRequested = true;
+    unique_lock<mutex> finishLock(finishMutex);
+    isFinishRequested = true;
 }
 
 } // namespace core

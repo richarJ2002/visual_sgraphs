@@ -32,31 +32,31 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveTrajectoryEuRoC(const string &filename)
+void System::saveTrajectoryEuRoC(const string &filename_in)
 {
 
-    cout << endl << "Saving trajectory to " << filename << " ..." << endl;
+    cout << endl << "Saving trajectory to " << filename_in << " ..." << endl;
 
-    vector<Map *> vpMaps      = p_atlas->getAllMaps();
-    std::size_t   numMaxKFs   = 0;
-    Map          *p_biggerMap = nullptr;
-    std::cout << "There are " << std::to_string(vpMaps.size())
+    vector<Map *> maps                 = p_atlas->getAllMaps();
+    std::size_t   maximumKeyFrameCount = 0;
+    Map          *p_biggerMap          = nullptr;
+    std::cout << "There are " << std::to_string(maps.size())
               << " maps in the atlas" << std::endl;
-    for (Map *pMap : vpMaps)
+    for (Map *p_map : maps)
     {
-        if (pMap == nullptr)
+        if (p_map == nullptr)
         {
             continue;
         }
 
-        const std::size_t keyFrameCount = pMap->getAllKeyFrames().size();
+        const std::size_t keyFrameCount = p_map->getAllKeyFrames().size();
 
-        std::cout << "  Map " << std::to_string(pMap->getId()) << " has "
+        std::cout << "  Map " << std::to_string(p_map->getId()) << " has "
                   << std::to_string(keyFrameCount) << " KFs" << std::endl;
-        if (keyFrameCount > numMaxKFs)
+        if (keyFrameCount > maximumKeyFrameCount)
         {
-            numMaxKFs   = keyFrameCount;
-            p_biggerMap = pMap;
+            maximumKeyFrameCount = keyFrameCount;
+            p_biggerMap          = p_map;
         }
     }
 
@@ -67,20 +67,20 @@ void System::saveTrajectoryEuRoC(const string &filename)
         return;
     }
 
-    vector<KeyFrame *> vpKFs = p_biggerMap->getAllKeyFrames();
-    sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
+    vector<KeyFrame *> keyFrames = p_biggerMap->getAllKeyFrames();
+    sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
     Sophus::SE3f
         Twb; // Can be word to cam0 or world to b depending on IMU or not.
     if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO || sensor == IMU_RGBD)
-        Twb = vpKFs[0]->getImuPose();
+        Twb = keyFrames[0]->getImuPose();
     else
-        Twb = vpKFs[0]->getPoseInverse();
+        Twb = keyFrames[0]->getPoseInverse();
 
     ofstream f;
-    f.open(filename.c_str());
+    f.open(filename_in.c_str());
     // cout << "file open" << endl;
     f << fixed;
 
@@ -91,45 +91,45 @@ void System::saveTrajectoryEuRoC(const string &filename)
 
     // For each frame we have a reference keyframe (lRit), the timestamp (lT)
     // and a flag which is true when tracking failed (lbL).
-    list<vs_graphs::core::KeyFrame *>::iterator lRit =
-        p_tracker->mlpReferences.begin();
+    list<vs_graphs::core::KeyFrame *>::iterator rits =
+        p_tracker->referenceKeyFrames.begin();
     list<double>::iterator lT  = p_tracker->frameTimes.begin();
-    list<bool>::iterator   lbL = p_tracker->mlbLost.begin();
+    list<bool>::iterator   lbL = p_tracker->lostFlags.begin();
 
     for (auto lit  = p_tracker->relativeFramePoses.begin(),
               lend = p_tracker->relativeFramePoses.end();
          lit != lend;
-         lit++, lRit++, lT++, lbL++)
+         lit++, rits++, lT++, lbL++)
     {
         if (*lbL)
             continue;
 
-        KeyFrame *pKF = *lRit;
+        KeyFrame *p_keyFrame = *rits;
 
         Sophus::SE3f Trw;
 
         // If the reference keyframe was culled, traverse the spanning tree to
         // get a suitable keyframe.
-        if (!pKF)
+        if (!p_keyFrame)
             continue;
 
-        while (pKF->isBad())
+        while (p_keyFrame->isBad())
         {
-            Trw = Trw * pKF->tcp;
-            pKF = pKF->getParent();
+            Trw        = Trw * p_keyFrame->tcp;
+            p_keyFrame = p_keyFrame->getParent();
         }
 
-        if (!pKF || pKF->getMap() != p_biggerMap)
+        if (!p_keyFrame || p_keyFrame->getMap() != p_biggerMap)
             continue;
 
-        Trw = Trw * pKF->getPose() *
+        Trw = Trw * p_keyFrame->getPose() *
               Twb; // Tcp*Tpw*Twb0=Tcb0 where b0 is the new world reference
 
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD)
         {
             Sophus::SE3f Twb =
-                (pKF->imuCalibration.mTbc * (*lit) * Trw).inverse();
+                (p_keyFrame->imuCalibration.mTbc * (*lit) * Trw).inverse();
             Eigen::Quaternionf q   = Twb.unit_quaternion();
             Eigen::Vector3f    twb = Twb.translation();
             f << setprecision(6) << 1e9 * (*lT) << " " << setprecision(9)
@@ -149,7 +149,7 @@ void System::saveTrajectoryEuRoC(const string &filename)
 
     f.close();
     cout << endl
-         << "End of saving trajectory to " << filename << " ..." << endl;
+         << "End of saving trajectory to " << filename_in << " ..." << endl;
 }
 
 } // namespace core

@@ -59,17 +59,17 @@ class TestAtlas : public Atlas
 
     std::unique_lock<std::mutex> lockAtlas()
     {
-        return std::unique_lock<std::mutex>(mMutexAtlas);
+        return std::unique_lock<std::mutex>(atlasMutex);
     }
 
     bool tryLockRoomContext()
     {
-        if (!mRoomContextMutex.try_lock())
+        if (!roomContextMutex.try_lock())
         {
             return false;
         }
 
-        mRoomContextMutex.unlock();
+        roomContextMutex.unlock();
         return true;
     }
 };

@@ -30,42 +30,43 @@ namespace vs_graphs
 namespace core
 {
 
-float TwoViewReconstruction::checkFundamental(const Eigen::Matrix3f &F21,
-                                              vector<bool> &vbMatchesInliers,
-                                              float         sigma)
+float TwoViewReconstruction::checkFundamental(
+    const Eigen::Matrix3f &F21_in,
+    vector<bool>          &matchesInliersFlags_inout,
+    float                  sigma_in)
 {
     const int N = matches12.size();
 
-    const float f11 = F21(0, 0);
-    const float f12 = F21(0, 1);
-    const float f13 = F21(0, 2);
-    const float f21 = F21(1, 0);
-    const float f22 = F21(1, 1);
-    const float f23 = F21(1, 2);
-    const float f31 = F21(2, 0);
-    const float f32 = F21(2, 1);
-    const float f33 = F21(2, 2);
+    const float f11 = F21_in(0, 0);
+    const float f12 = F21_in(0, 1);
+    const float f13 = F21_in(0, 2);
+    const float f21 = F21_in(1, 0);
+    const float f22 = F21_in(1, 1);
+    const float f23 = F21_in(1, 2);
+    const float f31 = F21_in(2, 0);
+    const float f32 = F21_in(2, 1);
+    const float f33 = F21_in(2, 2);
 
-    vbMatchesInliers.resize(N);
+    matchesInliersFlags_inout.resize(N);
 
     float score = 0;
 
-    const float th      = 3.841;
-    const float thScore = 5.991;
+    const float threshold      = 3.841;
+    const float thresholdScore = 5.991;
 
-    const float invSigmaSquare = 1.0 / (sigma * sigma);
+    const float invSigmaSquare = 1.0 / (sigma_in * sigma_in);
 
-    for (int i = 0; i < N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
     {
-        bool bIn = true;
+        bool isInlier = true;
 
-        const cv::KeyPoint &kp1 = keys1[matches12[i].first];
-        const cv::KeyPoint &kp2 = keys2[matches12[i].second];
+        const cv::KeyPoint &keyPoint1 = keys1[matches12[keyPointIndex].first];
+        const cv::KeyPoint &keyPoint2 = keys2[matches12[keyPointIndex].second];
 
-        const float u1 = kp1.pt.x;
-        const float v1 = kp1.pt.y;
-        const float u2 = kp2.pt.x;
-        const float v2 = kp2.pt.y;
+        const float u1 = keyPoint1.pt.x;
+        const float v1 = keyPoint1.pt.y;
+        const float u2 = keyPoint2.pt.x;
+        const float v2 = keyPoint2.pt.y;
 
         // Reprojection error in second image
         // l2=F21x1=(a2,b2,c2)
@@ -76,14 +77,14 @@ float TwoViewReconstruction::checkFundamental(const Eigen::Matrix3f &F21,
 
         const float num2 = a2 * u2 + b2 * v2 + c2;
 
-        const float squareDist1 = num2 * num2 / (a2 * a2 + b2 * b2);
+        const float squareDistance1 = num2 * num2 / (a2 * a2 + b2 * b2);
 
-        const float chiSquare1 = squareDist1 * invSigmaSquare;
+        const float chiSquare1 = squareDistance1 * invSigmaSquare;
 
-        if (chiSquare1 > th)
-            bIn = false;
+        if (chiSquare1 > threshold)
+            isInlier = false;
         else
-            score += thScore - chiSquare1;
+            score += thresholdScore - chiSquare1;
 
         // Reprojection error in second image
         // l1 =x2tF21=(a1,b1,c1)
@@ -94,19 +95,19 @@ float TwoViewReconstruction::checkFundamental(const Eigen::Matrix3f &F21,
 
         const float num1 = a1 * u1 + b1 * v1 + c1;
 
-        const float squareDist2 = num1 * num1 / (a1 * a1 + b1 * b1);
+        const float squareDistance2 = num1 * num1 / (a1 * a1 + b1 * b1);
 
-        const float chiSquare2 = squareDist2 * invSigmaSquare;
+        const float chiSquare2 = squareDistance2 * invSigmaSquare;
 
-        if (chiSquare2 > th)
-            bIn = false;
+        if (chiSquare2 > threshold)
+            isInlier = false;
         else
-            score += thScore - chiSquare2;
+            score += thresholdScore - chiSquare2;
 
-        if (bIn)
-            vbMatchesInliers[i] = true;
+        if (isInlier)
+            matchesInliersFlags_inout[keyPointIndex] = true;
         else
-            vbMatchesInliers[i] = false;
+            matchesInliersFlags_inout[keyPointIndex] = false;
     }
 
     return score;

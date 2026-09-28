@@ -34,11 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane)
+void Map::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     // Add the plane to the hashmap
-    roomWallPlaneIndex[pPlane->getId()] = pPlane;
+    roomWallPlaneIndex[p_plane_in->getId()] = p_plane_in;
 }
 
 } // namespace core

@@ -34,28 +34,29 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addMapPlane(geometric::Plane *pPlane)
+void Map::addMapPlane(geometric::Plane *p_plane_inout)
 {
-    if (pPlane == nullptr)
+    if (p_plane_inout == nullptr)
     {
         return;
     }
 
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
 
     for (auto planeIterator = planeIndex.begin();
          planeIterator != planeIndex.end();)
     {
-        planeIterator = planeIterator->second == pPlane &&
-                                planeIterator->first != pPlane->getId()
+        planeIterator = planeIterator->second == p_plane_inout &&
+                                planeIterator->first != p_plane_inout->getId()
                             ? planeIndex.erase(planeIterator)
                             : std::next(planeIterator);
     }
 
-    const auto existingPlaneIterator = planeIndex.find(pPlane->getId());
+    const auto existingPlaneIterator = planeIndex.find(p_plane_inout->getId());
 
-    if (pPlane->getId() < 0 || (existingPlaneIterator != planeIndex.end() &&
-                                existingPlaneIterator->second != pPlane))
+    if (p_plane_inout->getId() < 0 ||
+        (existingPlaneIterator != planeIndex.end() &&
+         existingPlaneIterator->second != p_plane_inout))
     {
         while (planeIndex.count(nextAvailablePlaneId) > 0)
         {
@@ -65,19 +66,19 @@ void Map::addMapPlane(geometric::Plane *pPlane)
         const int replacementPlaneId = nextAvailablePlaneId++;
 
         std::cerr << "[Map] geometric::Plane ID collision for "
-                  << pPlane->getId() << "; reassigned to " << replacementPlaneId
-                  << "." << std::endl;
+                  << p_plane_inout->getId() << "; reassigned to "
+                  << replacementPlaneId << "." << std::endl;
 
-        pPlane->setId(replacementPlaneId);
+        p_plane_inout->setId(replacementPlaneId);
     }
     else
     {
         nextAvailablePlaneId =
-            std::max(nextAvailablePlaneId, pPlane->getId() + 1);
+            std::max(nextAvailablePlaneId, p_plane_inout->getId() + 1);
     }
 
-    planes.insert(pPlane);
-    planeIndex.insert_or_assign(pPlane->getId(), pPlane);
+    planes.insert(p_plane_inout);
+    planeIndex.insert_or_assign(p_plane_inout->getId(), p_plane_inout);
 }
 
 } // namespace core

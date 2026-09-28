@@ -25,8 +25,8 @@ namespace core
 
 bool SemanticSegmentation::isFinished()
 {
-    std::unique_lock<std::mutex> lock(mMutexFinish);
-    return finished;
+    std::unique_lock<std::mutex> lock(finishMutex);
+    return hasFinished;
 }
 
 } // namespace core

@@ -36,11 +36,11 @@ nlohmann::json augmentMissionHealthTopologyJsonWithSemantics(
         return topologyJson_in;
     }
 
-    const std::int64_t ageMs =
+    const std::int64_t ageMilliseconds =
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - entry_in.updateInstant)
             .count();
-    topologyJson_in["semanticCacheAgeMs"]     = ageMs;
+    topologyJson_in["semanticCacheAgeMs"]     = ageMilliseconds;
     topologyJson_in["semanticCycle"]          = entry_in.semanticCycle;
     topologyJson_in["semanticUpdateSequence"] = entry_in.updateSequence;
     if (entry_in.currentMapId.has_value())

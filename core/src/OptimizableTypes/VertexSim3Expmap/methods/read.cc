@@ -30,25 +30,27 @@ namespace vs_graphs
 namespace core
 {
 
-bool VertexSim3Expmap::read(std::istream &is)
+bool VertexSim3Expmap::read(std::istream &inputStream_inout)
 {
     g2o::Vector7d cam2world;
-    for (int i = 0; i < 6; i++)
-        is >> cam2world[i];
+    for (int parameterIndex = 0; parameterIndex < 6; parameterIndex++)
+        inputStream_inout >> cam2world[parameterIndex];
 
-    is >> cam2world[6];
+    inputStream_inout >> cam2world[6];
 
-    float nextParam;
-    for (size_t i = 0; i < pCamera1->size(); i++)
+    float cameraParameterValue;
+    for (size_t parameterIndex = 0; parameterIndex < p_firstCamera->size();
+         parameterIndex++)
     {
-        is >> nextParam;
-        pCamera1->setParameter(nextParam, i);
+        inputStream_inout >> cameraParameterValue;
+        p_firstCamera->setParameter(cameraParameterValue, parameterIndex);
     }
 
-    for (size_t i = 0; i < pCamera2->size(); i++)
+    for (size_t parameterIndex = 0; parameterIndex < p_secondCamera->size();
+         parameterIndex++)
     {
-        is >> nextParam;
-        pCamera2->setParameter(nextParam, i);
+        inputStream_inout >> cameraParameterValue;
+        p_secondCamera->setParameter(cameraParameterValue, parameterIndex);
     }
 
     setEstimate(g2o::Sim3(cam2world).inverse());

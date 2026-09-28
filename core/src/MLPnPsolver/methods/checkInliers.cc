@@ -58,11 +58,12 @@ void MLPnPsolver::checkInliers()
 {
     inlierCount = 0;
 
-    for (int i = 0; i < N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < correspondenceCount;
+         keyPointIndex++)
     {
-        point_t     p = points3Dw[i];
+        Point3      p = points3Dw[keyPointIndex];
         cv::Point3f P3Dw(p(0), p(1), p(2));
-        cv::Point2f P2D = points2D[i];
+        cv::Point2f P2D = points2D[keyPointIndex];
 
         float xc = mRi[0][0] * P3Dw.x + mRi[0][1] * P3Dw.y +
                    mRi[0][2] * P3Dw.z + mti[0];
@@ -74,19 +75,19 @@ void MLPnPsolver::checkInliers()
         cv::Point3f P3Dc(xc, yc, zc);
         cv::Point2f uv = p_camera->project(P3Dc);
 
-        float distX = P2D.x - uv.x;
-        float distY = P2D.y - uv.y;
+        float distanceX = P2D.x - uv.x;
+        float distanceY = P2D.y - uv.y;
 
-        float error2 = distX * distX + distY * distY;
+        float error2 = distanceX * distanceX + distanceY * distanceY;
 
-        if (error2 < maxError[i])
+        if (error2 < maxError[keyPointIndex])
         {
-            inlierFlags[i] = true;
+            inlierFlags[keyPointIndex] = true;
             inlierCount++;
         }
         else
         {
-            inlierFlags[i] = false;
+            inlierFlags[keyPointIndex] = false;
         }
     }
 }

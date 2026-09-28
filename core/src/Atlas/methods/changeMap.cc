@@ -30,17 +30,17 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::changeMap(Map *pMap)
+void Atlas::changeMap(Map *p_map_in)
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> atlasLock(atlasMutex);
     std::cout << "\n[Atlas]" << std::endl;
-    std::cout << "- Changing to map with MapId #" << pMap->getId() << " ..."
+    std::cout << "- Changing to map with MapId #" << p_map_in->getId() << " ..."
               << std::endl;
 
     if (p_activeMap)
         p_activeMap->setStoredMap();
 
-    p_activeMap = pMap;
+    p_activeMap = p_map_in;
     p_activeMap->setCurrentMap();
 }
 

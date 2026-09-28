@@ -43,21 +43,21 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::setImuPoseVelocity(const Eigen::Matrix3f &Rwb,
-                               const Eigen::Vector3f &twb,
-                               const Eigen::Vector3f &Vwb)
+void Frame::setImuPoseVelocity(const Eigen::Matrix3f &Rwb_in,
+                               const Eigen::Vector3f &twb_in,
+                               const Eigen::Vector3f &Vwb_in)
 {
-    velocityVw        = Vwb;
-    velocityAvailable = true;
+    velocityVw          = Vwb_in;
+    isVelocityAvailable = true;
 
-    Sophus::SE3f Twb(Rwb, twb);
+    Sophus::SE3f Twb(Rwb_in, twb_in);
     Sophus::SE3f Tbw = Twb.inverse();
 
     poseTcw = imuCalibration.mTcb * Tbw;
 
     updatePoseMatrices();
-    isFrameSet    = true;
-    poseAvailable = true;
+    isFrameSet      = true;
+    isPoseAvailable = true;
 }
 
 } // namespace core

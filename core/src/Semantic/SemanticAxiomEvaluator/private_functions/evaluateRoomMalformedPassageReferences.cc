@@ -52,9 +52,10 @@ void evaluateRoomMalformedPassageReferences(
             continue;
         }
         bool anyMalformed = false;
-        for (const EntityRef &passageRef : room.passageRefs)
+        for (const EntityRef &passageReference : room.passageRefs)
         {
-            if (!passageRef.key.has_value() && passageRef.localId.has_value())
+            if (!passageReference.key.has_value() &&
+                passageReference.localId.has_value())
             {
                 anyMalformed = true;
                 break;

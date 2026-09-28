@@ -30,7 +30,7 @@ namespace semantic
 
 std::vector<vs_graphs::core::semantic::Room *> Floor::getRooms() const
 {
-    std::lock_guard<std::mutex> lock(mMutexRooms);
+    std::lock_guard<std::mutex> lock(roomsMutex);
     return rooms;
 }
 

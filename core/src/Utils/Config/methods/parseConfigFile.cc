@@ -44,9 +44,9 @@ namespace config
 {
 
 /* Stub: the path is accepted without loading any configuration. */
-bool ConfigParser::parseConfigFile(const std::string &configFilePath_in)
+bool ConfigParser::parseConfigFile(const std::string &configurationFilePath_in)
 {
-    (void)configFilePath_in;
+    (void)configurationFilePath_in;
     return true;
 }
 

@@ -43,8 +43,8 @@ void System::updateRgbdFrontendHealth(
                                      std::memory_order_relaxed);
     rgbdFrontendOverwrittenCount.store(overwrittenCount_in,
                                        std::memory_order_relaxed);
-    rgbdFrontendWorkerInFlight.store(isWorkerInFlight_in,
-                                     std::memory_order_relaxed);
+    isRgbdFrontendWorkerInFlight.store(isWorkerInFlight_in,
+                                       std::memory_order_relaxed);
     rgbdFrontendLastProcessedSensorTimestampNanoseconds.store(
         lastProcessedSensorTimestampNanoseconds_in,
         std::memory_order_relaxed);

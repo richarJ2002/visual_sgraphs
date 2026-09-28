@@ -28,7 +28,7 @@ namespace IMU
 
 Eigen::Matrix<float, 6, 1> Preintegrated::getDeltaBias()
 {
-    std::unique_lock<std::mutex> lock(mMutex);
+    std::unique_lock<std::mutex> lock(preintegrationMutex);
     return db;
 }
 

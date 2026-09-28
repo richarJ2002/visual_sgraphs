@@ -35,18 +35,18 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::changeParent(KeyFrame *pKF)
+void KeyFrame::changeParent(KeyFrame *p_keyFrame_inout)
 {
-    unique_lock<mutex> lockCon(mMutexConnections);
-    if (pKF == this)
+    unique_lock<mutex> lockCon(connectionsMutex);
+    if (p_keyFrame_inout == this)
     {
         cout << "ERROR: Change parent KF, the parent and child are the same KF"
              << endl;
         throw std::invalid_argument("The parent and child can not be the same");
     }
 
-    p_parent = pKF;
-    pKF->addChild(this);
+    p_parent = p_keyFrame_inout;
+    p_keyFrame_inout->addChild(this);
 }
 
 } // namespace core

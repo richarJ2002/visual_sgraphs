@@ -17,47 +17,58 @@ namespace vs_graphs
 namespace core
 {
 
-void FrameDrawer::drawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
+void FrameDrawer::drawTextInfo(cv::Mat &sourceImage_in,
+                               int      trackingState_in,
+                               cv::Mat &annotatedImage_out)
 {
-    stringstream s;
-    if (nState == Tracking::NO_IMAGES_YET)
-        s << " WAITING FOR IMAGES";
-    else if (nState == Tracking::NOT_INITIALIZED)
-        s << " TRYING TO INITIALIZE ";
-    else if (nState == Tracking::OK)
+    stringstream textStream;
+    if (trackingState_in == Tracking::NO_IMAGES_YET)
+        textStream << " WAITING FOR IMAGES";
+    else if (trackingState_in == Tracking::NOT_INITIALIZED)
+        textStream << " TRYING TO INITIALIZE ";
+    else if (trackingState_in == Tracking::OK)
     {
-        if (!onlyTracking)
-            s << "SLAM MODE |  ";
+        if (!isTrackingOnlyMode)
+            textStream << "SLAM MODE |  ";
         else
-            s << "LOCALIZATION | ";
-        int nMaps = p_atlas->countMaps();
-        int nKFs  = p_atlas->getKeyFrameCount();
-        int nMPs  = p_atlas->getMapPointCount();
-        s << "Maps: " << nMaps << ", KFs: " << nKFs << ", MPs: " << nMPs
-          << ", Matches: " << trackedCount;
+            textStream << "LOCALIZATION | ";
+        int mapCount      = p_atlas->countMaps();
+        int keyFrameCount = p_atlas->getKeyFrameCount();
+        int mapPointCount = p_atlas->getMapPointCount();
+        textStream << "Maps: " << mapCount << ", KFs: " << keyFrameCount
+                   << ", MPs: " << mapPointCount
+                   << ", Matches: " << trackedCount;
         if (trackedVOCount > 0)
-            s << ", + VO matches: " << trackedVOCount;
+            textStream << ", + VO matches: " << trackedVOCount;
     }
-    else if (nState == Tracking::LOST)
+    else if (trackingState_in == Tracking::LOST)
     {
-        s << " TRACK LOST. TRYING TO RELOCALIZE ";
+        textStream << " TRACK LOST. TRYING TO RELOCALIZE ";
     }
-    else if (nState == Tracking::SYSTEM_NOT_READY)
+    else if (trackingState_in == Tracking::SYSTEM_NOT_READY)
     {
-        s << " LOADING ORB VOCABULARY. PLEASE WAIT...";
+        textStream << " LOADING ORB VOCABULARY. PLEASE WAIT...";
     }
 
     int      baseline = 0;
-    cv::Size textSize =
-        cv::getTextSize(s.str(), cv::FONT_HERSHEY_PLAIN, 1, 1, &baseline);
+    cv::Size textSize = cv::getTextSize(textStream.str(),
+                                        cv::FONT_HERSHEY_PLAIN,
+                                        1,
+                                        1,
+                                        &baseline);
 
-    imText = cv::Mat(im.rows + textSize.height + 10, im.cols, im.type());
-    im.copyTo(imText.rowRange(0, im.rows).colRange(0, im.cols));
-    imText.rowRange(im.rows, imText.rows) =
-        cv::Mat::zeros(textSize.height + 10, im.cols, im.type());
-    cv::putText(imText,
-                s.str(),
-                cv::Point(5, imText.rows - 5),
+    annotatedImage_out = cv::Mat(sourceImage_in.rows + textSize.height + 10,
+                                 sourceImage_in.cols,
+                                 sourceImage_in.type());
+    sourceImage_in.copyTo(annotatedImage_out.rowRange(0, sourceImage_in.rows)
+                              .colRange(0, sourceImage_in.cols));
+    annotatedImage_out.rowRange(sourceImage_in.rows, annotatedImage_out.rows) =
+        cv::Mat::zeros(textSize.height + 10,
+                       sourceImage_in.cols,
+                       sourceImage_in.type());
+    cv::putText(annotatedImage_out,
+                textStream.str(),
+                cv::Point(5, annotatedImage_out.rows - 5),
                 cv::FONT_HERSHEY_PLAIN,
                 1,
                 cv::Scalar(255, 255, 255),

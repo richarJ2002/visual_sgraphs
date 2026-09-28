@@ -43,7 +43,7 @@ void vs_graphs::core::KeyFrame::addMapPassage(
         return;
     }
 
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
 
     if (std::find(mapPassages.begin(), mapPassages.end(), p_passage_in) ==
         mapPassages.end())

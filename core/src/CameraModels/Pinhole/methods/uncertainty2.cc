@@ -35,7 +35,7 @@ namespace camera_models
 namespace pinhole
 {
 float Pinhole::uncertainty2(
-    [[maybe_unused]] const Eigen::Matrix<double, 2, 1> &point2D_in)
+    [[maybe_unused]] const Eigen::Matrix<double, 2, 1> &point2d_in)
 {
     return 1.0;
 }

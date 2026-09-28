@@ -30,15 +30,15 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addMapPassage(vs_graphs::core::semantic::Passage *passage)
+void Atlas::addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
 {
-    if (passage == nullptr)
+    if (p_passage_in == nullptr)
     {
         return;
     }
-    observePassageIdentity(passage->getId());
-    vs_graphs::core::Map *pMapMP = passage->getMap();
-    pMapMP->addMapPassage(passage);
+    observePassageIdentity(p_passage_in->getId());
+    vs_graphs::core::Map *p_ownerMap = p_passage_in->getMap();
+    p_ownerMap->addMapPassage(p_passage_in);
 }
 
 } // namespace core

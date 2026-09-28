@@ -109,13 +109,12 @@ void Utils::propagateSemanticPoseCorrections(
                                    cameraCenter_OldWorld_m});
     }
 
-    std::sort(correctionNodes.begin(),
-              correctionNodes.end(),
-              [](const PoseCorrectionNode &firstNode_in,
-                 const PoseCorrectionNode &secondNode_in) {
-                  return firstNode_in.p_keyFrame->mnId <
-                         secondNode_in.p_keyFrame->mnId;
-              });
+    std::sort(
+        correctionNodes.begin(),
+        correctionNodes.end(),
+        [](const PoseCorrectionNode &firstNode_in,
+           const PoseCorrectionNode &secondNode_in)
+        { return firstNode_in.p_keyFrame->id < secondNode_in.p_keyFrame->id; });
 
     const auto findNodeForKeyFrame =
         [&correctionNodes](

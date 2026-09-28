@@ -37,7 +37,7 @@ namespace core
 
 Eigen::Vector3f KeyFrame::getAccBias()
 {
-    unique_lock<mutex> lock(mMutexPose);
+    unique_lock<mutex> lock(poseMutex);
     return Eigen::Vector3f(imuBias.bax, imuBias.bay, imuBias.baz);
 }
 

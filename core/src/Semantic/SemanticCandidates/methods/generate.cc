@@ -20,10 +20,10 @@ namespace semantic
 std::vector<SemanticCandidate> SemanticCandidates::generate(
     const std::map<long unsigned int, std::vector<RoomContextSnapshot>>
                                   &history_in,
-    const SemanticCandidateConfig &config_in,
+    const SemanticCandidateConfig &configuration_in,
     const std::optional<int>       anchorRoomId_in)
 {
-    return generateWithStatus(history_in, config_in, anchorRoomId_in)
+    return generateWithStatus(history_in, configuration_in, anchorRoomId_in)
         .candidates;
 }
 

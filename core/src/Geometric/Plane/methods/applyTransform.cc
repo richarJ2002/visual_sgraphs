@@ -34,7 +34,7 @@ namespace geometric
 
 void Plane::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 {
-    std::scoped_lock lock(mMutexPos, mMutexType, mMutexFeatures);
+    std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
 
     centroid = transform_oldWorldToNewWorld_in.map(centroid);
 
@@ -52,9 +52,9 @@ void Plane::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
     globalEquation =
         transformPlaneEquation(globalEquation, transform_oldWorldToNewWorld_in);
 
-    octree->deleteTree();
-    octree->setInputCloud(planeCloud);
-    octree->addPointsFromInputCloud();
+    p_octree->deleteTree();
+    p_octree->setInputCloud(planeCloud);
+    p_octree->addPointsFromInputCloud();
 
     /* Recompute the finite bounds in the transformed frame. */
     updatePlaneBoundsWithoutLock();

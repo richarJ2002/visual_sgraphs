@@ -35,7 +35,7 @@ namespace core
 void LocalMapping::processNewKeyFrame()
 {
     {
-        unique_lock<mutex> lock(mMutexNewKFs);
+        unique_lock<mutex> newKeyFramesLock(newKeyFramesMutex);
         p_currentKeyFrame = newKeyFrames.front();
         newKeyFrames.pop_front();
     }
@@ -44,26 +44,28 @@ void LocalMapping::processNewKeyFrame()
     p_currentKeyFrame->computeBagOfWords();
 
     // Associate MapPoints to the new keyframe and update normal and descriptor
-    const vector<MapPoint *> vpMapPointMatches =
+    const vector<MapPoint *> matchedMapPoints =
         p_currentKeyFrame->getMapPointMatches();
 
-    for (size_t i = 0; i < vpMapPointMatches.size(); i++)
+    for (size_t mapPointIndex = 0; mapPointIndex < matchedMapPoints.size();
+         mapPointIndex++)
     {
-        MapPoint *pMP = vpMapPointMatches[i];
-        if (pMP)
+        MapPoint *p_mapPoint = matchedMapPoints[mapPointIndex];
+        if (p_mapPoint)
         {
-            if (!pMP->isBad())
+            if (!p_mapPoint->isBad())
             {
-                if (!pMP->isInKeyFrame(p_currentKeyFrame))
+                if (!p_mapPoint->isInKeyFrame(p_currentKeyFrame))
                 {
-                    pMP->addObservation(p_currentKeyFrame, i);
-                    pMP->updateNormalAndDepth();
-                    pMP->computeDistinctiveDescriptors();
+                    p_mapPoint->addObservation(p_currentKeyFrame,
+                                               mapPointIndex);
+                    p_mapPoint->updateNormalAndDepth();
+                    p_mapPoint->computeDistinctiveDescriptors();
                 }
                 else // this can only happen for new stereo points inserted by
                      // the Tracking
                 {
-                    mlpRecentAddedMapPoints.push_back(pMP);
+                    recentAddedMapPoints.push_back(p_mapPoint);
                 }
             }
         }

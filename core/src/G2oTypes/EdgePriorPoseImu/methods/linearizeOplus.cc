@@ -34,11 +34,15 @@ namespace core
 
 void EdgePriorPoseImu::linearizeOplus()
 {
-    const VertexPose     *VP = static_cast<const VertexPose *>(_vertices[0]);
-    const Eigen::Vector3d er = LogSO3(Rwb.transpose() * VP->estimate().Rwb);
+    const VertexPose *p_poseVertex =
+        static_cast<const VertexPose *>(_vertices[0]);
+    const Eigen::Vector3d rotationError =
+        logSO3(Rwb.transpose() * p_poseVertex->estimate().Rwb);
     _jacobianOplus[0].setZero();
-    _jacobianOplus[0].block<3, 3>(0, 0) = InverseRightJacobianSO3(er);
-    _jacobianOplus[0].block<3, 3>(3, 3) = Rwb.transpose() * VP->estimate().Rwb;
+    _jacobianOplus[0].block<3, 3>(0, 0) =
+        inverseRightJacobianSO3(rotationError);
+    _jacobianOplus[0].block<3, 3>(3, 3) =
+        Rwb.transpose() * p_poseVertex->estimate().Rwb;
     _jacobianOplus[1].setZero();
     _jacobianOplus[1].block<3, 3>(6, 0) = Eigen::Matrix3d::Identity();
     _jacobianOplus[2].setZero();

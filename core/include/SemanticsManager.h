@@ -60,17 +60,17 @@ class SemanticsManager
     /*!
      * @brief       Serializes updates to the set of newly detected rooms.
      */
-    std::mutex mMutexNewRooms;
+    std::mutex newRoomsMutex;
 
     /*!
      * @brief       Serializes updates to the current/last-known room ids.
      */
-    mutable std::mutex mMutexCurrentRoom;
+    mutable std::mutex currentRoomMutex;
 
     // Shutdown control (LocalMapping-style handshake)
-    std::mutex mMutexFinish;
-    bool       finishRequested = false;
-    bool       finished        = false;
+    std::mutex finishMutex;
+    bool       isFinishRequested = false;
+    bool       hasFinished       = false;
     bool       checkFinish();
     void       setFinish();
 
@@ -80,7 +80,7 @@ class SemanticsManager
      *              service callback in particular) without touching the
      *              semantic-update lock.
      */
-    semantic::SemanticReportCache mSemanticReportCache;
+    semantic::SemanticReportCache semanticReportCache;
 
     /*!
      * @brief       Caller-owned state carried across
@@ -90,18 +90,18 @@ class SemanticsManager
      *              appeared/changed/resolved FAIL-finding transition or a
      *              topology digest change, and pace the heartbeat.
      */
-    semantic::SemanticDiagnosticState mSemanticDiagnosticState_;
+    semantic::SemanticDiagnosticState semanticDiagnosticState;
 
     /*!
      * @brief        Room-state machine implementing the transition
      *               table.
      *
      *               The tracker is a parallel, read-only observer of
-     *               the currentRoomId_/lastKnownRoomId_ bookkeeping;
+     *               the currentRoomId/lastKnownRoomId bookkeeping;
      *               it does not move those ids, it just records state
      *               transitions and guards.
      */
-    semantic::RoomTracker roomTracker_;
+    semantic::RoomTracker roomTracker;
 
     /*!
      * @brief Queued typed result from the future geometric verifier.
@@ -110,49 +110,49 @@ class SemanticsManager
      * publishes one result; the semantic thread consumes it once.  No room
      * geometry or identity is inferred when the flag is clear.
      */
-    semantic::VerificationVerdict verificationVerdict_{};
-    bool                          verificationVerdictPending_ = false;
+    semantic::VerificationVerdict verificationVerdict{};
+    bool                          isVerificationVerdictPending = false;
 
     /*!
      * @brief       Set by updateTraversalEvidence() when a passable passage
      *              crossing was observed during this semantic cycle.
      */
-    bool crossingEventPending_     = false;
-    bool crossingBothSidesPending_ = false;
+    bool isCrossingEventPending     = false;
+    bool isCrossingBothSidesPending = false;
 
     /*
      * Test-only seam, always declared so production and test builds share one
      * object layout; it stays empty outside tests, where
      * updateTraversalEvidence() only moves an empty std::function. The
-     * callback is deliberately invoked while mMutexCurrentRoom is held so the
+     * callback is deliberately invoked while currentRoomMutex is held so the
      * integration test proves real producer and consumer contention; it must
      * not call back into this manager except through the non-blocking
      * contention probe.
      */
-    std::function<void()> roomTrackerPendingPublishHook_;
+    std::function<void()> roomTrackerPendingPublishHook;
 
     /*!
      * @brief       Set by onTrackingLost() (once per loss episode) and
      *              consumed by the room tracker during the next Run cycle.
      */
-    bool trackingLostPending_       = false;
-    bool trackingLossEpisodeActive_ = false;
-    bool newMapCreatedDeferred_     = false;
-    bool pendingNewMapCreated_      = false;
+    bool isTrackingLostPending       = false;
+    bool isTrackingLossEpisodeActive = false;
+    bool isNewMapCreatedDeferred     = false;
+    bool isNewMapCreatedPending      = false;
 
     /*!
      * @brief       Id of the room the camera most recently occupied.
      *
      *              -1 until the first confirmed room has been resolved.
      */
-    int currentRoomId_{-1};
+    int currentRoomId{-1};
 
     /*!
      * @brief       Id of the room known just before the current tracking loss.
      *
      *              -1 when tracking has not yet been lost.
      */
-    int lastKnownRoomId_{-1};
+    int lastKnownRoomId{-1};
 
     /*!
      * @brief       The transformation matrix from ground plane to horizontal.
@@ -189,17 +189,17 @@ class SemanticsManager
     /*!
      * @brief       Passage hypotheses awaiting repeated Voxblox confirmation.
      */
-    std::vector<OpenPassageEvidence> openPassageEvidence_;
+    std::vector<OpenPassageEvidence> openPassageEvidence;
 
     /*!
      * @brief       Fingerprint of the last processed sparse-graph snapshot.
      */
-    std::uint64_t lastSkeletonFingerprint_ = 0U;
+    std::uint64_t lastSkeletonFingerprint = 0U;
 
     /*!
-     * @brief       Whether lastSkeletonFingerprint_ contains a valid snapshot.
+     * @brief       Whether lastSkeletonFingerprint contains a valid snapshot.
      */
-    bool hasSkeletonFingerprint_ = false;
+    bool hasSkeletonFingerprint = false;
 
     /*!
      * @brief       Latest UAV camera centre in the active map frame.
@@ -217,23 +217,23 @@ class SemanticsManager
     /*!
      * @brief       Whether currentCameraCenter_World_m holds a valid position.
      */
-    bool hasCameraCenter_ = false;
+    bool hasCameraCenter = false;
 
     /* Active map whose frame contains the tracked camera centres. */
-    Map *pCameraCenterMap_ = nullptr;
+    Map *p_cameraCenterMap = nullptr;
 
     /*! @brief Last keyframe consumed by traversal sampling. */
-    long unsigned int lastTraversalFrameId_    = 0U;
-    long unsigned int lastTraversalKeyFrameId_ = 0U;
+    long unsigned int lastTraversalFrameId    = 0U;
+    long unsigned int lastTraversalKeyFrameId = 0U;
 
     /*! @brief Whether the traversal keyframe cursor is initialized. */
-    bool hasTraversalKeyFrameCursor_ = false;
+    bool hasTraversalKeyFrameCursor = false;
 
     /*! @brief Active map which owns every map-local temporal cache below. */
-    Map *pTemporalStateMap_ = nullptr;
+    Map *p_temporalStateMap = nullptr;
 
     /*! @brief Coordinate-frame epoch used to detect whole-map rebases only. */
-    std::uint64_t temporalStateWorldFrameEpoch_ = 0U;
+    std::uint64_t temporalStateWorldFrameEpoch = 0U;
 
     /*!
      * @brief Confirmed rooms reported as disconnected on the previous cycle.
@@ -241,14 +241,14 @@ class SemanticsManager
      *        Retaining the IDs prevents the online consistency warning from
      *        being repeated when no new passage evidence has arrived.
      */
-    std::unordered_set<int> disconnectedRoomIds_;
+    std::unordered_set<int> disconnectedRoomIds;
 
     /*!
      * @brief       Tracks passage-created prospective room handles.
      *              A zero value denotes a live handle; entries are removed on
      *              promotion, replacement, or orphan cleanup.
      */
-    std::unordered_map<int, int> prospectiveRoomCycles_;
+    std::unordered_map<int, int> prospectiveRoomCycles;
 
     /*!
      * @brief       Consecutive cycles a passage has had zero associated
@@ -257,7 +257,7 @@ class SemanticsManager
      *              any room is associated, entries removed once the
      *              passage is marked bad (Passage::setBad()).
      */
-    std::unordered_map<int, std::size_t> passageZeroRoomCycles_;
+    std::unordered_map<int, std::size_t> passageZeroRoomCycles;
 
     struct UndefendedWallState
     {
@@ -268,10 +268,10 @@ class SemanticsManager
     };
 
     /*! @brief Weak, unused wall hypotheses awaiting bounded retirement. */
-    std::unordered_map<int, UndefendedWallState> undefendedWalls_;
+    std::unordered_map<int, UndefendedWallState> undefendedWalls;
 
     /*! @brief Current semantic transaction sequence used by SG_PIPELINE. */
-    std::uint64_t pipelineSemanticCycle_{0U};
+    std::uint64_t pipelineSemanticCycle{0U};
 
     /*! @brief Result of establishing the active map's bootstrap hierarchy. */
     enum class ActiveMapBootstrapResult
@@ -286,16 +286,16 @@ class SemanticsManager
     };
 
     /*! @brief Suppresses repeated diagnostics for the same entity ID. */
-    std::unordered_set<int>              loggedOrphanWallIds_;
-    std::unordered_map<int, std::string> loggedWallRejectionReasons_;
-    std::unordered_set<int>              loggedRetiredWallIds_;
-    std::unordered_set<int>              loggedRoomCleanupIds_;
+    std::unordered_set<int>              loggedOrphanWallIds;
+    std::unordered_map<int, std::string> loggedWallRejectionReasons;
+    std::unordered_set<int>              loggedRetiredWallIds;
+    std::unordered_set<int>              loggedRoomCleanupIds;
     /*! @brief Suppresses repeated diagnostics for the same merged passage
      *  pair (survivor id, absorbed id). Passage has no isBad()/deletion
      *  lifecycle, so a merge re-detects the same overlap every cycle;
      *  the field-sync itself is idempotent, only the log line needs
      *  deduplicating. */
-    std::set<std::pair<int, int>>        loggedPassageMergeIds_;
+    std::set<std::pair<int, int>>        loggedPassageMergeIds;
 
     /*!
      * @brief       Maximum number of prospective rooms allowed simultaneously.
@@ -327,7 +327,7 @@ class SemanticsManager
             &cameraPositionOverride_World_m_in = std::nullopt);
 
     /*!
-     * @brief       Seeds currentRoomId_ from the first confirmed room of the
+     * @brief       Seeds currentRoomId from the first confirmed room of the
      *              active map, only while no current room is resolved yet.
      *
      * @param[in]   p_activeMap_in
@@ -340,12 +340,12 @@ class SemanticsManager
      *               cycle.
      *
      *               Consumes the per-cycle crossing and tracking-loss
-     *               signals and feeds them to roomTracker_ together
+     *               signals and feeds them to roomTracker together
      *               with the abstract verification verdict from the
      *               verification stub. Read-only with respect to
-     *               currentRoomId_/lastKnownRoomId_.
+     *               currentRoomId/lastKnownRoomId.
      */
-    void updateRoomTrackerState(double now_s);
+    void updateRoomTrackerState(double now_s_in);
 
     /*!
      * @brief       Resolves a room by the (map id, room id) pair a
@@ -418,17 +418,17 @@ class SemanticsManager
     void suppressUndefendedWalls(void);
 
     /*!
-     * @brief       Converts openPassageEvidence_ into pointer-free,
+     * @brief       Converts openPassageEvidence into pointer-free,
      *              map-sorted OpenPassageHypothesisRecord values. Read-only;
      *              must be called while the semantic-update lock is still
-     *              held (openPassageEvidence_ holds raw Plane* pointers).
+     *              held (openPassageEvidence holds raw Plane* pointers).
      */
     std::vector<semantic::OpenPassageHypothesisRecord>
         captureOpenPassageHypotheses(void) const;
 
     /*!
      * @brief       Same as captureOpenPassageHypotheses(), for
-     *              undefendedWalls_.
+     *              undefendedWalls.
      */
     std::vector<semantic::UnresolvedWallHypothesisRecord>
         captureUnresolvedWallHypotheses(void) const;
@@ -437,12 +437,12 @@ class SemanticsManager
      * @brief        Emits bounded, parseable SG_AXIOM/SG_VIOLATION
      *               diagnostic lines for \p entry_in via
      *               semantic::buildSemanticDiagnosticUpdate(), which
-     *               also updates mSemanticDiagnosticState_ so the
+     *               also updates semanticDiagnosticState so the
      *               next call can detect a transition. Never acquires
      *               the semantic-update lock (called after it is
      *               released) and never mutates evaluator/inference
      *               state -- read-only with respect to everything
-     *               except mSemanticDiagnosticState_.
+     *               except semanticDiagnosticState.
      *
      * @param[in]    entry_in
      *               The cache entry just published for this cycle.
@@ -502,9 +502,9 @@ class SemanticsManager
     /*! @brief Outcome of enforcePassageApertureBackstop(). */
     enum class PassageSideEnforcementOutcome
     {
-        NoViolation,
-        RemovedUnbound,
-        Rerouted
+        NO_VIOLATION,
+        REMOVED_UNBOUND,
+        REROUTED
     };
 
     /*!
@@ -606,12 +606,12 @@ class SemanticsManager
 
     /*!
      * @brief       Constructor which stores the pointer to the map in the
-     *              member mpAtlas and gets the systems parameter.
+     *              member p_atlas and gets the systems parameter.
      *
      * @param[in]   pAtlas
      *              Pointer to map.
      */
-    explicit SemanticsManager(Atlas *pAtlas);
+    explicit SemanticsManager(Atlas *p_atlas_in);
 
     /*!
      * @brief       Gets the latest skeleton cluster acquired from voxblox.
@@ -639,20 +639,20 @@ class SemanticsManager
      * @brief       Detects open passages where a connected Voxblox skeleton
      *              edge crosses a finite mapped wall.
      *
-     * @param[in]   wallPlanes
+     * @param[in]   wallPlanes_in
      *              Confirmed wall planes available in the current map.
      */
     void detectOpenPassagesFromSkeletonEdges(
-        const std::vector<vs_graphs::core::geometric::Plane *> &wallPlanes);
+        const std::vector<vs_graphs::core::geometric::Plane *> &wallPlanes_in);
 
     /*!
      * @brief       Detects doors and doorways based on the detected planes and
      *              the mapped environment.
      *
-     * @param       pAtlas
+     * @param       p_atlas_in
      *              The Atlas containing the mapped environment
      */
-    void detectDoorsAndDoorways(vs_graphs::core::Atlas *pAtlas);
+    void detectDoorsAndDoorways(vs_graphs::core::Atlas *p_atlas_in);
 
     /*!
      * @brief       Gets the latest detected room candidates from GNN-based room
@@ -678,19 +678,19 @@ class SemanticsManager
      *              ground plane. Removes points that are too far from the
      *              plane.
      *
-     * @param       groundPlane
+     * @param       p_groundPlane_in
      *              The main ground plane that is the reference
      */
-    void filterGroundPlanes(geometric::Plane *groundPlane);
+    void filterGroundPlanes(geometric::Plane *p_groundPlane_in);
 
     /*!
      * @brief       Updates the passages in the map based on the detected doors
      *              and doorways.
      *
-     * @param       pAtlas
+     * @param       p_atlas_in
      *              The Atlas containing the mapped environment
      */
-    void updatePassages(vs_graphs::core::Atlas *pAtlas);
+    void updatePassages(vs_graphs::core::Atlas *p_atlas_in);
 
     /*!
      * @brief       Merges passages whose estimated 2D footprints (width x
@@ -718,10 +718,10 @@ class SemanticsManager
      *              passage aperture geometry. The evidence is a separate
      *              "settled" mark and never modifies observation confirmation.
      *
-     * @param[in]   pAtlas
+     * @param[in]   p_atlas_in
      *              The Atlas containing the mapped environment.
      */
-    void updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas);
+    void updateTraversalEvidence(vs_graphs::core::Atlas *p_atlas_in);
 
     /*!
      * @brief       Returns the id of the room currently occupied by the camera.
@@ -759,19 +759,19 @@ class SemanticsManager
      * @brief       Transforms the plane equation to the ground reference
      *              defined by mPlanePoseMat.
      *
-     * @param       planeEq
+     * @param       planeEq_in
      *              The plane equation
      *
      * @return      The transformed plane equation
      */
     Eigen::Vector3f
-        transformPlaneEqToGroundReference(const Eigen::Vector4d &planeEq);
+        transformPlaneEqToGroundReference(const Eigen::Vector4d &planeEq_in);
 
     /*!
      * @brief       Gets the median height of a ground plane after
      *              transformation to referece by mPlanePoseMat.
      *
-     * @param       groundPlane
+     * @param       p_groundPlane_in
      *              The ground plane
      *
      * @return      The median height of the ground plane, or std::nullopt
@@ -780,18 +780,19 @@ class SemanticsManager
      *              which is a valid real height).
      */
     std::optional<float>
-        computeGroundPlaneHeight(geometric::Plane *groundPlane);
+        computeGroundPlaneHeight(geometric::Plane *p_groundPlane_in);
 
     /*!
      * @brief       Computes the transformation matrix from the ground plane to
      *              the horizontal (y-inverted).
      *
-     * @param       plane
+     * @param       p_plane_in
      *              The plane
      *
      * @return      the transformation matrix
      */
-    Eigen::Matrix4f computePlaneToHorizontal(const geometric::Plane *plane);
+    Eigen::Matrix4f
+        computePlaneToHorizontal(const geometric::Plane *p_plane_in);
 
     /*!
      * @brief       Checks for the existing of a room with particular walls
@@ -914,7 +915,7 @@ class SemanticsManager
         const semantic::VerificationVerdict &verdict_in);
 
     /*! Test-only deterministic drain of the production event seam. */
-    void processRoomTrackerPendingForTest(double now_s);
+    void processRoomTrackerPendingForTest(double now_s_in);
 
     /*! Test-only readout of the production-owned tracker history. */
     const std::vector<semantic::TransitionEvent> &
@@ -950,7 +951,7 @@ class SemanticsManager
     /*! Test-only direct call into the private admission gate (far-side
      *  backstop, evidence check, wrong-side observation check, boundary
      *  topology). */
-    bool admitWallToRoomForTest(semantic::Room   *p_room_inout,
+    bool admitWallToRoomForTest(semantic::Room   *p_room_in,
                                 geometric::Plane *p_candidateWall_in);
 
     /*! Test-only direct call into the private per-cycle passage-side sweep

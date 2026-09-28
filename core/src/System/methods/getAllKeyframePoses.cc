@@ -32,16 +32,17 @@ namespace core
 
 vector<Sophus::SE3f> System::getAllKeyframePoses()
 {
-    vector<KeyFrame *> vpKFs = p_atlas->getAllKeyFrames();
-    sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
+    vector<KeyFrame *> keyFrames = p_atlas->getAllKeyFrames();
+    sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
-    vector<Sophus::SE3f> vKFposes;
+    vector<Sophus::SE3f> keyFramePoses;
 
-    for (size_t i = 0; i < vpKFs.size(); i++)
+    for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
+         keyFrameIndex++)
     {
-        KeyFrame *pKF = vpKFs[i];
+        KeyFrame *p_keyFrame = keyFrames[keyFrameIndex];
 
-        if (pKF->isBad())
+        if (p_keyFrame->isBad())
             continue;
 
         // Twb can be world frame to cam0 frame (without IMU) or body in world
@@ -49,14 +50,14 @@ vector<Sophus::SE3f> System::getAllKeyframePoses()
         Sophus::SE3f Twb;
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD) // with IMU
-            Twb = vpKFs[i]->getImuPose();
+            Twb = keyFrames[keyFrameIndex]->getImuPose();
         else // without IMU
-            Twb = vpKFs[i]->getPoseInverse();
+            Twb = keyFrames[keyFrameIndex]->getPoseInverse();
 
-        vKFposes.push_back(Twb);
+        keyFramePoses.push_back(Twb);
     }
 
-    return vKFposes;
+    return keyFramePoses;
 }
 
 } // namespace core

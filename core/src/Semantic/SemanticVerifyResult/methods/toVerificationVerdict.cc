@@ -32,7 +32,7 @@ VerificationVerdict SemanticVerifyResult::toVerificationVerdict() const
 {
     VerificationVerdict verdict;
     verdict.status      = status;
-    verdict.pass        = pass && floorGatePassed;
+    verdict.hasPassed   = hasPassed && hasFloorGatePassed;
     verdict.inlierCount = static_cast<unsigned int>(inliers.size());
     verdict.inlierRatio = inlierRatio;
     verdict.normalisedConditionNumber = normalisedConditionNumber;

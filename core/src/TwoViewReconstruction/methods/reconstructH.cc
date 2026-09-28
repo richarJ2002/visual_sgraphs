@@ -30,26 +30,27 @@ namespace vs_graphs
 namespace core
 {
 
-bool TwoViewReconstruction::reconstructH(vector<bool>        &vbMatchesInliers,
-                                         Eigen::Matrix3f     &H21,
-                                         Eigen::Matrix3f     &K,
-                                         Sophus::SE3f        &T21,
-                                         vector<cv::Point3f> &vP3D,
-                                         vector<bool>        &vbTriangulated,
-                                         float                minParallax,
-                                         int                  minTriangulated)
+bool TwoViewReconstruction::reconstructH(
+    vector<bool>        &matchesInliersFlags_inout,
+    Eigen::Matrix3f     &H21_in,
+    Eigen::Matrix3f     &K_in,
+    Sophus::SE3f        &T21_out,
+    vector<cv::Point3f> &vP3D_inout,
+    vector<bool>        &triangulatedFlags_out,
+    float                minimumParallax_in,
+    int                  minimumTriangulated_in)
 {
     int N = 0;
-    for (size_t i = 0, iend = vbMatchesInliers.size(); i < iend; i++)
-        if (vbMatchesInliers[i])
+    for (size_t i = 0, iend = matchesInliersFlags_inout.size(); i < iend; i++)
+        if (matchesInliersFlags_inout[i])
             N++;
 
     // We recover 8 motion hypotheses using the method of Faugeras et al.
     // Motion and structure from motion in a piecewise planar environment.
     // International Journal of Pattern Recognition and Artificial Intelligence,
     // 1988
-    Eigen::Matrix3f invK = K.inverse();
-    Eigen::Matrix3f A    = invK * H21 * K;
+    Eigen::Matrix3f invK = K_in.inverse();
+    Eigen::Matrix3f A    = invK * H21_in * K_in;
 
     Eigen::JacobiSVD<Eigen::Matrix3f> svd(A,
                                           Eigen::ComputeFullU |
@@ -83,11 +84,11 @@ bool TwoViewReconstruction::reconstructH(vector<bool>        &vbMatchesInliers,
     float x3[] = {aux3, -aux3, aux3, -aux3};
 
     // case d'=d2
-    float aux_stheta =
+    float auxStheta =
         sqrt((d1 * d1 - d2 * d2) * (d2 * d2 - d3 * d3)) / ((d1 + d3) * d2);
 
     float ctheta   = (d2 * d2 + d1 * d3) / ((d1 + d3) * d2);
-    float stheta[] = {aux_stheta, -aux_stheta, -aux_stheta, aux_stheta};
+    float stheta[] = {auxStheta, -auxStheta, -auxStheta, auxStheta};
 
     for (int i = 0; i < 4; i++)
     {
@@ -123,11 +124,11 @@ bool TwoViewReconstruction::reconstructH(vector<bool>        &vbMatchesInliers,
     }
 
     // case d'=-d2
-    float aux_sphi =
+    float auxSphi =
         sqrt((d1 * d1 - d2 * d2) * (d2 * d2 - d3 * d3)) / ((d1 - d3) * d2);
 
     float cphi   = (d1 * d3 - d2 * d2) / ((d1 - d3) * d2);
-    float sphi[] = {aux_sphi, -aux_sphi, -aux_sphi, aux_sphi};
+    float sphi[] = {auxSphi, -auxSphi, -auxSphi, auxSphi};
 
     for (int i = 0; i < 4; i++)
     {
@@ -162,11 +163,11 @@ bool TwoViewReconstruction::reconstructH(vector<bool>        &vbMatchesInliers,
         vn.push_back(n);
     }
 
-    int                 bestGood        = 0;
-    int                 secondBestGood  = 0;
-    int                 bestSolutionIdx = -1;
-    float               bestParallax    = -1;
-    vector<cv::Point3f> bestP3D;
+    int                 bestGood          = 0;
+    int                 secondBestGood    = 0;
+    int                 bestSolutionIndex = -1;
+    float               bestParallax      = -1;
+    vector<cv::Point3f> bestP3d;
     vector<bool>        bestTriangulated;
 
     // Instead of applying the visibility constraints proposed in the Faugeras'
@@ -176,45 +177,46 @@ bool TwoViewReconstruction::reconstructH(vector<bool>        &vbMatchesInliers,
     {
         float               parallaxi;
         vector<cv::Point3f> vP3Di;
-        vector<bool>        vbTriangulatedi;
-        int                 nGood = checkRT(vR[i],
-                            vt[i],
-                            keys1,
-                            keys2,
-                            matches12,
-                            vbMatchesInliers,
-                            K,
-                            vP3Di,
-                            4.0 * sigmaSquared,
-                            vbTriangulatedi,
-                            parallaxi);
+        vector<bool>        triangulatediFlags;
+        int                 goodCount = checkRT(vR[i],
+                                vt[i],
+                                keys1,
+                                keys2,
+                                matches12,
+                                matchesInliersFlags_inout,
+                                K_in,
+                                vP3Di,
+                                4.0 * sigmaSquared,
+                                triangulatediFlags,
+                                parallaxi);
 
-        if (nGood > bestGood)
+        if (goodCount > bestGood)
         {
-            secondBestGood   = bestGood;
-            bestGood         = nGood;
-            bestSolutionIdx  = i;
-            bestParallax     = parallaxi;
-            bestP3D          = vP3Di;
-            bestTriangulated = vbTriangulatedi;
+            secondBestGood    = bestGood;
+            bestGood          = goodCount;
+            bestSolutionIndex = i;
+            bestParallax      = parallaxi;
+            bestP3d           = vP3Di;
+            bestTriangulated  = triangulatediFlags;
         }
-        else if (nGood > secondBestGood)
+        else if (goodCount > secondBestGood)
         {
-            secondBestGood = nGood;
+            secondBestGood = goodCount;
         }
     }
 
-    if (secondBestGood < 0.75 * bestGood && bestParallax >= minParallax &&
-        bestGood > minTriangulated && bestGood > 0.9 * N)
+    if (secondBestGood < 0.75 * bestGood &&
+        bestParallax >= minimumParallax_in &&
+        bestGood > minimumTriangulated_in && bestGood > 0.9 * N)
     {
-        T21 = Sophus::SE3f(vR[bestSolutionIdx], vt[bestSolutionIdx]);
+        T21_out = Sophus::SE3f(vR[bestSolutionIndex], vt[bestSolutionIndex]);
 
         // Publish the winning hypothesis' structure, matching the output
         // contract reconstructF() honours: the monocular initializer reads
         // vP3D straight after Reconstruct() returns, so leaving it untouched
         // on this branch would hand it stale or empty map points.
-        vP3D           = bestP3D;
-        vbTriangulated = bestTriangulated;
+        vP3D_inout            = bestP3d;
+        triangulatedFlags_out = bestTriangulated;
 
         return true;
     }

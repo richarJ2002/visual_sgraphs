@@ -25,13 +25,14 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3f GeometricTools::computeF12(KeyFrame *&pKF1, KeyFrame *&pKF2)
+Eigen::Matrix3f GeometricTools::computeF12(KeyFrame *&keyFrame1_in,
+                                           KeyFrame *&keyFrame2_in)
 {
-    Sophus::SE3<float>                    Tc1w = pKF1->getPose();
+    Sophus::SE3<float>                    Tc1w = keyFrame1_in->getPose();
     Sophus::Matrix3<float>                Rc1w = Tc1w.rotationMatrix();
     Sophus::SE3<float>::TranslationMember tc1w = Tc1w.translation();
 
-    Sophus::SE3<float>                    Tc2w = pKF2->getPose();
+    Sophus::SE3<float>                    Tc2w = keyFrame2_in->getPose();
     Sophus::Matrix3<float>                Rc2w = Tc2w.rotationMatrix();
     Sophus::SE3<float>::TranslationMember tc2w = Tc2w.translation();
 
@@ -40,8 +41,8 @@ Eigen::Matrix3f GeometricTools::computeF12(KeyFrame *&pKF1, KeyFrame *&pKF2)
 
     Eigen::Matrix3f tc1c2x = Sophus::SO3f::hat(tc1c2);
 
-    const Eigen::Matrix3f K1 = pKF1->p_camera->toK_();
-    const Eigen::Matrix3f K2 = pKF2->p_camera->toK_();
+    const Eigen::Matrix3f K1 = keyFrame1_in->p_camera->toK_();
+    const Eigen::Matrix3f K2 = keyFrame2_in->p_camera->toK_();
 
     return K1.transpose().inverse() * tc1c2x * Rc1c2 * K2.inverse();
 }

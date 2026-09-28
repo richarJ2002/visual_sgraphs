@@ -34,27 +34,32 @@ SemanticVerifyConfig SemanticVerify::configFromSystemParams()
         types::SystemParams::getParams()->verification;
     const auto &loadedFactor = types::SystemParams::getParams()->factor;
 
-    SemanticVerifyConfig config;
-    config.maxNormalAngle_deg =
+    SemanticVerifyConfig configuration;
+    configuration.maxNormalAngle_deg =
         static_cast<double>(loadedVerification.maxNormalAngle_deg);
-    config.maxOffset_m = static_cast<double>(loadedVerification.maxOffset_m);
-    config.maxSupportDist_m =
+    configuration.maxOffset_m =
+        static_cast<double>(loadedVerification.maxOffset_m);
+    configuration.maxSupportDist_m =
         static_cast<double>(loadedVerification.maxSupportDist_m);
-    config.minInlierRatio =
+    configuration.minInlierRatio =
         static_cast<double>(loadedVerification.minInlierRatio);
-    config.maxConditionNumber =
+    configuration.maxConditionNumber =
         static_cast<double>(loadedVerification.maxConditionNumber);
-    config.ambiguityMarginInliers  = loadedVerification.ambiguityMarginInliers;
-    config.maxWallsPerRoom         = loadedVerification.maxWallsPerRoom;
-    config.maxHypotheses           = loadedVerification.maxHypotheses;
-    config.maxSupportSamplePerWall = loadedVerification.maxSupportSamplePerWall;
-    config.minAbsCosNormalAngle =
+    configuration.ambiguityMarginInliers =
+        loadedVerification.ambiguityMarginInliers;
+    configuration.maxWallsPerRoom = loadedVerification.maxWallsPerRoom;
+    configuration.maxHypotheses   = loadedVerification.maxHypotheses;
+    configuration.maxSupportSamplePerWall =
+        loadedVerification.maxSupportSamplePerWall;
+    configuration.minAbsCosNormalAngle =
         static_cast<double>(loadedVerification.minAbsCosNormalAngle);
-    config.sigmaTheta_rad = static_cast<double>(loadedFactor.sigmaTheta_rad);
-    config.sigmaOffset_m  = static_cast<double>(loadedFactor.sigmaOffset_m);
-    config.huberDelta     = static_cast<double>(loadedFactor.huberDelta);
-    config.optimizerIterations = loadedFactor.optimizerIterations;
-    return config;
+    configuration.sigmaTheta_rad =
+        static_cast<double>(loadedFactor.sigmaTheta_rad);
+    configuration.sigmaOffset_m =
+        static_cast<double>(loadedFactor.sigmaOffset_m);
+    configuration.huberDelta = static_cast<double>(loadedFactor.huberDelta);
+    configuration.optimizerIterations = loadedFactor.optimizerIterations;
+    return configuration;
 }
 
 } // namespace semantic

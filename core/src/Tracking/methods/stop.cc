@@ -36,10 +36,10 @@ namespace core
 #ifdef REGISTER_LOOP
 bool Tracking::stop()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    if (stopRequestedFlag && !notStop)
+    unique_lock<mutex> lock(stopMutex);
+    if (isStopRequested && !isStopBlocked)
     {
-        stopped = true;
+        hasStopped = true;
         cout << "Tracking STOP" << endl;
         return true;
     }

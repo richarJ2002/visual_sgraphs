@@ -25,8 +25,8 @@ namespace core
 
 void SemanticsManager::onTrackingRecovered(void)
 {
-    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-    trackingLossEpisodeActive_ = false;
+    std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+    isTrackingLossEpisodeActive = false;
 }
 
 } // namespace core

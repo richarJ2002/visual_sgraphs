@@ -34,8 +34,8 @@ namespace geometric
 
 bool Plane::isBad(void)
 {
-    unique_lock<mutex> lock(mMutexType);
-    return mbBad;
+    unique_lock<mutex> lock(typeMutex);
+    return isFlaggedBad;
 }
 
 } // namespace geometric

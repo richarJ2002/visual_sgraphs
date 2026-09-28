@@ -32,10 +32,10 @@ namespace core
 
 void Atlas::setSkeletonEdges(
     const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-        &newSkeletonEdges)
+        &newSkeletonEdges_in)
 {
     /* Lock access to the active map */
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
 
     if (p_activeMap == nullptr)
     {
@@ -43,7 +43,7 @@ void Atlas::setSkeletonEdges(
     }
 
     /* Store the connected edges in the active map */
-    p_activeMap->setSkeletonEdges(newSkeletonEdges);
+    p_activeMap->setSkeletonEdges(newSkeletonEdges_in);
 }
 
 } // namespace core

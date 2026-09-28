@@ -28,7 +28,7 @@ namespace semantic
 
 const RoomTrackerConfig &RoomTracker::getConfig() const
 {
-    return config_;
+    return config;
 }
 
 } // namespace semantic

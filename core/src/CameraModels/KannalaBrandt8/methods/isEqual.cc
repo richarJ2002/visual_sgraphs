@@ -34,23 +34,24 @@ bool KannalaBrandt8::isEqual(geometriccamera::GeometricCamera *p_camera_in)
     if (p_camera_in->getType() != geometriccamera::GeometricCamera::CAM_FISHEYE)
         return false;
 
-    KannalaBrandt8 *p_kannala_in = (KannalaBrandt8 *)p_camera_in;
+    KannalaBrandt8 *p_kannalaCamera = (KannalaBrandt8 *)p_camera_in;
 
-    if (abs(precision - p_kannala_in->getPrecision()) > 1e-6)
+    if (abs(precision - p_kannalaCamera->getPrecision()) > 1e-6)
         return false;
 
-    if (size() != p_kannala_in->size())
+    if (size() != p_kannalaCamera->size())
         return false;
 
-    bool is_same_camera = true;
-    for (size_t i = 0; i < size(); ++i)
+    bool isSameCamera = true;
+    for (size_t parameterIndex = 0; parameterIndex < size(); ++parameterIndex)
     {
-        if (abs(parameters[i] - p_kannala_in->getParameter(i)) > 1e-6)
+        if (abs(parameters[parameterIndex] -
+                p_kannalaCamera->getParameter(parameterIndex)) > 1e-6)
         {
-            is_same_camera = false;
+            isSameCamera = false;
             break;
         }
     }
-    return is_same_camera;
+    return isSameCamera;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

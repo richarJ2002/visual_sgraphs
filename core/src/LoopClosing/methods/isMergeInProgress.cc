@@ -32,7 +32,7 @@ namespace core
 
 bool LoopClosing::isMergeInProgress(void)
 {
-    return mergeInProgress.load();
+    return hasMergeInProgress.load();
 }
 
 } // namespace core

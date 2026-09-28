@@ -39,7 +39,7 @@ namespace camera_models
 namespace pinhole
 {
 bool Pinhole::epipolarConstrain(
-    geometriccamera::GeometricCamera *p_otherCamera_in,
+    geometriccamera::GeometricCamera *p_otherCamera_inout,
     const cv::KeyPoint               &keypoint1_in,
     const cv::KeyPoint               &keypoint2_in,
     const Eigen::Matrix3f            &rotation12_in,
@@ -48,30 +48,32 @@ bool Pinhole::epipolarConstrain(
     const float                       uncertainty_in)
 {
     // Compute Fundamental Matrix
-    Eigen::Matrix3f t12x = Sophus::SO3f::hat(translation12_in);
-    Eigen::Matrix3f K1   = this->toK_();
-    Eigen::Matrix3f K2   = p_otherCamera_in->toK_();
-    Eigen::Matrix3f F12 =
-        K1.transpose().inverse() * t12x * rotation12_in * K2.inverse();
+    Eigen::Matrix3f t12x          = Sophus::SO3f::hat(translation12_in);
+    Eigen::Matrix3f cameraMatrix1 = this->toK_();
+    Eigen::Matrix3f cameraMatrix2 = p_otherCamera_inout->toK_();
+    Eigen::Matrix3f F12           = cameraMatrix1.transpose().inverse() * t12x *
+                          rotation12_in * cameraMatrix2.inverse();
 
     // Epipolar line in second image l = x1'F12 = [a b c]
-    const float a = keypoint1_in.pt.x * F12(0, 0) +
-                    keypoint1_in.pt.y * F12(1, 0) + F12(2, 0);
-    const float b = keypoint1_in.pt.x * F12(0, 1) +
-                    keypoint1_in.pt.y * F12(1, 1) + F12(2, 1);
-    const float c = keypoint1_in.pt.x * F12(0, 2) +
-                    keypoint1_in.pt.y * F12(1, 2) + F12(2, 2);
+    const float epipolarLineA = keypoint1_in.pt.x * F12(0, 0) +
+                                keypoint1_in.pt.y * F12(1, 0) + F12(2, 0);
+    const float epipolarLineB = keypoint1_in.pt.x * F12(0, 1) +
+                                keypoint1_in.pt.y * F12(1, 1) + F12(2, 1);
+    const float epipolarLineC = keypoint1_in.pt.x * F12(0, 2) +
+                                keypoint1_in.pt.y * F12(1, 2) + F12(2, 2);
 
-    const float num = a * keypoint2_in.pt.x + b * keypoint2_in.pt.y + c;
+    const float numerator = epipolarLineA * keypoint2_in.pt.x +
+                            epipolarLineB * keypoint2_in.pt.y + epipolarLineC;
 
-    const float den = a * a + b * b;
+    const float denominator =
+        epipolarLineA * epipolarLineA + epipolarLineB * epipolarLineB;
 
-    if (den == 0)
+    if (denominator == 0)
         return false;
 
-    const float dsqr = num * num / den;
+    const float squaredDistance = numerator * numerator / denominator;
 
-    return dsqr < 3.84 * uncertainty_in;
+    return squaredDistance < 3.84 * uncertainty_in;
 }
 } // namespace pinhole
 } // namespace camera_models

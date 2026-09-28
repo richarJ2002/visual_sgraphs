@@ -43,15 +43,19 @@ namespace vs_graphs
 namespace core
 {
 
-bool Frame::isPositionInGrid(const cv::KeyPoint &kp, int &posX, int &posY)
+bool Frame::isPositionInGrid(const cv::KeyPoint &keyPoint_in,
+                             int                &positionX_out,
+                             int                &positionY_out)
 {
-    posX = round((kp.pt.x - gridMinX) * gridElementWidthInverse);
-    posY = round((kp.pt.y - gridMinY) * gridElementHeightInverse);
+    positionX_out =
+        round((keyPoint_in.pt.x - gridMinX) * gridElementWidthInverse);
+    positionY_out =
+        round((keyPoint_in.pt.y - gridMinY) * gridElementHeightInverse);
 
     // Keypoint's coordinates are undistorted, which could cause to go out of
     // the image
-    if (posX < 0 || posX >= FRAME_GRID_COLS || posY < 0 ||
-        posY >= FRAME_GRID_ROWS)
+    if (positionX_out < 0 || positionX_out >= FRAME_GRID_COLS ||
+        positionY_out < 0 || positionY_out >= FRAME_GRID_ROWS)
         return false;
 
     return true;

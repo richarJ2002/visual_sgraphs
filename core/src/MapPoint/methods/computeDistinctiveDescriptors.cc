@@ -37,13 +37,13 @@ namespace core
 void MapPoint::computeDistinctiveDescriptors()
 {
     // Retrieve all observed descriptors
-    vector<cv::Mat> vDescriptors;
+    vector<cv::Mat> descriptors;
 
     map<KeyFrame *, tuple<int, int>> observedKeyFrames;
 
     {
-        unique_lock<mutex> lock1(mMutexFeatures);
-        if (mbBad)
+        unique_lock<mutex> lock1(featuresMutex);
+        if (isFlaggedBad)
             return;
         observedKeyFrames = observations;
     }
@@ -51,7 +51,7 @@ void MapPoint::computeDistinctiveDescriptors()
     if (observedKeyFrames.empty())
         return;
 
-    vDescriptors.reserve(observedKeyFrames.size());
+    descriptors.reserve(observedKeyFrames.size());
 
     for (map<KeyFrame *, tuple<int, int>>::iterator
              mit  = observedKeyFrames.begin(),
@@ -59,65 +59,68 @@ void MapPoint::computeDistinctiveDescriptors()
          mit != mend;
          mit++)
     {
-        KeyFrame *pKF = mit->first;
+        KeyFrame *p_keyFrame = mit->first;
 
-        if (!pKF->isBad())
+        if (!p_keyFrame->isBad())
         {
             tuple<int, int> indexes = mit->second;
             int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
 
             if (leftIndex != -1)
             {
-                vDescriptors.push_back(pKF->descriptors.row(leftIndex));
+                descriptors.push_back(p_keyFrame->descriptors.row(leftIndex));
             }
             if (rightIndex != -1)
             {
-                vDescriptors.push_back(pKF->descriptors.row(rightIndex));
+                descriptors.push_back(p_keyFrame->descriptors.row(rightIndex));
             }
         }
     }
 
-    if (vDescriptors.empty())
+    if (descriptors.empty())
         return;
 
     // Compute distances between them
-    const size_t N = vDescriptors.size();
+    const size_t N = descriptors.size();
 
     // Symmetric N x N distance matrix held row-major, so row i occupies the
     // contiguous range [i * N, i * N + N).
-    std::vector<float> Distances(N * N);
-    for (size_t i = 0; i < N; i++)
+    std::vector<float> distances(N * N);
+    for (size_t keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
     {
-        Distances[i * N + i] = 0;
-        for (size_t j = i + 1; j < N; j++)
+        distances[keyPointIndex * N + keyPointIndex] = 0;
+        for (size_t secondDescriptorIndex = keyPointIndex + 1;
+             secondDescriptorIndex < N;
+             secondDescriptorIndex++)
         {
-            int distij = ORBmatcher::computeDescriptorDistance(vDescriptors[i],
-                                                               vDescriptors[j]);
-            Distances[i * N + j] = distij;
-            Distances[j * N + i] = distij;
+            int distij = ORBmatcher::computeDescriptorDistance(
+                descriptors[keyPointIndex],
+                descriptors[secondDescriptorIndex]);
+            distances[keyPointIndex * N + secondDescriptorIndex] = distij;
+            distances[secondDescriptorIndex * N + keyPointIndex] = distij;
         }
     }
 
     // Take the descriptor with least median distance to the rest
-    int BestMedian = INT_MAX;
-    int BestIdx    = 0;
-    for (size_t i = 0; i < N; i++)
+    int bestMedian = INT_MAX;
+    int bestIndex  = 0;
+    for (size_t keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
     {
-        const float *p_row = &Distances[i * N];
-        vector<int>  vDists(p_row, p_row + N);
-        sort(vDists.begin(), vDists.end());
-        int median = vDists[0.5 * (N - 1)];
+        const float *p_row = &distances[keyPointIndex * N];
+        vector<int>  dists(p_row, p_row + N);
+        sort(dists.begin(), dists.end());
+        int median = dists[0.5 * (N - 1)];
 
-        if (median < BestMedian)
+        if (median < bestMedian)
         {
-            BestMedian = median;
-            BestIdx    = i;
+            bestMedian = median;
+            bestIndex  = keyPointIndex;
         }
     }
 
     {
-        unique_lock<mutex> lock(mMutexFeatures);
-        descriptor = vDescriptors[BestIdx].clone();
+        unique_lock<mutex> lock(featuresMutex);
+        descriptor = descriptors[bestIndex].clone();
     }
 }
 

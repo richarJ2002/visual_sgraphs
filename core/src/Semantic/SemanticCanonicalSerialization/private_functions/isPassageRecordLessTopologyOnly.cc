@@ -61,10 +61,10 @@ bool isPassageRecordLessTopologyOnly(const PassageRecord &lhs_in,
         return static_cast<int>(lhs_in.passageType) <
                static_cast<int>(rhs_in.passageType);
     }
-    if (lhs_in.passable != rhs_in.passable)
+    if (lhs_in.isPassable != rhs_in.isPassable)
     {
-        return static_cast<int>(lhs_in.passable) <
-               static_cast<int>(rhs_in.passable);
+        return static_cast<int>(lhs_in.isPassable) <
+               static_cast<int>(rhs_in.isPassable);
     }
 
     std::vector<RawPlaneRef> lhsWallRefs = lhs_in.associateWallRefs;
@@ -75,13 +75,16 @@ bool isPassageRecordLessTopologyOnly(const PassageRecord &lhs_in,
     {
         return lhsWallRefs.size() < rhsWallRefs.size();
     }
-    for (std::size_t i = 0U; i < lhsWallRefs.size(); ++i)
+    for (std::size_t lhsWallRefIndex = 0U; lhsWallRefIndex < lhsWallRefs.size();
+         ++lhsWallRefIndex)
     {
-        if (isRawPlaneRefLess(lhsWallRefs[i], rhsWallRefs[i]))
+        if (isRawPlaneRefLess(lhsWallRefs[lhsWallRefIndex],
+                              rhsWallRefs[lhsWallRefIndex]))
         {
             return true;
         }
-        if (isRawPlaneRefLess(rhsWallRefs[i], lhsWallRefs[i]))
+        if (isRawPlaneRefLess(rhsWallRefs[lhsWallRefIndex],
+                              lhsWallRefs[lhsWallRefIndex]))
         {
             return false;
         }

@@ -48,16 +48,17 @@ class GeometricTools
      * @brief        Computes the fundamental matrix between two
      *               keyframe views.
      *
-     * @param[in]    pKF1
+     * @param[in]    keyFrame1_in
      *               Non-owning first keyframe; shall be non-null.
-     * @param[in]    pKF2
+     * @param[in]    keyFrame2_in
      *               Non-owning second keyframe; shall be
      *               non-null.
      *
      * @return       Fundamental matrix mapping the second view
      *               into the first.
      */
-    static Eigen::Matrix3f computeF12(KeyFrame *&pKF1, KeyFrame *&pKF2);
+    static Eigen::Matrix3f computeF12(KeyFrame *&keyFrame1_in,
+                                      KeyFrame *&keyFrame2_in);
 
     /*!
      * @brief        Triangulates two normalized observations
@@ -67,13 +68,13 @@ class GeometricTools
      *               Normalized observation in the first view.
      * @param[in]    x_c2
      *               Normalized observation in the second view.
-     * @param[in]    Tc1w
+     * @param[in]    Tc1w_in
      *               Three-by-four projection matrix of the
      *               first view.
-     * @param[in]    Tc2w
+     * @param[in]    Tc2w_in
      *               Three-by-four projection matrix of the
      *               second view.
-     * @param[out]   x3D
+     * @param[in,out] x3D_inout
      *               Triangulated point.
      *
      * @return       True and x3D set when the homogeneous scale
@@ -81,9 +82,9 @@ class GeometricTools
      */
     static bool triangulate(Eigen::Vector3f            &x_c1,
                             Eigen::Vector3f            &x_c2,
-                            Eigen::Matrix<float, 3, 4> &Tc1w,
-                            Eigen::Matrix<float, 3, 4> &Tc2w,
-                            Eigen::Vector3f            &x3D);
+                            Eigen::Matrix<float, 3, 4> &Tc1w_in,
+                            Eigen::Matrix<float, 3, 4> &Tc2w_in,
+                            Eigen::Vector3f            &x3D_inout);
 
     /*!
      * @brief        Checks element-wise agreement between a cv
@@ -110,10 +111,12 @@ class GeometricTools
             std::cout << "wrong cvmat size\n";
             return false;
         }
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
-                if ((cvMat.at<float>(i, j) > (eigMat(i, j) + epsilon)) ||
-                    (cvMat.at<float>(i, j) < (eigMat(i, j) - epsilon)))
+        for (int rowIndex = 0; rowIndex < rows; rowIndex++)
+            for (int columnIndex = 0; columnIndex < cols; columnIndex++)
+                if ((cvMat.at<float>(rowIndex, columnIndex) >
+                     (eigMat(rowIndex, columnIndex) + epsilon)) ||
+                    (cvMat.at<float>(rowIndex, columnIndex) <
+                     (eigMat(rowIndex, columnIndex) - epsilon)))
                 {
                     std::cout << "cv mat:\n" << cvMat << std::endl;
                     std::cout << "eig mat:\n" << eigMat << std::endl;
@@ -141,10 +144,12 @@ class GeometricTools
                               const Eigen::Matrix<T, rows, cols> &eigMat2)
     {
         const float epsilon = 1e-3;
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
-                if ((eigMat1(i, j) > (eigMat2(i, j) + epsilon)) ||
-                    (eigMat1(i, j) < (eigMat2(i, j) - epsilon)))
+        for (int rowIndex = 0; rowIndex < rows; rowIndex++)
+            for (int columnIndex = 0; columnIndex < cols; columnIndex++)
+                if ((eigMat1(rowIndex, columnIndex) >
+                     (eigMat2(rowIndex, columnIndex) + epsilon)) ||
+                    (eigMat1(rowIndex, columnIndex) <
+                     (eigMat2(rowIndex, columnIndex) - epsilon)))
                 {
                     std::cout << "eig mat 1:\n" << eigMat1 << std::endl;
                     std::cout << "eig mat 2:\n" << eigMat2 << std::endl;

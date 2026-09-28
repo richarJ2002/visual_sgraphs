@@ -43,12 +43,12 @@ namespace utils
 namespace settings
 {
 
-void Settings::readOtherParameters(cv::FileStorage &storage_in)
+void Settings::readOtherParameters(cv::FileStorage &storage_inout)
 {
     bool found;
 
     farPointsThreshold =
-        readParameter<float>(storage_in, "System.thFarPoints", found, false);
+        readParameter<float>(storage_inout, "System.thFarPoints", found, false);
 }
 
 } // namespace settings

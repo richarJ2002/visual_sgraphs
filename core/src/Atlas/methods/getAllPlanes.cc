@@ -32,7 +32,7 @@ namespace core
 
 std::vector<vs_graphs::core::geometric::Plane *> Atlas::getAllPlanes()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     return p_activeMap->getAllPlanes();
 }
 

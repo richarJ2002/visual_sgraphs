@@ -43,20 +43,20 @@ namespace utils
 namespace settings
 {
 
-void Settings::readORB(cv::FileStorage &storage_in)
+void Settings::readORB(cv::FileStorage &storage_inout)
 {
     bool found;
 
     featureCount =
-        readParameter<int>(storage_in, "ORBextractor.nFeatures", found);
+        readParameter<int>(storage_inout, "ORBextractor.nFeatures", found);
     orbScaleFactor =
-        readParameter<float>(storage_in, "ORBextractor.scaleFactor", found);
+        readParameter<float>(storage_inout, "ORBextractor.scaleFactor", found);
     pyramidLevels =
-        readParameter<int>(storage_in, "ORBextractor.nLevels", found);
+        readParameter<int>(storage_inout, "ORBextractor.nLevels", found);
     initialFastThreshold =
-        readParameter<int>(storage_in, "ORBextractor.iniThFAST", found);
+        readParameter<int>(storage_inout, "ORBextractor.iniThFAST", found);
     minimumFastThreshold =
-        readParameter<int>(storage_in, "ORBextractor.minThFAST", found);
+        readParameter<int>(storage_inout, "ORBextractor.minThFAST", found);
 }
 
 } // namespace settings

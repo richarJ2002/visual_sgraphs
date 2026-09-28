@@ -205,7 +205,7 @@ void makeFloor(semantic::Floor                     &floor_inout,
  *
  * @param   keyFrame_inout           KeyFrame to initialize; any prior state
  *                                    is overwritten.
- * @param   id_in                    KeyFrame id (KeyFrame::mnId).
+ * @param   id_in                    KeyFrame id (KeyFrame::id).
  * @param   p_map_in                 Map to register the KeyFrame with; non-
  *                                    owning, may be null to skip registration.
  * @param   cameraCenter_World_m_in  Camera center, world frame, meters.

@@ -34,12 +34,12 @@ namespace core
 
 bool LocalMapping::stop()
 {
-    unique_lock<mutex> lock(mMutexStop);
+    unique_lock<mutex> stopLock(stopMutex);
 
     // Check the conditions for stopping the Local Mapping
-    if (stopRequestedFlag && !notStop)
+    if (isStopRequested && !isStopBlocked)
     {
-        stopped = true;
+        hasStopped = true;
         return true;
     }
     return false;

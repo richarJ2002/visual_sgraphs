@@ -7,10 +7,10 @@ namespace vs_graphs
 namespace testing
 {
 
-void ClearFaults()
+void clearFaults()
 {
 #ifdef VS_GRAPHS_ENABLE_FAULT_INJECTION
-    FaultRegistry().clear();
+    getFaultRegistry().clear();
 #endif
 }
 

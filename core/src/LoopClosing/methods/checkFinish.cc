@@ -34,8 +34,8 @@ namespace core
 
 bool LoopClosing::checkFinish()
 {
-    unique_lock<mutex> lock(mMutexFinish);
-    return finishRequested;
+    unique_lock<mutex> lock(finishMutex);
+    return isFinishRequested;
 }
 
 } // namespace core

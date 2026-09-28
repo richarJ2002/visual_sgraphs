@@ -33,7 +33,7 @@ namespace core
 std::optional<semantic::RoomContextSnapshot>
     Atlas::copyLatestRoomContext(const int roomId_in) const
 {
-    std::lock_guard<std::mutex>                  contextLock(mRoomContextMutex);
+    std::lock_guard<std::mutex>                  contextLock(roomContextMutex);
     std::optional<semantic::RoomContextSnapshot> latestSnapshot;
 
     for (const std::pair<const long unsigned int,

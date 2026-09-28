@@ -41,12 +41,12 @@ bool Utils::pointOnPlane(Eigen::Vector4d planeEquation_in,
         return false;
 
     // Find the distance of the point from a given plane
-    double pointPlaneDist = calculateDistancePointToPlane(
+    double pointPlaneDistance = calculateDistancePointToPlane(
         planeEquation_in,
         p_mapPoint_in->getWorldPos().cast<double>());
 
     // Apply a threshold
-    if (pointPlaneDist <
+    if (pointPlaneDistance <
         types::SystemParams::getParams()->seg.planePointDistThresh)
         return true;
 

@@ -27,7 +27,7 @@ namespace semantic
 
 double Marker::getTime() const
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
+    std::lock_guard<std::mutex> lock(stateMutex);
     return time;
 }
 

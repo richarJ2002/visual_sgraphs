@@ -34,10 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::Marker *Map::getMarkerById(int markerId)
+semantic::Marker *Map::getMarkerById(int markerId_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    const auto         markerIterator = markerIndex.find(markerId);
+    unique_lock<mutex> lock(mapMutex);
+    const auto         markerIterator = markerIndex.find(markerId_in);
     return markerIterator != markerIndex.end() ? markerIterator->second
                                                : nullptr;
 }

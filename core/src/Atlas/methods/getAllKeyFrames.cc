@@ -32,7 +32,7 @@ namespace core
 
 std::vector<KeyFrame *> Atlas::getAllKeyFrames()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     return p_activeMap->getAllKeyFrames();
 }
 

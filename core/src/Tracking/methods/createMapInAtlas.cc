@@ -32,28 +32,28 @@ namespace core
 
 void Tracking::createMapInAtlas()
 {
-    lastInitFrameId = currentFrame.mnId;
+    lastInitFrameId = currentFrame.id;
     p_atlas->createNewMap();
     if (sensor == System::IMU_STEREO || sensor == System::IMU_MONOCULAR ||
         sensor == System::IMU_RGBD)
         p_atlas->setInertialSensor();
     isInitSet = false;
 
-    initialFrameId = currentFrame.mnId + 1;
+    initialFrameId = currentFrame.id + 1;
     state          = NO_IMAGES_YET;
 
     // Restart the variable with information about the last KF
-    velocityAvailable = false;
+    isVelocityAvailable = false;
     // mnLastRelocFrameId = mnLastInitFrameId; // The last relocation KF_id is
     // the current id, because it is the new starting point for new map
     Verbose::printMess("First frame id in map: " +
                            to_string(lastInitFrameId + 1),
                        Verbose::VERBOSITY_NORMAL);
-    visualOdometry = false; // Init value for know if there are enough MapPoints
-                            // in the last KF
+    isVisualOdometry = false; // Init value for know if there are enough
+                              // MapPoints in the last KF
     if (sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR)
     {
-        readyToInitialize = false;
+        isReadyToInitialize = false;
     }
 
     if ((sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
@@ -75,7 +75,7 @@ void Tracking::createMapInAtlas()
     currentFrame = Frame();
     iniMatches.clear();
 
-    createdMap = true;
+    hasCreatedMap = true;
 }
 
 } // namespace core

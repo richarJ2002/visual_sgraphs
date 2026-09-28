@@ -28,8 +28,8 @@ namespace core
 int SemanticsManager::getPendingWallAgeForTest(int wallId_in) const
 {
     const std::unordered_map<int, UndefendedWallState>::const_iterator found =
-        undefendedWalls_.find(wallId_in);
-    return found == undefendedWalls_.end()
+        undefendedWalls.find(wallId_in);
+    return found == undefendedWalls.end()
                ? -1
                : static_cast<int>(found->second.unresolvedCycles);
 }

@@ -34,63 +34,63 @@ namespace vs_graphs
 namespace core
 {
 
-void MapPoint::replace(MapPoint *pMP)
+void MapPoint::replace(MapPoint *p_mapPoint_inout)
 {
-    if (pMP->mnId == this->mnId)
+    if (p_mapPoint_inout->id == this->id)
         return;
 
     int                              nvisible, nfound;
-    map<KeyFrame *, tuple<int, int>> obs;
+    map<KeyFrame *, tuple<int, int>> observation;
     {
-        unique_lock<mutex> lock1(mMutexFeatures);
-        unique_lock<mutex> lock2(mMutexPos);
-        obs = observations;
+        unique_lock<mutex> lock1(featuresMutex);
+        unique_lock<mutex> lock2(positionMutex);
+        observation = observations;
         observations.clear();
-        mbBad      = true;
-        nvisible   = visibleCount;
-        nfound     = foundCount;
-        p_replaced = pMP;
+        isFlaggedBad = true;
+        nvisible     = visibleCount;
+        nfound       = foundCount;
+        p_replaced   = p_mapPoint_inout;
     }
 
-    for (map<KeyFrame *, tuple<int, int>>::iterator mit  = obs.begin(),
-                                                    mend = obs.end();
+    for (map<KeyFrame *, tuple<int, int>>::iterator mit  = observation.begin(),
+                                                    mend = observation.end();
          mit != mend;
          mit++)
     {
         // Replace measurement in keyframe
-        KeyFrame *pKF = mit->first;
+        KeyFrame *p_keyFrame = mit->first;
 
         tuple<int, int> indexes = mit->second;
         int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
 
-        if (!pMP->isInKeyFrame(pKF))
+        if (!p_mapPoint_inout->isInKeyFrame(p_keyFrame))
         {
             if (leftIndex != -1)
             {
-                pKF->replaceMapPointMatch(leftIndex, pMP);
-                pMP->addObservation(pKF, leftIndex);
+                p_keyFrame->replaceMapPointMatch(leftIndex, p_mapPoint_inout);
+                p_mapPoint_inout->addObservation(p_keyFrame, leftIndex);
             }
             if (rightIndex != -1)
             {
-                pKF->replaceMapPointMatch(rightIndex, pMP);
-                pMP->addObservation(pKF, rightIndex);
+                p_keyFrame->replaceMapPointMatch(rightIndex, p_mapPoint_inout);
+                p_mapPoint_inout->addObservation(p_keyFrame, rightIndex);
             }
         }
         else
         {
             if (leftIndex != -1)
             {
-                pKF->eraseMapPointMatch(leftIndex);
+                p_keyFrame->eraseMapPointMatch(leftIndex);
             }
             if (rightIndex != -1)
             {
-                pKF->eraseMapPointMatch(rightIndex);
+                p_keyFrame->eraseMapPointMatch(rightIndex);
             }
         }
     }
-    pMP->increaseFound(nfound);
-    pMP->increaseVisible(nvisible);
-    pMP->computeDistinctiveDescriptors();
+    p_mapPoint_inout->increaseFound(nfound);
+    p_mapPoint_inout->increaseVisible(nvisible);
+    p_mapPoint_inout->computeDistinctiveDescriptors();
 
     p_map->eraseMapPoint(this);
 }

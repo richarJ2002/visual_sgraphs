@@ -32,7 +32,7 @@ namespace core
 
 std::vector<MapPoint *> Atlas::getReferenceMapPoints()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     return p_activeMap->getReferenceMapPoints();
 }
 

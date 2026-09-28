@@ -26,16 +26,16 @@ namespace core
 {
 
 void SemanticSegmentation::addSegmentedFrameToBuffer(
-    std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *tuple)
+    std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in)
 {
-    const std::uint64_t keyFrameId = std::get<0>(*tuple);
+    const std::uint64_t keyFrameId = std::get<0>(*p_tuple_in);
     KeyFrame           *p_keyFrame = p_atlas->getKeyFrameById(keyFrameId);
     Map *p_sourceMap = p_keyFrame == nullptr ? nullptr : p_keyFrame->getMap();
 
     WorkItem droppedItem;
     bool     didDrop = false;
     {
-        std::lock_guard<std::mutex> lock(mMutexNewKFs);
+        std::lock_guard<std::mutex> lock(newKeyFramesMutex);
         if (segmentedImageBuffer.size() >= MAX_BUFFERED_WORK_ITEMS)
         {
             droppedItem = std::move(segmentedImageBuffer.front());
@@ -48,8 +48,8 @@ void SemanticSegmentation::addSegmentedFrameToBuffer(
         workItem.sourceMapId       = p_sourceMap == nullptr
                                          ? std::numeric_limits<std::uint64_t>::max()
                                          : p_sourceMap->getId();
-        workItem.uncertaintyImage  = std::get<1>(*tuple);
-        workItem.segmentationCloud = std::get<2>(*tuple);
+        workItem.uncertaintyImage  = std::get<1>(*p_tuple_in);
+        workItem.segmentationCloud = std::get<2>(*p_tuple_in);
         segmentedImageBuffer.push_back(std::move(workItem));
         enqueuedCount.fetch_add(1U, std::memory_order_relaxed);
 

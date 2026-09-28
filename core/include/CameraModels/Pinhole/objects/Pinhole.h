@@ -91,11 +91,11 @@ class Pinhole : public geometriccamera::GeometricCamera
      * @brief        Copies the calibration of another pinhole
      *               camera under a fresh identifier.
      *
-     * @param[in]    p_pinhole_in
+     * @param[in,out] p_pinhole_inout
      *               Non-owning source camera; shall be non-null.
      */
-    Pinhole(Pinhole *p_pinhole_in) :
-        geometriccamera::GeometricCamera(p_pinhole_in->parameters),
+    Pinhole(Pinhole *p_pinhole_inout) :
+        geometriccamera::GeometricCamera(p_pinhole_inout->parameters),
         p_twoViewReconstruction(nullptr)
     {
         assert(parameters.size() == 4);
@@ -115,85 +115,85 @@ class Pinhole : public geometriccamera::GeometricCamera
     /*!
      * @brief        Projects a camera-frame point into the image.
      *
-     * @param[in]    point3D_in
+     * @param[in]    point3d_in
      *               Point expressed in the camera frame.
      *
      * @return       Pixel coordinates of the projection.
      */
-    cv::Point2f     project(const cv::Point3f &point3D_in);
+    cv::Point2f     project(const cv::Point3f &point3d_in);
     /*!
      * @brief        Projects a camera-frame point into the image.
      *
-     * @param[in]    point3D_in
+     * @param[in]    point3d_in
      *               Point expressed in the camera frame.
      *
      * @return       Pixel coordinates of the projection.
      */
-    Eigen::Vector2d project(const Eigen::Vector3d &point3D_in);
+    Eigen::Vector2d project(const Eigen::Vector3d &point3d_in);
     /*!
      * @brief        Projects a camera-frame point into the image.
      *
-     * @param[in]    point3D_in
+     * @param[in]    point3d_in
      *               Point expressed in the camera frame.
      *
      * @return       Pixel coordinates of the projection.
      */
-    Eigen::Vector2f project(const Eigen::Vector3f &point3D_in);
+    Eigen::Vector2f project(const Eigen::Vector3f &point3d_in);
     /*!
      * @brief        Projects a camera-frame point into the image.
      *
-     * @param[in]    point3D_in
+     * @param[in]    point3d_in
      *               Point expressed in the camera frame.
      *
      * @return       Pixel coordinates as an Eigen vector.
      */
-    Eigen::Vector2f projectMat(const cv::Point3f &point3D_in);
+    Eigen::Vector2f projectMat(const cv::Point3f &point3d_in);
 
     /*!
      * @brief        Returns the squared uncertainty scale applied
      *               to observations at the given pixel.
      *
-     * @param[in]    point2D_in
+     * @param[in]    point2d_in
      *               Pixel whose scale is requested; currently
      *               unused.
      *
      * @return       One for uniform weighting.
      */
-    float uncertainty2(const Eigen::Matrix<double, 2, 1> &point2D_in);
+    float uncertainty2(const Eigen::Matrix<double, 2, 1> &point2d_in);
 
     /*!
      * @brief        Back-projects a pixel into a camera-frame
      *               ray.
      *
-     * @param[in]    point2D_in
+     * @param[in]    point2d_in
      *               Pixel to back-project.
      *
      * @return       Ray through the pixel in the camera frame.
      */
-    Eigen::Vector3f unprojectEig(const cv::Point2f &point2D_in);
+    Eigen::Vector3f unprojectEig(const cv::Point2f &point2d_in);
     /*!
      * @brief        Back-projects a pixel into a camera-frame
      *               ray.
      *
-     * @param[in]    point2D_in
+     * @param[in]    point2d_in
      *               Pixel to back-project.
      *
      * @return       Ray through the pixel in the camera frame.
      */
-    cv::Point3f     unproject(const cv::Point2f &point2D_in);
+    cv::Point3f     unproject(const cv::Point2f &point2d_in);
 
     /*!
      * @brief        Returns the Jacobian of the projection at a
      *               camera-frame point.
      *
-     * @param[in]    point3D_in
+     * @param[in]    point3d_in
      *               Point expressed in the camera frame.
      *
      * @return       Two-by-three Jacobian with image-x then
      *               image-y rows.
      */
     Eigen::Matrix<double, 2, 3>
-        computeProjectionJacobian(const Eigen::Vector3d &point3D_in);
+        computeProjectionJacobian(const Eigen::Vector3d &point3d_in);
 
     /*!
      * @brief        Estimates the relative pose between two views
@@ -206,12 +206,12 @@ class Pinhole : public geometriccamera::GeometricCamera
      * @param[in]    matches12_in
      *               Per-keypoint match indices from the first
      *               view into the second view.
-     * @param[out]   pose21_out
+     * @param[in,out] pose21_inout
      *               Estimated pose of the second view in the
      *               first view frame.
-     * @param[out]   points3D_out
+     * @param[in,out] points3d_inout
      *               Triangulated points.
-     * @param[out]   triangulated_out
+     * @param[in,out] triangulated_inout
      *               Per-match flag reporting a valid
      *               triangulation.
      *
@@ -221,9 +221,9 @@ class Pinhole : public geometriccamera::GeometricCamera
     bool reconstructWithTwoViews(const std::vector<cv::KeyPoint> &keys1_in,
                                  const std::vector<cv::KeyPoint> &keys2_in,
                                  const std::vector<int>          &matches12_in,
-                                 Sophus::SE3f                    &pose21_out,
-                                 std::vector<cv::Point3f>        &points3D_out,
-                                 std::vector<bool> &triangulated_out);
+                                 Sophus::SE3f                    &pose21_inout,
+                                 std::vector<cv::Point3f> &points3d_inout,
+                                 std::vector<bool>        &triangulated_inout);
 
     /*!
      * @brief        Returns the three-by-three calibration
@@ -247,7 +247,7 @@ class Pinhole : public geometriccamera::GeometricCamera
      *              The squared point-to-epipolar-line distance
      *              shall stay below 3.84 times the uncertainty.
      *
-     * @param[in]    p_otherCamera_in
+     * @param[in,out] p_otherCamera_inout
      *               Non-owning pointer to the second camera;
      *               shall be non-null.
      * @param[in]    keypoint1_in
@@ -269,13 +269,14 @@ class Pinhole : public geometriccamera::GeometricCamera
      * @return       True when the pair passes the epipolar
      *               test.
      */
-    bool epipolarConstrain(geometriccamera::GeometricCamera *p_otherCamera_in,
-                           const cv::KeyPoint               &keypoint1_in,
-                           const cv::KeyPoint               &keypoint2_in,
-                           const Eigen::Matrix3f            &rotation12_in,
-                           const Eigen::Vector3f            &translation12_in,
-                           const float                       sigmaLevel_in,
-                           const float                       uncertainty_in);
+    bool
+        epipolarConstrain(geometriccamera::GeometricCamera *p_otherCamera_inout,
+                          const cv::KeyPoint               &keypoint1_in,
+                          const cv::KeyPoint               &keypoint2_in,
+                          const Eigen::Matrix3f            &rotation12_in,
+                          const Eigen::Vector3f            &translation12_in,
+                          const float                       sigmaLevel_in,
+                          const float                       uncertainty_in);
 
     /*!
      * @brief        Rejects every keypoint pair without
@@ -285,18 +286,18 @@ class Pinhole : public geometriccamera::GeometricCamera
      *               Keypoint in this camera view.
      * @param[in]    keypoint2_in
      *               Keypoint in the second camera view.
-     * @param[in]    p_otherCamera_in
+     * @param[in,out] p_otherCamera_inout
      *               Non-owning pointer to the second camera.
-     * @param[in]    pose1_in
+     * @param[in,out] pose1_inout
      *               Pose of this camera in the world frame.
-     * @param[in]    pose2_in
+     * @param[in,out] pose2_inout
      *               Pose of the second camera in the world
      *               frame.
      * @param[in]    sigmaLevel1_in
      *               Scale variance of the first keypoint level.
      * @param[in]    sigmaLevel2_in
      *               Scale variance of the second keypoint level.
-     * @param[out]   point3D_out
+     * @param[in,out] point3d_inout
      *               Left unchanged.
      *
      * @return       Always false.
@@ -304,12 +305,12 @@ class Pinhole : public geometriccamera::GeometricCamera
     bool matchAndTriangulate(
         [[maybe_unused]] const cv::KeyPoint               &keypoint1_in,
         [[maybe_unused]] const cv::KeyPoint               &keypoint2_in,
-        [[maybe_unused]] geometriccamera::GeometricCamera *p_otherCamera_in,
-        [[maybe_unused]] Sophus::SE3f                     &pose1_in,
-        [[maybe_unused]] Sophus::SE3f                     &pose2_in,
+        [[maybe_unused]] geometriccamera::GeometricCamera *p_otherCamera_inout,
+        [[maybe_unused]] Sophus::SE3f                     &pose1_inout,
+        [[maybe_unused]] Sophus::SE3f                     &pose2_inout,
         [[maybe_unused]] const float                       sigmaLevel1_in,
         [[maybe_unused]] const float                       sigmaLevel2_in,
-        [[maybe_unused]] Eigen::Vector3f                  &point3D_out)
+        [[maybe_unused]] Eigen::Vector3f                  &point3d_inout)
     {
         return false;
     }
@@ -318,27 +319,28 @@ class Pinhole : public geometriccamera::GeometricCamera
      * @brief        Appends the four calibration entries to the
      *               stream.
      *
-     * @param[in,out] os
+     * @param[in,out] outputStream_inout
      *                Stream receiving the entries.
      * @param[in]    pinhole_in
      *               Camera whose entries are written.
      *
      * @return       The output stream.
      */
-    friend std::ostream &operator<<(std::ostream  &os,
+    friend std::ostream &operator<<(std::ostream  &outputStream_inout,
                                     const Pinhole &pinhole_in);
     /*!
      * @brief        Reads four calibration entries from the
      *               stream.
      *
-     * @param[in,out] is
+     * @param[in,out] inputStream_inout
      *                Stream holding the entries; shall be good.
      * @param[in,out] pinhole_inout
      *                Camera receiving the entries.
      *
      * @return       The input stream.
      */
-    friend std::istream &operator>>(std::istream &is, Pinhole &pinhole_inout);
+    friend std::istream &operator>>(std::istream &inputStream_inout,
+                                    Pinhole      &pinhole_inout);
 
     /*!
      * @brief        Checks calibration equality with another

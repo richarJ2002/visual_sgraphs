@@ -35,10 +35,10 @@ namespace camera_models
 {
 namespace pinhole
 {
-Eigen::Vector3f Pinhole::unprojectEig(const cv::Point2f &point2D_in)
+Eigen::Vector3f Pinhole::unprojectEig(const cv::Point2f &point2d_in)
 {
-    return Eigen::Vector3f((point2D_in.x - parameters[2]) / parameters[0],
-                           (point2D_in.y - parameters[3]) / parameters[1],
+    return Eigen::Vector3f((point2d_in.x - parameters[2]) / parameters[0],
+                           (point2d_in.y - parameters[3]) / parameters[1],
                            1.f);
 }
 } // namespace pinhole

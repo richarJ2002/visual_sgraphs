@@ -29,25 +29,35 @@
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
-Eigen::Vector2d KannalaBrandt8::project(const Eigen::Vector3d &point3D_in)
+Eigen::Vector2d KannalaBrandt8::project(const Eigen::Vector3d &point3d_in)
 {
-    const double x2_plus_y2 =
-        point3D_in[0] * point3D_in[0] + point3D_in[1] * point3D_in[1];
-    const double theta = atan2f(sqrtf(x2_plus_y2), point3D_in[2]);
-    const double psi   = atan2f(point3D_in[1], point3D_in[0]);
+    const double planarRadiusSquared =
+        point3d_in[0] * point3d_in[0] + point3d_in[1] * point3d_in[1];
+    const double incidenceAngle =
+        atan2f(sqrtf(planarRadiusSquared), point3d_in[2]);
+    const double azimuthAngle = atan2f(point3d_in[1], point3d_in[0]);
 
-    const double theta2 = theta * theta;
-    const double theta3 = theta * theta2;
-    const double theta5 = theta3 * theta2;
-    const double theta7 = theta5 * theta2;
-    const double theta9 = theta7 * theta2;
-    const double r = theta + parameters[4] * theta3 + parameters[5] * theta5 +
-                     parameters[6] * theta7 + parameters[7] * theta9;
+    const double incidenceAngleSquared = incidenceAngle * incidenceAngle;
+    const double incidenceAngleCubed   = incidenceAngle * incidenceAngleSquared;
+    const double incidenceAnglePow5 =
+        incidenceAngleCubed * incidenceAngleSquared;
+    const double incidenceAnglePow7 =
+        incidenceAnglePow5 * incidenceAngleSquared;
+    const double incidenceAnglePow9 =
+        incidenceAnglePow7 * incidenceAngleSquared;
+    const double distortedIncidenceAngle =
+        incidenceAngle + parameters[4] * incidenceAngleCubed +
+        parameters[5] * incidenceAnglePow5 +
+        parameters[6] * incidenceAnglePow7 + parameters[7] * incidenceAnglePow9;
 
-    Eigen::Vector2d res;
-    res[0] = parameters[0] * r * cos(psi) + parameters[2];
-    res[1] = parameters[1] * r * sin(psi) + parameters[3];
+    Eigen::Vector2d projectedPoint;
+    projectedPoint[0] =
+        parameters[0] * distortedIncidenceAngle * cos(azimuthAngle) +
+        parameters[2];
+    projectedPoint[1] =
+        parameters[1] * distortedIncidenceAngle * sin(azimuthAngle) +
+        parameters[3];
 
-    return res;
+    return projectedPoint;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

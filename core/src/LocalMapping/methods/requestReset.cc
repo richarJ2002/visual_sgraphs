@@ -35,17 +35,17 @@ namespace core
 void LocalMapping::requestReset()
 {
     {
-        unique_lock<mutex> lock(mMutexReset);
+        unique_lock<mutex> resetLock(resetMutex);
         // Request to reset the map
-        resetRequested = true;
+        isResetRequested = true;
     }
 
     // Wait until the mutex is free
     while (1)
     {
         {
-            unique_lock<mutex> lock2(mMutexReset);
-            if (!resetRequested)
+            unique_lock<mutex> resetLock2(resetMutex);
+            if (!isResetRequested)
                 break;
         }
         usleep(3000);

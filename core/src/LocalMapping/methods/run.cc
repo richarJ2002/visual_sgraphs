@@ -36,7 +36,7 @@ namespace core
 
 void LocalMapping::run()
 {
-    finished = false;
+    hasFinished = false;
 
     while (1)
     {
@@ -44,47 +44,47 @@ void LocalMapping::run()
         setAcceptKeyFrames(false);
 
         // Check if there are keyframes in the queue
-        if (checkNewKeyFrames() && !badImu)
+        if (checkNewKeyFrames() && !isImuBad)
         {
 #ifdef REGISTER_TIMES
-            double timeLBA_ms       = 0;
-            double timeKFCulling_ms = 0;
+            double timeLocalBa_ms         = 0;
+            double timeKeyFrameCulling_ms = 0;
 
-            std::chrono::steady_clock::time_point time_StartProcessKF =
+            std::chrono::steady_clock::time_point processKeyFrameStartTime =
                 std::chrono::steady_clock::now();
 #endif
             // BoW conversion and insertion in Map
             processNewKeyFrame();
 #ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point time_EndProcessKF =
+            std::chrono::steady_clock::time_point processKeyFrameEndTime =
                 std::chrono::steady_clock::now();
 
-            double timeProcessKF =
+            double timeProcessKeyFrame =
                 std::chrono::duration_cast<
                     std::chrono::duration<double, std::milli>>(
-                    time_EndProcessKF - time_StartProcessKF)
+                    processKeyFrameEndTime - processKeyFrameStartTime)
                     .count();
-            vdKFInsert_ms.push_back(timeProcessKF);
+            keyFrameInsertTimes_ms.push_back(timeProcessKeyFrame);
 #endif
 
             // Check recent MapPoints
             mapPointCulling();
 #ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point time_EndMPCulling =
+            std::chrono::steady_clock::time_point mapPointCullingEndTime =
                 std::chrono::steady_clock::now();
 
-            double timeMPCulling =
+            double timeMapPointCulling =
                 std::chrono::duration_cast<
                     std::chrono::duration<double, std::milli>>(
-                    time_EndMPCulling - time_EndProcessKF)
+                    mapPointCullingEndTime - processKeyFrameEndTime)
                     .count();
-            vdMPCulling_ms.push_back(timeMPCulling);
+            mapPointCullingTimes_ms.push_back(timeMapPointCulling);
 #endif
 
             // Triangulate new MapPoints
             createNewMapPoints();
 
-            abortBA = false;
+            shouldAbortBa = false;
 
             if (!checkNewKeyFrames())
             {
@@ -94,33 +94,33 @@ void LocalMapping::run()
             }
 
 #ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point time_EndMPCreation =
+            std::chrono::steady_clock::time_point mapPointCreationEndTime =
                 std::chrono::steady_clock::now();
 
-            double timeMPCreation =
+            double timeMapPointCreation =
                 std::chrono::duration_cast<
                     std::chrono::duration<double, std::milli>>(
-                    time_EndMPCreation - time_EndMPCulling)
+                    mapPointCreationEndTime - mapPointCullingEndTime)
                     .count();
-            vdMPCreation_ms.push_back(timeMPCreation);
+            mapPointCreationTimes_ms.push_back(timeMapPointCreation);
 #endif
 
             // Only consumed by the REGISTER_TIMES statistics block below.
-            [[maybe_unused]] bool b_doneLBA = false;
+            [[maybe_unused]] bool wasLocalBaExecuted = false;
 
-            int num_FixedKF_BA = 0;
-            int num_OptKF_BA   = 0;
-            int num_MPs_BA     = 0;
-            int num_edges_BA   = 0;
+            int baFixedKeyFrameCount     = 0;
+            int baOptimizedKeyFrameCount = 0;
+            int baMapPointCount          = 0;
+            int baEdgeCount              = 0;
 
             if (!checkNewKeyFrames() && !stopRequested())
             {
                 if (p_atlas->getKeyFrameCount() > 2)
                 {
-                    if (inertial &&
+                    if (isInertial &&
                         p_currentKeyFrame->getMap()->isImuInitialized())
                     {
-                        float dist =
+                        float cameraCenterDistance =
                             (p_currentKeyFrame->p_prevKF->getCameraCenter() -
                              p_currentKeyFrame->getCameraCenter())
                                 .norm() +
@@ -129,7 +129,7 @@ void LocalMapping::run()
                              p_currentKeyFrame->p_prevKF->getCameraCenter())
                                 .norm();
 
-                        if (dist > 0.05)
+                        if (cameraCenterDistance > 0.05)
                             initializationStartTime +=
                                 p_currentKeyFrame->timeStamp -
                                 p_currentKeyFrame->p_prevKF->timeStamp;
@@ -138,66 +138,69 @@ void LocalMapping::run()
                          * Initialization itself is gated by cumulative
                          * translation below. */
 
-                        bool bLarge = ((p_tracker->getMatchesInliers() > 75) &&
-                                       monocular) ||
-                                      ((p_tracker->getMatchesInliers() > 100) &&
-                                       !monocular);
+                        bool isLargeBundleAdjustment =
+                            ((p_tracker->getMatchesInliers() > 75) &&
+                             isMonocular) ||
+                            ((p_tracker->getMatchesInliers() > 100) &&
+                             !isMonocular);
                         Optimizer::localInertialBA(
                             p_currentKeyFrame,
-                            &abortBA,
+                            &shouldAbortBa,
                             p_currentKeyFrame->getMap(),
-                            num_FixedKF_BA,
-                            num_OptKF_BA,
-                            num_MPs_BA,
-                            num_edges_BA,
-                            bLarge,
+                            baFixedKeyFrameCount,
+                            baOptimizedKeyFrameCount,
+                            baMapPointCount,
+                            baEdgeCount,
+                            isLargeBundleAdjustment,
                             !p_currentKeyFrame->getMap()->getInertialBA2());
-                        b_doneLBA = true;
+                        wasLocalBaExecuted = true;
                     }
                     else
                     {
                         Optimizer::localBundleAdjustment(
                             p_currentKeyFrame,
-                            &abortBA,
+                            &shouldAbortBa,
                             p_currentKeyFrame->getMap(),
-                            num_FixedKF_BA,
-                            num_OptKF_BA,
-                            num_MPs_BA,
-                            num_edges_BA,
+                            baFixedKeyFrameCount,
+                            baOptimizedKeyFrameCount,
+                            baMapPointCount,
+                            baEdgeCount,
                             types::SystemParams::getParams()->markers.impact);
-                        b_doneLBA = true;
+                        wasLocalBaExecuted = true;
                     }
                 }
 #ifdef REGISTER_TIMES
-                std::chrono::steady_clock::time_point time_EndLBA =
+                std::chrono::steady_clock::time_point localBaEndTime =
                     std::chrono::steady_clock::now();
 
-                if (b_doneLBA)
+                if (wasLocalBaExecuted)
                 {
-                    timeLBA_ms = std::chrono::duration_cast<
-                                     std::chrono::duration<double, std::milli>>(
-                                     time_EndLBA - time_EndMPCreation)
-                                     .count();
-                    vdLBA_ms.push_back(timeLBA_ms);
+                    timeLocalBa_ms =
+                        std::chrono::duration_cast<
+                            std::chrono::duration<double, std::milli>>(
+                            localBaEndTime - mapPointCreationEndTime)
+                            .count();
+                    localBaTimes_ms.push_back(timeLocalBa_ms);
 
-                    nLBA_exec += 1;
-                    if (abortBA)
+                    localBaExecutionCount += 1;
+                    if (shouldAbortBa)
                     {
-                        nLBA_abort += 1;
+                        localBaAbortCount += 1;
                     }
-                    vnLBA_edges.push_back(num_edges_BA);
-                    vnLBA_KFopt.push_back(num_OptKF_BA);
-                    vnLBA_KFfixed.push_back(num_FixedKF_BA);
-                    vnLBA_MPs.push_back(num_MPs_BA);
+                    localBaEdgeCounts.push_back(baEdgeCount);
+                    localBaOptimizedKeyFrameCounts.push_back(
+                        baOptimizedKeyFrameCount);
+                    localBaFixedKeyFrameCounts.push_back(baFixedKeyFrameCount);
+                    localBaMapPointCounts.push_back(baMapPointCount);
                 }
 
 #endif
 
                 // IMU initialization
                 if (!p_currentKeyFrame->getMap()->isImuInitialized() &&
-                    inertial)
+                    isInertial)
                 {
-                    if (monocular)
+                    if (isMonocular)
                         initializeIMU(1e2, 1e10, true);
                     else
                         initializeIMU(1e2, 1e5, true);
@@ -207,22 +210,22 @@ void LocalMapping::run()
                 keyFrameCulling();
 
 #ifdef REGISTER_TIMES
-                std::chrono::steady_clock::time_point time_EndKFCulling =
+                std::chrono::steady_clock::time_point keyFrameCullingEndTime =
                     std::chrono::steady_clock::now();
 
-                timeKFCulling_ms =
+                timeKeyFrameCulling_ms =
                     std::chrono::duration_cast<
                         std::chrono::duration<double, std::milli>>(
-                        time_EndKFCulling - time_EndLBA)
+                        keyFrameCullingEndTime - localBaEndTime)
                         .count();
-                vdKFCulling_ms.push_back(timeKFCulling_ms);
+                keyFrameCullingTimes_ms.push_back(timeKeyFrameCulling_ms);
 #endif
 
                 // Staged IMU initialization
                 // [Hint] For Visual-Inertial SLAM, the IMU biases and scale are
                 // initially unknown (the first 5secs). After 15 seconds, they
                 // are locked to avoid drift.
-                if ((initializationStartTime < 50.0f) && inertial)
+                if ((initializationStartTime < 50.0f) && isInertial)
                 {
                     // Enter here everytime local-mapping is called
                     if (p_currentKeyFrame->getMap()->isImuInitialized() &&
@@ -239,7 +242,7 @@ void LocalMapping::run()
                                        "initialization (stage#1) ..."
                                     << std::endl;
                                 p_currentKeyFrame->getMap()->setInertialBA1();
-                                if (monocular)
+                                if (isMonocular)
                                     initializeIMU(1.f, 1e5, true);
                                 else
                                     initializeIMU(1.f, 1e5, true);
@@ -259,7 +262,7 @@ void LocalMapping::run()
                                        "initialization (stage#2) ..."
                                     << std::endl;
                                 p_currentKeyFrame->getMap()->setInertialBA2();
-                                if (monocular)
+                                if (isMonocular)
                                     initializeIMU(0.f, 0.f, true);
                                 else
                                     initializeIMU(0.f, 0.f, true);
@@ -284,7 +287,7 @@ void LocalMapping::run()
                              (initializationStartTime > 75.0f &&
                               initializationStartTime < 75.5f)))
                         {
-                            if (monocular)
+                            if (isMonocular)
                                 scaleRefinement();
                         }
                     }
@@ -292,25 +295,25 @@ void LocalMapping::run()
             }
 
 #ifdef REGISTER_TIMES
-            vdLBASync_ms.push_back(timeKFCulling_ms);
-            vdKFCullingSync_ms.push_back(timeKFCulling_ms);
+            localBaSyncTimes_ms.push_back(timeKeyFrameCulling_ms);
+            keyFrameCullingSyncTimes_ms.push_back(timeKeyFrameCulling_ms);
 #endif
 
             p_loopCloser->insertKeyFrame(p_currentKeyFrame);
 
 #ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point time_EndLocalMap =
+            std::chrono::steady_clock::time_point localMapEndTime =
                 std::chrono::steady_clock::now();
 
             double timeLocalMap =
                 std::chrono::duration_cast<
                     std::chrono::duration<double, std::milli>>(
-                    time_EndLocalMap - time_StartProcessKF)
+                    localMapEndTime - processKeyFrameStartTime)
                     .count();
-            vdLMTotal_ms.push_back(timeLocalMap);
+            localMappingTotalTimes_ms.push_back(timeLocalMap);
 #endif
         }
-        else if (stop() && !badImu)
+        else if (stop() && !isImuBad)
         {
             // Safe area to stop
             while (isStopped() && !checkFinish())

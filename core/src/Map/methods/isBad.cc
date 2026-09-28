@@ -36,7 +36,7 @@ namespace core
 
 bool Map::isBad()
 {
-    return mbBad.load(std::memory_order_acquire);
+    return isFlaggedBad.load(std::memory_order_acquire);
 }
 
 } // namespace core

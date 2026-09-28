@@ -35,8 +35,8 @@ namespace core
 #ifdef REGISTER_LOOP
 bool Tracking::isStopped()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    return stopped;
+    unique_lock<mutex> lock(stopMutex);
+    return hasStopped;
 }
 #endif
 

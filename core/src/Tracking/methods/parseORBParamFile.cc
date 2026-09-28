@@ -32,117 +32,117 @@ namespace vs_graphs
 namespace core
 {
 
-bool Tracking::parseORBParamFile(cv::FileStorage &fSettings)
+bool Tracking::parseORBParamFile(cv::FileStorage &settings_in)
 {
-    bool  b_miss_params = false;
-    int   nFeatures     = 0;
-    int   nLevels       = 0;
-    int   fIniThFAST    = 0;
-    int   fMinThFAST    = 0;
-    float fScaleFactor  = 0.0F;
+    bool  isParameterMissing   = false;
+    int   featureCount         = 0;
+    int   levelCount           = 0;
+    int   initialThresholdFast = 0;
+    int   minimumThresholdFast = 0;
+    float scaleFactor          = 0.0F;
 
-    cv::FileNode node = fSettings["ORBextractor.nFeatures"];
+    cv::FileNode node = settings_in["ORBextractor.nFeatures"];
     if (!node.empty() && node.isInt())
     {
-        nFeatures = node.operator int();
+        featureCount = node.operator int();
     }
     else
     {
         std::cerr << "*ORBextractor.nFeatures parameter doesn't exist or is "
                      "not an integer*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["ORBextractor.scaleFactor"];
+    node = settings_in["ORBextractor.scaleFactor"];
     if (!node.empty() && node.isReal())
     {
-        fScaleFactor = node.real();
+        scaleFactor = node.real();
     }
     else
     {
         std::cerr << "*ORBextractor.scaleFactor parameter doesn't exist or is "
                      "not a real number*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["ORBextractor.nLevels"];
+    node = settings_in["ORBextractor.nLevels"];
     if (!node.empty() && node.isInt())
     {
-        nLevels = node.operator int();
+        levelCount = node.operator int();
     }
     else
     {
         std::cerr << "*ORBextractor.nLevels parameter doesn't exist or is not "
                      "an integer*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["ORBextractor.iniThFAST"];
+    node = settings_in["ORBextractor.iniThFAST"];
     if (!node.empty() && node.isInt())
     {
-        fIniThFAST = node.operator int();
+        initialThresholdFast = node.operator int();
     }
     else
     {
         std::cerr << "*ORBextractor.iniThFAST parameter doesn't exist or is "
                      "not an integer*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["ORBextractor.minThFAST"];
+    node = settings_in["ORBextractor.minThFAST"];
     if (!node.empty() && node.isInt())
     {
-        fMinThFAST = node.operator int();
+        minimumThresholdFast = node.operator int();
     }
     else
     {
         std::cerr << "*ORBextractor.minThFAST parameter doesn't exist or is "
                      "not an integer*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    if (b_miss_params)
+    if (isParameterMissing)
     {
         return false;
     }
 
-    p_orbExtractorLeft = new ORBextractor(nFeatures,
-                                          fScaleFactor,
-                                          nLevels,
-                                          fIniThFAST,
-                                          fMinThFAST);
+    p_orbExtractorLeft = new ORBextractor(featureCount,
+                                          scaleFactor,
+                                          levelCount,
+                                          initialThresholdFast,
+                                          minimumThresholdFast);
 
     if (sensor == System::STEREO || sensor == System::IMU_STEREO)
-        p_orbExtractorRight = new ORBextractor(nFeatures,
-                                               fScaleFactor,
-                                               nLevels,
-                                               fIniThFAST,
-                                               fMinThFAST);
+        p_orbExtractorRight = new ORBextractor(featureCount,
+                                               scaleFactor,
+                                               levelCount,
+                                               initialThresholdFast,
+                                               minimumThresholdFast);
 
     if (sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR)
-        p_iniOrbExtractor = new ORBextractor(5 * nFeatures,
-                                             fScaleFactor,
-                                             nLevels,
-                                             fIniThFAST,
-                                             fMinThFAST);
+        p_iniOrbExtractor = new ORBextractor(5 * featureCount,
+                                             scaleFactor,
+                                             levelCount,
+                                             initialThresholdFast,
+                                             minimumThresholdFast);
 
     // Adaptive FAST threshold initialization
     lastFrameFeatures        = 0;
     consecutiveLowFeatures   = 0;
-    baseInitialFastThreshold = fIniThFAST;
-    baseMinimumFastThreshold = fMinThFAST;
+    baseInitialFastThreshold = initialThresholdFast;
+    baseMinimumFastThreshold = minimumThresholdFast;
 
     cout << endl << "ORB Extractor Parameters: " << endl;
-    cout << "- Number of Features: " << nFeatures << endl;
-    cout << "- Scale Levels: " << nLevels << endl;
-    cout << "- Scale Factor: " << fScaleFactor << endl;
-    cout << "- Initial Fast Threshold: " << fIniThFAST << endl;
-    cout << "- Minimum Fast Threshold: " << fMinThFAST << endl;
+    cout << "- Number of Features: " << featureCount << endl;
+    cout << "- Scale Levels: " << levelCount << endl;
+    cout << "- Scale Factor: " << scaleFactor << endl;
+    cout << "- Initial Fast Threshold: " << initialThresholdFast << endl;
+    cout << "- Minimum Fast Threshold: " << minimumThresholdFast << endl;
 
     return true;
 }

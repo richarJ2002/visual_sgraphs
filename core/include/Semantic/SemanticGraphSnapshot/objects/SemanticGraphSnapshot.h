@@ -79,7 +79,7 @@ struct SemanticGraphSnapshot
     std::vector<MapSnapshot> maps;
 
     /*! @brief Always NOT_EXPOSED_BY_CURRENT_API in this slice: Atlas's
-     *  bad/retired map sets (mspBadMaps/mspRetiredMaps) are protected with
+     *  bad/retired map sets (badMaps/retiredMaps) are protected with
      *  no public enumeration API (confirmed by direct source read of
      *  Atlas.h/Atlas.cc). This snapshot never claims visibility into
      *  quarantined map state. */
@@ -97,7 +97,7 @@ struct SemanticGraphSnapshot
     UnavailableReason roomContextHistoryReason{
         UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE};
 
-    /*! @brief Value-only copy of SemanticsManager::openPassageEvidence_
+    /*! @brief Value-only copy of SemanticsManager::openPassageEvidence
      *  (SemanticsManager.h), converted and populated by SemanticsManager
      *  itself at the semantic transaction boundary
      * (captureSemanticGraphSnapshot() cannot see this private member); empty
@@ -113,7 +113,7 @@ struct SemanticGraphSnapshot
     UnavailableReason managerPrivateOpenPassageHypothesesReason{
         UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE};
 
-    /*! @brief Value-only copy of SemanticsManager::undefendedWalls_
+    /*! @brief Value-only copy of SemanticsManager::undefendedWalls
      *  (SemanticsManager.h), converted and populated by SemanticsManager
      *  itself at the semantic transaction boundary; empty and meaningless
      *  whenever managerPrivateUnresolvedWallHypothesesReason != NONE. */

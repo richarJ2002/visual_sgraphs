@@ -32,87 +32,96 @@ class Sim3Solver
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Sim3Solver(KeyFrame                      *pKF1,
-               KeyFrame                      *pKF2,
-               const std::vector<MapPoint *> &vpMatched12,
-               const bool                     bFixScale = true,
-               vector<KeyFrame *> vpKeyFrameMatchedMP = vector<KeyFrame *>()) :
+    Sim3Solver(
+        KeyFrame                      *p_keyFrame1_inout,
+        KeyFrame                      *p_keyFrame2_inout,
+        const std::vector<MapPoint *> &matched12_in,
+        const bool                     isScaleFixed_in = true,
+        vector<KeyFrame *> keyFrameMatchedMapPoints_in = vector<KeyFrame *>()) :
         iterationCount(0),
         bestInlierCount(0),
-        fixScale(bFixScale),
-        pCamera1(pKF1->p_camera),
-        pCamera2(pKF2->p_camera)
+        isScaleFixed(isScaleFixed_in),
+        p_firstCamera(p_keyFrame1_inout->p_camera),
+        p_secondCamera(p_keyFrame2_inout->p_camera)
     {
-        bool bDifferentKFs = false;
-        if (vpKeyFrameMatchedMP.empty())
+        bool areKeyFramesDifferent = false;
+        if (keyFrameMatchedMapPoints_in.empty())
         {
-            bDifferentKFs       = true;
-            vpKeyFrameMatchedMP = vector<KeyFrame *>(vpMatched12.size(), pKF2);
+            areKeyFramesDifferent = true;
+            keyFrameMatchedMapPoints_in =
+                vector<KeyFrame *>(matched12_in.size(), p_keyFrame2_inout);
         }
 
-        p_keyFrame1 = pKF1;
-        p_keyFrame2 = pKF2;
+        p_keyFrame1 = p_keyFrame1_inout;
+        p_keyFrame2 = p_keyFrame2_inout;
 
-        vector<MapPoint *> vpKeyFrameMP1 = pKF1->getMapPointMatches();
+        vector<MapPoint *> keyFrameMapPoint1 =
+            p_keyFrame1_inout->getMapPointMatches();
 
-        mN1 = vpMatched12.size();
+        firstMatchCount = matched12_in.size();
 
-        mapPoints1.reserve(mN1);
-        mapPoints2.reserve(mN1);
-        mapPointMatches12 = vpMatched12;
-        indices1.reserve(mN1);
-        points3Dc1.reserve(mN1);
-        points3Dc2.reserve(mN1);
+        mapPoints1.reserve(firstMatchCount);
+        mapPoints2.reserve(firstMatchCount);
+        mapPointMatches12 = matched12_in;
+        indices1.reserve(firstMatchCount);
+        points3Dc1.reserve(firstMatchCount);
+        points3Dc2.reserve(firstMatchCount);
 
-        Eigen::Matrix3f Rcw1 = pKF1->getRotation();
-        Eigen::Vector3f tcw1 = pKF1->getTranslation();
-        Eigen::Matrix3f Rcw2 = pKF2->getRotation();
-        Eigen::Vector3f tcw2 = pKF2->getTranslation();
+        Eigen::Matrix3f Rcw1 = p_keyFrame1_inout->getRotation();
+        Eigen::Vector3f tcw1 = p_keyFrame1_inout->getTranslation();
+        Eigen::Matrix3f Rcw2 = p_keyFrame2_inout->getRotation();
+        Eigen::Vector3f tcw2 = p_keyFrame2_inout->getTranslation();
 
-        allIndices.reserve(mN1);
+        allIndices.reserve(firstMatchCount);
 
         size_t idx = 0;
 
-        KeyFrame *pKFm = pKF2; // Default variable
-        for (int i1 = 0; i1 < mN1; i1++)
+        KeyFrame *pKFm = p_keyFrame2_inout; // Default variable
+        for (int i1 = 0; i1 < firstMatchCount; i1++)
         {
-            if (vpMatched12[i1])
+            if (matched12_in[i1])
             {
-                MapPoint *pMP1 = vpKeyFrameMP1[i1];
-                MapPoint *pMP2 = vpMatched12[i1];
+                MapPoint *p_mapPoint1 = keyFrameMapPoint1[i1];
+                MapPoint *p_mapPoint2 = matched12_in[i1];
 
-                if (!pMP1)
+                if (!p_mapPoint1)
                     continue;
 
-                if (pMP1->isBad() || pMP2->isBad())
+                if (p_mapPoint1->isBad() || p_mapPoint2->isBad())
                     continue;
 
-                if (bDifferentKFs)
-                    pKFm = vpKeyFrameMatchedMP[i1];
+                if (areKeyFramesDifferent)
+                    pKFm = keyFrameMatchedMapPoints_in[i1];
 
-                int indexKF1 = get<0>(pMP1->getIndexInKeyFrame(pKF1));
-                int indexKF2 = get<0>(pMP2->getIndexInKeyFrame(pKFm));
+                int indexKeyFrame1 =
+                    get<0>(p_mapPoint1->getIndexInKeyFrame(p_keyFrame1_inout));
+                int indexKeyFrame2 =
+                    get<0>(p_mapPoint2->getIndexInKeyFrame(pKFm));
 
-                if (indexKF1 < 0 || indexKF2 < 0)
+                if (indexKeyFrame1 < 0 || indexKeyFrame2 < 0)
                     continue;
 
-                const cv::KeyPoint &kp1 = pKF1->keyPointsUndistorted[indexKF1];
-                const cv::KeyPoint &kp2 = pKFm->keyPointsUndistorted[indexKF2];
+                const cv::KeyPoint &keyPoint1 =
+                    p_keyFrame1_inout->keyPointsUndistorted[indexKeyFrame1];
+                const cv::KeyPoint &keyPoint2 =
+                    pKFm->keyPointsUndistorted[indexKeyFrame2];
 
-                const float sigmaSquare1 = pKF1->levelSigmaSquared[kp1.octave];
-                const float sigmaSquare2 = pKFm->levelSigmaSquared[kp2.octave];
+                const float sigmaSquare1 =
+                    p_keyFrame1_inout->levelSigmaSquared[keyPoint1.octave];
+                const float sigmaSquare2 =
+                    pKFm->levelSigmaSquared[keyPoint2.octave];
 
                 maxError1.push_back(9.210 * sigmaSquare1);
                 maxError2.push_back(9.210 * sigmaSquare2);
 
-                mapPoints1.push_back(pMP1);
-                mapPoints2.push_back(pMP2);
+                mapPoints1.push_back(p_mapPoint1);
+                mapPoints2.push_back(p_mapPoint2);
                 indices1.push_back(i1);
 
-                Eigen::Vector3f X3D1w = pMP1->getWorldPos();
+                Eigen::Vector3f X3D1w = p_mapPoint1->getWorldPos();
                 points3Dc1.push_back(Rcw1 * X3D1w + tcw1);
 
-                Eigen::Vector3f X3D2w = pMP2->getWorldPos();
+                Eigen::Vector3f X3D2w = p_mapPoint2->getWorldPos();
                 points3Dc2.push_back(Rcw2 * X3D2w + tcw2);
 
                 allIndices.push_back(idx);
@@ -120,27 +129,28 @@ class Sim3Solver
             }
         }
 
-        fromCameraToImage(points3Dc1, points1im1, pCamera1);
-        fromCameraToImage(points3Dc2, points2im2, pCamera2);
+        fromCameraToImage(points3Dc1, points1im1, p_firstCamera);
+        fromCameraToImage(points3Dc2, points2im2, p_secondCamera);
 
         setRansacParameters();
     }
 
-    void setRansacParameters(double probability   = 0.99,
-                             int    minInliers    = 6,
-                             int    maxIterations = 300);
+    void setRansacParameters(double probability_in       = 0.99,
+                             int    minimumInliers_in    = 6,
+                             int    maximumIterations_in = 300);
 
-    Eigen::Matrix4f find(std::vector<bool> &vbInliers12, int &nInliers);
+    Eigen::Matrix4f find(std::vector<bool> &inliers12Flags_inout,
+                         int               &inlierCount_inout);
 
-    Eigen::Matrix4f iterate(int                nIterations,
-                            bool              &bNoMore,
-                            std::vector<bool> &vbInliers,
-                            int               &nInliers);
-    Eigen::Matrix4f iterate(int           nIterations,
-                            bool         &bNoMore,
-                            vector<bool> &vbInliers,
-                            int          &nInliers,
-                            bool         &bConverge);
+    Eigen::Matrix4f iterate(int                iterationCount_in,
+                            bool              &areIterationsExhausted_out,
+                            std::vector<bool> &inliersFlags_out,
+                            int               &inlierCount_out);
+    Eigen::Matrix4f iterate(int           iterationCount_in,
+                            bool         &areIterationsExhausted_out,
+                            vector<bool> &inliersFlags_out,
+                            int          &inlierCount_out,
+                            bool         &hasConverged_out);
 
     Eigen::Matrix4f getEstimatedTransformation();
     Eigen::Matrix3f getEstimatedRotation();
@@ -148,22 +158,23 @@ class Sim3Solver
     float           getEstimatedScale();
 
   protected:
-    void computeCentroid(Eigen::Matrix3f &P,
-                         Eigen::Matrix3f &Pr,
-                         Eigen::Vector3f &C);
+    void computeCentroid(Eigen::Matrix3f &P_in,
+                         Eigen::Matrix3f &Pr_inout,
+                         Eigen::Vector3f &C_out);
 
-    void computeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2);
+    void computeSim3(Eigen::Matrix3f &P1_inout, Eigen::Matrix3f &P2_inout);
 
     void checkInliers();
 
-    void project(const std::vector<Eigen::Vector3f>              &vP3Dw,
-                 std::vector<Eigen::Vector2f>                    &vP2D,
-                 Eigen::Matrix4f                                  Tcw,
-                 camera_models::geometriccamera::GeometricCamera *pCamera);
+    void project(
+        const std::vector<Eigen::Vector3f>              &vP3Dw_in,
+        std::vector<Eigen::Vector2f>                    &points2D_out,
+        Eigen::Matrix4f                                  Tcw_in,
+        camera_models::geometriccamera::GeometricCamera *p_camera_inout);
     void fromCameraToImage(
-        const std::vector<Eigen::Vector3f>              &vP3Dc,
-        std::vector<Eigen::Vector2f>                    &vP2D,
-        camera_models::geometriccamera::GeometricCamera *pCamera);
+        const std::vector<Eigen::Vector3f>              &vP3Dc_in,
+        std::vector<Eigen::Vector2f>                    &points2D_out,
+        camera_models::geometriccamera::GeometricCamera *p_camera_inout);
 
   protected:
     // KeyFrames and matches
@@ -181,8 +192,8 @@ class Sim3Solver
     std::vector<size_t>          maxError1;
     std::vector<size_t>          maxError2;
 
-    int N;
-    int mN1;
+    int correspondenceCount;
+    int firstMatchCount;
 
     // Current Estimation
     Eigen::Matrix3f   mR12i;
@@ -198,12 +209,12 @@ class Sim3Solver
     std::vector<bool> bestInlierFlags;
     int               bestInlierCount;
     Eigen::Matrix4f   mBestT12;
-    Eigen::Matrix3f   mBestRotation;
-    Eigen::Vector3f   mBestTranslation;
-    float             mBestScale;
+    Eigen::Matrix3f   bestRotation;
+    Eigen::Vector3f   bestTranslation;
+    float             bestScale;
 
     // Scale is fixed to 1 in the stereo/RGBD case
-    bool fixScale;
+    bool isScaleFixed;
 
     // Indices for random selection
     std::vector<size_t> allIndices;
@@ -229,7 +240,8 @@ class Sim3Solver
     // cv::Mat mK1;
     // cv::Mat mK2;
 
-    camera_models::geometriccamera::GeometricCamera *pCamera1, *pCamera2;
+    camera_models::geometriccamera::GeometricCamera *p_firstCamera,
+        *p_secondCamera;
 };
 
 } // namespace core

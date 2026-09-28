@@ -39,10 +39,10 @@ namespace utils
 bool Utils::collectCorrespondingWalls(
     Map                          *p_mapA_in,
     Map                          *p_mapB_in,
-    std::vector<Eigen::Vector3d> &normalsA_out,
-    std::vector<Eigen::Vector3d> &centroidsA_out,
-    std::vector<Eigen::Vector3d> &normalsB_out,
-    std::vector<Eigen::Vector3d> &centroidsB_out)
+    std::vector<Eigen::Vector3d> &normalsA_inout,
+    std::vector<Eigen::Vector3d> &centroidsA_inout,
+    std::vector<Eigen::Vector3d> &normalsB_inout,
+    std::vector<Eigen::Vector3d> &centroidsB_inout)
 {
     if (p_mapA_in == nullptr || p_mapB_in == nullptr)
     {
@@ -83,16 +83,16 @@ bool Utils::collectCorrespondingWalls(
 
             matchWallsBetweenRooms(p_roomA,
                                    p_roomB,
-                                   normalsA_out,
-                                   centroidsA_out,
-                                   normalsB_out,
-                                   centroidsB_out);
+                                   normalsA_inout,
+                                   centroidsA_inout,
+                                   normalsB_inout,
+                                   centroidsB_inout);
             break;
         }
     }
 
-    return normalsA_out.size() >= 3 &&
-           normalsA_out.size() == normalsB_out.size();
+    return normalsA_inout.size() >= 3 &&
+           normalsA_inout.size() == normalsB_inout.size();
 }
 
 } // namespace utils

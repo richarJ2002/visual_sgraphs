@@ -24,54 +24,54 @@ namespace core
 {
 
 void SemanticSegmentation::threshSeparatePointCloud(
-    pcl::PCLPointCloud2::Ptr                              pclPc2SegPrb,
-    cv::Mat                                              &segImgUncertainity,
-    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &clsCloudPtrs,
-    const pcl::PointCloud<pcl::PointXYZRGB>::Ptr         &thisKFPointCloud)
+    pcl::PCLPointCloud2::Ptr p_pclPc2SegPrb_in,
+    cv::Mat                 &segImageUncertainity_in,
+    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_clsCloudPtrs_out,
+    const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_thisKeyFramePointCloud_in)
 {
     /* Extract parameters on thresholds */
-    const uint8_t confidenceThresh = p_sysParams->semSeg.confThresh * 255;
-    const float   probThresh       = p_sysParams->semSeg.probThresh;
-    const float   distanceThreshNear =
+    const uint8_t confidenceThreshold = p_sysParams->semSeg.confThresh * 255;
+    const float   probThreshold       = p_sysParams->semSeg.probThresh;
+    const float   distanceThresholdNear =
         p_sysParams->pointcloud.distanceThresh.first;
-    const float distanceThreshFar =
+    const float distanceThresholdFar =
         p_sysParams->pointcloud.distanceThresh.second;
 
     /* Parse the PointCloud2 message */
-    const int width      = pclPc2SegPrb->width;
-    const int numPoints  = width * pclPc2SegPrb->height;
-    const int pointStep  = pclPc2SegPrb->point_step;
-    const int numClasses = pointStep / bytesPerClassProb;
+    const int width      = p_pclPc2SegPrb_in->width;
+    const int pointCount = width * p_pclPc2SegPrb_in->height;
+    const int pointStep  = p_pclPc2SegPrb_in->point_step;
+    const int classCount = pointStep / bytesPerClassProb;
 
     /* Clear the seperated point cloud vector `clsCloudPtrs` */
-    clsCloudPtrs.clear();
-    clsCloudPtrs.reserve(numClasses);
+    p_clsCloudPtrs_out.clear();
+    p_clsCloudPtrs_out.reserve(classCount);
 
     /*!
      * For each semantic class, add an instance to the output clsCloudPtrs list.
      * This way the pointclouds can be put into there respective class.
      */
-    for (int i = 0; i < numClasses; i++)
+    for (int classIndex = 0; classIndex < classCount; classIndex++)
     {
-        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr pointCloud(
+        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_pointCloud(
             new pcl::PointCloud<pcl::PointXYZRGBA>);
-        pointCloud->is_dense = false;
-        pointCloud->height   = 1;
-        clsCloudPtrs.push_back(pointCloud);
+        p_pointCloud->is_dense = false;
+        p_pointCloud->height   = 1;
+        p_clsCloudPtrs_out.push_back(p_pointCloud);
     }
 
     /* Extract the data from the inputted segmented point cloud */
-    const uint8_t *data = pclPc2SegPrb->data.data();
+    const uint8_t *p_data = p_pclPc2SegPrb_in->data.data();
 
     /*!
      * Iterate through the number of classes.
      *  j -> class index
      *  i -> flattened pixel index
      */
-    for (int j = 0; j < numClasses; j++)
+    for (int j = 0; j < classCount; j++)
     {
         /* Iterate through the number of points */
-        for (int i = 0; i < numPoints; i++)
+        for (int classIndex = 0; classIndex < pointCount; classIndex++)
         {
             /*!
              * Initilize variable containing probability point i belongs to
@@ -81,8 +81,9 @@ void SemanticSegmentation::threshSeparatePointCloud(
 
             /* Extract probabliilty that point i belongs to class j */
             std::memcpy(&probability,
-                        data + pointStep * i + bytesPerClassProb * j +
-                            pclPc2SegPrb->fields[0].offset,
+                        p_data + pointStep * classIndex +
+                            bytesPerClassProb * j +
+                            p_pclPc2SegPrb_in->fields[0].offset,
                         bytesPerClassProb);
 
             /*!
@@ -90,19 +91,19 @@ void SemanticSegmentation::threshSeparatePointCloud(
              * uncertainty). This is to check that the probability of the
              * semantic.
              */
-            if (probability >= probThresh)
+            if (probability >= probThreshold)
             {
                 // /* Inject coordinates as a point to respective point cloud */
                 /* Initialize point to be filtered into class point cloud */
                 pcl::PointXYZRGBA point;
 
                 /* Find the pixel index of the point in the image */
-                point.y = static_cast<int>(i / width);
-                point.x = i % width;
+                point.y = static_cast<int>(classIndex / width);
+                point.x = classIndex % width;
 
                 /* Extract the original point from the keyframe point cloud */
                 const pcl::PointXYZRGB origPoint =
-                    thisKFPointCloud->at(point.x, point.y);
+                    p_thisKeyFramePointCloud_in->at(point.x, point.y);
 
                 /* If the original point has invalid data, skip data point */
                 if (!pcl::isFinite(origPoint))
@@ -111,22 +112,22 @@ void SemanticSegmentation::threshSeparatePointCloud(
                 }
 
                 /* Extract the rgb uncertainty from the image */
-                cv::Vec3b vec =
-                    segImgUncertainity.at<cv::Vec3b>(point.y, point.x);
+                cv::Vec3b vector =
+                    segImageUncertainity_in.at<cv::Vec3b>(point.y, point.x);
 
                 /*!
                  * Convert the rgb uncertainty of the pixel to a single value
                  * and store in the alpha channel.
                  */
-                point.a =
-                    255 - static_cast<int>(0.299 * vec[2] + 0.587 * vec[1] +
-                                           0.114 * vec[0]);
+                point.a = 255 - static_cast<int>(0.299 * vector[2] +
+                                                 0.587 * vector[1] +
+                                                 0.114 * vector[0]);
 
                 /*!
                  * Exclude the points with low confidence that segmentation was
                  * correct.
                  */
-                if (point.a < confidenceThresh)
+                if (point.a < confidenceThreshold)
                 {
                     continue;
                 }
@@ -144,11 +145,11 @@ void SemanticSegmentation::threshSeparatePointCloud(
                  * between near and far thresholds confidence = 255 for near, 45
                  * for far, and interpolated according to squared distance
                  */
-                if (point.z < distanceThreshNear)
+                if (point.z < distanceThresholdNear)
                 {
                     point.a = 255;
                 }
-                else if (point.z > distanceThreshFar)
+                else if (point.z > distanceThresholdFar)
                 {
                     point.a = 45;
                 }
@@ -156,22 +157,23 @@ void SemanticSegmentation::threshSeparatePointCloud(
                 {
                     point.a =
                         255 - static_cast<int>(
-                                  210 * sqrt((point.z - distanceThreshNear) /
-                                             (distanceThreshFar -
-                                              distanceThreshNear)));
+                                  210 * sqrt((point.z - distanceThresholdNear) /
+                                             (distanceThresholdFar -
+                                              distanceThresholdNear)));
                 }
 
                 /* Add the point to the respective class specific point cloud */
-                clsCloudPtrs[j]->push_back(point);
+                p_clsCloudPtrs_out[j]->push_back(point);
             }
         }
     }
 
     /* Specify size/width and header for each class specific point cloud */
-    for (int i = 0; i < numClasses; i++)
+    for (int classIndex = 0; classIndex < classCount; classIndex++)
     {
-        clsCloudPtrs[i]->width  = clsCloudPtrs[i]->size();
-        clsCloudPtrs[i]->header = pclPc2SegPrb->header;
+        p_clsCloudPtrs_out[classIndex]->width =
+            p_clsCloudPtrs_out[classIndex]->size();
+        p_clsCloudPtrs_out[classIndex]->header = p_pclPc2SegPrb_in->header;
     }
 }
 

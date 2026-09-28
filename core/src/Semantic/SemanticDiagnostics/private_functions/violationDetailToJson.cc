@@ -37,20 +37,20 @@ namespace semantic
 {
 
 nlohmann::json violationDetailToJson(const Finding &finding_in,
-                                     const char    *transition_in)
+                                     const char    *p_transition_in)
 {
     /* WARN for a newly appeared hard failure (the operator-relevant case);
      * INFO for a resolution or any other transition. This never emits DEBUG
      * (no opt-in proposal trace exists yet) or SG_DECISION (no real opt-in
      * decision source exists yet). */
     const bool isNewlyAppearedHardFailure =
-        std::string(transition_in) == "appeared" &&
+        std::string(p_transition_in) == "appeared" &&
         finding_in.classification == AxiomClass::HARD;
 
     nlohmann::json json;
     json["level"]        = isNewlyAppearedHardFailure ? "WARN" : "INFO";
     json["findingId"]    = finding_in.id;
-    json["transition"]   = transition_in;
+    json["transition"]   = p_transition_in;
     json["axiomCode"]    = axiomCodeName(finding_in.axiomCode);
     json["result"]       = axiomResultName(finding_in.result);
     json["severity"]     = axiomClassName(finding_in.classification);

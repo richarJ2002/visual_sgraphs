@@ -40,8 +40,8 @@ namespace core
  *              call.
  *
  *              Atlas::SetMapBad() erases a map from the active set
- *              (Atlas::mspMaps) and marks it bad without clearing
- *              Atlas::mpCurrentMap; a later Atlas::ChangeMap() call is what
+ *              (Atlas::maps) and marks it bad without clearing
+ *              Atlas::p_activeMap; a later Atlas::ChangeMap() call is what
  *              eventually installs a new current map. Between those two
  *              calls, a truthful coherent read must be able to report that
  *              the current map id names a map genuinely absent from the
@@ -50,14 +50,14 @@ namespace core
  */
 enum class AtlasCurrentMapStatus : std::uint8_t
 {
-    /*! @brief Atlas::mpCurrentMap was nullptr at the moment of the read. */
+    /*! @brief Atlas::p_activeMap was nullptr at the moment of the read. */
     NO_CURRENT_MAP = 0U,
 
-    /*! @brief Atlas::mpCurrentMap was non-null and present in the returned
+    /*! @brief Atlas::p_activeMap was non-null and present in the returned
      *  active map vector. */
     CURRENT_MAP_ACTIVE = 1U,
 
-    /*! @brief Atlas::mpCurrentMap was non-null but absent from the returned
+    /*! @brief Atlas::p_activeMap was non-null but absent from the returned
      *  active map vector -- reachable via Atlas::SetMapBad(currentMap)
      *  followed by no Atlas::ChangeMap() call yet. */
     CURRENT_MAP_NOT_ACTIVE = 2U

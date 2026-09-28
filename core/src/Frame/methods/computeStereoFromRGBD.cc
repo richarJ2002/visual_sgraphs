@@ -43,25 +43,25 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::computeStereoFromRGBD(const cv::Mat &imDepth)
+void Frame::computeStereoFromRGBD(const cv::Mat &imageDepth_in)
 {
-    uRight = vector<float>(N, -1);
-    depths = vector<float>(N, -1);
+    uRight = vector<float>(keyPointCount, -1);
+    depths = vector<float>(keyPointCount, -1);
 
-    for (int i = 0; i < N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < keyPointCount; keyPointIndex++)
     {
-        const cv::KeyPoint &kp  = keyPoints[i];
-        const cv::KeyPoint &kpU = keyPointsUndistorted[i];
+        const cv::KeyPoint &keyPoint  = keyPoints[keyPointIndex];
+        const cv::KeyPoint &keyPointU = keyPointsUndistorted[keyPointIndex];
 
-        const float &v = kp.pt.y;
-        const float &u = kp.pt.x;
+        const float &v = keyPoint.pt.y;
+        const float &u = keyPoint.pt.x;
 
-        const float d = imDepth.at<float>(v, u);
+        const float d = imageDepth_in.at<float>(v, u);
 
         if (d > 0)
         {
-            depths[i] = d;
-            uRight[i] = kpU.pt.x - mbf / d;
+            depths[keyPointIndex] = d;
+            uRight[keyPointIndex] = keyPointU.pt.x - mbf / d;
         }
     }
 }

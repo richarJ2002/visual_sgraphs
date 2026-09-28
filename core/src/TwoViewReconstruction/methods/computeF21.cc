@@ -31,29 +31,29 @@ namespace core
 {
 
 Eigen::Matrix3f
-    TwoViewReconstruction::computeF21(const vector<cv::Point2f> &vP1,
-                                      const vector<cv::Point2f> &vP2)
+    TwoViewReconstruction::computeF21(const vector<cv::Point2f> &points1_in,
+                                      const vector<cv::Point2f> &points2_in)
 {
-    const int N = vP1.size();
+    const int N = points1_in.size();
 
     Eigen::MatrixXf A(N, 9);
 
-    for (int i = 0; i < N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
     {
-        const float u1 = vP1[i].x;
-        const float v1 = vP1[i].y;
-        const float u2 = vP2[i].x;
-        const float v2 = vP2[i].y;
+        const float u1 = points1_in[keyPointIndex].x;
+        const float v1 = points1_in[keyPointIndex].y;
+        const float u2 = points2_in[keyPointIndex].x;
+        const float v2 = points2_in[keyPointIndex].y;
 
-        A(i, 0) = u2 * u1;
-        A(i, 1) = u2 * v1;
-        A(i, 2) = u2;
-        A(i, 3) = v2 * u1;
-        A(i, 4) = v2 * v1;
-        A(i, 5) = v2;
-        A(i, 6) = u1;
-        A(i, 7) = v1;
-        A(i, 8) = 1;
+        A(keyPointIndex, 0) = u2 * u1;
+        A(keyPointIndex, 1) = u2 * v1;
+        A(keyPointIndex, 2) = u2;
+        A(keyPointIndex, 3) = v2 * u1;
+        A(keyPointIndex, 4) = v2 * v1;
+        A(keyPointIndex, 5) = v2;
+        A(keyPointIndex, 6) = u1;
+        A(keyPointIndex, 7) = v1;
+        A(keyPointIndex, 8) = 1;
     }
 
     Eigen::JacobiSVD<Eigen::MatrixXf> svd(A,

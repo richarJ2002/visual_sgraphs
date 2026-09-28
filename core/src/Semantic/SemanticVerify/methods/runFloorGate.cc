@@ -38,13 +38,13 @@ bool SemanticVerify::runFloorGate(
                               transform_absorbedToSurviving_in.translation(),
                               1.0);
     std::string     resultText;
-    const bool      passed       = verifyLoopMergeFloors(p_survivingMap_in,
+    const bool      passed          = verifyLoopMergeFloors(p_survivingMap_in,
                                               p_absorbedMap_in,
                                               transform,
                                               resultText);
-    result_inout.floorGateRan    = true;
-    result_inout.floorGatePassed = passed;
-    result_inout.floorGateResult = resultText;
+    result_inout.hasFloorGateRun    = true;
+    result_inout.hasFloorGatePassed = passed;
+    result_inout.floorGateResult    = resultText;
     return passed;
 }
 

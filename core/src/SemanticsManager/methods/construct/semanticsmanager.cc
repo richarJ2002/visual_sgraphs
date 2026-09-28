@@ -23,31 +23,31 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticsManager::SemanticsManager(Atlas *pAtlas)
+SemanticsManager::SemanticsManager(Atlas *p_atlas_in)
 {
     /* Store the address of the atlas map */
-    p_atlas = pAtlas;
+    p_atlas = p_atlas_in;
 
     /* Get the system parameters */
     p_sysParams = types::SystemParams::getParams();
 
     /* Configure the room-tracking state machine. */
-    semantic::RoomTrackerConfig trackerConfig;
-    trackerConfig.crossing_dwell_s =
+    semantic::RoomTrackerConfig trackerConfiguration;
+    trackerConfiguration.crossing_dwell_s =
         static_cast<double>(p_sysParams->roomTracking.crossingDwell_s);
-    trackerConfig.crossing_confidence =
+    trackerConfiguration.crossing_confidence =
         static_cast<double>(p_sysParams->roomTracking.crossingConfidence);
-    trackerConfig.lost_timeout_s =
+    trackerConfiguration.lost_timeout_s =
         static_cast<double>(p_sysParams->roomTracking.lostTimeout_s);
-    trackerConfig.reacquire_timeout_s =
+    trackerConfiguration.reacquire_timeout_s =
         static_cast<double>(p_sysParams->roomTracking.reacquireTimeout_s);
-    trackerConfig.reacquire_retry_interval_s =
+    trackerConfiguration.reacquire_retry_interval_s =
         static_cast<double>(p_sysParams->roomTracking.reacquireRetryInterval_s);
-    trackerConfig.reacquire_max_retries =
+    trackerConfiguration.reacquire_max_retries =
         p_sysParams->roomTracking.reacquireMaxRetries;
-    trackerConfig.reacquire_min_planes =
+    trackerConfiguration.reacquire_min_planes =
         p_sysParams->roomTracking.reacquireMinPlanes;
-    roomTracker_ = semantic::RoomTracker(trackerConfig);
+    roomTracker = semantic::RoomTracker(trackerConfiguration);
 }
 
 } // namespace core

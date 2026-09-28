@@ -35,7 +35,7 @@ void Passage::addAssociateWall(vs_graphs::core::geometric::Plane *p_wall_in)
         return;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
 
     const bool alreadyPresent = std::any_of(
         associateWalls.begin(),

@@ -30,51 +30,54 @@ namespace vs_graphs
 namespace core
 {
 
-camera_models::geometriccamera::GeometricCamera *
-    Atlas::addCamera(camera_models::geometriccamera::GeometricCamera *pCam)
+camera_models::geometriccamera::GeometricCamera *Atlas::addCamera(
+    camera_models::geometriccamera::GeometricCamera *p_camera_in)
 {
     // Check if the camera already exists
-    bool bAlreadyInMap = false;
-    int  index_cam     = -1;
-    for (size_t i = 0; i < cameras.size(); ++i)
+    bool isAlreadyInMap     = false;
+    int  matchedCameraIndex = -1;
+    for (size_t cameraIndex = 0; cameraIndex < cameras.size(); ++cameraIndex)
     {
-        camera_models::geometriccamera::GeometricCamera *pCam_i = cameras[i];
-        if (!pCam)
+        camera_models::geometriccamera::GeometricCamera *p_existingCamera =
+            cameras[cameraIndex];
+        if (!p_camera_in)
             std::cout << "Not pCam" << std::endl;
-        if (!pCam_i)
+        if (!p_existingCamera)
             std::cout << "Not pCam_i" << std::endl;
-        if (pCam->getType() != pCam_i->getType())
+        if (p_camera_in->getType() != p_existingCamera->getType())
             continue;
 
-        if (pCam->getType() ==
+        if (p_camera_in->getType() ==
             camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE)
         {
-            if (((camera_models::pinhole::Pinhole *)pCam_i)->isEqual(pCam))
+            if (((camera_models::pinhole::Pinhole *)p_existingCamera)
+                    ->isEqual(p_camera_in))
             {
-                bAlreadyInMap = true;
-                index_cam     = i;
+                isAlreadyInMap     = true;
+                matchedCameraIndex = cameraIndex;
             }
         }
-        else if (pCam->getType() ==
+        else if (p_camera_in->getType() ==
                  camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE)
         {
-            if (((camera_models::kannalabrandt8::KannalaBrandt8 *)pCam_i)
-                    ->isEqual(pCam))
+            if (((camera_models::kannalabrandt8::KannalaBrandt8 *)
+                     p_existingCamera)
+                    ->isEqual(p_camera_in))
             {
-                bAlreadyInMap = true;
-                index_cam     = i;
+                isAlreadyInMap     = true;
+                matchedCameraIndex = cameraIndex;
             }
         }
     }
 
-    if (bAlreadyInMap)
+    if (isAlreadyInMap)
     {
-        return cameras[index_cam];
+        return cameras[matchedCameraIndex];
     }
     else
     {
-        cameras.push_back(pCam);
-        return pCam;
+        cameras.push_back(p_camera_in);
+        return p_camera_in;
     }
 }
 

@@ -30,20 +30,20 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<MapPoint *>
-    Tracking::findPointsCloseToLocation(const std::vector<MapPoint *> &points,
-                                        const Eigen::Vector3f         &location,
-                                        double distanceThreshold)
+std::vector<MapPoint *> Tracking::findPointsCloseToLocation(
+    const std::vector<MapPoint *> &points_in,
+    const Eigen::Vector3f         &location_in,
+    double                         distanceThreshold_in)
 {
     std::vector<MapPoint *> closePoints;
-    for (MapPoint *point : points)
+    for (MapPoint *p_point : points_in)
     {
         double distance = utils::utils::Utils::calculateEuclideanDistance(
-            point->getWorldPos(),
-            location);
-        if (distance <= distanceThreshold)
+            p_point->getWorldPos(),
+            location_in);
+        if (distance <= distanceThreshold_in)
         {
-            closePoints.push_back(point);
+            closePoints.push_back(p_point);
         }
     }
 

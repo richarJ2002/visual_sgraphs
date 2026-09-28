@@ -30,8 +30,8 @@ namespace semantic
 
 bool Passage::isPassable() const
 {
-    std::lock_guard<std::mutex> lock(mMutexType);
-    return passable;
+    std::lock_guard<std::mutex> lock(typeMutex);
+    return isMarkedPassable;
 }
 
 } // namespace semantic

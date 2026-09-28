@@ -34,7 +34,8 @@ namespace vs_graphs
 namespace core
 {
 
-void MapPoint::PreSave(set<KeyFrame *> &spKF, set<MapPoint *> &spMP)
+void MapPoint::preSave(set<KeyFrame *> &keyFrames_in,
+                       set<MapPoint *> &mapPoints_in)
 {
     backupReplacedId = -1;
 
@@ -43,39 +44,41 @@ void MapPoint::PreSave(set<KeyFrame *> &spKF, set<MapPoint *> &spMP)
 
     // Snapshot the observation map and replaced pointer under the feature lock.
     // Dropped keyframes are erased below, after the lock is released, because
-    // EraseObservation() takes mMutexFeatures again.
-    std::map<KeyFrame *, std::tuple<int, int>> tmp_mObservations;
+    // EraseObservation() takes featuresMutex again.
+    std::map<KeyFrame *, std::tuple<int, int>> savedObservations;
     {
-        unique_lock<mutex> lock(mMutexFeatures);
-        if (p_replaced && spMP.find(p_replaced) != spMP.end())
-            backupReplacedId = p_replaced->mnId;
+        unique_lock<mutex> lock(featuresMutex);
+        if (p_replaced && mapPoints_in.find(p_replaced) != mapPoints_in.end())
+            backupReplacedId = p_replaced->id;
 
-        tmp_mObservations.insert(observations.begin(), observations.end());
+        savedObservations.insert(observations.begin(), observations.end());
     }
 
     for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator
-             it  = tmp_mObservations.begin(),
-             end = tmp_mObservations.end();
-         it != end;
-         ++it)
+             observationIt = savedObservations.begin(),
+             end           = savedObservations.end();
+         observationIt != end;
+         ++observationIt)
     {
-        KeyFrame *pKFi = it->first;
-        if (spKF.find(pKFi) != spKF.end())
+        KeyFrame *p_keyFrame = observationIt->first;
+        if (keyFrames_in.find(p_keyFrame) != keyFrames_in.end())
         {
-            backupObservationIds1[it->first->mnId] = get<0>(it->second);
-            backupObservationIds2[it->first->mnId] = get<1>(it->second);
+            backupObservationIds1[observationIt->first->id] =
+                get<0>(observationIt->second);
+            backupObservationIds2[observationIt->first->id] =
+                get<1>(observationIt->second);
         }
         else
         {
-            eraseObservation(pKFi);
+            eraseObservation(p_keyFrame);
         }
     }
 
     // Save the id of the reference KF
-    unique_lock<mutex> lock(mMutexFeatures);
-    if (spKF.find(p_referenceKeyFrame) != spKF.end())
+    unique_lock<mutex> lock(featuresMutex);
+    if (keyFrames_in.find(p_referenceKeyFrame) != keyFrames_in.end())
     {
-        backupRefKeyFrameId = p_referenceKeyFrame->mnId;
+        backupRefKeyFrameId = p_referenceKeyFrame->id;
     }
 }
 

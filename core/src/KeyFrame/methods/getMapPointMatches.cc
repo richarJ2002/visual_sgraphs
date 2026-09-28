@@ -37,7 +37,7 @@ namespace core
 
 vector<MapPoint *> KeyFrame::getMapPointMatches()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return mapPoints;
 }
 

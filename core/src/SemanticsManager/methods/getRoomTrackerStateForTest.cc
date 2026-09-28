@@ -25,7 +25,7 @@ namespace core
 
 semantic::RoomTrackingState SemanticsManager::getRoomTrackerStateForTest() const
 {
-    return roomTracker_.getState();
+    return roomTracker.getState();
 }
 
 } // namespace core

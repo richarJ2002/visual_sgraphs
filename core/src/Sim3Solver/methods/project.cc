@@ -32,22 +32,23 @@ namespace core
 {
 
 void Sim3Solver::project(
-    const vector<Eigen::Vector3f>                   &vP3Dw,
-    vector<Eigen::Vector2f>                         &vP2D,
-    Eigen::Matrix4f                                  Tcw,
-    camera_models::geometriccamera::GeometricCamera *pCamera)
+    const vector<Eigen::Vector3f>                   &vP3Dw_in,
+    vector<Eigen::Vector2f>                         &points2D_out,
+    Eigen::Matrix4f                                  Tcw_in,
+    camera_models::geometriccamera::GeometricCamera *p_camera_inout)
 {
-    Eigen::Matrix3f Rcw = Tcw.block<3, 3>(0, 0);
-    Eigen::Vector3f tcw = Tcw.block<3, 1>(0, 3);
+    Eigen::Matrix3f Rcw = Tcw_in.block<3, 3>(0, 0);
+    Eigen::Vector3f tcw = Tcw_in.block<3, 1>(0, 3);
 
-    vP2D.clear();
-    vP2D.reserve(vP3Dw.size());
+    points2D_out.clear();
+    points2D_out.reserve(vP3Dw_in.size());
 
-    for (size_t i = 0, iend = vP3Dw.size(); i < iend; i++)
+    for (size_t pointIndex = 0, iend = vP3Dw_in.size(); pointIndex < iend;
+         pointIndex++)
     {
-        Eigen::Vector3f P3Dc = Rcw * vP3Dw[i] + tcw;
-        Eigen::Vector2f pt2D = pCamera->project(P3Dc);
-        vP2D.push_back(pt2D);
+        Eigen::Vector3f P3Dc    = Rcw * vP3Dw_in[pointIndex] + tcw;
+        Eigen::Vector2f point2d = p_camera_inout->project(P3Dc);
+        points2D_out.push_back(point2d);
     }
 }
 

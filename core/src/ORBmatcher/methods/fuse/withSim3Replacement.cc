@@ -30,11 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::fuse(KeyFrame                 *pKF,
+int ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
                      Sophus::Sim3f            &Scw,
                      const vector<MapPoint *> &vpPoints,
                      float                     th,
-                     vector<MapPoint *>       &vpReplacePoint)
+                     vector<MapPoint *>       &replacePoints_inout)
 {
     // Decompose Scw
     Sophus::SE3f Tcw =
@@ -42,23 +42,23 @@ int ORBmatcher::fuse(KeyFrame                 *pKF,
     Eigen::Vector3f Ow = Tcw.inverse().translation();
 
     // Set of MapPoints already found in the KeyFrame
-    const set<MapPoint *> spAlreadyFound = pKF->getMapPoints();
+    const set<MapPoint *> alreadyFounds = p_keyframe_inout->getMapPoints();
 
-    int nFused = 0;
+    int fusedCount = 0;
 
-    const int nPoints = vpPoints.size();
+    const int pointCount = vpPoints.size();
 
     // For each candidate MapPoint project and match
-    for (int iMP = 0; iMP < nPoints; iMP++)
+    for (int mapPointIndex = 0; mapPointIndex < pointCount; mapPointIndex++)
     {
-        MapPoint *pMP = vpPoints[iMP];
+        MapPoint *p_mapPoint = vpPoints[mapPointIndex];
 
         // Discard Bad MapPoints and already found
-        if (pMP->isBad() || spAlreadyFound.count(pMP))
+        if (p_mapPoint->isBad() || alreadyFounds.count(p_mapPoint))
             continue;
 
         // Get 3D Coords.
-        Eigen::Vector3f p3Dw = pMP->getWorldPos();
+        Eigen::Vector3f p3Dw = p_mapPoint->getWorldPos();
 
         // Transform into Camera Coords.
         Eigen::Vector3f p3Dc = Tcw * p3Dw;
@@ -68,85 +68,92 @@ int ORBmatcher::fuse(KeyFrame                 *pKF,
             continue;
 
         // Project into Image
-        const Eigen::Vector2f uv = pKF->p_camera->project(p3Dc);
+        const Eigen::Vector2f uv = p_keyframe_inout->p_camera->project(p3Dc);
 
         // Point must be inside the image
-        if (!pKF->isInImage(uv(0), uv(1)))
+        if (!p_keyframe_inout->isInImage(uv(0), uv(1)))
             continue;
 
         // Depth must be inside the scale pyramid of the image
-        const float     maxDistance = pMP->getMaxDistanceInvariance();
-        const float     minDistance = pMP->getMinDistanceInvariance();
+        const float maximumDistance = p_mapPoint->getMaxDistanceInvariance();
+        const float minimumDistance = p_mapPoint->getMinDistanceInvariance();
         Eigen::Vector3f PO          = p3Dw - Ow;
-        const float     dist3D      = PO.norm();
+        const float     distance3d  = PO.norm();
 
-        if (dist3D < minDistance || dist3D > maxDistance)
+        if (distance3d < minimumDistance || distance3d > maximumDistance)
             continue;
 
         // Viewing angle must be less than 60 deg
-        Eigen::Vector3f Pn = pMP->getNormal();
+        Eigen::Vector3f Pn = p_mapPoint->getNormal();
 
-        if (PO.dot(Pn) < 0.5 * dist3D)
+        if (PO.dot(Pn) < 0.5 * distance3d)
             continue;
 
         // Compute predicted scale level
-        const int nPredictedLevel = pMP->predictScale(dist3D, pKF);
+        const int predictedLevelCount =
+            p_mapPoint->predictScale(distance3d, p_keyframe_inout);
 
         // Search in a radius
-        const float radius = th * pKF->scaleFactors[nPredictedLevel];
+        const float radius =
+            th * p_keyframe_inout->scaleFactors[predictedLevelCount];
 
-        const vector<size_t> vIndices =
-            pKF->getFeaturesInArea(uv(0), uv(1), radius);
+        const vector<size_t> indices =
+            p_keyframe_inout->getFeaturesInArea(uv(0), uv(1), radius);
 
-        if (vIndices.empty())
+        if (indices.empty())
             continue;
 
         // Match to the most similar keypoint in the radius
 
-        const cv::Mat dMP = pMP->getDescriptor();
+        const cv::Mat mapPointDescriptor = p_mapPoint->getDescriptor();
 
-        int bestDist = INT_MAX;
-        int bestIdx  = -1;
-        for (vector<size_t>::const_iterator vit = vIndices.begin();
-             vit != vIndices.end();
+        int bestDistance = INT_MAX;
+        int bestIndex    = -1;
+        for (vector<size_t>::const_iterator vit = indices.begin();
+             vit != indices.end();
              vit++)
         {
-            const size_t idx     = *vit;
-            const int   &kpLevel = pKF->keyPointsUndistorted[idx].octave;
+            const size_t featureIndex = *vit;
+            const int   &keyPointLevel =
+                p_keyframe_inout->keyPointsUndistorted[featureIndex].octave;
 
-            if (kpLevel < nPredictedLevel - 1 || kpLevel > nPredictedLevel)
+            if (keyPointLevel < predictedLevelCount - 1 ||
+                keyPointLevel > predictedLevelCount)
                 continue;
 
-            const cv::Mat &dKF = pKF->descriptors.row(idx);
+            const cv::Mat &keyFrameDescriptor =
+                p_keyframe_inout->descriptors.row(featureIndex);
 
-            int dist = computeDescriptorDistance(dMP, dKF);
+            int distance = computeDescriptorDistance(mapPointDescriptor,
+                                                     keyFrameDescriptor);
 
-            if (dist < bestDist)
+            if (distance < bestDistance)
             {
-                bestDist = dist;
-                bestIdx  = idx;
+                bestDistance = distance;
+                bestIndex    = featureIndex;
             }
         }
 
         // If there is already a MapPoint replace otherwise add new measurement
-        if (bestDist <= TH_LOW)
+        if (bestDistance <= TH_LOW)
         {
-            MapPoint *pMPinKF = pKF->getMapPoint(bestIdx);
-            if (pMPinKF)
+            MapPoint *p_keyFrameMapPoint =
+                p_keyframe_inout->getMapPoint(bestIndex);
+            if (p_keyFrameMapPoint)
             {
-                if (!pMPinKF->isBad())
-                    vpReplacePoint[iMP] = pMPinKF;
+                if (!p_keyFrameMapPoint->isBad())
+                    replacePoints_inout[mapPointIndex] = p_keyFrameMapPoint;
             }
             else
             {
-                pMP->addObservation(pKF, bestIdx);
-                pKF->addMapPoint(pMP, bestIdx);
+                p_mapPoint->addObservation(p_keyframe_inout, bestIndex);
+                p_keyframe_inout->addMapPoint(p_mapPoint, bestIndex);
             }
-            nFused++;
+            fusedCount++;
         }
     }
 
-    return nFused;
+    return fusedCount;
 }
 
 } // namespace core

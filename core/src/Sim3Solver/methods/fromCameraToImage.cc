@@ -32,17 +32,18 @@ namespace core
 {
 
 void Sim3Solver::fromCameraToImage(
-    const vector<Eigen::Vector3f>                   &vP3Dc,
-    vector<Eigen::Vector2f>                         &vP2D,
-    camera_models::geometriccamera::GeometricCamera *pCamera)
+    const vector<Eigen::Vector3f>                   &vP3Dc_in,
+    vector<Eigen::Vector2f>                         &points2D_out,
+    camera_models::geometriccamera::GeometricCamera *p_camera_inout)
 {
-    vP2D.clear();
-    vP2D.reserve(vP3Dc.size());
+    points2D_out.clear();
+    points2D_out.reserve(vP3Dc_in.size());
 
-    for (size_t i = 0, iend = vP3Dc.size(); i < iend; i++)
+    for (size_t pointIndex = 0, iend = vP3Dc_in.size(); pointIndex < iend;
+         pointIndex++)
     {
-        Eigen::Vector2f pt2D = pCamera->project(vP3Dc[i]);
-        vP2D.push_back(pt2D);
+        Eigen::Vector2f point2d = p_camera_inout->project(vP3Dc_in[pointIndex]);
+        points2D_out.push_back(point2d);
     }
 }
 

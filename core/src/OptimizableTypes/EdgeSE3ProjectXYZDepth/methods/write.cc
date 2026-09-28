@@ -30,11 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool EdgeSE3ProjectXYZDepth::write(std::ostream &os) const
+bool EdgeSE3ProjectXYZDepth::write(std::ostream &outputStream_inout) const
 {
-    os << measurement() << " ";
-    os << " " << information()(0, 0);
-    return os.good();
+    outputStream_inout << measurement() << " ";
+    outputStream_inout << " " << information()(0, 0);
+    return outputStream_inout.good();
 }
 
 } // namespace core

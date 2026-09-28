@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane)
+void Atlas::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
 {
-    vs_graphs::core::Map *pMapMP = pPlane->getMap();
-    pMapMP->addRoomWallPlane(pPlane);
+    vs_graphs::core::Map *p_ownerMap = p_plane_in->getMap();
+    p_ownerMap->addRoomWallPlane(p_plane_in);
 }
 
 } // namespace core

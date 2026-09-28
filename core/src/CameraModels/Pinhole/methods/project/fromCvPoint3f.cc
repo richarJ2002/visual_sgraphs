@@ -35,11 +35,11 @@ namespace camera_models
 {
 namespace pinhole
 {
-cv::Point2f Pinhole::project(const cv::Point3f &point3D_in)
+cv::Point2f Pinhole::project(const cv::Point3f &point3d_in)
 {
     return cv::Point2f(
-        parameters[0] * point3D_in.x / point3D_in.z + parameters[2],
-        parameters[1] * point3D_in.y / point3D_in.z + parameters[3]);
+        parameters[0] * point3d_in.x / point3d_in.z + parameters[2],
+        parameters[1] * point3d_in.y / point3d_in.z + parameters[3]);
 }
 } // namespace pinhole
 } // namespace camera_models

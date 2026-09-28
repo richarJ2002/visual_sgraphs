@@ -34,12 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addMapMarker(semantic::Marker *pMarker)
+void Map::addMapMarker(semantic::Marker *p_marker_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    markers.insert(pMarker);
+    unique_lock<mutex> lock(mapMutex);
+    markers.insert(p_marker_in);
     // Add the marker to the hashmap
-    markerIndex[pMarker->getId()] = pMarker;
+    markerIndex[p_marker_in->getId()] = p_marker_in;
 }
 
 } // namespace core

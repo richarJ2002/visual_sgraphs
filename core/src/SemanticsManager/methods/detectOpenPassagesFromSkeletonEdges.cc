@@ -28,7 +28,7 @@ namespace core
 {
 
 void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
-    const std::vector<vs_graphs::core::geometric::Plane *> &wallPlanes)
+    const std::vector<vs_graphs::core::geometric::Plane *> &wallPlanes_in)
 {
     const types::SystemParams::SemSeg::PassageDetection &passageParameters =
         p_sysParams->semSeg.passageDetection;
@@ -89,8 +89,8 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
     if (skeletonEdges.empty())
     {
-        openPassageEvidence_.clear();
-        hasSkeletonFingerprint_ = false;
+        openPassageEvidence.clear();
+        hasSkeletonFingerprint = false;
         return;
     }
 
@@ -121,20 +121,20 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         appendFingerprintCoordinate(skeletonEdge.second.z());
     }
 
-    if (hasSkeletonFingerprint_ &&
-        skeletonFingerprint == lastSkeletonFingerprint_)
+    if (hasSkeletonFingerprint &&
+        skeletonFingerprint == lastSkeletonFingerprint)
     {
         return;
     }
 
-    lastSkeletonFingerprint_ = skeletonFingerprint;
-    hasSkeletonFingerprint_  = true;
+    lastSkeletonFingerprint = skeletonFingerprint;
+    hasSkeletonFingerprint  = true;
 
     /* ---------------------------------------------------------------------- *
      * PREPARE THE GROUND PLANE
      * ---------------------------------------------------------------------- */
 
-    vs_graphs::core::geometric::Plane *groundPlane =
+    vs_graphs::core::geometric::Plane *p_groundPlane =
         p_atlas->getBiggestGroundPlane();
 
     Eigen::Vector4d groundEquation = Eigen::Vector4d::Zero();
@@ -143,9 +143,9 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
     bool hasValidGroundEquation = false;
 
-    if (groundPlane != nullptr && !groundPlane->isBad())
+    if (p_groundPlane != nullptr && !p_groundPlane->isBad())
     {
-        groundEquation = groundPlane->getGlobalEquation().coeffs();
+        groundEquation = p_groundPlane->getGlobalEquation().coeffs();
 
         const double groundNormalNorm = groundEquation.head<3>().norm();
 
@@ -167,8 +167,8 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
      */
     if (!hasValidGroundEquation)
     {
-        openPassageEvidence_.clear();
-        hasSkeletonFingerprint_ = false;
+        openPassageEvidence.clear();
+        hasSkeletonFingerprint = false;
         return;
     }
 
@@ -178,7 +178,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
     struct PassageCandidate
     {
-        vs_graphs::core::geometric::Plane *wall = nullptr;
+        vs_graphs::core::geometric::Plane *p_wall = nullptr;
 
         Eigen::Vector3d crossingPoint = Eigen::Vector3d::Zero();
 
@@ -209,25 +209,25 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
     std::vector<PassageCandidate> passageCandidates;
 
-    passageCandidates.reserve(wallPlanes.size());
+    passageCandidates.reserve(wallPlanes_in.size());
 
     /* ---------------------------------------------------------------------- *
      * FIND CROSSINGS FOR EACH WALL
      * ---------------------------------------------------------------------- */
 
-    for (vs_graphs::core::geometric::Plane *wall : wallPlanes)
+    for (vs_graphs::core::geometric::Plane *p_wall : wallPlanes_in)
     {
-        if (wall == nullptr || wall->isBad())
+        if (p_wall == nullptr || p_wall->isBad())
         {
             continue;
         }
 
         const geometric::Plane::GeometrySnapshot wallGeometry =
-            wall->getGeometrySnapshot();
-        const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr wallCloud =
+            p_wall->getGeometrySnapshot();
+        const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallCloud =
             wallGeometry.supportCloud;
 
-        if (wallCloud == nullptr || wallCloud->empty())
+        if (p_wallCloud == nullptr || p_wallCloud->empty())
         {
             continue;
         }
@@ -285,10 +285,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
         std::size_t         validWallPointCount = 0;
         std::vector<double> horizontalWallCoordinates_m;
-        horizontalWallCoordinates_m.reserve(wallCloud->size());
+        horizontalWallCoordinates_m.reserve(p_wallCloud->size());
 
         /* Calculate the finite wall bounds */
-        for (const pcl::PointXYZRGBA &point : wallCloud->points)
+        for (const pcl::PointXYZRGBA &point : p_wallCloud->points)
         {
             if (!pcl::isFinite(point))
             {
@@ -496,7 +496,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             double nearestWallPointDistance =
                 std::numeric_limits<double>::max();
 
-            for (const pcl::PointXYZRGBA &wallPointPcl : wallCloud->points)
+            for (const pcl::PointXYZRGBA &wallPointPcl : p_wallCloud->points)
             {
                 if (!pcl::isFinite(wallPointPcl))
                 {
@@ -671,7 +671,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             passageCentre_World_m -= finalPlaneResidual_m * wallNormal;
 
             PassageCandidate candidate;
-            candidate.wall          = wall;
+            candidate.p_wall        = p_wall;
             candidate.crossingPoint = passageCentre_World_m;
             candidate.openingRadius = maximumOpeningRadius_m;
             candidate.heightSpan_m  = measuredHeightSpan_m;
@@ -685,7 +685,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
      * TEMPORAL EVIDENCE ASSOCIATION
      * ---------------------------------------------------------------------- */
 
-    for (OpenPassageEvidence &evidence : openPassageEvidence_)
+    for (OpenPassageEvidence &evidence : openPassageEvidence)
     {
         evidence.missedUpdateCount++;
     }
@@ -696,7 +696,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         double               nearestEvidenceDistance_m =
             std::numeric_limits<double>::infinity();
 
-        for (OpenPassageEvidence &evidence : openPassageEvidence_)
+        for (OpenPassageEvidence &evidence : openPassageEvidence)
         {
             if (evidence.p_supportingWall == nullptr ||
                 evidence.p_supportingWall->isBad())
@@ -724,7 +724,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             Eigen::Vector3d evidenceWallNormal =
                 evidence.p_supportingWall->getGlobalEquation().normal();
             Eigen::Vector3d candidateWallNormal =
-                candidate.wall->getGlobalEquation().normal();
+                candidate.p_wall->getGlobalEquation().normal();
 
             if (!evidenceWallNormal.allFinite() ||
                 !candidateWallNormal.allFinite() ||
@@ -744,7 +744,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             }
 
             Eigen::Vector4d candidateWallEquation =
-                candidate.wall->getGlobalEquation().coeffs();
+                candidate.p_wall->getGlobalEquation().coeffs();
             const double candidateWallNormalNorm =
                 candidateWallEquation.head<3>().norm();
 
@@ -770,13 +770,13 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
         if (p_matchingEvidence == nullptr)
         {
-            openPassageEvidence_.push_back({candidate.wall,
-                                            candidate.crossingPoint,
-                                            1U,
-                                            0U,
-                                            skeletonFingerprint,
-                                            candidate.openingRadius,
-                                            candidate.heightSpan_m});
+            openPassageEvidence.push_back({candidate.p_wall,
+                                           candidate.crossingPoint,
+                                           1U,
+                                           0U,
+                                           skeletonFingerprint,
+                                           candidate.openingRadius,
+                                           candidate.heightSpan_m});
             candidate.confirmationCount = 1U;
             continue;
         }
@@ -790,7 +790,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             (previousWeight * p_matchingEvidence->centroid_World_m +
              candidate.crossingPoint) /
             (previousWeight + 1.0);
-        p_matchingEvidence->p_supportingWall  = candidate.wall;
+        p_matchingEvidence->p_supportingWall  = candidate.p_wall;
         p_matchingEvidence->missedUpdateCount = 0U;
         /* The true opening only gets more of it confirmed over time as the
          * crossing evidence accumulates -- never shrinks a size estimate
@@ -815,7 +815,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         candidate.heightSpan_m      = p_matchingEvidence->heightSpan_m;
 
         Eigen::Vector4d supportingWallEquation =
-            candidate.wall->getGlobalEquation().coeffs();
+            candidate.p_wall->getGlobalEquation().coeffs();
         const double supportingWallNormalNorm =
             supportingWallEquation.head<3>().norm();
 
@@ -833,17 +833,17 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         }
     }
 
-    openPassageEvidence_.erase(
+    openPassageEvidence.erase(
         std::remove_if(
-            openPassageEvidence_.begin(),
-            openPassageEvidence_.end(),
+            openPassageEvidence.begin(),
+            openPassageEvidence.end(),
             [maximumMissedUpdateCount](const OpenPassageEvidence &evidence)
             {
                 return evidence.p_supportingWall == nullptr ||
                        evidence.p_supportingWall->isBad() ||
                        evidence.missedUpdateCount > maximumMissedUpdateCount;
             }),
-        openPassageEvidence_.end());
+        openPassageEvidence.end());
 
     if (passageCandidates.empty())
     {
@@ -864,13 +864,13 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
     for (const PassageCandidate &candidate : passageCandidates)
     {
-        if (candidate.wall == nullptr || candidate.wall->isBad())
+        if (candidate.p_wall == nullptr || candidate.p_wall->isBad())
         {
             continue;
         }
 
         Eigen::Vector3d candidateNormal =
-            candidate.wall->getGlobalEquation().normal();
+            candidate.p_wall->getGlobalEquation().normal();
 
         if (!candidateNormal.allFinite() || candidateNormal.norm() < 1e-8)
         {
@@ -879,11 +879,11 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
         candidateNormal.normalize();
 
-        vs_graphs::core::semantic::Passage *matchingPassage           = nullptr;
+        vs_graphs::core::semantic::Passage *p_matchingPassage         = nullptr;
         bool                                hasAmbiguousNearbyPassage = false;
 
         Eigen::Vector4d candidateWallEquation =
-            candidate.wall->getGlobalEquation().coeffs();
+            candidate.p_wall->getGlobalEquation().coeffs();
         const double candidateWallNormalNorm =
             candidateWallEquation.head<3>().norm();
 
@@ -898,16 +898,16 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         const std::vector<vs_graphs::core::semantic::Passage *>
             existingPassages = p_atlas->getAllPassages();
 
-        for (vs_graphs::core::semantic::Passage *existingPassage :
+        for (vs_graphs::core::semantic::Passage *p_existingPassage :
              existingPassages)
         {
-            if (existingPassage == nullptr)
+            if (p_existingPassage == nullptr)
             {
                 continue;
             }
 
             const Eigen::Vector3d existingCentroid =
-                existingPassage->getCentroid().cast<double>();
+                p_existingPassage->getCentroid().cast<double>();
 
             if (!existingCentroid.allFinite())
             {
@@ -932,7 +932,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             }
 
             Eigen::Vector3d existingNormal =
-                existingPassage->getGlobalEquation().normal();
+                p_existingPassage->getGlobalEquation().normal();
 
             if (!existingNormal.allFinite() || existingNormal.norm() < 1e-8)
             {
@@ -951,7 +951,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             if (normalAlignment >= duplicateNormalAlignment &&
                 supportingWallSeparation_m <= 0.30)
             {
-                matchingPassage = existingPassage;
+                p_matchingPassage = p_existingPassage;
                 break;
             }
 
@@ -973,14 +973,14 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
          * Update an existing passage so a previously created low marker moves
          * to the corrected doorway centre.
          */
-        if (matchingPassage != nullptr)
+        if (p_matchingPassage != nullptr)
         {
             /*
              * Connected ESDF free space through the wall is stronger evidence
              * than a stale blocked-door classification at the same opening.
              */
-            matchingPassage->setPassable(true);
-            matchingPassage->setCentroid(candidate.crossingPoint);
+            p_matchingPassage->setPassable(true);
+            p_matchingPassage->setCentroid(candidate.crossingPoint);
 
             /*
              * A passage is framed by the wall face that first produced it.
@@ -992,19 +992,19 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
              * anchors the passage; otherwise just pair the face.
              */
             const std::vector<geometric::Plane *> matchingSupportingWalls =
-                matchingPassage->getAssociateWalls();
+                p_matchingPassage->getAssociateWalls();
             const bool isKnownSupportingFace =
                 std::find(matchingSupportingWalls.begin(),
                           matchingSupportingWalls.end(),
-                          candidate.wall) != matchingSupportingWalls.end();
+                          candidate.p_wall) != matchingSupportingWalls.end();
 
             if (isKnownSupportingFace)
             {
-                matchingPassage->setGlobalEquation(
-                    candidate.wall->getGlobalEquation());
+                p_matchingPassage->setGlobalEquation(
+                    candidate.p_wall->getGlobalEquation());
             }
 
-            matchingPassage->addAssociateWall(candidate.wall);
+            p_matchingPassage->addAssociateWall(candidate.p_wall);
 
             /* Open passages previously carried no size estimate at all
              * (only door-typed/blocked passages did) -- diameter from the
@@ -1015,8 +1015,8 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
              * heightSpan_m already hold the running max -- see the
              * temporal evidence merge above). */
             constexpr double defaultOpenPassageHeight_m = 2.0;
-            matchingPassage->setWidth(2.0 * candidate.openingRadius);
-            matchingPassage->setHeight(
+            p_matchingPassage->setWidth(2.0 * candidate.openingRadius);
+            p_matchingPassage->setHeight(
                 std::max(candidate.heightSpan_m, defaultOpenPassageHeight_m));
 
             continue;
@@ -1055,7 +1055,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
          * passages that later acquire two associated rooms. */
         GeoSemHelpers::createMapPassage(p_atlas,
                                         nullptr,
-                                        candidate.wall,
+                                        candidate.p_wall,
                                         true,
                                         candidate.crossingPoint);
 

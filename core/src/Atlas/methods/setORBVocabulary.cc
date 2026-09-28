@@ -30,9 +30,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setORBVocabulary(ORBVocabulary *pORBVoc)
+void Atlas::setORBVocabulary(ORBVocabulary *p_orbVocabulary_in)
 {
-    p_orbVocabulary = pORBVoc;
+    p_orbVocabulary = p_orbVocabulary_in;
 }
 
 } // namespace core

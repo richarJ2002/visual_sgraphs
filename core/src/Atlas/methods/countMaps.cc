@@ -32,7 +32,7 @@ namespace core
 
 int Atlas::countMaps()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     return maps.size();
 }
 

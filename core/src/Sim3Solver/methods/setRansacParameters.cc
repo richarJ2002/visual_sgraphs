@@ -31,26 +31,26 @@ namespace vs_graphs
 namespace core
 {
 
-void Sim3Solver::setRansacParameters(double probability,
-                                     int    minInliers,
-                                     int    maxIterations)
+void Sim3Solver::setRansacParameters(double probability_in,
+                                     int    minimumInliers_in,
+                                     int    maximumIterations_in)
 {
-    ransacProb          = probability;
-    ransacMinInliers    = minInliers;
-    ransacMaxIterations = maxIterations;
+    ransacProb          = probability_in;
+    ransacMinInliers    = minimumInliers_in;
+    ransacMaxIterations = maximumIterations_in;
 
-    N = mapPoints1.size(); // number of correspondences
+    correspondenceCount = mapPoints1.size(); // number of correspondences
 
-    inlierFlags.resize(N);
+    inlierFlags.resize(correspondenceCount);
 
     // Adjust Parameters according to number of correspondences
-    float epsilon = (float)ransacMinInliers / N;
+    float epsilon = (float)ransacMinInliers / correspondenceCount;
 
     // Set RANSAC iterations according to probability, epsilon, and max
     // iterations
     int nIterations;
 
-    if (ransacMinInliers == N)
+    if (ransacMinInliers == correspondenceCount)
         nIterations = 1;
     else
         nIterations = ceil(log(1 - ransacProb) / log(1 - pow(epsilon, 3)));

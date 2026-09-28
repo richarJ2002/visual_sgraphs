@@ -53,18 +53,18 @@ nlohmann::json serializeRoomRecord(const RoomRecord &value_in,
     std::vector<RawPlaneRef> wallRefs = value_in.wallRefs;
     std::sort(wallRefs.begin(), wallRefs.end(), &isRawPlaneRefLess);
     nlohmann::json wallRefsJson = nlohmann::json::array();
-    for (const RawPlaneRef &wallRef : wallRefs)
+    for (const RawPlaneRef &wallReference : wallRefs)
     {
-        wallRefsJson.push_back(serializeRawPlaneRef(wallRef));
+        wallRefsJson.push_back(serializeRawPlaneRef(wallReference));
     }
     json["wallRefs"] = std::move(wallRefsJson);
 
     std::vector<EntityRef> passageRefs = value_in.passageRefs;
     std::sort(passageRefs.begin(), passageRefs.end(), &isEntityRefLess);
     nlohmann::json passageRefsJson = nlohmann::json::array();
-    for (const EntityRef &passageRef : passageRefs)
+    for (const EntityRef &passageReference : passageRefs)
     {
-        passageRefsJson.push_back(serializeEntityRef(passageRef));
+        passageRefsJson.push_back(serializeEntityRef(passageReference));
     }
     json["passageRefs"] = std::move(passageRefsJson);
 

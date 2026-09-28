@@ -52,16 +52,16 @@ class EdgeSE3ProjectXYZOnlyPose
 
     EdgeSE3ProjectXYZOnlyPose() {}
 
-    bool read(std::istream &is);
+    bool read(std::istream &inputStream_inout);
 
-    bool write(std::ostream &os) const;
+    bool write(std::ostream &outputStream_inout) const;
 
     void computeError()
     {
         const g2o::VertexSE3Expmap *v1 =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        Eigen::Vector2d obs(_measurement);
-        _error = obs - pCamera->project(v1->estimate().map(Xw));
+        Eigen::Vector2d observation(_measurement);
+        _error = observation - p_camera->project(v1->estimate().map(Xw));
     }
 
     bool isDepthPositive()
@@ -74,7 +74,7 @@ class EdgeSE3ProjectXYZOnlyPose
     virtual void linearizeOplus();
 
     Eigen::Vector3d                                  Xw;
-    camera_models::geometriccamera::GeometricCamera *pCamera;
+    camera_models::geometriccamera::GeometricCamera *p_camera;
 };
 
 /*!
@@ -90,9 +90,9 @@ class EdgeSE3ProjectXYZDepth
 
     EdgeSE3ProjectXYZDepth() {}
 
-    bool read(std::istream &is);
+    bool read(std::istream &inputStream_inout);
 
-    bool write(std::ostream &os) const;
+    bool write(std::ostream &outputStream_inout) const;
 
     void computeError()
     {
@@ -101,9 +101,9 @@ class EdgeSE3ProjectXYZDepth
         // Transform 3D point to camera frame
         Eigen::Vector3d Xc = v1->estimate().map(Xw);
         // Depth measurement
-        double          obs = _measurement;
+        double          observation = _measurement;
         // Error is difference between measured depth and estimated depth
-        _error[0] = obs - Xc(2);
+        _error[0] = observation - Xc(2);
     }
 
     bool isDepthPositive()
@@ -116,7 +116,7 @@ class EdgeSE3ProjectXYZDepth
     virtual void linearizeOplus();
 
     Eigen::Vector3d                                  Xw;
-    camera_models::geometriccamera::GeometricCamera *pCamera;
+    camera_models::geometriccamera::GeometricCamera *p_camera;
 };
 
 /*!
@@ -131,16 +131,17 @@ class EdgeSE3ProjectXYZOnlyPoseToBody
 
     EdgeSE3ProjectXYZOnlyPoseToBody() {}
 
-    bool read(std::istream &is);
+    bool read(std::istream &inputStream_inout);
 
-    bool write(std::ostream &os) const;
+    bool write(std::ostream &outputStream_inout) const;
 
     void computeError()
     {
         const g2o::VertexSE3Expmap *v1 =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        Eigen::Vector2d obs(_measurement);
-        _error = obs - pCamera->project((mTrl * v1->estimate()).map(Xw));
+        Eigen::Vector2d observation(_measurement);
+        _error =
+            observation - p_camera->project((mTrl * v1->estimate()).map(Xw));
     }
 
     bool isDepthPositive()
@@ -153,7 +154,7 @@ class EdgeSE3ProjectXYZOnlyPoseToBody
     virtual void linearizeOplus();
 
     Eigen::Vector3d                                  Xw;
-    camera_models::geometriccamera::GeometricCamera *pCamera;
+    camera_models::geometriccamera::GeometricCamera *p_camera;
 
     g2o::SE3Quat mTrl;
 };
@@ -177,9 +178,9 @@ class EdgeSE3ProjectXYZ : public g2o::BaseBinaryEdge<2,
                        g2o::VertexSE3Expmap>()
     {}
 
-    bool read(std::istream &is);
+    bool read(std::istream &inputStream_inout);
 
-    bool write(std::ostream &os) const;
+    bool write(std::ostream &outputStream_inout) const;
 
     void computeError()
     {
@@ -187,8 +188,9 @@ class EdgeSE3ProjectXYZ : public g2o::BaseBinaryEdge<2,
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[1]);
         const g2o::VertexSBAPointXYZ *v2 =
             static_cast<const g2o::VertexSBAPointXYZ *>(_vertices[0]);
-        Eigen::Vector2d obs(_measurement);
-        _error = obs - pCamera->project(v1->estimate().map(v2->estimate()));
+        Eigen::Vector2d observation(_measurement);
+        _error =
+            observation - p_camera->project(v1->estimate().map(v2->estimate()));
     }
 
     bool isDepthPositive()
@@ -202,7 +204,7 @@ class EdgeSE3ProjectXYZ : public g2o::BaseBinaryEdge<2,
 
     virtual void linearizeOplus();
 
-    camera_models::geometriccamera::GeometricCamera *pCamera;
+    camera_models::geometriccamera::GeometricCamera *p_camera;
 };
 
 /*!
@@ -225,9 +227,9 @@ class EdgeSE3ProjectXYZToBody
                        g2o::VertexSE3Expmap>()
     {}
 
-    bool read(std::istream &is);
+    bool read(std::istream &inputStream_inout);
 
-    bool write(std::ostream &os) const;
+    bool write(std::ostream &outputStream_inout) const;
 
     void computeError()
     {
@@ -235,9 +237,9 @@ class EdgeSE3ProjectXYZToBody
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[1]);
         const g2o::VertexSBAPointXYZ *v2 =
             static_cast<const g2o::VertexSBAPointXYZ *>(_vertices[0]);
-        Eigen::Vector2d obs(_measurement);
-        _error =
-            obs - pCamera->project((mTrl * v1->estimate()).map(v2->estimate()));
+        Eigen::Vector2d observation(_measurement);
+        _error = observation -
+                 p_camera->project((mTrl * v1->estimate()).map(v2->estimate()));
     }
 
     bool isDepthPositive()
@@ -251,7 +253,7 @@ class EdgeSE3ProjectXYZToBody
 
     virtual void linearizeOplus();
 
-    camera_models::geometriccamera::GeometricCamera *pCamera;
+    camera_models::geometriccamera::GeometricCamera *p_camera;
     g2o::SE3Quat                                     mTrl;
 };
 
@@ -268,30 +270,31 @@ class VertexSim3Expmap : public g2o::BaseVertex<7, g2o::Sim3>
         BaseVertex<7, g2o::Sim3>()
     {
         _marginalized = false;
-        _fix_scale    = false;
+        isScaleFixed  = false;
     }
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
     virtual void setToOriginImpl()
     {
         _estimate = g2o::Sim3();
     }
 
-    virtual void oplusImpl(const double *update_)
+    virtual void oplusImpl(const double *p_update_in)
     {
-        Eigen::Map<g2o::Vector7d> update(const_cast<double *>(update_));
+        Eigen::Map<g2o::Vector7d> update(const_cast<double *>(p_update_in));
 
-        if (_fix_scale)
+        if (isScaleFixed)
             update[6] = 0;
 
         g2o::Sim3 s(update);
         setEstimate(s * estimate());
     }
 
-    camera_models::geometriccamera::GeometricCamera *pCamera1, *pCamera2;
+    camera_models::geometriccamera::GeometricCamera *p_firstCamera,
+        *p_secondCamera;
 
-    bool _fix_scale;
+    bool isScaleFixed;
 };
 
 class EdgeSim3ProjectXYZ
@@ -308,8 +311,8 @@ class EdgeSim3ProjectXYZ
                             g2o::VertexSBAPointXYZ,
                             VertexSim3Expmap>()
     {}
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
     void computeError()
     {
@@ -319,9 +322,9 @@ class EdgeSim3ProjectXYZ
         const g2o::VertexSBAPointXYZ *v2 =
             static_cast<const g2o::VertexSBAPointXYZ *>(_vertices[0]);
 
-        Eigen::Vector2d obs(_measurement);
-        _error =
-            obs - v1->pCamera1->project(v1->estimate().map(v2->estimate()));
+        Eigen::Vector2d observation(_measurement);
+        _error = observation -
+                 v1->p_firstCamera->project(v1->estimate().map(v2->estimate()));
     }
 };
 
@@ -339,8 +342,8 @@ class EdgeInverseSim3ProjectXYZ
                             g2o::VertexSBAPointXYZ,
                             VertexSim3Expmap>()
     {}
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
     void computeError()
     {
@@ -350,9 +353,10 @@ class EdgeInverseSim3ProjectXYZ
         const g2o::VertexSBAPointXYZ *v2 =
             static_cast<const g2o::VertexSBAPointXYZ *>(_vertices[0]);
 
-        Eigen::Vector2d obs(_measurement);
-        _error = obs - v1->pCamera2->project(
-                           (v1->estimate().inverse().map(v2->estimate())));
+        Eigen::Vector2d observation(_measurement);
+        _error =
+            observation - v1->p_secondCamera->project(
+                              (v1->estimate().inverse().map(v2->estimate())));
     }
 };
 
@@ -375,30 +379,31 @@ class EdgeSE3ProjectSE3 : public g2o::BaseBinaryEdge<6,
                             g2o::VertexSE3Expmap,
                             g2o::VertexSE3Expmap>()
     {}
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
-    virtual void setMeasurement(const g2o::Isometry3D &m) override
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
+    virtual void setMeasurement(const g2o::Isometry3D &m_in) override
     {
-        _measurement = m;
+        _measurement = m_in;
     }
 
     void computeError()
     {
         // Marker's global pose
-        const g2o::VertexSE3Expmap *vMarkerGP =
+        const g2o::VertexSE3Expmap *p_markerGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
         // KeyFrame's global pose
-        const g2o::VertexSE3Expmap *vKeyFrameGP =
+        const g2o::VertexSE3Expmap *p_keyFrameGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[1]);
 
         // Calculate the local pose of the marker w.r.t. the keyframe
-        g2o::SE3Quat markerLP = vKeyFrameGP->estimate() * vMarkerGP->estimate();
+        g2o::SE3Quat markerLp =
+            p_keyFrameGpVertex->estimate() * p_markerGpVertex->estimate();
 
-        g2o::Isometry3D markerLPIso = g2o::Isometry3D::Identity();
-        markerLPIso.matrix()        = markerLP.to_homogeneous_matrix();
+        g2o::Isometry3D markerLpIso = g2o::Isometry3D::Identity();
+        markerLpIso.matrix()        = markerLp.to_homogeneous_matrix();
         // Calculating the transformation between the measuremenent and the
         // marker's local pose
-        g2o::Isometry3D delta = _measurement.inverse() * markerLPIso;
+        g2o::Isometry3D delta = _measurement.inverse() * markerLpIso;
 
         // Calculating the final error
         _error = g2o::internal::toVectorMQT(delta);
@@ -421,21 +426,21 @@ class EdgeSE3DoorwayProjectSE3Room : public EdgeSE3ProjectSE3
     void computeError()
     {
         // Room's global pose
-        const g2o::VertexSE3Expmap *vRoomGP =
+        const g2o::VertexSE3Expmap *p_roomGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
         // Passage's global pose
-        const g2o::VertexSE3Expmap *vDoorwayGP =
+        const g2o::VertexSE3Expmap *p_doorwayGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[1]);
 
         // Calculate the local pose of the doorway w.r.t. the keyframe
-        g2o::SE3Quat doorwayLP =
-            vRoomGP->estimate().inverse() * vDoorwayGP->estimate();
+        g2o::SE3Quat doorwayLp = p_roomGpVertex->estimate().inverse() *
+                                 p_doorwayGpVertex->estimate();
 
-        g2o::Isometry3D doorwayLPIso = g2o::Isometry3D::Identity();
-        doorwayLPIso.matrix()        = doorwayLP.to_homogeneous_matrix();
+        g2o::Isometry3D doorwayLpIso = g2o::Isometry3D::Identity();
+        doorwayLpIso.matrix()        = doorwayLp.to_homogeneous_matrix();
         // Calculating the transformation between the measuremenent and the
         // doorway's local pose
-        g2o::Isometry3D delta = _measurement.inverse() * doorwayLPIso;
+        g2o::Isometry3D delta = _measurement.inverse() * doorwayLpIso;
 
         // Calculating the final error
         _error = g2o::internal::toVectorMQT(delta);
@@ -461,12 +466,12 @@ class EdgeSE3KFPointToPlane : public g2o::BaseBinaryEdge<1,
                             g2o::VertexSE3Expmap,
                             g2o::VertexPlane>()
     {}
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
-    void setMeasurement(const Eigen::Matrix4d &m) override
+    void setMeasurement(const Eigen::Matrix4d &m_in) override
     {
-        _measurement = m;
+        _measurement = m_in;
     }
 
     void computeError()
@@ -485,14 +490,14 @@ class EdgeSE3KFPointToPlane : public g2o::BaseBinaryEdge<1,
     // Checks if the plane distance d is in the correct direction
     bool isDistanceCorrect()
     {
-        const g2o::VertexSE3Expmap *vKeyFrameGP =
+        const g2o::VertexSE3Expmap *p_keyFrameGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        const g2o::VertexPlane *vPlaneGP =
+        const g2o::VertexPlane *p_planeGpVertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
         // local plane equation
-        Eigen::Isometry3d kfPose     = vKeyFrameGP->estimate();
-        g2o::Plane3D      localPlane = kfPose * vPlaneGP->estimate();
+        Eigen::Isometry3d keyFramePose = p_keyFrameGpVertex->estimate();
+        g2o::Plane3D localPlane = keyFramePose * p_planeGpVertex->estimate();
 
         return (localPlane.coeffs()(3) > 0);
     }
@@ -517,26 +522,26 @@ class EdgeVertexPlaneProjectSE3KF
                             g2o::VertexSE3Expmap,
                             g2o::VertexPlane>()
     {}
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
-    void setMeasurement(const g2o::Plane3D &m) override
+    void setMeasurement(const g2o::Plane3D &m_in) override
     {
-        _measurement = m;
+        _measurement = m_in;
     }
 
     void computeError()
     {
         // KeyFrame's global pose
-        const g2o::VertexSE3Expmap *vKeyFrameGP =
+        const g2o::VertexSE3Expmap *p_keyFrameGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
         // Plane's global pose
-        const g2o::VertexPlane *vPlaneGP =
+        const g2o::VertexPlane *p_planeGpVertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
         // Calculating poses (in global frame)
-        Eigen::Isometry3d kfPose     = vKeyFrameGP->estimate();
-        g2o::Plane3D      localPlane = kfPose * vPlaneGP->estimate();
+        Eigen::Isometry3d keyFramePose = p_keyFrameGpVertex->estimate();
+        g2o::Plane3D localPlane = keyFramePose * p_planeGpVertex->estimate();
 
         // Calculating the error
         _error = localPlane.ominus(_measurement);
@@ -545,14 +550,14 @@ class EdgeVertexPlaneProjectSE3KF
     // Checks if the plane distance d is in the correct direction
     bool isDistanceCorrect()
     {
-        const g2o::VertexSE3Expmap *vKeyFrameGP =
+        const g2o::VertexSE3Expmap *p_keyFrameGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        const g2o::VertexPlane *vPlaneGP =
+        const g2o::VertexPlane *p_planeGpVertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
         // local plane equation
-        Eigen::Isometry3d kfPose     = vKeyFrameGP->estimate();
-        g2o::Plane3D      localPlane = kfPose * vPlaneGP->estimate();
+        Eigen::Isometry3d keyFramePose = p_keyFrameGpVertex->estimate();
+        g2o::Plane3D localPlane = keyFramePose * p_planeGpVertex->estimate();
 
         return (localPlane.coeffs()(3) > 0);
     }
@@ -575,23 +580,23 @@ class EdgeVertexPlaneProjectPointXYZ
                             g2o::VertexSBAPointXYZ,
                             g2o::VertexPlane>()
     {}
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
     void computeError()
     {
         // Map Point's position
-        const g2o::VertexSBAPointXYZ *vPoint =
+        const g2o::VertexSBAPointXYZ *p_pointVertex =
             static_cast<const g2o::VertexSBAPointXYZ *>(_vertices[0]);
         // Plane's global pose
-        const g2o::VertexPlane *vPlaneGP =
+        const g2o::VertexPlane *p_planeGpVertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
         // Calculating the error
         // plane equation is already normalized -> D = n.x + d
-        _error[0] = vPlaneGP->estimate().coeffs().head(3).dot(
-                        vPoint->estimate().head(3)) +
-                    vPlaneGP->estimate().coeffs()(3);
+        _error[0] = p_planeGpVertex->estimate().coeffs().head(3).dot(
+                        p_pointVertex->estimate().head(3)) +
+                    p_planeGpVertex->estimate().coeffs()(3);
     }
 };
 
@@ -615,21 +620,21 @@ class EdgeVertexPlaneProjectSE3M
                             g2o::VertexSE3Expmap,
                             g2o::VertexPlane>()
     {}
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
     void computeError()
     {
         // Marker's global pose
-        const g2o::VertexSE3Expmap *vMarkerGP =
+        const g2o::VertexSE3Expmap *p_markerGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
         // Plane's global pose
-        const g2o::VertexPlane *vPlaneGP =
+        const g2o::VertexPlane *p_planeGpVertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
         // Calculating poses (in global frame)
-        g2o::Isometry3D markerPose  = vMarkerGP->estimate();
-        g2o::Vector4D   planeCoeffs = vPlaneGP->estimate().coeffs();
+        g2o::Isometry3D markerPose  = p_markerGpVertex->estimate();
+        g2o::Vector4D   planeCoeffs = p_planeGpVertex->estimate().coeffs();
 
         // Normalize the plane vector if necessary
         if (planeCoeffs(3) < 0)
@@ -669,23 +674,23 @@ class EdgeVertexPlaneParallelism
     EdgeVertexPlaneParallelism() :
         g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>()
     {}
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
     void computeError() override
     {
         // Planes
-        const g2o::VertexPlane *vPlane1 =
+        const g2o::VertexPlane *p_plane1Vertex =
             static_cast<const g2o::VertexPlane *>(_vertices[0]);
-        const g2o::VertexPlane *vPlane2 =
+        const g2o::VertexPlane *p_plane2Vertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
-        Eigen::Vector3d n1 = vPlane1->estimate().normal().normalized();
-        Eigen::Vector3d n2 = vPlane2->estimate().normal().normalized();
+        Eigen::Vector3d n1 = p_plane1Vertex->estimate().normal().normalized();
+        Eigen::Vector3d n2 = p_plane2Vertex->estimate().normal().normalized();
 
         // Compute deviation from parallelism
-        double err = std::fabs(n1.dot(n2));
-        _error[0]  = 1 - err;
+        double error = std::fabs(n1.dot(n2));
+        _error[0]    = 1 - error;
     }
 };
 
@@ -703,23 +708,23 @@ class EdgeVertexPlanePerpendicularity
     EdgeVertexPlanePerpendicularity() :
         g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>()
     {}
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
     void computeError() override
     {
         // Planes
-        const g2o::VertexPlane *vPlane1 =
+        const g2o::VertexPlane *p_plane1Vertex =
             static_cast<const g2o::VertexPlane *>(_vertices[0]);
-        const g2o::VertexPlane *vPlane2 =
+        const g2o::VertexPlane *p_plane2Vertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
-        Eigen::Vector3d n1 = vPlane1->estimate().normal().normalized();
-        Eigen::Vector3d n2 = vPlane2->estimate().normal().normalized();
+        Eigen::Vector3d n1 = p_plane1Vertex->estimate().normal().normalized();
+        Eigen::Vector3d n2 = p_plane2Vertex->estimate().normal().normalized();
 
         // Compute deviation from perpendicularity
-        double err = std::fabs(n1.dot(n2));
-        _error[0]  = err;
+        double error = std::fabs(n1.dot(n2));
+        _error[0]    = error;
     }
 };
 
@@ -739,15 +744,15 @@ class EdgeVertex2PlaneProjectSE3Room
     {
         resize(3);
     }
-    EdgeVertex2PlaneProjectSE3Room(Eigen::Vector3d position) :
+    EdgeVertex2PlaneProjectSE3Room(Eigen::Vector3d position_in) :
         g2o::BaseMultiEdge<3, Eigen::Vector3d>()
     {
         // markerPosition = position;
         resize(3);
     }
 
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
     void computeError() override
     {
@@ -765,32 +770,32 @@ class EdgeVertex2PlaneProjectSE3Room
         correctPlaneDirection(wall1);
         correctPlaneDirection(wall2);
 
-        Eigen::Vector3d vec;
+        Eigen::Vector3d vector;
         if (fabs(wall1(3)) > fabs(wall2(3)))
         {
-            vec = (0.5 * (fabs(wall1(3)) * wall1.head(3) -
-                          fabs(wall2(3)) * wall2.head(3))) +
-                  fabs(wall2(3)) * wall2.head(3);
+            vector = (0.5 * (fabs(wall1(3)) * wall1.head(3) -
+                             fabs(wall2(3)) * wall2.head(3))) +
+                     fabs(wall2(3)) * wall2.head(3);
         }
         else
         {
-            vec = (0.5 * (fabs(wall2(3)) * wall2.head(3) -
-                          fabs(wall1(3)) * wall1.head(3))) +
-                  fabs(wall1(3)) * wall1.head(3);
+            vector = (0.5 * (fabs(wall2(3)) * wall2.head(3) -
+                             fabs(wall1(3)) * wall1.head(3))) +
+                     fabs(wall1(3)) * wall1.head(3);
         }
 
-        Eigen::Vector3d normal = vec / vec.norm();
+        Eigen::Vector3d normal = vector / vector.norm();
         // Eigen::Vector3d finalPose = vec + (markerPosition -
         // (markerPosition.dot(normal)) * normal);
 
-        _error = roomPose - vec;
+        _error = roomPose - vector;
     }
 
   protected:
-    virtual void correctPlaneDirection(Eigen::Vector4d &plane)
+    virtual void correctPlaneDirection(Eigen::Vector4d &plane_inout)
     {
-        if (plane(3) > 0)
-            plane *= -1;
+        if (plane_inout(3) > 0)
+            plane_inout *= -1;
     }
 };
 
@@ -810,8 +815,8 @@ class EdgeVertex4PlaneProjectSE3Room
     {
         resize(5);
     }
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
     void computeError() override
     {
@@ -837,34 +842,34 @@ class EdgeVertex4PlaneProjectSE3Room
         correctPlaneDirection(yPlane1);
         correctPlaneDirection(yPlane2);
 
-        Eigen::Vector3d vecX, vecY;
+        Eigen::Vector3d vectorX, vectorY;
         if (fabs(xPlane1(3)) > fabs(xPlane2(3)))
-            vecX = (0.5 * (fabs(xPlane1(3)) * xPlane1.head(3) -
-                           fabs(xPlane2(3)) * xPlane2.head(3))) +
-                   fabs(xPlane2(3)) * xPlane2.head(3);
+            vectorX = (0.5 * (fabs(xPlane1(3)) * xPlane1.head(3) -
+                              fabs(xPlane2(3)) * xPlane2.head(3))) +
+                      fabs(xPlane2(3)) * xPlane2.head(3);
         else
-            vecX = (0.5 * (fabs(xPlane2(3)) * xPlane2.head(3) -
-                           fabs(xPlane1(3)) * xPlane1.head(3))) +
-                   fabs(xPlane1(3)) * xPlane1.head(3);
+            vectorX = (0.5 * (fabs(xPlane2(3)) * xPlane2.head(3) -
+                              fabs(xPlane1(3)) * xPlane1.head(3))) +
+                      fabs(xPlane1(3)) * xPlane1.head(3);
 
         if (fabs(yPlane1(3)) > fabs(yPlane2(3)))
-            vecY = (0.5 * (fabs(yPlane1(3)) * yPlane1.head(3) -
-                           fabs(yPlane2(3)) * yPlane2.head(3))) +
-                   fabs(yPlane2(3)) * yPlane2.head(3);
+            vectorY = (0.5 * (fabs(yPlane1(3)) * yPlane1.head(3) -
+                              fabs(yPlane2(3)) * yPlane2.head(3))) +
+                      fabs(yPlane2(3)) * yPlane2.head(3);
         else
-            vecY = (0.5 * (fabs(yPlane2(3)) * yPlane2.head(3) -
-                           fabs(yPlane1(3)) * yPlane1.head(3))) +
-                   fabs(yPlane1(3)) * yPlane1.head(3);
+            vectorY = (0.5 * (fabs(yPlane2(3)) * yPlane2.head(3) -
+                              fabs(yPlane1(3)) * yPlane1.head(3))) +
+                      fabs(yPlane1(3)) * yPlane1.head(3);
 
-        Eigen::Vector3d finalPose = vecX + vecY;
+        Eigen::Vector3d finalPose = vectorX + vectorY;
         _error                    = roomPose - finalPose;
     }
 
   protected:
-    virtual void correctPlaneDirection(Eigen::Vector4d &plane)
+    virtual void correctPlaneDirection(Eigen::Vector4d &plane_inout)
     {
-        if (plane(3) > 0)
-            plane *= -1;
+        if (plane_inout(3) > 0)
+            plane_inout *= -1;
     }
 };
 
@@ -879,8 +884,8 @@ class EdgeVertexNPlaneProjectSE3Room
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
     EdgeVertexNPlaneProjectSE3Room()
     {
         // Dynamically sized edge: at least one SE3 (room center) + N planes
@@ -890,17 +895,18 @@ class EdgeVertexNPlaneProjectSE3Room
     void computeError() override
     {
         // First vertex is always the room pose (SE3)
-        const g2o::VertexSE3Expmap *vRoom =
+        const g2o::VertexSE3Expmap *p_roomVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        Eigen::Vector3d roomPose = vRoom->estimate().translation();
+        Eigen::Vector3d roomPose = p_roomVertex->estimate().translation();
 
         // Remaining vertices are walls
         std::vector<Eigen::Vector4d> walls;
-        for (size_t i = 1; i < _vertices.size(); ++i)
+        for (size_t vertexIndex = 1; vertexIndex < _vertices.size();
+             ++vertexIndex)
         {
-            const g2o::VertexPlane *vWall =
-                static_cast<const g2o::VertexPlane *>(_vertices[i]);
-            Eigen::Vector4d plane = vWall->estimate().coeffs();
+            const g2o::VertexPlane *p_wallVertex =
+                static_cast<const g2o::VertexPlane *>(_vertices[vertexIndex]);
+            Eigen::Vector4d plane = p_wallVertex->estimate().coeffs();
             correctPlaneDirection(plane);
             walls.push_back(plane);
         }
@@ -926,10 +932,10 @@ class EdgeVertexNPlaneProjectSE3Room
     }
 
   protected:
-    void correctPlaneDirection(Eigen::Vector4d &plane)
+    void correctPlaneDirection(Eigen::Vector4d &plane_inout)
     {
-        if (plane(3) > 0)
-            plane *= -1;
+        if (plane_inout(3) > 0)
+            plane_inout *= -1;
     }
 };
 
@@ -943,8 +949,8 @@ class EdgeVertexNSE3RoomProjectSE3Floor
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
     EdgeVertexNSE3RoomProjectSE3Floor()
     {
         // Dynamically sized edge: at least one SE3 (floor center) + N rooms
@@ -954,17 +960,19 @@ class EdgeVertexNSE3RoomProjectSE3Floor
     void computeError() override
     {
         // First vertex is always the floor pose (SE3)
-        const g2o::VertexSE3Expmap *vFloor =
+        const g2o::VertexSE3Expmap *p_floorVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        Eigen::Vector3d floorPose = vFloor->estimate().translation();
+        Eigen::Vector3d floorPose = p_floorVertex->estimate().translation();
 
         // Remaining vertices are rooms
         std::vector<Eigen::Vector3d> rooms;
-        for (size_t i = 1; i < _vertices.size(); ++i)
+        for (size_t vertexIndex = 1; vertexIndex < _vertices.size();
+             ++vertexIndex)
         {
-            const g2o::VertexSE3Expmap *vRoom =
-                static_cast<const g2o::VertexSE3Expmap *>(_vertices[i]);
-            Eigen::Vector3d room = vRoom->estimate().translation();
+            const g2o::VertexSE3Expmap *p_roomVertex =
+                static_cast<const g2o::VertexSE3Expmap *>(
+                    _vertices[vertexIndex]);
+            Eigen::Vector3d room = p_roomVertex->estimate().translation();
             rooms.push_back(room);
         }
 
@@ -1000,21 +1008,22 @@ class EdgeVertexSE3RoomProjectSE3Marker
                             g2o::VertexSE3Expmap,
                             g2o::VertexSE3Expmap>()
     {}
-    virtual bool read(std::istream &is);
-    virtual bool write(std::ostream &os) const;
+    virtual bool read(std::istream &inputStream_inout);
+    virtual bool write(std::ostream &outputStream_inout) const;
 
     void computeError()
     {
         // Marker's global pose
-        const g2o::VertexSE3Expmap *vMarkerGP =
+        const g2o::VertexSE3Expmap *p_markerGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
         // Room's center point in global pose
-        const g2o::VertexSE3Expmap *vRoomCenterGP =
+        const g2o::VertexSE3Expmap *p_roomCenterGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[1]);
 
         // Calculating poses (in global frame)
-        g2o::Isometry3D markerPose = vMarkerGP->estimate();
-        Eigen::Vector3d roomPose   = vRoomCenterGP->estimate().translation();
+        g2o::Isometry3D markerPose = p_markerGpVertex->estimate();
+        Eigen::Vector3d roomPose =
+            p_roomCenterGpVertex->estimate().translation();
 
         // Calculating the error
         _error[0] = markerPose.translation()(0) - roomPose(0);
@@ -1068,11 +1077,11 @@ class EdgePlaneTransformSE3
 
     EdgePlaneTransformSE3() {}
 
-    bool read([[maybe_unused]] std::istream &is)
+    bool read([[maybe_unused]] std::istream &is_inout)
     {
         return false;
     }
-    bool write([[maybe_unused]] std::ostream &os) const
+    bool write([[maybe_unused]] std::ostream &os_inout) const
     {
         return false;
     }
@@ -1087,23 +1096,24 @@ class EdgePlaneTransformSE3
 
         // Plane.cc:transformPlaneEquation law (scale fixed at 1 here):
         // n' = R n ; d' = sigma*d - n'^T t
-        const Eigen::Vector3d n_pred =
+        const Eigen::Vector3d predCount =
             static_cast<double>(_measurement.sigma) * (R * _measurement.n_A);
-        const double d_pred =
+        const double predictedDistance =
             static_cast<double>(_measurement.sigma) * _measurement.d_A -
-            n_pred.dot(t);
+            predCount.dot(t);
 
         // Minimal rotation vector (axis-angle) that rotates n_pred onto
         // n_B, i.e. Log_SO3(n_pred, n_B).
         const Eigen::Vector3d &n_B      = _measurement.n_B;
-        const Eigen::Vector3d  axis     = n_pred.cross(n_B);
+        const Eigen::Vector3d  axis     = predCount.cross(n_B);
         const double           sinAngle = axis.norm();
-        const double cosAngle  = std::max(-1.0, std::min(1.0, n_pred.dot(n_B)));
-        const double angle     = std::atan2(sinAngle, cosAngle);
-        Eigen::Vector3d logVec = Eigen::Vector3d::Zero();
+        const double           cosAngle =
+            std::max(-1.0, std::min(1.0, predCount.dot(n_B)));
+        const double    angle     = std::atan2(sinAngle, cosAngle);
+        Eigen::Vector3d logVector = Eigen::Vector3d::Zero();
         if (sinAngle > 1e-12)
         {
-            logVec = (axis / sinAngle) * angle;
+            logVector = (axis / sinAngle) * angle;
         }
         else if (cosAngle < 0.0)
         {
@@ -1114,7 +1124,7 @@ class EdgePlaneTransformSE3
             // vector orthogonal to n_pred is a valid rotation axis at
             // this isolated point; unitOrthogonal() picks one
             // deterministically.
-            logVec = n_pred.unitOrthogonal() * angle;
+            logVector = predCount.unitOrthogonal() * angle;
         }
 
         // Orthonormal 2D basis for the tangent plane at n_B (B_B).
@@ -1124,9 +1134,9 @@ class EdgePlaneTransformSE3
         const Eigen::Vector3d axisU = n_B.cross(referenceAxis).normalized();
         const Eigen::Vector3d axisV = n_B.cross(axisU).normalized();
 
-        _error[0] = axisU.dot(logVec);
-        _error[1] = axisV.dot(logVec);
-        _error[2] = d_pred - _measurement.d_B;
+        _error[0] = axisU.dot(logVector);
+        _error[1] = axisV.dot(logVector);
+        _error[2] = predictedDistance - _measurement.d_B;
     }
 };
 } // namespace core

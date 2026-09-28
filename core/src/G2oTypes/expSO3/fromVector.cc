@@ -32,9 +32,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3d ExpSO3(const Eigen::Vector3d &w)
+Eigen::Matrix3d expSO3(const Eigen::Vector3d &rotationVector_in)
 {
-    return ExpSO3(w[0], w[1], w[2]);
+    return expSO3(rotationVector_in[0],
+                  rotationVector_in[1],
+                  rotationVector_in[2]);
 }
 
 } // namespace core

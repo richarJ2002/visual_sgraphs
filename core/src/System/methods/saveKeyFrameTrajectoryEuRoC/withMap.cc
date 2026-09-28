@@ -32,45 +32,47 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveKeyFrameTrajectoryEuRoC(const string &filename, Map *pMap)
+void System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
+                                         Map          *p_map_in)
 {
 
     cout << endl
-         << "Saving keyframe trajectory of map " << pMap->getId() << " to "
-         << filename << " ..." << endl;
+         << "Saving keyframe trajectory of map " << p_map_in->getId() << " to "
+         << filename_in << " ..." << endl;
 
-    vector<KeyFrame *> vpKFs = pMap->getAllKeyFrames();
-    sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
+    vector<KeyFrame *> keyFrames = p_map_in->getAllKeyFrames();
+    sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
     ofstream f;
-    f.open(filename.c_str());
+    f.open(filename_in.c_str());
     f << fixed;
 
-    for (size_t i = 0; i < vpKFs.size(); i++)
+    for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
+         keyFrameIndex++)
     {
-        KeyFrame *pKF = vpKFs[i];
+        KeyFrame *p_keyFrame = keyFrames[keyFrameIndex];
 
-        if (!pKF || pKF->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
             continue;
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD)
         {
-            Sophus::SE3f       Twb = pKF->getImuPose();
+            Sophus::SE3f       Twb = p_keyFrame->getImuPose();
             Eigen::Quaternionf q   = Twb.unit_quaternion();
             Eigen::Vector3f    twb = Twb.translation();
-            f << setprecision(6) << 1e9 * pKF->timeStamp << " "
+            f << setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
               << setprecision(9) << twb(0) << " " << twb(1) << " " << twb(2)
               << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()
               << endl;
         }
         else
         {
-            Sophus::SE3f       Twc = pKF->getPoseInverse();
+            Sophus::SE3f       Twc = p_keyFrame->getPoseInverse();
             Eigen::Quaternionf q   = Twc.unit_quaternion();
             Eigen::Vector3f    t   = Twc.translation();
-            f << setprecision(6) << 1e9 * pKF->timeStamp << " "
+            f << setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
               << setprecision(9) << t(0) << " " << t(1) << " " << t(2) << " "
               << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
         }

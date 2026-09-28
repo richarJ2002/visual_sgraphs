@@ -204,7 +204,7 @@
 #include "Semantic/Marker.h"
 #include "Semantic/Passage.h"
 #include "Semantic/Room.h"
-using json = nlohmann::json;
+using Json = nlohmann::json;
 
 /* -------------------------------------------------------------------------- *
  * ORB-SLAM3 STATE
@@ -254,7 +254,7 @@ void recordEstimatorFrame(const double frameInterval_seconds);
  *
  * @note        Global variable declared in `commonStat.cpp`
  */
-extern vs_graphs::core::System::eSensor sensorType;
+extern vs_graphs::core::System::SensorType sensorType;
 
 /* -------------------------------------------------------------------------- *
  * COMMON CONFIGURATION

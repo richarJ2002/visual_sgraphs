@@ -36,25 +36,25 @@ namespace semantic
 
 EntityRef entityRefForPassage(Passage *p_passage_in)
 {
-    EntityRef ref;
+    EntityRef reference;
     if (p_passage_in == nullptr)
     {
-        return ref;
+        return reference;
     }
-    ref.localId                   = p_passage_in->getId();
-    ref.isLive                    = !p_passage_in->isBad();
-    ref.livenessUnavailableReason = UnavailableReason::NONE;
+    reference.localId                   = p_passage_in->getId();
+    reference.isLive                    = !p_passage_in->isBad();
+    reference.livenessUnavailableReason = UnavailableReason::NONE;
 
     core::Map *p_map = p_passage_in->getMap();
     if (p_map == nullptr)
     {
-        ref.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
-        return ref;
+        reference.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
+        return reference;
     }
-    ref.key =
+    reference.key =
         makeKey(EntityKind::PASSAGE, p_map->getId(), p_passage_in->getId());
-    ref.reason = UnavailableReason::NONE;
-    return ref;
+    reference.reason = UnavailableReason::NONE;
+    return reference;
 }
 
 } // namespace semantic

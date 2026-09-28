@@ -32,9 +32,9 @@ namespace core
 namespace geometric
 {
 
-void Plane::setId(int value)
+void Plane::setId(int id_in)
 {
-    id = value;
+    id = id_in;
 }
 
 } // namespace geometric

@@ -30,18 +30,22 @@ namespace vs_graphs
 namespace core
 {
 
-bool VertexSim3Expmap::write(std::ostream &os) const
+bool VertexSim3Expmap::write(std::ostream &outputStream_inout) const
 {
     g2o::Sim3     cam2world(estimate().inverse());
-    g2o::Vector7d lv = cam2world.log();
-    for (int i = 0; i < 7; i++)
-        os << lv[i] << " ";
-    for (size_t i = 0; i < pCamera1->size(); i++)
-        os << pCamera1->getParameter(i) << " ";
+    g2o::Vector7d logVector = cam2world.log();
+    for (int parameterIndex = 0; parameterIndex < 7; parameterIndex++)
+        outputStream_inout << logVector[parameterIndex] << " ";
+    for (size_t parameterIndex = 0; parameterIndex < p_firstCamera->size();
+         parameterIndex++)
+        outputStream_inout << p_firstCamera->getParameter(parameterIndex)
+                           << " ";
 
-    for (size_t i = 0; i < pCamera2->size(); i++)
-        os << pCamera2->getParameter(i) << " ";
-    return os.good();
+    for (size_t parameterIndex = 0; parameterIndex < p_secondCamera->size();
+         parameterIndex++)
+        outputStream_inout << p_secondCamera->getParameter(parameterIndex)
+                           << " ";
+    return outputStream_inout.good();
 }
 
 } // namespace core

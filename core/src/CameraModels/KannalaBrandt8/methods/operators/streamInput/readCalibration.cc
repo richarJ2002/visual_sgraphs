@@ -32,15 +32,16 @@
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
-std::istream &operator>>(std::istream &is, KannalaBrandt8 &kannala_inout)
+std::istream &operator>>(std::istream   &inputStream_inout,
+                         KannalaBrandt8 &kannala_out)
 {
-    float nextParam;
-    for (size_t i = 0; i < 8; i++)
+    float nextParameter;
+    for (size_t parameterIndex = 0; parameterIndex < 8; parameterIndex++)
     {
-        assert(is.good()); // Make sure the input stream is good
-        is >> nextParam;
-        kannala_inout.parameters[i] = nextParam;
+        assert(inputStream_inout.good()); // Make sure the input stream is good
+        inputStream_inout >> nextParameter;
+        kannala_out.parameters[parameterIndex] = nextParameter;
     }
-    return is;
+    return inputStream_inout;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

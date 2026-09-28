@@ -36,182 +36,218 @@ void LocalMapping::keyFrameCulling()
     // A keyframe is considered redundant if the 90% of the MapPoints it sees,
     // are seen in at least other 3 keyframes (in the same or finer scale) We
     // only consider close stereo points
-    const int Nd = 21;
+    const int temporalWindowSize = 21;
     p_currentKeyFrame->updateBestCovisibles();
-    vector<KeyFrame *> vpLocalKeyFrames =
+    vector<KeyFrame *> neighborKeyFrames =
         p_currentKeyFrame->getVectorCovisibleKeyFrames();
 
-    float redundant_th;
-    if (!inertial)
-        redundant_th = 0.9;
-    else if (monocular)
-        redundant_th = 0.9;
+    float redundancyThreshold;
+    if (!isInertial)
+        redundancyThreshold = 0.9;
+    else if (isMonocular)
+        redundancyThreshold = 0.9;
     else
-        redundant_th = 0.5;
+        redundancyThreshold = 0.5;
 
-    const bool bInitImu = p_atlas->isImuInitialized();
-    int        count    = 0;
+    const bool isImuInitialized       = p_atlas->isImuInitialized();
+    int        processedKeyFrameCount = 0;
 
     // Compute the oldest keyframe in the optimizable inertial window.
-    unsigned long lastOptimizableKeyFrameId = p_currentKeyFrame->mnId;
-    if (inertial)
+    unsigned long lastOptimizableKeyFrameId = p_currentKeyFrame->id;
+    if (isInertial)
     {
         int       temporalKeyFrameCount = 0;
         KeyFrame *p_oldestKeyFrame      = p_currentKeyFrame;
-        while (temporalKeyFrameCount < Nd && p_oldestKeyFrame->p_prevKF)
+        while (temporalKeyFrameCount < temporalWindowSize &&
+               p_oldestKeyFrame->p_prevKF)
         {
             p_oldestKeyFrame = p_oldestKeyFrame->p_prevKF;
             temporalKeyFrameCount++;
         }
-        lastOptimizableKeyFrameId = p_oldestKeyFrame->mnId;
+        lastOptimizableKeyFrameId = p_oldestKeyFrame->id;
     }
 
-    for (vector<KeyFrame *>::iterator vit  = vpLocalKeyFrames.begin(),
-                                      vend = vpLocalKeyFrames.end();
-         vit != vend;
-         vit++)
+    for (vector<KeyFrame *>::iterator
+             neighborKeyFrameIt  = neighborKeyFrames.begin(),
+             neighborKeyFrameEnd = neighborKeyFrames.end();
+         neighborKeyFrameIt != neighborKeyFrameEnd;
+         neighborKeyFrameIt++)
     {
-        count++;
-        KeyFrame *pKF = *vit;
+        processedKeyFrameCount++;
+        KeyFrame *p_neighborKeyFrame = *neighborKeyFrameIt;
 
-        if ((pKF->mnId == pKF->getMap()->getInitKeyFrameId()) || pKF->isBad())
+        if ((p_neighborKeyFrame->id ==
+             p_neighborKeyFrame->getMap()->getInitKeyFrameId()) ||
+            p_neighborKeyFrame->isBad())
             continue;
-        const vector<MapPoint *> vpMapPoints = pKF->getMapPointMatches();
+        const vector<MapPoint *> neighborMapPoints =
+            p_neighborKeyFrame->getMapPointMatches();
 
-        int       nObs                   = 3;
-        const int thObs                  = nObs;
-        int       nRedundantObservations = 0;
-        int       nMPs                   = 0;
-        for (size_t i = 0, iend = vpMapPoints.size(); i < iend; i++)
+        int       observationCount          = 3;
+        const int observationThreshold      = observationCount;
+        int       redundantObservationCount = 0;
+        int       validMapPointCount        = 0;
+        for (size_t mapPointIndex = 0, mapPointCount = neighborMapPoints.size();
+             mapPointIndex < mapPointCount;
+             mapPointIndex++)
         {
-            MapPoint *pMP = vpMapPoints[i];
-            if (pMP)
+            MapPoint *p_mapPoint = neighborMapPoints[mapPointIndex];
+            if (p_mapPoint)
             {
-                if (!pMP->isBad())
+                if (!p_mapPoint->isBad())
                 {
-                    if (!monocular)
+                    if (!isMonocular)
                     {
-                        if (pKF->depths[i] > pKF->depthThreshold ||
-                            pKF->depths[i] < 0)
+                        if (p_neighborKeyFrame->depths[mapPointIndex] >
+                                p_neighborKeyFrame->depthThreshold ||
+                            p_neighborKeyFrame->depths[mapPointIndex] < 0)
                             continue;
                     }
 
-                    nMPs++;
-                    if (pMP->getObservationCount() > thObs)
+                    validMapPointCount++;
+                    if (p_mapPoint->getObservationCount() >
+                        observationThreshold)
                     {
                         // Reached only when Nleft != -1, i.e. the fisheye
                         // stereo case, where Nleft is a keypoint count >= 0.
                         const int &scaleLevel =
-                            (pKF->Nleft == -1)
-                                ? pKF->keyPointsUndistorted[i].octave
-                            : (i < static_cast<std::size_t>(pKF->Nleft))
-                                ? pKF->keyPoints[i].octave
-                                : pKF->keyPointsRight[i].octave;
-                        const map<KeyFrame *, tuple<int, int>> observations =
-                            pMP->getObservations();
-                        int nObs = 0;
+                            (p_neighborKeyFrame->leftKeyPointCount == -1)
+                                ? p_neighborKeyFrame
+                                      ->keyPointsUndistorted[mapPointIndex]
+                                      .octave
+                            : (mapPointIndex <
+                               static_cast<std::size_t>(
+                                   p_neighborKeyFrame->leftKeyPointCount))
+                                ? p_neighborKeyFrame->keyPoints[mapPointIndex]
+                                      .octave
+                                : p_neighborKeyFrame
+                                      ->keyPointsRight[mapPointIndex]
+                                      .octave;
+                        const map<KeyFrame *, tuple<int, int>>
+                            pointObservations = p_mapPoint->getObservations();
+                        int observationCount  = 0;
                         for (map<KeyFrame *, tuple<int, int>>::const_iterator
-                                 mit  = observations.begin(),
-                                 mend = observations.end();
-                             mit != mend;
-                             mit++)
+                                 observationIt  = pointObservations.begin(),
+                                 observationEnd = pointObservations.end();
+                             observationIt != observationEnd;
+                             observationIt++)
                         {
-                            KeyFrame *pKFi = mit->first;
-                            if (pKFi == pKF)
+                            KeyFrame *p_observingKeyFrame =
+                                observationIt->first;
+                            if (p_observingKeyFrame == p_neighborKeyFrame)
                                 continue;
-                            tuple<int, int> indexes   = mit->second;
-                            int             leftIndex = get<0>(indexes),
-                                rightIndex            = get<1>(indexes);
-                            int scaleLeveli           = -1;
-                            if (pKFi->Nleft == -1)
-                                scaleLeveli =
-                                    pKFi->keyPointsUndistorted[leftIndex]
+                            tuple<int, int> observationIndices =
+                                observationIt->second;
+                            int leftIndex          = get<0>(observationIndices),
+                                rightIndex         = get<1>(observationIndices);
+                            int observerScaleLevel = -1;
+                            if (p_observingKeyFrame->leftKeyPointCount == -1)
+                                observerScaleLevel =
+                                    p_observingKeyFrame
+                                        ->keyPointsUndistorted[leftIndex]
                                         .octave;
                             else
                             {
                                 if (leftIndex != -1)
                                 {
-                                    scaleLeveli =
-                                        pKFi->keyPoints[leftIndex].octave;
+                                    observerScaleLevel =
+                                        p_observingKeyFrame
+                                            ->keyPoints[leftIndex]
+                                            .octave;
                                 }
                                 if (rightIndex != -1)
                                 {
                                     int rightLevel =
-                                        pKFi->keyPointsRight[rightIndex -
-                                                             pKFi->Nleft]
+                                        p_observingKeyFrame
+                                            ->keyPointsRight
+                                                [rightIndex -
+                                                 p_observingKeyFrame
+                                                     ->leftKeyPointCount]
                                             .octave;
-                                    scaleLeveli = (scaleLeveli == -1 ||
-                                                   scaleLeveli > rightLevel)
-                                                      ? rightLevel
-                                                      : scaleLeveli;
+                                    observerScaleLevel =
+                                        (observerScaleLevel == -1 ||
+                                         observerScaleLevel > rightLevel)
+                                            ? rightLevel
+                                            : observerScaleLevel;
                                 }
                             }
 
-                            if (scaleLeveli <= scaleLevel + 1)
+                            if (observerScaleLevel <= scaleLevel + 1)
                             {
-                                nObs++;
-                                if (nObs > thObs)
+                                observationCount++;
+                                if (observationCount > observationThreshold)
                                     break;
                             }
                         }
-                        if (nObs > thObs)
+                        if (observationCount > observationThreshold)
                         {
-                            nRedundantObservations++;
+                            redundantObservationCount++;
                         }
                     }
                 }
             }
         }
 
-        if (nRedundantObservations > redundant_th * nMPs)
+        if (redundantObservationCount >
+            redundancyThreshold * validMapPointCount)
         {
-            if (inertial)
+            if (isInertial)
             {
-                if (p_atlas->getKeyFrameCount() <= Nd)
+                if (p_atlas->getKeyFrameCount() <= temporalWindowSize)
                     continue;
 
-                if (pKF->mnId > (p_currentKeyFrame->mnId - 2))
+                if (p_neighborKeyFrame->id > (p_currentKeyFrame->id - 2))
                     continue;
 
-                if (pKF->p_prevKF && pKF->p_nextKF)
+                if (p_neighborKeyFrame->p_prevKF &&
+                    p_neighborKeyFrame->p_nextKF)
                 {
-                    const float t =
-                        pKF->p_nextKF->timeStamp - pKF->p_prevKF->timeStamp;
+                    const float timeGap =
+                        p_neighborKeyFrame->p_nextKF->timeStamp -
+                        p_neighborKeyFrame->p_prevKF->timeStamp;
 
-                    if ((bInitImu && (pKF->mnId < lastOptimizableKeyFrameId) &&
-                         t < 3.) ||
-                        (t < 0.5))
+                    if ((isImuInitialized &&
+                         (p_neighborKeyFrame->id < lastOptimizableKeyFrameId) &&
+                         timeGap < 3.) ||
+                        (timeGap < 0.5))
                     {
-                        pKF->p_nextKF->p_imuPreintegrated->mergePrevious(
-                            pKF->p_imuPreintegrated);
-                        pKF->p_nextKF->p_prevKF = pKF->p_prevKF;
-                        pKF->p_prevKF->p_nextKF = pKF->p_nextKF;
-                        pKF->p_nextKF           = nullptr;
-                        pKF->p_prevKF           = nullptr;
-                        pKF->setBadFlag();
+                        p_neighborKeyFrame->p_nextKF->p_imuPreintegrated
+                            ->mergePrevious(
+                                p_neighborKeyFrame->p_imuPreintegrated);
+                        p_neighborKeyFrame->p_nextKF->p_prevKF =
+                            p_neighborKeyFrame->p_prevKF;
+                        p_neighborKeyFrame->p_prevKF->p_nextKF =
+                            p_neighborKeyFrame->p_nextKF;
+                        p_neighborKeyFrame->p_nextKF = nullptr;
+                        p_neighborKeyFrame->p_prevKF = nullptr;
+                        p_neighborKeyFrame->setBadFlag();
                     }
                     else if (!p_currentKeyFrame->getMap()->getInertialBA2() &&
-                             ((pKF->getImuPosition() -
-                               pKF->p_prevKF->getImuPosition())
+                             ((p_neighborKeyFrame->getImuPosition() -
+                               p_neighborKeyFrame->p_prevKF->getImuPosition())
                                   .norm() < 0.02) &&
-                             (t < 3))
+                             (timeGap < 3))
                     {
-                        pKF->p_nextKF->p_imuPreintegrated->mergePrevious(
-                            pKF->p_imuPreintegrated);
-                        pKF->p_nextKF->p_prevKF = pKF->p_prevKF;
-                        pKF->p_prevKF->p_nextKF = pKF->p_nextKF;
-                        pKF->p_nextKF           = nullptr;
-                        pKF->p_prevKF           = nullptr;
-                        pKF->setBadFlag();
+                        p_neighborKeyFrame->p_nextKF->p_imuPreintegrated
+                            ->mergePrevious(
+                                p_neighborKeyFrame->p_imuPreintegrated);
+                        p_neighborKeyFrame->p_nextKF->p_prevKF =
+                            p_neighborKeyFrame->p_prevKF;
+                        p_neighborKeyFrame->p_prevKF->p_nextKF =
+                            p_neighborKeyFrame->p_nextKF;
+                        p_neighborKeyFrame->p_nextKF = nullptr;
+                        p_neighborKeyFrame->p_prevKF = nullptr;
+                        p_neighborKeyFrame->setBadFlag();
                     }
                 }
             }
             else
             {
-                pKF->setBadFlag();
+                p_neighborKeyFrame->setBadFlag();
             }
         }
-        if ((count > 20 && abortBA) || count > 100)
+        if ((processedKeyFrameCount > 20 && shouldAbortBa) ||
+            processedKeyFrameCount > 100)
         {
             break;
         }

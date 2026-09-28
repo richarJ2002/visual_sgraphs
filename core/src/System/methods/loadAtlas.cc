@@ -33,16 +33,16 @@ namespace vs_graphs
 namespace core
 {
 
-bool System::loadAtlas(int type)
+bool System::loadAtlas(int type_in)
 {
-    string strFileVoc, strVocChecksum;
+    string fileVocabulary, vocabularyChecksum;
     bool   isRead = false;
 
     string pathLoadFileName = "./";
     pathLoadFileName        = pathLoadFileName.append(loadAtlasFile);
     pathLoadFileName        = pathLoadFileName.append(".osa");
 
-    if (type == TEXT_FILE) // File text
+    if (type_in == TEXT_FILE) // File text
     {
         cout << "Starting to read the save text file "
              << pathLoadFileName.c_str() << endl;
@@ -53,13 +53,13 @@ bool System::loadAtlas(int type)
             return false;
         }
         boost::archive::text_iarchive ia(ifs);
-        ia >> strFileVoc;
-        ia >> strVocChecksum;
+        ia >> fileVocabulary;
+        ia >> vocabularyChecksum;
         ia >> p_atlas;
         cout << "End to load the save text file " << endl;
         isRead = true;
     }
-    else if (type == BINARY_FILE) // File binary
+    else if (type_in == BINARY_FILE) // File binary
     {
         cout << "Starting to read the save binary file "
              << pathLoadFileName.c_str() << endl;
@@ -70,8 +70,8 @@ bool System::loadAtlas(int type)
             return false;
         }
         boost::archive::binary_iarchive ia(ifs);
-        ia >> strFileVoc;
-        ia >> strVocChecksum;
+        ia >> fileVocabulary;
+        ia >> vocabularyChecksum;
         ia >> p_atlas;
         cout << "End to load the save binary file" << endl;
         isRead = true;
@@ -80,21 +80,21 @@ bool System::loadAtlas(int type)
     if (isRead)
     {
         // Check if the vocabulary is the same
-        string strInputVocabularyChecksum =
+        string inputVocabularyChecksum =
             calculateCheckSum(vocabularyFilePath, TEXT_FILE);
 
-        if (strInputVocabularyChecksum.compare(strVocChecksum) != 0)
+        if (inputVocabularyChecksum.compare(vocabularyChecksum) != 0)
         {
             cout << "The vocabulary load isn't the same which the load session "
                     "was created "
                  << endl;
-            cout << "-Vocabulary name: " << strFileVoc << endl;
+            cout << "-Vocabulary name: " << fileVocabulary << endl;
             return false; // Both are differents
         }
 
         p_atlas->setKeyFrameDatabase(p_keyFrameDatabase);
         p_atlas->setORBVocabulary(p_vocabulary);
-        p_atlas->PostLoad();
+        p_atlas->postLoad();
 
         return true;
     }

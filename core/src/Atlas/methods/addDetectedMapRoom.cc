@@ -30,15 +30,15 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addDetectedMapRoom(semantic::Room *room)
+void Atlas::addDetectedMapRoom(semantic::Room *p_room_in)
 {
-    if (room == nullptr)
+    if (p_room_in == nullptr)
     {
         return;
     }
-    observeRoomIdentity(room->getId());
-    Map *pMapMP = room->getMap();
-    pMapMP->addDetectedMapRoom(room);
+    observeRoomIdentity(p_room_in->getId());
+    Map *p_ownerMap = p_room_in->getMap();
+    p_ownerMap->addDetectedMapRoom(p_room_in);
 }
 
 } // namespace core

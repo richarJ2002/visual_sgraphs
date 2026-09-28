@@ -25,7 +25,7 @@ namespace core
 
 bool SemanticsManager::tryLockRoomTrackerPendingMutexForTest() const
 {
-    std::unique_lock<std::mutex> currentRoomLock(mMutexCurrentRoom,
+    std::unique_lock<std::mutex> currentRoomLock(currentRoomMutex,
                                                  std::try_to_lock);
     return currentRoomLock.owns_lock();
 }

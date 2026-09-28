@@ -32,7 +32,7 @@ namespace core
 
 int Atlas::reserveRoomIdentity(void)
 {
-    return nextRoomIdentity_.fetch_add(1, std::memory_order_relaxed);
+    return nextRoomIdentity.fetch_add(1, std::memory_order_relaxed);
 }
 
 } // namespace core

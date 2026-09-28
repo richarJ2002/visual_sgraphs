@@ -13,74 +13,77 @@ namespace vs_graphs
 namespace core
 {
 
-void FrameDrawer::update(Tracking *pTracker)
+void FrameDrawer::update(Tracking *p_tracker_in)
 {
-    unique_lock<mutex> lock(mMutex);
-    pTracker->imageGray.copyTo(image);
-    currentKeys    = pTracker->currentFrame.keyPoints;
-    depthThreshold = pTracker->currentFrame.depthThreshold;
-    currentDepths  = pTracker->currentFrame.depths;
+    unique_lock<mutex> stateLock(frameStateMutex);
+    p_tracker_in->imageGray.copyTo(image);
+    currentKeys    = p_tracker_in->currentFrame.keyPoints;
+    depthThreshold = p_tracker_in->currentFrame.depthThreshold;
+    currentDepths  = p_tracker_in->currentFrame.depths;
 
-    if (both)
+    if (shouldDrawBothImages)
     {
-        currentKeysRight = pTracker->currentFrame.keyPointsRight;
-        pTracker->imageRight.copyTo(imageRight);
-        N = currentKeys.size() + currentKeysRight.size();
+        currentKeysRight = p_tracker_in->currentFrame.keyPointsRight;
+        p_tracker_in->imageRight.copyTo(imageRight);
+        keyPointCount = currentKeys.size() + currentKeysRight.size();
     }
     else
     {
-        N = currentKeys.size();
+        keyPointCount = currentKeys.size();
     }
 
-    mvbVO        = vector<bool>(N, false);
-    mvbMap       = vector<bool>(N, false);
-    onlyTracking = pTracker->onlyTracking;
+    isVisualOdometryPoint = vector<bool>(keyPointCount, false);
+    isTrackedMapPoint     = vector<bool>(keyPointCount, false);
+    isTrackingOnlyMode    = p_tracker_in->isTrackingOnlyMode;
 
     // Variables for the new visualization
-    currentFrame  = pTracker->currentFrame;
+    currentFrame  = p_tracker_in->currentFrame;
     projectPoints = currentFrame.projectedPoints;
     matchedInImage.clear();
 
-    localMap = pTracker->getLocalMapPoints();
+    localMap = p_tracker_in->getLocalMapPoints();
     matchedKeys.clear();
-    matchedKeys.reserve(N);
+    matchedKeys.reserve(keyPointCount);
     matchedMPs.clear();
-    matchedMPs.reserve(N);
+    matchedMPs.reserve(keyPointCount);
     outlierKeys.clear();
-    outlierKeys.reserve(N);
+    outlierKeys.reserve(keyPointCount);
     outlierMPs.clear();
-    outlierMPs.reserve(N);
+    outlierMPs.reserve(keyPointCount);
 
-    if (pTracker->lastProcessedState == Tracking::NOT_INITIALIZED)
+    if (p_tracker_in->lastProcessedState == Tracking::NOT_INITIALIZED)
     {
-        iniKeys    = pTracker->initialFrame.keyPoints;
-        iniMatches = pTracker->iniMatches;
+        iniKeys    = p_tracker_in->initialFrame.keyPoints;
+        iniMatches = p_tracker_in->iniMatches;
     }
-    else if (pTracker->lastProcessedState == Tracking::OK)
+    else if (p_tracker_in->lastProcessedState == Tracking::OK)
     {
-        for (int i = 0; i < N; i++)
+        for (int keyPointIndex = 0; keyPointIndex < keyPointCount;
+             keyPointIndex++)
         {
-            MapPoint *pMP = pTracker->currentFrame.mapPoints[i];
-            if (pMP)
+            MapPoint *p_mapPoint =
+                p_tracker_in->currentFrame.mapPoints[keyPointIndex];
+            if (p_mapPoint)
             {
-                if (!pTracker->currentFrame.outlierFlags[i])
+                if (!p_tracker_in->currentFrame.outlierFlags[keyPointIndex])
                 {
-                    if (pMP->getObservationCount() > 0)
-                        mvbMap[i] = true;
+                    if (p_mapPoint->getObservationCount() > 0)
+                        isTrackedMapPoint[keyPointIndex] = true;
                     else
-                        mvbVO[i] = true;
+                        isVisualOdometryPoint[keyPointIndex] = true;
 
-                    matchedInImage[pMP->mnId] = currentKeys[i].pt;
+                    matchedInImage[p_mapPoint->id] =
+                        currentKeys[keyPointIndex].pt;
                 }
                 else
                 {
-                    outlierMPs.push_back(pMP);
-                    outlierKeys.push_back(currentKeys[i]);
+                    outlierMPs.push_back(p_mapPoint);
+                    outlierKeys.push_back(currentKeys[keyPointIndex]);
                 }
             }
         }
     }
-    state = static_cast<int>(pTracker->lastProcessedState);
+    state = static_cast<int>(p_tracker_in->lastProcessedState);
 }
 
 } // namespace core

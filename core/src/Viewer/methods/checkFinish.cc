@@ -36,8 +36,8 @@ namespace core
 
 bool Viewer::checkFinish()
 {
-    unique_lock<mutex> lock(mMutexFinish);
-    return finishRequested;
+    unique_lock<mutex> lock(finishMutex);
+    return isFinishRequested;
 }
 
 } // namespace core

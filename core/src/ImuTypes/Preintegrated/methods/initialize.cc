@@ -24,7 +24,7 @@ namespace core
 namespace IMU
 {
 
-void Preintegrated::initialize(const Bias &b_)
+void Preintegrated::initialize(const Bias &referenceBias_in)
 {
     dR.setIdentity();
     dV.setZero();
@@ -37,12 +37,12 @@ void Preintegrated::initialize(const Bias &b_)
     C.setZero();
     Info.setZero();
     db.setZero();
-    b  = b_;
-    bu = b_;
+    b  = referenceBias_in;
+    bu = referenceBias_in;
     avgA.setZero();
     avgW.setZero();
     dT = 0.0f;
-    mvMeasurements.clear();
+    measurements.clear();
 }
 
 } // namespace IMU

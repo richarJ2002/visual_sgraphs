@@ -26,78 +26,81 @@ namespace core
 namespace semantic
 {
 
-void RoomTracker::commit(RoomTrackingState           source,
-                         RoomTrackingEvent           event,
-                         double                      now_s,
-                         const TraversalGuardValues &crossing,
-                         const VerificationVerdict  &verification,
-                         bool                        accepted)
+void RoomTracker::commit(RoomTrackingState           source_in,
+                         RoomTrackingEvent           event_in,
+                         double                      now_s_in,
+                         const TraversalGuardValues &crossing_in,
+                         const VerificationVerdict  &verification_in,
+                         bool                        accepted_in)
 {
-    TransitionEvent record;
-    record.timestamp_s      = now_s;
-    record.sourceState      = source;
-    record.event            = event;
-    record.dwell_s          = crossing.dwell_s;
-    record.confidence       = crossing.confidence;
-    record.verificationPass = verification.isPass();
-    record.targetState      = accepted ? state_ : source;
+    TransitionEvent transitionRecord;
+    transitionRecord.timestamp_s           = now_s_in;
+    transitionRecord.sourceState           = source_in;
+    transitionRecord.event                 = event_in;
+    transitionRecord.dwell_s               = crossing_in.dwell_s;
+    transitionRecord.confidence            = crossing_in.confidence;
+    transitionRecord.hasVerificationPassed = verification_in.isPass();
+    transitionRecord.targetState = accepted_in ? trackingState : source_in;
 
     /* Resolve the target state for accepted transitions. */
-    if (accepted)
+    if (accepted_in)
     {
-        if (event == RoomTrackingEvent::FIRST_ROOM_CONFIRMED ||
-            event == RoomTrackingEvent::ROOM_REACQUIRED ||
-            event == RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM ||
-            event == RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE)
+        if (event_in == RoomTrackingEvent::FIRST_ROOM_CONFIRMED ||
+            event_in == RoomTrackingEvent::ROOM_REACQUIRED ||
+            event_in == RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM ||
+            event_in == RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE)
         {
-            record.targetState = RoomTrackingState::CONFIRMED_ROOM;
+            transitionRecord.targetState = RoomTrackingState::CONFIRMED_ROOM;
         }
-        else if (event == RoomTrackingEvent::PASSAGE_CROSSING_DETECTED)
+        else if (event_in == RoomTrackingEvent::PASSAGE_CROSSING_DETECTED)
         {
-            record.targetState = RoomTrackingState::CROSSING_PASSAGE;
+            transitionRecord.targetState = RoomTrackingState::CROSSING_PASSAGE;
         }
-        else if (event == RoomTrackingEvent::TRACKING_LOST)
+        else if (event_in == RoomTrackingEvent::TRACKING_LOST)
         {
-            record.targetState = RoomTrackingState::LOST_WITH_LAST_ROOM;
+            transitionRecord.targetState =
+                RoomTrackingState::LOST_WITH_LAST_ROOM;
         }
-        else if (event == RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH)
+        else if (event_in == RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH)
         {
-            record.targetState = RoomTrackingState::REACQUIRING_IN_NEW_MAP;
+            transitionRecord.targetState =
+                RoomTrackingState::REACQUIRING_IN_NEW_MAP;
         }
-        else if (event == RoomTrackingEvent::LOST_TIMEOUT ||
-                 event == RoomTrackingEvent::REACQUIRE_TIMEOUT)
+        else if (event_in == RoomTrackingEvent::LOST_TIMEOUT ||
+                 event_in == RoomTrackingEvent::REACQUIRE_TIMEOUT)
         {
-            record.targetState = RoomTrackingState::LOST_WITHOUT_ROOM;
+            transitionRecord.targetState = RoomTrackingState::LOST_WITHOUT_ROOM;
         }
         else
         {
-            record.targetState = source;
+            transitionRecord.targetState = source_in;
         }
     }
-    record.accepted = accepted;
+    transitionRecord.isAccepted = accepted_in;
 
-    eventHistory_.push_back(record);
-    lastEvent_ = record;
+    eventHistory.push_back(transitionRecord);
+    lastEvent = transitionRecord;
 
-    if (accepted)
+    if (accepted_in)
     {
-        std::cout << "[RoomTracker] transition: " << eventToJSON(record)
-                  << std::endl;
+        std::cout << "[RoomTracker] transition: "
+                  << eventToJSON(transitionRecord) << std::endl;
 
-        state_                    = record.targetState;
-        lastEnterStateTime_s_     = now_s;
-        crossingDwellStartTime_s_ = -1.0;
-        hasObservedBothSides_     = false;
-        if (record.targetState == RoomTrackingState::REACQUIRING_IN_NEW_MAP)
+        trackingState            = transitionRecord.targetState;
+        lastEnterStateTime_s     = now_s_in;
+        crossingDwellStartTime_s = -1.0;
+        hasObservedBothSides     = false;
+        if (transitionRecord.targetState ==
+            RoomTrackingState::REACQUIRING_IN_NEW_MAP)
         {
-            reacquireRetryCount_      = 0U;
-            reacquireLastRetryTime_s_ = -1.0;
+            reacquireRetryCount      = 0U;
+            reacquireLastRetryTime_s = -1.0;
         }
     }
     else
     {
         std::cout << "[RoomTracker] WARN rejected transition: "
-                  << eventToJSON(record) << std::endl;
+                  << eventToJSON(transitionRecord) << std::endl;
     }
 }
 

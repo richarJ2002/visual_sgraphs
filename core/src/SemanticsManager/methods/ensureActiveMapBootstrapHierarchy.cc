@@ -34,7 +34,7 @@ SemanticsManager::ActiveMapBootstrapResult
     {
         std::cout << "SG_PIPELINE {\"event\":\"initialization\","
                      "\"reason\":\"NO_ACTIVE_MAP\",\"semantic_cycle\":"
-                  << pipelineSemanticCycle_ << "}" << std::endl;
+                  << pipelineSemanticCycle << "}" << std::endl;
         return ActiveMapBootstrapResult::NO_ACTIVE_MAP;
     }
 
@@ -59,21 +59,22 @@ SemanticsManager::ActiveMapBootstrapResult
         return nullptr;
     };
 
-    int currentRoomId = -1;
+    int currentRoomIdSnapshot = -1;
     {
-        std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-        currentRoomId = currentRoomId_;
+        std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+        currentRoomIdSnapshot = currentRoomId;
     }
     const int recoveryRoomId = p_atlas->getCurrentSemanticRoomIdentity();
 
-    semantic::Room *p_bootstrapRoom = resolveLiveRoomById(currentRoomId);
+    semantic::Room *p_bootstrapRoom =
+        resolveLiveRoomById(currentRoomIdSnapshot);
     if (p_bootstrapRoom == nullptr)
     {
         p_bootstrapRoom = resolveLiveRoomById(recoveryRoomId);
     }
     /* When a recovery identity exists (tracking-loss reset), never fall back
      * to an arbitrary lowest-ID live room: a spurious free-space SE# created
-     * during the reset transient would otherwise hijack `currentRoomId_` away
+     * during the reset transient would otherwise hijack `currentRoomId` away
      * from the last-known hierarchy. The lowest-ID seed applies to cold start
      * only (no recovery identity). */
     if (p_bootstrapRoom == nullptr && recoveryRoomId < 0)
@@ -155,7 +156,7 @@ SemanticsManager::ActiveMapBootstrapResult
                       << p_activeMap->getId()
                       << ",\"reason\":\"NO_USABLE_CAMERA_POSE\","
                          "\"semantic_cycle\":"
-                      << pipelineSemanticCycle_ << "}" << std::endl;
+                      << pipelineSemanticCycle << "}" << std::endl;
             return ActiveMapBootstrapResult::NO_USABLE_CAMERA_POSE;
         }
     }
@@ -177,7 +178,7 @@ SemanticsManager::ActiveMapBootstrapResult
                       << p_activeMap->getId()
                       << ",\"reason\":\"ROOM_CREATION_FAILED\","
                          "\"semantic_cycle\":"
-                      << pipelineSemanticCycle_ << "}" << std::endl;
+                      << pipelineSemanticCycle << "}" << std::endl;
             return ActiveMapBootstrapResult::ROOM_CREATION_FAILED;
         }
         p_atlas->addCandidateMapRoom(p_bootstrapRoom);
@@ -222,17 +223,17 @@ SemanticsManager::ActiveMapBootstrapResult
                   << ",\"reason\":\"FLOOR_CREATION_FAILED\","
                      "\"room_id\":"
                   << p_bootstrapRoom->getId()
-                  << ",\"semantic_cycle\":" << pipelineSemanticCycle_ << "}"
+                  << ",\"semantic_cycle\":" << pipelineSemanticCycle << "}"
                   << std::endl;
         return ActiveMapBootstrapResult::FLOOR_CREATION_FAILED;
     }
 
     p_canonicalFloor->addRoom(p_bootstrapRoom);
-    if (resolveLiveRoomById(currentRoomId) == nullptr)
+    if (resolveLiveRoomById(currentRoomIdSnapshot) == nullptr)
     {
         {
-            std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-            currentRoomId_ = p_bootstrapRoom->getId();
+            std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+            currentRoomId = p_bootstrapRoom->getId();
             p_atlas->setCurrentSemanticRoomIdentity(p_bootstrapRoom->getId());
         }
         /* The UAV starts inside the bootstrap room: presence evidences entry.
@@ -264,7 +265,7 @@ SemanticsManager::ActiveMapBootstrapResult
                 p_recoveryPassage = new semantic::Passage();
                 p_recoveryPassage->setId(passageContext.id);
                 p_recoveryPassage->setMap(p_activeMap);
-                p_recoveryPassage->setPassable(passageContext.passable);
+                p_recoveryPassage->setPassable(passageContext.isPassable);
                 p_recoveryPassage->setPassageType(
                     semantic::Passage::PassageVariant::DOORWAY);
                 p_recoveryPassage->setRecoveryProxy(true);
@@ -302,7 +303,7 @@ SemanticsManager::ActiveMapBootstrapResult
             {
                 p_recoveryPassage->setProspectiveRoom(p_bootstrapRoom);
             }
-            if (p_recoveryPassage->getKnownSideProvenance().pRoom == nullptr &&
+            if (p_recoveryPassage->getKnownSideProvenance().p_room == nullptr &&
                 p_recoveryPassage->getProspectiveRoom() == nullptr)
             {
                 p_recoveryPassage->setKnownSideRoom(p_bootstrapRoom);
@@ -320,7 +321,7 @@ SemanticsManager::ActiveMapBootstrapResult
                   << ",\"reason\":\"BOOTSTRAP_CREATED\",\"room_id\":"
                   << p_bootstrapRoom->getId()
                   << ",\"floor_id\":" << p_canonicalFloor->getId()
-                  << ",\"semantic_cycle\":" << pipelineSemanticCycle_ << "}"
+                  << ",\"semantic_cycle\":" << pipelineSemanticCycle << "}"
                   << std::endl;
         return ActiveMapBootstrapResult::INITIALIZED;
     }
@@ -334,7 +335,7 @@ SemanticsManager::ActiveMapBootstrapResult
                   << p_bootstrapRoom->getId()
                   << ",\"floor_id\":" << p_canonicalFloor->getId()
                   << ",\"restored_passages\":" << restoredPassageCount
-                  << ",\"semantic_cycle\":" << pipelineSemanticCycle_ << "}"
+                  << ",\"semantic_cycle\":" << pipelineSemanticCycle << "}"
                   << std::endl;
         return ActiveMapBootstrapResult::RECOVERED;
     }

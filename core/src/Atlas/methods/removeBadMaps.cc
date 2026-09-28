@@ -32,7 +32,7 @@ namespace core
 
 void Atlas::removeBadMaps()
 {
-    std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
+    std::unique_lock<std::mutex> atlasLock(atlasMutex);
 
     /* Preserve ownership until no runtime reader can retain a raw Map*. */
     retiredMaps.insert(badMaps.begin(), badMaps.end());

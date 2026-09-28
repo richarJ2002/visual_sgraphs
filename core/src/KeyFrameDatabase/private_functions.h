@@ -21,15 +21,15 @@ namespace core
 /*!
  * @brief           Orders accumulated-score pairs by descending score.
  *
- * @param[in]       a
+ * @param[in]       firstScoredCandidate_in
  *                  First pair.
- * @param[in]       b
+ * @param[in]       secondScoredCandidate_in
  *                  Second pair.
  *
  * @return          True when the first score exceeds the second.
  */
-bool compFirst(const std::pair<float, KeyFrame *> &a,
-               const std::pair<float, KeyFrame *> &b);
+bool compFirst(const std::pair<float, KeyFrame *> &firstScoredCandidate_in,
+               const std::pair<float, KeyFrame *> &secondScoredCandidate_in);
 
 } // namespace core
 } // namespace vs_graphs

@@ -24,9 +24,9 @@ namespace core
 namespace IMU
 {
 
-Eigen::Matrix3f NormalizeRotation(const Eigen::Matrix3f &R)
+Eigen::Matrix3f normalizeRotation(const Eigen::Matrix3f &rotationMatrix_in)
 {
-    Eigen::JacobiSVD<Eigen::Matrix3f> svd(R,
+    Eigen::JacobiSVD<Eigen::Matrix3f> svd(rotationMatrix_in,
                                           Eigen::ComputeFullU |
                                               Eigen::ComputeFullV);
     return svd.matrixU() * svd.matrixV().transpose();

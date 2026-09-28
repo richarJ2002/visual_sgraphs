@@ -39,8 +39,9 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
 
     // Rotation Histogram (to check rotation consistency)
     vector<int> rotHist[HISTO_LENGTH];
-    for (int i = 0; i < HISTO_LENGTH; i++)
-        rotHist[i].reserve(500);
+    for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
+         histogramBinIndex++)
+        rotHist[histogramBinIndex].reserve(500);
     const float factor = 1.0f / HISTO_LENGTH;
 
     const Sophus::SE3f    Tcw = CurrentFrame.getPose();
@@ -49,18 +50,19 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
     const Sophus::SE3f    Tlw = LastFrame.getPose();
     const Eigen::Vector3f tlc = Tlw * twc;
 
-    const bool bForward  = tlc(2) > CurrentFrame.mb && !bMono;
-    const bool bBackward = -tlc(2) > CurrentFrame.mb && !bMono;
+    const bool isMovingForward  = tlc(2) > CurrentFrame.mb && !bMono;
+    const bool isMovingBackward = -tlc(2) > CurrentFrame.mb && !bMono;
 
-    for (int i = 0; i < LastFrame.N; i++)
+    for (int histogramBinIndex = 0; histogramBinIndex < LastFrame.keyPointCount;
+         histogramBinIndex++)
     {
-        MapPoint *pMP = LastFrame.mapPoints[i];
-        if (pMP)
+        MapPoint *p_mapPoint = LastFrame.mapPoints[histogramBinIndex];
+        if (p_mapPoint)
         {
-            if (!LastFrame.outlierFlags[i])
+            if (!LastFrame.outlierFlags[histogramBinIndex])
             {
                 // Project
-                Eigen::Vector3f x3Dw = pMP->getWorldPos();
+                Eigen::Vector3f x3Dw = p_mapPoint->getWorldPos();
                 Eigen::Vector3f x3Dc = Tcw * x3Dw;
 
                 const float invzc = 1.0 / x3Dc(2);
@@ -77,44 +79,49 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                     uv(1) > CurrentFrame.gridMaxY)
                     continue;
 
-                int nLastOctave =
-                    (LastFrame.Nleft == -1 || i < LastFrame.Nleft)
-                        ? LastFrame.keyPoints[i].octave
-                        : LastFrame.keyPointsRight[i - LastFrame.Nleft].octave;
+                int lastOctaveCount =
+                    (LastFrame.leftKeyPointCount == -1 ||
+                     histogramBinIndex < LastFrame.leftKeyPointCount)
+                        ? LastFrame.keyPoints[histogramBinIndex].octave
+                        : LastFrame
+                              .keyPointsRight[histogramBinIndex -
+                                              LastFrame.leftKeyPointCount]
+                              .octave;
 
                 // Search in a window. Size depends on scale
-                float radius = th * CurrentFrame.scaleFactors[nLastOctave];
+                float radius = th * CurrentFrame.scaleFactors[lastOctaveCount];
 
-                vector<size_t> vIndices2;
+                vector<size_t> indices2;
 
-                if (bForward)
-                    vIndices2 = CurrentFrame.getFeaturesInArea(uv(0),
-                                                               uv(1),
-                                                               radius,
-                                                               nLastOctave);
-                else if (bBackward)
-                    vIndices2 = CurrentFrame.getFeaturesInArea(uv(0),
-                                                               uv(1),
-                                                               radius,
-                                                               0,
-                                                               nLastOctave);
+                if (isMovingForward)
+                    indices2 = CurrentFrame.getFeaturesInArea(uv(0),
+                                                              uv(1),
+                                                              radius,
+                                                              lastOctaveCount);
+                else if (isMovingBackward)
+                    indices2 = CurrentFrame.getFeaturesInArea(uv(0),
+                                                              uv(1),
+                                                              radius,
+                                                              0,
+                                                              lastOctaveCount);
                 else
-                    vIndices2 = CurrentFrame.getFeaturesInArea(uv(0),
-                                                               uv(1),
-                                                               radius,
-                                                               nLastOctave - 1,
-                                                               nLastOctave + 1);
+                    indices2 =
+                        CurrentFrame.getFeaturesInArea(uv(0),
+                                                       uv(1),
+                                                       radius,
+                                                       lastOctaveCount - 1,
+                                                       lastOctaveCount + 1);
 
-                if (vIndices2.empty())
+                if (indices2.empty())
                     continue;
 
-                const cv::Mat dMP = pMP->getDescriptor();
+                const cv::Mat mapPointDescriptor = p_mapPoint->getDescriptor();
 
-                int bestDist = 256;
-                int bestIdx2 = -1;
+                int bestDistance = 256;
+                int bestIndex2   = -1;
 
-                for (vector<size_t>::const_iterator vit  = vIndices2.begin(),
-                                                    vend = vIndices2.end();
+                for (vector<size_t>::const_iterator vit  = indices2.begin(),
+                                                    vend = indices2.end();
                      vit != vend;
                      vit++)
                 {
@@ -125,7 +132,8 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                             0)
                             continue;
 
-                    if (CurrentFrame.Nleft == -1 && CurrentFrame.uRight[i2] > 0)
+                    if (CurrentFrame.leftKeyPointCount == -1 &&
+                        CurrentFrame.uRight[i2] > 0)
                     {
                         const float ur = uv(0) - CurrentFrame.mbf * invzc;
                         const float er = fabs(ur - CurrentFrame.uRight[i2]);
@@ -135,142 +143,161 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
 
                     const cv::Mat &d = CurrentFrame.descriptors.row(i2);
 
-                    const int dist = computeDescriptorDistance(dMP, d);
+                    const int distance =
+                        computeDescriptorDistance(mapPointDescriptor, d);
 
-                    if (dist < bestDist)
+                    if (distance < bestDistance)
                     {
-                        bestDist = dist;
-                        bestIdx2 = i2;
+                        bestDistance = distance;
+                        bestIndex2   = i2;
                     }
                 }
 
-                if (bestDist <= TH_HIGH)
+                if (bestDistance <= TH_HIGH)
                 {
-                    CurrentFrame.mapPoints[bestIdx2] = pMP;
+                    CurrentFrame.mapPoints[bestIndex2] = p_mapPoint;
                     nmatches++;
 
-                    if (mbCheckOrientation)
+                    if (shouldCheckOrientation)
                     {
-                        cv::KeyPoint kpLF =
-                            (LastFrame.Nleft == -1)
-                                ? LastFrame.keyPointsUndistorted[i]
-                            : (i < LastFrame.Nleft)
-                                ? LastFrame.keyPoints[i]
-                                : LastFrame.keyPointsRight[i - LastFrame.Nleft];
+                        cv::KeyPoint keyPointLf =
+                            (LastFrame.leftKeyPointCount == -1)
+                                ? LastFrame
+                                      .keyPointsUndistorted[histogramBinIndex]
+                            : (histogramBinIndex < LastFrame.leftKeyPointCount)
+                                ? LastFrame.keyPoints[histogramBinIndex]
+                                : LastFrame.keyPointsRight
+                                      [histogramBinIndex -
+                                       LastFrame.leftKeyPointCount];
 
-                        cv::KeyPoint kpCF =
-                            (CurrentFrame.Nleft == -1)
-                                ? CurrentFrame.keyPointsUndistorted[bestIdx2]
-                            : (bestIdx2 < CurrentFrame.Nleft)
-                                ? CurrentFrame.keyPoints[bestIdx2]
-                                : CurrentFrame
-                                      .keyPointsRight[bestIdx2 -
-                                                      CurrentFrame.Nleft];
-                        float rot = kpLF.angle - kpCF.angle;
+                        cv::KeyPoint keyPointCf =
+                            (CurrentFrame.leftKeyPointCount == -1)
+                                ? CurrentFrame.keyPointsUndistorted[bestIndex2]
+                            : (bestIndex2 < CurrentFrame.leftKeyPointCount)
+                                ? CurrentFrame.keyPoints[bestIndex2]
+                                : CurrentFrame.keyPointsRight
+                                      [bestIndex2 -
+                                       CurrentFrame.leftKeyPointCount];
+                        float rot = keyPointLf.angle - keyPointCf.angle;
                         if (rot < 0.0)
                             rot += 360.0f;
                         int bin = round(rot * factor);
                         if (bin == HISTO_LENGTH)
                             bin = 0;
                         assert(bin >= 0 && bin < HISTO_LENGTH);
-                        rotHist[bin].push_back(bestIdx2);
+                        rotHist[bin].push_back(bestIndex2);
                     }
                 }
-                if (CurrentFrame.Nleft != -1)
+                if (CurrentFrame.leftKeyPointCount != -1)
                 {
                     Eigen::Vector3f x3Dr =
                         CurrentFrame.getRelativePoseTrl() * x3Dc;
                     Eigen::Vector2f uv = CurrentFrame.p_camera->project(x3Dr);
 
-                    int nLastOctave =
-                        (LastFrame.Nleft == -1 || i < LastFrame.Nleft)
-                            ? LastFrame.keyPoints[i].octave
-                            : LastFrame.keyPointsRight[i - LastFrame.Nleft]
+                    int lastOctaveCount =
+                        (LastFrame.leftKeyPointCount == -1 ||
+                         histogramBinIndex < LastFrame.leftKeyPointCount)
+                            ? LastFrame.keyPoints[histogramBinIndex].octave
+                            : LastFrame
+                                  .keyPointsRight[histogramBinIndex -
+                                                  LastFrame.leftKeyPointCount]
                                   .octave;
 
                     // Search in a window. Size depends on scale
-                    float radius = th * CurrentFrame.scaleFactors[nLastOctave];
+                    float radius =
+                        th * CurrentFrame.scaleFactors[lastOctaveCount];
 
-                    vector<size_t> vIndices2;
+                    vector<size_t> indices2;
 
-                    if (bForward)
-                        vIndices2 = CurrentFrame.getFeaturesInArea(uv(0),
-                                                                   uv(1),
-                                                                   radius,
-                                                                   nLastOctave,
-                                                                   -1,
-                                                                   true);
-                    else if (bBackward)
-                        vIndices2 = CurrentFrame.getFeaturesInArea(uv(0),
-                                                                   uv(1),
-                                                                   radius,
-                                                                   0,
-                                                                   nLastOctave,
-                                                                   true);
-                    else
-                        vIndices2 =
+                    if (isMovingForward)
+                        indices2 =
                             CurrentFrame.getFeaturesInArea(uv(0),
                                                            uv(1),
                                                            radius,
-                                                           nLastOctave - 1,
-                                                           nLastOctave + 1,
+                                                           lastOctaveCount,
+                                                           -1,
+                                                           true);
+                    else if (isMovingBackward)
+                        indices2 =
+                            CurrentFrame.getFeaturesInArea(uv(0),
+                                                           uv(1),
+                                                           radius,
+                                                           0,
+                                                           lastOctaveCount,
+                                                           true);
+                    else
+                        indices2 =
+                            CurrentFrame.getFeaturesInArea(uv(0),
+                                                           uv(1),
+                                                           radius,
+                                                           lastOctaveCount - 1,
+                                                           lastOctaveCount + 1,
                                                            true);
 
-                    const cv::Mat dMP = pMP->getDescriptor();
+                    const cv::Mat mapPointDescriptor =
+                        p_mapPoint->getDescriptor();
 
-                    int bestDist = 256;
-                    int bestIdx2 = -1;
+                    int bestDistance = 256;
+                    int bestIndex2   = -1;
 
-                    for (vector<size_t>::const_iterator vit = vIndices2.begin(),
-                                                        vend = vIndices2.end();
+                    for (vector<size_t>::const_iterator vit  = indices2.begin(),
+                                                        vend = indices2.end();
                          vit != vend;
                          vit++)
                     {
                         const size_t i2 = *vit;
-                        if (CurrentFrame.mapPoints[i2 + CurrentFrame.Nleft])
-                            if (CurrentFrame.mapPoints[i2 + CurrentFrame.Nleft]
+                        if (CurrentFrame
+                                .mapPoints[i2 + CurrentFrame.leftKeyPointCount])
+                            if (CurrentFrame
+                                    .mapPoints[i2 +
+                                               CurrentFrame.leftKeyPointCount]
                                     ->getObservationCount() > 0)
                                 continue;
 
                         const cv::Mat &d = CurrentFrame.descriptors.row(
-                            i2 + CurrentFrame.Nleft);
+                            i2 + CurrentFrame.leftKeyPointCount);
 
-                        const int dist = computeDescriptorDistance(dMP, d);
+                        const int distance =
+                            computeDescriptorDistance(mapPointDescriptor, d);
 
-                        if (dist < bestDist)
+                        if (distance < bestDistance)
                         {
-                            bestDist = dist;
-                            bestIdx2 = i2;
+                            bestDistance = distance;
+                            bestIndex2   = i2;
                         }
                     }
 
-                    if (bestDist <= TH_HIGH)
+                    if (bestDistance <= TH_HIGH)
                     {
-                        CurrentFrame.mapPoints[bestIdx2 + CurrentFrame.Nleft] =
-                            pMP;
+                        CurrentFrame.mapPoints[bestIndex2 +
+                                               CurrentFrame.leftKeyPointCount] =
+                            p_mapPoint;
                         nmatches++;
-                        if (mbCheckOrientation)
+                        if (shouldCheckOrientation)
                         {
-                            cv::KeyPoint kpLF =
-                                (LastFrame.Nleft == -1)
-                                    ? LastFrame.keyPointsUndistorted[i]
-                                : (i < LastFrame.Nleft)
-                                    ? LastFrame.keyPoints[i]
-                                    : LastFrame
-                                          .keyPointsRight[i - LastFrame.Nleft];
+                            cv::KeyPoint keyPointLf =
+                                (LastFrame.leftKeyPointCount == -1)
+                                    ? LastFrame.keyPointsUndistorted
+                                          [histogramBinIndex]
+                                : (histogramBinIndex <
+                                   LastFrame.leftKeyPointCount)
+                                    ? LastFrame.keyPoints[histogramBinIndex]
+                                    : LastFrame.keyPointsRight
+                                          [histogramBinIndex -
+                                           LastFrame.leftKeyPointCount];
 
-                            cv::KeyPoint kpCF =
-                                CurrentFrame.keyPointsRight[bestIdx2];
+                            cv::KeyPoint keyPointCf =
+                                CurrentFrame.keyPointsRight[bestIndex2];
 
-                            float rot = kpLF.angle - kpCF.angle;
+                            float rot = keyPointLf.angle - keyPointCf.angle;
                             if (rot < 0.0)
                                 rot += 360.0f;
                             int bin = round(rot * factor);
                             if (bin == HISTO_LENGTH)
                                 bin = 0;
                             assert(bin >= 0 && bin < HISTO_LENGTH);
-                            rotHist[bin].push_back(bestIdx2 +
-                                                   CurrentFrame.Nleft);
+                            rotHist[bin].push_back(
+                                bestIndex2 + CurrentFrame.leftKeyPointCount);
                         }
                     }
                 }
@@ -279,7 +306,7 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
     }
 
     // Apply rotation consistency
-    if (mbCheckOrientation)
+    if (shouldCheckOrientation)
     {
         int ind1 = -1;
         int ind2 = -1;
@@ -287,13 +314,19 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
 
         computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3);
 
-        for (int i = 0; i < HISTO_LENGTH; i++)
+        for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
+             histogramBinIndex++)
         {
-            if (i != ind1 && i != ind2 && i != ind3)
+            if (histogramBinIndex != ind1 && histogramBinIndex != ind2 &&
+                histogramBinIndex != ind3)
             {
-                for (size_t j = 0, jend = rotHist[i].size(); j < jend; j++)
+                for (size_t binEntryIndex = 0,
+                            jend          = rotHist[histogramBinIndex].size();
+                     binEntryIndex < jend;
+                     binEntryIndex++)
                 {
-                    CurrentFrame.mapPoints[rotHist[i][j]] =
+                    CurrentFrame
+                        .mapPoints[rotHist[histogramBinIndex][binEntryIndex]] =
                         static_cast<MapPoint *>(nullptr);
                     nmatches--;
                 }

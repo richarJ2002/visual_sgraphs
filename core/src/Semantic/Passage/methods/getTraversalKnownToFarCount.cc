@@ -30,7 +30,7 @@ namespace semantic
 
 std::size_t Passage::getTraversalKnownToFarCount() const
 {
-    std::lock_guard<std::mutex> lock(mMutexType);
+    std::lock_guard<std::mutex> lock(typeMutex);
     return traversalKnownToFarCount;
 }
 

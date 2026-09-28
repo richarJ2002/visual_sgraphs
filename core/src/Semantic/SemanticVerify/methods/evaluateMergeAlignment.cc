@@ -34,7 +34,7 @@ SemanticMergeGateResult SemanticVerify::evaluateMergeAlignment(
     const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
     const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
     const g2o::Sim3            &transform_absorbedToSurviving_in,
-    const SemanticVerifyConfig &config_in)
+    const SemanticVerifyConfig &configuration_in)
 {
     SemanticMergeGateResult                                  result;
     std::map<std::string, const SemanticMergeRoomEvidence *> survivingById;
@@ -61,7 +61,7 @@ SemanticMergeGateResult SemanticVerify::evaluateMergeAlignment(
             checkFixedTransformWalls(match->second->walls,
                                      absorbedRoom.walls,
                                      transform_absorbedToSurviving_in,
-                                     config_in,
+                                     configuration_in,
                                      matchedWalls);
         result.matchedWallCount += matchedWalls;
         if (wallCheck == AlignmentCheck::CONTRADICTION)
@@ -83,7 +83,7 @@ SemanticMergeGateResult SemanticVerify::evaluateMergeAlignment(
             checkPassageTopology(match->second->context,
                                  absorbedRoom.context,
                                  transform_absorbedToSurviving_in,
-                                 config_in,
+                                 configuration_in,
                                  matchedPassages,
                                  topologyReason);
         result.matchedPassageCount += matchedPassages;

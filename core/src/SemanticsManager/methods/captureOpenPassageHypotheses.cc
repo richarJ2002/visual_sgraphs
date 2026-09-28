@@ -32,8 +32,8 @@ std::vector<semantic::OpenPassageHypothesisRecord>
     SemanticsManager::captureOpenPassageHypotheses(void) const
 {
     std::vector<semantic::OpenPassageHypothesisRecord> records;
-    records.reserve(openPassageEvidence_.size());
-    for (const OpenPassageEvidence &evidence : openPassageEvidence_)
+    records.reserve(openPassageEvidence.size());
+    for (const OpenPassageEvidence &evidence : openPassageEvidence)
     {
         semantic::OpenPassageHypothesisRecord record;
         record.supportingWallRef =

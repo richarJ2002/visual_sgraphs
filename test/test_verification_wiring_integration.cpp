@@ -144,15 +144,15 @@ semantic::SemanticCandidate makeCandidate(Map            *p_mapA_in,
                                           semantic::Room *p_roomB_in)
 {
     semantic::SemanticCandidate candidate;
-    candidate.mapAId                   = p_mapA_in->getId();
-    candidate.roomAId                  = p_roomA_in->getId();
-    candidate.mapBId                   = p_mapB_in->getId();
-    candidate.roomBId                  = p_roomB_in->getId();
-    candidate.minimumEvidenceSatisfied = true;
-    candidate.ambiguous                = true; // see production comment: the
-                                               // winner's own flag is
-                                               // always true and unused as
-                                               // a gate by itself.
+    candidate.mapAId                     = p_mapA_in->getId();
+    candidate.roomAId                    = p_roomA_in->getId();
+    candidate.mapBId                     = p_mapB_in->getId();
+    candidate.roomBId                    = p_roomB_in->getId();
+    candidate.isMinimumEvidenceSatisfied = true;
+    candidate.isAmbiguous                = true; // see production comment: the
+                                                 // winner's own flag is
+                                                 // always true and unused as
+                                                 // a gate by itself.
     return candidate;
 }
 
@@ -220,8 +220,8 @@ TEST(VerificationWiringIntegration,
     ASSERT_FALSE(history.empty());
     EXPECT_EQ(history.back().event,
               semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED);
-    EXPECT_TRUE(history.back().accepted);
-    EXPECT_TRUE(history.back().verificationPass);
+    EXPECT_TRUE(history.back().isAccepted);
+    EXPECT_TRUE(history.back().hasVerificationPassed);
 }
 
 TEST(VerificationWiringIntegration,
@@ -286,16 +286,16 @@ TEST(VerificationWiringIntegration, GenuineTiedLeaderIsSkipped)
      * either wrongly skip every candidate ever, or wrongly attempt a room
      * lookup here; either way the tracker must stay UNKNOWN with no crash. */
     semantic::SemanticCandidate first;
-    first.mapAId                   = 1U;
-    first.roomAId                  = 1;
-    first.mapBId                   = 2U;
-    first.roomBId                  = 2;
-    first.minimumEvidenceSatisfied = true;
-    first.ambiguous                = true;
+    first.mapAId                     = 1U;
+    first.roomAId                    = 1;
+    first.mapBId                     = 2U;
+    first.roomBId                    = 2;
+    first.isMinimumEvidenceSatisfied = true;
+    first.isAmbiguous                = true;
 
     semantic::SemanticCandidate second = first;
     second.roomBId                     = 3;
-    second.ambiguous                   = true;
+    second.isAmbiguous                 = true;
 
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);

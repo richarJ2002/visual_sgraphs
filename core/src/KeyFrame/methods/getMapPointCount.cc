@@ -37,15 +37,17 @@ namespace core
 
 int KeyFrame::getMapPointCount()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
-    int                numberMPs = 0;
-    for (size_t i = 0, iend = mapPoints.size(); i < iend; i++)
+    unique_lock<mutex> lock(featuresMutex);
+    int                numberMapPoints = 0;
+    for (size_t mapPointIndex = 0, iend = mapPoints.size();
+         mapPointIndex < iend;
+         mapPointIndex++)
     {
-        if (!mapPoints[i])
+        if (!mapPoints[mapPointIndex])
             continue;
-        numberMPs++;
+        numberMapPoints++;
     }
-    return numberMPs;
+    return numberMapPoints;
 }
 
 } // namespace core

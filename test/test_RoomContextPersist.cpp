@@ -219,13 +219,13 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
     ASSERT_EQ(snap.wallBounds.size(), snap.wallNormals.size());
     ASSERT_EQ(snap.wallBounds.size(), 3U);
 
-    EXPECT_TRUE(snap.wallBounds[0].valid);
+    EXPECT_TRUE(snap.wallBounds[0].isValid);
     EXPECT_LT(snap.wallBounds[0].minU_m, snap.wallBounds[0].maxU_m);
     EXPECT_LT(snap.wallBounds[0].minV_m, snap.wallBounds[0].maxV_m);
 
-    EXPECT_FALSE(snap.wallBounds[1].valid);
+    EXPECT_FALSE(snap.wallBounds[1].isValid);
 
-    EXPECT_FALSE(snap.wallBounds[2].valid);
+    EXPECT_FALSE(snap.wallBounds[2].isValid);
     EXPECT_FALSE(std::isfinite(snap.wallNormals[2].x()));
 }
 
@@ -325,10 +325,10 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
 
     const semantic::PassageContext &full = p_knownSnap->passageContexts[0];
     EXPECT_EQ(full.id, 40);
-    EXPECT_TRUE(full.passable);
+    EXPECT_TRUE(full.isPassable);
     EXPECT_TRUE(full.hasFarSideRoom);
     EXPECT_EQ(full.secondaryRoomId, 21);
-    EXPECT_TRUE(full.apertureValid);
+    EXPECT_TRUE(full.isApertureValid);
     EXPECT_DOUBLE_EQ(full.width_m, 1.2);
     EXPECT_DOUBLE_EQ(full.height_m, 2.1);
     EXPECT_TRUE(full.hasKnownSideDirection);
@@ -344,9 +344,9 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
 
     const semantic::PassageContext &sparse = p_knownSnap->passageContexts[1];
     EXPECT_EQ(sparse.id, 41);
-    EXPECT_FALSE(sparse.passable);
-    EXPECT_FALSE(sparse.hasFarSideRoom); // absence, not a sentinel ID
-    EXPECT_FALSE(sparse.apertureValid);  // negative width
+    EXPECT_FALSE(sparse.isPassable);
+    EXPECT_FALSE(sparse.hasFarSideRoom);  // absence, not a sentinel ID
+    EXPECT_FALSE(sparse.isApertureValid); // negative width
     EXPECT_FALSE(sparse.hasKnownSideDirection);
     EXPECT_FALSE(sparse.hasKnownSideRoom);
     EXPECT_EQ(sparse.knownSideRoomId, -1);
@@ -357,7 +357,7 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
 
     const semantic::PassageContext &nonFinite = p_knownSnap->passageContexts[2];
     EXPECT_EQ(nonFinite.id, 42);
-    EXPECT_FALSE(nonFinite.apertureValid); // NaN height, default width
+    EXPECT_FALSE(nonFinite.isApertureValid); // NaN height, default width
     EXPECT_FALSE(nonFinite.hasFarSideRoom);
 }
 
@@ -391,9 +391,9 @@ TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
     ASSERT_EQ(history.count(mapId), 1U);
     const semantic::RoomContextSnapshot &snap = history.at(mapId).front();
     ASSERT_EQ(snap.wallBounds.size(), 1U);
-    EXPECT_FALSE(snap.wallBounds.front().valid);
+    EXPECT_FALSE(snap.wallBounds.front().isValid);
     ASSERT_EQ(snap.passageContexts.size(), 1U);
-    EXPECT_FALSE(snap.passageContexts.front().apertureValid);
+    EXPECT_FALSE(snap.passageContexts.front().isApertureValid);
     EXPECT_FALSE(snap.passageContexts.front().hasFarSideRoom);
 }
 
@@ -487,7 +487,7 @@ TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
     EXPECT_EQ(history.at(oldMapId).front().roomId, 5);
     EXPECT_EQ(history.at(oldMapId).front().roomTag, "room_5");
     ASSERT_EQ(history.at(oldMapId).front().wallBounds.size(), 1U);
-    EXPECT_TRUE(history.at(oldMapId).front().wallBounds.front().valid);
+    EXPECT_TRUE(history.at(oldMapId).front().wallBounds.front().isValid);
 
     /* Map identity is carried by the history container key alone; no
      * separate snapshot-level mapId is introduced. */
@@ -522,7 +522,7 @@ TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
                         history.at(oldMapId).front().roomId ==
                             static_cast<int>(iteration) &&
                         history.at(oldMapId).front().wallBounds.size() == 1U &&
-                        history.at(oldMapId).front().wallBounds.front().valid;
+                        history.at(oldMapId).front().wallBounds.front().isValid;
         if (ok)
         {
             ++successCount;

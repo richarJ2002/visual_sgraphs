@@ -32,7 +32,7 @@ namespace core
 
 int Atlas::reserveFloorIdentity(void)
 {
-    return nextFloorIdentity_.fetch_add(1, std::memory_order_relaxed);
+    return nextFloorIdentity.fetch_add(1, std::memory_order_relaxed);
 }
 
 } // namespace core

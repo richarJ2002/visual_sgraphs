@@ -44,17 +44,20 @@ void SemanticsManager::mergeOverlappingPassages(void)
     const std::vector<semantic::Passage *> allPassages =
         p_atlas->getAllPassages();
 
-    for (std::size_t i = 0U; i < allPassages.size(); ++i)
+    for (std::size_t allPassageIndex = 0U; allPassageIndex < allPassages.size();
+         ++allPassageIndex)
     {
-        semantic::Passage *p_first = allPassages[i];
+        semantic::Passage *p_first = allPassages[allPassageIndex];
         if (p_first == nullptr || p_first->isBad())
         {
             continue;
         }
 
-        for (std::size_t j = i + 1U; j < allPassages.size(); ++j)
+        for (std::size_t otherPassageIndex = allPassageIndex + 1U;
+             otherPassageIndex < allPassages.size();
+             ++otherPassageIndex)
         {
-            semantic::Passage *p_second = allPassages[j];
+            semantic::Passage *p_second = allPassages[otherPassageIndex];
             if (p_second == nullptr || p_second->isBad())
             {
                 continue;
@@ -168,7 +171,7 @@ void SemanticsManager::mergeOverlappingPassages(void)
                     p_absorbed->getProspectiveRoom());
             }
 
-            if (loggedPassageMergeIds_
+            if (loggedPassageMergeIds
                     .insert({p_survivor->getId(), p_absorbed->getId()})
                     .second)
             {

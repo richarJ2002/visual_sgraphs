@@ -28,10 +28,10 @@ namespace core
 namespace semantic
 {
 
-void Passage::setCentroid(const Eigen::Vector3d &value)
+void Passage::setCentroid(const Eigen::Vector3d &value_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
-    centroid = value;
+    std::lock_guard<std::mutex> lock(geometryMutex);
+    centroid = value_in;
 }
 
 } // namespace semantic

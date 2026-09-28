@@ -34,7 +34,7 @@ AlignmentCheck
     checkPassageTopology(const RoomContextSnapshot  &survivingContext_in,
                          const RoomContextSnapshot  &absorbedContext_in,
                          const g2o::Sim3            &transform_in,
-                         const SemanticVerifyConfig &config_in,
+                         const SemanticVerifyConfig &configuration_in,
                          std::size_t                &matchedCount_out,
                          SemanticMergeReason        &contradictionReason_out)
 {
@@ -73,7 +73,7 @@ AlignmentCheck
         const PassageContext &absorbedPassage  = *entry.second;
         const PassageContext &survivingPassage = *match->second;
         ++matchedCount_out;
-        if (absorbedPassage.passable != survivingPassage.passable)
+        if (absorbedPassage.isPassable != survivingPassage.isPassable)
         {
             contradictionReason_out =
                 SemanticMergeReason::PASSAGE_IDENTITY_CONTRADICTION;
@@ -125,7 +125,7 @@ AlignmentCheck
                 transformedDirection.normalized().dot(
                     survivingPassage.knownSideDirection_World.normalized());
             if (!std::isfinite(directionAgreement) ||
-                directionAgreement < config_in.minAbsCosNormalAngle)
+                directionAgreement < configuration_in.minAbsCosNormalAngle)
             {
                 contradictionReason_out =
                     SemanticMergeReason::PASSAGE_DIRECTION_CONTRADICTION;

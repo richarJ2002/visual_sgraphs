@@ -28,7 +28,7 @@ namespace IMU
 
 Eigen::Matrix3f Preintegrated::getOriginalDeltaRotation()
 {
-    std::unique_lock<std::mutex> lock(mMutex);
+    std::unique_lock<std::mutex> lock(preintegrationMutex);
     return dR;
 }
 

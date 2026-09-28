@@ -34,7 +34,7 @@ namespace geometric
 
 void Plane::setMap(core::Map *p_map_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     p_map = p_map_in;
 }
 

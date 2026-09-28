@@ -33,7 +33,7 @@ namespace core
 
 float Sim3Solver::getEstimatedScale()
 {
-    return mBestScale;
+    return bestScale;
 }
 
 } // namespace core

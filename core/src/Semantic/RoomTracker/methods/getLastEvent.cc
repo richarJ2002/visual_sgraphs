@@ -28,7 +28,7 @@ namespace semantic
 
 const TransitionEvent &RoomTracker::getLastEvent() const
 {
-    return lastEvent_;
+    return lastEvent;
 }
 
 } // namespace semantic

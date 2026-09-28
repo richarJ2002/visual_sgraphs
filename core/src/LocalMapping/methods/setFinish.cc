@@ -34,10 +34,10 @@ namespace core
 
 void LocalMapping::setFinish()
 {
-    unique_lock<mutex> lock(mMutexFinish);
-    finished = true;
-    unique_lock<mutex> lock2(mMutexStop);
-    stopped = true;
+    unique_lock<mutex> finishLock(finishMutex);
+    hasFinished = true;
+    unique_lock<mutex> stopLock(stopMutex);
+    hasStopped = true;
 }
 
 } // namespace core

@@ -54,39 +54,39 @@ namespace vs_graphs
 namespace core
 {
 
-void MLPnPsolver::setRansacParameters(double probability,
-                                      int    minInliers,
-                                      int    maxIterations,
-                                      int    minSet,
-                                      float  epsilon,
-                                      float  th2)
+void MLPnPsolver::setRansacParameters(double probability_in,
+                                      int    minimumInliers_in,
+                                      int    maximumIterations_in,
+                                      int    minimumSet_in,
+                                      float  epsilon_in,
+                                      float  threshold2_in)
 {
-    ransacProb          = probability;
-    ransacMinInliers    = minInliers;
-    ransacMaxIterations = maxIterations;
-    ransacEpsilon       = epsilon;
-    ransacMinSet        = minSet;
+    ransacProb          = probability_in;
+    ransacMinInliers    = minimumInliers_in;
+    ransacMaxIterations = maximumIterations_in;
+    ransacEpsilon       = epsilon_in;
+    ransacMinSet        = minimumSet_in;
 
-    N = points2D.size(); // number of correspondences
+    correspondenceCount = points2D.size(); // number of correspondences
 
-    inlierFlags.resize(N);
+    inlierFlags.resize(correspondenceCount);
 
     // Adjust Parameters according to number of correspondences
-    int nMinInliers = N * ransacEpsilon;
-    if (nMinInliers < ransacMinInliers)
-        nMinInliers = ransacMinInliers;
-    if (nMinInliers < minSet)
-        nMinInliers = minSet;
-    ransacMinInliers = nMinInliers;
+    int minimumInlierCount = correspondenceCount * ransacEpsilon;
+    if (minimumInlierCount < ransacMinInliers)
+        minimumInlierCount = ransacMinInliers;
+    if (minimumInlierCount < minimumSet_in)
+        minimumInlierCount = minimumSet_in;
+    ransacMinInliers = minimumInlierCount;
 
-    if (ransacEpsilon < (float)ransacMinInliers / N)
-        ransacEpsilon = (float)ransacMinInliers / N;
+    if (ransacEpsilon < (float)ransacMinInliers / correspondenceCount)
+        ransacEpsilon = (float)ransacMinInliers / correspondenceCount;
 
     // Set RANSAC iterations according to probability, epsilon, and max
     // iterations
     int nIterations;
 
-    if (ransacMinInliers == N)
+    if (ransacMinInliers == correspondenceCount)
         nIterations = 1;
     else
         nIterations =
@@ -95,8 +95,10 @@ void MLPnPsolver::setRansacParameters(double probability,
     ransacMaxIterations = max(1, min(nIterations, ransacMaxIterations));
 
     maxError.resize(sigmaSquared.size());
-    for (size_t i = 0; i < sigmaSquared.size(); i++)
-        maxError[i] = sigmaSquared[i] * th2;
+    for (size_t sigmaSquaredIndex = 0; sigmaSquaredIndex < sigmaSquared.size();
+         sigmaSquaredIndex++)
+        maxError[sigmaSquaredIndex] =
+            sigmaSquared[sigmaSquaredIndex] * threshold2_in;
 }
 
 } // namespace core

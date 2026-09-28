@@ -60,21 +60,21 @@ void SemanticsManager::run(void)
         std::unique_lock<std::mutex> semanticUpdateLock =
             p_atlas->acquireSemanticUpdateLock();
 
-        pipelineSemanticCycle_ = ++summaryCycle;
+        pipelineSemanticCycle = ++summaryCycle;
         resetTemporalStateForMap(p_atlas->getCurrentMap());
         ensureActiveMapBootstrapHierarchy();
 
         /* Validate the low-level semantic planes */
-        geometric::Plane *mainGroundPlane = p_atlas->getBiggestGroundPlane();
+        geometric::Plane *p_mainGroundPlane = p_atlas->getBiggestGroundPlane();
 
         /* If there is a ground plane, find its transform and filter planes */
-        if (mainGroundPlane != nullptr)
+        if (p_mainGroundPlane != nullptr)
         {
             /* Find the transform from ground plane to horizontal */
-            planePoseMat = computePlaneToHorizontal(mainGroundPlane);
+            planePoseMat = computePlaneToHorizontal(p_mainGroundPlane);
 
             /* Filter ground planes */
-            filterGroundPlanes(mainGroundPlane);
+            filterGroundPlanes(p_mainGroundPlane);
 
             /* Filter the wall planes */
             filterWallPlanes();
@@ -169,7 +169,7 @@ void SemanticsManager::run(void)
 
                 const int  roomId = p_candidate->getId();
                 const bool isTrackedProspective =
-                    prospectiveRoomCycles_.count(roomId) > 0U;
+                    prospectiveRoomCycles.count(roomId) > 0U;
 
                 std::vector<vs_graphs::core::semantic::Passage *>
                     referencingPassages;
@@ -213,7 +213,7 @@ void SemanticsManager::run(void)
                     hasValidGeometry)
                 {
                     /* Wall count and age are deliberately irrelevant here. */
-                    prospectiveRoomCycles_[roomId] = 0;
+                    prospectiveRoomCycles[roomId] = 0;
                     continue;
                 }
 
@@ -231,7 +231,7 @@ void SemanticsManager::run(void)
                         p_candidateMap->eraseMarkerBasedMapRoom(p_candidate);
                     }
                     p_candidate->setBad();
-                    if (loggedRoomCleanupIds_.insert(roomId).second)
+                    if (loggedRoomCleanupIds.insert(roomId).second)
                     {
                         std::cout << "[SemMgr] Cleaning up orphaned "
                                      "prospective semantic::Room#"
@@ -242,7 +242,7 @@ void SemanticsManager::run(void)
                     }
                 }
 
-                prospectiveRoomCycles_.erase(roomId);
+                prospectiveRoomCycles.erase(roomId);
             }
         }
 
@@ -322,51 +322,54 @@ void SemanticsManager::run(void)
                     currentSnapshot.snapshots;
             }
         }
-        semantic::SemanticCandidateConfig candidateConfig;
-        candidateConfig.topK = p_sysParams->candidateGen.topK;
-        candidateConfig.candidatePairCap =
+        semantic::SemanticCandidateConfig candidateConfiguration;
+        candidateConfiguration.topK = p_sysParams->candidateGen.topK;
+        candidateConfiguration.candidatePairCap =
             p_sysParams->candidateGen.candidatePairCap;
-        candidateConfig.topologyNodesCap =
+        candidateConfiguration.topologyNodesCap =
             p_sysParams->candidateGen.topologyNodesCap;
-        candidateConfig.globalFallbackCap =
+        candidateConfiguration.globalFallbackCap =
             p_sysParams->candidateGen.globalFallbackCap;
-        candidateConfig.weightAngle  = p_sysParams->candidateGen.weightAngle;
-        candidateConfig.weightExtent = p_sysParams->candidateGen.weightExtent;
-        candidateConfig.weightAperture =
+        candidateConfiguration.weightAngle =
+            p_sysParams->candidateGen.weightAngle;
+        candidateConfiguration.weightExtent =
+            p_sysParams->candidateGen.weightExtent;
+        candidateConfiguration.weightAperture =
             p_sysParams->candidateGen.weightAperture;
-        candidateConfig.weightTopology =
+        candidateConfiguration.weightTopology =
             p_sysParams->candidateGen.weightTopology;
-        candidateConfig.angleMissingPenalty =
+        candidateConfiguration.angleMissingPenalty =
             p_sysParams->candidateGen.angleMissingPenalty;
-        candidateConfig.extentMissingPenalty =
+        candidateConfiguration.extentMissingPenalty =
             p_sysParams->candidateGen.extentMissingPenalty;
-        candidateConfig.apertureMissingPenalty =
+        candidateConfiguration.apertureMissingPenalty =
             p_sysParams->candidateGen.apertureMissingPenalty;
-        candidateConfig.ambiguityMargin =
+        candidateConfiguration.ambiguityMargin =
             p_sysParams->candidateGen.ambiguityMargin;
-        candidateConfig.angleTolerance_rad =
+        candidateConfiguration.angleTolerance_rad =
             p_sysParams->candidateGen.angleTolerance_rad;
-        candidateConfig.runtimeBudget_ms =
+        candidateConfiguration.runtimeBudget_ms =
             p_sysParams->candidateGen.runtimeBudget_ms;
-        candidateConfig.descriptorElementsCap =
+        candidateConfiguration.descriptorElementsCap =
             p_sysParams->candidateGen.descriptorElementsCap;
-        candidateConfig.topoRefinementIters =
+        candidateConfiguration.topoRefinementIters =
             p_sysParams->candidateGen.topoRefinementIters;
         /* The "last-confirmed room" anchor for adjacency-
          * prioritised candidate search. -1 (unset) maps to no anchor. */
-        const int                lastKnownRoomId = getLastKnownRoomId();
+        const int                lastKnownRoomIdSnapshot = getLastKnownRoomId();
         const std::optional<int> anchorRoomId =
-            lastKnownRoomId >= 0 ? std::optional<int>(lastKnownRoomId)
-                                 : std::nullopt;
+            lastKnownRoomIdSnapshot >= 0
+                ? std::optional<int>(lastKnownRoomIdSnapshot)
+                : std::nullopt;
         const std::vector<semantic::SemanticCandidate> candidates =
             semantic::SemanticCandidates::generate(copiedContext,
-                                                   candidateConfig,
+                                                   candidateConfiguration,
                                                    anchorRoomId);
         std::cout << "[SemMgr] semantic_candidates count=" << candidates.size()
                   << std::endl;
 
         /* Run the geometric verifier on the single best candidate and feed
-         * the resulting VerificationVerdict to roomTracker_ via
+         * the resulting VerificationVerdict to roomTracker via
          * submitVerificationVerdict(). This still only makes the *verdict*
          * real -- it must not call Atlas::MergeMapPair() or otherwise mutate
          * the Atlas; that trigger is a separate, deliberately gated step. */
@@ -420,7 +423,7 @@ void SemanticsManager::run(void)
             if (evaluateWallAdmissionEvidence(p_plane,
                                               p_sysParams,
                                               pipelineGroundNormal_World)
-                    .admissible)
+                    .isAdmissible)
             {
                 admissibleWallCount++;
             }
@@ -456,8 +459,8 @@ void SemanticsManager::run(void)
             skeletonVertexCount += cluster.size();
         }
         const std::size_t pendingWallCount = std::count_if(
-            undefendedWalls_.begin(),
-            undefendedWalls_.end(),
+            undefendedWalls.begin(),
+            undefendedWalls.end(),
             [&ownedWallIds](
                 const std::pair<const int, UndefendedWallState> &entry)
             { return ownedWallIds.count(entry.first) == 0U; });
@@ -470,7 +473,7 @@ void SemanticsManager::run(void)
                   << (p_pipelineMap != nullptr
                           ? static_cast<long long>(p_pipelineMap->getId())
                           : -1)
-                  << ",\"semantic_cycle\":" << pipelineSemanticCycle_
+                  << ",\"semantic_cycle\":" << pipelineSemanticCycle
                   << ",\"current_room_id\":" << getCurrentRoomId()
                   << ",\"raw_planes\":" << pipelinePlanes.size()
                   << ",\"wall_class_planes\":" << wallClassCount
@@ -497,7 +500,7 @@ void SemanticsManager::run(void)
          * ownership, passage, room, and completeness decisions -- this
          * never mutates Atlas/Map/Room/Wall/Passage state.
          * ------------------------------------------------------------------ */
-        const std::uint64_t semanticCycle = pipelineSemanticCycle_;
+        const std::uint64_t semanticCycle = pipelineSemanticCycle;
 
         semantic::SemanticGraphSnapshot snapshot =
             semantic::captureSemanticGraphSnapshot(p_atlas);
@@ -544,17 +547,17 @@ void SemanticsManager::run(void)
             std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - evaluationStart);
 
-        mSemanticReportCache.update(snapshot,
-                                    evaluationReport,
-                                    completenessResults,
-                                    semanticCycle,
-                                    snapshot.currentMapId,
-                                    currentMapRevision,
-                                    topologyDigest,
-                                    fullGeometryDigest,
-                                    evaluationDuration);
+        semanticReportCache.update(snapshot,
+                                   evaluationReport,
+                                   completenessResults,
+                                   semanticCycle,
+                                   snapshot.currentMapId,
+                                   currentMapRevision,
+                                   topologyDigest,
+                                   fullGeometryDigest,
+                                   evaluationDuration);
 
-        logSemanticDiagnostics(mSemanticReportCache.getLatest());
+        logSemanticDiagnostics(semanticReportCache.getLatest());
 
         /* Find the time after it took to run the loop */
         const std::chrono::steady_clock::time_point end =

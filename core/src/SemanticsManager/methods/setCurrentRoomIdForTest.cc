@@ -25,8 +25,8 @@ namespace core
 
 void SemanticsManager::setCurrentRoomIdForTest(const int roomId_in)
 {
-    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-    currentRoomId_ = roomId_in;
+    std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+    currentRoomId = roomId_in;
     p_atlas->setCurrentSemanticRoomIdentity(roomId_in);
 }
 

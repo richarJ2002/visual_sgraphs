@@ -34,10 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-void MapPoint::PostLoad(map<long unsigned int, KeyFrame *> &mpKFid,
-                        map<long unsigned int, MapPoint *> &mpMPid)
+void MapPoint::postLoad(map<long unsigned int, KeyFrame *> &keyFrameId_in,
+                        map<long unsigned int, MapPoint *> &mapPointId_in)
 {
-    p_referenceKeyFrame = mpKFid[backupRefKeyFrameId];
+    p_referenceKeyFrame = keyFrameId_in[backupRefKeyFrameId];
     if (!p_referenceKeyFrame)
     {
         cout << "ERROR: MP without KF reference " << backupRefKeyFrameId
@@ -46,27 +46,28 @@ void MapPoint::PostLoad(map<long unsigned int, KeyFrame *> &mpKFid,
     p_replaced = static_cast<MapPoint *>(nullptr);
     if (backupReplacedId >= 0)
     {
-        map<long unsigned int, MapPoint *>::iterator it =
-            mpMPid.find(backupReplacedId);
-        if (it != mpMPid.end())
-            p_replaced = it->second;
+        map<long unsigned int, MapPoint *>::iterator mapPointIdIt =
+            mapPointId_in.find(backupReplacedId);
+        if (mapPointIdIt != mapPointId_in.end())
+            p_replaced = mapPointIdIt->second;
     }
 
     observations.clear();
 
     for (map<long unsigned int, int>::const_iterator
-             it  = backupObservationIds1.begin(),
-             end = backupObservationIds1.end();
-         it != end;
-         ++it)
+             mapPointIdIt = backupObservationIds1.begin(),
+             end          = backupObservationIds1.end();
+         mapPointIdIt != end;
+         ++mapPointIdIt)
     {
-        KeyFrame                                   *pKFi = mpKFid[it->first];
+        KeyFrame *p_keyFrame = keyFrameId_in[mapPointIdIt->first];
         map<long unsigned int, int>::const_iterator it2 =
-            backupObservationIds2.find(it->first);
-        std::tuple<int, int> indexes = tuple<int, int>(it->second, it2->second);
-        if (pKFi)
+            backupObservationIds2.find(mapPointIdIt->first);
+        std::tuple<int, int> indexes =
+            tuple<int, int>(mapPointIdIt->second, it2->second);
+        if (p_keyFrame)
         {
-            observations[pKFi] = indexes;
+            observations[p_keyFrame] = indexes;
         }
     }
 

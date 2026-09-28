@@ -25,10 +25,10 @@ namespace core
 namespace semantic
 {
 
-void Marker::setMarkerType(Marker::MarkerVariant newType)
+void Marker::setMarkerType(Marker::MarkerVariant newType_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    markerType = newType;
+    std::lock_guard<std::mutex> lock(stateMutex);
+    markerType = newType_in;
 }
 
 } // namespace semantic

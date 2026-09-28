@@ -37,7 +37,7 @@ namespace core
 
 vector<KeyFrame *> KeyFrame::getVectorCovisibleKeyFrames()
 {
-    unique_lock<mutex> lock(mMutexConnections);
+    unique_lock<mutex> lock(connectionsMutex);
     return orderedConnectedKeyFrames;
 }
 

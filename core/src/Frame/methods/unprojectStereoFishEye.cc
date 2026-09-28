@@ -43,9 +43,9 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f Frame::unprojectStereoFishEye(const int &i)
+Eigen::Vector3f Frame::unprojectStereoFishEye(const int &index_in)
 {
-    return rotationRwc * stereoPoints3D[i] + centerOw;
+    return rotationRwc * stereoPoints3D[index_in] + centerOw;
 }
 
 } // namespace core

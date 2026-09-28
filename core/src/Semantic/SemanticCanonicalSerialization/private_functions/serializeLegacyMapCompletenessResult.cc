@@ -57,7 +57,7 @@ nlohmann::json serializeLegacyMapCompletenessResult(
     std::sort(danglingPassageIds.begin(), danglingPassageIds.end());
     json["danglingPassageIds"] = danglingPassageIds;
 
-    json["mapFullyModeled"] = value_in.mapFullyModeled;
+    json["mapFullyModeled"] = value_in.isMapFullyModeled;
     return json;
 }
 

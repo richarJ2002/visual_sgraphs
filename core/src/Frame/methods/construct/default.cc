@@ -47,14 +47,14 @@ namespace core
 
 Frame::Frame() :
     p_poseImuConstraint(nullptr),
-    poseAvailable(false),
-    velocityAvailable(false),
+    isPoseAvailable(false),
+    isVelocityAvailable(false),
     p_imuPreintegrated(nullptr),
     p_previousFrame(nullptr),
     p_imuPreintegratedFrame(nullptr),
     p_referenceKeyFrame(static_cast<KeyFrame *>(nullptr)),
     isFrameSet(false),
-    imuPreintegrated(false)
+    hasImuPreintegration(false)
 {
 #ifdef REGISTER_TIMES
     stereoMatchTime   = 0;

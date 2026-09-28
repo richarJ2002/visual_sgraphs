@@ -26,7 +26,7 @@ namespace core
 int SemanticsManager::ensureActiveMapBootstrapHierarchyForTest(
     const Eigen::Vector3d &cameraPosition_World_m_in)
 {
-    pipelineSemanticCycle_++;
+    pipelineSemanticCycle++;
     return static_cast<int>(
         ensureActiveMapBootstrapHierarchy(cameraPosition_World_m_in));
 }

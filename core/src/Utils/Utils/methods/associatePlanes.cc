@@ -158,22 +158,22 @@ int Utils::associatePlanes(
     double bestAssociationScore = std::numeric_limits<double>::max();
 
     /* Iterate through every mapped plane */
-    for (geometric::Plane *mappedPlane : mappedPlanes_in)
+    for (geometric::Plane *p_mappedPlane : mappedPlanes_in)
     {
         /* Skip invalid mapped planes */
-        if (mappedPlane == nullptr || mappedPlane->isBad())
+        if (p_mappedPlane == nullptr || p_mappedPlane->isBad())
         {
             continue;
         }
 
         /* Extract the mapped plane point cloud */
         const geometric::Plane::GeometrySnapshot mappedGeometry =
-            mappedPlane->getGeometrySnapshot();
-        const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr mappedCloud =
+            p_mappedPlane->getGeometrySnapshot();
+        const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_mappedCloud =
             mappedGeometry.supportCloud;
 
         /* Skip mapped planes without finite geometry */
-        if (mappedCloud == nullptr || mappedCloud->empty())
+        if (p_mappedCloud == nullptr || p_mappedCloud->empty())
         {
             continue;
         }
@@ -185,7 +185,7 @@ int Utils::associatePlanes(
          * observation so that it can accumulate enough votes for confirmation.
          */
         const geometric::Plane::PlaneVariant mappedPlaneType =
-            mappedPlane->getExpectedPlaneType();
+            p_mappedPlane->getExpectedPlaneType();
 
         const bool semanticTypesCompatible =
             observedPlaneType_in == geometric::Plane::PlaneVariant::UNDEFINED ||
@@ -235,7 +235,7 @@ int Utils::associatePlanes(
             observationOrigin_World_m_in->allFinite())
         {
             const ObservationSideEvidence mappedObservationSide =
-                getMedianObservationSide_World_m(mappedPlane, mappedEquation);
+                getMedianObservationSide_World_m(p_mappedPlane, mappedEquation);
 
             const double givenObservationSide_m =
                 mappedEquation.head<3>().dot(
@@ -244,7 +244,7 @@ int Utils::associatePlanes(
 
             constexpr double minimumReliableSideDistance_m = 0.10;
 
-            if (mappedObservationSide.ambiguous)
+            if (mappedObservationSide.isAmbiguous)
             {
                 continue;
             }
@@ -287,7 +287,7 @@ int Utils::associatePlanes(
         const bool finiteWallExtentsCompatible =
             useWallExtension &&
             finiteWallExtentsAreCompatible(
-                mappedCloud,
+                p_mappedCloud,
                 p_observedCloud_in,
                 mappedEquation.head<3>(),
                 p_sysParams->semSeg.reassociate.wallExtension
@@ -309,7 +309,7 @@ int Utils::associatePlanes(
          */
         pcl::KdTreeFLANN<pcl::PointXYZRGBA> mappedCloudSearch;
 
-        mappedCloudSearch.setInputCloud(mappedCloud);
+        mappedCloudSearch.setInputCloud(p_mappedCloud);
 
         const std::size_t samplingStride = std::max<std::size_t>(
             1,
@@ -438,7 +438,7 @@ int Utils::associatePlanes(
         {
             bestAssociationScore = associationScore;
 
-            bestPlaneId = mappedPlane->getId();
+            bestPlaneId = p_mappedPlane->getId();
         }
     }
 

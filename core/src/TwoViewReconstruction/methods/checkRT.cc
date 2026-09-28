@@ -30,76 +30,83 @@ namespace vs_graphs
 namespace core
 {
 
-int TwoViewReconstruction::checkRT(const Eigen::Matrix3f      &R,
-                                   const Eigen::Vector3f      &t,
-                                   const vector<cv::KeyPoint> &vKeys1,
-                                   const vector<cv::KeyPoint> &vKeys2,
-                                   const vector<Match>        &vMatches12,
-                                   vector<bool>               &vbMatchesInliers,
-                                   const Eigen::Matrix3f      &K,
-                                   vector<cv::Point3f>        &vP3D,
-                                   float                       th2,
-                                   vector<bool>               &vbGood,
-                                   float                      &parallax)
+int TwoViewReconstruction::checkRT(const Eigen::Matrix3f      &R_in,
+                                   const Eigen::Vector3f      &t_in,
+                                   const vector<cv::KeyPoint> &keys1_in,
+                                   const vector<cv::KeyPoint> &keys2_in,
+                                   const vector<Match>        &matches12_in,
+                                   vector<bool> &matchesInliersFlags_in,
+                                   const Eigen::Matrix3f &K_in,
+                                   vector<cv::Point3f>   &vP3D_inout,
+                                   float                  threshold2_in,
+                                   vector<bool>          &goodFlags_out,
+                                   float                 &parallax_out)
 {
     // Calibration parameters
-    const float fx = K(0, 0);
-    const float fy = K(1, 1);
-    const float cx = K(0, 2);
-    const float cy = K(1, 2);
+    const float fx = K_in(0, 0);
+    const float fy = K_in(1, 1);
+    const float cx = K_in(0, 2);
+    const float cy = K_in(1, 2);
 
-    vbGood = vector<bool>(vKeys1.size(), false);
-    vP3D.resize(vKeys1.size());
+    goodFlags_out = vector<bool>(keys1_in.size(), false);
+    vP3D_inout.resize(keys1_in.size());
 
-    vector<float> vCosParallax;
-    vCosParallax.reserve(vKeys1.size());
+    vector<float> cosParallaxes;
+    cosParallaxes.reserve(keys1_in.size());
 
     // Camera 1 Projection Matrix K[I|0]
     Eigen::Matrix<float, 3, 4> P1;
     P1.setZero();
-    P1.block<3, 3>(0, 0) = K;
+    P1.block<3, 3>(0, 0) = K_in;
 
     Eigen::Vector3f O1;
     O1.setZero();
 
     // Camera 2 Projection Matrix K[R|t]
     Eigen::Matrix<float, 3, 4> P2;
-    P2.block<3, 3>(0, 0) = R;
-    P2.block<3, 1>(0, 3) = t;
-    P2                   = K * P2;
+    P2.block<3, 3>(0, 0) = R_in;
+    P2.block<3, 1>(0, 3) = t_in;
+    P2                   = K_in * P2;
 
-    Eigen::Vector3f O2 = -R.transpose() * t;
+    Eigen::Vector3f O2 = -R_in.transpose() * t_in;
 
-    int nGood = 0;
+    int goodCount = 0;
 
-    for (size_t i = 0, iend = vMatches12.size(); i < iend; i++)
+    for (size_t matchIndex = 0, iend = matches12_in.size(); matchIndex < iend;
+         matchIndex++)
     {
-        if (!vbMatchesInliers[i])
+        if (!matchesInliersFlags_in[matchIndex])
             continue;
 
-        const cv::KeyPoint &kp1 = vKeys1[vMatches12[i].first];
-        const cv::KeyPoint &kp2 = vKeys2[vMatches12[i].second];
+        const cv::KeyPoint &keyPoint1 =
+            keys1_in[matches12_in[matchIndex].first];
+        const cv::KeyPoint &keyPoint2 =
+            keys2_in[matches12_in[matchIndex].second];
 
         Eigen::Vector3f p3dC1;
-        Eigen::Vector3f x_p1(kp1.pt.x, kp1.pt.y, 1);
-        Eigen::Vector3f x_p2(kp2.pt.x, kp2.pt.y, 1);
+        Eigen::Vector3f homogeneousPoint1(keyPoint1.pt.x, keyPoint1.pt.y, 1);
+        Eigen::Vector3f homogeneousPoint2(keyPoint2.pt.x, keyPoint2.pt.y, 1);
 
-        GeometricTools::triangulate(x_p1, x_p2, P1, P2, p3dC1);
+        GeometricTools::triangulate(homogeneousPoint1,
+                                    homogeneousPoint2,
+                                    P1,
+                                    P2,
+                                    p3dC1);
 
         if (!isfinite(p3dC1(0)) || !isfinite(p3dC1(1)) || !isfinite(p3dC1(2)))
         {
-            vbGood[vMatches12[i].first] = false;
+            goodFlags_out[matches12_in[matchIndex].first] = false;
             continue;
         }
 
         // Check parallax
-        Eigen::Vector3f normal1 = p3dC1 - O1;
-        float           dist1   = normal1.norm();
+        Eigen::Vector3f normal1   = p3dC1 - O1;
+        float           distance1 = normal1.norm();
 
-        Eigen::Vector3f normal2 = p3dC1 - O2;
-        float           dist2   = normal2.norm();
+        Eigen::Vector3f normal2   = p3dC1 - O2;
+        float           distance2 = normal2.norm();
 
-        float cosParallax = normal1.dot(normal2) / (dist1 * dist2);
+        float cosParallax = normal1.dot(normal2) / (distance1 * distance2);
 
         // Check depth in front of first camera (only if enough parallax, as
         // "infinite" points can easily go to negative depth)
@@ -108,54 +115,57 @@ int TwoViewReconstruction::checkRT(const Eigen::Matrix3f      &R,
 
         // Check depth in front of second camera (only if enough parallax, as
         // "infinite" points can easily go to negative depth)
-        Eigen::Vector3f p3dC2 = R * p3dC1 + t;
+        Eigen::Vector3f p3dC2 = R_in * p3dC1 + t_in;
 
         if (p3dC2(2) <= 0 && cosParallax < 0.99998)
             continue;
 
         // Check reprojection error in first image
-        float im1x, im1y;
+        float image1X, image1Y;
         float invZ1 = 1.0 / p3dC1(2);
-        im1x        = fx * p3dC1(0) * invZ1 + cx;
-        im1y        = fy * p3dC1(1) * invZ1 + cy;
+        image1X     = fx * p3dC1(0) * invZ1 + cx;
+        image1Y     = fy * p3dC1(1) * invZ1 + cy;
 
-        float squareError1 = (im1x - kp1.pt.x) * (im1x - kp1.pt.x) +
-                             (im1y - kp1.pt.y) * (im1y - kp1.pt.y);
+        float squareError1 =
+            (image1X - keyPoint1.pt.x) * (image1X - keyPoint1.pt.x) +
+            (image1Y - keyPoint1.pt.y) * (image1Y - keyPoint1.pt.y);
 
-        if (squareError1 > th2)
+        if (squareError1 > threshold2_in)
             continue;
 
         // Check reprojection error in second image
-        float im2x, im2y;
+        float image2X, image2Y;
         float invZ2 = 1.0 / p3dC2(2);
-        im2x        = fx * p3dC2(0) * invZ2 + cx;
-        im2y        = fy * p3dC2(1) * invZ2 + cy;
+        image2X     = fx * p3dC2(0) * invZ2 + cx;
+        image2Y     = fy * p3dC2(1) * invZ2 + cy;
 
-        float squareError2 = (im2x - kp2.pt.x) * (im2x - kp2.pt.x) +
-                             (im2y - kp2.pt.y) * (im2y - kp2.pt.y);
+        float squareError2 =
+            (image2X - keyPoint2.pt.x) * (image2X - keyPoint2.pt.x) +
+            (image2Y - keyPoint2.pt.y) * (image2Y - keyPoint2.pt.y);
 
-        if (squareError2 > th2)
+        if (squareError2 > threshold2_in)
             continue;
 
-        vCosParallax.push_back(cosParallax);
-        vP3D[vMatches12[i].first] = cv::Point3f(p3dC1(0), p3dC1(1), p3dC1(2));
-        nGood++;
+        cosParallaxes.push_back(cosParallax);
+        vP3D_inout[matches12_in[matchIndex].first] =
+            cv::Point3f(p3dC1(0), p3dC1(1), p3dC1(2));
+        goodCount++;
 
         if (cosParallax < 0.99998)
-            vbGood[vMatches12[i].first] = true;
+            goodFlags_out[matches12_in[matchIndex].first] = true;
     }
 
-    if (nGood > 0)
+    if (goodCount > 0)
     {
-        sort(vCosParallax.begin(), vCosParallax.end());
+        sort(cosParallaxes.begin(), cosParallaxes.end());
 
-        size_t idx = min(50, int(vCosParallax.size() - 1));
-        parallax   = acos(vCosParallax[idx]) * 180 / CV_PI;
+        size_t parallaxIndex = min(50, int(cosParallaxes.size() - 1));
+        parallax_out         = acos(cosParallaxes[parallaxIndex]) * 180 / CV_PI;
     }
     else
-        parallax = 0;
+        parallax_out = 0;
 
-    return nGood;
+    return goodCount;
 }
 
 } // namespace core

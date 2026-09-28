@@ -29,11 +29,11 @@ namespace semantic
 {
 
 /*! @brief Formats a double for JSON output without trailing exponent noise. */
-std::string formatDouble(double value)
+std::string formatDouble(double numericValue_in)
 {
-    std::ostringstream stream;
-    stream << value;
-    return stream.str();
+    std::ostringstream textStream;
+    textStream << numericValue_in;
+    return textStream.str();
 }
 
 } // namespace semantic

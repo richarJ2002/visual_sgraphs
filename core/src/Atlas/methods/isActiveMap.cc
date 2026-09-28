@@ -37,7 +37,7 @@ bool Atlas::isActiveMap(Map *p_map_in)
         return false;
     }
 
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     return maps.count(p_map_in) > 0 && !p_map_in->isBad();
 }
 

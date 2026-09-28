@@ -32,15 +32,15 @@ namespace core
 namespace geometric
 {
 
-void Plane::mergeObservation(core::KeyFrame    *p_keyFrame_in,
+void Plane::mergeObservation(core::KeyFrame    *p_keyFrame_inout,
                              const Observation &observation_in)
 {
-    if (p_keyFrame_in == nullptr || p_keyFrame_in->isBad())
+    if (p_keyFrame_inout == nullptr || p_keyFrame_inout->isBad())
     {
         return;
     }
 
-    std::scoped_lock lock(mMutexFeatures, mMutexType);
+    std::scoped_lock lock(featuresMutex, typeMutex);
     auto evidenceFromObservation = [](const Observation &observation)
     {
         std::map<PlaneVariant, double> evidence = observation.semanticEvidence;
@@ -53,22 +53,22 @@ void Plane::mergeObservation(core::KeyFrame    *p_keyFrame_in,
         return evidence;
     };
 
-    const auto existingIterator = observations.find(p_keyFrame_in);
-    if (existingIterator == observations.end())
+    const auto observationIt = observations.find(p_keyFrame_inout);
+    if (observationIt == observations.end())
     {
         Observation mergedObservation = observation_in;
         mergedObservation.semanticEvidence =
             evidenceFromObservation(observation_in);
-        observations.emplace(p_keyFrame_in, std::move(mergedObservation));
+        observations.emplace(p_keyFrame_inout, std::move(mergedObservation));
         ++observationCount;
         if (p_refKeyFrame == nullptr)
         {
-            p_refKeyFrame = p_keyFrame_in;
+            p_refKeyFrame = p_keyFrame_inout;
         }
     }
     else
     {
-        Observation &retainedObservation = existingIterator->second;
+        Observation &retainedObservation = observationIt->second;
         const double retainedConfidence  = retainedObservation.confidence;
         retainedObservation.pointPlaneConstraintMatrix +=
             observation_in.pointPlaneConstraintMatrix;

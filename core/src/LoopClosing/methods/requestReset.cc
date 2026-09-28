@@ -36,15 +36,15 @@ namespace core
 void LoopClosing::requestReset()
 {
     {
-        unique_lock<mutex> lock(mMutexReset);
-        resetRequested = true;
+        unique_lock<mutex> lock(resetMutex);
+        isResetRequested = true;
     }
 
     while (1)
     {
         {
-            unique_lock<mutex> lock2(mMutexReset);
-            if (!resetRequested)
+            unique_lock<mutex> lock2(resetMutex);
+            if (!isResetRequested)
                 break;
         }
         usleep(5000);

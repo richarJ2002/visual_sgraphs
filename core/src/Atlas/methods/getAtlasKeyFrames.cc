@@ -32,18 +32,18 @@ namespace core
 
 map<long unsigned int, KeyFrame *> Atlas::getAtlasKeyFrames()
 {
-    map<long unsigned int, KeyFrame *> mpIdKFs;
-    for (Map *pMap_i : backupMaps)
+    map<long unsigned int, KeyFrame *> idKeyFrames;
+    for (Map *p_backupMap : backupMaps)
     {
-        vector<KeyFrame *> vpKFs_Mi = pMap_i->getAllKeyFrames();
+        vector<KeyFrame *> backupKeyFrames = p_backupMap->getAllKeyFrames();
 
-        for (KeyFrame *pKF_j_Mi : vpKFs_Mi)
+        for (KeyFrame *p_backupKeyFrame : backupKeyFrames)
         {
-            mpIdKFs[pKF_j_Mi->mnId] = pKF_j_Mi;
+            idKeyFrames[p_backupKeyFrame->id] = p_backupKeyFrame;
         }
     }
 
-    return mpIdKFs;
+    return idKeyFrames;
 }
 
 } // namespace core

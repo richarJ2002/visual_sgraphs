@@ -36,10 +36,10 @@ namespace core
 
 unsigned int Map::getLowerKeyFrameId()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     if (p_lowerIdKeyFrame)
     {
-        return p_lowerIdKeyFrame->mnId;
+        return p_lowerIdKeyFrame->id;
     }
     return 0;
 }

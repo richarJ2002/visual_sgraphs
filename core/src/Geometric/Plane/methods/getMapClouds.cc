@@ -38,16 +38,16 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr Plane::getMapClouds(void)
      * Publishers retain this result after the lock is released, so return a
      * snapshot instead of an alias to the concurrently updated member cloud.
      */
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloudCopy(
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloudCopy(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
 
-    std::scoped_lock lock(mMutexPos, mMutexFeatures);
+    std::scoped_lock lock(positionMutex, featuresMutex);
     if (planeCloud != nullptr)
     {
-        *planeCloudCopy = *planeCloud;
+        *p_planeCloudCopy = *planeCloud;
     }
 
-    return planeCloudCopy;
+    return p_planeCloudCopy;
 }
 
 } // namespace geometric

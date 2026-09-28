@@ -85,7 +85,7 @@ TEST(SemanticDiagnostics, FirstCycleEmitsSummaryAndOnlyFailAppeared)
     const SemanticDiagnosticUpdate update =
         buildSemanticDiagnosticUpdate(entry, state);
 
-    ASSERT_TRUE(update.emit);
+    ASSERT_TRUE(update.shouldEmit);
     EXPECT_EQ(update.summary["eventType"], "summary");
     ASSERT_EQ(update.violationDetails.size(), 1U);
     EXPECT_EQ(update.violationDetails[0]["findingId"], "f1");
@@ -107,14 +107,14 @@ TEST(SemanticDiagnostics, UnchangedCycles2Through9EmitNothing)
 
     ASSERT_TRUE(
         buildSemanticDiagnosticUpdate(makeEntry(1U, findings, "d"), state)
-            .emit);
+            .shouldEmit);
 
     for (std::uint64_t cycle = 2U; cycle <= 9U; ++cycle)
     {
         const SemanticDiagnosticUpdate update =
             buildSemanticDiagnosticUpdate(makeEntry(cycle, findings, "d"),
                                           state);
-        EXPECT_FALSE(update.emit) << "cycle " << cycle;
+        EXPECT_FALSE(update.shouldEmit) << "cycle " << cycle;
     }
 }
 
@@ -126,18 +126,18 @@ TEST(SemanticDiagnostics, HeartbeatEmittedExactlyOnCycle10)
 
     ASSERT_TRUE(
         buildSemanticDiagnosticUpdate(makeEntry(1U, findings, "d"), state)
-            .emit);
+            .shouldEmit);
     for (std::uint64_t cycle = 2U; cycle <= 9U; ++cycle)
     {
         ASSERT_FALSE(
             buildSemanticDiagnosticUpdate(makeEntry(cycle, findings, "d"),
                                           state)
-                .emit);
+                .shouldEmit);
     }
 
     const SemanticDiagnosticUpdate heartbeat =
         buildSemanticDiagnosticUpdate(makeEntry(10U, findings, "d"), state);
-    ASSERT_TRUE(heartbeat.emit);
+    ASSERT_TRUE(heartbeat.shouldEmit);
     EXPECT_EQ(heartbeat.summary["eventType"], "heartbeat");
     EXPECT_TRUE(heartbeat.violationDetails.empty());
 
@@ -149,11 +149,11 @@ TEST(SemanticDiagnostics, HeartbeatEmittedExactlyOnCycle10)
         ASSERT_FALSE(
             buildSemanticDiagnosticUpdate(makeEntry(cycle, findings, "d"),
                                           state)
-                .emit);
+                .shouldEmit);
     }
     EXPECT_TRUE(
         buildSemanticDiagnosticUpdate(makeEntry(19U, findings, "d"), state)
-            .emit);
+            .shouldEmit);
 }
 
 TEST(SemanticDiagnostics, AppearedChangedAndResolvedFailTransitions)
@@ -178,7 +178,7 @@ TEST(SemanticDiagnostics, AppearedChangedAndResolvedFailTransitions)
             "d2"),
         state);
 
-    ASSERT_TRUE(update.emit);
+    ASSERT_TRUE(update.shouldEmit);
     std::map<std::string, std::string> transitionById;
     for (const nlohmann::json &detail : update.violationDetails)
     {
@@ -198,7 +198,7 @@ TEST(SemanticDiagnostics, GeometryOnlyDriftNeverEmitsOrRepeatsDetails)
 
     ASSERT_TRUE(
         buildSemanticDiagnosticUpdate(makeEntry(1U, findings, "topo-a"), state)
-            .emit);
+            .shouldEmit);
 
     SemanticReportCacheEntry geometryDriftEntry =
         makeEntry(2U, findings, "topo-a");
@@ -207,7 +207,7 @@ TEST(SemanticDiagnostics, GeometryOnlyDriftNeverEmitsOrRepeatsDetails)
 
     const SemanticDiagnosticUpdate update =
         buildSemanticDiagnosticUpdate(geometryDriftEntry, state);
-    EXPECT_FALSE(update.emit);
+    EXPECT_FALSE(update.shouldEmit);
 }
 
 TEST(SemanticDiagnostics, DetailCapBoundsOutputAndCountsEverything)
@@ -225,7 +225,7 @@ TEST(SemanticDiagnostics, DetailCapBoundsOutputAndCountsEverything)
     const SemanticDiagnosticUpdate update =
         buildSemanticDiagnosticUpdate(makeEntry(2U, manyFailures, "d2"), state);
 
-    ASSERT_TRUE(update.emit);
+    ASSERT_TRUE(update.shouldEmit);
     EXPECT_EQ(update.violationDetails.size(), kMaxViolationDetailsPerCycle);
     EXPECT_EQ(update.summary["emittedViolationCount"],
               kMaxViolationDetailsPerCycle);

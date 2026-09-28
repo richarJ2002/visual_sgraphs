@@ -36,7 +36,7 @@ namespace core
 
 Map *Map::getFollowingMap()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return p_followingMap;
 }
 

@@ -36,11 +36,11 @@ namespace core
 
 bool MapPoint::isBad()
 {
-    unique_lock<mutex> lock1(mMutexFeatures, std::defer_lock);
-    unique_lock<mutex> lock2(mMutexPos, std::defer_lock);
+    unique_lock<mutex> lock1(featuresMutex, std::defer_lock);
+    unique_lock<mutex> lock2(positionMutex, std::defer_lock);
     lock(lock1, lock2);
 
-    return mbBad;
+    return isFlaggedBad;
 }
 
 } // namespace core

@@ -34,20 +34,25 @@ namespace core
 
 void EdgePriorPoseImu::computeError()
 {
-    const VertexPose     *VP = static_cast<const VertexPose *>(_vertices[0]);
-    const VertexVelocity *VV =
+    const VertexPose *p_poseVertex =
+        static_cast<const VertexPose *>(_vertices[0]);
+    const VertexVelocity *p_velocityVertex =
         static_cast<const VertexVelocity *>(_vertices[1]);
-    const VertexGyroBias *VG =
+    const VertexGyroBias *p_gyroBiasVertex =
         static_cast<const VertexGyroBias *>(_vertices[2]);
-    const VertexAccBias *VA = static_cast<const VertexAccBias *>(_vertices[3]);
+    const VertexAccBias *p_accBiasVertex =
+        static_cast<const VertexAccBias *>(_vertices[3]);
 
-    const Eigen::Vector3d er  = LogSO3(Rwb.transpose() * VP->estimate().Rwb);
-    const Eigen::Vector3d et  = Rwb.transpose() * (VP->estimate().twb - twb);
-    const Eigen::Vector3d ev  = VV->estimate() - vwb;
-    const Eigen::Vector3d ebg = VG->estimate() - bg;
-    const Eigen::Vector3d eba = VA->estimate() - ba;
+    const Eigen::Vector3d rotationError =
+        logSO3(Rwb.transpose() * p_poseVertex->estimate().Rwb);
+    const Eigen::Vector3d translationError =
+        Rwb.transpose() * (p_poseVertex->estimate().twb - twb);
+    const Eigen::Vector3d velocityError = p_velocityVertex->estimate() - vwb;
+    const Eigen::Vector3d gyroBiasError = p_gyroBiasVertex->estimate() - bg;
+    const Eigen::Vector3d accBiasError  = p_accBiasVertex->estimate() - ba;
 
-    _error << er, et, ev, ebg, eba;
+    _error << rotationError, translationError, velocityError, gyroBiasError,
+        accBiasError;
 }
 
 } // namespace core

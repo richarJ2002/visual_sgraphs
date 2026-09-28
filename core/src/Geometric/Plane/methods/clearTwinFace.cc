@@ -34,7 +34,7 @@ namespace geometric
 
 void Plane::clearTwinFace(void)
 {
-    unique_lock<mutex> lock(mMutexPos);
+    unique_lock<mutex> lock(positionMutex);
     p_twinFace = nullptr;
 }
 

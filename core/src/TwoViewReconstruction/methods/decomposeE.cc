@@ -30,21 +30,21 @@ namespace vs_graphs
 namespace core
 {
 
-void TwoViewReconstruction::decomposeE(const Eigen::Matrix3f &E,
-                                       Eigen::Matrix3f       &R1,
-                                       Eigen::Matrix3f       &R2,
-                                       Eigen::Vector3f       &t)
+void TwoViewReconstruction::decomposeE(const Eigen::Matrix3f &E_in,
+                                       Eigen::Matrix3f       &R1_out,
+                                       Eigen::Matrix3f       &R2_out,
+                                       Eigen::Vector3f       &t_out)
 {
 
-    Eigen::JacobiSVD<Eigen::Matrix3f> svd(E,
+    Eigen::JacobiSVD<Eigen::Matrix3f> svd(E_in,
                                           Eigen::ComputeFullU |
                                               Eigen::ComputeFullV);
 
     Eigen::Matrix3f U  = svd.matrixU();
     Eigen::Matrix3f Vt = svd.matrixV().transpose();
 
-    t = U.col(2);
-    t = t / t.norm();
+    t_out = U.col(2);
+    t_out = t_out / t_out.norm();
 
     Eigen::Matrix3f W;
     W.setZero();
@@ -52,13 +52,13 @@ void TwoViewReconstruction::decomposeE(const Eigen::Matrix3f &E,
     W(1, 0) = 1;
     W(2, 2) = 1;
 
-    R1 = U * W * Vt;
-    if (R1.determinant() < 0)
-        R1 = -R1;
+    R1_out = U * W * Vt;
+    if (R1_out.determinant() < 0)
+        R1_out = -R1_out;
 
-    R2 = U * W.transpose() * Vt;
-    if (R2.determinant() < 0)
-        R2 = -R2;
+    R2_out = U * W.transpose() * Vt;
+    if (R2_out.determinant() < 0)
+        R2_out = -R2_out;
 }
 
 } // namespace core

@@ -49,152 +49,176 @@ namespace settings
 
 using namespace std;
 
-std::ostream &operator<<(std::ostream &output, const Settings &settings)
+std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
 {
     // Camera#1
-    output << "\t- Camera#1 parameters (";
-    if (settings.cameraModel == Settings::CameraType::PINHOLE ||
-        settings.cameraModel == Settings::CameraType::RECTIFIED)
-        output << "camera_models::Pinhole";
+    output_inout << "\t- Camera#1 parameters (";
+    if (s_in.cameraModel == Settings::CameraType::PINHOLE ||
+        s_in.cameraModel == Settings::CameraType::RECTIFIED)
+        output_inout << "camera_models::Pinhole";
     else
-        output << "Kannala-Brandt";
-    output << "): [";
-    for (size_t i = 0; i < settings.originalCalibration1->size(); i++)
-        output << " " << settings.originalCalibration1->getParameter(i);
-    output << " ]" << endl;
+        output_inout << "Kannala-Brandt";
+    output_inout << "): [";
+    for (size_t originalCalibration1Index = 0;
+         originalCalibration1Index < s_in.p_originalCalibration1->size();
+         originalCalibration1Index++)
+        output_inout << " "
+                     << s_in.p_originalCalibration1->getParameter(
+                            originalCalibration1Index);
+    output_inout << " ]" << endl;
 
-    if (!settings.pinholeDistortion1.empty())
+    if (!s_in.pinholeDistortion1.empty())
     {
-        output << "\t- Camera#1 distortion parameters: [ ";
-        for (float d : settings.pinholeDistortion1)
-            output << " " << d;
-        output << " ]" << endl;
+        output_inout << "\t- Camera#1 distortion parameters: [ ";
+        for (float d : s_in.pinholeDistortion1)
+            output_inout << " " << d;
+        output_inout << " ]" << endl;
     }
 
-    if ((settings.sensor == System::STEREO ||
-         settings.sensor == System::IMU_STEREO) &&
-        (settings.cameraModel != Settings::CameraType::RECTIFIED))
+    if ((s_in.sensor == System::STEREO || s_in.sensor == System::IMU_STEREO) &&
+        (s_in.cameraModel != Settings::CameraType::RECTIFIED))
     {
-        output << "\t- Camera#2 parameters (";
-        if (settings.cameraModel == Settings::CameraType::PINHOLE)
-            output << "camera_models::Pinhole";
+        output_inout << "\t- Camera#2 parameters (";
+        if (s_in.cameraModel == Settings::CameraType::PINHOLE)
+            output_inout << "camera_models::Pinhole";
         else
-            output << "Kannala-Brandt";
-        output << "): [";
-        for (size_t i = 0; i < settings.originalCalibration2->size(); i++)
-            output << " " << settings.originalCalibration2->getParameter(i);
-        output << " ]" << endl;
+            output_inout << "Kannala-Brandt";
+        output_inout << "): [";
+        for (size_t originalCalibration1Index = 0;
+             originalCalibration1Index < s_in.p_originalCalibration2->size();
+             originalCalibration1Index++)
+            output_inout << " "
+                         << s_in.p_originalCalibration2->getParameter(
+                                originalCalibration1Index);
+        output_inout << " ]" << endl;
 
-        if (!settings.pinholeDistortion2.empty())
+        if (!s_in.pinholeDistortion2.empty())
         {
-            output << "\t- Camera#2 distortion parameters: [ ";
-            for (float d : settings.pinholeDistortion2)
-                output << " " << d;
-            output << " ]" << endl;
+            output_inout << "\t- Camera#2 distortion parameters: [ ";
+            for (float d : s_in.pinholeDistortion2)
+                output_inout << " " << d;
+            output_inout << " ]" << endl;
         }
     }
 
-    output << "\t- Original frame size: [ " << settings.originalImageSize.width
-           << "," << settings.originalImageSize.height << " ]" << endl;
-    output << "\t- Current frame size: [ " << settings.newImageSize.width << ","
-           << settings.newImageSize.height << " ]" << endl;
+    output_inout << "\t- Original frame size: [ "
+                 << s_in.originalImageSize.width << ","
+                 << s_in.originalImageSize.height << " ]" << endl;
+    output_inout << "\t- Current frame size: [ " << s_in.newImageSize.width
+                 << "," << s_in.newImageSize.height << " ]" << endl;
 
-    if (settings.rectifyNeeded)
+    if (s_in.isRectificationNeeded)
     {
-        output << "\t- Camera#1 parameters after rectification: [";
-        for (size_t i = 0; i < settings.calibration1->size(); i++)
-            output << " " << settings.calibration1->getParameter(i);
-        output << " ]" << endl;
+        output_inout << "\t- Camera#1 parameters after rectification: [";
+        for (size_t originalCalibration1Index = 0;
+             originalCalibration1Index < s_in.p_calibration1->size();
+             originalCalibration1Index++)
+            output_inout << " "
+                         << s_in.p_calibration1->getParameter(
+                                originalCalibration1Index);
+        output_inout << " ]" << endl;
 
-        if (settings.sensor == System::STEREO ||
-            settings.sensor == System::IMU_STEREO)
+        if (s_in.sensor == System::STEREO || s_in.sensor == System::IMU_STEREO)
         {
-            output << "\t- Camera#2 parameters after rectification: [";
-            for (size_t i = 0; i < settings.calibration2->size(); i++)
-                output << " " << settings.calibration2->getParameter(i);
-            output << " ]" << endl;
+            output_inout << "\t- Camera#2 parameters after rectification: [";
+            for (size_t originalCalibration1Index = 0;
+                 originalCalibration1Index < s_in.p_calibration2->size();
+                 originalCalibration1Index++)
+                output_inout << " "
+                             << s_in.p_calibration2->getParameter(
+                                    originalCalibration1Index);
+            output_inout << " ]" << endl;
         }
     }
-    else if (settings.resize1Needed)
+    else if (s_in.isFirstResizeNeeded)
     {
-        output << "\t- Camera#1 parameters after resize: [";
-        for (size_t i = 0; i < settings.calibration1->size(); i++)
-            output << " " << settings.calibration1->getParameter(i);
-        output << " ]" << endl;
+        output_inout << "\t- Camera#1 parameters after resize: [";
+        for (size_t originalCalibration1Index = 0;
+             originalCalibration1Index < s_in.p_calibration1->size();
+             originalCalibration1Index++)
+            output_inout << " "
+                         << s_in.p_calibration1->getParameter(
+                                originalCalibration1Index);
+        output_inout << " ]" << endl;
 
-        if ((settings.sensor == System::STEREO ||
-             settings.sensor == System::IMU_STEREO) &&
-            settings.cameraModel == Settings::CameraType::KANNALA_BRANDT)
+        if ((s_in.sensor == System::STEREO ||
+             s_in.sensor == System::IMU_STEREO) &&
+            s_in.cameraModel == Settings::CameraType::KANNALA_BRANDT)
         {
-            output << "\t- Camera#2 parameters after resize: [";
-            for (size_t i = 0; i < settings.calibration2->size(); i++)
-                output << " " << settings.calibration2->getParameter(i);
-            output << " ]" << endl;
+            output_inout << "\t- Camera#2 parameters after resize: [";
+            for (size_t originalCalibration1Index = 0;
+                 originalCalibration1Index < s_in.p_calibration2->size();
+                 originalCalibration1Index++)
+                output_inout << " "
+                             << s_in.p_calibration2->getParameter(
+                                    originalCalibration1Index);
+            output_inout << " ]" << endl;
         }
     }
 
     // Frame rate
-    output << "\t- Sequence FPS: " << settings.framesPerSecond << endl;
+    output_inout << "\t- Sequence FPS: " << s_in.framesPerSecond << endl;
 
     // Stereo stuff
-    if (settings.sensor == System::STEREO ||
-        settings.sensor == System::IMU_STEREO)
+    if (s_in.sensor == System::STEREO || s_in.sensor == System::IMU_STEREO)
     {
-        output << "\t- Stereo baseline: " << settings.stereoBaseline << endl;
-        output << "\t- Stereo depth threshold : " << settings.depthThreshold
-               << endl;
+        output_inout << "\t- Stereo baseline: " << s_in.stereoBaseline << endl;
+        output_inout << "\t- Stereo depth threshold : " << s_in.depthThreshold
+                     << endl;
 
-        if (settings.cameraModel == Settings::CameraType::KANNALA_BRANDT)
+        if (s_in.cameraModel == Settings::CameraType::KANNALA_BRANDT)
         {
-            auto vOverlapping1 =
+            auto overlapping1 =
                 static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
-                    settings.calibration1)
+                    s_in.p_calibration1)
                     ->lappingArea;
-            auto vOverlapping2 =
+            auto overlapping2 =
                 static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
-                    settings.calibration2)
+                    s_in.p_calibration2)
                     ->lappingArea;
-            output << "\t- Camera 1 overlapping area: [ " << vOverlapping1[0]
-                   << " , " << vOverlapping1[1] << " ]" << endl;
-            output << "\t- Camera 2 overlapping area: [ " << vOverlapping2[0]
-                   << " , " << vOverlapping2[1] << " ]" << endl;
+            output_inout << "\t- Camera 1 overlapping area: [ "
+                         << overlapping1[0] << " , " << overlapping1[1] << " ]"
+                         << endl;
+            output_inout << "\t- Camera 2 overlapping area: [ "
+                         << overlapping2[0] << " , " << overlapping2[1] << " ]"
+                         << endl;
         }
     }
 
     // IMU parameters
-    if (settings.sensor == System::IMU_MONOCULAR ||
-        settings.sensor == System::IMU_STEREO ||
-        settings.sensor == System::IMU_RGBD)
+    if (s_in.sensor == System::IMU_MONOCULAR ||
+        s_in.sensor == System::IMU_STEREO || s_in.sensor == System::IMU_RGBD)
     {
-        output << "\t- Gyro noise: " << settings.gyroNoise << endl;
-        output << "\t- Accelerometer noise: " << settings.accelNoise << endl;
-        output << "\t- Gyro walk: " << settings.gyroWalkNoise << endl;
-        output << "\t- Accelerometer walk: " << settings.accelWalkNoise << endl;
-        output << "\t- IMU frequency: " << settings.imuSampleRate << endl;
-        output << "\t- IMU threshold: " << settings.imuErrorThreshold << endl;
+        output_inout << "\t- Gyro noise: " << s_in.gyroNoise << endl;
+        output_inout << "\t- Accelerometer noise: " << s_in.accelNoise << endl;
+        output_inout << "\t- Gyro walk: " << s_in.gyroWalkNoise << endl;
+        output_inout << "\t- Accelerometer walk: " << s_in.accelWalkNoise
+                     << endl;
+        output_inout << "\t- IMU frequency: " << s_in.imuSampleRate << endl;
+        output_inout << "\t- IMU threshold: " << s_in.imuErrorThreshold << endl;
     }
 
     // RGB-D parameters
-    if (settings.sensor == System::RGBD || settings.sensor == System::IMU_RGBD)
+    if (s_in.sensor == System::RGBD || s_in.sensor == System::IMU_RGBD)
     {
-        output << "\t- RGB-D depth map factor: " << settings.depthMapScale
-               << endl;
-        output << "\t- Stereo depth threshold: " << settings.depthThreshold
-               << endl;
-        output << "\t- Metric close depth: "
-               << settings.stereoBaseline * settings.depthThreshold << endl;
+        output_inout << "\t- RGB-D depth map factor: " << s_in.depthMapScale
+                     << endl;
+        output_inout << "\t- Stereo depth threshold: " << s_in.depthThreshold
+                     << endl;
+        output_inout << "\t- Metric close depth: "
+                     << s_in.stereoBaseline * s_in.depthThreshold << endl;
     }
 
     // ORB parameters
-    output << "\t- Features per image: " << settings.featureCount << endl;
-    output << "\t- ORB scale factor: " << settings.orbScaleFactor << endl;
-    output << "\t- ORB number of scales: " << settings.pyramidLevels << endl;
-    output << "\t- Initial FAST threshold: " << settings.initialFastThreshold
-           << endl;
-    output << "\t- Min FAST threshold: " << settings.minimumFastThreshold
-           << endl;
+    output_inout << "\t- Features per image: " << s_in.featureCount << endl;
+    output_inout << "\t- ORB scale factor: " << s_in.orbScaleFactor << endl;
+    output_inout << "\t- ORB number of scales: " << s_in.pyramidLevels << endl;
+    output_inout << "\t- Initial FAST threshold: " << s_in.initialFastThreshold
+                 << endl;
+    output_inout << "\t- Min FAST threshold: " << s_in.minimumFastThreshold
+                 << endl;
 
-    return output;
+    return output_inout;
 }
 
 } // namespace settings

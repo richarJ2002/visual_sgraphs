@@ -73,11 +73,11 @@ TranslationFit fitTranslation(const Eigen::Matrix3d              &rotation_in,
                                                     Eigen::ComputeThinV);
     const Eigen::VectorXd singularValues = svd.singularValues();
 
-    constexpr double kRankTolerance = 1e-9;
+    constexpr double RANK_TOLERANCE = 1e-9;
     std::size_t      rank           = 0U;
     for (Eigen::Index index = 0; index < singularValues.size(); ++index)
     {
-        if (singularValues(index) > kRankTolerance)
+        if (singularValues(index) > RANK_TOLERANCE)
         {
             ++rank;
         }
@@ -85,7 +85,7 @@ TranslationFit fitTranslation(const Eigen::Matrix3d              &rotation_in,
     result.rank = rank;
     result.conditionNumber =
         (singularValues.size() > 0 &&
-         singularValues(singularValues.size() - 1) > kRankTolerance)
+         singularValues(singularValues.size() - 1) > RANK_TOLERANCE)
             ? singularValues(0) / singularValues(singularValues.size() - 1)
             : std::numeric_limits<double>::infinity();
 

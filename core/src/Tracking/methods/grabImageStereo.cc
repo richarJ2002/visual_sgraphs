@@ -31,55 +31,55 @@ namespace core
 {
 
 Sophus::SE3f
-    Tracking::grabImageStereo(const cv::Mat                        &imRectLeft,
-                              const cv::Mat                        &imRectRight,
-                              const double                         &timestamp,
-                              string                                filename,
-                              const std::vector<semantic::Marker *> markers,
-                              const std::vector<semantic::Room *>   rooms)
+    Tracking::grabImageStereo(const cv::Mat &imageRectifiedLeft_in,
+                              const cv::Mat &imageRectifiedRight_in,
+                              const double  &timestamp_in,
+                              string         filename_in,
+                              const std::vector<semantic::Marker *> markers_in,
+                              const std::vector<semantic::Room *>   rooms_in)
 {
     // Set arguments to local variables
-    env_rooms = rooms;
+    env_rooms = rooms_in;
 
     // Adaptive FAST threshold: adjust before feature extraction
     adjustFASTThreshold();
 
-    imageGray           = imRectLeft;
-    cv::Mat imGrayRight = imRectRight;
-    imageRight          = imRectRight;
+    imageGray              = imageRectifiedLeft_in;
+    cv::Mat imageGrayRight = imageRectifiedRight_in;
+    imageRight             = imageRectifiedRight_in;
 
     if (imageGray.channels() == 3)
     {
-        if (rgbEnabled)
+        if (isRgbEnabled)
         {
             cvtColor(imageGray, imageGray, cv::COLOR_RGB2GRAY);
-            cvtColor(imGrayRight, imGrayRight, cv::COLOR_RGB2GRAY);
+            cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_RGB2GRAY);
         }
         else
         {
             cvtColor(imageGray, imageGray, cv::COLOR_BGR2GRAY);
-            cvtColor(imGrayRight, imGrayRight, cv::COLOR_BGR2GRAY);
+            cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_BGR2GRAY);
         }
     }
     else if (imageGray.channels() == 4)
     {
-        if (rgbEnabled)
+        if (isRgbEnabled)
         {
             cvtColor(imageGray, imageGray, cv::COLOR_RGBA2GRAY);
-            cvtColor(imGrayRight, imGrayRight, cv::COLOR_RGBA2GRAY);
+            cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_RGBA2GRAY);
         }
         else
         {
             cvtColor(imageGray, imageGray, cv::COLOR_BGRA2GRAY);
-            cvtColor(imGrayRight, imGrayRight, cv::COLOR_BGRA2GRAY);
+            cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_BGRA2GRAY);
         }
     }
 
     if (sensor == System::STEREO && !p_camera2)
-        currentFrame = Frame(imRectLeft,
+        currentFrame = Frame(imageRectifiedLeft_in,
                              imageGray,
-                             imGrayRight,
-                             timestamp,
+                             imageGrayRight,
+                             timestamp_in,
                              p_orbExtractorLeft,
                              p_orbExtractorRight,
                              p_orbVocabulary,
@@ -90,12 +90,12 @@ Sophus::SE3f
                              p_camera,
                              nullptr,
                              IMU::Calib(),
-                             markers);
+                             markers_in);
     else if (sensor == System::STEREO && p_camera2)
-        currentFrame = Frame(imRectLeft,
+        currentFrame = Frame(imageRectifiedLeft_in,
                              imageGray,
-                             imGrayRight,
-                             timestamp,
+                             imageGrayRight,
+                             timestamp_in,
                              p_orbExtractorLeft,
                              p_orbExtractorRight,
                              p_orbVocabulary,
@@ -108,12 +108,12 @@ Sophus::SE3f
                              poseTlr,
                              nullptr,
                              IMU::Calib(),
-                             markers);
+                             markers_in);
     else if (sensor == System::IMU_STEREO && !p_camera2)
-        currentFrame = Frame(imRectLeft,
+        currentFrame = Frame(imageRectifiedLeft_in,
                              imageGray,
-                             imGrayRight,
-                             timestamp,
+                             imageGrayRight,
+                             timestamp_in,
                              p_orbExtractorLeft,
                              p_orbExtractorRight,
                              p_orbVocabulary,
@@ -124,12 +124,12 @@ Sophus::SE3f
                              p_camera,
                              &lastFrame,
                              *p_imuCalibration,
-                             markers);
+                             markers_in);
     else if (sensor == System::IMU_STEREO && p_camera2)
-        currentFrame = Frame(imRectLeft,
+        currentFrame = Frame(imageRectifiedLeft_in,
                              imageGray,
-                             imGrayRight,
-                             timestamp,
+                             imageGrayRight,
+                             timestamp_in,
                              p_orbExtractorLeft,
                              p_orbExtractorRight,
                              p_orbVocabulary,
@@ -142,14 +142,14 @@ Sophus::SE3f
                              poseTlr,
                              &lastFrame,
                              *p_imuCalibration,
-                             markers);
+                             markers_in);
 
-    currentFrame.fileName  = filename;
+    currentFrame.fileName  = filename_in;
     currentFrame.datasetId = numDataset;
 
 #ifdef REGISTER_TIMES
-    vdORBExtract_ms.push_back(currentFrame.orbExtractionTime);
-    vdStereoMatch_ms.push_back(currentFrame.stereoMatchTime);
+    orbExtractionTimes_ms.push_back(currentFrame.orbExtractionTime);
+    stereoMatchTimes_ms.push_back(currentFrame.stereoMatchTime);
 #endif
 
     track();

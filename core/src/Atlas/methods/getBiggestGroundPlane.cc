@@ -32,7 +32,7 @@ namespace core
 
 geometric::Plane *Atlas::getBiggestGroundPlane()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     return p_activeMap != nullptr ? p_activeMap->getBiggestGroundPlane()
                                   : nullptr;
 }

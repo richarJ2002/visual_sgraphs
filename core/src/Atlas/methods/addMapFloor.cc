@@ -30,15 +30,15 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addMapFloor(semantic::Floor *floor)
+void Atlas::addMapFloor(semantic::Floor *p_floor_in)
 {
-    if (floor == nullptr)
+    if (p_floor_in == nullptr)
     {
         return;
     }
-    observeFloorIdentity(floor->getId());
-    Map *pMapMP = floor->getMap();
-    pMapMP->addMapFloor(floor);
+    observeFloorIdentity(p_floor_in->getId());
+    Map *p_ownerMap = p_floor_in->getMap();
+    p_ownerMap->addMapFloor(p_floor_in);
 }
 
 } // namespace core

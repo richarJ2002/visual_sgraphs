@@ -35,36 +35,37 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
-                                      bool                      *pbStopFlag,
-                                      Map                       *pMap,
-                                      int                       &countFixedKF,
-                                      int                       &num_OptKF,
-                                      int                       &num_MPs,
-                                      int                       &num_edges,
-                                      double                     markerImpact)
+void Optimizer::localBundleAdjustment(
+    vs_graphs::core::KeyFrame *p_keyFrame_inout,
+    bool                      *p_pbStopFlag_in,
+    Map                       *p_map_inout,
+    int                       &fixedKeyFrameCount_inout,
+    int                       &optKeyFrameCount_out,
+    int                       &mapPointCount_out,
+    int                       &edgeCount_out,
+    double                     markerImpact_in)
 {
     // System parameters
     vs_graphs::core::types::SystemParams *p_sysParams =
         vs_graphs::core::types::SystemParams::getParams();
 
     // Variables
-    countFixedKF = 0;
-    num_OptKF    = 0;
-    num_MPs      = 0;
-    num_edges    = 0;
-    std::list<vs_graphs::core::semantic::Room *>    localRoomList;
-    vs_graphs::core::Map                           *pCurrentMap = pKF->getMap();
+    fixedKeyFrameCount_inout = 0;
+    optKeyFrameCount_out     = 0;
+    mapPointCount_out        = 0;
+    edgeCount_out            = 0;
+    std::list<vs_graphs::core::semantic::Room *> localRoomList;
+    vs_graphs::core::Map *p_currentMap = p_keyFrame_inout->getMap();
     std::list<vs_graphs::core::geometric::Plane *>  localPlaneList;
     std::list<vs_graphs::core::semantic::Marker *>  localMarkerList;
     std::list<vs_graphs::core::semantic::Passage *> localPassageList;
     std::list<vs_graphs::core::KeyFrame *>          localKeyFrameList;
     std::list<vs_graphs::core::MapPoint *>          localMapPointList;
-    std::vector<vs_graphs::core::KeyFrame *>        neighborKeyFrameVec;
+    std::vector<vs_graphs::core::KeyFrame *>        neighborKeyFrameVector;
     std::vector<vs_graphs::core::semantic::Room *>  allRooms =
-        pCurrentMap->getAllRooms();
+        p_currentMap->getAllRooms();
     std::vector<vs_graphs::core::semantic::Floor *> allFloors =
-        pCurrentMap->getAllFloors();
+        p_currentMap->getAllFloors();
 
     // Unorderd maps to keep track of the local entities
     std::unordered_map<int, bool> localPlaneId;
@@ -74,32 +75,36 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
     std::unordered_map<int, bool> localKeyFrameId;
 
     // [LBA] Initialize the KeyFrame-related variables
-    localKeyFrameList.push_back(pKF);
-    localKeyFrameId[pKF->mnId] = true;
-    pKF->baLocalKeyFrameId     = pKF->mnId;
+    localKeyFrameList.push_back(p_keyFrame_inout);
+    localKeyFrameId[p_keyFrame_inout->id] = true;
+    p_keyFrame_inout->baLocalKeyFrameId   = p_keyFrame_inout->id;
 
     // [LBA] Fill in the neighbor KeyFrames
     if (p_sysParams->planeBasedCovisibility.enabled)
         // Get the KeyFrames that see the same planes
-        neighborKeyFrameVec = pKF->getBestCovisibilityKeyFrames(
+        neighborKeyFrameVector = p_keyFrame_inout->getBestCovisibilityKeyFrames(
             p_sysParams->planeBasedCovisibility.maxKeyframes);
     else
         // Get the KeyFrames that see the same MapPoints
-        neighborKeyFrameVec = pKF->getVectorCovisibleKeyFrames();
+        neighborKeyFrameVector =
+            p_keyFrame_inout->getVectorCovisibleKeyFrames();
 
     // Iterate through all neighboring KeyFrames
-    for (int idx = 0, idxEnd = neighborKeyFrameVec.size(); idx < idxEnd; idx++)
+    for (int markerIt = 0, indexEnd = neighborKeyFrameVector.size();
+         markerIt < indexEnd;
+         markerIt++)
     {
         // Get the current KeyFrame's neighbors
-        vs_graphs::core::KeyFrame *pKFi = neighborKeyFrameVec[idx];
+        vs_graphs::core::KeyFrame *p_keyFrame =
+            neighborKeyFrameVector[markerIt];
         // Mark the KeyFrame as a part of the current LBA
-        pKFi->baLocalKeyFrameId = pKF->mnId;
+        p_keyFrame->baLocalKeyFrameId = p_keyFrame_inout->id;
         // If the KeyFrame is proper, add it to the list of local KeyFrames for
         // LBA
-        if (!pKFi->isBad() && pKFi->getMap() == pCurrentMap)
+        if (!p_keyFrame->isBad() && p_keyFrame->getMap() == p_currentMap)
         {
-            localKeyFrameList.push_back(pKFi);
-            localKeyFrameId[pKFi->mnId] = true;
+            localKeyFrameList.push_back(p_keyFrame);
+            localKeyFrameId[p_keyFrame->id] = true;
         }
     }
 
@@ -111,95 +116,97 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
          lit++)
     {
         // Variables
-        vs_graphs::core::KeyFrame                       *pKFi = *lit;
-        std::vector<vs_graphs::core::geometric::Plane *> localPlanesVec =
-            pKFi->getMapPlanes();
-        std::vector<vs_graphs::core::semantic::Marker *> localMarkersVec =
-            pKFi->getMapMarkers();
-        std::vector<vs_graphs::core::semantic::Passage *> localDoorwaysVec =
-            pKFi->getMapPassages();
-        std::vector<vs_graphs::core::MapPoint *> localMapPointsVec =
-            pKFi->getMapPointMatches();
+        vs_graphs::core::KeyFrame                       *p_keyFrame = *lit;
+        std::vector<vs_graphs::core::geometric::Plane *> localPlanesVector =
+            p_keyFrame->getMapPlanes();
+        std::vector<vs_graphs::core::semantic::Marker *> localMarkersVector =
+            p_keyFrame->getMapMarkers();
+        std::vector<vs_graphs::core::semantic::Passage *> localDoorwaysVector =
+            p_keyFrame->getMapPassages();
+        std::vector<vs_graphs::core::MapPoint *> localMapPointsVector =
+            p_keyFrame->getMapPointMatches();
 
         // If the KeyFrame is the initial KeyFrame of the map, mark that as a
         // fixed KeyFrame
-        if (pKFi->mnId == pMap->getInitKeyFrameId())
-            countFixedKF = 1;
+        if (p_keyFrame->id == p_map_inout->getInitKeyFrameId())
+            fixedKeyFrameCount_inout = 1;
 
         // [LBA] Loop through all the MapPoints and prepare them for LBA
         for (std::vector<vs_graphs::core::MapPoint *>::iterator
-                 vit  = localMapPointsVec.begin(),
-                 vend = localMapPointsVec.end();
+                 vit  = localMapPointsVector.begin(),
+                 vend = localMapPointsVector.end();
              vit != vend;
              vit++)
         {
             // Variables
-            vs_graphs::core::MapPoint *pMP = *vit;
+            vs_graphs::core::MapPoint *p_mapPoint = *vit;
 
             // If the MapPoint is proper, add it to the list of local MapPoints
             // for LBA
-            if (pMP)
-                if (!pMP->isBad() && pMP->getMap() == pCurrentMap)
+            if (p_mapPoint)
+                if (!p_mapPoint->isBad() &&
+                    p_mapPoint->getMap() == p_currentMap)
                 {
-                    if (pMP->baLocalKeyFrameId != pKF->mnId)
+                    if (p_mapPoint->baLocalKeyFrameId != p_keyFrame_inout->id)
                     {
-                        localMapPointList.push_back(pMP);
-                        localMapPointId[pMP->mnId] = true;
-                        pMP->baLocalKeyFrameId     = pKF->mnId;
+                        localMapPointList.push_back(p_mapPoint);
+                        localMapPointId[p_mapPoint->id] = true;
+                        p_mapPoint->baLocalKeyFrameId   = p_keyFrame_inout->id;
                     }
                 }
         }
 
         // [LBA] Loop through all the Markers and prepare them for LBA
         for (std::vector<vs_graphs::core::semantic::Marker *>::iterator
-                 idx  = localMarkersVec.begin(),
-                 vend = localMarkersVec.end();
-             idx != vend;
-             idx++)
+                 markerIt = localMarkersVector.begin(),
+                 vend     = localMarkersVector.end();
+             markerIt != vend;
+             markerIt++)
         {
-            if (localMarkerId.find((*idx)->getId()) == localMarkerId.end())
+            if (localMarkerId.find((*markerIt)->getId()) == localMarkerId.end())
             {
-                vs_graphs::core::semantic::Marker *marker = *idx;
-                localMarkerList.push_back(marker);
-                localMarkerId[marker->getId()] = true;
+                vs_graphs::core::semantic::Marker *p_marker = *markerIt;
+                localMarkerList.push_back(p_marker);
+                localMarkerId[p_marker->getId()] = true;
             }
         }
 
         // [LBA] Loop through all the Planes and prepare them for LBA
         for (std::vector<vs_graphs::core::geometric::Plane *>::iterator
-                 idx  = localPlanesVec.begin(),
-                 vend = localPlanesVec.end();
-             idx != vend;
-             idx++)
+                 markerIt = localPlanesVector.begin(),
+                 vend     = localPlanesVector.end();
+             markerIt != vend;
+             markerIt++)
         {
-            vs_graphs::core::geometric::Plane *plane = *idx;
+            vs_graphs::core::geometric::Plane *p_localPlane = *markerIt;
             // If the plane does not exist, skip it
-            if (!plane)
+            if (!p_localPlane)
                 continue;
             // If the plane is not known, do not add it to the local map
-            if (plane->getPlaneType() ==
+            if (p_localPlane->getPlaneType() ==
                 geometric::Plane::PlaneVariant::UNDEFINED)
                 continue;
             // Otherwise, add the plane to the local map
-            if (localPlaneId.find(plane->getId()) == localPlaneId.end())
+            if (localPlaneId.find(p_localPlane->getId()) == localPlaneId.end())
             {
-                localPlaneList.push_back(plane);
-                localPlaneId[plane->getId()] = true;
+                localPlaneList.push_back(p_localPlane);
+                localPlaneId[p_localPlane->getId()] = true;
             }
         }
 
         // [LBA] Loop through all the Doorways and prepare them for LBA
         for (std::vector<vs_graphs::core::semantic::Passage *>::iterator
-                 idx  = localDoorwaysVec.begin(),
-                 vend = localDoorwaysVec.end();
-             idx != vend;
-             idx++)
+                 markerIt = localDoorwaysVector.begin(),
+                 vend     = localDoorwaysVector.end();
+             markerIt != vend;
+             markerIt++)
         {
-            if (localDoorwayId.find((*idx)->getId()) == localDoorwayId.end())
+            if (localDoorwayId.find((*markerIt)->getId()) ==
+                localDoorwayId.end())
             {
-                vs_graphs::core::semantic::Passage *doorway = *idx;
-                localPassageList.push_back(doorway);
-                localDoorwayId[doorway->getId()] = true;
+                vs_graphs::core::semantic::Passage *p_doorway = *markerIt;
+                localPassageList.push_back(p_doorway);
+                localDoorwayId[p_doorway->getId()] = true;
             }
         }
     }
@@ -221,55 +228,56 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
     }
 
     // [LBA] Loop through all the local Rooms to add all their walls to LBA
-    std::list<vs_graphs::core::geometric::Plane *> lRecentLocalMapPlanes;
+    std::list<vs_graphs::core::geometric::Plane *> recentLocalMapPlanes;
     for (std::list<vs_graphs::core::semantic::Room *>::iterator
-             idx  = localRoomList.begin(),
-             vend = localRoomList.end();
-         idx != vend;
-         idx++)
+             markerIt = localRoomList.begin(),
+             vend     = localRoomList.end();
+         markerIt != vend;
+         markerIt++)
     {
         std::vector<vs_graphs::core::geometric::Plane *> roomWalls =
-            (*idx)->getWalls();
+            (*markerIt)->getWalls();
         for (const auto &roomWall : roomWalls)
         {
             if (localPlaneId.find(roomWall->getId()) == localPlaneId.end())
             {
                 localPlaneList.push_back(roomWall);
                 localPlaneId[roomWall->getId()] = true;
-                lRecentLocalMapPlanes.push_back(roomWall);
+                recentLocalMapPlanes.push_back(roomWall);
             }
         }
     }
 
     // [LBA] Loop through the recently added planes, get all the KeyFrames and
     // add them
-    std::list<vs_graphs::core::KeyFrame *> lRecentLocalMapKeyFrames;
+    std::list<vs_graphs::core::KeyFrame *> recentLocalMapKeyFrames;
     for (std::list<vs_graphs::core::geometric::Plane *>::iterator
-             idx  = lRecentLocalMapPlanes.begin(),
-             vend = lRecentLocalMapPlanes.end();
-         idx != vend;
-         idx++)
+             markerIt = recentLocalMapPlanes.begin(),
+             vend     = recentLocalMapPlanes.end();
+         markerIt != vend;
+         markerIt++)
     {
         std::map<vs_graphs::core::KeyFrame *,
                  vs_graphs::core::geometric::Plane::Observation>
-            planeObservations = (*idx)->getObservations();
+            planeObservations = (*markerIt)->getObservations();
         for (std::map<
                  vs_graphs::core::KeyFrame *,
                  vs_graphs::core::geometric::Plane::Observation>::const_iterator
-                 obsId  = planeObservations.begin(),
-                 obLast = planeObservations.end();
-             obsId != obLast;
-             obsId++)
+                 observationId = planeObservations.begin(),
+                 obLast        = planeObservations.end();
+             observationId != obLast;
+             observationId++)
         {
-            vs_graphs::core::KeyFrame *pKFi = obsId->first;
-            if (!pKFi->isBad() && pKFi->getMap() == pCurrentMap)
+            vs_graphs::core::KeyFrame *p_keyFrame = observationId->first;
+            if (!p_keyFrame->isBad() && p_keyFrame->getMap() == p_currentMap)
             {
-                if (localKeyFrameId.find(pKFi->mnId) == localKeyFrameId.end())
+                if (localKeyFrameId.find(p_keyFrame->id) ==
+                    localKeyFrameId.end())
                 {
-                    localKeyFrameList.push_back(pKFi);
-                    localKeyFrameId[pKFi->mnId] = true;
-                    pKFi->baLocalKeyFrameId     = pKF->mnId;
-                    lRecentLocalMapKeyFrames.push_back(pKFi);
+                    localKeyFrameList.push_back(p_keyFrame);
+                    localKeyFrameId[p_keyFrame->id] = true;
+                    p_keyFrame->baLocalKeyFrameId   = p_keyFrame_inout->id;
+                    recentLocalMapKeyFrames.push_back(p_keyFrame);
                 }
             }
         }
@@ -278,28 +286,29 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
     // [LBA] Loop through the recently added keyframes, get all the map points
     // and add them
     for (std::list<vs_graphs::core::KeyFrame *>::iterator
-             idx  = lRecentLocalMapKeyFrames.begin(),
-             vend = lRecentLocalMapKeyFrames.end();
-         idx != vend;
-         idx++)
+             markerIt = recentLocalMapKeyFrames.begin(),
+             vend     = recentLocalMapKeyFrames.end();
+         markerIt != vend;
+         markerIt++)
     {
         std::vector<vs_graphs::core::MapPoint *> vpMPs =
-            (*idx)->getMapPointMatches();
+            (*markerIt)->getMapPointMatches();
         for (std::vector<vs_graphs::core::MapPoint *>::iterator
                  vit  = vpMPs.begin(),
                  vend = vpMPs.end();
              vit != vend;
              vit++)
         {
-            vs_graphs::core::MapPoint *pMP = *vit;
-            if (pMP)
-                if (!pMP->isBad() && pMP->getMap() == pCurrentMap)
+            vs_graphs::core::MapPoint *p_mapPoint = *vit;
+            if (p_mapPoint)
+                if (!p_mapPoint->isBad() &&
+                    p_mapPoint->getMap() == p_currentMap)
                 {
-                    if (pMP->baLocalKeyFrameId != pKF->mnId)
+                    if (p_mapPoint->baLocalKeyFrameId != p_keyFrame_inout->id)
                     {
-                        localMapPointList.push_back(pMP);
-                        localMapPointId[pMP->mnId] = true;
-                        pMP->baLocalKeyFrameId     = pKF->mnId;
+                        localMapPointList.push_back(p_mapPoint);
+                        localMapPointId[p_mapPoint->id] = true;
+                        p_mapPoint->baLocalKeyFrameId   = p_keyFrame_inout->id;
                     }
                 }
         }
@@ -307,7 +316,7 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
 
     // [LBA] Fixed Keyframes for MPs (Keyframes that see Local MapPoints but
     // that are not Local Keyframes)
-    std::list<vs_graphs::core::KeyFrame *> lFixedCameras;
+    std::list<vs_graphs::core::KeyFrame *> fixedCameras;
     for (std::list<vs_graphs::core::MapPoint *>::iterator
              lit  = localMapPointList.begin(),
              lend = localMapPointList.end();
@@ -323,21 +332,22 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
              mit != mend;
              mit++)
         {
-            vs_graphs::core::KeyFrame *pKFi = mit->first;
+            vs_graphs::core::KeyFrame *p_keyFrame = mit->first;
 
-            if (pKFi->baLocalKeyFrameId != pKF->mnId &&
-                pKFi->baFixedKeyFrameId != pKF->mnId)
+            if (p_keyFrame->baLocalKeyFrameId != p_keyFrame_inout->id &&
+                p_keyFrame->baFixedKeyFrameId != p_keyFrame_inout->id)
             {
-                pKFi->baFixedKeyFrameId = pKF->mnId;
-                if (!pKFi->isBad() && pKFi->getMap() == pCurrentMap)
-                    lFixedCameras.push_back(pKFi);
+                p_keyFrame->baFixedKeyFrameId = p_keyFrame_inout->id;
+                if (!p_keyFrame->isBad() &&
+                    p_keyFrame->getMap() == p_currentMap)
+                    fixedCameras.push_back(p_keyFrame);
             }
         }
     }
 
     // Count fixed KeyFrames
-    countFixedKF = lFixedCameras.size() + countFixedKF;
-    if (countFixedKF == 0)
+    fixedKeyFrameCount_inout = fixedCameras.size() + fixedKeyFrameCount_inout;
+    if (fixedKeyFrameCount_inout == 0)
     {
         std::cout << "[Optimizer] No fixed KeyFrames found for LBA! Aborting..."
                   << std::endl;
@@ -346,29 +356,29 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
 
     // [LBA] Setup optimizer
     g2o::SparseOptimizer                 optimizer;
-    g2o::BlockSolverX::LinearSolverType *linearSolver;
+    g2o::BlockSolverX::LinearSolverType *p_linearSolver;
 
-    linearSolver =
+    p_linearSolver =
         new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
 
-    g2o::BlockSolverX *solver_ptr = new g2o::BlockSolverX(linearSolver);
+    g2o::BlockSolverX *solver_ptr = new g2o::BlockSolverX(p_linearSolver);
 
-    g2o::OptimizationAlgorithmLevenberg *solver =
+    g2o::OptimizationAlgorithmLevenberg *p_solver =
         new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
-    if (pMap->isInertial())
-        solver->setUserLambdaInit(100.0);
+    if (p_map_inout->isInertial())
+        p_solver->setUserLambdaInit(100.0);
 
-    optimizer.setAlgorithm(solver);
+    optimizer.setAlgorithm(p_solver);
     optimizer.setVerbose(false);
 
-    if (pbStopFlag)
-        optimizer.setForceStopFlag(pbStopFlag);
+    if (p_pbStopFlag_in)
+        optimizer.setForceStopFlag(p_pbStopFlag_in);
 
-    unsigned long maxKFid = 0;
+    unsigned long maximumKeyFrameId = 0;
 
     // Debug LBA
-    pCurrentMap->optKeyFrameIds.clear();
-    pCurrentMap->fixedKeyFrameIds.clear();
+    p_currentMap->optKeyFrameIds.clear();
+    p_currentMap->fixedKeyFrameIds.clear();
 
     // [LBA] Local KeyFrame vertices
     for (std::list<vs_graphs::core::KeyFrame *>::iterator
@@ -377,106 +387,109 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
          lit != lend;
          lit++)
     {
-        vs_graphs::core::KeyFrame *pKFi = *lit;
-        g2o::VertexSE3Expmap      *vSE3 = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>         Tcw  = pKFi->getPose();
-        vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                                       Tcw.translation().cast<double>()));
-        vSE3->setId(pKFi->mnId);
-        vSE3->setFixed(pKFi->mnId == pMap->getInitKeyFrameId());
-        optimizer.addVertex(vSE3);
-        if (pKFi->mnId > maxKFid)
-            maxKFid = pKFi->mnId;
-        pCurrentMap->optKeyFrameIds.insert(pKFi->mnId);
+        vs_graphs::core::KeyFrame *p_keyFrame  = *lit;
+        g2o::VertexSE3Expmap      *p_se3Vertex = new g2o::VertexSE3Expmap();
+        Sophus::SE3<float>         Tcw         = p_keyFrame->getPose();
+        p_se3Vertex->setEstimate(
+            g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
+                         Tcw.translation().cast<double>()));
+        p_se3Vertex->setId(p_keyFrame->id);
+        p_se3Vertex->setFixed(p_keyFrame->id ==
+                              p_map_inout->getInitKeyFrameId());
+        optimizer.addVertex(p_se3Vertex);
+        if (p_keyFrame->id > maximumKeyFrameId)
+            maximumKeyFrameId = p_keyFrame->id;
+        p_currentMap->optKeyFrameIds.insert(p_keyFrame->id);
     }
-    num_OptKF = localKeyFrameList.size();
+    optKeyFrameCount_out = localKeyFrameList.size();
 
     // [LBA] Fixed KeyFrame vertices
     for (std::list<vs_graphs::core::KeyFrame *>::iterator
-             lit  = lFixedCameras.begin(),
-             lend = lFixedCameras.end();
+             lit  = fixedCameras.begin(),
+             lend = fixedCameras.end();
          lit != lend;
          lit++)
     {
-        KeyFrame             *pKFi = *lit;
-        g2o::VertexSE3Expmap *vSE3 = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>    Tcw  = pKFi->getPose();
-        vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                                       Tcw.translation().cast<double>()));
-        vSE3->setId(pKFi->mnId);
-        vSE3->setFixed(true);
-        optimizer.addVertex(vSE3);
-        if (pKFi->mnId > maxKFid)
-            maxKFid = pKFi->mnId;
-        pCurrentMap->fixedKeyFrameIds.insert(pKFi->mnId);
+        KeyFrame             *p_keyFrame  = *lit;
+        g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
+        Sophus::SE3<float>    Tcw         = p_keyFrame->getPose();
+        p_se3Vertex->setEstimate(
+            g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
+                         Tcw.translation().cast<double>()));
+        p_se3Vertex->setId(p_keyFrame->id);
+        p_se3Vertex->setFixed(true);
+        optimizer.addVertex(p_se3Vertex);
+        if (p_keyFrame->id > maximumKeyFrameId)
+            maximumKeyFrameId = p_keyFrame->id;
+        p_currentMap->fixedKeyFrameIds.insert(p_keyFrame->id);
     }
 
     // [LBA] MapPoint vertices
-    const int nExpectedSize =
-        (localKeyFrameList.size() + lFixedCameras.size()) *
+    const int expectedSizeCount =
+        (localKeyFrameList.size() + fixedCameras.size()) *
         localMapPointList.size();
 
-    vector<vs_graphs::core::EdgeSE3ProjectXYZ *> vpEdgesMono;
-    vpEdgesMono.reserve(nExpectedSize);
+    vector<vs_graphs::core::EdgeSE3ProjectXYZ *> edgesMonos;
+    edgesMonos.reserve(expectedSizeCount);
 
-    vector<vs_graphs::core::EdgeSE3ProjectXYZToBody *> vpEdgesBody;
-    vpEdgesBody.reserve(nExpectedSize);
+    vector<vs_graphs::core::EdgeSE3ProjectXYZToBody *> edgesBodies;
+    edgesBodies.reserve(expectedSizeCount);
 
-    vector<KeyFrame *> vpEdgeKFMono;
-    vpEdgeKFMono.reserve(nExpectedSize);
+    vector<KeyFrame *> edgeKeyFrameMonos;
+    edgeKeyFrameMonos.reserve(expectedSizeCount);
 
-    vector<KeyFrame *> vpEdgeKFBody;
-    vpEdgeKFBody.reserve(nExpectedSize);
+    vector<KeyFrame *> edgeKeyFrameBodies;
+    edgeKeyFrameBodies.reserve(expectedSizeCount);
 
-    vector<MapPoint *> vpMapPointEdgeMono;
-    vpMapPointEdgeMono.reserve(nExpectedSize);
+    vector<MapPoint *> mapPointEdgeMonos;
+    mapPointEdgeMonos.reserve(expectedSizeCount);
 
-    vector<MapPoint *> vpMapPointEdgeBody;
-    vpMapPointEdgeBody.reserve(nExpectedSize);
+    vector<MapPoint *> mapPointEdgeBodies;
+    mapPointEdgeBodies.reserve(expectedSizeCount);
 
-    vector<g2o::EdgeStereoSE3ProjectXYZ *> vpEdgesStereo;
-    vpEdgesStereo.reserve(nExpectedSize);
+    vector<g2o::EdgeStereoSE3ProjectXYZ *> edgesStereos;
+    edgesStereos.reserve(expectedSizeCount);
 
-    vector<KeyFrame *> vpEdgeKFStereo;
-    vpEdgeKFStereo.reserve(nExpectedSize);
+    vector<KeyFrame *> edgeKeyFrameStereos;
+    edgeKeyFrameStereos.reserve(expectedSizeCount);
 
-    vector<MapPoint *> vpMapPointEdgeStereo;
-    vpMapPointEdgeStereo.reserve(nExpectedSize);
+    vector<MapPoint *> mapPointEdgeStereos;
+    mapPointEdgeStereos.reserve(expectedSizeCount);
 
-    const int nExpectedSizePlane =
-        (localKeyFrameList.size() + lFixedCameras.size()) *
+    const int expectedSizePlaneCount =
+        (localKeyFrameList.size() + fixedCameras.size()) *
         localPlaneList.size();
-    vector<EdgeVertexPlaneProjectSE3KF *> vpEdgesPlane;
-    vpEdgesPlane.reserve(nExpectedSizePlane);
+    vector<EdgeVertexPlaneProjectSE3KF *> edgesPlanes;
+    edgesPlanes.reserve(expectedSizePlaneCount);
 
-    vector<KeyFrame *> vpEdgeKFPlane;
-    vpEdgeKFPlane.reserve(nExpectedSizePlane);
+    vector<KeyFrame *> edgeKeyFramePlanes;
+    edgeKeyFramePlanes.reserve(expectedSizePlaneCount);
 
-    vector<geometric::Plane *> vpPlaneEdgePlane;
-    vpPlaneEdgePlane.reserve(nExpectedSizePlane);
+    vector<geometric::Plane *> planeEdgePlanes;
+    planeEdgePlanes.reserve(expectedSizePlaneCount);
 
-    vector<EdgeSE3KFPointToPlane *> vpEdgesPlanePoint;
-    vpEdgesPlanePoint.reserve(nExpectedSizePlane);
+    vector<EdgeSE3KFPointToPlane *> edgesPlanePoints;
+    edgesPlanePoints.reserve(expectedSizePlaneCount);
 
-    vector<KeyFrame *> vpEdgeKFPlanePoint;
-    vpEdgeKFPlanePoint.reserve(nExpectedSizePlane);
+    vector<KeyFrame *> edgeKeyFramePlanePoints;
+    edgeKeyFramePlanePoints.reserve(expectedSizePlaneCount);
 
-    vector<geometric::Plane *> vpPlaneEdgePlanePoint;
-    vpPlaneEdgePlanePoint.reserve(nExpectedSizePlane);
+    vector<geometric::Plane *> planeEdgePlanePoints;
+    planeEdgePlanePoints.reserve(expectedSizePlaneCount);
 
-    const float thHuber1D     = sqrt(3.841);
-    const float thHuberMono   = sqrt(5.991);
-    const float thHuberStereo = sqrt(7.815);
+    const float thresholdHuber1d     = sqrt(3.841);
+    const float thresholdHuberMono   = sqrt(5.991);
+    const float thresholdHuberStereo = sqrt(7.815);
 
-    int nRooms    = 1;
-    int nFloors   = 1;
-    int nPlanes   = 1;
-    int nPoints   = 0;
-    int nMarkers  = 1;
-    int nDoorways = 1;
+    int roomCount    = 1;
+    int floorCount   = 1;
+    int planeCount   = 1;
+    int pointCount   = 0;
+    int markerCount  = 1;
+    int doorwayCount = 1;
 
-    int nEdges  = 0;
-    int maxOpId = 0;
+    int edgeCount   = 0;
+    int maximumOpId = 0;
 
     for (std::list<vs_graphs::core::MapPoint *>::iterator
              lit  = localMapPointList.begin(),
@@ -484,21 +497,21 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
          lit != lend;
          lit++)
     {
-        vs_graphs::core::MapPoint *pMP    = *lit;
-        g2o::VertexSBAPointXYZ    *vPoint = new g2o::VertexSBAPointXYZ();
-        vPoint->setEstimate(pMP->getWorldPos().cast<double>());
-        int id = pMP->mnId + maxKFid + 1;
-        vPoint->setId(id);
-        vPoint->setMarginalized(true);
-        optimizer.addVertex(vPoint);
-        nPoints++;
+        vs_graphs::core::MapPoint *p_mapPoint    = *lit;
+        g2o::VertexSBAPointXYZ    *p_pointVertex = new g2o::VertexSBAPointXYZ();
+        p_pointVertex->setEstimate(p_mapPoint->getWorldPos().cast<double>());
+        int id = p_mapPoint->id + maximumKeyFrameId + 1;
+        p_pointVertex->setId(id);
+        p_pointVertex->setMarginalized(true);
+        optimizer.addVertex(p_pointVertex);
+        pointCount++;
 
         // Update the maxOpId to hold the biggest value
-        if (id > maxOpId)
-            maxOpId = id;
+        if (id > maximumOpId)
+            maximumOpId = id;
 
         const map<KeyFrame *, tuple<int, int>> observations =
-            pMP->getObservations();
+            p_mapPoint->getObservations();
 
         // Set edges
         for (map<KeyFrame *, tuple<int, int>>::const_iterator
@@ -507,19 +520,20 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
              mit != mend;
              mit++)
         {
-            KeyFrame *pKFi = mit->first;
+            KeyFrame *p_keyFrame = mit->first;
 
-            if (!pKFi->isBad() && pKFi->getMap() == pCurrentMap)
+            if (!p_keyFrame->isBad() && p_keyFrame->getMap() == p_currentMap)
             {
                 const int leftIndex = get<0>(mit->second);
 
                 // Monocular observation
-                if (leftIndex != -1 && pKFi->uRight[get<0>(mit->second)] < 0)
+                if (leftIndex != -1 &&
+                    p_keyFrame->uRight[get<0>(mit->second)] < 0)
                 {
-                    const cv::KeyPoint &kpUn =
-                        pKFi->keyPointsUndistorted[leftIndex];
-                    Eigen::Matrix<double, 2, 1> obs;
-                    obs << kpUn.pt.x, kpUn.pt.y;
+                    const cv::KeyPoint &keyPointUn =
+                        p_keyFrame->keyPointsUndistorted[leftIndex];
+                    Eigen::Matrix<double, 2, 1> observation;
+                    observation << keyPointUn.pt.x, keyPointUn.pt.y;
 
                     vs_graphs::core::EdgeSE3ProjectXYZ *e =
                         new vs_graphs::core::EdgeSE3ProjectXYZ();
@@ -529,38 +543,43 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                                      optimizer.vertex(id)));
                     e->setVertex(1,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                                     optimizer.vertex(pKFi->mnId)));
-                    e->setMeasurement(obs);
+                                     optimizer.vertex(p_keyFrame->id)));
+                    e->setMeasurement(observation);
                     const float &invSigma2 =
-                        pKFi->invLevelSigmaSquared[kpUn.octave];
+                        p_keyFrame->invLevelSigmaSquared[keyPointUn.octave];
                     e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
 
-                    g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-                    e->setRobustKernel(rk);
-                    rk->setDelta(thHuberMono);
+                    g2o::RobustKernelHuber *p_robustKernel =
+                        new g2o::RobustKernelHuber;
+                    e->setRobustKernel(p_robustKernel);
+                    p_robustKernel->setDelta(thresholdHuberMono);
 
-                    e->pCamera = pKFi->p_camera;
+                    e->p_camera = p_keyFrame->p_camera;
 
                     optimizer.addEdge(e);
-                    vpEdgesMono.push_back(e);
-                    vpEdgeKFMono.push_back(pKFi);
-                    vpMapPointEdgeMono.push_back(pMP);
+                    edgesMonos.push_back(e);
+                    edgeKeyFrameMonos.push_back(p_keyFrame);
+                    mapPointEdgeMonos.push_back(p_mapPoint);
 
-                    nEdges++;
+                    edgeCount++;
                 }
-                else if (leftIndex != -1 && pKFi->uRight[get<0>(mit->second)] >=
-                                                0) // Stereo observation
+                else if (leftIndex != -1 &&
+                         p_keyFrame->uRight[get<0>(mit->second)] >=
+                             0) // Stereo observation
                 {
-                    const cv::KeyPoint &kpUn =
-                        pKFi->keyPointsUndistorted[leftIndex];
-                    Eigen::Matrix<double, 3, 1> obs;
-                    const float kp_ur = pKFi->uRight[get<0>(mit->second)];
-                    obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
+                    const cv::KeyPoint &keyPointUn =
+                        p_keyFrame->keyPointsUndistorted[leftIndex];
+                    Eigen::Matrix<double, 3, 1> observation;
+                    const float                 rightKeyPointU =
+                        p_keyFrame->uRight[get<0>(mit->second)];
+                    observation << keyPointUn.pt.x, keyPointUn.pt.y,
+                        rightKeyPointU;
 
                     g2o::EdgeStereoSE3ProjectXYZ *e =
                         new g2o::EdgeStereoSE3ProjectXYZ();
 
-                    if (optimizer.vertex(id) && optimizer.vertex(pKFi->mnId))
+                    if (optimizer.vertex(id) &&
+                        optimizer.vertex(p_keyFrame->id))
                     {
                         e->setVertex(
                             0,
@@ -569,51 +588,53 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                         e->setVertex(
                             1,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                                optimizer.vertex(pKFi->mnId)));
-                        e->setMeasurement(obs);
+                                optimizer.vertex(p_keyFrame->id)));
+                        e->setMeasurement(observation);
                         const float &invSigma2 =
-                            pKFi->invLevelSigmaSquared[kpUn.octave];
+                            p_keyFrame->invLevelSigmaSquared[keyPointUn.octave];
                         Eigen::Matrix3d Info =
                             Eigen::Matrix3d::Identity() * invSigma2;
                         e->setInformation(Info);
 
-                        g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-                        e->setRobustKernel(rk);
-                        rk->setDelta(thHuberStereo);
+                        g2o::RobustKernelHuber *p_robustKernel =
+                            new g2o::RobustKernelHuber;
+                        e->setRobustKernel(p_robustKernel);
+                        p_robustKernel->setDelta(thresholdHuberStereo);
 
-                        e->fx = pKFi->fx;
-                        e->fy = pKFi->fy;
-                        e->cx = pKFi->cx;
-                        e->cy = pKFi->cy;
-                        e->bf = pKFi->mbf;
+                        e->fx = p_keyFrame->fx;
+                        e->fy = p_keyFrame->fy;
+                        e->cx = p_keyFrame->cx;
+                        e->cy = p_keyFrame->cy;
+                        e->bf = p_keyFrame->mbf;
 
                         optimizer.addEdge(e);
-                        vpEdgesStereo.push_back(e);
-                        vpEdgeKFStereo.push_back(pKFi);
-                        vpMapPointEdgeStereo.push_back(pMP);
+                        edgesStereos.push_back(e);
+                        edgeKeyFrameStereos.push_back(p_keyFrame);
+                        mapPointEdgeStereos.push_back(p_mapPoint);
 
-                        nEdges++;
+                        edgeCount++;
                     }
                 }
 
-                if (pKFi->p_camera2)
+                if (p_keyFrame->p_camera2)
                 {
                     int rightIndex = get<1>(mit->second);
 
                     if (rightIndex != -1 &&
-                        rightIndex < (int)pKFi->keyPointsRight.size())
+                        rightIndex < (int)p_keyFrame->keyPointsRight.size())
                     {
-                        rightIndex -= pKFi->Nleft;
+                        rightIndex -= p_keyFrame->leftKeyPointCount;
 
-                        Eigen::Matrix<double, 2, 1> obs;
-                        cv::KeyPoint kp = pKFi->keyPointsRight[rightIndex];
-                        obs << kp.pt.x, kp.pt.y;
+                        Eigen::Matrix<double, 2, 1> observation;
+                        cv::KeyPoint                keyPoint =
+                            p_keyFrame->keyPointsRight[rightIndex];
+                        observation << keyPoint.pt.x, keyPoint.pt.y;
 
                         vs_graphs::core::EdgeSE3ProjectXYZToBody *e =
                             new vs_graphs::core::EdgeSE3ProjectXYZToBody();
 
                         if (optimizer.vertex(id) &&
-                            optimizer.vertex(pKFi->mnId))
+                            optimizer.vertex(p_keyFrame->id))
                         {
                             e->setVertex(
                                 0,
@@ -622,58 +643,59 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                             e->setVertex(
                                 1,
                                 dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                                    optimizer.vertex(pKFi->mnId)));
-                            e->setMeasurement(obs);
+                                    optimizer.vertex(p_keyFrame->id)));
+                            e->setMeasurement(observation);
                             const float &invSigma2 =
-                                pKFi->invLevelSigmaSquared[kp.octave];
+                                p_keyFrame
+                                    ->invLevelSigmaSquared[keyPoint.octave];
                             e->setInformation(Eigen::Matrix2d::Identity() *
                                               invSigma2);
 
-                            g2o::RobustKernelHuber *rk =
+                            g2o::RobustKernelHuber *p_robustKernel =
                                 new g2o::RobustKernelHuber;
-                            e->setRobustKernel(rk);
-                            rk->setDelta(thHuberMono);
+                            e->setRobustKernel(p_robustKernel);
+                            p_robustKernel->setDelta(thresholdHuberMono);
 
-                            Sophus::SE3f Trl = pKFi->getRelativePoseTrl();
+                            Sophus::SE3f Trl = p_keyFrame->getRelativePoseTrl();
                             e->mTrl          = g2o::SE3Quat(
                                 Trl.unit_quaternion().cast<double>(),
                                 Trl.translation().cast<double>());
 
-                            e->pCamera = pKFi->p_camera2;
+                            e->p_camera = p_keyFrame->p_camera2;
 
                             optimizer.addEdge(e);
-                            vpEdgesBody.push_back(e);
-                            vpEdgeKFBody.push_back(pKFi);
-                            vpMapPointEdgeBody.push_back(pMP);
+                            edgesBodies.push_back(e);
+                            edgeKeyFrameBodies.push_back(p_keyFrame);
+                            mapPointEdgeBodies.push_back(p_mapPoint);
 
-                            nEdges++;
+                            edgeCount++;
                         }
                     }
                 }
             }
         }
     }
-    num_edges = nEdges;
+    edgeCount_out = edgeCount;
 
     // [LBA] Markers
-    for (list<semantic::Marker *>::iterator idx  = localMarkerList.begin(),
-                                            lend = localMarkerList.end();
-         idx != lend;
-         idx++)
+    for (list<semantic::Marker *>::iterator markerIt = localMarkerList.begin(),
+                                            lend     = localMarkerList.end();
+         markerIt != lend;
+         markerIt++)
     {
         // Adding a vertex for each marker
-        semantic::Marker     *pMapMarker = *idx;
-        g2o::VertexSE3Expmap *vMarker    = new g2o::VertexSE3Expmap();
-        vMarker->setEstimate(g2o::SE3Quat(
-            pMapMarker->getGlobalPose().unit_quaternion().cast<double>(),
-            pMapMarker->getGlobalPose().translation().cast<double>()));
-        int opId = maxOpId + nMarkers;
-        vMarker->setId(opId);
-        optimizer.addVertex(vMarker);
-        nMarkers++;
+        semantic::Marker     *p_mapMarker    = *markerIt;
+        g2o::VertexSE3Expmap *p_markerVertex = new g2o::VertexSE3Expmap();
+        p_markerVertex->setEstimate(g2o::SE3Quat(
+            p_mapMarker->getGlobalPose().unit_quaternion().cast<double>(),
+            p_mapMarker->getGlobalPose().translation().cast<double>()));
+        int opId = maximumOpId + markerCount;
+        p_markerVertex->setId(opId);
+        optimizer.addVertex(p_markerVertex);
+        markerCount++;
 
         // Setting the local optimization ID for the marker
-        pMapMarker->setOpId(opId);
+        p_mapMarker->setOpId(opId);
 
         // 🚧 [vS-Graphs v.2.0] in contrast with the first version of visual
         // S-Graphs, where there was an edge between the marker and the
@@ -682,58 +704,58 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
         // between the marker and the plane.
     }
 
-    maxOpId += nMarkers;
+    maximumOpId += markerCount;
 
     // [LBA] Planes
     for (std::list<vs_graphs::core::geometric::Plane *>::iterator
-             idx  = localPlaneList.begin(),
-             lend = localPlaneList.end();
-         idx != lend;
-         idx++)
+             markerIt = localPlaneList.begin(),
+             lend     = localPlaneList.end();
+         markerIt != lend;
+         markerIt++)
     {
         // Variables
-        vs_graphs::core::geometric::Plane *pMapPlane = *idx;
-        g2o::VertexPlane                  *vPlane    = new g2o::VertexPlane();
+        vs_graphs::core::geometric::Plane *p_mapPlane = *markerIt;
+        g2o::VertexPlane *p_planeVertex               = new g2o::VertexPlane();
 
         // Adding a vertex for each plane
-        int opId = maxOpId + nPlanes;
-        vPlane->setId(opId);
+        int opId = maximumOpId + planeCount;
+        p_planeVertex->setId(opId);
 
-        if (p_sysParams->optimization.marginalizePlanes)
-            vPlane->setMarginalized(true);
+        if (p_sysParams->optimization.shouldMarginalizePlanes)
+            p_planeVertex->setMarginalized(true);
 
-        g2o::Plane3D planeGlobalEquation = pMapPlane->getGlobalEquation();
-        vPlane->setEstimate(planeGlobalEquation);
-        optimizer.addVertex(vPlane);
-        nPlanes++;
+        g2o::Plane3D planeGlobalEquation = p_mapPlane->getGlobalEquation();
+        p_planeVertex->setEstimate(planeGlobalEquation);
+        optimizer.addVertex(p_planeVertex);
+        planeCount++;
 
         // Setting the local optimization ID for the plane
-        pMapPlane->setOpId(opId);
+        p_mapPlane->setOpId(opId);
 
         // Adding edge between plane and MapPoints
         if (p_sysParams->optimization.planeMapPoint.enabled &&
-            !p_sysParams->optimization.marginalizePlanes)
+            !p_sysParams->optimization.shouldMarginalizePlanes)
         {
-            set<MapPoint *> sMPs = pMapPlane->getMapPoints();
-            for (set<MapPoint *>::iterator lit  = sMPs.begin(),
-                                           lend = sMPs.end();
+            set<MapPoint *> mapPoints = p_mapPlane->getMapPoints();
+            for (set<MapPoint *>::iterator lit  = mapPoints.begin(),
+                                           lend = mapPoints.end();
                  lit != lend;
                  lit++)
             {
-                MapPoint *pMP = *lit;
+                MapPoint *p_mapPoint = *lit;
 
-                if (!pMP || pMP->isBad())
+                if (!p_mapPoint || p_mapPoint->isBad())
                     continue;
 
                 if (optimizer.vertex(opId) &&
-                    optimizer.vertex(pMP->mnId + maxKFid + 1))
+                    optimizer.vertex(p_mapPoint->id + maximumKeyFrameId + 1))
                 {
                     vs_graphs::core::EdgeVertexPlaneProjectPointXYZ *e =
                         new vs_graphs::core::EdgeVertexPlaneProjectPointXYZ();
-                    e->setVertex(
-                        0,
-                        dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                            optimizer.vertex(pMP->mnId + maxKFid + 1)));
+                    e->setVertex(0,
+                                 dynamic_cast<g2o::OptimizableGraph::Vertex *>(
+                                     optimizer.vertex(p_mapPoint->id +
+                                                      maximumKeyFrameId + 1)));
                     e->setVertex(1,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                      optimizer.vertex(opId)));
@@ -741,38 +763,40 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                                       p_sysParams->optimization.planeMapPoint
                                           .informationGain);
 
-                    g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-                    e->setRobustKernel(rk);
-                    rk->setDelta(thHuber1D);
+                    g2o::RobustKernelHuber *p_robustKernel =
+                        new g2o::RobustKernelHuber;
+                    e->setRobustKernel(p_robustKernel);
+                    p_robustKernel->setDelta(thresholdHuber1d);
                     optimizer.addEdge(e);
-                    nEdges++;
+                    edgeCount++;
                 }
             }
         }
 
         // Adding an edge between the plane and the keyframes
         const map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
-            observations = pMapPlane->getObservations();
+            observations = p_mapPlane->getObservations();
         for (map<KeyFrame *,
                  vs_graphs::core::geometric::Plane::Observation>::const_iterator
-                 obsId  = observations.begin(),
-                 obLast = observations.end();
-             obsId != obLast;
-             obsId++)
+                 observationId = observations.begin(),
+                 obLast        = observations.end();
+             observationId != obLast;
+             observationId++)
         {
-            KeyFrame                                      *pKFi = obsId->first;
-            vs_graphs::core::geometric::Plane::Observation obs  = obsId->second;
+            KeyFrame *p_keyFrame = observationId->first;
+            vs_graphs::core::geometric::Plane::Observation observation =
+                observationId->second;
 
-            if (pKFi->isBad())
+            if (p_keyFrame->isBad())
             {
                 std::cout
                     << "[Optimizer] Bad KeyFrame detected for LBA! Skipping..."
                     << std::endl;
-                pMapPlane->eraseObservation(pKFi);
+                p_mapPlane->eraseObservation(p_keyFrame);
                 continue;
             }
 
-            if (pKFi->getMap() != pCurrentMap)
+            if (p_keyFrame->getMap() != p_currentMap)
             {
                 std::cout << "[Optimizer] KeyFrame is not in the current map! "
                              "Skipping..."
@@ -780,7 +804,7 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                 continue;
             }
 
-            if (optimizer.vertex(opId) && optimizer.vertex(pKFi->mnId))
+            if (optimizer.vertex(opId) && optimizer.vertex(p_keyFrame->id))
             {
                 if (p_sysParams->optimization.planeKf.enabled)
                 {
@@ -788,35 +812,36 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                         new vs_graphs::core::EdgeVertexPlaneProjectSE3KF();
                     e->setVertex(0,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                                     optimizer.vertex(pKFi->mnId)));
+                                     optimizer.vertex(p_keyFrame->id)));
                     e->setVertex(1,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                      optimizer.vertex(opId)));
                     e->setInformation(
                         Eigen::Matrix<double, 3, 3>::Identity() *
-                        obs.confidence *
+                        observation.confidence *
                         p_sysParams->optimization.planeKf.informationGain);
-                    e->setMeasurement(obs.localPlane);
+                    e->setMeasurement(observation.localPlane);
 
-                    g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-                    e->setRobustKernel(rk);
-                    rk->setDelta(thHuberStereo);
+                    g2o::RobustKernelHuber *p_robustKernel =
+                        new g2o::RobustKernelHuber;
+                    e->setRobustKernel(p_robustKernel);
+                    p_robustKernel->setDelta(thresholdHuberStereo);
                     optimizer.addEdge(e);
-                    nEdges++;
+                    edgeCount++;
 
-                    vpEdgesPlane.push_back(e);
-                    vpEdgeKFPlane.push_back(pKFi);
-                    vpPlaneEdgePlane.push_back(pMapPlane);
+                    edgesPlanes.push_back(e);
+                    edgeKeyFramePlanes.push_back(p_keyFrame);
+                    planeEdgePlanes.push_back(p_mapPlane);
                 }
 
                 // Adding plane-point constraints
                 if (p_sysParams->optimization.planePoint.enabled)
                 {
                     // Get the class index of the plane
-                    int clsCloudIdx =
+                    int clsCloudIndex =
                         utils::utils::Utils::getClassIdFromPlaneType(
-                            pMapPlane->getPlaneType());
-                    if (clsCloudIdx != -1)
+                            p_mapPlane->getPlaneType());
+                    if (clsCloudIndex != -1)
                     {
                         // Add the plane-point constraint
                         vs_graphs::core::EdgeSE3KFPointToPlane *e =
@@ -824,68 +849,70 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                         e->setVertex(
                             0,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                                optimizer.vertex(pKFi->mnId)));
+                                optimizer.vertex(p_keyFrame->id)));
                         e->setVertex(
                             1,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                 optimizer.vertex(opId)));
                         e->setInformation(
                             Eigen::Matrix<double, 1, 1>::Identity() *
-                            obs.confidence *
+                            observation.confidence *
                             p_sysParams->optimization.planePoint
                                 .informationGain);
-                        e->setMeasurement(obs.pointPlaneConstraintMatrix);
+                        e->setMeasurement(
+                            observation.pointPlaneConstraintMatrix);
 
-                        g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-                        e->setRobustKernel(rk);
-                        rk->setDelta(thHuber1D);
+                        g2o::RobustKernelHuber *p_robustKernel =
+                            new g2o::RobustKernelHuber;
+                        e->setRobustKernel(p_robustKernel);
+                        p_robustKernel->setDelta(thresholdHuber1d);
                         optimizer.addEdge(e);
-                        nEdges++;
+                        edgeCount++;
 
-                        vpEdgesPlanePoint.push_back(e);
-                        vpEdgeKFPlanePoint.push_back(pKFi);
-                        vpPlaneEdgePlanePoint.push_back(pMapPlane);
+                        edgesPlanePoints.push_back(e);
+                        edgeKeyFramePlanePoints.push_back(p_keyFrame);
+                        planeEdgePlanePoints.push_back(p_mapPlane);
                     }
                 }
             }
         }
     }
 
-    maxOpId += nPlanes;
+    maximumOpId += planeCount;
 
     // [LBA] Rooms
     for (std::list<vs_graphs::core::semantic::Room *>::iterator
-             idx  = localRoomList.begin(),
-             lend = localRoomList.end();
-         idx != lend;
-         idx++)
+             markerIt = localRoomList.begin(),
+             lend     = localRoomList.end();
+         markerIt != lend;
+         markerIt++)
     {
         try
         {
             // Variables
-            vs_graphs::core::semantic::Room                 *pMapRoom = *idx;
+            vs_graphs::core::semantic::Room *p_mapRoom = *markerIt;
             std::vector<vs_graphs::core::geometric::Plane *> walls =
-                pMapRoom->getWalls();
+                p_mapRoom->getWalls();
 
             // No need to optimize if there are no walls
             if (walls.empty())
                 continue;
 
             // Adding a vertex for each room
-            g2o::VertexSE3Expmap *vrtxRoom = new g2o::VertexSE3Expmap();
+            g2o::VertexSE3Expmap *p_vertexRoom = new g2o::VertexSE3Expmap();
 
             // Setting the local optimization ID for the room
-            int opId = maxOpId + nRooms;
-            vrtxRoom->setId(opId);
-            pMapRoom->setOpId(opId);
-            nRooms++;
+            int opId = maximumOpId + roomCount;
+            p_vertexRoom->setId(opId);
+            p_mapRoom->setOpId(opId);
+            roomCount++;
 
             // Initialize the room vertex (centroid estimate)
-            vrtxRoom->setEstimate(
+            p_vertexRoom->setEstimate(
                 g2o::SE3Quat(Eigen::Quaterniond::Identity(),
-                             pMapRoom->getCentroid().cast<double>()));
-            vrtxRoom->setFixed(true);
-            optimizer.addVertex(vrtxRoom);
+                             p_mapRoom->getCentroid().cast<double>()));
+            p_vertexRoom->setFixed(true);
+            optimizer.addVertex(p_vertexRoom);
 
             /*
              * See the global BA path above: the legacy room-centering factor
@@ -893,28 +920,33 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
              */
 
             // Optimizing the parallel walls of the room
-            for (size_t i = 0; i < walls.size(); i++)
-                for (size_t j = i + 1; j < walls.size(); j++)
+            for (size_t edgeIndex = 0; edgeIndex < walls.size(); edgeIndex++)
+                for (size_t otherWallIndex = edgeIndex + 1;
+                     otherWallIndex < walls.size();
+                     otherWallIndex++)
                 {
-                    vs_graphs::core::geometric::Plane *wall1 = walls[i];
-                    vs_graphs::core::geometric::Plane *wall2 = walls[j];
+                    vs_graphs::core::geometric::Plane *p_wall1 =
+                        walls[edgeIndex];
+                    vs_graphs::core::geometric::Plane *p_wall2 =
+                        walls[otherWallIndex];
 
                     // If the same wall, skip
-                    if (wall1->getId() == wall2->getId())
+                    if (p_wall1->getId() == p_wall2->getId())
                         continue;
 
                     // Check if the walls are parallel
-                    if (utils::utils::Utils::arePlanesParallel(wall1, wall2))
+                    if (utils::utils::Utils::arePlanesParallel(p_wall1,
+                                                               p_wall2))
                     {
                         // If they are parallel, check if they are facing each
                         // other
                         if (utils::utils::Utils::arePlanesFacingEachOther(
-                                wall1,
-                                wall2))
+                                p_wall1,
+                                p_wall2))
                         {
                             // Variables
-                            int opId1 = wall1->getOpId();
-                            int opId2 = wall2->getOpId();
+                            int opId1 = p_wall1->getOpId();
+                            int opId2 = p_wall2->getOpId();
 
                             if (optimizer.vertex(opId) &&
                                 optimizer.vertex(opId1) &&
@@ -943,22 +975,22 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                                     1e3);
 
                                 // Adding the edge to the optimizer
-                                g2o::RobustKernelHuber *rk =
+                                g2o::RobustKernelHuber *p_robustKernel =
                                     new g2o::RobustKernelHuber;
-                                e->setRobustKernel(rk);
-                                rk->setDelta(thHuber1D);
+                                e->setRobustKernel(p_robustKernel);
+                                p_robustKernel->setDelta(thresholdHuber1d);
                                 optimizer.addEdge(e);
                             }
                         }
                     }
 
                     // Check if the walls are perpendicular
-                    if (utils::utils::Utils::arePlanesPerpendicular(wall1,
-                                                                    wall2))
+                    if (utils::utils::Utils::arePlanesPerpendicular(p_wall1,
+                                                                    p_wall2))
                     {
                         // Variables
-                        int opId1 = wall1->getOpId();
-                        int opId2 = wall2->getOpId();
+                        int opId1 = p_wall1->getOpId();
+                        int opId2 = p_wall2->getOpId();
 
                         if (optimizer.vertex(opId) && optimizer.vertex(opId1) &&
                             optimizer.vertex(opId2))
@@ -983,10 +1015,10 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
                                 Eigen::Matrix<double, 1, 1>::Identity() * 1e3);
 
                             // Adding the edge to the optimizer
-                            g2o::RobustKernelHuber *rk =
+                            g2o::RobustKernelHuber *p_robustKernel =
                                 new g2o::RobustKernelHuber;
-                            e->setRobustKernel(rk);
-                            rk->setDelta(thHuber1D);
+                            e->setRobustKernel(p_robustKernel);
+                            p_robustKernel->setDelta(thresholdHuber1d);
                             optimizer.addEdge(e);
                         }
                     }
@@ -1000,10 +1032,10 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
         }
     }
 
-    maxOpId += nRooms;
+    maximumOpId += roomCount;
 
     // abort if no edges
-    if (nEdges == 0)
+    if (edgeCount == 0)
     {
         Verbose::printMess(
             "LM-LBA: There are 0 edges in the optimizations, LBA aborted",
@@ -1011,123 +1043,130 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
         return;
     }
 
-    if (pbStopFlag)
-        if (*pbStopFlag)
+    if (p_pbStopFlag_in)
+        if (*p_pbStopFlag_in)
             return;
 
     optimizer.initializeOptimization();
     optimizer.optimize(10);
 
     vector<pair<KeyFrame *, MapPoint *>> vToErase;
-    vToErase.reserve(vpEdgesMono.size() + vpEdgesBody.size() +
-                     vpEdgesStereo.size());
+    vToErase.reserve(edgesMonos.size() + edgesBodies.size() +
+                     edgesStereos.size());
 
     vector<pair<KeyFrame *, geometric::Plane *>> vToErasePlane;
-    vToErasePlane.reserve(vpEdgesPlane.size() * 2);
+    vToErasePlane.reserve(edgesPlanes.size() * 2);
 
     // Check inlier observations
-    for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++)
+    for (size_t edgeIndex = 0, iend = edgesMonos.size(); edgeIndex < iend;
+         edgeIndex++)
     {
-        vs_graphs::core::EdgeSE3ProjectXYZ *e   = vpEdgesMono[i];
-        MapPoint                           *pMP = vpMapPointEdgeMono[i];
+        vs_graphs::core::EdgeSE3ProjectXYZ *e = edgesMonos[edgeIndex];
+        MapPoint *p_mapPoint                  = mapPointEdgeMonos[edgeIndex];
 
-        if (pMP->isBad())
+        if (p_mapPoint->isBad())
             continue;
 
         if (e->chi2() > 5.991 || !e->isDepthPositive())
         {
-            KeyFrame *pKFi = vpEdgeKFMono[i];
-            vToErase.push_back(make_pair(pKFi, pMP));
+            KeyFrame *p_keyFrame = edgeKeyFrameMonos[edgeIndex];
+            vToErase.push_back(make_pair(p_keyFrame, p_mapPoint));
         }
     }
 
-    for (size_t i = 0, iend = vpEdgesBody.size(); i < iend; i++)
+    for (size_t edgeIndex = 0, iend = edgesBodies.size(); edgeIndex < iend;
+         edgeIndex++)
     {
-        vs_graphs::core::EdgeSE3ProjectXYZToBody *e   = vpEdgesBody[i];
-        MapPoint                                 *pMP = vpMapPointEdgeBody[i];
+        vs_graphs::core::EdgeSE3ProjectXYZToBody *e = edgesBodies[edgeIndex];
+        MapPoint *p_mapPoint = mapPointEdgeBodies[edgeIndex];
 
-        if (pMP->isBad())
+        if (p_mapPoint->isBad())
             continue;
 
         if (e->chi2() > 5.991 || !e->isDepthPositive())
         {
-            KeyFrame *pKFi = vpEdgeKFBody[i];
-            vToErase.push_back(make_pair(pKFi, pMP));
+            KeyFrame *p_keyFrame = edgeKeyFrameBodies[edgeIndex];
+            vToErase.push_back(make_pair(p_keyFrame, p_mapPoint));
         }
     }
 
-    for (size_t i = 0, iend = vpEdgesStereo.size(); i < iend; i++)
+    for (size_t edgeIndex = 0, iend = edgesStereos.size(); edgeIndex < iend;
+         edgeIndex++)
     {
-        g2o::EdgeStereoSE3ProjectXYZ *e   = vpEdgesStereo[i];
-        MapPoint                     *pMP = vpMapPointEdgeStereo[i];
+        g2o::EdgeStereoSE3ProjectXYZ *e = edgesStereos[edgeIndex];
+        MapPoint *p_mapPoint            = mapPointEdgeStereos[edgeIndex];
 
-        if (pMP->isBad())
+        if (p_mapPoint->isBad())
             continue;
 
         if (e->chi2() > 7.815 || !e->isDepthPositive())
         {
-            KeyFrame *pKFi = vpEdgeKFStereo[i];
-            vToErase.push_back(make_pair(pKFi, pMP));
+            KeyFrame *p_keyFrame = edgeKeyFrameStereos[edgeIndex];
+            vToErase.push_back(make_pair(p_keyFrame, p_mapPoint));
         }
     }
 
-    for (size_t i = 0, iend = vpEdgesPlane.size(); i < iend; i++)
+    for (size_t edgeIndex = 0, iend = edgesPlanes.size(); edgeIndex < iend;
+         edgeIndex++)
     {
-        vs_graphs::core::EdgeVertexPlaneProjectSE3KF *e = vpEdgesPlane[i];
-        geometric::Plane *vpPlane                       = vpPlaneEdgePlane[i];
+        vs_graphs::core::EdgeVertexPlaneProjectSE3KF *e =
+            edgesPlanes[edgeIndex];
+        geometric::Plane *p_edgePlane = planeEdgePlanes[edgeIndex];
 
         if (e->chi2() > 7.815 || !e->isDistanceCorrect())
         {
 
             // if not already in ToErase, add it
-            std::pair<KeyFrame *, geometric::Plane *> pKFPlane =
-                make_pair(vpEdgeKFPlane[i], vpPlane);
+            std::pair<KeyFrame *, geometric::Plane *> keyFramePlane =
+                make_pair(edgeKeyFramePlanes[edgeIndex], p_edgePlane);
             if (std::find(vToErasePlane.begin(),
                           vToErasePlane.end(),
-                          pKFPlane) == vToErasePlane.end())
-                vToErasePlane.push_back(pKFPlane);
+                          keyFramePlane) == vToErasePlane.end())
+                vToErasePlane.push_back(keyFramePlane);
         }
     }
 
-    for (size_t i = 0, iend = vpEdgesPlanePoint.size(); i < iend; i++)
+    for (size_t edgeIndex = 0, iend = edgesPlanePoints.size(); edgeIndex < iend;
+         edgeIndex++)
     {
-        vs_graphs::core::EdgeSE3KFPointToPlane *e = vpEdgesPlanePoint[i];
-        geometric::Plane *vpPlane                 = vpPlaneEdgePlanePoint[i];
+        vs_graphs::core::EdgeSE3KFPointToPlane *e = edgesPlanePoints[edgeIndex];
+        geometric::Plane *p_edgePlane = planeEdgePlanePoints[edgeIndex];
 
         if (e->chi2() > 3.841 || !e->isDistanceCorrect())
         {
             // if not already in ToErase, add it
-            std::pair<KeyFrame *, geometric::Plane *> pKFPlane =
-                make_pair(vpEdgeKFPlanePoint[i], vpPlane);
+            std::pair<KeyFrame *, geometric::Plane *> keyFramePlane =
+                make_pair(edgeKeyFramePlanePoints[edgeIndex], p_edgePlane);
             if (std::find(vToErasePlane.begin(),
                           vToErasePlane.end(),
-                          pKFPlane) == vToErasePlane.end())
-                vToErasePlane.push_back(pKFPlane);
+                          keyFramePlane) == vToErasePlane.end())
+                vToErasePlane.push_back(keyFramePlane);
         }
     }
 
     // Get Map Mutex
-    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+    unique_lock<mutex> lock(p_map_inout->mapUpdateMutex);
 
     if (!vToErase.empty())
     {
-        for (size_t i = 0; i < vToErase.size(); i++)
+        for (size_t edgeIndex = 0; edgeIndex < vToErase.size(); edgeIndex++)
         {
-            KeyFrame *pKFi = vToErase[i].first;
-            MapPoint *pMPi = vToErase[i].second;
-            pKFi->eraseMapPointMatch(pMPi);
-            pMPi->eraseObservation(pKFi);
+            KeyFrame *p_keyFrame        = vToErase[edgeIndex].first;
+            MapPoint *p_mapPointToErase = vToErase[edgeIndex].second;
+            p_keyFrame->eraseMapPointMatch(p_mapPointToErase);
+            p_mapPointToErase->eraseObservation(p_keyFrame);
         }
     }
 
     if (!vToErasePlane.empty())
     {
-        for (size_t i = 0; i < vToErasePlane.size(); i++)
+        for (size_t edgeIndex = 0; edgeIndex < vToErasePlane.size();
+             edgeIndex++)
         {
-            KeyFrame         *pKFi   = vToErasePlane[i].first;
-            geometric::Plane *pPlane = vToErasePlane[i].second;
-            pPlane->eraseObservation(pKFi);
-            pKFi->removeMapPlane(pPlane);
+            KeyFrame         *p_keyFrame = vToErasePlane[edgeIndex].first;
+            geometric::Plane *p_plane    = vToErasePlane[edgeIndex].second;
+            p_plane->eraseObservation(p_keyFrame);
+            p_keyFrame->removeMapPlane(p_plane);
         }
     }
 
@@ -1139,13 +1178,14 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
     {
         try
         {
-            KeyFrame             *pKFi = *lit;
-            g2o::VertexSE3Expmap *vSE3 = static_cast<g2o::VertexSE3Expmap *>(
-                optimizer.vertex(pKFi->mnId));
-            g2o::SE3Quat SE3quat = vSE3->estimate();
-            Sophus::SE3f Tiw(SE3quat.rotation().cast<float>(),
-                             SE3quat.translation().cast<float>());
-            pKFi->setPose(Tiw);
+            KeyFrame             *p_keyFrame = *lit;
+            g2o::VertexSE3Expmap *p_se3Vertex =
+                static_cast<g2o::VertexSE3Expmap *>(
+                    optimizer.vertex(p_keyFrame->id));
+            g2o::SE3Quat poseEstimate = p_se3Vertex->estimate();
+            Sophus::SE3f Tiw(poseEstimate.rotation().cast<float>(),
+                             poseEstimate.translation().cast<float>());
+            p_keyFrame->setPose(Tiw);
         }
         catch (std::exception &e)
         {
@@ -1164,12 +1204,12 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
     {
         try
         {
-            MapPoint               *pMP = *lit;
-            g2o::VertexSBAPointXYZ *vPoint =
+            MapPoint               *p_mapPoint = *lit;
+            g2o::VertexSBAPointXYZ *p_pointVertex =
                 static_cast<g2o::VertexSBAPointXYZ *>(
-                    optimizer.vertex(pMP->mnId + maxKFid + 1));
-            pMP->setWorldPos(vPoint->estimate().cast<float>());
-            pMP->updateNormalAndDepth();
+                    optimizer.vertex(p_mapPoint->id + maximumKeyFrameId + 1));
+            p_mapPoint->setWorldPos(p_pointVertex->estimate().cast<float>());
+            p_mapPoint->updateNormalAndDepth();
         }
         catch (std::exception &e)
         {
@@ -1181,20 +1221,21 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
     }
 
     // [LBA] Locally optimized markers
-    for (list<semantic::Marker *>::iterator idx  = localMarkerList.begin(),
-                                            lend = localMarkerList.end();
-         idx != lend;
-         idx++)
+    for (list<semantic::Marker *>::iterator markerIt = localMarkerList.begin(),
+                                            lend     = localMarkerList.end();
+         markerIt != lend;
+         markerIt++)
     {
         try
         {
-            semantic::Marker     *pMapMarker = *idx;
-            g2o::VertexSE3Expmap *vMarker = static_cast<g2o::VertexSE3Expmap *>(
-                optimizer.vertex(pMapMarker->getOpId()));
-            g2o::SE3Quat SE3quat = vMarker->estimate();
-            Sophus::SE3f Tiw(SE3quat.rotation().cast<float>(),
-                             SE3quat.translation().cast<float>());
-            pMapMarker->setGlobalPose(Tiw);
+            semantic::Marker     *p_mapMarker = *markerIt;
+            g2o::VertexSE3Expmap *p_markerVertex =
+                static_cast<g2o::VertexSE3Expmap *>(
+                    optimizer.vertex(p_mapMarker->getOpId()));
+            g2o::SE3Quat poseEstimate = p_markerVertex->estimate();
+            Sophus::SE3f Tiw(poseEstimate.rotation().cast<float>(),
+                             poseEstimate.translation().cast<float>());
+            p_mapMarker->setGlobalPose(Tiw);
         }
         catch (std::exception &e)
         {
@@ -1207,18 +1248,18 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
 
     // [LBA] Locally optimized planes
     for (std::list<vs_graphs::core::geometric::Plane *>::iterator
-             idx  = localPlaneList.begin(),
-             lend = localPlaneList.end();
-         idx != lend;
-         idx++)
+             markerIt = localPlaneList.begin(),
+             lend     = localPlaneList.end();
+         markerIt != lend;
+         markerIt++)
     {
         try
         {
-            vs_graphs::core::geometric::Plane *pMapPlane = *idx;
-            g2o::VertexPlane *vPlane = static_cast<g2o::VertexPlane *>(
-                optimizer.vertex(pMapPlane->getOpId()));
-            g2o::Plane3D planePlane = vPlane->estimate();
-            pMapPlane->setGlobalEquation(planePlane);
+            vs_graphs::core::geometric::Plane *p_mapPlane = *markerIt;
+            g2o::VertexPlane *p_planeVertex = static_cast<g2o::VertexPlane *>(
+                optimizer.vertex(p_mapPlane->getOpId()));
+            g2o::Plane3D planePlane = p_planeVertex->estimate();
+            p_mapPlane->setGlobalEquation(planePlane);
         }
         catch (std::exception &e)
         {
@@ -1301,7 +1342,7 @@ void Optimizer::localBundleAdjustment(vs_graphs::core::KeyFrame *pKF,
     //     }
     // }
 
-    pMap->increaseChangeIndex();
+    p_map_inout->increaseChangeIndex();
 }
 
 } // namespace core

@@ -32,58 +32,58 @@ namespace vs_graphs
 namespace core
 {
 
-Tracking::Tracking(System                    *pSys,
-                   ORBVocabulary             *pVoc,
-                   FrameDrawer               *pFrameDrawer,
-                   MapDrawer                 *pMapDrawer,
-                   Atlas                     *pAtlas,
-                   KeyFrameDatabase          *pKFDB,
-                   const string              &strSettingPath,
-                   const int                  sensorType,
-                   utils::settings::Settings *settings,
-                   const string              &_nameSeq) :
+Tracking::Tracking(System                    *p_sys_in,
+                   ORBVocabulary             *p_vocabulary_in,
+                   FrameDrawer               *p_frameDrawer_in,
+                   MapDrawer                 *p_mapDrawer_in,
+                   Atlas                     *p_atlas_in,
+                   KeyFrameDatabase          *p_keyFrameDatabase_in,
+                   const string              &settingPath_in,
+                   const int                  sensorType_in,
+                   utils::settings::Settings *p_settings_in,
+                   const string              &nameSeq_in) :
     state(NO_IMAGES_YET),
-    sensor(sensorType),
+    sensor(sensorType_in),
     trackedFr(0),
-    step(false),
-    onlyTracking(false),
-    mapUpdated(false),
-    visualOdometry(false),
-    p_orbVocabulary(pVoc),
-    p_keyFrameDatabase(pKFDB),
-    readyToInitialize(false),
-    p_system(pSys),
+    isStepRequested(false),
+    isTrackingOnlyMode(false),
+    isMapUpdated(false),
+    isVisualOdometry(false),
+    p_orbVocabulary(p_vocabulary_in),
+    p_keyFrameDatabase(p_keyFrameDatabase_in),
+    isReadyToInitialize(false),
+    p_system(p_sys_in),
     p_viewer(nullptr),
-    p_frameDrawer(pFrameDrawer),
-    p_mapDrawer(pMapDrawer),
-    stepByStep(false),
-    p_atlas(pAtlas),
+    p_frameDrawer(p_frameDrawer_in),
+    p_mapDrawer(p_mapDrawer_in),
+    isStepByStepMode(false),
+    p_atlas(p_atlas_in),
     p_lastKeyFrame(static_cast<KeyFrame *>(nullptr)),
     lastRelocFrameId(0),
     time_recently_lost(10.0),
     firstFrameId(0),
     initialFrameId(0),
-    createdMap(false),
+    hasCreatedMap(false),
     p_camera2(nullptr)
 {
-    (void)_nameSeq;
+    (void)nameSeq_in;
     // Load camera parameters from settings file
-    if (settings)
+    if (p_settings_in)
     {
         std::cout << "[Tracking] New parameters from the config file!"
                   << std::endl;
-        newParameterLoader(settings);
+        newParameterLoader(p_settings_in);
     }
     else
     {
-        cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+        cv::FileStorage settingsFile(settingPath_in, cv::FileStorage::READ);
 
         // Load camera parameters
         std::cout
             << "[Tracking] Loading camera parameters from the config file!"
             << std::endl;
-        bool boolParseCamParams = parseCamParamFile(fSettings);
-        if (!boolParseCamParams)
+        bool boolParseCameraParams = parseCamParamFile(settingsFile);
+        if (!boolParseCameraParams)
             std::cerr << "[Tracking] Error with the camera parameters in the "
                          "config file!"
                       << std::endl;
@@ -91,21 +91,22 @@ Tracking::Tracking(System                    *pSys,
         // Load ORB parameters
         std::cout << "[Tracking] Loading ORB parameters from the config file!"
                   << std::endl;
-        bool boolParseORBFeats = parseORBParamFile(fSettings);
-        if (!boolParseORBFeats)
+        bool boolParseOrbFeats = parseORBParamFile(settingsFile);
+        if (!boolParseOrbFeats)
             std::cerr << "[Tracking] Error with the ORB parameters in the "
                          "config file!"
                       << std::endl;
 
         // Load IMU parameters if needed
-        bool boolParseIMU = true;
+        bool boolParseImu = true;
         std::cout << "[Tracking] Loading IMU parameters from the config file!"
                   << std::endl;
-        if (sensorType == System::IMU_MONOCULAR ||
-            sensorType == System::IMU_STEREO || sensorType == System::IMU_RGBD)
+        if (sensorType_in == System::IMU_MONOCULAR ||
+            sensorType_in == System::IMU_STEREO ||
+            sensorType_in == System::IMU_RGBD)
         {
-            boolParseIMU = parseIMUParamFile(fSettings);
-            if (!boolParseIMU)
+            boolParseImu = parseIMUParamFile(settingsFile);
+            if (!boolParseImu)
                 std::cerr << "[Tracking] Error with the IMU parameters in the "
                              "config file!"
                           << std::endl;
@@ -113,7 +114,7 @@ Tracking::Tracking(System                    *pSys,
         }
 
         // Check if everything is correctly loaded
-        if (!boolParseCamParams || !boolParseORBFeats || !boolParseIMU)
+        if (!boolParseCameraParams || !boolParseOrbFeats || !boolParseImu)
         {
             std::cerr << "[Tracking] Error found in the config file! The "
                          "format seems to be incorrect!"
@@ -127,63 +128,69 @@ Tracking::Tracking(System                    *pSys,
         }
     }
 
-    loadTrackingParameters(strSettingPath);
-    if (sensorType == System::IMU_MONOCULAR ||
-        sensorType == System::IMU_STEREO || sensorType == System::IMU_RGBD)
+    loadTrackingParameters(settingPath_in);
+    if (sensorType_in == System::IMU_MONOCULAR ||
+        sensorType_in == System::IMU_STEREO ||
+        sensorType_in == System::IMU_RGBD)
     {
         framesToResetIMU = maxFrames;
     }
 
     // Obtain the angles which will be used to rotate the world frame
     poseTc0w = Sophus::SE3f();
-    if (sensorType == System::MONOCULAR)
+    if (sensorType_in == System::MONOCULAR)
     {
-        float dWorldRPY[3] = {};
+        float worldRollPitchYaw[3] = {};
 
-        string strAngleNames[3] = {"roll", "pitch", "yaw"};
+        string angleNames[3] = {"roll", "pitch", "yaw"};
 
-        cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+        cv::FileStorage settingsFile(settingPath_in, cv::FileStorage::READ);
 
         std::cout << "Rotate world frame by (rad): ";
-        for (int i = 0; i < 3; i++)
+        for (int axisIndex = 0; axisIndex < 3; axisIndex++)
         {
-            cv::FileNode node = fSettings["WorldRPY." + strAngleNames[i]];
+            cv::FileNode node =
+                settingsFile["WorldRPY." + angleNames[axisIndex]];
             if (!node.empty() && node.isReal())
             {
-                dWorldRPY[i] = node.real();
+                worldRollPitchYaw[axisIndex] = node.real();
             }
             else
             {
-                dWorldRPY[i] = 0;
+                worldRollPitchYaw[axisIndex] = 0;
             }
-            std::cout << strAngleNames[i] << " " << dWorldRPY[i] << " ";
+            std::cout << angleNames[axisIndex] << " "
+                      << worldRollPitchYaw[axisIndex] << " ";
         }
         std::cout << endl;
 
-        Eigen::AngleAxisf  AngleR(dWorldRPY[0], Eigen::Vector3f::UnitX());
-        Eigen::AngleAxisf  AngleP(dWorldRPY[1], Eigen::Vector3f::UnitY());
-        Eigen::AngleAxisf  AngleY(dWorldRPY[2], Eigen::Vector3f::UnitZ());
-        Eigen::Quaternionf qRPY   = AngleR * AngleP * AngleY;
-        Eigen::Matrix3f    RotRPY = qRPY.matrix();
-        poseTc0w = Sophus::SE3f(RotRPY, Eigen::Vector3f::Zero());
+        Eigen::AngleAxisf  angleR(worldRollPitchYaw[0],
+                                 Eigen::Vector3f::UnitX());
+        Eigen::AngleAxisf  angleP(worldRollPitchYaw[1],
+                                 Eigen::Vector3f::UnitY());
+        Eigen::AngleAxisf  angleY(worldRollPitchYaw[2],
+                                 Eigen::Vector3f::UnitZ());
+        Eigen::Quaternionf rollPitchYawQuaternion = angleR * angleP * angleY;
+        Eigen::Matrix3f    rotRpy = rollPitchYawQuaternion.matrix();
+        poseTc0w = Sophus::SE3f(rotRpy, Eigen::Vector3f::Zero());
     }
 
-    initId       = 0;
-    lastId       = 0;
-    initWith3KFs = false;
-    numDataset   = 0;
+    initId                             = 0;
+    lastId                             = 0;
+    shouldInitializeWithThreeKeyFrames = false;
+    numDataset                         = 0;
 
-    vector<camera_models::geometriccamera::GeometricCamera *> vpCams =
+    vector<camera_models::geometriccamera::GeometricCamera *> cams =
         p_atlas->getAllCameras();
-    std::cout << "\n[Tracking] Found " << vpCams.size()
-              << " camera(s) in Atlas!" << std::endl;
-    for (camera_models::geometriccamera::GeometricCamera *pCam : vpCams)
+    std::cout << "\n[Tracking] Found " << cams.size() << " camera(s) in Atlas!"
+              << std::endl;
+    for (camera_models::geometriccamera::GeometricCamera *p_camera : cams)
     {
-        std::cout << "- Camera " << pCam->getId();
-        if (pCam->getType() ==
+        std::cout << "- Camera " << p_camera->getId();
+        if (p_camera->getType() ==
             camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE)
             std::cout << " is a pinhole!" << std::endl;
-        else if (pCam->getType() ==
+        else if (p_camera->getType() ==
                  camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE)
             std::cout << " is a fisheye!" << std::endl;
         else
@@ -191,15 +198,15 @@ Tracking::Tracking(System                    *pSys,
     }
 
 #ifdef REGISTER_TIMES
-    vdRectStereo_ms.clear();
-    vdResizeImage_ms.clear();
-    vdORBExtract_ms.clear();
-    vdStereoMatch_ms.clear();
-    vdIMUInteg_ms.clear();
-    vdPosePred_ms.clear();
-    vdLMTrack_ms.clear();
-    vdNewKF_ms.clear();
-    vdTrackTotal_ms.clear();
+    stereoRectificationTimes_ms.clear();
+    imageResizeTimes_ms.clear();
+    orbExtractionTimes_ms.clear();
+    stereoMatchTimes_ms.clear();
+    imuIntegrationTimes_ms.clear();
+    posePredictionTimes_ms.clear();
+    localMapTrackTimes_ms.clear();
+    newKeyFrameTimes_ms.clear();
+    trackTotalTimes_ms.clear();
 #endif
 }
 

@@ -38,60 +38,65 @@ namespace core
 void Tracking::createInitialMapMonocular()
 {
     // Create KeyFrames
-    KeyFrame *pKFini = new KeyFrame(initialFrame,
-                                    p_atlas->getCurrentMap(),
-                                    p_keyFrameDatabase);
-    KeyFrame *pKFcur = new KeyFrame(currentFrame,
-                                    p_atlas->getCurrentMap(),
-                                    p_keyFrameDatabase);
+    KeyFrame *p_keyFrameInitial = new KeyFrame(initialFrame,
+                                               p_atlas->getCurrentMap(),
+                                               p_keyFrameDatabase);
+    KeyFrame *p_keyFrameCurrent = new KeyFrame(currentFrame,
+                                               p_atlas->getCurrentMap(),
+                                               p_keyFrameDatabase);
 
     if (sensor == System::IMU_MONOCULAR)
-        pKFini->p_imuPreintegrated = (IMU::Preintegrated *)(nullptr);
+        p_keyFrameInitial->p_imuPreintegrated = (IMU::Preintegrated *)(nullptr);
 
-    pKFini->computeBagOfWords();
-    pKFcur->computeBagOfWords();
+    p_keyFrameInitial->computeBagOfWords();
+    p_keyFrameCurrent->computeBagOfWords();
 
     // Insert KFs in the map
-    p_atlas->addKeyFrame(pKFini);
-    p_atlas->addKeyFrame(pKFcur);
+    p_atlas->addKeyFrame(p_keyFrameInitial);
+    p_atlas->addKeyFrame(p_keyFrameCurrent);
 
-    for (size_t i = 0; i < iniMatches.size(); i++)
+    for (size_t initialMatchIndex = 0; initialMatchIndex < iniMatches.size();
+         initialMatchIndex++)
     {
-        if (iniMatches[i] < 0)
+        if (iniMatches[initialMatchIndex] < 0)
             continue;
 
         // Create MapPoint.
-        Eigen::Vector3f worldPos;
-        worldPos << iniP3D[i].x, iniP3D[i].y, iniP3D[i].z;
-        Sophus::SE3f Tc0mp(Eigen::Matrix3f::Identity(), worldPos);
-        Sophus::SE3f Twmp = poseTc0w.inverse() * Tc0mp;
-        worldPos          = Twmp.translation();
-        MapPoint *pMP =
-            new MapPoint(worldPos, pKFcur, p_atlas->getCurrentMap());
+        Eigen::Vector3f worldPosition;
+        worldPosition << iniP3D[initialMatchIndex].x,
+            iniP3D[initialMatchIndex].y, iniP3D[initialMatchIndex].z;
+        Sophus::SE3f Tc0mp(Eigen::Matrix3f::Identity(), worldPosition);
+        Sophus::SE3f Twmp    = poseTc0w.inverse() * Tc0mp;
+        worldPosition        = Twmp.translation();
+        MapPoint *p_mapPoint = new MapPoint(worldPosition,
+                                            p_keyFrameCurrent,
+                                            p_atlas->getCurrentMap());
 
-        pKFini->addMapPoint(pMP, i);
-        pKFcur->addMapPoint(pMP, iniMatches[i]);
+        p_keyFrameInitial->addMapPoint(p_mapPoint, initialMatchIndex);
+        p_keyFrameCurrent->addMapPoint(p_mapPoint,
+                                       iniMatches[initialMatchIndex]);
 
-        pMP->addObservation(pKFini, i);
-        pMP->addObservation(pKFcur, iniMatches[i]);
+        p_mapPoint->addObservation(p_keyFrameInitial, initialMatchIndex);
+        p_mapPoint->addObservation(p_keyFrameCurrent,
+                                   iniMatches[initialMatchIndex]);
 
-        pMP->computeDistinctiveDescriptors();
-        pMP->updateNormalAndDepth();
+        p_mapPoint->computeDistinctiveDescriptors();
+        p_mapPoint->updateNormalAndDepth();
 
         // Fill Current Frame structure
-        currentFrame.mapPoints[iniMatches[i]]    = pMP;
-        currentFrame.outlierFlags[iniMatches[i]] = false;
+        currentFrame.mapPoints[iniMatches[initialMatchIndex]]    = p_mapPoint;
+        currentFrame.outlierFlags[iniMatches[initialMatchIndex]] = false;
 
         // Add to Map
-        p_atlas->addMapPoint(pMP);
+        p_atlas->addMapPoint(p_mapPoint);
     }
 
     // Update Connections
-    pKFini->updateConnections();
-    pKFcur->updateConnections();
+    p_keyFrameInitial->updateConnections();
+    p_keyFrameCurrent->updateConnections();
 
-    std::set<MapPoint *> sMPs;
-    sMPs = pKFini->getMapPoints();
+    std::set<MapPoint *> mapPoints;
+    mapPoints = p_keyFrameInitial->getMapPoints();
 
     // Bundle Adjustment
     std::cout << "\n[Tracking]" << std::endl;
@@ -106,16 +111,16 @@ void Tracking::createInitialMapMonocular()
         true,
         types::SystemParams::getParams()->markers.impact);
 
-    float medianDepth = pKFini->computeSceneMedianDepth(2);
+    float medianDepth = p_keyFrameInitial->computeSceneMedianDepth(2);
     float invMedianDepth;
     if (sensor == System::IMU_MONOCULAR)
         invMedianDepth = 4.0f / medianDepth;
     else
         invMedianDepth = 1.0f / medianDepth;
 
-    if (medianDepth < 0 ||
-        pKFcur->getTrackedMapPointCount(1) < 50) // TODO Check, originally 100
-                                                 // tracks
+    if (medianDepth < 0 || p_keyFrameCurrent->getTrackedMapPointCount(1) <
+                               50) // TODO Check, originally 100
+                                   // tracks
     {
         Verbose::printMess("Wrong initialization, reseting...",
                            Verbose::VERBOSITY_QUIET);
@@ -125,54 +130,55 @@ void Tracking::createInitialMapMonocular()
     }
 
     // Scale initial baseline
-    Sophus::SE3f Tc2w = pKFcur->getPose();
+    Sophus::SE3f Tc2w = p_keyFrameCurrent->getPose();
     Tc2w.translation() *= invMedianDepth;
-    pKFcur->setPose(Tc2w);
+    p_keyFrameCurrent->setPose(Tc2w);
 
     // Scale points
-    vector<MapPoint *> vpAllMapPoints = pKFini->getMapPointMatches();
-    for (size_t iMP = 0; iMP < vpAllMapPoints.size(); iMP++)
+    vector<MapPoint *> allMapPoints = p_keyFrameInitial->getMapPointMatches();
+    for (size_t mapPointIndex = 0; mapPointIndex < allMapPoints.size();
+         mapPointIndex++)
     {
-        if (vpAllMapPoints[iMP])
+        if (allMapPoints[mapPointIndex])
         {
-            MapPoint *pMP = vpAllMapPoints[iMP];
-            pMP->setWorldPos(pMP->getWorldPos() * invMedianDepth);
-            pMP->updateNormalAndDepth();
+            MapPoint *p_mapPoint = allMapPoints[mapPointIndex];
+            p_mapPoint->setWorldPos(p_mapPoint->getWorldPos() * invMedianDepth);
+            p_mapPoint->updateNormalAndDepth();
         }
     }
 
     if (sensor == System::IMU_MONOCULAR)
     {
-        pKFcur->p_prevKF           = pKFini;
-        pKFini->p_nextKF           = pKFcur;
-        pKFcur->p_imuPreintegrated = p_imuPreintegratedFromLastKF;
+        p_keyFrameCurrent->p_prevKF           = p_keyFrameInitial;
+        p_keyFrameInitial->p_nextKF           = p_keyFrameCurrent;
+        p_keyFrameCurrent->p_imuPreintegrated = p_imuPreintegratedFromLastKF;
 
-        p_imuPreintegratedFromLastKF =
-            new IMU::Preintegrated(pKFcur->p_imuPreintegrated->getUpdatedBias(),
-                                   pKFcur->imuCalibration);
+        p_imuPreintegratedFromLastKF = new IMU::Preintegrated(
+            p_keyFrameCurrent->p_imuPreintegrated->getUpdatedBias(),
+            p_keyFrameCurrent->imuCalibration);
     }
 
-    p_localMapper->insertKeyFrame(pKFini);
-    p_localMapper->insertKeyFrame(pKFcur);
-    p_localMapper->firstTimestamp = pKFcur->timeStamp;
+    p_localMapper->insertKeyFrame(p_keyFrameInitial);
+    p_localMapper->insertKeyFrame(p_keyFrameCurrent);
+    p_localMapper->firstTimestamp = p_keyFrameCurrent->timeStamp;
 
-    currentFrame.setPose(pKFcur->getPose());
-    lastKeyFrameId = currentFrame.mnId;
-    p_lastKeyFrame = pKFcur;
-    // mnLastRelocFrameId = mInitialFrame.mnId;
+    currentFrame.setPose(p_keyFrameCurrent->getPose());
+    lastKeyFrameId = currentFrame.id;
+    p_lastKeyFrame = p_keyFrameCurrent;
+    // mnLastRelocFrameId = mInitialFrame.id;
 
-    localKeyFrames.push_back(pKFcur);
-    localKeyFrames.push_back(pKFini);
+    localKeyFrames.push_back(p_keyFrameCurrent);
+    localKeyFrames.push_back(p_keyFrameInitial);
     localMapPoints                   = p_atlas->getAllMapPoints();
-    p_referenceKF                    = pKFcur;
-    currentFrame.p_referenceKeyFrame = pKFcur;
+    p_referenceKF                    = p_keyFrameCurrent;
+    currentFrame.p_referenceKeyFrame = p_keyFrameCurrent;
 
     // Compute here initial velocity
-    vector<KeyFrame *> vKFs = p_atlas->getAllKeyFrames();
+    vector<KeyFrame *> keyFrames = p_atlas->getAllKeyFrames();
 
     Sophus::SE3f deltaT =
-        vKFs.back()->getPose() * vKFs.front()->getPoseInverse();
-    velocityAvailable   = false;
+        keyFrames.back()->getPose() * keyFrames.front()->getPoseInverse();
+    isVelocityAvailable = false;
     Eigen::Vector3f phi = deltaT.so3().log();
 
     double aux = (currentFrame.timeStamp - lastFrame.timeStamp) /
@@ -183,13 +189,13 @@ void Tracking::createInitialMapMonocular()
 
     p_atlas->setReferenceMapPoints(localMapPoints);
 
-    p_mapDrawer->setCurrentCameraPose(pKFcur->getPose());
+    p_mapDrawer->setCurrentCameraPose(p_keyFrameCurrent->getPose());
 
-    p_atlas->getCurrentMap()->keyFrameOrigins.push_back(pKFini);
+    p_atlas->getCurrentMap()->keyFrameOrigins.push_back(p_keyFrameInitial);
 
     state = OK;
 
-    initId = pKFcur->mnId;
+    initId = p_keyFrameCurrent->id;
 }
 
 } // namespace core

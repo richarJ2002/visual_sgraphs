@@ -47,26 +47,27 @@ namespace utils
 namespace settings
 {
 
-Settings::Settings(const std::string &configFilePath_in, const int &sensor_in) :
-    undistortNeeded(false),
-    rectifyNeeded(false),
-    resize1Needed(false),
-    resize2Needed(false)
+Settings::Settings(const std::string &configurationFilePath_in,
+                   const int         &sensor_in) :
+    isUndistortionNeeded(false),
+    isRectificationNeeded(false),
+    isFirstResizeNeeded(false),
+    isSecondResizeNeeded(false)
 {
     sensor = sensor_in;
 
     // Open settings file
-    cv::FileStorage storage_in(configFilePath_in, cv::FileStorage::READ);
+    cv::FileStorage storage_in(configurationFilePath_in, cv::FileStorage::READ);
     if (!storage_in.isOpened())
     {
         VSLAM_LOG_ERROR("\n[Settings] Could not open the configuration file at "
                         "'%s'! Aborting...\n",
-                        configFilePath_in.c_str());
+                        configurationFilePath_in.c_str());
         exit(-1);
     }
     else
         VSLAM_LOG_INFO("\n[Settings] Loading configurations from '%s'...\n",
-                       configFilePath_in.c_str());
+                       configurationFilePath_in.c_str());
 
     // Read Camera#1 (monocular, stereo or RGB-D)
     readCamera1(storage_in);
@@ -113,7 +114,7 @@ Settings::Settings(const std::string &configFilePath_in, const int &sensor_in) :
     readOtherParameters(storage_in);
     VSLAM_LOG_INFO("[Settings] Misc. parameters loaded!\n");
 
-    if (rectifyNeeded)
+    if (isRectificationNeeded)
     {
         precomputeRectificationMaps();
         VSLAM_LOG_INFO("[Settings] Computed rectification maps!\n");

@@ -31,9 +31,9 @@ namespace core
 {
 
 #ifdef REGISTER_TIMES
-void System::insertRectTime(double &time)
+void System::insertRectTime(double &time_inout)
 {
-    p_tracker->vdRectStereo_ms.push_back(time);
+    p_tracker->stereoRectificationTimes_ms.push_back(time_inout);
 }
 #endif
 

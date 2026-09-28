@@ -31,7 +31,7 @@ namespace semantic
 std::vector<vs_graphs::core::geometric::Plane *>
     Passage::getAssociateWalls() const
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
     return associateWalls;
 }
 

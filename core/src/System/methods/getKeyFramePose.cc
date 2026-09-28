@@ -30,9 +30,9 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f System::getKeyFramePose(KeyFrame *pKF)
+Sophus::SE3f System::getKeyFramePose(KeyFrame *p_keyFrame_in)
 {
-    if (pKF->isBad())
+    if (p_keyFrame_in->isBad())
         return Sophus::SE3f();
 
     // Twb can be world frame to cam0 frame (without IMU) or body in world frame
@@ -40,9 +40,9 @@ Sophus::SE3f System::getKeyFramePose(KeyFrame *pKF)
     Sophus::SE3f Twb;
     if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
         sensor == IMU_RGBD) // with IMU
-        Twb = pKF->getImuPose();
+        Twb = p_keyFrame_in->getImuPose();
     else // without IMU
-        Twb = pKF->getPoseInverse();
+        Twb = p_keyFrame_in->getPoseInverse();
 
     return Twb;
 }

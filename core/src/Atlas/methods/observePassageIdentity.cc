@@ -34,7 +34,7 @@ namespace core
 
 void Atlas::observePassageIdentity(const int passageId_in)
 {
-    advanceIdentityAllocator(nextPassageIdentity_, passageId_in);
+    advanceIdentityAllocator(nextPassageIdentity, passageId_in);
 }
 
 } // namespace core

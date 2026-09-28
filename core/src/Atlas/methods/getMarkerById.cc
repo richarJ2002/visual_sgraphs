@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::Marker *Atlas::getMarkerById(int markerId)
+semantic::Marker *Atlas::getMarkerById(int markerId_in)
 {
-    unique_lock<mutex> lock(mMutexAtlas);
-    return p_activeMap != nullptr ? p_activeMap->getMarkerById(markerId)
+    unique_lock<mutex> lock(atlasMutex);
+    return p_activeMap != nullptr ? p_activeMap->getMarkerById(markerId_in)
                                   : nullptr;
 }
 

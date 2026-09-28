@@ -37,16 +37,16 @@ namespace core
 void MapPoint::updateNormalAndDepth()
 {
     map<KeyFrame *, tuple<int, int>> observedKeyFrames;
-    KeyFrame                        *pRefKF;
+    KeyFrame                        *p_localReferenceKeyFrame;
     Eigen::Vector3f                  Pos;
     {
-        unique_lock<mutex> lock1(mMutexFeatures);
-        unique_lock<mutex> lock2(mMutexPos);
-        if (mbBad)
+        unique_lock<mutex> lock1(featuresMutex);
+        unique_lock<mutex> lock2(positionMutex);
+        if (isFlaggedBad)
             return;
-        observedKeyFrames = observations;
-        pRefKF            = p_referenceKeyFrame;
-        Pos               = worldPos;
+        observedKeyFrames        = observations;
+        p_localReferenceKeyFrame = p_referenceKeyFrame;
+        Pos                      = worldPos;
     }
 
     if (observedKeyFrames.empty())
@@ -61,54 +61,61 @@ void MapPoint::updateNormalAndDepth()
          mit != mend;
          mit++)
     {
-        KeyFrame *pKF = mit->first;
+        KeyFrame *p_keyFrame = mit->first;
 
         tuple<int, int> indexes = mit->second;
         int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
 
         if (leftIndex != -1)
         {
-            Eigen::Vector3f Owi     = pKF->getCameraCenter();
+            Eigen::Vector3f Owi     = p_keyFrame->getCameraCenter();
             Eigen::Vector3f normali = Pos - Owi;
             normal                  = normal + normali / normali.norm();
             n++;
         }
         if (rightIndex != -1)
         {
-            Eigen::Vector3f Owi     = pKF->getRightCameraCenter();
+            Eigen::Vector3f Owi     = p_keyFrame->getRightCameraCenter();
             Eigen::Vector3f normali = Pos - Owi;
             normal                  = normal + normali / normali.norm();
             n++;
         }
     }
 
-    Eigen::Vector3f PC   = Pos - pRefKF->getCameraCenter();
-    const float     dist = PC.norm();
+    Eigen::Vector3f PC = Pos - p_localReferenceKeyFrame->getCameraCenter();
+    const float     distance = PC.norm();
 
-    tuple<int, int> indexes   = observedKeyFrames[pRefKF];
+    tuple<int, int> indexes   = observedKeyFrames[p_localReferenceKeyFrame];
     int             leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
     int             level;
-    if (pRefKF->Nleft == -1)
+    if (p_localReferenceKeyFrame->leftKeyPointCount == -1)
     {
-        level = pRefKF->keyPointsUndistorted[leftIndex].octave;
+        level =
+            p_localReferenceKeyFrame->keyPointsUndistorted[leftIndex].octave;
     }
     else if (leftIndex != -1)
     {
-        level = pRefKF->keyPoints[leftIndex].octave;
+        level = p_localReferenceKeyFrame->keyPoints[leftIndex].octave;
     }
     else
     {
-        level = pRefKF->keyPointsRight[rightIndex - pRefKF->Nleft].octave;
+        level =
+            p_localReferenceKeyFrame
+                ->keyPointsRight[rightIndex -
+                                 p_localReferenceKeyFrame->leftKeyPointCount]
+                .octave;
     }
 
     // const int level = pRefKF->mvKeysUn[observations[pRefKF]].octave;
-    const float levelScaleFactor = pRefKF->scaleFactors[level];
-    const int   nLevels          = pRefKF->scaleLevelCount;
+    const float levelScaleFactor =
+        p_localReferenceKeyFrame->scaleFactors[level];
+    const int levelCount = p_localReferenceKeyFrame->scaleLevelCount;
 
     {
-        unique_lock<mutex> lock3(mMutexPos);
-        maxDistance  = dist * levelScaleFactor;
-        minDistance  = maxDistance / pRefKF->scaleFactors[nLevels - 1];
+        unique_lock<mutex> lock3(positionMutex);
+        maxDistance = distance * levelScaleFactor;
+        minDistance = maxDistance /
+                      p_localReferenceKeyFrame->scaleFactors[levelCount - 1];
         normalVector = normal / n;
     }
 }

@@ -43,15 +43,15 @@ namespace semantic
 bool isKnownInvalidPassageEndpointReference(
     const ResolvedRoomEndpoint &endpoint_in)
 {
-    if (!endpoint_in.referencePresent)
+    if (!endpoint_in.isReferencePresent)
     {
         /* Either an ordinary absent reference, or a non-null-but-mapless
-         * reference (referenceUnresolvable) -- both handled by dedicated
-         * callers via ResolvedRoomEndpoint::referenceUnresolvable, which
+         * reference (isReferenceUnresolvable) -- both handled by dedicated
+         * callers via ResolvedRoomEndpoint::isReferenceUnresolvable, which
          * this predicate deliberately treats as "known invalid" too, since
          * an attempted-but-mapless reference is itself an observable
          * contradiction, not an ordinary absence. */
-        return endpoint_in.referenceUnresolvable;
+        return endpoint_in.isReferenceUnresolvable;
     }
     return endpoint_in.isWrongKind || endpoint_in.isDuplicateIdentity ||
            endpoint_in.isReasonInconsistent ||

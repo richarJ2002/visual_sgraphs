@@ -112,8 +112,8 @@ void SemanticsManager::getUpdatedFloors(void)
     confirmedRooms.erase(
         std::remove_if(confirmedRooms.begin(),
                        confirmedRooms.end(),
-                       [](vs_graphs::core::semantic::Room *room)
-                       { return room == nullptr || room->isBad(); }),
+                       [](vs_graphs::core::semantic::Room *p_room)
+                       { return p_room == nullptr || p_room->isBad(); }),
         confirmedRooms.end());
 
     /* Keep hierarchy backlinks current even when no valid rooms remain. */
@@ -128,9 +128,9 @@ void SemanticsManager::getUpdatedFloors(void)
     roomCentroids.reserve(confirmedRooms.size());
 
     /* Extract centroids from each confirmed room */
-    for (vs_graphs::core::semantic::Room *room : confirmedRooms)
+    for (vs_graphs::core::semantic::Room *p_room : confirmedRooms)
     {
-        roomCentroids.push_back(room->getCentroid());
+        roomCentroids.push_back(p_room->getCentroid());
     }
 
     /* Find the floor centroid from the confirmed room centroids */

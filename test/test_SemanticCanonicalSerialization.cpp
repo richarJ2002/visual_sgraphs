@@ -101,7 +101,7 @@ TEST(SemanticCanonicalSerialization, SnapshotTopologyOnlyOmitsGeometryFields)
 TEST(SemanticCanonicalSerialization,
      SnapshotSerializationIsInvariantUnderPermutation)
 {
-    /* A separate Atlas assigns its Map a different id (Map::nNextId is a
+    /* A separate Atlas assigns its Map a different id (Map::nextId is a
      * process-wide monotonic counter), so two independently constructed
      * "equivalent" fixtures would genuinely differ in every mapId-bearing
      * field. Proving permutation-independence instead re-orders a copy of

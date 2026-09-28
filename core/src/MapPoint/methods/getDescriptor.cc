@@ -36,7 +36,7 @@ namespace core
 
 cv::Mat MapPoint::getDescriptor()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return descriptor.clone();
 }
 

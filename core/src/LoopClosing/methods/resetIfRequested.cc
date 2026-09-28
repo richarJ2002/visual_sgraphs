@@ -34,35 +34,36 @@ namespace core
 
 void LoopClosing::resetIfRequested()
 {
-    unique_lock<mutex> lock(mMutexReset);
-    if (resetRequested)
+    unique_lock<mutex> lock(resetMutex);
+    if (isResetRequested)
     {
         cout << "Loop closer reset requested..." << endl;
-        mlpLoopKeyFrameQueue.clear();
+        loopKeyFrameQueue.clear();
         lastLoopKeyFrameId =
             0; // TODO old variable, it is not use in the new algorithm
-        resetRequested          = false;
-        resetActiveMapRequested = false;
+        isResetRequested          = false;
+        isResetActiveMapRequested = false;
     }
-    else if (resetActiveMapRequested)
+    else if (isResetActiveMapRequested)
     {
 
-        for (list<KeyFrame *>::const_iterator it = mlpLoopKeyFrameQueue.begin();
-             it != mlpLoopKeyFrameQueue.end();)
+        for (list<KeyFrame *>::const_iterator loopKeyFrameIt =
+                 loopKeyFrameQueue.begin();
+             loopKeyFrameIt != loopKeyFrameQueue.end();)
         {
-            KeyFrame *pKFi = *it;
-            if (pKFi->getMap() == p_mapToReset)
+            KeyFrame *p_keyFrame = *loopKeyFrameIt;
+            if (p_keyFrame->getMap() == p_mapToReset)
             {
-                it = mlpLoopKeyFrameQueue.erase(it);
+                loopKeyFrameIt = loopKeyFrameQueue.erase(loopKeyFrameIt);
             }
             else
-                ++it;
+                ++loopKeyFrameIt;
         }
 
         lastLoopKeyFrameId =
             p_atlas->getLastInitKeyFrameId(); // TODO old variable, it is not
                                               // use in the new algorithm
-        resetActiveMapRequested = false;
+        isResetActiveMapRequested = false;
     }
 }
 

@@ -33,31 +33,33 @@ namespace geometric
 {
 
 void Plane::replaceMapClouds(
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud_in)
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_replacementCloud_in)
 {
-    std::scoped_lock lock(mMutexPos, mMutexType, mMutexFeatures);
+    std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
     planeCloud->clear();
     lastSuccessfulRefitFinitePointCount = 0;
     ++cloudGeneration;
 
-    if (!p_planeCloud_in || p_planeCloud_in->empty())
+    if (!p_replacementCloud_in || p_replacementCloud_in->empty())
     {
         centroid.setZero();
-        mbBad = true;
-        octree->deleteTree();
+        isFlaggedBad = true;
+        p_octree->deleteTree();
         return;
     }
 
-    planeCloud->assign(p_planeCloud_in->begin(), p_planeCloud_in->end());
-    planeCloud->header              = p_planeCloud_in->header;
-    planeCloud->is_dense            = p_planeCloud_in->is_dense;
-    planeCloud->sensor_origin_      = p_planeCloud_in->sensor_origin_;
-    planeCloud->sensor_orientation_ = p_planeCloud_in->sensor_orientation_;
+    planeCloud->assign(p_replacementCloud_in->begin(),
+                       p_replacementCloud_in->end());
+    planeCloud->header         = p_replacementCloud_in->header;
+    planeCloud->is_dense       = p_replacementCloud_in->is_dense;
+    planeCloud->sensor_origin_ = p_replacementCloud_in->sensor_origin_;
+    planeCloud->sensor_orientation_ =
+        p_replacementCloud_in->sensor_orientation_;
 
     /* Update the octree */
-    octree->deleteTree();
-    octree->setInputCloud(planeCloud);
-    octree->addPointsFromInputCloud();
+    p_octree->deleteTree();
+    p_octree->setInputCloud(planeCloud);
+    p_octree->addPointsFromInputCloud();
 }
 
 } // namespace geometric

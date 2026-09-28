@@ -242,7 +242,7 @@ class Plane
     /*!
      * @brief       Marks the plane as bad (if true, the plane will not be used)
      */
-    bool mbBad;
+    bool isFlaggedBad;
 
     /*!
      * @brief       Number of unique keyframes which have observed the plane.
@@ -340,14 +340,14 @@ class Plane
      * @brief       The octree for the plane cloud
      */
     boost::shared_ptr<pcl::octree::OctreePointCloudSearch<pcl::PointXYZRGBA>>
-        octree;
+        p_octree;
 
     /*!
      * @brief Recomputes the finite plane bounds while the geometry mutexes are
      *        already held by the caller.
      *
      * @note This helper must not acquire a mutex. It exists to prevent the
-     *       cloud mutation methods from recursively locking mMutexFeatures.
+     *       cloud mutation methods from recursively locking featuresMutex.
      */
     void updatePlaneBoundsWithoutLock(void);
 
@@ -362,8 +362,8 @@ class Plane
         opId  = -1;
         opIdG = -1;
 
-        mbBad     = false;
-        planeType = Plane::PlaneVariant::UNDEFINED;
+        isFlaggedBad = false;
+        planeType    = Plane::PlaneVariant::UNDEFINED;
 
         centroid.setZero();
 
@@ -374,7 +374,7 @@ class Plane
 
         planeCloud = std::make_shared<pcl::PointCloud<pcl::PointXYZRGBA>>();
 
-        octree = boost::make_shared<
+        p_octree = boost::make_shared<
             pcl::octree::OctreePointCloudSearch<pcl::PointXYZRGBA>>(
             types::SystemParams::getParams()
                 ->refineMapPoints.octree.resolution);
@@ -436,7 +436,7 @@ class Plane
     /*!
      * @brief       Sets the atlas-assigned plane identifier.
      */
-    void setId(int value);
+    void setId(int id_in);
 
     /*!
      * @brief       Returns the local optimizer vertex identifier.
@@ -446,7 +446,7 @@ class Plane
     /*!
      * @brief       Sets the local optimizer vertex identifier.
      */
-    void setOpId(int value);
+    void setOpId(int opId_in);
 
     /*!
      * @brief       Returns the global optimizer vertex identifier.
@@ -456,7 +456,7 @@ class Plane
     /*!
      * @brief       Sets the global optimizer vertex identifier.
      */
-    void setOpIdG(int value);
+    void setOpIdG(int opIdG_in);
 
     /*!
      * @brief       Reports whether this plane has been invalidated.
@@ -491,12 +491,12 @@ class Plane
     /*!
      * @brief       Sets the accepted semantic classification.
      */
-    void setPlaneType(PlaneVariant newType);
+    void setPlaneType(PlaneVariant planeType_in);
 
     /*!
      * @brief       Associates a non-owning map point with the plane.
      */
-    void setMapPoints(MapPoint *value);
+    void setMapPoints(MapPoint *p_mapPoint_in);
 
     /*!
      * @brief       Returns the map points associated with the plane.
@@ -519,13 +519,13 @@ class Plane
     /*!
      * @brief       Sets the plane centroid in the active map frame.
      */
-    void setCentroid(const Eigen::Vector3d &value);
+    void setCentroid(const Eigen::Vector3d &centroid_in);
 
     /*!
      * @brief       Stamps the world-frame camera position this face was first
      *              observed from. Intended to be called once, at creation.
      */
-    void setObservationOrigin_World(const Eigen::Vector3d &value);
+    void setObservationOrigin_World(const Eigen::Vector3d &origin_World_m_in);
 
     /*!
      * @brief       Returns the world-frame camera position this face was first
@@ -544,7 +544,7 @@ class Plane
      *              is responsible for setting the reverse link symmetrically
      *              (see SemanticsManager::reconcileWallFacePairs()).
      */
-    void setTwinFace(Plane *p_twin_in);
+    void setTwinFace(Plane *p_twinFace_in);
 
     /*!
      * @brief       Clears the linked opposite-facing Plane hypothesis.
@@ -559,7 +559,7 @@ class Plane
     /*!
      * @brief       Sets the plane equation in its observation frame.
      */
-    void setLocalEquation(const g2o::Plane3D &value);
+    void setLocalEquation(const g2o::Plane3D &localEquation_in);
 
     /*!
      * @brief       Returns the plane equation in the active map frame.
@@ -569,16 +569,16 @@ class Plane
     /*!
      * @brief       Sets the plane equation in the active map frame.
      */
-    void setGlobalEquation(const g2o::Plane3D &value);
+    void setGlobalEquation(const g2o::Plane3D &globalEquation_in);
 
     /*!
      * @brief       Records or replaces an observation from a keyframe.
      */
-    void addObservation(KeyFrame          *p_keyFrame_in,
+    void addObservation(KeyFrame          *p_keyFrame_inout,
                         const Observation &observation_in);
 
     /*! Inserts or fuses a same-keyframe observation and rebuilds semantics. */
-    void mergeObservation(KeyFrame          *p_keyFrame_in,
+    void mergeObservation(KeyFrame          *p_keyFrame_inout,
                           const Observation &observation_in);
 
     /*!
@@ -620,12 +620,12 @@ class Plane
      *              Reads exactly the fields getGeometrySnapshot() also
      *              reads (equation, centroid, bounds, evidence counts,
      *              cloud/refit generation numbers), under the identical
-     *              std::scoped_lock(mMutexPos, mMutexFeatures) critical
+     *              std::scoped_lock(positionMutex, featuresMutex) critical
      *              section, but omits the cloud copy. Use this whenever a
      *              caller does not need the support cloud itself.
      *
      * @note        Thread-safe; self-locking, so callers must not already
-     *              hold mMutexPos or mMutexFeatures on this thread.
+     *              hold positionMutex or featuresMutex on this thread.
      */
     PlaneGeometryMetadataSnapshot getGeometryMetadataSnapshot(void) const;
 
@@ -638,13 +638,14 @@ class Plane
      *
      *              Use replaceMapClouds() to substitute the whole cloud.
      */
-    void setMapClouds(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud_in);
+    void setMapClouds(
+        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_additionalCloud_in);
 
     /*!
      * @brief       Replaces the accumulated plane cloud contents.
      */
     void replaceMapClouds(
-        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud_in);
+        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_replacementCloud_in);
 
     /*! Claims and returns an immutable snapshot of a new cloud generation. */
     std::optional<GeometrySnapshot> beginMapCloudRefit(void);
@@ -664,12 +665,12 @@ class Plane
      * @brief       Tests whether a world-frame point belongs to the plane
      *              cloud within the configured association tolerance.
      */
-    bool isPointinPlaneCloud(const Eigen::Vector3d &point);
+    bool isPointinPlaneCloud(const Eigen::Vector3d &queryPoint_in);
 
     /*!
      * @brief       Adds weighted evidence for a semantic classification.
      */
-    void castWeightedVote(PlaneVariant semanticType, double voteWeight);
+    void castWeightedVote(PlaneVariant semanticType_in, double voteWeight_in);
 
     /*!
      * @brief       Clears semantic votes and restores undefined semantics.
@@ -699,12 +700,12 @@ class Plane
     /*!
      * @brief       Protects the owning-map pointer and semantic type.
      */
-    std::mutex mMutexMap, mMutexType;
+    std::mutex mapMutex, typeMutex;
 
     /*!
      * @brief       Protects feature associations and geometric state.
      */
-    mutable std::mutex mMutexFeatures, mMutexPos;
+    mutable std::mutex featuresMutex, positionMutex;
 };
 } // namespace geometric
 } // namespace core

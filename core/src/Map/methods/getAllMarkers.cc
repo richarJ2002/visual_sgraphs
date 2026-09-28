@@ -36,7 +36,7 @@ namespace core
 
 vector<semantic::Marker *> Map::getAllMarkers()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return vector<semantic::Marker *>(markers.begin(), markers.end());
 }
 

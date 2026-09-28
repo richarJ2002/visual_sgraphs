@@ -30,45 +30,48 @@ namespace vs_graphs
 namespace core
 {
 
-bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint> &vKeys1,
-                                        const std::vector<cv::KeyPoint> &vKeys2,
-                                        const vector<int>   &vMatches12,
-                                        Sophus::SE3f        &T21,
-                                        vector<cv::Point3f> &vP3D,
-                                        vector<bool>        &vbTriangulated)
+bool TwoViewReconstruction::reconstruct(
+    const std::vector<cv::KeyPoint> &keys1_in,
+    const std::vector<cv::KeyPoint> &keys2_in,
+    const vector<int>               &matches12_in,
+    Sophus::SE3f                    &T21_inout,
+    vector<cv::Point3f>             &vP3D_inout,
+    vector<bool>                    &triangulatedFlags_inout)
 {
     keys1.clear();
     keys2.clear();
 
-    keys1 = vKeys1;
-    keys2 = vKeys2;
+    keys1 = keys1_in;
+    keys2 = keys2_in;
 
     // Fill structures with current keypoints and matches with reference frame
     // Reference Frame: 1, Current Frame: 2
     matches12.clear();
     matches12.reserve(keys2.size());
     matchedFlags1.resize(keys1.size());
-    for (size_t i = 0, iend = vMatches12.size(); i < iend; i++)
+    for (size_t matchIndex = 0, iend = matches12_in.size(); matchIndex < iend;
+         matchIndex++)
     {
-        if (vMatches12[i] >= 0)
+        if (matches12_in[matchIndex] >= 0)
         {
-            matches12.push_back(make_pair(i, vMatches12[i]));
-            matchedFlags1[i] = true;
+            matches12.push_back(
+                make_pair(matchIndex, matches12_in[matchIndex]));
+            matchedFlags1[matchIndex] = true;
         }
         else
-            matchedFlags1[i] = false;
+            matchedFlags1[matchIndex] = false;
     }
 
     const int N = matches12.size();
 
     // Indices for minimum set selection
-    vector<size_t> vAllIndices;
-    vAllIndices.reserve(N);
-    vector<size_t> vAvailableIndices;
+    vector<size_t> allIndices;
+    allIndices.reserve(N);
+    vector<size_t> availableIndices;
 
-    for (int i = 0; i < N; i++)
+    for (int matchIndex = 0; matchIndex < N; matchIndex++)
     {
-        vAllIndices.push_back(i);
+        allIndices.push_back(matchIndex);
     }
 
     // Generate sets of 8 points for each RANSAC iteration
@@ -76,38 +79,39 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint> &vKeys1,
 
     DUtils::Random::SeedRandOnce(0);
 
-    for (int it = 0; it < maxIterations; it++)
+    for (int iterationIndex = 0; iterationIndex < maxIterations;
+         iterationIndex++)
     {
-        vAvailableIndices = vAllIndices;
+        availableIndices = allIndices;
 
         // Select a minimum set
-        for (size_t j = 0; j < 8; j++)
+        for (size_t setPointIndex = 0; setPointIndex < 8; setPointIndex++)
         {
             int randi =
-                DUtils::Random::RandomInt(0, vAvailableIndices.size() - 1);
-            int idx = vAvailableIndices[randi];
+                DUtils::Random::RandomInt(0, availableIndices.size() - 1);
+            int sampledIndex = availableIndices[randi];
 
-            sets[it][j] = idx;
+            sets[iterationIndex][setPointIndex] = sampledIndex;
 
-            vAvailableIndices[randi] = vAvailableIndices.back();
-            vAvailableIndices.pop_back();
+            availableIndices[randi] = availableIndices.back();
+            availableIndices.pop_back();
         }
     }
 
     // Launch threads to compute in parallel a fundamental matrix and a
     // homography
-    vector<bool>    vbMatchesInliersH, vbMatchesInliersF;
+    vector<bool>    matchesInliersHFlags, matchesInliersFFlags;
     float           SH, SF;
     Eigen::Matrix3f H, F;
 
     thread threadH(&TwoViewReconstruction::findHomography,
                    this,
-                   ref(vbMatchesInliersH),
+                   ref(matchesInliersHFlags),
                    ref(SH),
                    ref(H));
     thread threadF(&TwoViewReconstruction::findFundamental,
                    this,
-                   ref(vbMatchesInliersF),
+                   ref(matchesInliersFFlags),
                    ref(SF),
                    ref(F));
 
@@ -120,32 +124,32 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint> &vKeys1,
         return false;
     float RH = SH / (SH + SF);
 
-    float minParallax = 1.0;
+    float minimumParallax = 1.0;
 
     // Try to reconstruct from homography or fundamental depending on the ratio
     // (0.40-0.45)
     if (RH > 0.50) // if(RH>0.40)
     {
         // cout << "Initialization from Homography" << endl;
-        return reconstructH(vbMatchesInliersH,
+        return reconstructH(matchesInliersHFlags,
                             H,
                             calibrationMatrix,
-                            T21,
-                            vP3D,
-                            vbTriangulated,
-                            minParallax,
+                            T21_inout,
+                            vP3D_inout,
+                            triangulatedFlags_inout,
+                            minimumParallax,
                             50);
     }
     else // if(pF_HF>0.6)
     {
         // cout << "Initialization from Fundamental" << endl;
-        return reconstructF(vbMatchesInliersF,
+        return reconstructF(matchesInliersFFlags,
                             F,
                             calibrationMatrix,
-                            T21,
-                            vP3D,
-                            vbTriangulated,
-                            minParallax,
+                            T21_inout,
+                            vP3D_inout,
+                            triangulatedFlags_inout,
+                            minimumParallax,
                             50);
     }
 }

@@ -34,33 +34,36 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseKeyFrame(KeyFrame *pKF)
+void Map::eraseKeyFrame(KeyFrame *p_keyFrame_inout)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    keyFrames.erase(pKF);
-    keyFrameIndex.erase(pKF->mnId);
-    keyFrameOrigins.erase(
-        std::remove(keyFrameOrigins.begin(), keyFrameOrigins.end(), pKF),
-        keyFrameOrigins.end());
+    unique_lock<mutex> lock(mapMutex);
+    keyFrames.erase(p_keyFrame_inout);
+    keyFrameIndex.erase(p_keyFrame_inout->id);
+    keyFrameOrigins.erase(std::remove(keyFrameOrigins.begin(),
+                                      keyFrameOrigins.end(),
+                                      p_keyFrame_inout),
+                          keyFrameOrigins.end());
 
-    if (p_firstRegionKeyFrame == pKF)
+    if (p_firstRegionKeyFrame == p_keyFrame_inout)
     {
         p_firstRegionKeyFrame = nullptr;
     }
 
-    if (p_initialKeyFrame == pKF)
+    if (p_initialKeyFrame == p_keyFrame_inout)
     {
         p_initialKeyFrame = nullptr;
     }
 
     if (keyFrames.size() > 0)
     {
-        if (pKF->mnId == p_lowerIdKeyFrame->mnId)
+        if (p_keyFrame_inout->id == p_lowerIdKeyFrame->id)
         {
-            vector<KeyFrame *> vpKFs =
+            vector<KeyFrame *> remainingKeyFrames =
                 vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
-            sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
-            p_lowerIdKeyFrame = vpKFs[0];
+            sort(remainingKeyFrames.begin(),
+                 remainingKeyFrames.end(),
+                 KeyFrame::lId);
+            p_lowerIdKeyFrame = remainingKeyFrames[0];
         }
 
         if (p_initialKeyFrame == nullptr)

@@ -30,7 +30,7 @@ namespace semantic
 
 g2o::Plane3D Passage::getGlobalEquation() const
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
     return globalEquation;
 }
 

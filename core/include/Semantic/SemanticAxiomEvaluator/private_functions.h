@@ -105,7 +105,7 @@ const RecordT *findRecordByKey(const std::vector<RecordT> &records_in,
  *  not-yet-existing authoritative endpoint-slot field) are this slice's
  *  documented proxy for "real"/"confirmed". */
 ResolvedRoomEndpoint
-    resolveRoomEndpoint(const EntityRef             &ref_in,
+    resolveRoomEndpoint(const EntityRef             &reference_in,
                         long unsigned int            expectedMapId_in,
                         const SemanticGraphSnapshot &snapshot_in);
 
@@ -303,7 +303,7 @@ RoomBoundaryGeometryStatus
  *  a lossy boolean) so a known contradiction is never indistinguishable
  *  from merely unavailable evidence. */
 RoomBoundaryWallEvidenceStatus
-    isValidBoundaryWallEvidence(const RawPlaneRef           &wallRef_in,
+    isValidBoundaryWallEvidence(const RawPlaneRef           &wallReference_in,
                                 const RoomRecord            &room_in,
                                 const SemanticGraphSnapshot &snapshot_in);
 
@@ -494,7 +494,7 @@ LegacyMapCompletenessResult
 
 /*! @brief Computes the conservative semantic-completeness result for
  *  \p mapSnapshot_in (every field of MapCompletenessResult except \c legacy
- *  and \c legacyAndConservativeDiverge, which evaluateMapCompleteness.cc
+ *  and \c doLegacyAndConservativeDiverge, which evaluateMapCompleteness.cc
  *  fills in afterward). Does not call evaluateState(): it independently
  *  re-derives the minimal hard-contradiction signals it needs from
  *  \p snapshot_in using the same shared helpers the per-axiom evaluators

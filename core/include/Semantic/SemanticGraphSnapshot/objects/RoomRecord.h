@@ -117,7 +117,7 @@ struct RoomRecord
     /*! @brief One EntityRef per non-null Room::getPassages() entry (the
      *  Room::doorways side of the relationship), sorted deterministically.
      *  Captured independently of each Passage's own knownSideProvenance/
-     *  prospectiveRoom fields -- the two directions are not kept
+     *  p_prospectiveRoom fields -- the two directions are not kept
      *  synchronized by the current model, so the evaluator cross-checks
      *  them from both independently-captured sides. Unlike the prior
      *  std::vector<EntityKey> representation, a bad or unmapped passage

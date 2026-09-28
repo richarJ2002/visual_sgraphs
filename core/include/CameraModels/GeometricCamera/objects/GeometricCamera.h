@@ -102,86 +102,86 @@ class GeometricCamera
     /*!
      * @brief        Projects a camera-frame point into the image.
      *
-     * @param[in]    point3D_in
+     * @param[in]    point3d_in
      *               Point expressed in the camera frame.
      *
      * @return       Pixel coordinates of the projection.
      */
-    virtual cv::Point2f     project(const cv::Point3f &point3D_in) = 0;
+    virtual cv::Point2f     project(const cv::Point3f &point3d_in) = 0;
     /*!
      * @brief        Projects a camera-frame point into the image.
      *
-     * @param[in]    point3D_in
+     * @param[in]    point3d_in
      *               Point expressed in the camera frame.
      *
      * @return       Pixel coordinates of the projection.
      */
-    virtual Eigen::Vector2d project(const Eigen::Vector3d &point3D_in) = 0;
+    virtual Eigen::Vector2d project(const Eigen::Vector3d &point3d_in) = 0;
     /*!
      * @brief        Projects a camera-frame point into the image.
      *
-     * @param[in]    point3D_in
+     * @param[in]    point3d_in
      *               Point expressed in the camera frame.
      *
      * @return       Pixel coordinates of the projection.
      */
-    virtual Eigen::Vector2f project(const Eigen::Vector3f &point3D_in) = 0;
+    virtual Eigen::Vector2f project(const Eigen::Vector3f &point3d_in) = 0;
     /*!
      * @brief        Projects a camera-frame point into the image.
      *
-     * @param[in]    point3D_in
+     * @param[in]    point3d_in
      *               Point expressed in the camera frame.
      *
      * @return       Pixel coordinates as an Eigen vector.
      */
-    virtual Eigen::Vector2f projectMat(const cv::Point3f &point3D_in) = 0;
+    virtual Eigen::Vector2f projectMat(const cv::Point3f &point3d_in) = 0;
 
     /*!
      * @brief        Returns the squared uncertainty scale applied
      *               to observations at the given pixel.
      *
-     * @param[in]    point2D_in
+     * @param[in]    point2d_in
      *               Pixel whose scale is requested.
      *
      * @return       Squared scale factor; the shipped models
      *               return one for uniform weighting.
      */
     virtual float
-        uncertainty2(const Eigen::Matrix<double, 2, 1> &point2D_in) = 0;
+        uncertainty2(const Eigen::Matrix<double, 2, 1> &point2d_in) = 0;
 
     /*!
      * @brief        Back-projects a pixel into a camera-frame
      *               ray.
      *
-     * @param[in]    point2D_in
+     * @param[in]    point2d_in
      *               Pixel to back-project.
      *
      * @return       Ray through the pixel in the camera frame.
      */
-    virtual Eigen::Vector3f unprojectEig(const cv::Point2f &point2D_in) = 0;
+    virtual Eigen::Vector3f unprojectEig(const cv::Point2f &point2d_in) = 0;
     /*!
      * @brief        Back-projects a pixel into a camera-frame
      *               ray.
      *
-     * @param[in]    point2D_in
+     * @param[in]    point2d_in
      *               Pixel to back-project.
      *
      * @return       Ray through the pixel in the camera frame.
      */
-    virtual cv::Point3f     unproject(const cv::Point2f &point2D_in) = 0;
+    virtual cv::Point3f     unproject(const cv::Point2f &point2d_in) = 0;
 
     /*!
      * @brief        Returns the Jacobian of the projection at a
      *               camera-frame point.
      *
-     * @param[in]    point3D_in
+     * @param[in]    point3d_in
      *               Point expressed in the camera frame.
      *
      * @return       Two-by-three Jacobian with image-x then
      *               image-y rows.
      */
     virtual Eigen::Matrix<double, 2, 3>
-        computeProjectionJacobian(const Eigen::Vector3d &point3D_in) = 0;
+        computeProjectionJacobian(const Eigen::Vector3d &point3d_in) = 0;
 
     /*!
      * @brief        Estimates the relative pose between two views
@@ -194,12 +194,12 @@ class GeometricCamera
      * @param[in]    matches12_in
      *               Per-keypoint match indices from the first
      *               view into the second view.
-     * @param[out]   pose21_out
+     * @param[in,out] pose21_inout
      *               Estimated pose of the second view in the
      *               first view frame.
-     * @param[out]   points3D_out
+     * @param[in,out] points3d_inout
      *               Triangulated points.
-     * @param[out]   triangulated_out
+     * @param[in,out] triangulated_inout
      *               Per-match flag reporting a valid
      *               triangulation.
      *
@@ -210,9 +210,9 @@ class GeometricCamera
         reconstructWithTwoViews(const std::vector<cv::KeyPoint> &keys1_in,
                                 const std::vector<cv::KeyPoint> &keys2_in,
                                 const std::vector<int>          &matches12_in,
-                                Sophus::SE3f                    &pose21_out,
-                                std::vector<cv::Point3f>        &points3D_out,
-                                std::vector<bool> &triangulated_out) = 0;
+                                Sophus::SE3f                    &pose21_inout,
+                                std::vector<cv::Point3f>        &points3d_inout,
+                                std::vector<bool> &triangulated_inout) = 0;
 
     /*!
      * @brief        Returns the three-by-three calibration
@@ -233,7 +233,7 @@ class GeometricCamera
      * @brief        Checks whether two keypoints satisfy the
      *               epipolar constraint between the cameras.
      *
-     * @param[in]    p_otherCamera_in
+     * @param[in,out] p_otherCamera_inout
      *               Non-owning pointer to the second camera;
      *               shall be non-null.
      * @param[in]    keypoint1_in
@@ -254,7 +254,7 @@ class GeometricCamera
      * @return       True when the pair passes the epipolar
      *               test.
      */
-    virtual bool epipolarConstrain(GeometricCamera       *p_otherCamera_in,
+    virtual bool epipolarConstrain(GeometricCamera       *p_otherCamera_inout,
                                    const cv::KeyPoint    &keypoint1_in,
                                    const cv::KeyPoint    &keypoint2_in,
                                    const Eigen::Matrix3f &rotation12_in,
@@ -306,19 +306,19 @@ class GeometricCamera
      *               Keypoint in this camera view.
      * @param[in]    keypoint2_in
      *               Keypoint in the second camera view.
-     * @param[in]    p_otherCamera_in
+     * @param[in,out] p_otherCamera_inout
      *               Non-owning pointer to the second camera;
      *               shall be non-null.
-     * @param[in]    pose1_in
+     * @param[in,out] pose1_inout
      *               Pose of this camera in the world frame.
-     * @param[in]    pose2_in
+     * @param[in,out] pose2_inout
      *               Pose of the second camera in the world
      *               frame.
      * @param[in]    sigmaLevel1_in
      *               Scale variance of the first keypoint level.
      * @param[in]    sigmaLevel2_in
      *               Scale variance of the second keypoint level.
-     * @param[out]   point3D_out
+     * @param[in,out] point3d_inout
      *               Triangulated point in the world frame.
      *
      * @return       True when the pair is accepted and
@@ -326,12 +326,12 @@ class GeometricCamera
      */
     virtual bool matchAndTriangulate(const cv::KeyPoint &keypoint1_in,
                                      const cv::KeyPoint &keypoint2_in,
-                                     GeometricCamera    *p_otherCamera_in,
-                                     Sophus::SE3f       &pose1_in,
-                                     Sophus::SE3f       &pose2_in,
+                                     GeometricCamera    *p_otherCamera_inout,
+                                     Sophus::SE3f       &pose1_inout,
+                                     Sophus::SE3f       &pose2_inout,
                                      const float         sigmaLevel1_in,
                                      const float         sigmaLevel2_in,
-                                     Eigen::Vector3f    &point3D_out) = 0;
+                                     Eigen::Vector3f    &point3d_inout) = 0;
 
     /*!
      * @brief        Returns the unique camera identifier.

@@ -244,7 +244,7 @@ namespace
  * setPose(). Only isBad()/getCameraCenter() are exercised by the code under
  * test, both safe on a default-constructed KeyFrame (KeyFrame's default
  * constructor is a plain member-initialiser list; SetPose/GetCameraCenter
- * only touch mTcw/mTwc under mMutexPose). */
+ * only touch mTcw/mTwc under poseMutex). */
 std::unique_ptr<KeyFrame>
     makeKeyFrameAt(const Eigen::Vector3d &cameraCenter_World_in)
 {

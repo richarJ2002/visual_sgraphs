@@ -42,7 +42,7 @@ bool Tracking::trackWithMotionModel()
     updateLastFrame();
 
     if (p_atlas->isImuInitialized() &&
-        (currentFrame.mnId > lastRelocFrameId + framesToResetIMU))
+        (currentFrame.id > lastRelocFrameId + framesToResetIMU))
     {
         // Predict state with IMU if it is initialized and it doesnt need reset
         predictStateIMU();
@@ -58,35 +58,36 @@ bool Tracking::trackWithMotionModel()
          static_cast<MapPoint *>(nullptr));
 
     // Project points seen in previous frame
-    int th;
+    int threshold;
 
     if (sensor == System::STEREO)
-        th = 7;
+        threshold = 7;
     else
-        th = 15;
+        threshold = 15;
 
     int nmatches = matcher.searchByProjection(
         currentFrame,
         lastFrame,
-        th,
+        threshold,
         sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR);
 
     // If few matches, use progressively wider window searches.
     int searchStep   = 1;
-    int searchRadius = th;
+    int searchRadius = threshold;
     while (nmatches < 20 && searchRadius < motionModelMaxSearchRadius)
     {
-        int expandedTh = static_cast<int>(std::ceil(
-            th * (1.0F +
-                  searchStep * (mfMotionModelSearchRadiusMultiplier - 1.0F))));
-        expandedTh     = std::min(expandedTh, motionModelMaxSearchRadius);
-        if (expandedTh <= searchRadius)
+        int expandedThreshold = static_cast<int>(std::ceil(
+            threshold *
+            (1.0F + searchStep * (motionModelSearchRadiusMultiplier - 1.0F))));
+        expandedThreshold =
+            std::min(expandedThreshold, motionModelMaxSearchRadius);
+        if (expandedThreshold <= searchRadius)
         {
             break;
         }
 
         Verbose::printMess("Not enough matches, wider window search (radius " +
-                               std::to_string(expandedTh) + ")!!",
+                               std::to_string(expandedThreshold) + ")!!",
                            Verbose::VERBOSITY_NORMAL);
         fill(currentFrame.mapPoints.begin(),
              currentFrame.mapPoints.end(),
@@ -95,11 +96,11 @@ bool Tracking::trackWithMotionModel()
         nmatches = matcher.searchByProjection(
             currentFrame,
             lastFrame,
-            expandedTh,
+            expandedThreshold,
             sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR);
         Verbose::printMess("Matches with wider search: " + to_string(nmatches),
                            Verbose::VERBOSITY_NORMAL);
-        searchRadius = expandedTh;
+        searchRadius = expandedThreshold;
         searchStep++;
     }
 
@@ -118,35 +119,38 @@ bool Tracking::trackWithMotionModel()
 
     // Discard outliers
     int nmatchesMap = 0;
-    for (int i = 0; i < currentFrame.N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
+         keyPointIndex++)
     {
-        if (currentFrame.mapPoints[i])
+        if (currentFrame.mapPoints[keyPointIndex])
         {
-            if (currentFrame.outlierFlags[i])
+            if (currentFrame.outlierFlags[keyPointIndex])
             {
-                MapPoint *pMP = currentFrame.mapPoints[i];
+                MapPoint *p_mapPoint = currentFrame.mapPoints[keyPointIndex];
 
-                currentFrame.mapPoints[i]    = static_cast<MapPoint *>(nullptr);
-                currentFrame.outlierFlags[i] = false;
-                if (i < currentFrame.Nleft)
+                currentFrame.mapPoints[keyPointIndex] =
+                    static_cast<MapPoint *>(nullptr);
+                currentFrame.outlierFlags[keyPointIndex] = false;
+                if (keyPointIndex < currentFrame.leftKeyPointCount)
                 {
-                    pMP->trackInView = false;
+                    p_mapPoint->isTrackedInView = false;
                 }
                 else
                 {
-                    pMP->trackInViewR = false;
+                    p_mapPoint->isTrackedInRightView = false;
                 }
-                pMP->lastSeenFrameId = currentFrame.mnId;
+                p_mapPoint->lastSeenFrameId = currentFrame.id;
                 nmatches--;
             }
-            else if (currentFrame.mapPoints[i]->getObservationCount() > 0)
+            else if (currentFrame.mapPoints[keyPointIndex]
+                         ->getObservationCount() > 0)
                 nmatchesMap++;
         }
     }
 
-    if (onlyTracking)
+    if (isTrackingOnlyMode)
     {
-        visualOdometry = nmatchesMap < 10;
+        isVisualOdometry = nmatchesMap < 10;
         return nmatches > 20;
     }
 

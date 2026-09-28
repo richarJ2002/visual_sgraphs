@@ -24,18 +24,18 @@ namespace core
 {
 
 std::pair<bool, std::string> GeoSemHelpers::checkIfMarkerIsDoorway(
-    const int                                     &markerId,
-    std::vector<vs_graphs::core::semantic::Room *> envRooms)
+    const int                                     &markerId_in,
+    std::vector<vs_graphs::core::semantic::Room *> envRooms_in)
 {
     bool        isDoorway = true;
     std::string name      = "";
     // Loop over all markers attached to doorways
-    for (const auto &roomPtr : envRooms)
+    for (const auto &room : envRooms_in)
     {
-        if (roomPtr->getMetaMarkerId() == markerId)
+        if (room->getMetaMarkerId() == markerId_in)
         {
             isDoorway = false;
-            name      = roomPtr->getName();
+            name      = room->getName();
             break; // No need to continue searching if found
         }
     }

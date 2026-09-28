@@ -49,34 +49,35 @@ class Viewer
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Viewer(System                    *pSystem,
-           FrameDrawer               *pFrameDrawer,
-           MapDrawer                 *pMapDrawer,
-           Tracking                  *pTracking,
-           const string              &strSettingPath,
-           utils::settings::Settings *settings) :
-        both(false),
-        p_system(pSystem),
-        p_frameDrawer(pFrameDrawer),
-        p_mapDrawer(pMapDrawer),
-        p_tracker(pTracking),
-        finishRequested(false),
-        finished(true),
-        stopped(true),
-        stopRequestedFlag(false)
+    Viewer(System                    *p_system_in,
+           FrameDrawer               *p_frameDrawer_in,
+           MapDrawer                 *p_mapDrawer_in,
+           Tracking                  *p_tracking_in,
+           const string              &settingsFilePath_in,
+           utils::settings::Settings *p_settings_in) :
+        shouldDrawBothImages(false),
+        p_system(p_system_in),
+        p_frameDrawer(p_frameDrawer_in),
+        p_mapDrawer(p_mapDrawer_in),
+        p_tracker(p_tracking_in),
+        isFinishRequested(false),
+        hasFinished(true),
+        hasStopped(true),
+        isStopRequested(false)
     {
-        if (settings)
+        if (p_settings_in)
         {
-            newParameterLoader(settings);
+            newParameterLoader(p_settings_in);
         }
         else
         {
 
-            cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+            cv::FileStorage settingsFileStorage(settingsFilePath_in,
+                                                cv::FileStorage::READ);
 
-            bool is_correct = parseViewerParamFile(fSettings);
+            bool isConfigValid = parseViewerParamFile(settingsFileStorage);
 
-            if (!is_correct)
+            if (!isConfigValid)
             {
                 std::cerr
                     << "**ERROR in the config file, the format is not correct**"
@@ -85,15 +86,15 @@ class Viewer
                 {
                     throw -1;
                 }
-                catch (exception &e)
+                catch (exception &parseError)
                 {}
             }
         }
 
-        stopTrack = false;
+        isTrackingStopRequested = false;
     }
 
-    void newParameterLoader(utils::settings::Settings *settings);
+    void newParameterLoader(utils::settings::Settings *p_settings_inout);
 
     // Main thread function. Draw points, keyframes, the current camera pose and
     // the last processed frame. Drawing is refreshed according to the camera
@@ -114,10 +115,10 @@ class Viewer
 
     // void SetTrackingPause();
 
-    bool both;
+    bool shouldDrawBothImages;
 
   private:
-    bool parseViewerParamFile(cv::FileStorage &fSettings);
+    bool parseViewerParamFile(cv::FileStorage &settings_in);
 
     bool stop();
 
@@ -135,15 +136,15 @@ class Viewer
 
     bool       checkFinish();
     void       setFinish();
-    bool       finishRequested;
-    bool       finished;
-    std::mutex mMutexFinish;
+    bool       isFinishRequested;
+    bool       hasFinished;
+    std::mutex finishMutex;
 
-    bool       stopped;
-    bool       stopRequestedFlag;
-    std::mutex mMutexStop;
+    bool       hasStopped;
+    bool       isStopRequested;
+    std::mutex stopMutex;
 
-    bool stopTrack;
+    bool isTrackingStopRequested;
 };
 
 } // namespace core

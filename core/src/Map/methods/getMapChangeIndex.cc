@@ -36,7 +36,7 @@ namespace core
 
 int Map::getMapChangeIndex()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return mapChange;
 }
 

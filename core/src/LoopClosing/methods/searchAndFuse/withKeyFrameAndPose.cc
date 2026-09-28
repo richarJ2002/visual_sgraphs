@@ -35,47 +35,48 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::searchAndFuse(const KeyFrameAndPose &CorrectedPosesMap,
-                                vector<MapPoint *>    &vpMapPoints)
+void LoopClosing::searchAndFuse(const KeyFrameAndPose &correctedPosesMap_in,
+                                vector<MapPoint *>    &mapPoints_in)
 {
     ORBmatcher matcher(0.8);
 
-    int total_replaces = 0;
+    int totalReplaces = 0;
 
     // cout << "[FUSE]: Initially there are " << vpMapPoints.size() << " MPs" <<
     // endl; cout << "FUSE: Intially there are " << CorrectedPosesMap.size() <<
     // " KFs" << endl;
-    for (KeyFrameAndPose::const_iterator mit  = CorrectedPosesMap.begin(),
-                                         mend = CorrectedPosesMap.end();
+    for (KeyFrameAndPose::const_iterator mit  = correctedPosesMap_in.begin(),
+                                         mend = correctedPosesMap_in.end();
          mit != mend;
          mit++)
     {
-        int       num_replaces = 0;
-        KeyFrame *pKFi         = mit->first;
-        Map      *pMap         = pKFi->getMap();
+        int       replaceCount = 0;
+        KeyFrame *p_keyFrame   = mit->first;
+        Map      *p_map        = p_keyFrame->getMap();
 
         g2o::Sim3     g2oScw = mit->second;
         Sophus::Sim3f Scw    = utils::converter::Converter::toSophus(g2oScw);
 
-        vector<MapPoint *> vpReplacePoints(vpMapPoints.size(),
-                                           static_cast<MapPoint *>(nullptr));
-        int numFused = matcher.fuse(pKFi, Scw, vpMapPoints, 4, vpReplacePoints);
+        vector<MapPoint *> replacePoints(mapPoints_in.size(),
+                                         static_cast<MapPoint *>(nullptr));
+        int                fusedCount =
+            matcher.fuse(p_keyFrame, Scw, mapPoints_in, 4, replacePoints);
 
         // Get Map Mutex
-        unique_lock<mutex> lock(pMap->mMutexMapUpdate);
-        const int          nLP = vpMapPoints.size();
-        for (int i = 0; i < nLP; i++)
+        unique_lock<mutex> lock(p_map->mapUpdateMutex);
+        const int          lpCount = mapPoints_in.size();
+        for (int lpIndex = 0; lpIndex < lpCount; lpIndex++)
         {
-            MapPoint *pRep = vpReplacePoints[i];
-            if (pRep)
+            MapPoint *p_rep = replacePoints[lpIndex];
+            if (p_rep)
             {
 
-                num_replaces += 1;
-                pRep->replace(vpMapPoints[i]);
+                replaceCount += 1;
+                p_rep->replace(mapPoints_in[lpIndex]);
             }
         }
 
-        total_replaces += num_replaces;
+        totalReplaces += replaceCount;
     }
     // cout << "[FUSE]: " << total_replaces << " MPs had been fused" << endl;
 }

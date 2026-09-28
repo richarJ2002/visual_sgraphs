@@ -43,22 +43,25 @@ int ORBmatcher::searchByProjection(Frame                 &CurrentFrame,
 
     // Rotation Histogram (to check rotation consistency)
     vector<int> rotHist[HISTO_LENGTH];
-    for (int i = 0; i < HISTO_LENGTH; i++)
-        rotHist[i].reserve(500);
+    for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
+         histogramBinIndex++)
+        rotHist[histogramBinIndex].reserve(500);
     const float factor = 1.0f / HISTO_LENGTH;
 
-    const vector<MapPoint *> vpMPs = pKF->getMapPointMatches();
+    const vector<MapPoint *> mapPoints = pKF->getMapPointMatches();
 
-    for (size_t i = 0, iend = vpMPs.size(); i < iend; i++)
+    for (size_t histogramBinIndex = 0, iend = mapPoints.size();
+         histogramBinIndex < iend;
+         histogramBinIndex++)
     {
-        MapPoint *pMP = vpMPs[i];
+        MapPoint *p_mapPoint = mapPoints[histogramBinIndex];
 
-        if (pMP)
+        if (p_mapPoint)
         {
-            if (!pMP->isBad() && !sAlreadyFound.count(pMP))
+            if (!p_mapPoint->isBad() && !sAlreadyFound.count(p_mapPoint))
             {
                 // Project
-                Eigen::Vector3f x3Dw = pMP->getWorldPos();
+                Eigen::Vector3f x3Dw = p_mapPoint->getWorldPos();
                 Eigen::Vector3f x3Dc = Tcw * x3Dw;
 
                 const Eigen::Vector2f uv = CurrentFrame.p_camera->project(x3Dc);
@@ -71,39 +74,43 @@ int ORBmatcher::searchByProjection(Frame                 &CurrentFrame,
                     continue;
 
                 // Compute predicted scale level
-                Eigen::Vector3f PO     = x3Dw - Ow;
-                float           dist3D = PO.norm();
+                Eigen::Vector3f PO         = x3Dw - Ow;
+                float           distance3d = PO.norm();
 
-                const float maxDistance = pMP->getMaxDistanceInvariance();
-                const float minDistance = pMP->getMinDistanceInvariance();
+                const float maximumDistance =
+                    p_mapPoint->getMaxDistanceInvariance();
+                const float minimumDistance =
+                    p_mapPoint->getMinDistanceInvariance();
 
                 // Depth must be inside the scale pyramid of the image
-                if (dist3D < minDistance || dist3D > maxDistance)
+                if (distance3d < minimumDistance ||
+                    distance3d > maximumDistance)
                     continue;
 
-                int nPredictedLevel = pMP->predictScale(dist3D, &CurrentFrame);
+                int predictedLevelCount =
+                    p_mapPoint->predictScale(distance3d, &CurrentFrame);
 
                 // Search in a window
                 const float radius =
-                    th * CurrentFrame.scaleFactors[nPredictedLevel];
+                    th * CurrentFrame.scaleFactors[predictedLevelCount];
 
-                const vector<size_t> vIndices2 =
+                const vector<size_t> indices2 =
                     CurrentFrame.getFeaturesInArea(uv(0),
                                                    uv(1),
                                                    radius,
-                                                   nPredictedLevel - 1,
-                                                   nPredictedLevel + 1);
+                                                   predictedLevelCount - 1,
+                                                   predictedLevelCount + 1);
 
-                if (vIndices2.empty())
+                if (indices2.empty())
                     continue;
 
-                const cv::Mat dMP = pMP->getDescriptor();
+                const cv::Mat mapPointDescriptor = p_mapPoint->getDescriptor();
 
-                int bestDist = 256;
-                int bestIdx2 = -1;
+                int bestDistance = 256;
+                int bestIndex2   = -1;
 
-                for (vector<size_t>::const_iterator vit = vIndices2.begin();
-                     vit != vIndices2.end();
+                for (vector<size_t>::const_iterator vit = indices2.begin();
+                     vit != indices2.end();
                      vit++)
                 {
                     const size_t i2 = *vit;
@@ -112,39 +119,40 @@ int ORBmatcher::searchByProjection(Frame                 &CurrentFrame,
 
                     const cv::Mat &d = CurrentFrame.descriptors.row(i2);
 
-                    const int dist = computeDescriptorDistance(dMP, d);
+                    const int distance =
+                        computeDescriptorDistance(mapPointDescriptor, d);
 
-                    if (dist < bestDist)
+                    if (distance < bestDistance)
                     {
-                        bestDist = dist;
-                        bestIdx2 = i2;
+                        bestDistance = distance;
+                        bestIndex2   = i2;
                     }
                 }
 
-                if (bestDist <= ORBdist)
+                if (bestDistance <= ORBdist)
                 {
-                    CurrentFrame.mapPoints[bestIdx2] = pMP;
+                    CurrentFrame.mapPoints[bestIndex2] = p_mapPoint;
                     nmatches++;
 
-                    if (mbCheckOrientation)
+                    if (shouldCheckOrientation)
                     {
                         float rot =
-                            pKF->keyPointsUndistorted[i].angle -
-                            CurrentFrame.keyPointsUndistorted[bestIdx2].angle;
+                            pKF->keyPointsUndistorted[histogramBinIndex].angle -
+                            CurrentFrame.keyPointsUndistorted[bestIndex2].angle;
                         if (rot < 0.0)
                             rot += 360.0f;
                         int bin = round(rot * factor);
                         if (bin == HISTO_LENGTH)
                             bin = 0;
                         assert(bin >= 0 && bin < HISTO_LENGTH);
-                        rotHist[bin].push_back(bestIdx2);
+                        rotHist[bin].push_back(bestIndex2);
                     }
                 }
             }
         }
     }
 
-    if (mbCheckOrientation)
+    if (shouldCheckOrientation)
     {
         int ind1 = -1;
         int ind2 = -1;
@@ -152,13 +160,20 @@ int ORBmatcher::searchByProjection(Frame                 &CurrentFrame,
 
         computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3);
 
-        for (int i = 0; i < HISTO_LENGTH; i++)
+        for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
+             histogramBinIndex++)
         {
-            if (i != ind1 && i != ind2 && i != ind3)
+            if (histogramBinIndex != ind1 && histogramBinIndex != ind2 &&
+                histogramBinIndex != ind3)
             {
-                for (size_t j = 0, jend = rotHist[i].size(); j < jend; j++)
+                for (size_t binEntryIndex = 0,
+                            jend          = rotHist[histogramBinIndex].size();
+                     binEntryIndex < jend;
+                     binEntryIndex++)
                 {
-                    CurrentFrame.mapPoints[rotHist[i][j]] = nullptr;
+                    CurrentFrame
+                        .mapPoints[rotHist[histogramBinIndex][binEntryIndex]] =
+                        nullptr;
                     nmatches--;
                 }
             }

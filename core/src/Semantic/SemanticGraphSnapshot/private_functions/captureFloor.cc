@@ -49,7 +49,7 @@ FloorRecord captureFloor(Floor *p_floor_in, long unsigned int mapId_in)
 
     record.centroid_World_m = p_floor_in->getCentroid();
     /* A single getPlaneIdentity() read: calling hasPlaneIdentity() first
-     * would lock and release Floor::mMutexGeometry a second time, so the
+     * would lock and release Floor::geometryMutex a second time, so the
      * two calls together are not atomic with each other. The optional
      * already carries "absent" correctly on its own. */
     record.planeIdentity = p_floor_in->getPlaneIdentity();

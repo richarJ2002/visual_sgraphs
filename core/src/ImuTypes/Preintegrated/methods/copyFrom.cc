@@ -24,27 +24,27 @@ namespace core
 namespace IMU
 {
 
-void Preintegrated::copyFrom(Preintegrated *pImuPre)
+void Preintegrated::copyFrom(Preintegrated *p_sourcePreintegrated_in)
 {
-    dT      = pImuPre->dT;
-    C       = pImuPre->C;
-    Info    = pImuPre->Info;
-    Nga     = pImuPre->Nga;
-    NgaWalk = pImuPre->NgaWalk;
-    b.copyFrom(pImuPre->b);
-    dR   = pImuPre->dR;
-    dV   = pImuPre->dV;
-    dP   = pImuPre->dP;
-    JRg  = pImuPre->JRg;
-    JVg  = pImuPre->JVg;
-    JVa  = pImuPre->JVa;
-    JPg  = pImuPre->JPg;
-    JPa  = pImuPre->JPa;
-    avgA = pImuPre->avgA;
-    avgW = pImuPre->avgW;
-    bu.copyFrom(pImuPre->bu);
-    db             = pImuPre->db;
-    mvMeasurements = pImuPre->mvMeasurements;
+    dT      = p_sourcePreintegrated_in->dT;
+    C       = p_sourcePreintegrated_in->C;
+    Info    = p_sourcePreintegrated_in->Info;
+    Nga     = p_sourcePreintegrated_in->Nga;
+    NgaWalk = p_sourcePreintegrated_in->NgaWalk;
+    b.copyFrom(p_sourcePreintegrated_in->b);
+    dR   = p_sourcePreintegrated_in->dR;
+    dV   = p_sourcePreintegrated_in->dV;
+    dP   = p_sourcePreintegrated_in->dP;
+    JRg  = p_sourcePreintegrated_in->JRg;
+    JVg  = p_sourcePreintegrated_in->JVg;
+    JVa  = p_sourcePreintegrated_in->JVa;
+    JPg  = p_sourcePreintegrated_in->JPg;
+    JPa  = p_sourcePreintegrated_in->JPa;
+    avgA = p_sourcePreintegrated_in->avgA;
+    avgW = p_sourcePreintegrated_in->avgW;
+    bu.copyFrom(p_sourcePreintegrated_in->bu);
+    db           = p_sourcePreintegrated_in->db;
+    measurements = p_sourcePreintegrated_in->measurements;
 }
 
 } // namespace IMU

@@ -33,8 +33,8 @@ namespace core
 System::~System()
 {
     {
-        unique_lock<mutex> lock(mMutexReset);
-        shutdownRequested = true;
+        unique_lock<mutex> lock(resetMutex);
+        isShutdownRequested = true;
     }
 
     /* Request a graceful stop on every running worker thread. */
@@ -59,25 +59,25 @@ System::~System()
         usleep(1000);
     }
     /* Join and free the thread objects (first and only join). */
-    mptLocalMapping->join();
-    mptLoopClosing->join();
-    mptSemanticSegmentation->join();
-    mptSemanticsManager->join();
+    p_localMappingThread->join();
+    p_loopClosingThread->join();
+    p_semanticSegmentationThread->join();
+    p_semanticsManagerThread->join();
     if (p_viewer != static_cast<Viewer *>(nullptr))
     {
-        mptViewer->join();
+        p_viewerThread->join();
     }
     clearResetCause(this);
 
-    delete mptLocalMapping;
-    delete mptLoopClosing;
-    delete mptSemanticSegmentation;
-    delete mptSemanticsManager;
+    delete p_localMappingThread;
+    delete p_loopClosingThread;
+    delete p_semanticSegmentationThread;
+    delete p_semanticsManagerThread;
     if (p_viewer != static_cast<Viewer *>(nullptr))
     {
-        delete mptViewer;
+        delete p_viewerThread;
     }
-    delete mptGeometricSegmentation;
+    delete p_geometricSegmentationThread;
 }
 
 } // namespace core

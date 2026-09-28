@@ -40,7 +40,7 @@ namespace semantic
 void evaluateOnePassageProvenance(const PassageRecord  &passage_in,
                                   std::vector<Finding> &findings_inout)
 {
-    if (!passage_in.passable)
+    if (!passage_in.isPassable)
     {
         findings_inout.push_back(
             makeFinding(AxiomCode::AX_PASS_01,

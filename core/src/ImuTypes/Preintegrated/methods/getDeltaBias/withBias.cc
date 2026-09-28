@@ -26,15 +26,15 @@ namespace core
 namespace IMU
 {
 
-IMU::Bias Preintegrated::getDeltaBias(const Bias &b_)
+IMU::Bias Preintegrated::getDeltaBias(const Bias &referenceBias_in)
 {
-    std::unique_lock<std::mutex> lock(mMutex);
-    return IMU::Bias(b_.bax - b.bax,
-                     b_.bay - b.bay,
-                     b_.baz - b.baz,
-                     b_.bwx - b.bwx,
-                     b_.bwy - b.bwy,
-                     b_.bwz - b.bwz);
+    std::unique_lock<std::mutex> lock(preintegrationMutex);
+    return IMU::Bias(referenceBias_in.bax - b.bax,
+                     referenceBias_in.bay - b.bay,
+                     referenceBias_in.baz - b.baz,
+                     referenceBias_in.bwx - b.bwx,
+                     referenceBias_in.bwy - b.bwy,
+                     referenceBias_in.bwz - b.bwz);
 }
 
 } // namespace IMU

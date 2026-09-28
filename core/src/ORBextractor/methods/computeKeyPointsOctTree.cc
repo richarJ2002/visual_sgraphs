@@ -73,55 +73,57 @@ namespace core
 {
 
 void ORBextractor::computeKeyPointsOctTree(
-    vector<vector<KeyPoint>> &keypointsPerLevel_out)
+    vector<vector<KeyPoint>> &keypointsPerLevel_inout)
 {
-    keypointsPerLevel_out.resize(levelCount);
+    keypointsPerLevel_inout.resize(levelCount);
 
     const float W = 35;
 
     for (int level = 0; level < levelCount; ++level)
     {
-        const int minBorderX = EDGE_THRESHOLD - 3;
-        const int minBorderY = minBorderX;
-        const int maxBorderX = imagePyramid[level].cols - EDGE_THRESHOLD + 3;
-        const int maxBorderY = imagePyramid[level].rows - EDGE_THRESHOLD + 3;
+        const int minimumBorderX = EDGE_THRESHOLD - 3;
+        const int minimumBorderY = minimumBorderX;
+        const int maximumBorderX =
+            imagePyramid[level].cols - EDGE_THRESHOLD + 3;
+        const int maximumBorderY =
+            imagePyramid[level].rows - EDGE_THRESHOLD + 3;
 
         vector<cv::KeyPoint> keysToDistribute_in;
         keysToDistribute_in.reserve(featureCount * 10);
 
-        const float width  = (maxBorderX - minBorderX);
-        const float height = (maxBorderY - minBorderY);
+        const float width  = (maximumBorderX - minimumBorderX);
+        const float height = (maximumBorderY - minimumBorderY);
 
-        const int nCols = width / W;
-        const int nRows = height / W;
-        const int wCell = ceil(width / nCols);
-        const int hCell = ceil(height / nRows);
+        const int colCount   = width / W;
+        const int rowCount   = height / W;
+        const int cellWidth  = ceil(width / colCount);
+        const int cellHeight = ceil(height / rowCount);
 
-        for (int i = 0; i < nRows; i++)
+        for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
         {
-            const float iniY = minBorderY + i * hCell;
-            float       maxY = iniY + hCell + 6;
+            const float initialY = minimumBorderY + rowIndex * cellHeight;
+            float       maximumY = initialY + cellHeight + 6;
 
-            if (iniY >= maxBorderY - 3)
+            if (initialY >= maximumBorderY - 3)
                 continue;
-            if (maxY > maxBorderY)
-                maxY = maxBorderY;
+            if (maximumY > maximumBorderY)
+                maximumY = maximumBorderY;
 
-            for (int j = 0; j < nCols; j++)
+            for (int colIndex = 0; colIndex < colCount; colIndex++)
             {
-                const float iniX = minBorderX + j * wCell;
-                float       maxX = iniX + wCell + 6;
-                if (iniX >= maxBorderX - 6)
+                const float initialX = minimumBorderX + colIndex * cellWidth;
+                float       maximumX = initialX + cellWidth + 6;
+                if (initialX >= maximumBorderX - 6)
                     continue;
-                if (maxX > maxBorderX)
-                    maxX = maxBorderX;
+                if (maximumX > maximumBorderX)
+                    maximumX = maximumBorderX;
 
-                vector<cv::KeyPoint> vKeysCell;
+                vector<cv::KeyPoint> keysCells;
 
                 FAST(imagePyramid[level]
-                         .rowRange(iniY, maxY)
-                         .colRange(iniX, maxX),
-                     vKeysCell,
+                         .rowRange(initialY, maximumY)
+                         .colRange(initialX, maximumX),
+                     keysCells,
                      initialFastThreshold,
                      true);
 
@@ -138,12 +140,12 @@ void ORBextractor::computeKeyPointsOctTree(
                          vKeysCell,initialFastThreshold,true);
                 }*/
 
-                if (vKeysCell.empty())
+                if (keysCells.empty())
                 {
                     FAST(imagePyramid[level]
-                             .rowRange(iniY, maxY)
-                             .colRange(iniX, maxX),
-                         vKeysCell,
+                             .rowRange(initialY, maximumY)
+                             .colRange(initialX, maximumX),
+                         keysCells,
                          minimumFastThreshold,
                          true);
                     /*if(bRight && j <= 13){
@@ -160,28 +162,28 @@ void ORBextractor::computeKeyPointsOctTree(
                     }*/
                 }
 
-                if (!vKeysCell.empty())
+                if (!keysCells.empty())
                 {
-                    for (vector<cv::KeyPoint>::iterator vit = vKeysCell.begin();
-                         vit != vKeysCell.end();
+                    for (vector<cv::KeyPoint>::iterator vit = keysCells.begin();
+                         vit != keysCells.end();
                          vit++)
                     {
-                        (*vit).pt.x += j * wCell;
-                        (*vit).pt.y += i * hCell;
+                        (*vit).pt.x += colIndex * cellWidth;
+                        (*vit).pt.y += rowIndex * cellHeight;
                         keysToDistribute_in.push_back(*vit);
                     }
                 }
             }
         }
 
-        vector<KeyPoint> &keypoints = keypointsPerLevel_out[level];
+        vector<KeyPoint> &keypoints = keypointsPerLevel_inout[level];
         keypoints.reserve(featureCount);
 
         keypoints = distributeOctTree(keysToDistribute_in,
-                                      minBorderX,
-                                      maxBorderX,
-                                      minBorderY,
-                                      maxBorderY,
+                                      minimumBorderX,
+                                      maximumBorderX,
+                                      minimumBorderY,
+                                      maximumBorderY,
                                       featuresPerLevel[level],
                                       level);
 
@@ -189,19 +191,19 @@ void ORBextractor::computeKeyPointsOctTree(
 
         // Add border to coordinates and scale information
         const int nkps = keypoints.size();
-        for (int i = 0; i < nkps; i++)
+        for (int rowIndex = 0; rowIndex < nkps; rowIndex++)
         {
-            keypoints[i].pt.x += minBorderX;
-            keypoints[i].pt.y += minBorderY;
-            keypoints[i].octave = level;
-            keypoints[i].size   = scaledPatchSize;
+            keypoints[rowIndex].pt.x += minimumBorderX;
+            keypoints[rowIndex].pt.y += minimumBorderY;
+            keypoints[rowIndex].octave = level;
+            keypoints[rowIndex].size   = scaledPatchSize;
         }
     }
 
     // compute orientations
     for (int level = 0; level < levelCount; ++level)
         computeOrientation(imagePyramid[level],
-                           keypointsPerLevel_out[level],
+                           keypointsPerLevel_inout[level],
                            orientationMaxOffset);
 }
 

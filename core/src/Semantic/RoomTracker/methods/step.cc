@@ -26,17 +26,17 @@ namespace core
 namespace semantic
 {
 
-RoomTrackingState RoomTracker::step(double                      now_s,
-                                    const TraversalGuardValues &crossing,
-                                    const VerificationVerdict  &verification,
-                                    const TrackingStatusInput  &tracking)
+RoomTrackingState RoomTracker::step(double                      now_s_in,
+                                    const TraversalGuardValues &crossing_in,
+                                    const VerificationVerdict  &verification_in,
+                                    const TrackingStatusInput  &tracking_in)
 {
     const double effectiveNow =
-        !std::isfinite(now_s)
-            ? lastReceivedTime_s_
-            : (now_s < lastReceivedTime_s_ ? lastReceivedTime_s_ : now_s);
+        !std::isfinite(now_s_in)
+            ? lastReceivedTime_s
+            : (now_s_in < lastReceivedTime_s ? lastReceivedTime_s : now_s_in);
 
-    const bool newlyTrackingLost = tracking.lost && !wasTrackingLost_;
+    const bool newlyTrackingLost = tracking_in.isLost && !wasTrackingLost;
 
     if (newlyTrackingLost)
     {
@@ -45,67 +45,67 @@ RoomTrackingState RoomTracker::step(double                      now_s,
          * rejected by the oracle. */
         applyEvent(RoomTrackingEvent::TRACKING_LOST,
                    effectiveNow,
-                   crossing,
-                   verification);
+                   crossing_in,
+                   verification_in);
     }
     else
     {
-        switch (state_)
+        switch (trackingState)
         {
         case RoomTrackingState::LOST_WITH_LAST_ROOM:
         {
-            if (tracking.newMapCreated && verification.isPass())
+            if (tracking_in.isNewMapCreated && verification_in.isPass())
             {
                 /* Transition-table row 7 (guarded). */
                 applyEvent(RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
                            effectiveNow,
-                           crossing,
-                           verification);
+                           crossing_in,
+                           verification_in);
             }
-            else if (effectiveNow - lastEnterStateTime_s_ >=
-                     config_.lost_timeout_s)
+            else if (effectiveNow - lastEnterStateTime_s >=
+                     config.lost_timeout_s)
             {
                 /* Transition-table row 8 (unconditional). */
                 applyEvent(RoomTrackingEvent::LOST_TIMEOUT,
                            effectiveNow,
-                           crossing,
-                           verification);
+                           crossing_in,
+                           verification_in);
             }
             break;
         }
         case RoomTrackingState::REACQUIRING_IN_NEW_MAP:
         {
-            if (verification.isPass())
+            if (verification_in.isPass())
             {
                 /* Transition-table row 9 (guarded). */
                 applyEvent(RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
                            effectiveNow,
-                           crossing,
-                           verification);
+                           crossing_in,
+                           verification_in);
             }
-            else if (effectiveNow - lastEnterStateTime_s_ >=
-                     config_.reacquire_timeout_s)
+            else if (effectiveNow - lastEnterStateTime_s >=
+                     config.reacquire_timeout_s)
             {
                 /* Transition-table row 10 (unconditional). */
                 applyEvent(RoomTrackingEvent::REACQUIRE_TIMEOUT,
                            effectiveNow,
-                           crossing,
-                           verification);
+                           crossing_in,
+                           verification_in);
             }
-            else if (reacquireLastRetryTime_s_ < 0.0 ||
-                     effectiveNow - reacquireLastRetryTime_s_ >=
-                         config_.reacquire_retry_interval_s)
+            else if (reacquireLastRetryTime_s < 0.0 ||
+                     effectiveNow - reacquireLastRetryTime_s >=
+                         config.reacquire_retry_interval_s)
             {
                 /* Retry backoff: after the configured number of
                  * failed attempts the reacquire is retired. */
-                ++reacquireRetryCount_;
-                reacquireLastRetryTime_s_ = effectiveNow;
-                if (reacquireRetryCount_ > config_.reacquire_max_retries)
+                ++reacquireRetryCount;
+                reacquireLastRetryTime_s = effectiveNow;
+                if (reacquireRetryCount > config.reacquire_max_retries)
                 {
                     applyEvent(RoomTrackingEvent::REACQUIRE_TIMEOUT,
                                effectiveNow,
-                               crossing,
-                               verification);
+                               crossing_in,
+                               verification_in);
                 }
             }
             break;
@@ -113,12 +113,12 @@ RoomTrackingState RoomTracker::step(double                      now_s,
         case RoomTrackingState::UNKNOWN:
         {
             /* Transition-table row 1 (guarded). */
-            if (verification.isPass())
+            if (verification_in.isPass())
             {
                 applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                            effectiveNow,
-                           crossing,
-                           verification);
+                           crossing_in,
+                           verification_in);
             }
             break;
         }
@@ -127,19 +127,20 @@ RoomTrackingState RoomTracker::step(double                      now_s,
             /* Transition-table row 2 (guarded). The dwell timer
              * starts on first guard satisfaction and resets on any failure. */
             const bool guardSatisfied =
-                crossing.passageDetected && crossing.passable &&
-                std::isfinite(crossing.confidence) &&
-                crossing.confidence >= 0.0 && crossing.confidence <= 1.0 &&
-                crossing.confidence >= config_.crossing_confidence;
-            TraversalGuardValues guard = crossing;
-            guard.dwell_s =
-                accumulateDwell(state_, effectiveNow, guardSatisfied);
-            if (guard.dwell_s >= config_.crossing_dwell_s)
+                crossing_in.isPassageDetected && crossing_in.isPassable &&
+                std::isfinite(crossing_in.confidence) &&
+                crossing_in.confidence >= 0.0 &&
+                crossing_in.confidence <= 1.0 &&
+                crossing_in.confidence >= config.crossing_confidence;
+            TraversalGuardValues updatedGuardValues = crossing_in;
+            updatedGuardValues.dwell_s =
+                accumulateDwell(trackingState, effectiveNow, guardSatisfied);
+            if (updatedGuardValues.dwell_s >= config.crossing_dwell_s)
             {
                 applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
                            effectiveNow,
-                           guard,
-                           verification);
+                           updatedGuardValues,
+                           verification_in);
             }
             break;
         }
@@ -148,41 +149,41 @@ RoomTrackingState RoomTracker::step(double                      now_s,
             /* Transition-table row 4 (guarded). Both-sides evidence is
              * cumulative; the dwell timer runs once the traversal facts and
              * the verification verdict both hold. */
-            hasObservedBothSides_ =
-                hasObservedBothSides_ || crossing.bothSidesObserved;
+            hasObservedBothSides =
+                hasObservedBothSides || crossing_in.areBothSidesObserved;
             const bool guardSatisfied =
-                hasObservedBothSides_ && verification.isPass();
-            TraversalGuardValues guard = crossing;
-            guard.dwell_s =
-                accumulateDwell(state_, effectiveNow, guardSatisfied);
-            guard.bothSidesObserved = hasObservedBothSides_;
-            if (guard.dwell_s >= config_.crossing_dwell_s)
+                hasObservedBothSides && verification_in.isPass();
+            TraversalGuardValues updatedGuardValues = crossing_in;
+            updatedGuardValues.dwell_s =
+                accumulateDwell(trackingState, effectiveNow, guardSatisfied);
+            updatedGuardValues.areBothSidesObserved = hasObservedBothSides;
+            if (updatedGuardValues.dwell_s >= config.crossing_dwell_s)
             {
                 applyEvent(RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
                            effectiveNow,
-                           guard,
-                           verification);
+                           updatedGuardValues,
+                           verification_in);
             }
             break;
         }
         case RoomTrackingState::LOST_WITHOUT_ROOM:
         {
             /* Transition-table row 6 (guarded). */
-            if (verification.isPass())
+            if (verification_in.isPass())
             {
                 applyEvent(RoomTrackingEvent::ROOM_REACQUIRED,
                            effectiveNow,
-                           crossing,
-                           verification);
+                           crossing_in,
+                           verification_in);
             }
             break;
         }
         }
     }
 
-    wasTrackingLost_    = tracking.lost;
-    lastReceivedTime_s_ = effectiveNow;
-    return state_;
+    wasTrackingLost    = tracking_in.isLost;
+    lastReceivedTime_s = effectiveNow;
+    return trackingState;
 }
 
 } // namespace semantic

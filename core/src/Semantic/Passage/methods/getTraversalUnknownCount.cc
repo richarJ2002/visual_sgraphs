@@ -30,7 +30,7 @@ namespace semantic
 
 std::size_t Passage::getTraversalUnknownCount() const
 {
-    std::lock_guard<std::mutex> lock(mMutexType);
+    std::lock_guard<std::mutex> lock(typeMutex);
     return traversalUnknownCount;
 }
 

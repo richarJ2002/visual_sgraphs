@@ -21,7 +21,7 @@ namespace semantic
 
 bool isValidWallBounds(const WallBounds &bounds_in)
 {
-    return bounds_in.valid && std::isfinite(bounds_in.minU_m) &&
+    return bounds_in.isValid && std::isfinite(bounds_in.minU_m) &&
            std::isfinite(bounds_in.maxU_m) && std::isfinite(bounds_in.minV_m) &&
            std::isfinite(bounds_in.maxV_m) &&
            bounds_in.maxU_m > bounds_in.minU_m &&

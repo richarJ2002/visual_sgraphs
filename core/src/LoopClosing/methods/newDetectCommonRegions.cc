@@ -37,19 +37,19 @@ bool LoopClosing::newDetectCommonRegions()
 {
     // To deactivate placerecognition. No loopclosing nor merging will be
     // performed
-    if (!activeLC)
+    if (!isLoopClosingActive)
     {
         return false;
     }
 
     {
-        unique_lock<mutex> lock(mMutexLoopQueue);
-        p_currentKF = mlpLoopKeyFrameQueue.front();
-        mlpLoopKeyFrameQueue.pop_front();
+        unique_lock<mutex> lock(loopQueueMutex);
+        p_currentKF = loopKeyFrameQueue.front();
+        loopKeyFrameQueue.pop_front();
         // Avoid that a keyframe can be erased while it is being process by this
         // thread
         p_currentKF->setNotErase();
-        p_currentKF->currentPlaceRecognition = true;
+        p_currentKF->isInCurrentPlaceRecognition = true;
 
         p_lastMap = p_currentKF->getMap();
     }
@@ -78,8 +78,8 @@ bool LoopClosing::newDetectCommonRegions()
 
     // Check the last candidates with geometric validation
     //  Loop candidates
-    bool bLoopDetectedInKF = false;
-    bool bCheckSpatial     = false;
+    bool isLoopDetectedInKeyFrame = false;
+    bool shouldCheckSpatial       = false;
 
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point time_StartEstSim3_1 =
@@ -87,38 +87,39 @@ bool LoopClosing::newDetectCommonRegions()
 #endif
     if (loopNumCoincidences > 0)
     {
-        bCheckSpatial = true;
+        shouldCheckSpatial = true;
         // Find from the last KF candidates
         Sophus::SE3d mTcl =
             (p_currentKF->getPose() * p_loopLastCurrentKF->getPoseInverse())
                 .cast<double>();
         g2o::Sim3 gScl(mTcl.unit_quaternion(), mTcl.translation(), 1.0);
-        g2o::Sim3 gScw           = gScl * mg2oLoopSlw;
-        int       numProjMatches = 0;
-        vector<MapPoint *> vpMatchedMPs;
-        bool bCommonRegion = detectAndReffineSim3FromLastKF(p_currentKF,
-                                                            p_loopMatchedKF,
-                                                            gScw,
-                                                            numProjMatches,
-                                                            loopMPs,
-                                                            vpMatchedMPs);
-        if (bCommonRegion)
+        g2o::Sim3 gScw                 = gScl * mg2oLoopSlw;
+        int       projectionMatchCount = 0;
+        vector<MapPoint *> matchedMapPoints;
+        bool               isCommonRegionFound =
+            detectAndReffineSim3FromLastKF(p_currentKF,
+                                           p_loopMatchedKF,
+                                           gScw,
+                                           projectionMatchCount,
+                                           loopMPs,
+                                           matchedMapPoints);
+        if (isCommonRegionFound)
         {
 
-            bLoopDetectedInKF = true;
+            isLoopDetectedInKeyFrame = true;
 
             loopNumCoincidences++;
             p_loopLastCurrentKF->setErase();
             p_loopLastCurrentKF = p_currentKF;
             mg2oLoopSlw         = gScw;
-            loopMatchedMPs      = vpMatchedMPs;
+            loopMatchedMPs      = matchedMapPoints;
 
-            loopDetected    = loopNumCoincidences >= 3;
+            isLoopDetected  = loopNumCoincidences >= 3;
             loopNumNotFound = 0;
         }
         else
         {
-            bLoopDetectedInKF = false;
+            isLoopDetectedInKeyFrame = false;
 
             loopNumNotFound++;
             if (loopNumNotFound >= 2)
@@ -135,7 +136,7 @@ bool LoopClosing::newDetectCommonRegions()
     }
 
     // Merge candidates
-    bool bMergeDetectedInKF = false;
+    bool isMergeDetectedInKeyFrame = false;
     if (mergeNumCoincidences > 0)
     {
         // Find from the last KF candidates
@@ -144,31 +145,32 @@ bool LoopClosing::newDetectCommonRegions()
                 .cast<double>();
 
         g2o::Sim3 gScl(mTcl.unit_quaternion(), mTcl.translation(), 1.0);
-        g2o::Sim3 gScw           = gScl * mg2oMergeSlw;
-        int       numProjMatches = 0;
-        vector<MapPoint *> vpMatchedMPs;
-        bool bCommonRegion = detectAndReffineSim3FromLastKF(p_currentKF,
-                                                            p_mergeMatchedKF,
-                                                            gScw,
-                                                            numProjMatches,
-                                                            mergeMPs,
-                                                            vpMatchedMPs);
-        if (bCommonRegion)
+        g2o::Sim3 gScw                 = gScl * mg2oMergeSlw;
+        int       projectionMatchCount = 0;
+        vector<MapPoint *> matchedMapPoints;
+        bool               isCommonRegionFound =
+            detectAndReffineSim3FromLastKF(p_currentKF,
+                                           p_mergeMatchedKF,
+                                           gScw,
+                                           projectionMatchCount,
+                                           mergeMPs,
+                                           matchedMapPoints);
+        if (isCommonRegionFound)
         {
-            bMergeDetectedInKF = true;
+            isMergeDetectedInKeyFrame = true;
 
             mergeNumCoincidences++;
             p_mergeLastCurrentKF->setErase();
             p_mergeLastCurrentKF = p_currentKF;
             mg2oMergeSlw         = gScw;
-            mergeMatchedMPs      = vpMatchedMPs;
+            mergeMatchedMPs      = matchedMapPoints;
 
-            mergeDetected = mergeNumCoincidences >= 3;
+            isMergeDetected = mergeNumCoincidences >= 3;
         }
         else
         {
-            mergeDetected      = false;
-            bMergeDetectedInKF = false;
+            isMergeDetected           = false;
+            isMergeDetectedInKeyFrame = false;
 
             mergeNumNotFound++;
             if (mergeNumNotFound >= 2)
@@ -192,10 +194,10 @@ bool LoopClosing::newDetectCommonRegions()
             .count();
 #endif
 
-    if (mergeDetected || loopDetected)
+    if (isMergeDetected || isLoopDetected)
     {
 #ifdef REGISTER_TIMES
-        vdEstSim3_ms.push_back(timeEstSim3);
+        sim3EstimationTimes_ms.push_back(timeEstSim3);
 #endif
         p_keyFrameDatabase->add(p_currentKF);
         return true;
@@ -203,31 +205,31 @@ bool LoopClosing::newDetectCommonRegions()
 
     // TODO: This is only necessary if we use a minimun score for pick the best
     // candidates
-    const vector<KeyFrame *> vpConnectedKeyFrames =
+    const vector<KeyFrame *> connectedKeyFrames =
         p_currentKF->getVectorCovisibleKeyFrames();
 
     // Extract candidates from the bag of words
-    vector<KeyFrame *> vpMergeBowCand, vpLoopBowCand;
-    if (!bMergeDetectedInKF || !bLoopDetectedInKF)
+    vector<KeyFrame *> mergeBowCandidates, loopBowCandidates;
+    if (!isMergeDetectedInKeyFrame || !isLoopDetectedInKeyFrame)
     {
         // Search in BoW
 #ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point time_StartQuery =
+        std::chrono::steady_clock::time_point timeStartQuery =
             std::chrono::steady_clock::now();
 #endif
         p_keyFrameDatabase->detectNBestCandidates(p_currentKF,
-                                                  vpLoopBowCand,
-                                                  vpMergeBowCand,
+                                                  loopBowCandidates,
+                                                  mergeBowCandidates,
                                                   3);
 #ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point time_EndQuery =
+        std::chrono::steady_clock::time_point timeEndQuery =
             std::chrono::steady_clock::now();
 
         double timeDataQuery = std::chrono::duration_cast<
                                    std::chrono::duration<double, std::milli>>(
-                                   time_EndQuery - time_StartQuery)
+                                   timeEndQuery - timeStartQuery)
                                    .count();
-        vdDataQuery_ms.push_back(timeDataQuery);
+        dataQueryTimes_ms.push_back(timeDataQuery);
 #endif
     }
 
@@ -237,26 +239,26 @@ bool LoopClosing::newDetectCommonRegions()
 #endif
     // Check the BoW candidates if the geometric candidate list is empty
     // Loop candidates
-    if (!bLoopDetectedInKF && !vpLoopBowCand.empty())
+    if (!isLoopDetectedInKeyFrame && !loopBowCandidates.empty())
     {
-        loopDetected = detectCommonRegionsFromBoW(vpLoopBowCand,
-                                                  p_loopMatchedKF,
-                                                  p_loopLastCurrentKF,
-                                                  mg2oLoopSlw,
-                                                  loopNumCoincidences,
-                                                  loopMPs,
-                                                  loopMatchedMPs);
+        isLoopDetected = detectCommonRegionsFromBoW(loopBowCandidates,
+                                                    p_loopMatchedKF,
+                                                    p_loopLastCurrentKF,
+                                                    mg2oLoopSlw,
+                                                    loopNumCoincidences,
+                                                    loopMPs,
+                                                    loopMatchedMPs);
     }
     // Merge candidates
-    if (!bMergeDetectedInKF && !vpMergeBowCand.empty())
+    if (!isMergeDetectedInKeyFrame && !mergeBowCandidates.empty())
     {
-        mergeDetected = detectCommonRegionsFromBoW(vpMergeBowCand,
-                                                   p_mergeMatchedKF,
-                                                   p_mergeLastCurrentKF,
-                                                   mg2oMergeSlw,
-                                                   mergeNumCoincidences,
-                                                   mergeMPs,
-                                                   mergeMatchedMPs);
+        isMergeDetected = detectCommonRegionsFromBoW(mergeBowCandidates,
+                                                     p_mergeMatchedKF,
+                                                     p_mergeLastCurrentKF,
+                                                     mg2oMergeSlw,
+                                                     mergeNumCoincidences,
+                                                     mergeMPs,
+                                                     mergeMatchedMPs);
     }
 
 #ifdef REGISTER_TIMES
@@ -267,18 +269,18 @@ bool LoopClosing::newDetectCommonRegions()
         std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
             time_EndEstSim3_2 - time_StartEstSim3_2)
             .count();
-    vdEstSim3_ms.push_back(timeEstSim3);
+    sim3EstimationTimes_ms.push_back(timeEstSim3);
 #endif
 
     p_keyFrameDatabase->add(p_currentKF);
 
-    if (mergeDetected || loopDetected)
+    if (isMergeDetected || isLoopDetected)
     {
         return true;
     }
 
     p_currentKF->setErase();
-    p_currentKF->currentPlaceRecognition = false;
+    p_currentKF->isInCurrentPlaceRecognition = false;
 
     return false;
 }

@@ -127,14 +127,14 @@ TEST(RoomTrackerSkeleton, ConfidenceFormula)
 TEST(RoomTrackerSkeleton, EventSerialisationIsJSON)
 {
     semantic::TransitionEvent event;
-    event.timestamp_s      = 12.5;
-    event.sourceState      = semantic::RoomTrackingState::CONFIRMED_ROOM;
-    event.event            = semantic::RoomTrackingEvent::TRACKING_LOST;
-    event.targetState      = semantic::RoomTrackingState::LOST_WITH_LAST_ROOM;
-    event.dwell_s          = 0.0;
-    event.confidence       = 0.0;
-    event.verificationPass = false;
-    event.accepted         = true;
+    event.timestamp_s = 12.5;
+    event.sourceState = semantic::RoomTrackingState::CONFIRMED_ROOM;
+    event.event       = semantic::RoomTrackingEvent::TRACKING_LOST;
+    event.targetState = semantic::RoomTrackingState::LOST_WITH_LAST_ROOM;
+    event.dwell_s     = 0.0;
+    event.confidence  = 0.0;
+    event.hasVerificationPassed = false;
+    event.isAccepted            = true;
 
     const std::string json = semantic::RoomTracker::eventToJSON(event);
     EXPECT_NE(json.find("\"source\":\"CONFIRMED_ROOM\""), std::string::npos);

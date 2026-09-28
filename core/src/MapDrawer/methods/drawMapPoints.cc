@@ -36,28 +36,32 @@ namespace core
 
 void MapDrawer::drawMapPoints()
 {
-    Map *pActiveMap = p_atlas->getCurrentMap();
-    if (!pActiveMap)
+    Map *p_activeMap = p_atlas->getCurrentMap();
+    if (!p_activeMap)
         return;
 
-    const vector<MapPoint *> &vpMPs    = pActiveMap->getAllMapPoints();
-    const vector<MapPoint *> &vpRefMPs = pActiveMap->getReferenceMapPoints();
+    const vector<MapPoint *> &mapPoints = p_activeMap->getAllMapPoints();
+    const vector<MapPoint *> &vpRefMPs  = p_activeMap->getReferenceMapPoints();
 
-    set<MapPoint *> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
+    set<MapPoint *> referenceMapPoints(vpRefMPs.begin(), vpRefMPs.end());
 
-    if (vpMPs.empty())
+    if (mapPoints.empty())
         return;
 
     glPointSize(pointSize);
     glBegin(GL_POINTS);
     glColor3f(0.0, 0.0, 0.0);
 
-    for (size_t i = 0, iend = vpMPs.size(); i < iend; i++)
+    for (size_t mapPointIndex = 0, iend = mapPoints.size();
+         mapPointIndex < iend;
+         mapPointIndex++)
     {
-        if (vpMPs[i]->isBad() || spRefMPs.count(vpMPs[i]))
+        if (mapPoints[mapPointIndex]->isBad() ||
+            referenceMapPoints.count(mapPoints[mapPointIndex]))
             continue;
-        Eigen::Matrix<float, 3, 1> pos = vpMPs[i]->getWorldPos();
-        glVertex3f(pos(0), pos(1), pos(2));
+        Eigen::Matrix<float, 3, 1> position =
+            mapPoints[mapPointIndex]->getWorldPos();
+        glVertex3f(position(0), position(1), position(2));
     }
     glEnd();
 
@@ -65,15 +69,15 @@ void MapDrawer::drawMapPoints()
     glBegin(GL_POINTS);
     glColor3f(1.0, 0.0, 0.0);
 
-    for (set<MapPoint *>::iterator sit  = spRefMPs.begin(),
-                                   send = spRefMPs.end();
+    for (set<MapPoint *>::iterator sit  = referenceMapPoints.begin(),
+                                   send = referenceMapPoints.end();
          sit != send;
          sit++)
     {
         if ((*sit)->isBad())
             continue;
-        Eigen::Matrix<float, 3, 1> pos = (*sit)->getWorldPos();
-        glVertex3f(pos(0), pos(1), pos(2));
+        Eigen::Matrix<float, 3, 1> position = (*sit)->getWorldPos();
+        glVertex3f(position(0), position(1), position(2));
     }
 
     glEnd();

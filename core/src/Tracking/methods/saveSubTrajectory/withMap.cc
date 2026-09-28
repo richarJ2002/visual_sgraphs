@@ -30,13 +30,14 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::saveSubTrajectory(string strNameFile_frames,
-                                 string strNameFile_kf,
-                                 Map   *pMap)
+void Tracking::saveSubTrajectory(string textNameFileFrames_in,
+                                 string textNameFileKeyFrame_in,
+                                 Map   *p_map_in)
 {
-    p_system->saveTrajectoryEuRoC(strNameFile_frames, pMap);
-    if (!strNameFile_kf.empty())
-        p_system->saveKeyFrameTrajectoryEuRoC(strNameFile_kf, pMap);
+    p_system->saveTrajectoryEuRoC(textNameFileFrames_in, p_map_in);
+    if (!textNameFileKeyFrame_in.empty())
+        p_system->saveKeyFrameTrajectoryEuRoC(textNameFileKeyFrame_in,
+                                              p_map_in);
 }
 
 } // namespace core

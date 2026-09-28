@@ -32,7 +32,7 @@ bool SemanticsManager::evaluateWallAdmissionEvidenceAdmissibleForTest(
     return evaluateWallAdmissionEvidence(p_wall_in,
                                          p_sysParams,
                                          groundNormal_World_in)
-        .admissible;
+        .isAdmissible;
 }
 
 } // namespace core

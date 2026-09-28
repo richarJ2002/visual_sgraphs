@@ -178,7 +178,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
 
     // --- KeyFrames (exactly 3) -------------------------------------------
     KeyFrame knownSideKeyFrame;
-    knownSideKeyFrame.mnId = 0U;
+    knownSideKeyFrame.id = 0U;
     knownSideKeyFrame.setPose(
         Sophus::SE3f(Eigen::Matrix3f::Identity(),
                      Eigen::Vector3f(-KNOWN_SIDE_CAMERA_CENTER_X,
@@ -187,7 +187,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     p_map->addKeyFrame(&knownSideKeyFrame);
 
     KeyFrame apertureKeyFrame;
-    apertureKeyFrame.mnId = 1U;
+    apertureKeyFrame.id = 1U;
     apertureKeyFrame.setPose(
         Sophus::SE3f(Eigen::Matrix3f::Identity(),
                      Eigen::Vector3f(-APERTURE_CAMERA_CENTER_X,
@@ -196,7 +196,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     p_map->addKeyFrame(&apertureKeyFrame);
 
     KeyFrame farSideKeyFrame;
-    farSideKeyFrame.mnId = 2U;
+    farSideKeyFrame.id = 2U;
     farSideKeyFrame.setPose(
         Sophus::SE3f(Eigen::Matrix3f::Identity(),
                      Eigen::Vector3f(-FAR_SIDE_CAMERA_CENTER_X,

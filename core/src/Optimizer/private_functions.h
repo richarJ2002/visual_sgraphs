@@ -30,17 +30,17 @@ class AtomicOptimizerStopBridge final : public g2o::HyperGraphAction
 {
   public:
     AtomicOptimizerStopBridge(const std::atomic_bool *p_stopRequested_in,
-                              bool                   *p_localStopFlag_out) :
+                              bool                   *p_localStopFlag_inout) :
         p_stopRequested(p_stopRequested_in),
-        p_localStopFlag(p_localStopFlag_out)
+        p_localStopFlag(p_localStopFlag_inout)
     {}
 
     g2o::HyperGraphAction *
         operator()(const g2o::HyperGraph *p_graph_in,
-                   Parameters            *p_parameters_in = nullptr) override
+                   Parameters            *p_parameters_inout = nullptr) override
     {
         (void)p_graph_in;
-        (void)p_parameters_in;
+        (void)p_parameters_inout;
 
         if (p_stopRequested != nullptr && p_localStopFlag != nullptr &&
             p_stopRequested->load(std::memory_order_acquire))
@@ -56,8 +56,8 @@ class AtomicOptimizerStopBridge final : public g2o::HyperGraphAction
     bool                   *p_localStopFlag;
 };
 
-bool sortByVal(const std::pair<MapPoint *, int> &a,
-               const std::pair<MapPoint *, int> &b);
+bool sortByVal(const std::pair<MapPoint *, int> &firstEntry_in,
+               const std::pair<MapPoint *, int> &secondEntry_in);
 
 } // namespace core
 } // namespace vs_graphs

@@ -30,30 +30,32 @@ namespace vs_graphs
 namespace core
 {
 
-bool System::saveMapPointsAsPCD(const string &filename)
+bool System::saveMapPointsAsPCD(const string &filename_in)
 {
     try
     {
         // make a pointcloud out of all map points
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(
+        pcl::PointCloud<pcl::PointXYZ>::Ptr p_cloud(
             new pcl::PointCloud<pcl::PointXYZ>);
-        vector<MapPoint *> vpMPs = p_atlas->getCurrentMap()->getAllMapPoints();
-        for (size_t i = 0; i < vpMPs.size(); i++)
+        vector<MapPoint *> mapPoints =
+            p_atlas->getCurrentMap()->getAllMapPoints();
+        for (size_t mapPointIndex = 0; mapPointIndex < mapPoints.size();
+             mapPointIndex++)
         {
-            MapPoint *pMP = vpMPs[i];
-            if (pMP->isBad())
+            MapPoint *p_mapPoint = mapPoints[mapPointIndex];
+            if (p_mapPoint->isBad())
                 continue;
 
-            Eigen::Vector3d P3Dw = pMP->getWorldPos().cast<double>();
+            Eigen::Vector3d P3Dw = p_mapPoint->getWorldPos().cast<double>();
             pcl::PointXYZ   point;
             point.x = P3Dw.x();
             point.y = P3Dw.y();
             point.z = P3Dw.z();
-            cloud->push_back(point);
+            p_cloud->push_back(point);
         }
 
         // save the pointcloud
-        pcl::io::savePCDFileBinary(filename + ".pcd", *cloud);
+        pcl::io::savePCDFileBinary(filename_in + ".pcd", *p_cloud);
 
         return true;
     }

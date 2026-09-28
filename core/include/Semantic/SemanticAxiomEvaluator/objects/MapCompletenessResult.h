@@ -109,10 +109,10 @@ struct MapCompletenessResult
      *  this same map, reproduced from this snapshot. */
     LegacyMapCompletenessResult legacy;
 
-    /*! @brief True when legacy.mapFullyModeled != isComplete: the shadow
+    /*! @brief True when legacy.isMapFullyModeled != isComplete: the shadow
      *  conservative calculation and the current production calculation
      *  disagree about this map. */
-    bool legacyAndConservativeDiverge{false};
+    bool doLegacyAndConservativeDiverge{false};
 };
 
 } // namespace semantic

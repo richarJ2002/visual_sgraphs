@@ -33,41 +33,43 @@ namespace core
 void LocalMapping::mapPointCulling()
 {
     // Check Recent Added MapPoints
-    list<MapPoint *>::iterator lit          = mlpRecentAddedMapPoints.begin();
-    const unsigned long int    nCurrentKFid = p_currentKeyFrame->mnId;
+    list<MapPoint *>::iterator recentMapPointIt  = recentAddedMapPoints.begin();
+    const unsigned long int    currentKeyFrameId = p_currentKeyFrame->id;
 
-    int nThObs;
-    if (monocular)
-        nThObs = 2;
+    int rawObservationThreshold;
+    if (isMonocular)
+        rawObservationThreshold = 2;
     else
-        nThObs = 3;
-    const int cnThObs = nThObs;
+        rawObservationThreshold = 3;
+    const int observationThreshold = rawObservationThreshold;
 
-    int borrar = mlpRecentAddedMapPoints.size();
+    int remainingCandidateCount = recentAddedMapPoints.size();
 
-    while (lit != mlpRecentAddedMapPoints.end())
+    while (recentMapPointIt != recentAddedMapPoints.end())
     {
-        MapPoint *pMP = *lit;
+        MapPoint *p_mapPoint = *recentMapPointIt;
 
-        if (pMP->isBad())
-            lit = mlpRecentAddedMapPoints.erase(lit);
-        else if (pMP->getFoundRatio() < 0.25f)
+        if (p_mapPoint->isBad())
+            recentMapPointIt = recentAddedMapPoints.erase(recentMapPointIt);
+        else if (p_mapPoint->getFoundRatio() < 0.25f)
         {
-            pMP->setBadFlag();
-            lit = mlpRecentAddedMapPoints.erase(lit);
+            p_mapPoint->setBadFlag();
+            recentMapPointIt = recentAddedMapPoints.erase(recentMapPointIt);
         }
-        else if (((int)nCurrentKFid - (int)pMP->firstKeyFrameId) >= 2 &&
-                 pMP->getObservationCount() <= cnThObs)
+        else if (((int)currentKeyFrameId - (int)p_mapPoint->firstKeyFrameId) >=
+                     2 &&
+                 p_mapPoint->getObservationCount() <= observationThreshold)
         {
-            pMP->setBadFlag();
-            lit = mlpRecentAddedMapPoints.erase(lit);
+            p_mapPoint->setBadFlag();
+            recentMapPointIt = recentAddedMapPoints.erase(recentMapPointIt);
         }
-        else if (((int)nCurrentKFid - (int)pMP->firstKeyFrameId) >= 3)
-            lit = mlpRecentAddedMapPoints.erase(lit);
+        else if (((int)currentKeyFrameId - (int)p_mapPoint->firstKeyFrameId) >=
+                 3)
+            recentMapPointIt = recentAddedMapPoints.erase(recentMapPointIt);
         else
         {
-            lit++;
-            borrar--;
+            recentMapPointIt++;
+            remainingCandidateCount--;
         }
     }
 }

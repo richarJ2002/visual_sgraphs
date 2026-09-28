@@ -26,28 +26,28 @@ namespace core
 namespace IMU
 {
 
-std::ostream &operator<<(std::ostream &out, const Bias &b)
+std::ostream &operator<<(std::ostream &out_inout, const Bias &b_in)
 {
-    if (b.bwx > 0)
-        out << " ";
-    out << b.bwx << ",";
-    if (b.bwy > 0)
-        out << " ";
-    out << b.bwy << ",";
-    if (b.bwz > 0)
-        out << " ";
-    out << b.bwz << ",";
-    if (b.bax > 0)
-        out << " ";
-    out << b.bax << ",";
-    if (b.bay > 0)
-        out << " ";
-    out << b.bay << ",";
-    if (b.baz > 0)
-        out << " ";
-    out << b.baz;
+    if (b_in.bwx > 0)
+        out_inout << " ";
+    out_inout << b_in.bwx << ",";
+    if (b_in.bwy > 0)
+        out_inout << " ";
+    out_inout << b_in.bwy << ",";
+    if (b_in.bwz > 0)
+        out_inout << " ";
+    out_inout << b_in.bwz << ",";
+    if (b_in.bax > 0)
+        out_inout << " ";
+    out_inout << b_in.bax << ",";
+    if (b_in.bay > 0)
+        out_inout << " ";
+    out_inout << b_in.bay << ",";
+    if (b_in.baz > 0)
+        out_inout << " ";
+    out_inout << b_in.baz;
 
-    return out;
+    return out_inout;
 }
 
 } // namespace IMU

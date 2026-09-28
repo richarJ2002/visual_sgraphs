@@ -30,19 +30,19 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setMapBad(Map *p_map_in)
+void Atlas::setMapBad(Map *p_map_inout)
 {
-    if (p_map_in == nullptr)
+    if (p_map_inout == nullptr)
     {
         return;
     }
 
-    std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
+    std::unique_lock<std::mutex> atlasLock(atlasMutex);
 
-    maps.erase(p_map_in);
-    p_map_in->setBad();
+    maps.erase(p_map_inout);
+    p_map_inout->setBad();
 
-    badMaps.insert(p_map_in);
+    badMaps.insert(p_map_inout);
 }
 
 } // namespace core

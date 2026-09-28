@@ -35,13 +35,15 @@ namespace camera_models
 {
 namespace pinhole
 {
-Eigen::Vector2d Pinhole::project(const Eigen::Vector3d &point3D_in)
+Eigen::Vector2d Pinhole::project(const Eigen::Vector3d &point3d_in)
 {
-    Eigen::Vector2d res;
-    res[0] = parameters[0] * point3D_in[0] / point3D_in[2] + parameters[2];
-    res[1] = parameters[1] * point3D_in[1] / point3D_in[2] + parameters[3];
+    Eigen::Vector2d projectedPoint;
+    projectedPoint[0] =
+        parameters[0] * point3d_in[0] / point3d_in[2] + parameters[2];
+    projectedPoint[1] =
+        parameters[1] * point3d_in[1] / point3d_in[2] + parameters[3];
 
-    return res;
+    return projectedPoint;
 }
 } // namespace pinhole
 } // namespace camera_models

@@ -34,7 +34,7 @@ namespace geometric
 
 PlaneGeometryMetadataSnapshot Plane::getGeometryMetadataSnapshot(void) const
 {
-    std::scoped_lock              lock(mMutexPos, mMutexFeatures);
+    std::scoped_lock              lock(positionMutex, featuresMutex);
     PlaneGeometryMetadataSnapshot snapshot;
     snapshot.equation_World            = globalEquation.coeffs();
     snapshot.centroid_World_m          = centroid;

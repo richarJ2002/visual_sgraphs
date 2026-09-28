@@ -30,7 +30,7 @@ namespace semantic
 bool Room::isRecoveryProxy() const
 {
     std::lock_guard<std::mutex> lock(stateMutex);
-    return recoveryProxy;
+    return isMarkedRecoveryProxy;
 }
 
 } // namespace semantic

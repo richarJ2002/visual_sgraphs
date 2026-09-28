@@ -36,7 +36,7 @@ namespace core
 
 std::uint64_t Map::getWorldFrameEpoch()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return worldFrameEpoch;
 }
 

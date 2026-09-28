@@ -71,7 +71,7 @@ nlohmann::json entityKeysToJson(const std::vector<EntityKey> &keys_in);
  *  \c result == AxiomResult::FAIL -- see buildSemanticDiagnosticUpdate.cc,
  *  the only caller. */
 nlohmann::json violationDetailToJson(const Finding &finding_in,
-                                     const char    *transition_in);
+                                     const char    *p_transition_in);
 
 } // namespace semantic
 } // namespace core

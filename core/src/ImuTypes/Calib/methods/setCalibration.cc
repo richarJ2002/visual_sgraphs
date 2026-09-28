@@ -24,20 +24,20 @@ namespace core
 namespace IMU
 {
 
-void Calib::setCalibration(const Sophus::SE3<float> &sophTbc,
-                           const float              &ng,
-                           const float              &na,
-                           const float              &ngw,
-                           const float              &naw)
+void Calib::setCalibration(const Sophus::SE3<float> &sophTbc_in,
+                           const float              &ng_in,
+                           const float              &na_in,
+                           const float              &ngw_in,
+                           const float              &naw_in)
 {
-    mbIsSet          = true;
-    const float ng2  = ng * ng;
-    const float na2  = na * na;
-    const float ngw2 = ngw * ngw;
-    const float naw2 = naw * naw;
+    isCalibrationSet = true;
+    const float ng2  = ng_in * ng_in;
+    const float na2  = na_in * na_in;
+    const float ngw2 = ngw_in * ngw_in;
+    const float naw2 = naw_in * naw_in;
 
     // Sophus/Eigen
-    mTbc = sophTbc;
+    mTbc = sophTbc_in;
     mTcb = mTbc.inverse();
     Cov.diagonal() << ng2, ng2, ng2, na2, na2, na2;
     CovWalk.diagonal() << ngw2, ngw2, ngw2, naw2, naw2, naw2;

@@ -27,8 +27,8 @@ namespace semantic
 
 bool Marker::isMarkerInGMap() const
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    return markerInGMap;
+    std::lock_guard<std::mutex> lock(stateMutex);
+    return isInGlobalMap;
 }
 
 } // namespace semantic

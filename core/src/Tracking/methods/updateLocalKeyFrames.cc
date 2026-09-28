@@ -35,95 +35,99 @@ void Tracking::updateLocalKeyFrames()
     // Each map point vote for the keyframes in which it has been observed
     map<KeyFrame *, int> keyframeCounter;
     if (!p_atlas->isImuInitialized() ||
-        (currentFrame.mnId < lastRelocFrameId + 2))
+        (currentFrame.id < lastRelocFrameId + 2))
     {
-        for (int i = 0; i < currentFrame.N; i++)
+        for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
+             keyPointIndex++)
         {
-            MapPoint *pMP = currentFrame.mapPoints[i];
-            if (pMP)
+            MapPoint *p_mapPoint = currentFrame.mapPoints[keyPointIndex];
+            if (p_mapPoint)
             {
-                if (!pMP->isBad())
+                if (!p_mapPoint->isBad())
                 {
                     const map<KeyFrame *, tuple<int, int>> observations =
-                        pMP->getObservations();
+                        p_mapPoint->getObservations();
                     for (map<KeyFrame *, tuple<int, int>>::const_iterator
-                             it    = observations.begin(),
-                             itend = observations.end();
-                         it != itend;
-                         it++)
-                        keyframeCounter[it->first]++;
+                             keyFrameCounterIt = observations.begin(),
+                             itend             = observations.end();
+                         keyFrameCounterIt != itend;
+                         keyFrameCounterIt++)
+                        keyframeCounter[keyFrameCounterIt->first]++;
                 }
                 else
                 {
-                    currentFrame.mapPoints[i] = nullptr;
+                    currentFrame.mapPoints[keyPointIndex] = nullptr;
                 }
             }
         }
     }
     else
     {
-        for (int i = 0; i < lastFrame.N; i++)
+        for (int keyPointIndex = 0; keyPointIndex < lastFrame.keyPointCount;
+             keyPointIndex++)
         {
             // Using lastframe since current frame has not matches yet
-            if (lastFrame.mapPoints[i])
+            if (lastFrame.mapPoints[keyPointIndex])
             {
-                MapPoint *pMP = lastFrame.mapPoints[i];
-                if (!pMP)
+                MapPoint *p_mapPoint = lastFrame.mapPoints[keyPointIndex];
+                if (!p_mapPoint)
                     continue;
-                if (!pMP->isBad())
+                if (!p_mapPoint->isBad())
                 {
                     const map<KeyFrame *, tuple<int, int>> observations =
-                        pMP->getObservations();
+                        p_mapPoint->getObservations();
                     for (map<KeyFrame *, tuple<int, int>>::const_iterator
-                             it    = observations.begin(),
-                             itend = observations.end();
-                         it != itend;
-                         it++)
-                        keyframeCounter[it->first]++;
+                             keyFrameCounterIt = observations.begin(),
+                             itend             = observations.end();
+                         keyFrameCounterIt != itend;
+                         keyFrameCounterIt++)
+                        keyframeCounter[keyFrameCounterIt->first]++;
                 }
                 else
                 {
                     // MODIFICATION
-                    lastFrame.mapPoints[i] = nullptr;
+                    lastFrame.mapPoints[keyPointIndex] = nullptr;
                 }
             }
         }
     }
 
-    int       max    = 0;
-    KeyFrame *pKFmax = static_cast<KeyFrame *>(nullptr);
+    int       maximum           = 0;
+    KeyFrame *p_keyFrameMaximum = static_cast<KeyFrame *>(nullptr);
 
     localKeyFrames.clear();
     localKeyFrames.reserve(3 * keyframeCounter.size());
 
     // All keyframes that observe a map point are included in the local map.
     // Also check which keyframe shares most points
-    for (map<KeyFrame *, int>::const_iterator it    = keyframeCounter.begin(),
-                                              itEnd = keyframeCounter.end();
-         it != itEnd;
-         it++)
+    for (map<KeyFrame *, int>::const_iterator
+             keyFrameCounterIt = keyframeCounter.begin(),
+             itEnd             = keyframeCounter.end();
+         keyFrameCounterIt != itEnd;
+         keyFrameCounterIt++)
     {
-        KeyFrame *pKF = it->first;
+        KeyFrame *p_keyFrame = keyFrameCounterIt->first;
 
-        if (pKF->isBad())
+        if (p_keyFrame->isBad())
             continue;
 
-        if (it->second > max)
+        if (keyFrameCounterIt->second > maximum)
         {
-            max    = it->second;
-            pKFmax = pKF;
+            maximum           = keyFrameCounterIt->second;
+            p_keyFrameMaximum = p_keyFrame;
         }
 
-        localKeyFrames.push_back(pKF);
-        pKF->trackReferenceFrameId = currentFrame.mnId;
+        localKeyFrames.push_back(p_keyFrame);
+        p_keyFrame->trackReferenceFrameId = currentFrame.id;
     }
 
     // Include also some not-already-included keyframes that are neighbors to
     // already-included keyframes
-    for (vector<KeyFrame *>::const_iterator itKF    = localKeyFrames.begin(),
-                                            itEndKF = localKeyFrames.end();
-         itKF != itEndKF;
-         itKF++)
+    for (vector<KeyFrame *>::const_iterator
+             itKeyFrame    = localKeyFrames.begin(),
+             itEndKeyFrame = localKeyFrames.end();
+         itKeyFrame != itEndKeyFrame;
+         itKeyFrame++)
     {
         // Limit the number of keyframes - use configurable max (200 for
         // corridors)
@@ -132,53 +136,55 @@ void Tracking::updateLocalKeyFrames()
             break;
         }
 
-        KeyFrame *pKF = *itKF;
+        KeyFrame *p_keyFrame = *itKeyFrame;
 
-        const vector<KeyFrame *> vNeighs =
-            pKF->getBestCovisibilityKeyFrames(10);
+        const vector<KeyFrame *> neighbors =
+            p_keyFrame->getBestCovisibilityKeyFrames(10);
 
-        for (vector<KeyFrame *>::const_iterator itNeighKF    = vNeighs.begin(),
-                                                itEndNeighKF = vNeighs.end();
-             itNeighKF != itEndNeighKF;
-             itNeighKF++)
+        for (vector<KeyFrame *>::const_iterator
+                 itNeighborKeyFrame    = neighbors.begin(),
+                 itEndNeighborKeyFrame = neighbors.end();
+             itNeighborKeyFrame != itEndNeighborKeyFrame;
+             itNeighborKeyFrame++)
         {
-            KeyFrame *pNeighKF = *itNeighKF;
-            if (!pNeighKF->isBad())
+            KeyFrame *p_neighborKeyFrame = *itNeighborKeyFrame;
+            if (!p_neighborKeyFrame->isBad())
             {
-                if (pNeighKF->trackReferenceFrameId != currentFrame.mnId)
+                if (p_neighborKeyFrame->trackReferenceFrameId !=
+                    currentFrame.id)
                 {
-                    localKeyFrames.push_back(pNeighKF);
-                    pNeighKF->trackReferenceFrameId = currentFrame.mnId;
+                    localKeyFrames.push_back(p_neighborKeyFrame);
+                    p_neighborKeyFrame->trackReferenceFrameId = currentFrame.id;
                     break;
                 }
             }
         }
 
-        const set<KeyFrame *> spChilds = pKF->getChilds();
-        for (set<KeyFrame *>::const_iterator sit  = spChilds.begin(),
-                                             send = spChilds.end();
+        const set<KeyFrame *> childs = p_keyFrame->getChilds();
+        for (set<KeyFrame *>::const_iterator sit  = childs.begin(),
+                                             send = childs.end();
              sit != send;
              sit++)
         {
-            KeyFrame *pChildKF = *sit;
-            if (!pChildKF->isBad())
+            KeyFrame *p_childKeyFrame = *sit;
+            if (!p_childKeyFrame->isBad())
             {
-                if (pChildKF->trackReferenceFrameId != currentFrame.mnId)
+                if (p_childKeyFrame->trackReferenceFrameId != currentFrame.id)
                 {
-                    localKeyFrames.push_back(pChildKF);
-                    pChildKF->trackReferenceFrameId = currentFrame.mnId;
+                    localKeyFrames.push_back(p_childKeyFrame);
+                    p_childKeyFrame->trackReferenceFrameId = currentFrame.id;
                     break;
                 }
             }
         }
 
-        KeyFrame *pParent = pKF->getParent();
-        if (pParent)
+        KeyFrame *p_parent = p_keyFrame->getParent();
+        if (p_parent)
         {
-            if (pParent->trackReferenceFrameId != currentFrame.mnId)
+            if (p_parent->trackReferenceFrameId != currentFrame.id)
             {
-                localKeyFrames.push_back(pParent);
-                pParent->trackReferenceFrameId = currentFrame.mnId;
+                localKeyFrames.push_back(p_parent);
+                p_parent->trackReferenceFrameId = currentFrame.id;
                 break;
             }
         }
@@ -189,25 +195,25 @@ void Tracking::updateLocalKeyFrames()
          sensor == System::IMU_RGBD) &&
         localKeyFrames.size() < 80)
     {
-        KeyFrame *tempKeyFrame = currentFrame.p_lastKeyFrame;
+        KeyFrame *p_tempKeyFrame = currentFrame.p_lastKeyFrame;
 
         const int Nd = 20;
-        for (int i = 0; i < Nd; i++)
+        for (int keyPointIndex = 0; keyPointIndex < Nd; keyPointIndex++)
         {
-            if (!tempKeyFrame)
+            if (!p_tempKeyFrame)
                 break;
-            if (tempKeyFrame->trackReferenceFrameId != currentFrame.mnId)
+            if (p_tempKeyFrame->trackReferenceFrameId != currentFrame.id)
             {
-                localKeyFrames.push_back(tempKeyFrame);
-                tempKeyFrame->trackReferenceFrameId = currentFrame.mnId;
-                tempKeyFrame                        = tempKeyFrame->p_prevKF;
+                localKeyFrames.push_back(p_tempKeyFrame);
+                p_tempKeyFrame->trackReferenceFrameId = currentFrame.id;
+                p_tempKeyFrame = p_tempKeyFrame->p_prevKF;
             }
         }
     }
 
-    if (pKFmax)
+    if (p_keyFrameMaximum)
     {
-        p_referenceKF                    = pKFmax;
+        p_referenceKF                    = p_keyFrameMaximum;
         currentFrame.p_referenceKeyFrame = p_referenceKF;
     }
 }

@@ -24,10 +24,10 @@ namespace core
 {
 
 bool SemanticsManager::admitWallToRoomForTest(
-    semantic::Room   *p_room_inout,
+    semantic::Room   *p_room_in,
     geometric::Plane *p_candidateWall_in)
 {
-    return admitWallToRoom(p_room_inout, p_candidateWall_in);
+    return admitWallToRoom(p_room_in, p_candidateWall_in);
 }
 
 } // namespace core

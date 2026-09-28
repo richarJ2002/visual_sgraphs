@@ -42,9 +42,9 @@ namespace utils
 namespace utils
 {
 
-void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
+void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 {
-    if (p_atlas_inout == nullptr)
+    if (p_atlas_in == nullptr)
     {
         return;
     }
@@ -58,7 +58,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
         mergedPlaneInPass = false;
 
         const std::vector<geometric::Plane *> mappedPlanes =
-            p_atlas_inout->getAllPlanes();
+            p_atlas_in->getAllPlanes();
 
         for (geometric::Plane *p_candidatePlane : mappedPlanes)
         {
@@ -127,8 +127,8 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
                                 p_otherPlane,
                                 otherEquation_World);
 
-                        if (candidateObservationSide.ambiguous ||
-                            otherObservationSide.ambiguous)
+                        if (candidateObservationSide.isAmbiguous ||
+                            otherObservationSide.isAmbiguous)
                         {
                             continue;
                         }
@@ -230,12 +230,12 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
 
             const geometric::Plane::GeometrySnapshot retiredGeometry =
                 p_retiredPlane->getGeometrySnapshot();
-            pcl::PointCloud<pcl::PointXYZRGBA>::Ptr retiredCloudCopy(
+            pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_retiredCloudCopy(
                 new pcl::PointCloud<pcl::PointXYZRGBA>);
             if (retiredGeometry.supportCloud != nullptr)
             {
-                *retiredCloudCopy = *retiredGeometry.supportCloud;
-                p_retainedPlane->setMapClouds(retiredCloudCopy);
+                *p_retiredCloudCopy = *retiredGeometry.supportCloud;
+                p_retainedPlane->setMapClouds(p_retiredCloudCopy);
             }
 
             for (MapPoint *p_mapPoint : p_retiredPlane->getMapPoints())
@@ -263,7 +263,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
             const geometric::Plane::PlaneVariant retainedPlaneType =
                 p_retainedPlane->getPlaneType();
 
-            for (semantic::Room *p_room : p_atlas_inout->getAllRooms())
+            for (semantic::Room *p_room : p_atlas_in->getAllRooms())
             {
                 if (p_room == nullptr || p_room->isBad())
                 {
@@ -275,7 +275,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
             }
 
             for (vs_graphs::core::semantic::Passage *p_passage :
-                 p_atlas_inout->getAllPassages())
+                 p_atlas_in->getAllPassages())
             {
                 if (p_passage != nullptr)
                 {
@@ -284,7 +284,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
                 }
             }
 
-            for (KeyFrame *p_keyFrame : p_atlas_inout->getAllKeyFrames())
+            for (KeyFrame *p_keyFrame : p_atlas_in->getAllKeyFrames())
             {
                 if (p_keyFrame != nullptr && !p_keyFrame->isBad())
                 {
@@ -293,7 +293,7 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_inout)
                 }
             }
 
-            Map *p_currentMap = p_atlas_inout->getCurrentMap();
+            Map *p_currentMap = p_atlas_in->getCurrentMap();
 
             if (p_currentMap != nullptr)
             {

@@ -55,7 +55,7 @@ class Passage
     {
         /*! Non-owning room known to occupy the observing side, when available.
          */
-        vs_graphs::core::semantic::Room *pRoom{nullptr};
+        vs_graphs::core::semantic::Room *p_room{nullptr};
 
         /*!
          * Unit world-frame direction from the passage toward the observing
@@ -86,17 +86,17 @@ class Passage
     int                                              opIdG;
     double                                           width;
     double                                           height;
-    bool                                             passable;
+    bool                                             isMarkedPassable;
     Eigen::Vector3d                                  centroid;
     PassageVariant                                   passageType;
     g2o::Plane3D                                     globalEquation;
-    vs_graphs::core::geometric::Plane               *associateDoor;
+    vs_graphs::core::geometric::Plane               *p_associatedDoor;
     std::vector<vs_graphs::core::geometric::Plane *> associateWalls;
     vs_graphs::core::semantic::Room
-                       *prospectiveRoom; // Stable far-side room handle
+                       *p_prospectiveRoom; // Stable far-side room handle
     KnownSideProvenance knownSideProvenance;
-    bool                mbBad{false};
-    bool                recoveryProxy{false};
+    bool                isFlaggedBad{false};
+    bool                isMarkedRecoveryProxy{false};
 
     /*!
      * @brief       Number of independent traversal observations.
@@ -117,11 +117,11 @@ class Passage
         opIdG(-1),
         width(0.0),
         height(0.0),
-        passable(false),
+        isMarkedPassable(false),
         centroid(Eigen::Vector3d::Zero()),
         passageType(Passage::PassageVariant::UNDEFINED),
-        associateDoor(nullptr),
-        prospectiveRoom(nullptr),
+        p_associatedDoor(nullptr),
+        p_prospectiveRoom(nullptr),
         traversalKnownToFarCount(0U),
         traversalFarToKnownCount(0U),
         traversalUnknownCount(0U),
@@ -141,16 +141,16 @@ class Passage
     void applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
 
     int  getId() const;
-    void setId(int value);
+    void setId(int value_in);
 
     int  getOpId() const;
-    void setOpId(int value);
+    void setOpId(int value_in);
 
     int  getOpIdG() const;
-    void setOpIdG(int value);
+    void setOpIdG(int value_in);
 
     bool isPassable() const;
-    void setPassable(bool value);
+    void setPassable(bool value_in);
 
     /*! @brief Marks this passage invalid (e.g. never resolved to any
      *  associated room -- see associatePassagesToRooms()'s 0-room
@@ -178,10 +178,10 @@ class Passage
     /*!
      * @brief       Sets or clears the traversal evidence flag.
      *
-     * @param[in]   value
+     * @param[in]   value_in
      *              Settled (true) or not yet crossed (false).
      */
-    void setTraversalEvidence(bool value);
+    void setTraversalEvidence(bool value_in);
 
     /*!
      * @brief       Returns the number of traversal observations accumulated.
@@ -208,28 +208,28 @@ class Passage
     /*!
      * @brief       Overrides the traversal observation counter.
      *
-     * @param[in]   value
+     * @param[in]   value_in
      *              New traversal observation count.
      */
-    void setTraversalObservationCount(std::size_t value);
+    void setTraversalObservationCount(std::size_t value_in);
 
     double getWidth() const;
-    void   setWidth(double value);
+    void   setWidth(double value_in);
 
     double getHeight() const;
-    void   setHeight(double value);
+    void   setHeight(double value_in);
 
     PassageVariant getPassageType();
-    void           setPassageType(PassageVariant newType);
+    void           setPassageType(PassageVariant newType_in);
 
     Eigen::Vector3d getCentroid() const;
-    void            setCentroid(const Eigen::Vector3d &value);
+    void            setCentroid(const Eigen::Vector3d &value_in);
 
     g2o::Plane3D getGlobalEquation() const;
-    void         setGlobalEquation(const g2o::Plane3D &value);
+    void         setGlobalEquation(const g2o::Plane3D &value_in);
 
     vs_graphs::core::geometric::Plane *getAssociateDoor() const;
-    void setAssociateDoor(vs_graphs::core::geometric::Plane *value);
+    void setAssociateDoor(vs_graphs::core::geometric::Plane *p_value_in);
 
     void addAssociateWall(vs_graphs::core::geometric::Plane *p_wall_in);
 
@@ -291,10 +291,12 @@ class Passage
      * Topology links and traversal counters are merged without duplication.
      * The caller must serialize semantic graph mutation for both passages.
      *
-     * @param[in] p_duplicate_in Duplicate passage with the same stable ID.
+     * @param[in,out] p_duplicate_inout Duplicate passage with the same stable
+     * ID.
      * @return True when valid real geometry replaced recovery-proxy geometry.
      */
-    bool mergeFromDuplicate(vs_graphs::core::semantic::Passage *p_duplicate_in);
+    bool mergeFromDuplicate(
+        vs_graphs::core::semantic::Passage *p_duplicate_inout);
 
     /*!
      * @brief       Replaces every reference to a retired plane hypothesis.
@@ -322,8 +324,8 @@ class Passage
 
   protected:
     vs_graphs::core::Map *p_map{nullptr};
-    std::mutex            mMutexMap;
-    mutable std::mutex    mMutexType, mMutexGeometry;
+    std::mutex            mapMutex;
+    mutable std::mutex    typeMutex, geometryMutex;
 };
 
 } // namespace semantic

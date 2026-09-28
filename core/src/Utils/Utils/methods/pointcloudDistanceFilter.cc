@@ -51,14 +51,14 @@ typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDistanceFilter(
     const float thresholdFar  = thresholds.second;
 
     // Define the filtered point p_cloud_in object
-    typename pcl::PointCloud<PointT>::Ptr filteredCloud(
+    typename pcl::PointCloud<PointT>::Ptr p_filteredCloud(
         new pcl::PointCloud<PointT>());
-    filteredCloud->reserve(p_cloud_in->size());
+    p_filteredCloud->reserve(p_cloud_in->size());
 
     // Filter the point p_cloud_in
     std::copy_if(p_cloud_in->begin(),
                  p_cloud_in->end(),
-                 std::back_inserter(filteredCloud->points),
+                 std::back_inserter(p_filteredCloud->points),
                  [&](const PointT &p)
                  {
                      /*!
@@ -72,12 +72,12 @@ typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDistanceFilter(
                      return distance > thresholdNear && distance < thresholdFar;
                  });
 
-    filteredCloud->height   = 1;
-    filteredCloud->is_dense = false;
-    filteredCloud->header   = p_cloud_in->header;
-    filteredCloud->width    = filteredCloud->size();
+    p_filteredCloud->height   = 1;
+    p_filteredCloud->is_dense = false;
+    p_filteredCloud->header   = p_cloud_in->header;
+    p_filteredCloud->width    = p_filteredCloud->size();
 
-    return filteredCloud;
+    return p_filteredCloud;
 }
 template pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
     Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(

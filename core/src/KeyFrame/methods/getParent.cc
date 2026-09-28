@@ -37,7 +37,7 @@ namespace core
 
 KeyFrame *KeyFrame::getParent()
 {
-    unique_lock<mutex> lockCon(mMutexConnections);
+    unique_lock<mutex> lockCon(connectionsMutex);
     return p_parent;
 }
 

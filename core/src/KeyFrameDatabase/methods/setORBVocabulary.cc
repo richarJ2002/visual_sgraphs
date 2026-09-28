@@ -29,11 +29,11 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::setORBVocabulary(ORBVocabulary *pORBVoc)
+void KeyFrameDatabase::setORBVocabulary(ORBVocabulary *p_orbVocabulary_in)
 {
-    ORBVocabulary **ptr;
-    ptr  = (ORBVocabulary **)(&p_vocabulary);
-    *ptr = pORBVoc;
+    ORBVocabulary **p_vocabularySlot;
+    p_vocabularySlot  = (ORBVocabulary **)(&p_vocabulary);
+    *p_vocabularySlot = p_orbVocabulary_in;
 
     invertedFile.clear();
     invertedFile.resize(p_vocabulary->size());

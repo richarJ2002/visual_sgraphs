@@ -36,7 +36,7 @@ namespace core
 
 float MapPoint::getFoundRatio()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return static_cast<float>(foundCount) / visibleCount;
 }
 

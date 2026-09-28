@@ -34,20 +34,20 @@ namespace geometric
 
 Plane::PlaneVariant Plane::getExpectedPlaneType(void)
 {
-    unique_lock<mutex> lock(mMutexType);
+    unique_lock<mutex> lock(typeMutex);
 
     // get the maximum vote
-    double       maxVotes = 0;
-    PlaneVariant maxType  = PlaneVariant::UNDEFINED;
+    double       maximumVotes = 0;
+    PlaneVariant maximumType  = PlaneVariant::UNDEFINED;
     for (const auto &vote : semanticVotes)
     {
-        if (vote.second > maxVotes)
+        if (vote.second > maximumVotes)
         {
-            maxVotes = vote.second;
-            maxType  = vote.first;
+            maximumVotes = vote.second;
+            maximumType  = vote.first;
         }
     }
-    return maxType;
+    return maximumType;
 }
 
 } // namespace geometric

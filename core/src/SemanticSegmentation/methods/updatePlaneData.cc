@@ -30,43 +30,46 @@ namespace core
 {
 
 void SemanticSegmentation::updatePlaneData(
-    KeyFrame                                             *pKF,
+    KeyFrame                                             *p_keyFrame_in,
     std::vector<std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
-                                      Eigen::Vector4d>>> &clsPlanes)
+                                      Eigen::Vector4d>>> &p_clsPlanes_in)
 {
     /* Iterate through each semantic class of planes */
-    for (size_t clsId = 0; clsId < clsPlanes.size(); clsId++)
+    for (size_t clsId = 0; clsId < p_clsPlanes_in.size(); clsId++)
     {
         /* Iterate through each plane in the semantic group */
-        for (const auto &planePoint : clsPlanes[clsId])
+        for (const auto &p_planePoint : p_clsPlanes_in[clsId])
         {
             /* Get the plane equation of the plane */
-            Eigen::Vector4d estimatedPlane = planePoint.second;
+            Eigen::Vector4d estimatedPlane = p_planePoint.second;
 
             /* Initiate a 3D plane object from the detected plane */
             g2o::Plane3D detectedPlane(estimatedPlane);
 
             /* Convert the given plane to global coordinates */
             g2o::Plane3D globalEquation = utils::utils::Utils::applyPoseToPlane(
-                pKF->getPoseInverse().matrix().cast<double>(),
+                p_keyFrame_in->getPoseInverse().matrix().cast<double>(),
                 detectedPlane);
 
             /* Extract the point cloud assoicated with the plane */
-            pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planeCloud =
-                planePoint.first;
+            pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud =
+                p_planePoint.first;
 
             /* Initialize the confidence vector */
             std::vector<double> confidences;
 
             /* Extract the confidences from each point in the point cloud */
-            for (size_t i = 0; i < planeCloud->size(); i++)
+            for (size_t planeCloudIndex = 0;
+                 planeCloudIndex < p_planeCloud->size();
+                 planeCloudIndex++)
             {
                 confidences.push_back(
-                    static_cast<int>(planeCloud->points[i].a) / 255.0);
+                    static_cast<int>(p_planeCloud->points[planeCloudIndex].a) /
+                    255.0);
             }
 
             /* Initialize the confidence variable */
-            double conf = 0.0;
+            double confidence = 0.0;
 
             /*!
              * Find the average confidence across all the points.
@@ -83,24 +86,24 @@ void SemanticSegmentation::updatePlaneData(
              */
             if (!confidences.empty())
             {
-                conf = std::accumulate(confidences.begin(),
-                                       confidences.end(),
-                                       0.0) /
-                       confidences.size();
+                confidence = std::accumulate(confidences.begin(),
+                                             confidences.end(),
+                                             0.0) /
+                             confidences.size();
             }
 
             /* Initialize a temporary global point cloud which is empty */
-            pcl::PointCloud<pcl::PointXYZRGBA>::Ptr globalPlaneCloud(
+            pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_globalPlaneCloud(
                 new pcl::PointCloud<pcl::PointXYZRGBA>);
 
             /* Copy the plane cloud to the global point cloud */
-            pcl::copyPointCloud(*planeCloud, *globalPlaneCloud);
+            pcl::copyPointCloud(*p_planeCloud, *p_globalPlaneCloud);
 
             /* Transform globalPlaneCloud with the transform of the keyframe */
             pcl::transformPointCloud(
-                *globalPlaneCloud,
-                *globalPlaneCloud,
-                pKF->getPoseInverse().matrix().cast<float>());
+                *p_globalPlaneCloud,
+                *p_globalPlaneCloud,
+                p_keyFrame_in->getPoseInverse().matrix().cast<float>());
 
             /* Get the semantic type of the observation */
             vs_graphs::core::geometric::Plane::PlaneVariant semanticType =
@@ -117,12 +120,12 @@ void SemanticSegmentation::updatePlaneData(
             int matchedPlaneId = utils::utils::Utils::associatePlanes(
                 p_atlas->getAllPlanes(),
                 globalEquation,
-                globalPlaneCloud,
+                p_globalPlaneCloud,
                 Eigen::Matrix4d::Identity(),
                 semanticType,
                 p_sysParams->seg.planeAssociation.ominusThresh,
                 -1.0F,
-                pKF->getCameraCenter().cast<double>());
+                p_keyFrame_in->getCameraCenter().cast<double>());
 
             /*!
              * If no mapped plane is associated with current plane
@@ -139,7 +142,7 @@ void SemanticSegmentation::updatePlaneData(
                  * whether the observation is sufficiently large to become a
                  * new mapped plane.
                  */
-                if (!geoRuns)
+                if (!isGeometricSegmentationRunning)
                 {
                     /*!
                      * Apply an additional geometry check before creating a new
@@ -164,17 +167,17 @@ void SemanticSegmentation::updatePlaneData(
                         if (wallCreationParams.connectivity.enabled)
                         {
                             connectedSupport = findLargestWallComponent(
-                                globalPlaneCloud,
+                                p_globalPlaneCloud,
                                 wallCreationParams.connectivity
                                     .clusterTolerance_m);
                         }
-                        else if (globalPlaneCloud != nullptr)
+                        else if (p_globalPlaneCloud != nullptr)
                         {
                             connectedSupport.finitePointCount =
-                                globalPlaneCloud->size();
+                                p_globalPlaneCloud->size();
                             connectedSupport.componentRatio = 1.0;
                             connectedSupport.pointIndices.resize(
-                                globalPlaneCloud->size());
+                                p_globalPlaneCloud->size());
                             std::iota(connectedSupport.pointIndices.begin(),
                                       connectedSupport.pointIndices.end(),
                                       0);
@@ -188,8 +191,8 @@ void SemanticSegmentation::updatePlaneData(
                             p_connectedCameraWallCloud(
                                 new pcl::PointCloud<pcl::PointXYZRGBA>);
 
-                        if (globalPlaneCloud != nullptr &&
-                            planeCloud != nullptr)
+                        if (p_globalPlaneCloud != nullptr &&
+                            p_planeCloud != nullptr)
                         {
                             p_connectedGlobalWallCloud->reserve(
                                 connectedSupport.pointIndices.size());
@@ -202,20 +205,22 @@ void SemanticSegmentation::updatePlaneData(
                                 if (sourcePointIndex < 0 ||
                                     static_cast<std::size_t>(
                                         sourcePointIndex) >=
-                                        globalPlaneCloud->size() ||
+                                        p_globalPlaneCloud->size() ||
                                     static_cast<std::size_t>(
-                                        sourcePointIndex) >= planeCloud->size())
+                                        sourcePointIndex) >=
+                                        p_planeCloud->size())
                                 {
                                     continue;
                                 }
 
                                 p_connectedGlobalWallCloud->push_back(
-                                    globalPlaneCloud
+                                    p_globalPlaneCloud
                                         ->points[static_cast<std::size_t>(
                                             sourcePointIndex)]);
                                 p_connectedCameraWallCloud->push_back(
-                                    planeCloud->points[static_cast<std::size_t>(
-                                        sourcePointIndex)]);
+                                    p_planeCloud
+                                        ->points[static_cast<std::size_t>(
+                                            sourcePointIndex)]);
                             }
                         }
 
@@ -286,42 +291,44 @@ void SemanticSegmentation::updatePlaneData(
                         }
 
                         /* Persist only the validated connected wall support. */
-                        globalPlaneCloud = p_connectedGlobalWallCloud;
-                        planeCloud       = p_connectedCameraWallCloud;
+                        p_globalPlaneCloud = p_connectedGlobalWallCloud;
+                        p_planeCloud       = p_connectedCameraWallCloud;
                     }
 
                     /* Create a new mapped plane */
-                    vs_graphs::core::geometric::Plane *newMapPlane =
+                    vs_graphs::core::geometric::Plane *p_newMapPlane =
                         GeoSemHelpers::createMapPlane(p_atlas,
-                                                      pKF,
+                                                      p_keyFrame_in,
                                                       detectedPlane,
-                                                      planeCloud,
+                                                      p_planeCloud,
                                                       semanticType,
-                                                      conf);
+                                                      confidence);
 
                     /* Confirm that plane creation succeeded */
-                    if (newMapPlane == nullptr)
+                    if (p_newMapPlane == nullptr)
                     {
                         continue;
                     }
 
                     /* Update the semantic votes of the new plane */
-                    updatePlaneSemantics(newMapPlane->getId(), clsId, conf);
+                    updatePlaneSemantics(p_newMapPlane->getId(),
+                                         clsId,
+                                         confidence);
                 }
             }
             else
             {
                 /* Update matched mapped plane with the current observation
                  */
-                if (!geoRuns)
+                if (!isGeometricSegmentationRunning)
                 {
                     GeoSemHelpers::updateMapPlane(p_atlas,
-                                                  pKF,
+                                                  p_keyFrame_in,
                                                   detectedPlane,
-                                                  planeCloud,
+                                                  p_planeCloud,
                                                   matchedPlaneId,
                                                   semanticType,
-                                                  conf);
+                                                  confidence);
                 }
                 else
                 {
@@ -332,19 +339,20 @@ void SemanticSegmentation::updatePlaneData(
                      * and append it to the matched mapped plane.
                      */
                     pcl::transformPointCloud(
-                        *planeCloud,
-                        *planeCloud,
-                        pKF->getPoseInverse().matrix().cast<float>());
+                        *p_planeCloud,
+                        *p_planeCloud,
+                        p_keyFrame_in->getPoseInverse().matrix().cast<float>());
 
-                    vs_graphs::core::geometric::Plane *matchedPlane =
+                    vs_graphs::core::geometric::Plane *p_matchedPlane =
                         p_atlas->getPlaneById(matchedPlaneId);
 
-                    if (matchedPlane != nullptr && !matchedPlane->isBad() &&
-                        !planeCloud->empty())
+                    if (p_matchedPlane != nullptr && !p_matchedPlane->isBad() &&
+                        !p_planeCloud->empty())
                     {
-                        matchedPlane->setMapClouds(planeCloud);
+                        p_matchedPlane->setMapClouds(p_planeCloud);
 
-                        GeoSemHelpers::refitMappedPlaneFromCloud(matchedPlane);
+                        GeoSemHelpers::refitMappedPlaneFromCloud(
+                            p_matchedPlane);
                     }
                 }
 
@@ -352,7 +360,7 @@ void SemanticSegmentation::updatePlaneData(
                  * Cast the current semantic observation vote for the matched
                  * plane.
                  */
-                updatePlaneSemantics(matchedPlaneId, clsId, conf);
+                updatePlaneSemantics(matchedPlaneId, clsId, confidence);
             }
         }
     }

@@ -45,155 +45,159 @@ namespace core
 
 void Frame::computeStereoMatches()
 {
-    uRight = vector<float>(N, -1.0f);
-    depths = vector<float>(N, -1.0f);
+    uRight = vector<float>(keyPointCount, -1.0f);
+    depths = vector<float>(keyPointCount, -1.0f);
 
-    const int thOrbDist = (ORBmatcher::TH_HIGH + ORBmatcher::TH_LOW) / 2;
+    const int thresholdOrbDistance =
+        (ORBmatcher::TH_HIGH + ORBmatcher::TH_LOW) / 2;
 
-    const int nRows = p_orbExtractorLeft->imagePyramid[0].rows;
+    const int rowCount = p_orbExtractorLeft->imagePyramid[0].rows;
 
     // Assign keypoints to row table
-    vector<vector<size_t>> vRowIndices(nRows, vector<size_t>());
+    vector<vector<size_t>> rowIndices(rowCount, vector<size_t>());
 
-    for (int i = 0; i < nRows; i++)
-        vRowIndices[i].reserve(200);
+    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+        rowIndices[rowIndex].reserve(200);
 
     const int Nr = keyPointsRight.size();
 
     for (int iR = 0; iR < Nr; iR++)
     {
-        const cv::KeyPoint &kp  = keyPointsRight[iR];
-        const float        &kpY = kp.pt.y;
+        const cv::KeyPoint &keyPoint  = keyPointsRight[iR];
+        const float        &keyPointY = keyPoint.pt.y;
         const float         r = 2.0f * scaleFactors[keyPointsRight[iR].octave];
-        const int           maxr = ceil(kpY + r);
-        const int           minr = floor(kpY - r);
+        const int           maxr = ceil(keyPointY + r);
+        const int           minr = floor(keyPointY - r);
 
         for (int yi = minr; yi <= maxr; yi++)
-            vRowIndices[yi].push_back(iR);
+            rowIndices[yi].push_back(iR);
     }
 
     // Set limits for search
-    const float minZ = mb;
-    const float minD = 0;
-    const float maxD = mbf / minZ;
+    const float minimumZ = mb;
+    const float minimumD = 0;
+    const float maximumD = mbf / minimumZ;
 
     // For each left keypoint search a match in the right image
-    vector<pair<int, int>> vDistIdx;
-    vDistIdx.reserve(N);
+    vector<pair<int, int>> distanceIndices;
+    distanceIndices.reserve(keyPointCount);
 
-    for (int iL = 0; iL < N; iL++)
+    for (int iL = 0; iL < keyPointCount; iL++)
     {
-        const cv::KeyPoint &kpL    = keyPoints[iL];
-        const int          &levelL = kpL.octave;
-        const float        &vL     = kpL.pt.y;
-        const float        &uL     = kpL.pt.x;
+        const cv::KeyPoint &keyPointL = keyPoints[iL];
+        const int          &levelL    = keyPointL.octave;
+        const float        &vL        = keyPointL.pt.y;
+        const float        &uL        = keyPointL.pt.x;
 
-        const vector<size_t> &vCandidates = vRowIndices[vL];
+        const vector<size_t> &candidates = rowIndices[vL];
 
-        if (vCandidates.empty())
+        if (candidates.empty())
             continue;
 
-        const float minU = uL - maxD;
-        const float maxU = uL - minD;
+        const float minimumU = uL - maximumD;
+        const float maximumU = uL - minimumD;
 
-        if (maxU < 0)
+        if (maximumU < 0)
             continue;
 
-        int    bestDist = ORBmatcher::TH_HIGH;
-        size_t bestIdxR = 0;
+        int    bestDistance = ORBmatcher::TH_HIGH;
+        size_t bestIndexR   = 0;
 
         const cv::Mat &dL = descriptors.row(iL);
 
         // Compare descriptor to right keypoints
-        for (size_t iC = 0; iC < vCandidates.size(); iC++)
+        for (size_t iC = 0; iC < candidates.size(); iC++)
         {
-            const size_t        iR  = vCandidates[iC];
-            const cv::KeyPoint &kpR = keyPointsRight[iR];
+            const size_t        iR        = candidates[iC];
+            const cv::KeyPoint &keyPointR = keyPointsRight[iR];
 
-            if (kpR.octave < levelL - 1 || kpR.octave > levelL + 1)
+            if (keyPointR.octave < levelL - 1 || keyPointR.octave > levelL + 1)
                 continue;
 
-            const float &uR = kpR.pt.x;
+            const float &uR = keyPointR.pt.x;
 
-            if (uR >= minU && uR <= maxU)
+            if (uR >= minimumU && uR <= maximumU)
             {
                 const cv::Mat &dR = descriptorsRight.row(iR);
-                const int dist = ORBmatcher::computeDescriptorDistance(dL, dR);
+                const int      distance =
+                    ORBmatcher::computeDescriptorDistance(dL, dR);
 
-                if (dist < bestDist)
+                if (distance < bestDistance)
                 {
-                    bestDist = dist;
-                    bestIdxR = iR;
+                    bestDistance = distance;
+                    bestIndexR   = iR;
                 }
             }
         }
 
         // Subpixel match by correlation
-        if (bestDist < thOrbDist)
+        if (bestDistance < thresholdOrbDistance)
         {
             // coordinates in image pyramid at keypoint scale
-            const float uR0         = keyPointsRight[bestIdxR].pt.x;
-            const float scaleFactor = invScaleFactors[kpL.octave];
-            const float scaleduL    = round(kpL.pt.x * scaleFactor);
-            const float scaledvL    = round(kpL.pt.y * scaleFactor);
-            const float scaleduR0   = round(uR0 * scaleFactor);
+            const float bestRightU  = keyPointsRight[bestIndexR].pt.x;
+            const float scaleFactor = invScaleFactors[keyPointL.octave];
+            const float scaleduL    = round(keyPointL.pt.x * scaleFactor);
+            const float scaledvL    = round(keyPointL.pt.y * scaleFactor);
+            const float scaleduR0   = round(bestRightU * scaleFactor);
 
             // sliding window search
             const int w  = 5;
-            cv::Mat   IL = p_orbExtractorLeft->imagePyramid[kpL.octave]
+            cv::Mat   IL = p_orbExtractorLeft->imagePyramid[keyPointL.octave]
                              .rowRange(scaledvL - w, scaledvL + w + 1)
                              .colRange(scaleduL - w, scaleduL + w + 1);
 
-            int           bestDist = INT_MAX;
-            int           bestincR = 0;
-            const int     L        = 5;
-            vector<float> vDists;
-            vDists.resize(2 * L + 1);
+            int           bestDistance = INT_MAX;
+            int           bestincR     = 0;
+            const int     L            = 5;
+            vector<float> dists;
+            dists.resize(2 * L + 1);
 
             const float iniu = scaleduR0 + L - w;
             const float endu = scaleduR0 + L + w + 1;
             if (iniu < 0 ||
-                endu >= p_orbExtractorRight->imagePyramid[kpL.octave].cols)
+                endu >=
+                    p_orbExtractorRight->imagePyramid[keyPointL.octave].cols)
                 continue;
 
             for (int incR = -L; incR <= +L; incR++)
             {
-                cv::Mat IR = p_orbExtractorRight->imagePyramid[kpL.octave]
+                cv::Mat IR = p_orbExtractorRight->imagePyramid[keyPointL.octave]
                                  .rowRange(scaledvL - w, scaledvL + w + 1)
                                  .colRange(scaleduR0 + incR - w,
                                            scaleduR0 + incR + w + 1);
 
-                float dist = cv::norm(IL, IR, cv::NORM_L1);
-                if (dist < bestDist)
+                float distance = cv::norm(IL, IR, cv::NORM_L1);
+                if (distance < bestDistance)
                 {
-                    bestDist = dist;
-                    bestincR = incR;
+                    bestDistance = distance;
+                    bestincR     = incR;
                 }
 
-                vDists[L + incR] = dist;
+                dists[L + incR] = distance;
             }
 
             if (bestincR == -L || bestincR == L)
                 continue;
 
             // Sub-pixel match (Parabola fitting)
-            const float dist1 = vDists[L + bestincR - 1];
-            const float dist2 = vDists[L + bestincR];
-            const float dist3 = vDists[L + bestincR + 1];
+            const float distance1 = dists[L + bestincR - 1];
+            const float distance2 = dists[L + bestincR];
+            const float distance3 = dists[L + bestincR + 1];
 
             const float deltaR =
-                (dist1 - dist3) / (2.0f * (dist1 + dist3 - 2.0f * dist2));
+                (distance1 - distance3) /
+                (2.0f * (distance1 + distance3 - 2.0f * distance2));
 
             if (deltaR < -1 || deltaR > 1)
                 continue;
 
             // Re-scaled coordinate
-            float bestuR = scaleFactors[kpL.octave] *
+            float bestuR = scaleFactors[keyPointL.octave] *
                            ((float)scaleduR0 + (float)bestincR + deltaR);
 
             float disparity = (uL - bestuR);
 
-            if (disparity >= minD && disparity < maxD)
+            if (disparity >= minimumD && disparity < maximumD)
             {
                 if (disparity <= 0)
                 {
@@ -202,12 +206,12 @@ void Frame::computeStereoMatches()
                 }
                 depths[iL] = mbf / disparity;
                 uRight[iL] = bestuR;
-                vDistIdx.push_back(pair<int, int>(bestDist, iL));
+                distanceIndices.push_back(pair<int, int>(bestDistance, iL));
             }
         }
     }
 
-    rejectOutlierStereoMatches(vDistIdx, uRight, depths);
+    rejectOutlierStereoMatches(distanceIndices, uRight, depths);
 }
 
 } // namespace core

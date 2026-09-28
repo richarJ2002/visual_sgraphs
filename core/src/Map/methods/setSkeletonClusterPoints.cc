@@ -35,10 +35,10 @@ namespace core
 {
 
 void Map::setSkeletonClusterPoints(
-    const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints)
+    const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    skeletonClusterPoints = newClusterPoints;
+    unique_lock<mutex> lock(mapMutex);
+    skeletonClusterPoints = newClusterPoints_in;
 }
 
 } // namespace core

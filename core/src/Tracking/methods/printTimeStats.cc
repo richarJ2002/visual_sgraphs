@@ -56,70 +56,70 @@ void Tracking::printTimeStats()
     f << "---------------------------" << std::endl;
     f << "Tracking" << std::setprecision(5) << std::endl << std::endl;
     double average, deviation;
-    if (!vdRectStereo_ms.empty())
+    if (!stereoRectificationTimes_ms.empty())
     {
-        average   = calcAverage(vdRectStereo_ms);
-        deviation = calcDeviation(vdRectStereo_ms, average);
+        average   = calcAverage(stereoRectificationTimes_ms);
+        deviation = calcDeviation(stereoRectificationTimes_ms, average);
         std::cout << "Stereo Rectification: " << average << "$\\pm$"
                   << deviation << std::endl;
         f << "Stereo Rectification: " << average << "$\\pm$" << deviation
           << std::endl;
     }
 
-    if (!vdResizeImage_ms.empty())
+    if (!imageResizeTimes_ms.empty())
     {
-        average   = calcAverage(vdResizeImage_ms);
-        deviation = calcDeviation(vdResizeImage_ms, average);
+        average   = calcAverage(imageResizeTimes_ms);
+        deviation = calcDeviation(imageResizeTimes_ms, average);
         std::cout << "Image Resize: " << average << "$\\pm$" << deviation
                   << std::endl;
         f << "Image Resize: " << average << "$\\pm$" << deviation << std::endl;
     }
 
-    average   = calcAverage(vdORBExtract_ms);
-    deviation = calcDeviation(vdORBExtract_ms, average);
+    average   = calcAverage(orbExtractionTimes_ms);
+    deviation = calcDeviation(orbExtractionTimes_ms, average);
     std::cout << "ORB Extraction: " << average << "$\\pm$" << deviation
               << std::endl;
     f << "ORB Extraction: " << average << "$\\pm$" << deviation << std::endl;
 
-    if (!vdStereoMatch_ms.empty())
+    if (!stereoMatchTimes_ms.empty())
     {
-        average   = calcAverage(vdStereoMatch_ms);
-        deviation = calcDeviation(vdStereoMatch_ms, average);
+        average   = calcAverage(stereoMatchTimes_ms);
+        deviation = calcDeviation(stereoMatchTimes_ms, average);
         std::cout << "Stereo Matching: " << average << "$\\pm$" << deviation
                   << std::endl;
         f << "Stereo Matching: " << average << "$\\pm$" << deviation
           << std::endl;
     }
 
-    if (!vdIMUInteg_ms.empty())
+    if (!imuIntegrationTimes_ms.empty())
     {
-        average   = calcAverage(vdIMUInteg_ms);
-        deviation = calcDeviation(vdIMUInteg_ms, average);
+        average   = calcAverage(imuIntegrationTimes_ms);
+        deviation = calcDeviation(imuIntegrationTimes_ms, average);
         std::cout << "IMU Preintegration: " << average << "$\\pm$" << deviation
                   << std::endl;
         f << "IMU Preintegration: " << average << "$\\pm$" << deviation
           << std::endl;
     }
 
-    average   = calcAverage(vdPosePred_ms);
-    deviation = calcDeviation(vdPosePred_ms, average);
+    average   = calcAverage(posePredictionTimes_ms);
+    deviation = calcDeviation(posePredictionTimes_ms, average);
     std::cout << "Pose Prediction: " << average << "$\\pm$" << deviation
               << std::endl;
     f << "Pose Prediction: " << average << "$\\pm$" << deviation << std::endl;
 
-    average   = calcAverage(vdLMTrack_ms);
-    deviation = calcDeviation(vdLMTrack_ms, average);
+    average   = calcAverage(localMapTrackTimes_ms);
+    deviation = calcDeviation(localMapTrackTimes_ms, average);
     std::cout << "LM Track: " << average << "$\\pm$" << deviation << std::endl;
     f << "LM Track: " << average << "$\\pm$" << deviation << std::endl;
 
-    average   = calcAverage(vdNewKF_ms);
-    deviation = calcDeviation(vdNewKF_ms, average);
+    average   = calcAverage(newKeyFrameTimes_ms);
+    deviation = calcDeviation(newKeyFrameTimes_ms, average);
     std::cout << "New KF decision: " << average << "$\\pm$" << deviation
               << std::endl;
     f << "New KF decision: " << average << "$\\pm$" << deviation << std::endl;
 
-    average   = calcAverage(vdTrackTotal_ms);
-    deviation = calcDeviation(vdTrackTotal_ms, average);
+    average   = calcAverage(trackTotalTimes_ms);
+    deviation = calcDeviation(trackTotalTimes_ms, average);
     std::cout << "Total Tracking: " << average << "$\\pm$" << deviation
               << std::endl;
     f << "Total Tracking: " << average << "$\\pm$" << deviation << std::endl;
@@ -129,37 +129,38 @@ void Tracking::printTimeStats()
     std::cout << "Local Mapping" << std::endl << std::endl;
     f << std::endl << "Local Mapping" << std::endl << std::endl;
 
-    average   = calcAverage(p_localMapper->vdKFInsert_ms);
-    deviation = calcDeviation(p_localMapper->vdKFInsert_ms, average);
+    average   = calcAverage(p_localMapper->keyFrameInsertTimes_ms);
+    deviation = calcDeviation(p_localMapper->keyFrameInsertTimes_ms, average);
     std::cout << "KF Insertion: " << average << "$\\pm$" << deviation
               << std::endl;
     f << "KF Insertion: " << average << "$\\pm$" << deviation << std::endl;
 
-    average   = calcAverage(p_localMapper->vdMPCulling_ms);
-    deviation = calcDeviation(p_localMapper->vdMPCulling_ms, average);
+    average   = calcAverage(p_localMapper->mapPointCullingTimes_ms);
+    deviation = calcDeviation(p_localMapper->mapPointCullingTimes_ms, average);
     std::cout << "MP Culling: " << average << "$\\pm$" << deviation
               << std::endl;
     f << "MP Culling: " << average << "$\\pm$" << deviation << std::endl;
 
-    average   = calcAverage(p_localMapper->vdMPCreation_ms);
-    deviation = calcDeviation(p_localMapper->vdMPCreation_ms, average);
+    average   = calcAverage(p_localMapper->mapPointCreationTimes_ms);
+    deviation = calcDeviation(p_localMapper->mapPointCreationTimes_ms, average);
     std::cout << "MP Creation: " << average << "$\\pm$" << deviation
               << std::endl;
     f << "MP Creation: " << average << "$\\pm$" << deviation << std::endl;
 
-    average   = calcAverage(p_localMapper->vdLBA_ms);
-    deviation = calcDeviation(p_localMapper->vdLBA_ms, average);
+    average   = calcAverage(p_localMapper->localBaTimes_ms);
+    deviation = calcDeviation(p_localMapper->localBaTimes_ms, average);
     std::cout << "LBA: " << average << "$\\pm$" << deviation << std::endl;
     f << "LBA: " << average << "$\\pm$" << deviation << std::endl;
 
-    average   = calcAverage(p_localMapper->vdKFCulling_ms);
-    deviation = calcDeviation(p_localMapper->vdKFCulling_ms, average);
+    average   = calcAverage(p_localMapper->keyFrameCullingTimes_ms);
+    deviation = calcDeviation(p_localMapper->keyFrameCullingTimes_ms, average);
     std::cout << "KF Culling: " << average << "$\\pm$" << deviation
               << std::endl;
     f << "KF Culling: " << average << "$\\pm$" << deviation << std::endl;
 
-    average   = calcAverage(p_localMapper->vdLMTotal_ms);
-    deviation = calcDeviation(p_localMapper->vdLMTotal_ms, average);
+    average = calcAverage(p_localMapper->localMappingTotalTimes_ms);
+    deviation =
+        calcDeviation(p_localMapper->localMappingTotalTimes_ms, average);
     std::cout << "Total Local Mapping: " << average << "$\\pm$" << deviation
               << std::endl;
     f << "Total Local Mapping: " << average << "$\\pm$" << deviation
@@ -171,34 +172,39 @@ void Tracking::printTimeStats()
     f << "---------------------------" << std::endl;
     f << std::endl << "LBA complexity (mean$\\pm$std)" << std::endl;
 
-    average   = calcAverage(p_localMapper->vnLBA_edges);
-    deviation = calcDeviation(p_localMapper->vnLBA_edges, average);
+    average   = calcAverage(p_localMapper->localBaEdgeCounts);
+    deviation = calcDeviation(p_localMapper->localBaEdgeCounts, average);
     std::cout << "LBA Edges: " << average << "$\\pm$" << deviation << std::endl;
     f << "LBA Edges: " << average << "$\\pm$" << deviation << std::endl;
 
-    average   = calcAverage(p_localMapper->vnLBA_KFopt);
-    deviation = calcDeviation(p_localMapper->vnLBA_KFopt, average);
+    average = calcAverage(p_localMapper->localBaOptimizedKeyFrameCounts);
+    deviation =
+        calcDeviation(p_localMapper->localBaOptimizedKeyFrameCounts, average);
     std::cout << "LBA KF optimized: " << average << "$\\pm$" << deviation
               << std::endl;
     f << "LBA KF optimized: " << average << "$\\pm$" << deviation << std::endl;
 
-    average   = calcAverage(p_localMapper->vnLBA_KFfixed);
-    deviation = calcDeviation(p_localMapper->vnLBA_KFfixed, average);
+    average = calcAverage(p_localMapper->localBaFixedKeyFrameCounts);
+    deviation =
+        calcDeviation(p_localMapper->localBaFixedKeyFrameCounts, average);
     std::cout << "LBA KF fixed: " << average << "$\\pm$" << deviation
               << std::endl;
     f << "LBA KF fixed: " << average << "$\\pm$" << deviation << std::endl;
 
-    average   = calcAverage(p_localMapper->vnLBA_MPs);
-    deviation = calcDeviation(p_localMapper->vnLBA_MPs, average);
+    average   = calcAverage(p_localMapper->localBaMapPointCounts);
+    deviation = calcDeviation(p_localMapper->localBaMapPointCounts, average);
     std::cout << "LBA MP: " << average << "$\\pm$" << deviation << std::endl
               << std::endl;
     f << "LBA MP: " << average << "$\\pm$" << deviation << std::endl
       << std::endl;
 
-    std::cout << "LBA executions: " << p_localMapper->nLBA_exec << std::endl;
-    std::cout << "LBA aborts: " << p_localMapper->nLBA_abort << std::endl;
-    f << "LBA executions: " << p_localMapper->nLBA_exec << std::endl;
-    f << "LBA aborts: " << p_localMapper->nLBA_abort << std::endl;
+    std::cout << "LBA executions: " << p_localMapper->localBaExecutionCount
+              << std::endl;
+    std::cout << "LBA aborts: " << p_localMapper->localBaAbortCount
+              << std::endl;
+    f << "LBA executions: " << p_localMapper->localBaExecutionCount
+      << std::endl;
+    f << "LBA aborts: " << p_localMapper->localBaAbortCount << std::endl;
 
     // Map complexity
     std::cout << "---------------------------" << std::endl;
@@ -209,36 +215,37 @@ void Tracking::printTimeStats()
               << std::endl;
     f << "---------------------------" << std::endl;
     f << std::endl << "Map complexity" << std::endl;
-    vector<Map *> vpMaps   = p_atlas->getAllMaps();
-    Map          *pBestMap = vpMaps[0];
-    for (int i = 1; i < vpMaps.size(); ++i)
+    vector<Map *> maps      = p_atlas->getAllMaps();
+    Map          *p_bestMap = maps[0];
+    for (int mapIndex = 1; mapIndex < maps.size(); ++mapIndex)
     {
-        if (pBestMap->getAllKeyFrames().size() <
-            vpMaps[i]->getAllKeyFrames().size())
+        if (p_bestMap->getAllKeyFrames().size() <
+            maps[mapIndex]->getAllKeyFrames().size())
         {
-            pBestMap = vpMaps[i];
+            p_bestMap = maps[mapIndex];
         }
     }
 
-    f << "KFs in map: " << pBestMap->getAllKeyFrames().size() << std::endl;
-    f << "MPs in map: " << pBestMap->getAllMapPoints().size() << std::endl;
+    f << "KFs in map: " << p_bestMap->getAllKeyFrames().size() << std::endl;
+    f << "MPs in map: " << p_bestMap->getAllMapPoints().size() << std::endl;
 
     f << "---------------------------" << std::endl;
     f << std::endl << "Place Recognition (mean$\\pm$std)" << std::endl;
     std::cout << "---------------------------" << std::endl;
     std::cout << std::endl << "Place Recognition (mean$\\pm$std)" << std::endl;
-    average   = calcAverage(p_loopClosing->vdDataQuery_ms);
-    deviation = calcDeviation(p_loopClosing->vdDataQuery_ms, average);
+    average   = calcAverage(p_loopClosing->dataQueryTimes_ms);
+    deviation = calcDeviation(p_loopClosing->dataQueryTimes_ms, average);
     f << "Database Query: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Database Query: " << average << "$\\pm$" << deviation
               << std::endl;
-    average   = calcAverage(p_loopClosing->vdEstSim3_ms);
-    deviation = calcDeviation(p_loopClosing->vdEstSim3_ms, average);
+    average   = calcAverage(p_loopClosing->sim3EstimationTimes_ms);
+    deviation = calcDeviation(p_loopClosing->sim3EstimationTimes_ms, average);
     f << "SE3 estimation: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "SE3 estimation: " << average << "$\\pm$" << deviation
               << std::endl;
-    average   = calcAverage(p_loopClosing->vdPRTotal_ms);
-    deviation = calcDeviation(p_loopClosing->vdPRTotal_ms, average);
+    average = calcAverage(p_loopClosing->placeRecognitionTotalTimes_ms);
+    deviation =
+        calcDeviation(p_loopClosing->placeRecognitionTotalTimes_ms, average);
     f << "Total Place Recognition: " << average << "$\\pm$" << deviation
       << std::endl
       << std::endl;
@@ -248,100 +255,103 @@ void Tracking::printTimeStats()
 
     f << std::endl << "Loop Closing (mean$\\pm$std)" << std::endl;
     std::cout << std::endl << "Loop Closing (mean$\\pm$std)" << std::endl;
-    average   = calcAverage(p_loopClosing->vdLoopFusion_ms);
-    deviation = calcDeviation(p_loopClosing->vdLoopFusion_ms, average);
+    average   = calcAverage(p_loopClosing->loopFusionTimes_ms);
+    deviation = calcDeviation(p_loopClosing->loopFusionTimes_ms, average);
     f << "Loop Fusion: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Loop Fusion: " << average << "$\\pm$" << deviation
               << std::endl;
-    average   = calcAverage(p_loopClosing->vdLoopOptEss_ms);
-    deviation = calcDeviation(p_loopClosing->vdLoopOptEss_ms, average);
+    average = calcAverage(p_loopClosing->loopEssentialGraphTimes_ms);
+    deviation =
+        calcDeviation(p_loopClosing->loopEssentialGraphTimes_ms, average);
     f << "Essential Graph: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Essential Graph: " << average << "$\\pm$" << deviation
               << std::endl;
-    average   = calcAverage(p_loopClosing->vdLoopTotal_ms);
-    deviation = calcDeviation(p_loopClosing->vdLoopTotal_ms, average);
+    average   = calcAverage(p_loopClosing->loopTotalTimes_ms);
+    deviation = calcDeviation(p_loopClosing->loopTotalTimes_ms, average);
     f << "Total Loop Closing: " << average << "$\\pm$" << deviation << std::endl
       << std::endl;
     std::cout << "Total Loop Closing: " << average << "$\\pm$" << deviation
               << std::endl
               << std::endl;
 
-    f << "Numb exec: " << p_loopClosing->nLoop << std::endl;
-    std::cout << "Num exec: " << p_loopClosing->nLoop << std::endl;
-    average   = calcAverage(p_loopClosing->vnLoopKFs);
-    deviation = calcDeviation(p_loopClosing->vnLoopKFs, average);
+    f << "Numb exec: " << p_loopClosing->loopCount << std::endl;
+    std::cout << "Num exec: " << p_loopClosing->loopCount << std::endl;
+    average   = calcAverage(p_loopClosing->loopKeyFrameCounts);
+    deviation = calcDeviation(p_loopClosing->loopKeyFrameCounts, average);
     f << "Number of KFs: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Number of KFs: " << average << "$\\pm$" << deviation
               << std::endl;
 
     f << std::endl << "Map Merging (mean$\\pm$std)" << std::endl;
     std::cout << std::endl << "Map Merging (mean$\\pm$std)" << std::endl;
-    average   = calcAverage(p_loopClosing->vdMergeMaps_ms);
-    deviation = calcDeviation(p_loopClosing->vdMergeMaps_ms, average);
+    average   = calcAverage(p_loopClosing->mergeMapsTimes_ms);
+    deviation = calcDeviation(p_loopClosing->mergeMapsTimes_ms, average);
     f << "Merge Maps: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Merge Maps: " << average << "$\\pm$" << deviation
               << std::endl;
-    average   = calcAverage(p_loopClosing->vdWeldingBA_ms);
-    deviation = calcDeviation(p_loopClosing->vdWeldingBA_ms, average);
+    average   = calcAverage(p_loopClosing->weldingBaTimes_ms);
+    deviation = calcDeviation(p_loopClosing->weldingBaTimes_ms, average);
     f << "Welding BA: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Welding BA: " << average << "$\\pm$" << deviation
               << std::endl;
-    average   = calcAverage(p_loopClosing->vdMergeOptEss_ms);
-    deviation = calcDeviation(p_loopClosing->vdMergeOptEss_ms, average);
+    average = calcAverage(p_loopClosing->mergeEssentialGraphTimes_ms);
+    deviation =
+        calcDeviation(p_loopClosing->mergeEssentialGraphTimes_ms, average);
     f << "Optimization Ess.: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Optimization Ess.: " << average << "$\\pm$" << deviation
               << std::endl;
-    average   = calcAverage(p_loopClosing->vdMergeTotal_ms);
-    deviation = calcDeviation(p_loopClosing->vdMergeTotal_ms, average);
+    average   = calcAverage(p_loopClosing->mergeTotalTimes_ms);
+    deviation = calcDeviation(p_loopClosing->mergeTotalTimes_ms, average);
     f << "Total Map Merging: " << average << "$\\pm$" << deviation << std::endl
       << std::endl;
     std::cout << "Total Map Merging: " << average << "$\\pm$" << deviation
               << std::endl
               << std::endl;
 
-    f << "Numb exec: " << p_loopClosing->nMerges << std::endl;
-    std::cout << "Num exec: " << p_loopClosing->nMerges << std::endl;
-    average   = calcAverage(p_loopClosing->vnMergeKFs);
-    deviation = calcDeviation(p_loopClosing->vnMergeKFs, average);
+    f << "Numb exec: " << p_loopClosing->mergeCount << std::endl;
+    std::cout << "Num exec: " << p_loopClosing->mergeCount << std::endl;
+    average   = calcAverage(p_loopClosing->mergeKeyFrameCounts);
+    deviation = calcDeviation(p_loopClosing->mergeKeyFrameCounts, average);
     f << "Number of KFs: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Number of KFs: " << average << "$\\pm$" << deviation
               << std::endl;
-    average   = calcAverage(p_loopClosing->vnMergeMPs);
-    deviation = calcDeviation(p_loopClosing->vnMergeMPs, average);
+    average   = calcAverage(p_loopClosing->mergeMapPointCounts);
+    deviation = calcDeviation(p_loopClosing->mergeMapPointCounts, average);
     f << "Number of MPs: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Number of MPs: " << average << "$\\pm$" << deviation
               << std::endl;
 
     f << std::endl << "Full GBA (mean$\\pm$std)" << std::endl;
     std::cout << std::endl << "Full GBA (mean$\\pm$std)" << std::endl;
-    average   = calcAverage(p_loopClosing->vdGBA_ms);
-    deviation = calcDeviation(p_loopClosing->vdGBA_ms, average);
+    average   = calcAverage(p_loopClosing->gbaTimes_ms);
+    deviation = calcDeviation(p_loopClosing->gbaTimes_ms, average);
     f << "GBA: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "GBA: " << average << "$\\pm$" << deviation << std::endl;
-    average   = calcAverage(p_loopClosing->vdUpdateMap_ms);
-    deviation = calcDeviation(p_loopClosing->vdUpdateMap_ms, average);
+    average   = calcAverage(p_loopClosing->updateMapTimes_ms);
+    deviation = calcDeviation(p_loopClosing->updateMapTimes_ms, average);
     f << "Map Update: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Map Update: " << average << "$\\pm$" << deviation
               << std::endl;
-    average   = calcAverage(p_loopClosing->vdFGBATotal_ms);
-    deviation = calcDeviation(p_loopClosing->vdFGBATotal_ms, average);
+    average   = calcAverage(p_loopClosing->fullGbaTotalTimes_ms);
+    deviation = calcDeviation(p_loopClosing->fullGbaTotalTimes_ms, average);
     f << "Total Full GBA: " << average << "$\\pm$" << deviation << std::endl
       << std::endl;
     std::cout << "Total Full GBA: " << average << "$\\pm$" << deviation
               << std::endl
               << std::endl;
 
-    f << "Numb exec: " << p_loopClosing->nFGBA_exec << std::endl;
-    std::cout << "Num exec: " << p_loopClosing->nFGBA_exec << std::endl;
-    f << "Numb abort: " << p_loopClosing->nFGBA_abort << std::endl;
-    std::cout << "Num abort: " << p_loopClosing->nFGBA_abort << std::endl;
-    average   = calcAverage(p_loopClosing->vnGBAKFs);
-    deviation = calcDeviation(p_loopClosing->vnGBAKFs, average);
+    f << "Numb exec: " << p_loopClosing->fullGbaExecutionCount << std::endl;
+    std::cout << "Num exec: " << p_loopClosing->fullGbaExecutionCount
+              << std::endl;
+    f << "Numb abort: " << p_loopClosing->fullGbaAbortCount << std::endl;
+    std::cout << "Num abort: " << p_loopClosing->fullGbaAbortCount << std::endl;
+    average   = calcAverage(p_loopClosing->gbaKeyFrameCounts);
+    deviation = calcDeviation(p_loopClosing->gbaKeyFrameCounts, average);
     f << "Number of KFs: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Number of KFs: " << average << "$\\pm$" << deviation
               << std::endl;
-    average   = calcAverage(p_loopClosing->vnGBAMPs);
-    deviation = calcDeviation(p_loopClosing->vnGBAMPs, average);
+    average   = calcAverage(p_loopClosing->gbaMapPointCounts);
+    deviation = calcDeviation(p_loopClosing->gbaMapPointCounts, average);
     f << "Number of MPs: " << average << "$\\pm$" << deviation << std::endl;
     std::cout << "Number of MPs: " << average << "$\\pm$" << deviation
               << std::endl;

@@ -32,7 +32,7 @@ void Marker::eraseObservation(core::KeyFrame *p_keyFrame_in)
         return;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexObservations);
+    std::lock_guard<std::mutex> lock(observationsMutex);
     observations.erase(p_keyFrame_in);
 }
 

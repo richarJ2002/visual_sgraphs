@@ -76,10 +76,10 @@ bool isValueLessForCollisionTiebreak(const PassageRecord &lhs_in,
     {
         return isDoubleLess(lhs_in.height_m, rhs_in.height_m);
     }
-    if (lhs_in.passable != rhs_in.passable)
+    if (lhs_in.isPassable != rhs_in.isPassable)
     {
-        return static_cast<int>(lhs_in.passable) <
-               static_cast<int>(rhs_in.passable);
+        return static_cast<int>(lhs_in.isPassable) <
+               static_cast<int>(rhs_in.isPassable);
     }
     if (std::lexicographical_compare(lhs_in.associateWallRefs.begin(),
                                      lhs_in.associateWallRefs.end(),

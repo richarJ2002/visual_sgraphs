@@ -36,7 +36,7 @@ namespace core
 
 vector<semantic::Room *> Map::getAllMarkerBasedMapRooms()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return vector<semantic::Room *>(markerBasedRooms.begin(),
                                     markerBasedRooms.end());
 }

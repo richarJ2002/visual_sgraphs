@@ -14,14 +14,14 @@ namespace vs_graphs
 namespace core
 {
 
-void MapDrawer::newParameterLoader(utils::settings::Settings *settings)
+void MapDrawer::newParameterLoader(utils::settings::Settings *p_settings_inout)
 {
-    keyFrameSize      = settings->keyFrameSize();
-    keyFrameLineWidth = settings->keyFrameLineWidth();
-    graphLineWidth    = settings->graphLineWidth();
-    pointSize         = settings->pointSize();
-    cameraSize        = settings->cameraSize();
-    cameraLineWidth   = settings->cameraLineWidth();
+    keyFrameSize      = p_settings_inout->keyFrameSize();
+    keyFrameLineWidth = p_settings_inout->keyFrameLineWidth();
+    graphLineWidth    = p_settings_inout->graphLineWidth();
+    pointSize         = p_settings_inout->pointSize();
+    cameraSize        = p_settings_inout->cameraSize();
+    cameraLineWidth   = p_settings_inout->cameraLineWidth();
 }
 
 } // namespace core

@@ -34,9 +34,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::changeId(long unsigned int nId)
+void Map::changeId(long unsigned int idCount_in)
 {
-    mnId = nId;
+    id = idCount_in;
 }
 
 } // namespace core

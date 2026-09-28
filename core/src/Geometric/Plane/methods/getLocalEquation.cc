@@ -34,7 +34,7 @@ namespace geometric
 
 g2o::Plane3D Plane::getLocalEquation(void) const
 {
-    unique_lock<mutex> lock(mMutexPos);
+    unique_lock<mutex> lock(positionMutex);
     return localEquation;
 }
 

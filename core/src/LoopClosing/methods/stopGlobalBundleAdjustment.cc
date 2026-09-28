@@ -39,15 +39,15 @@ bool LoopClosing::stopGlobalBundleAdjustment()
     bool         optimizationWasRunning         = false;
 
     {
-        std::unique_lock<std::mutex> globalBundleAdjustmentLock(mMutexGBA);
+        std::unique_lock<std::mutex> globalBundleAdjustmentLock(gbaMutex);
 
-        optimizationWasRunning = runningGBA;
+        optimizationWasRunning = isGbaRunning;
 
         if (optimizationWasRunning)
         {
             /* Invalidate the result before waiting for the worker to finish. */
             ++fullBundleAdjustmentIndex;
-            globalBundleAdjustmentStopRequested.store(
+            isGlobalBundleAdjustmentStopRequested.store(
                 true,
                 std::memory_order_release);
         }
@@ -71,9 +71,9 @@ bool LoopClosing::stopGlobalBundleAdjustment()
     }
 
     {
-        std::unique_lock<std::mutex> globalBundleAdjustmentLock(mMutexGBA);
-        runningGBA  = false;
-        finishedGBA = true;
+        std::unique_lock<std::mutex> globalBundleAdjustmentLock(gbaMutex);
+        isGbaRunning   = false;
+        hasGbaFinished = true;
     }
 
     return optimizationWasRunning;

@@ -27,13 +27,13 @@ namespace semantic
 {
 
 RoomTrackingState
-    RoomTracker::applyEvent(RoomTrackingEvent           event,
-                            double                      now_s,
-                            const TraversalGuardValues &crossing,
-                            const VerificationVerdict  &verification)
+    RoomTracker::applyEvent(RoomTrackingEvent           event_in,
+                            double                      now_s_in,
+                            const TraversalGuardValues &crossing_in,
+                            const VerificationVerdict  &verification_in)
 {
-    applyRow(state_, event, now_s, crossing, verification);
-    return state_;
+    applyRow(trackingState, event_in, now_s_in, crossing_in, verification_in);
+    return trackingState;
 }
 
 } // namespace semantic

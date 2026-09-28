@@ -30,14 +30,16 @@ namespace vs_graphs
 namespace core
 {
 
-bool EdgeVertexPlaneProjectPointXYZ::read(std::istream &is)
+bool EdgeVertexPlaneProjectPointXYZ::read(std::istream &inputStream_inout)
 {
-    for (int i = 0; i < information().rows(); i++)
-        for (int j = i; j < information().cols(); ++j)
+    for (int rowIndex = 0; rowIndex < information().rows(); rowIndex++)
+        for (int columnIndex = rowIndex; columnIndex < information().cols();
+             ++columnIndex)
         {
-            is >> information()(i, j);
-            if (i != j)
-                information()(j, i) = information()(i, j);
+            inputStream_inout >> information()(rowIndex, columnIndex);
+            if (rowIndex != columnIndex)
+                information()(columnIndex, rowIndex) =
+                    information()(rowIndex, columnIndex);
         }
     return true;
 }

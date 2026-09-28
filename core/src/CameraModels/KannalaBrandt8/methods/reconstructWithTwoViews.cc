@@ -43,9 +43,9 @@ bool KannalaBrandt8::reconstructWithTwoViews(
     const std::vector<cv::KeyPoint> &keys1_in,
     const std::vector<cv::KeyPoint> &keys2_in,
     const std::vector<int>          &matches12_in,
-    Sophus::SE3f                    &pose21_out,
-    std::vector<cv::Point3f>        &points3D_out,
-    std::vector<bool>               &triangulated_out)
+    Sophus::SE3f                    &pose21_inout,
+    std::vector<cv::Point3f>        &points3d_inout,
+    std::vector<bool>               &triangulated_inout)
 {
     /*!
      * If address for two view reconstruction does not exist then init. This is
@@ -54,54 +54,69 @@ bool KannalaBrandt8::reconstructWithTwoViews(
     if (!p_twoViewReconstruction)
     {
         /* Extract calibration matrix */
-        Eigen::Matrix3f K = this->toK_();
+        Eigen::Matrix3f calibrationMatrix = this->toK_();
 
         /* Init two view reconstruction */
-        p_twoViewReconstruction = new TwoViewReconstruction(K);
+        p_twoViewReconstruction = new TwoViewReconstruction(calibrationMatrix);
     }
 
     /* Correct FishEye distortion */
-    std::vector<cv::KeyPoint> vKeysUn1 = keys1_in, vKeysUn2 = keys2_in;
-    std::vector<cv::Point2f>  vPts1(keys1_in.size());
-    std::vector<cv::Point2f>  vPts2(keys2_in.size());
+    std::vector<cv::KeyPoint> undistortedKeys1 = keys1_in,
+                              undistortedKeys2 = keys2_in;
+    std::vector<cv::Point2f> undistortedPoints1(keys1_in.size());
+    std::vector<cv::Point2f> undistortedPoints2(keys2_in.size());
 
     /* Extract points from key 1 */
-    for (size_t i = 0; i < keys1_in.size(); i++)
+    for (size_t featureIndex = 0; featureIndex < keys1_in.size();
+         featureIndex++)
     {
-        vPts1[i] = keys1_in[i].pt;
+        undistortedPoints1[featureIndex] = keys1_in[featureIndex].pt;
     }
 
     /* Extract points from key 2 */
-    for (size_t i = 0; i < keys2_in.size(); i++)
+    for (size_t featureIndex = 0; featureIndex < keys2_in.size();
+         featureIndex++)
     {
-        vPts2[i] = keys2_in[i].pt;
+        undistortedPoints2[featureIndex] = keys2_in[featureIndex].pt;
     }
 
-    cv::Mat D = (cv::Mat_<float>(4, 1) << parameters[4],
-                 parameters[5],
-                 parameters[6],
-                 parameters[7]);
+    cv::Mat distortionCoefficients = (cv::Mat_<float>(4, 1) << parameters[4],
+                                      parameters[5],
+                                      parameters[6],
+                                      parameters[7]);
 
-    cv::Mat R = cv::Mat::eye(3, 3, CV_32F);
-    cv::Mat K = this->toK();
-    cv::fisheye::undistortPoints(vPts1, vPts1, K, D, R, K);
-    cv::fisheye::undistortPoints(vPts2, vPts2, K, D, R, K);
+    cv::Mat rectificationMatrix = cv::Mat::eye(3, 3, CV_32F);
+    cv::Mat calibrationMatrix   = this->toK();
+    cv::fisheye::undistortPoints(undistortedPoints1,
+                                 undistortedPoints1,
+                                 calibrationMatrix,
+                                 distortionCoefficients,
+                                 rectificationMatrix,
+                                 calibrationMatrix);
+    cv::fisheye::undistortPoints(undistortedPoints2,
+                                 undistortedPoints2,
+                                 calibrationMatrix,
+                                 distortionCoefficients,
+                                 rectificationMatrix,
+                                 calibrationMatrix);
 
-    for (size_t i = 0; i < keys1_in.size(); i++)
+    for (size_t featureIndex = 0; featureIndex < keys1_in.size();
+         featureIndex++)
     {
-        vKeysUn1[i].pt = vPts1[i];
+        undistortedKeys1[featureIndex].pt = undistortedPoints1[featureIndex];
     }
 
-    for (size_t i = 0; i < keys2_in.size(); i++)
+    for (size_t featureIndex = 0; featureIndex < keys2_in.size();
+         featureIndex++)
     {
-        vKeysUn2[i].pt = vPts2[i];
+        undistortedKeys2[featureIndex].pt = undistortedPoints2[featureIndex];
     }
 
-    return p_twoViewReconstruction->Reconstruct(vKeysUn1,
-                                                vKeysUn2,
+    return p_twoViewReconstruction->reconstruct(undistortedKeys1,
+                                                undistortedKeys2,
                                                 matches12_in,
-                                                pose21_out,
-                                                points3D_out,
-                                                triangulated_out);
+                                                pose21_inout,
+                                                points3d_inout,
+                                                triangulated_inout);
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

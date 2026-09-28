@@ -37,13 +37,13 @@ bool Passage::replacePlaneAssociation(geometric::Plane *p_retiredPlane_in,
         return false;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
 
     bool replacedAssociation = false;
 
-    if (associateDoor == p_retiredPlane_in)
+    if (p_associatedDoor == p_retiredPlane_in)
     {
-        associateDoor       = p_retainedPlane_in;
+        p_associatedDoor    = p_retainedPlane_in;
         replacedAssociation = true;
     }
 

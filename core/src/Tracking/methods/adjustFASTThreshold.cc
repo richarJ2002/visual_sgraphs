@@ -36,22 +36,22 @@ namespace core
 void Tracking::adjustFASTThreshold()
 {
     // Count features in current frame
-    int nCurrentFeatures = currentFrame.N;
+    int currentFeatureCount = currentFrame.keyPointCount;
 
     // If this is the first frame after initialization, just record
     if (lastFrameFeatures == 0)
     {
-        lastFrameFeatures = nCurrentFeatures;
+        lastFrameFeatures = currentFeatureCount;
         return;
     }
 
     // Check if feature count dropped significantly
     float featureRatio =
-        (float)nCurrentFeatures / (float)std::max(1, lastFrameFeatures);
+        (float)currentFeatureCount / (float)std::max(1, lastFrameFeatures);
 
     // If features dropped below 50% of previous (more sensitive), or absolute
     // count is very low
-    bool lowFeatures = (featureRatio < 0.5f) || (nCurrentFeatures < 400);
+    bool lowFeatures = (featureRatio < 0.5f) || (currentFeatureCount < 400);
 
     if (lowFeatures)
     {
@@ -64,50 +64,57 @@ void Tracking::adjustFASTThreshold()
 
     // Adjust thresholds based on consecutive low-feature frames
     // Lower thresholds to extract more features in textureless areas
-    int newIniThFAST = baseInitialFastThreshold;
-    int newMinThFAST = baseMinimumFastThreshold;
+    int newInitialThresholdFast = baseInitialFastThreshold;
+    int newMinimumThresholdFast = baseMinimumFastThreshold;
 
     if (consecutiveLowFeatures >= 1) // React faster - after just 1 frame
     {
         // Progressively lower thresholds (but not below minimum)
         // Each step reduces by 3, minimum of 1 for both (more aggressive)
         int reduction = std::min(consecutiveLowFeatures, 6) * 3;
-        newIniThFAST  = std::max(baseInitialFastThreshold - reduction, 1);
-        newMinThFAST  = std::max(baseMinimumFastThreshold - reduction, 1);
+        newInitialThresholdFast =
+            std::max(baseInitialFastThreshold - reduction, 1);
+        newMinimumThresholdFast =
+            std::max(baseMinimumFastThreshold - reduction, 1);
     }
-    else if (consecutiveLowFeatures == 0 && nCurrentFeatures > 2500)
+    else if (consecutiveLowFeatures == 0 && currentFeatureCount > 2500)
     {
         // Plenty of features - can restore base thresholds
-        newIniThFAST = baseInitialFastThreshold;
-        newMinThFAST = baseMinimumFastThreshold;
+        newInitialThresholdFast = baseInitialFastThreshold;
+        newMinimumThresholdFast = baseMinimumFastThreshold;
     }
 
     // Apply new thresholds if changed
-    if (newIniThFAST != p_orbExtractorLeft->getInitialFastThreshold() ||
-        newMinThFAST != p_orbExtractorLeft->getMinimumFastThreshold())
+    if (newInitialThresholdFast !=
+            p_orbExtractorLeft->getInitialFastThreshold() ||
+        newMinimumThresholdFast !=
+            p_orbExtractorLeft->getMinimumFastThreshold())
     {
-        p_orbExtractorLeft->setInitialFastThreshold(newIniThFAST);
-        p_orbExtractorLeft->setMinimumFastThreshold(newMinThFAST);
+        p_orbExtractorLeft->setInitialFastThreshold(newInitialThresholdFast);
+        p_orbExtractorLeft->setMinimumFastThreshold(newMinimumThresholdFast);
         if (p_orbExtractorRight)
         {
-            p_orbExtractorRight->setInitialFastThreshold(newIniThFAST);
-            p_orbExtractorRight->setMinimumFastThreshold(newMinThFAST);
+            p_orbExtractorRight->setInitialFastThreshold(
+                newInitialThresholdFast);
+            p_orbExtractorRight->setMinimumFastThreshold(
+                newMinimumThresholdFast);
         }
         if (p_iniOrbExtractor)
         {
-            p_iniOrbExtractor->setInitialFastThreshold(newIniThFAST);
-            p_iniOrbExtractor->setMinimumFastThreshold(newMinThFAST);
+            p_iniOrbExtractor->setInitialFastThreshold(newInitialThresholdFast);
+            p_iniOrbExtractor->setMinimumFastThreshold(newMinimumThresholdFast);
         }
         Verbose::printMess(
-            "[Tracking] Adaptive FAST: iniTh=" + std::to_string(newIniThFAST) +
-                " minTh=" + std::to_string(newMinThFAST) +
-                " (features=" + std::to_string(nCurrentFeatures) +
+            "[Tracking] Adaptive FAST: iniTh=" +
+                std::to_string(newInitialThresholdFast) +
+                " minTh=" + std::to_string(newMinimumThresholdFast) +
+                " (features=" + std::to_string(currentFeatureCount) +
                 " consecutive_low=" + std::to_string(consecutiveLowFeatures) +
                 ")",
             Verbose::VERBOSITY_NORMAL);
     }
 
-    lastFrameFeatures = nCurrentFeatures;
+    lastFrameFeatures = currentFeatureCount;
 }
 
 } // namespace core

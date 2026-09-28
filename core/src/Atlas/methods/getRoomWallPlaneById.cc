@@ -30,11 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-vs_graphs::core::geometric::Plane *Atlas::getRoomWallPlaneById(int planeId)
+vs_graphs::core::geometric::Plane *Atlas::getRoomWallPlaneById(int planeId_in)
 {
-    unique_lock<mutex> lock(mMutexAtlas);
-    return p_activeMap != nullptr ? p_activeMap->getRoomWallPlaneById(planeId)
-                                  : nullptr;
+    unique_lock<mutex> lock(atlasMutex);
+    return p_activeMap != nullptr
+               ? p_activeMap->getRoomWallPlaneById(planeId_in)
+               : nullptr;
 }
 
 } // namespace core

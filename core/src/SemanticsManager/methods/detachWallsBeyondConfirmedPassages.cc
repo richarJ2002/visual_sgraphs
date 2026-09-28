@@ -33,7 +33,7 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
         p_sysParams->roomSeg.passagePartition;
 
     if (!partitionParameters.enabled ||
-        !partitionParameters.detachWallsBeyondPassages)
+        !partitionParameters.shouldDetachWallsBeyondPassages)
     {
         return;
     }

@@ -30,7 +30,7 @@ namespace semantic
 
 bool Passage::getTraversalEvidence() const
 {
-    std::lock_guard<std::mutex> lock(mMutexType);
+    std::lock_guard<std::mutex> lock(typeMutex);
     return traversalKnownToFarCount > 0U || traversalFarToKnownCount > 0U ||
            traversalUnknownCount > 0U;
 }

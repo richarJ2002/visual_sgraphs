@@ -36,12 +36,12 @@ namespace vs_graphs::core::camera_models::kannalabrandt8
 bool KannalaBrandt8::matchAndTriangulate(
     const cv::KeyPoint               &keypoint1_in,
     const cv::KeyPoint               &keypoint2_in,
-    geometriccamera::GeometricCamera *p_otherCamera_in,
+    geometriccamera::GeometricCamera *p_otherCamera_inout,
     Sophus::SE3f                     &pose1_in,
     Sophus::SE3f                     &pose2_in,
     const float                       sigmaLevel1_in,
     const float                       sigmaLevel2_in,
-    Eigen::Vector3f                  &point3D_out)
+    Eigen::Vector3f                  &point3d_inout)
 {
     /* Declare and init local variables */
     Eigen::Matrix<float, 3, 4> eigTcw1 = pose1_in.matrix3x4();
@@ -51,47 +51,59 @@ bool KannalaBrandt8::matchAndTriangulate(
     Eigen::Matrix3f            Rcw2    = eigTcw2.block<3, 3>(0, 0);
     Eigen::Matrix3f            Rwc2    = Rcw2.transpose();
 
-    cv::Point3f ray1c = this->unproject(keypoint1_in.pt);
-    cv::Point3f ray2c = p_otherCamera_in->unproject(keypoint2_in.pt);
+    cv::Point3f unprojectedPoint1 = this->unproject(keypoint1_in.pt);
+    cv::Point3f unprojectedPoint2 =
+        p_otherCamera_inout->unproject(keypoint2_in.pt);
 
-    Eigen::Vector3f r1(ray1c.x, ray1c.y, ray1c.z);
-    Eigen::Vector3f r2(ray2c.x, ray2c.y, ray2c.z);
+    Eigen::Vector3f cameraRay1(unprojectedPoint1.x,
+                               unprojectedPoint1.y,
+                               unprojectedPoint1.z);
+    Eigen::Vector3f cameraRay2(unprojectedPoint2.x,
+                               unprojectedPoint2.y,
+                               unprojectedPoint2.z);
 
     /* Check parallax between rays */
-    Eigen::Vector3f ray1 = Rwc1 * r1;
-    Eigen::Vector3f ray2 = Rwc2 * r2;
+    Eigen::Vector3f worldRay1 = Rwc1 * cameraRay1;
+    Eigen::Vector3f worldRay2 = Rwc2 * cameraRay2;
 
-    const float cosParallaxRays = ray1.dot(ray2) / (ray1.norm() * ray2.norm());
+    const float parallaxCosine =
+        worldRay1.dot(worldRay2) / (worldRay1.norm() * worldRay2.norm());
 
     /* If parallax is lower than 0.9998, reject this match */
-    if (cosParallaxRays > 0.9998)
+    if (parallaxCosine > 0.9998)
     {
         return false;
     }
 
     /* Parallax is good, so we try to triangulate */
-    cv::Point2f p11, p22;
+    cv::Point2f imagePoint1, imagePoint2;
 
-    p11.x = ray1c.x;
-    p11.y = ray1c.y;
+    imagePoint1.x = unprojectedPoint1.x;
+    imagePoint1.y = unprojectedPoint1.y;
 
-    p22.x = ray2c.x;
-    p22.y = ray2c.y;
+    imagePoint2.x = unprojectedPoint2.x;
+    imagePoint2.y = unprojectedPoint2.y;
 
-    Eigen::Vector3f x3D;
+    Eigen::Vector3f triangulatedPoint3D;
 
-    triangulate(p11, p22, eigTcw1, eigTcw2, x3D);
+    triangulate(imagePoint1,
+                imagePoint2,
+                eigTcw1,
+                eigTcw2,
+                triangulatedPoint3D);
 
     /* Check triangulation in front of cameras */
-    float z1 = Rcw1.row(2).dot(x3D) + pose1_in.translation()(2);
-    if (z1 <= 0)
+    float cameraDepth1 =
+        Rcw1.row(2).dot(triangulatedPoint3D) + pose1_in.translation()(2);
+    if (cameraDepth1 <= 0)
     {
         /* Point is not in front of the first camera */
         return false;
     }
 
-    float z2 = Rcw2.row(2).dot(x3D) + pose2_in.translation()(2);
-    if (z2 <= 0)
+    float cameraDepth2 =
+        Rcw2.row(2).dot(triangulatedPoint3D) + pose2_in.translation()(2);
+    if (cameraDepth2 <= 0)
     {
         /* Point is not in front of the first camera */
         return false;
@@ -101,13 +113,15 @@ bool KannalaBrandt8::matchAndTriangulate(
      * Check reprojection error in first keyframe: Transform point into camera
      * reference system.
      */
-    Eigen::Vector3f x3D1 = Rcw1 * x3D + pose1_in.translation();
-    Eigen::Vector2f uv1  = this->project(x3D1);
+    Eigen::Vector3f pointInCamera1 =
+        Rcw1 * triangulatedPoint3D + pose1_in.translation();
+    Eigen::Vector2f projectedPoint1 = this->project(pointInCamera1);
 
-    float errX1 = uv1(0) - keypoint1_in.pt.x;
-    float errY1 = uv1(1) - keypoint1_in.pt.y;
+    float reprojectionErrorX1 = projectedPoint1(0) - keypoint1_in.pt.x;
+    float reprojectionErrorY1 = projectedPoint1(1) - keypoint1_in.pt.y;
 
-    if ((errX1 * errX1 + errY1 * errY1) > 5.991 * sigmaLevel1_in)
+    if ((reprojectionErrorX1 * reprojectionErrorX1 +
+         reprojectionErrorY1 * reprojectionErrorY1) > 5.991 * sigmaLevel1_in)
     {
         /* Reprojection error is high, hence reject */
         return false;
@@ -117,13 +131,16 @@ bool KannalaBrandt8::matchAndTriangulate(
      * Check reprojection error in second keyframe: Transform point into camera
      * reference system.
      */
-    Eigen::Vector3f x3D2 = Rcw2 * x3D + pose2_in.translation();
-    Eigen::Vector2f uv2  = p_otherCamera_in->project(x3D2);
+    Eigen::Vector3f pointInCamera2 =
+        Rcw2 * triangulatedPoint3D + pose2_in.translation();
+    Eigen::Vector2f projectedPoint2 =
+        p_otherCamera_inout->project(pointInCamera2);
 
-    float errX2 = uv2(0) - keypoint2_in.pt.x;
-    float errY2 = uv2(1) - keypoint2_in.pt.y;
+    float reprojectionErrorX2 = projectedPoint2(0) - keypoint2_in.pt.x;
+    float reprojectionErrorY2 = projectedPoint2(1) - keypoint2_in.pt.y;
 
-    if ((errX2 * errX2 + errY2 * errY2) > 5.991 * sigmaLevel2_in)
+    if ((reprojectionErrorX2 * reprojectionErrorX2 +
+         reprojectionErrorY2 * reprojectionErrorY2) > 5.991 * sigmaLevel2_in)
     {
         /* Reprojection error is high */
         return false;
@@ -133,7 +150,7 @@ bool KannalaBrandt8::matchAndTriangulate(
      * Since parallax is big enough and reprojection errors are low, this pair
      * of points can be considered as a match.
      */
-    point3D_out = x3D;
+    point3d_inout = triangulatedPoint3D;
 
     return true;
 }

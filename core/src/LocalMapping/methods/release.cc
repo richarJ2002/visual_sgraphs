@@ -34,17 +34,17 @@ namespace core
 
 void LocalMapping::release()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    unique_lock<mutex> lock2(mMutexFinish);
-    if (finished)
+    unique_lock<mutex> stopLock(stopMutex);
+    unique_lock<mutex> finishLock(finishMutex);
+    if (hasFinished)
         return;
-    stopped           = false;
-    stopRequestedFlag = false;
-    for (list<KeyFrame *>::iterator lit  = newKeyFrames.begin(),
-                                    lend = newKeyFrames.end();
-         lit != lend;
-         lit++)
-        delete *lit;
+    hasStopped      = false;
+    isStopRequested = false;
+    for (list<KeyFrame *>::iterator newKeyFrameIt  = newKeyFrames.begin(),
+                                    newKeyFrameEnd = newKeyFrames.end();
+         newKeyFrameIt != newKeyFrameEnd;
+         newKeyFrameIt++)
+        delete *newKeyFrameIt;
     newKeyFrames.clear();
 }
 

@@ -30,9 +30,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setViewer(Viewer *pViewer)
+void Atlas::setViewer(Viewer *p_viewer_in)
 {
-    p_viewer  = pViewer;
+    p_viewer  = p_viewer_in;
     hasViewer = true;
 }
 

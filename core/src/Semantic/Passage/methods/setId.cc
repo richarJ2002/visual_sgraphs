@@ -28,9 +28,9 @@ namespace core
 namespace semantic
 {
 
-void Passage::setId(int value)
+void Passage::setId(int value_in)
 {
-    id = value;
+    id = value_in;
 }
 
 } // namespace semantic

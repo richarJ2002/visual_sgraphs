@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::Floor *Atlas::getFloorById(int floorId)
+semantic::Floor *Atlas::getFloorById(int floorId_in)
 {
-    unique_lock<mutex> lock(mMutexAtlas);
-    return p_activeMap != nullptr ? p_activeMap->getFloorById(floorId)
+    unique_lock<mutex> lock(atlasMutex);
+    return p_activeMap != nullptr ? p_activeMap->getFloorById(floorId_in)
                                   : nullptr;
 }
 

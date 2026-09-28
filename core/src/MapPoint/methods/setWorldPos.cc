@@ -34,11 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-void MapPoint::setWorldPos(const Eigen::Vector3f &Pos)
+void MapPoint::setWorldPos(const Eigen::Vector3f &Pos_in)
 {
-    unique_lock<mutex> lock2(mGlobalMutex);
-    unique_lock<mutex> lock(mMutexPos);
-    worldPos = Pos;
+    unique_lock<mutex> lock2(globalMutex);
+    unique_lock<mutex> lock(positionMutex);
+    worldPos = Pos_in;
 }
 
 } // namespace core

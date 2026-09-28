@@ -32,10 +32,10 @@ namespace core
 namespace geometric
 {
 
-void Plane::setTwinFace(Plane *p_twin_in)
+void Plane::setTwinFace(Plane *p_twinFace_in)
 {
-    unique_lock<mutex> lock(mMutexPos);
-    p_twinFace = p_twin_in;
+    unique_lock<mutex> lock(positionMutex);
+    p_twinFace = p_twinFace_in;
 }
 
 } // namespace geometric

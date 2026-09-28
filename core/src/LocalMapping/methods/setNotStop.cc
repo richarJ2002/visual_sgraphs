@@ -32,14 +32,14 @@ namespace vs_graphs
 namespace core
 {
 
-bool LocalMapping::setNotStop(bool flag)
+bool LocalMapping::setNotStop(bool shouldPreventStop_in)
 {
-    unique_lock<mutex> lock(mMutexStop);
+    unique_lock<mutex> stopLock(stopMutex);
 
-    if (flag && stopped)
+    if (shouldPreventStop_in && hasStopped)
         return false;
 
-    notStop = flag;
+    isStopBlocked = shouldPreventStop_in;
 
     return true;
 }

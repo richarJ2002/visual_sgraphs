@@ -48,35 +48,35 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
         return semantic::SemanticMergeDecision::REJECT;
     }
 
-    Map *pCurrentMap = p_currentKF->getMap();
-    Map *pMergeMap   = p_mergeMatchedKF->getMap();
+    Map *p_currentMap = p_currentKF->getMap();
+    Map *p_mergeMap   = p_mergeMatchedKF->getMap();
 
-    if (pCurrentMap == nullptr || pMergeMap == nullptr ||
-        pCurrentMap == pMergeMap || pCurrentMap->isBad() ||
-        pMergeMap->isBad() || !p_atlas->isActiveMap(pCurrentMap) ||
-        !p_atlas->isActiveMap(pMergeMap))
+    if (p_currentMap == nullptr || p_mergeMap == nullptr ||
+        p_currentMap == p_mergeMap || p_currentMap->isBad() ||
+        p_mergeMap->isBad() || !p_atlas->isActiveMap(p_currentMap) ||
+        !p_atlas->isActiveMap(p_mergeMap))
     {
         return semantic::SemanticMergeDecision::REJECT;
     }
 
-    int numTemporalKFs = 11; // [TODO] Set by parameter
+    int temporalKeyFrameCount = 11; // [TODO] Set by parameter
 
     // Relationship to rebuild the essential graph, it is used two times, first
     // in the local window and later in the rest of the map
-    KeyFrame *pNewChild;
-    KeyFrame *pNewParent;
+    KeyFrame *p_newChild;
+    KeyFrame *p_newParent;
 
-    vector<KeyFrame *> vpLocalCurrentWindowKFs;
-    vector<KeyFrame *> vpMergeConnectedKFs;
+    vector<KeyFrame *> localCurrentWindowKeyFrames;
+    vector<KeyFrame *> mergeConnectedKeyFrames;
 
     KeyFrameAndPose CorrectedSim3, NonCorrectedSim3;
 
     // Flag that is true only when we stopped a running BA, in this case we need
     // relaunch at the end of the merge
-    bool bRelaunchBA = false;
+    bool shouldRelaunchBa = false;
 
     /* Stop and reclaim GBA before either map changes frame or ownership. */
-    bRelaunchBA = stopGlobalBundleAdjustment();
+    shouldRelaunchBa = stopGlobalBundleAdjustment();
 
     p_localMapper->requestStop();
 
@@ -91,9 +91,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
         p_atlas->acquireSemanticUpdateLock();
 
     if (p_currentKF->isBad() || p_mergeMatchedKF->isBad() ||
-        p_currentKF->getMap() != pCurrentMap ||
-        p_mergeMatchedKF->getMap() != pMergeMap ||
-        !p_atlas->isActiveMap(pCurrentMap) || !p_atlas->isActiveMap(pMergeMap))
+        p_currentKF->getMap() != p_currentMap ||
+        p_mergeMatchedKF->getMap() != p_mergeMap ||
+        !p_atlas->isActiveMap(p_currentMap) ||
+        !p_atlas->isActiveMap(p_mergeMap))
     {
         semanticUpdateLock.unlock();
         p_localMapper->release();
@@ -102,13 +103,13 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 
     const semantic::SemanticMergeGateResult semanticMergeGate =
         semantic::SemanticVerify::evaluateMapMergeGate(
-            pCurrentMap,
-            pMergeMap,
+            p_currentMap,
+            p_mergeMap,
             oldCorrectedPose.inverse(),
             semantic::SemanticVerify::configFromSystemParams());
     const std::string floorVerificationResult = semanticMergeGate.floorDecision;
-    std::cout << "[SemanticMergeGate] surviving_map=" << pCurrentMap->getId()
-              << " absorbed_map=" << pMergeMap->getId() << " decision="
+    std::cout << "[SemanticMergeGate] surviving_map=" << p_currentMap->getId()
+              << " absorbed_map=" << p_mergeMap->getId() << " decision="
               << semantic::SemanticVerify::mergeDecisionName(
                      semanticMergeGate.decision)
               << " reason="
@@ -123,9 +124,9 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
     {
         semanticUpdateLock.unlock();
         p_localMapper->release();
-        if (bRelaunchBA)
+        if (shouldRelaunchBa)
         {
-            relaunchGlobalBundleAdjustment(pCurrentMap);
+            relaunchGlobalBundleAdjustment(p_currentMap);
         }
         return semanticMergeGate.decision;
     }
@@ -136,16 +137,16 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                           oldCorrectedPose.translation().cast<float>());
 
         std::unique_lock<std::mutex> currentMapUpdateLock(
-            pCurrentMap->mMutexMapUpdate);
+            p_currentMap->mapUpdateMutex);
 
         p_localMapper->emptyQueue();
 
         std::chrono::steady_clock::time_point t2 =
             std::chrono::steady_clock::now();
-        bool bScaleVel = false;
+        bool shouldScaleVelocity = false;
         if (s_on != 1)
-            bScaleVel = true;
-        pCurrentMap->applyScaledRotation(T_on, s_on, bScaleVel);
+            shouldScaleVelocity = true;
+        p_currentMap->applyScaledRotation(T_on, s_on, shouldScaleVelocity);
         p_tracker->updateFrameIMU(s_on,
                                   p_currentKF->getImuBias(),
                                   p_tracker->getLastKeyFrame());
@@ -154,27 +155,27 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             std::chrono::steady_clock::now();
     }
 
-    const int numKFnew = pCurrentMap->getKeyFrameCount();
+    const int keyFrameNewCount = p_currentMap->getKeyFrameCount();
 
     if ((p_tracker->sensor == System::IMU_MONOCULAR ||
          p_tracker->sensor == System::IMU_STEREO ||
          p_tracker->sensor == System::IMU_RGBD) &&
-        !pCurrentMap->getInertialBA2())
+        !p_currentMap->getInertialBA2())
     {
         /* Map is not completly initialized */
         Eigen::Vector3d bg, ba;
         bg << 0., 0., 0.;
         ba << 0., 0., 0.;
-        Optimizer::inertialOptimization(pCurrentMap, bg, ba);
+        Optimizer::inertialOptimization(p_currentMap, bg, ba);
         IMU::Bias b(ba[0], ba[1], ba[2], bg[0], bg[1], bg[2]);
         std::unique_lock<std::mutex> currentMapUpdateLock(
-            pCurrentMap->mMutexMapUpdate);
+            p_currentMap->mapUpdateMutex);
         p_tracker->updateFrameIMU(1.0f, b, p_tracker->getLastKeyFrame());
 
         /* Set map initialized */
-        pCurrentMap->setInertialBA2();
-        pCurrentMap->setInertialBA1();
-        pCurrentMap->setImuInitialized();
+        p_currentMap->setInertialBA2();
+        p_currentMap->setInertialBA1();
+        p_currentMap->setImuInitialized();
     }
 
     /* Retain imported room identities for post-optimization reconciliation. */
@@ -187,52 +188,54 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
          *
          * @note        Get Merge Map Mutex and stop tracking.
          */
-        std::scoped_lock mapUpdateLocks(pCurrentMap->mMutexMapUpdate,
-                                        pMergeMap->mMutexMapUpdate);
+        std::scoped_lock mapUpdateLocks(p_currentMap->mapUpdateMutex,
+                                        p_mergeMap->mapUpdateMutex);
 
-        vector<KeyFrame *>         vpMergeMapKFs = pMergeMap->getAllKeyFrames();
-        vector<MapPoint *>         vpMergeMapMPs = pMergeMap->getAllMapPoints();
-        vector<geometric::Plane *> vpMergeMapPlanes = pMergeMap->getAllPlanes();
-        vector<semantic::Marker *> vpMergeMapMarkers =
-            pMergeMap->getAllMarkers();
-        vector<vs_graphs::core::semantic::Passage *> vpMergeMapPassages =
-            pMergeMap->getAllPassages();
-        vector<semantic::Room *> vpMergeMapDetectedRooms =
-            pMergeMap->getAllDetectedMapRooms();
-        vector<semantic::Room *> vpMergeMapMarkerRooms =
-            pMergeMap->getAllMarkerBasedMapRooms();
-        vector<semantic::Floor *> vpMergeMapFloors = pMergeMap->getAllFloors();
+        vector<KeyFrame *> mergeMapKeyFrames = p_mergeMap->getAllKeyFrames();
+        vector<MapPoint *> mergeMapMapPoints = p_mergeMap->getAllMapPoints();
+        vector<geometric::Plane *> mergeMapPlanes = p_mergeMap->getAllPlanes();
+        vector<semantic::Marker *> mergeMapMarkers =
+            p_mergeMap->getAllMarkers();
+        vector<vs_graphs::core::semantic::Passage *> mergeMapPassages =
+            p_mergeMap->getAllPassages();
+        vector<semantic::Room *> mergeMapDetectedRooms =
+            p_mergeMap->getAllDetectedMapRooms();
+        vector<semantic::Room *> mergeMapMarkerRooms =
+            p_mergeMap->getAllMarkerBasedMapRooms();
+        vector<semantic::Floor *> mergeMapFloors = p_mergeMap->getAllFloors();
 
-        importedRooms = vpMergeMapDetectedRooms;
+        importedRooms = mergeMapDetectedRooms;
         importedRooms.insert(importedRooms.end(),
-                             vpMergeMapMarkerRooms.begin(),
-                             vpMergeMapMarkerRooms.end());
+                             mergeMapMarkerRooms.begin(),
+                             mergeMapMarkerRooms.end());
 
-        for (KeyFrame *pKFi : vpMergeMapKFs)
+        for (KeyFrame *p_keyFrame : mergeMapKeyFrames)
         {
-            if (!pKFi || pKFi->isBad() || pKFi->getMap() != pMergeMap)
+            if (!p_keyFrame || p_keyFrame->isBad() ||
+                p_keyFrame->getMap() != p_mergeMap)
             {
                 continue;
             }
 
             // Make sure connections are updated
-            pKFi->updateMap(pCurrentMap);
-            pCurrentMap->addKeyFrame(pKFi);
-            pMergeMap->eraseKeyFrame(pKFi);
+            p_keyFrame->updateMap(p_currentMap);
+            p_currentMap->addKeyFrame(p_keyFrame);
+            p_mergeMap->eraseKeyFrame(p_keyFrame);
         }
 
-        for (MapPoint *pMPi : vpMergeMapMPs)
+        for (MapPoint *p_mapPoint : mergeMapMapPoints)
         {
-            if (!pMPi || pMPi->isBad() || pMPi->getMap() != pMergeMap)
+            if (!p_mapPoint || p_mapPoint->isBad() ||
+                p_mapPoint->getMap() != p_mergeMap)
                 continue;
 
-            pMPi->updateMap(pCurrentMap);
-            pCurrentMap->addMapPoint(pMPi);
-            pMergeMap->eraseMapPoint(pMPi);
+            p_mapPoint->updateMap(p_currentMap);
+            p_currentMap->addMapPoint(p_mapPoint);
+            p_mergeMap->eraseMapPoint(p_mapPoint);
         }
 
         int nextPlaneId = 0;
-        for (geometric::Plane *p_existingPlane : pCurrentMap->getAllPlanes())
+        for (geometric::Plane *p_existingPlane : p_currentMap->getAllPlanes())
         {
             if (p_existingPlane != nullptr)
             {
@@ -241,21 +244,21 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             }
         }
 
-        for (geometric::Plane *p_plane : vpMergeMapPlanes)
+        for (geometric::Plane *p_plane : mergeMapPlanes)
         {
             if (p_plane == nullptr || p_plane->isBad())
             {
                 continue;
             }
 
-            p_plane->setMap(pCurrentMap);
+            p_plane->setMap(p_currentMap);
             p_plane->setId(nextPlaneId++);
-            pCurrentMap->addMapPlane(p_plane);
-            pMergeMap->eraseMapPlane(p_plane);
+            p_currentMap->addMapPlane(p_plane);
+            p_mergeMap->eraseMapPlane(p_plane);
         }
 
         int nextMarkerId = 0;
-        for (semantic::Marker *p_existingMarker : pCurrentMap->getAllMarkers())
+        for (semantic::Marker *p_existingMarker : p_currentMap->getAllMarkers())
         {
             if (p_existingMarker != nullptr)
             {
@@ -264,20 +267,20 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             }
         }
 
-        for (semantic::Marker *p_marker : vpMergeMapMarkers)
+        for (semantic::Marker *p_marker : mergeMapMarkers)
         {
             if (p_marker == nullptr)
             {
                 continue;
             }
 
-            p_marker->setMap(pCurrentMap);
+            p_marker->setMap(p_currentMap);
             p_marker->setId(nextMarkerId++);
-            pCurrentMap->addMapMarker(p_marker);
-            pMergeMap->eraseMapMarker(p_marker);
+            p_currentMap->addMapMarker(p_marker);
+            p_mergeMap->eraseMapMarker(p_marker);
         }
 
-        for (vs_graphs::core::semantic::Passage *p_passage : vpMergeMapPassages)
+        for (vs_graphs::core::semantic::Passage *p_passage : mergeMapPassages)
         {
             if (p_passage == nullptr)
             {
@@ -286,7 +289,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 
             semantic::Passage *p_retainedPassage = nullptr;
             for (semantic::Passage *p_existingPassage :
-                 pCurrentMap->getAllPassages())
+                 p_currentMap->getAllPassages())
             {
                 if (p_existingPassage != nullptr &&
                     p_existingPassage->getId() == p_passage->getId())
@@ -296,11 +299,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                 }
             }
 
-            pMergeMap->eraseMapPassage(p_passage);
+            p_mergeMap->eraseMapPassage(p_passage);
             if (p_retainedPassage != nullptr)
             {
                 p_retainedPassage->mergeFromDuplicate(p_passage);
-                for (semantic::Room *p_room : vpMergeMapDetectedRooms)
+                for (semantic::Room *p_room : mergeMapDetectedRooms)
                 {
                     if (p_room != nullptr)
                     {
@@ -308,7 +311,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                                                           p_retainedPassage);
                     }
                 }
-                for (semantic::Room *p_room : vpMergeMapMarkerRooms)
+                for (semantic::Room *p_room : mergeMapMarkerRooms)
                 {
                     if (p_room != nullptr)
                     {
@@ -320,44 +323,45 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                 continue;
             }
 
-            p_passage->setMap(pCurrentMap);
-            pCurrentMap->addMapPassage(p_passage);
+            p_passage->setMap(p_currentMap);
+            p_currentMap->addMapPassage(p_passage);
         }
 
-        for (semantic::Room *p_room : vpMergeMapDetectedRooms)
+        for (semantic::Room *p_room : mergeMapDetectedRooms)
         {
             if (p_room == nullptr || p_room->isBad())
             {
                 continue;
             }
 
-            p_room->setMap(pCurrentMap);
-            pCurrentMap->addDetectedMapRoom(p_room);
-            pMergeMap->eraseDetectedMapRoom(p_room);
+            p_room->setMap(p_currentMap);
+            p_currentMap->addDetectedMapRoom(p_room);
+            p_mergeMap->eraseDetectedMapRoom(p_room);
         }
 
-        for (semantic::Room *p_room : vpMergeMapMarkerRooms)
+        for (semantic::Room *p_room : mergeMapMarkerRooms)
         {
             if (p_room == nullptr || p_room->isBad())
             {
                 continue;
             }
 
-            p_room->setMap(pCurrentMap);
-            pCurrentMap->addCandidateMapRoom(p_room);
-            pMergeMap->eraseMarkerBasedMapRoom(p_room);
+            p_room->setMap(p_currentMap);
+            p_currentMap->addCandidateMapRoom(p_room);
+            p_mergeMap->eraseMarkerBasedMapRoom(p_room);
         }
 
-        for (semantic::Floor *p_floor : vpMergeMapFloors)
+        for (semantic::Floor *p_floor : mergeMapFloors)
         {
             if (p_floor == nullptr)
             {
                 continue;
             }
 
-            pMergeMap->eraseMapFloor(p_floor);
+            p_mergeMap->eraseMapFloor(p_floor);
             semantic::Floor *p_retainedFloor = nullptr;
-            for (semantic::Floor *p_existingFloor : pCurrentMap->getAllFloors())
+            for (semantic::Floor *p_existingFloor :
+                 p_currentMap->getAllFloors())
             {
                 if (p_existingFloor != nullptr &&
                     p_existingFloor->getId() == p_floor->getId())
@@ -371,17 +375,17 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                 mergeFloorEvidenceAndRooms(p_retainedFloor, p_floor);
                 continue;
             }
-            p_floor->setMap(pCurrentMap);
-            pCurrentMap->addMapFloor(p_floor);
+            p_floor->setMap(p_currentMap);
+            p_currentMap->addMapFloor(p_floor);
         }
 
-        collapseMergedFloors(pCurrentMap);
+        collapseMergedFloors(p_currentMap);
 
         /* Rebuild derived free-space topology in the corrected map frame. */
-        pCurrentMap->setSkeletonClusterPoints({});
-        pCurrentMap->setSkeletonEdges({});
+        p_currentMap->setSkeletonClusterPoints({});
+        p_currentMap->setSkeletonEdges({});
 
-        for (semantic::Room *p_room : pCurrentMap->getAllRooms())
+        for (semantic::Room *p_room : p_currentMap->getAllRooms())
         {
             if (p_room == nullptr || p_room->isBad())
             {
@@ -392,47 +396,47 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             {
                 if (p_wall != nullptr && !p_wall->isBad())
                 {
-                    pCurrentMap->addRoomWallPlane(p_wall);
+                    p_currentMap->addRoomWallPlane(p_wall);
                 }
             }
         }
 
         // Save non corrected poses (already merged maps)
-        vector<KeyFrame *> vpKFs = pCurrentMap->getAllKeyFrames();
-        for (KeyFrame *pKFi : vpKFs)
+        vector<KeyFrame *> keyFrames = p_currentMap->getAllKeyFrames();
+        for (KeyFrame *p_keyFrame : keyFrames)
         {
-            Sophus::SE3d Tiw = (pKFi->getPose()).cast<double>();
+            Sophus::SE3d Tiw = (p_keyFrame->getPose()).cast<double>();
             g2o::Sim3    g2oSiw(Tiw.unit_quaternion(), Tiw.translation(), 1.0);
-            NonCorrectedSim3[pKFi] = g2oSiw;
+            NonCorrectedSim3[p_keyFrame] = g2oSiw;
         }
     }
 
-    if (pMergeMap->getOriginKeyFrame() != nullptr)
+    if (p_mergeMap->getOriginKeyFrame() != nullptr)
     {
-        pMergeMap->getOriginKeyFrame()->setFirstConnection(false);
+        p_mergeMap->getOriginKeyFrame()->setFirstConnection(false);
     }
-    pNewChild =
+    p_newChild =
         p_mergeMatchedKF
             ->getParent(); // Old parent, it will be the new child of this KF
-    pNewParent = p_mergeMatchedKF; // Old child, now it will be the parent of
-                                   // its own parent(we need eliminate this KF
-                                   // from children list in its old parent)
+    p_newParent = p_mergeMatchedKF; // Old child, now it will be the parent of
+                                    // its own parent(we need eliminate this KF
+                                    // from children list in its old parent)
     p_mergeMatchedKF->changeParent(p_currentKF);
-    while (pNewChild)
+    while (p_newChild)
     {
-        pNewChild->eraseChild(
-            pNewParent); // We remove the relation between the old parent and
-                         // the new for avoid loop
-        KeyFrame *pOldParent = pNewChild->getParent();
-        pNewChild->changeParent(pNewParent);
-        pNewParent = pNewChild;
-        pNewChild  = pOldParent;
+        p_newChild->eraseChild(
+            p_newParent); // We remove the relation between the old parent and
+                          // the new for avoid loop
+        KeyFrame *p_oldParent = p_newChild->getParent();
+        p_newChild->changeParent(p_newParent);
+        p_newParent = p_newChild;
+        p_newChild  = p_oldParent;
     }
 
     vector<MapPoint *>
-        vpCheckFuseMapPoint; // MapPoint vector from current map to allow to
-                             // fuse duplicated points with the old map (merge)
-    vector<KeyFrame *> vpCurrentConnectedKFs;
+        checkFuseMapPoints; // MapPoint vector from current map to allow to
+                            // fuse duplicated points with the old map (merge)
+    vector<KeyFrame *> currentConnectedKeyFrames;
 
     mergeConnectedKFs.clear();
     mergeConnectedKFs.push_back(p_mergeMatchedKF);
@@ -443,78 +447,78 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                                 mergeConnectedKFs.end());
 
     p_currentKF->updateConnections();
-    vpCurrentConnectedKFs.push_back(p_currentKF);
+    currentConnectedKeyFrames.push_back(p_currentKF);
     aux = p_currentKF->getVectorCovisibleKeyFrames();
-    vpCurrentConnectedKFs.insert(vpCurrentConnectedKFs.end(),
-                                 aux.begin(),
-                                 aux.end());
-    if (vpCurrentConnectedKFs.size() > 6)
-        vpCurrentConnectedKFs.erase(vpCurrentConnectedKFs.begin() + 6,
-                                    vpCurrentConnectedKFs.end());
+    currentConnectedKeyFrames.insert(currentConnectedKeyFrames.end(),
+                                     aux.begin(),
+                                     aux.end());
+    if (currentConnectedKeyFrames.size() > 6)
+        currentConnectedKeyFrames.erase(currentConnectedKeyFrames.begin() + 6,
+                                        currentConnectedKeyFrames.end());
 
-    set<MapPoint *> spMapPointMerge;
-    for (KeyFrame *pKFi : mergeConnectedKFs)
+    set<MapPoint *> mapPointMerges;
+    for (KeyFrame *p_keyFrame : mergeConnectedKFs)
     {
-        set<MapPoint *> vpMPs = pKFi->getMapPoints();
-        spMapPointMerge.insert(vpMPs.begin(), vpMPs.end());
-        if (spMapPointMerge.size() > 1000)
+        set<MapPoint *> mapPoints = p_keyFrame->getMapPoints();
+        mapPointMerges.insert(mapPoints.begin(), mapPoints.end());
+        if (mapPointMerges.size() > 1000)
             break;
     }
 
-    vpCheckFuseMapPoint.reserve(spMapPointMerge.size());
-    std::copy(spMapPointMerge.begin(),
-              spMapPointMerge.end(),
-              std::back_inserter(vpCheckFuseMapPoint));
-    searchAndFuse(vpCurrentConnectedKFs, vpCheckFuseMapPoint);
+    checkFuseMapPoints.reserve(mapPointMerges.size());
+    std::copy(mapPointMerges.begin(),
+              mapPointMerges.end(),
+              std::back_inserter(checkFuseMapPoints));
+    searchAndFuse(currentConnectedKeyFrames, checkFuseMapPoints);
 
-    for (KeyFrame *pKFi : vpCurrentConnectedKFs)
+    for (KeyFrame *p_keyFrame : currentConnectedKeyFrames)
     {
-        if (!pKFi || pKFi->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
             continue;
 
-        pKFi->updateConnections();
+        p_keyFrame->updateConnections();
     }
 
-    const auto finalizeInertialMerge = [this, pCurrentMap, pMergeMap]()
+    const auto finalizeInertialMerge = [this, p_currentMap, p_mergeMap]()
     {
         p_mergeMatchedKF->addMergeEdge(p_currentKF);
         p_currentKF->addMergeEdge(p_mergeMatchedKF);
-        pCurrentMap->increaseChangeIndex();
+        p_currentMap->increaseChangeIndex();
 
         /*!
          * Inertial welding changes the same derived-map coordinate contract
          * as a visual merge. Increment the externally observed revision after
          * all corrected poses and semantic entities have become authoritative.
          */
-        pCurrentMap->informNewBigChange();
+        p_currentMap->informNewBigChange();
 
-        p_atlas->changeMap(pCurrentMap);
-        p_atlas->setMapBad(pMergeMap);
+        p_atlas->changeMap(p_currentMap);
+        p_atlas->setMapBad(p_mergeMap);
         p_atlas->removeBadMaps();
     };
-    for (KeyFrame *pKFi : mergeConnectedKFs)
+    for (KeyFrame *p_keyFrame : mergeConnectedKFs)
     {
-        if (!pKFi || pKFi->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
             continue;
 
-        pKFi->updateConnections();
+        p_keyFrame->updateConnections();
     }
 
     /* A sufficiently established current map can support inertial welding BA.
      */
     bool inertialBundleAdjustmentRan = false;
 
-    if (numKFnew >= 10)
+    if (keyFrameNewCount >= 10)
     {
-        bool      bStopFlag         = false;
+        bool      isStopRequested   = false;
         KeyFrame *p_currentKeyFrame = p_tracker->getLastKeyFrame();
 
         if (p_currentKeyFrame != nullptr)
         {
             Optimizer::mergeInertialBA(p_currentKeyFrame,
                                        p_mergeMatchedKF,
-                                       &bStopFlag,
-                                       pCurrentMap,
+                                       &isStopRequested,
+                                       p_currentMap,
                                        CorrectedSim3);
             inertialBundleAdjustmentRan = true;
         }
@@ -529,7 +533,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             (void)poseBefore_WorldToCamera;
 
             if (p_keyFrame == nullptr || p_keyFrame->isBad() ||
-                p_keyFrame->getMap() != pCurrentMap)
+                p_keyFrame->getMap() != p_currentMap)
             {
                 continue;
             }
@@ -550,7 +554,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             1.0);
 
         utils::utils::Utils::propagateSemanticPoseCorrections(
-            pCurrentMap,
+            p_currentMap,
             NonCorrectedSim3,
             CorrectedSim3,
             identityTransform_WorldToWorld);
@@ -565,7 +569,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 
     /* Matching stable room identities must collapse even when optional
      * geometry reassociation is disabled. */
-    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(pCurrentMap,
+    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap,
                                                       importedRooms);
 
     if (types::SystemParams::getParams()->semSeg.reassociate.enabled)
@@ -576,8 +580,8 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 
     finalizeInertialMerge();
 
-    std::cout << "[SemanticMergeGate] surviving_map=" << pCurrentMap->getId()
-              << " absorbed_map=" << pMergeMap->getId()
+    std::cout << "[SemanticMergeGate] surviving_map=" << p_currentMap->getId()
+              << " absorbed_map=" << p_mergeMap->getId()
               << " decision=ACCEPT reason=ALIGNED"
               << " floor=" << floorVerificationResult << " committed=1"
               << std::endl;
@@ -588,11 +592,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 
     p_localMapper->release();
 
-    if (bRelaunchBA &&
-        (!pCurrentMap->isImuInitialized() ||
-         (pCurrentMap->getKeyFrameCount() < 200 && p_atlas->countMaps() == 1)))
+    if (shouldRelaunchBa &&
+        (!p_currentMap->isImuInitialized() ||
+         (p_currentMap->getKeyFrameCount() < 200 && p_atlas->countMaps() == 1)))
     {
-        relaunchGlobalBundleAdjustment(pCurrentMap);
+        relaunchGlobalBundleAdjustment(p_currentMap);
     }
 
     return semantic::SemanticMergeDecision::ACCEPT;

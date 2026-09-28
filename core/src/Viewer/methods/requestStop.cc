@@ -36,9 +36,9 @@ namespace core
 
 void Viewer::requestStop()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    if (!stopped)
-        stopRequestedFlag = true;
+    unique_lock<mutex> lock(stopMutex);
+    if (!hasStopped)
+        isStopRequested = true;
 }
 
 } // namespace core

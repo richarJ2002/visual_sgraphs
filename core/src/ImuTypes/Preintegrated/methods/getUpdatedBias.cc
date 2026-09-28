@@ -28,7 +28,7 @@ namespace IMU
 
 Bias Preintegrated::getUpdatedBias()
 {
-    std::unique_lock<std::mutex> lock(mMutex);
+    std::unique_lock<std::mutex> lock(preintegrationMutex);
     return bu;
 }
 

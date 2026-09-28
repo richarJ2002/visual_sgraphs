@@ -28,8 +28,8 @@ namespace IMU
 
 Eigen::Matrix3f Preintegrated::getUpdatedDeltaRotation()
 {
-    std::unique_lock<std::mutex> lock(mMutex);
-    return NormalizeRotation(dR * Sophus::SO3f::exp(JRg * db.head(3)).matrix());
+    std::unique_lock<std::mutex> lock(preintegrationMutex);
+    return normalizeRotation(dR * Sophus::SO3f::exp(JRg * db.head(3)).matrix());
 }
 
 } // namespace IMU

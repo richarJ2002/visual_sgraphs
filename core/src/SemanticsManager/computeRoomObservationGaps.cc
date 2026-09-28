@@ -47,7 +47,7 @@ namespace core
  */
 std::vector<semantic::Room::ObservationGap> computeRoomObservationGaps(
     const std::vector<FiniteWallSegment2d> &wallSegments_in,
-    const Eigen::Vector2d                  &roomCentroid_Ground_m_in,
+    const Eigen::Vector2d                  &roomCentroidGround_m_in,
     /* An axis-aligned (or any) rectangle's four wall midpoints sit exactly
      * on its principal axes as seen from the centroid -- always exactly 90
      * deg apart by construction, regardless of aspect ratio. The threshold
@@ -67,16 +67,16 @@ std::vector<semantic::Room::ObservationGap> computeRoomObservationGaps(
     midpointAngles_rad.reserve(wallSegments_in.size());
     for (const FiniteWallSegment2d &segment : wallSegments_in)
     {
-        const Eigen::Vector2d midpoint_Ground_m =
+        const Eigen::Vector2d midpointGround_m =
             0.5 * (segment.start_World_m + segment.end_World_m) -
-            roomCentroid_Ground_m_in;
-        if (!midpoint_Ground_m.allFinite() ||
-            midpoint_Ground_m.squaredNorm() < 1e-12)
+            roomCentroidGround_m_in;
+        if (!midpointGround_m.allFinite() ||
+            midpointGround_m.squaredNorm() < 1e-12)
         {
             continue;
         }
         midpointAngles_rad.push_back(
-            std::atan2(midpoint_Ground_m.y(), midpoint_Ground_m.x()));
+            std::atan2(midpointGround_m.y(), midpointGround_m.x()));
     }
 
     if (midpointAngles_rad.empty())
@@ -87,13 +87,15 @@ std::vector<semantic::Room::ObservationGap> computeRoomObservationGaps(
 
     std::sort(midpointAngles_rad.begin(), midpointAngles_rad.end());
 
-    for (std::size_t index = 0U; index < midpointAngles_rad.size(); ++index)
+    for (std::size_t angleIndex = 0U; angleIndex < midpointAngles_rad.size();
+         ++angleIndex)
     {
-        const double thisAngle_rad = midpointAngles_rad[index];
-        const double nextAngle_rad = (index + 1U < midpointAngles_rad.size())
-                                         ? midpointAngles_rad[index + 1U]
-                                         : midpointAngles_rad[0] + 2.0 * M_PI;
-        const double span_rad      = nextAngle_rad - thisAngle_rad;
+        const double thisAngle_rad = midpointAngles_rad[angleIndex];
+        const double nextAngle_rad =
+            (angleIndex + 1U < midpointAngles_rad.size())
+                ? midpointAngles_rad[angleIndex + 1U]
+                : midpointAngles_rad[0] + 2.0 * M_PI;
+        const double span_rad = nextAngle_rad - thisAngle_rad;
 
         if (span_rad > gapThreshold_rad_in)
         {

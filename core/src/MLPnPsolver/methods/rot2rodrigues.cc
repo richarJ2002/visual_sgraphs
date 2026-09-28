@@ -54,18 +54,18 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3d MLPnPsolver::rot2rodrigues(const Eigen::Matrix3d &R)
+Eigen::Vector3d MLPnPsolver::rot2rodrigues(const Eigen::Matrix3d &R_in)
 {
-    rodrigues_t omega;
+    RodriguesVector omega;
     omega << 0.0, 0.0, 0.0;
 
-    double trace = R.trace() - 1.0;
+    double trace = R_in.trace() - 1.0;
     double wnorm = acos(trace / 2.0);
     if (wnorm > std::numeric_limits<double>::epsilon())
     {
-        omega[0]  = (R(2, 1) - R(1, 2));
-        omega[1]  = (R(0, 2) - R(2, 0));
-        omega[2]  = (R(1, 0) - R(0, 1));
+        omega[0]  = (R_in(2, 1) - R_in(1, 2));
+        omega[1]  = (R_in(0, 2) - R_in(2, 0));
+        omega[2]  = (R_in(1, 0) - R_in(0, 1));
         double sc = wnorm / (2.0 * sin(wnorm));
         omega *= sc;
     }

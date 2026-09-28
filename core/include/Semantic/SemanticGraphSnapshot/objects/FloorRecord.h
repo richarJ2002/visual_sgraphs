@@ -67,7 +67,7 @@ struct FloorRecord
      *  returned optional was empty (equivalently, Floor::hasPlaneIdentity()
      *  was false at that same instant -- the two are never queried
      *  separately, since each independently locks and releases
-     *  Floor::mMutexGeometry and would not be atomic together). */
+     *  Floor::geometryMutex and would not be atomic together). */
     std::optional<Floor::PlaneIdentity> planeIdentity;
 
     /*! @brief One EntityRef per non-null Floor::getRooms() entry, sorted

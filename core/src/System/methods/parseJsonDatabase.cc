@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-void System::parseJsonDatabase(string jsonFilePath)
+void System::parseJsonDatabase(string jsonFilePath_in)
 {
     // Skip the parsing
-    if (jsonFilePath.empty())
+    if (jsonFilePath_in.empty())
     {
         std::cout << "[System] No JSON file describing the environment is "
                      "provided. Skipping ..."
@@ -43,7 +43,7 @@ void System::parseJsonDatabase(string jsonFilePath)
     // Creating an object of the database loader
     vs_graphs::core::DBParser parser;
     // Load JSON file
-    json                      envData = parser.parseJsonFile(jsonFilePath);
+    Json                      envData = parser.parseJsonFile(jsonFilePath_in);
     // Getting semantic entities
     envRooms = parser.getEnvironmentRooms(envData);
     // Printing the success message

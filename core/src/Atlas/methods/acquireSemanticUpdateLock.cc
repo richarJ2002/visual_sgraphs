@@ -32,7 +32,7 @@ namespace core
 
 std::unique_lock<std::mutex> Atlas::acquireSemanticUpdateLock()
 {
-    return std::unique_lock<std::mutex>(mMutexSemanticUpdate);
+    return std::unique_lock<std::mutex>(semanticUpdateMutex);
 }
 
 } // namespace core

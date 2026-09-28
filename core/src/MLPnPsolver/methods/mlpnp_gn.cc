@@ -54,53 +54,58 @@ namespace vs_graphs
 namespace core
 {
 
-void MLPnPsolver::mlpnp_gn(Eigen::VectorXd                    &x,
-                           const points_t                     &pts,
-                           const std::vector<Eigen::MatrixXd> &nullspaces,
-                           const Eigen::SparseMatrix<double>   Kll,
-                           bool                                use_cov)
+void MLPnPsolver::mlpnp_gn(Eigen::VectorXd                    &x_inout,
+                           const Points3                      &points_in,
+                           const std::vector<Eigen::MatrixXd> &nullspaces_in,
+                           const Eigen::SparseMatrix<double>   Kll_in,
+                           bool shouldUseCovariance_in)
 {
-    const int numObservations = pts.size();
-    const int numUnknowns     = 6;
+    const int observationCount = points_in.size();
+    const int unknownCount     = 6;
     // check redundancy
-    assert((2 * numObservations - numUnknowns) > 0);
+    assert((2 * observationCount - unknownCount) > 0);
 
     // =============
     // set all matrices up
     // =============
 
-    Eigen::VectorXd r(2 * numObservations);
-    Eigen::VectorXd rd(2 * numObservations);
-    Eigen::MatrixXd Jac(2 * numObservations, numUnknowns);
-    Eigen::VectorXd g(numUnknowns, 1);
-    Eigen::VectorXd dx(numUnknowns, 1); // result vector
+    Eigen::VectorXd r(2 * observationCount);
+    Eigen::VectorXd rd(2 * observationCount);
+    Eigen::MatrixXd Jac(2 * observationCount, unknownCount);
+    Eigen::VectorXd g(unknownCount, 1);
+    Eigen::VectorXd dx(unknownCount, 1); // result vector
 
     Jac.setZero();
     r.setZero();
     dx.setZero();
     g.setZero();
 
-    int       it_cnt = 0;
-    bool      stop   = false;
-    const int maxIt  = 5;
-    double    epsP   = 1e-5;
+    int       it_cnt    = 0;
+    bool      stop      = false;
+    const int maximumIt = 5;
+    double    epsP      = 1e-5;
 
-    Eigen::MatrixXd JacTSKll;
+    Eigen::MatrixXd jacTsKll;
     Eigen::MatrixXd A;
     // solve simple gradient descent
-    while (it_cnt < maxIt && !stop)
+    while (it_cnt < maximumIt && !stop)
     {
-        mlpnp_residuals_and_jacs(x, pts, nullspaces, r, Jac, true);
+        mlpnp_residuals_and_jacs(x_inout,
+                                 points_in,
+                                 nullspaces_in,
+                                 r,
+                                 Jac,
+                                 true);
 
-        if (use_cov)
-            JacTSKll = Jac.transpose() * Kll;
+        if (shouldUseCovariance_in)
+            jacTsKll = Jac.transpose() * Kll_in;
         else
-            JacTSKll = Jac.transpose();
+            jacTsKll = Jac.transpose();
 
-        A = JacTSKll * Jac;
+        A = jacTsKll * Jac;
 
         // get system matrix
-        g = JacTSKll * r;
+        g = jacTsKll * r;
 
         // solve
         Eigen::LDLT<Eigen::MatrixXd> chol(A);
@@ -114,12 +119,12 @@ void MLPnPsolver::mlpnp_gn(Eigen::VectorXd                    &x,
         Eigen::MatrixXd dl = Jac * dx;
         if (dl.array().abs().maxCoeff() < epsP)
         {
-            stop = true;
-            x    = x - dx;
+            stop    = true;
+            x_inout = x_inout - dx;
             break;
         }
         else
-            x = x - dx;
+            x_inout = x_inout - dx;
 
         ++it_cnt;
     } // while

@@ -57,29 +57,29 @@ struct ResolvedRoomEndpoint
     /*! @brief True when the source EntityRef itself named a key
      *  (EntityRef::reason == UnavailableReason::NONE). False for the
      *  ordinary "no such endpoint" case (no reference attempted) and for a
-     *  non-null but unmapped target (see referenceUnresolvable). */
-    bool referencePresent{false};
+     *  non-null but unmapped target (see isReferenceUnresolvable). */
+    bool isReferencePresent{false};
 
     /*! @brief True when a reference was attempted (the underlying pointer
      *  was non-null) but no key could be formed (EntityRef::reason ==
      *  UnavailableReason::ENTITY_HAS_NO_MAP). Always false when
-     *  referencePresent is true. */
-    bool referenceUnresolvable{false};
+     *  isReferencePresent is true. */
+    bool isReferenceUnresolvable{false};
 
     /*! @brief The referenced room's key; present only when
-     *  referencePresent. */
+     *  isReferencePresent. */
     std::optional<EntityKey> key;
 
-    /*! @brief True when referencePresent and key->mapId differs from the
+    /*! @brief True when isReferencePresent and key->mapId differs from the
      *  expected map id passed to resolveRoomEndpoint(). Meaningful only
-     *  when referencePresent. */
+     *  when isReferencePresent. */
     bool isCrossMap{false};
 
-    /*! @brief True when referencePresent and a RoomRecord with this exact
+    /*! @brief True when isReferencePresent and a RoomRecord with this exact
      *  key was found somewhere in the evaluated SemanticGraphSnapshot
      *  (any live map, not only the expected one). isConfirmedRoomVariant/
      *  floorKey are meaningful only when this is true; isLive is
-     *  meaningful whenever referencePresent or referenceUnresolvable (see
+     *  meaningful whenever isReferencePresent or isReferenceUnresolvable (see
      *  isLive below) regardless of this flag. */
     bool isFoundInSnapshot{false};
 
@@ -88,7 +88,7 @@ struct ResolvedRoomEndpoint
      *  was non-null at capture time, independent of whether a key could be
      *  formed or whether this snapshot can enumerate the target in any
      *  captured map -- see EntityRef.h). Meaningful whenever
-     *  referencePresent or referenceUnresolvable and isLiveAvailable.
+     *  isReferencePresent or isReferenceUnresolvable and isLiveAvailable.
      *  No longer filled or overridden from the
      *  found RoomRecord's own isLive when isFoundInSnapshot -- a genuinely
      *  unavailable reference-level liveness must never be manufactured from
@@ -106,14 +106,14 @@ struct ResolvedRoomEndpoint
      *  floorRef resolves to a key. */
     std::optional<EntityKey> floorKey{};
 
-    /*! @brief True when referencePresent and more than one distinct
+    /*! @brief True when isReferencePresent and more than one distinct
      *  RoomRecord in the referenced key's own map shares that exact key:
      *  which room actually forms this endpoint is ambiguous, so it can
      *  never supply positive proof. Meaningful only when
-     *  referencePresent. */
+     *  isReferencePresent. */
     bool isDuplicateIdentity{false};
 
-    /*! @brief True when referencePresent and \c isLive is genuinely
+    /*! @brief True when isReferencePresent and \c isLive is genuinely
      *  unproven (the source EntityRef::isLive carried no value at all --
      *  EntityRef::livenessUnavailableReason != UnavailableReason::NONE).
      *  \c isLive keeps its own default (false) in this case, so every
@@ -122,9 +122,9 @@ struct ResolvedRoomEndpoint
      *  not a bad endpoint merely because \c isLive defaults to false. */
     bool isLiveAvailable{false};
 
-    /*! @brief True when referencePresent and the referenced key's own
+    /*! @brief True when isReferencePresent and the referenced key's own
      *  EntityKind is not EntityKind::ROOM: a wrong-kind key masquerading as
-     *  a room reference. Meaningful only when referencePresent. */
+     *  a room reference. Meaningful only when isReferencePresent. */
     bool isWrongKind{false};
 
     /*! @brief True when isFoundInSnapshot and the located RoomRecord's own
@@ -134,21 +134,21 @@ struct ResolvedRoomEndpoint
      *  isFoundInSnapshot. */
     bool isTargetDeclaredMapMismatch{false};
 
-    /*! @brief True when referencePresent (the source EntityRef::key had a
+    /*! @brief True when isReferencePresent (the source EntityRef::key had a
      *  value) but the source EntityRef::reason was not
      *  UnavailableReason::NONE -- a violation of EntityRef's own
      *  documented invariant (key.has_value() <=> reason == NONE). Snapshot
      *  records are adversarial value inputs and this invariant is not
      *  assumed to hold; a reference violating it is treated as a known
      *  contradiction, not an ordinary valid keyed reference. Meaningful
-     *  only when referencePresent. */
+     *  only when isReferencePresent. */
     bool isReasonInconsistent{false};
 
-    /*! @brief True when referencePresent and more than one MapSnapshot in
+    /*! @brief True when isReferencePresent and more than one MapSnapshot in
      *  the evaluated snapshot shares the referenced key's own mapId: which
      *  MapSnapshot is actually authoritative for that map id is itself
      *  ambiguous, so no first-match lookup may supply positive proof.
-     *  Meaningful only when referencePresent. */
+     *  Meaningful only when isReferencePresent. */
     bool isContainingMapAmbiguous{false};
 };
 

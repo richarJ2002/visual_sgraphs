@@ -34,7 +34,7 @@ namespace geometric
 
 Plane *Plane::getTwinFace(void) const
 {
-    unique_lock<mutex> lock(mMutexPos);
+    unique_lock<mutex> lock(positionMutex);
     return p_twinFace;
 }
 

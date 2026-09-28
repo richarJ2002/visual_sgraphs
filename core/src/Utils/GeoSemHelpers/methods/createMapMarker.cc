@@ -25,26 +25,27 @@ namespace core
 
 semantic::Marker *
     GeoSemHelpers::createMapMarker(Atlas                     *p_atlas_inout,
-                                   vs_graphs::core::KeyFrame *pKF,
-                                   const semantic::Marker    *visitedMarker)
+                                   vs_graphs::core::KeyFrame *p_keyFrame_inout,
+                                   const semantic::Marker *p_visitedMarker_in)
 {
-    vs_graphs::core::semantic::Marker *newMapMarker =
+    vs_graphs::core::semantic::Marker *p_newMapMarker =
         new vs_graphs::core::semantic::Marker();
 
-    newMapMarker->setId(visitedMarker->getId());
-    newMapMarker->setMap(p_atlas_inout->getCurrentMap());
-    newMapMarker->setOpId(visitedMarker->getOpId());
-    newMapMarker->setTime(visitedMarker->getTime());
-    newMapMarker->setLocalPose(visitedMarker->getLocalPose());
-    newMapMarker->setGlobalPose(visitedMarker->getGlobalPose());
-    newMapMarker->setMarkerType(visitedMarker->getMarkerType());
-    newMapMarker->setMarkerInGMap(visitedMarker->isMarkerInGMap());
-    newMapMarker->addObservation(pKF, visitedMarker->getLocalPose());
+    p_newMapMarker->setId(p_visitedMarker_in->getId());
+    p_newMapMarker->setMap(p_atlas_inout->getCurrentMap());
+    p_newMapMarker->setOpId(p_visitedMarker_in->getOpId());
+    p_newMapMarker->setTime(p_visitedMarker_in->getTime());
+    p_newMapMarker->setLocalPose(p_visitedMarker_in->getLocalPose());
+    p_newMapMarker->setGlobalPose(p_visitedMarker_in->getGlobalPose());
+    p_newMapMarker->setMarkerType(p_visitedMarker_in->getMarkerType());
+    p_newMapMarker->setMarkerInGMap(p_visitedMarker_in->isMarkerInGMap());
+    p_newMapMarker->addObservation(p_keyFrame_inout,
+                                   p_visitedMarker_in->getLocalPose());
 
-    pKF->addMapMarker(newMapMarker);
-    p_atlas_inout->addMapMarker(newMapMarker);
+    p_keyFrame_inout->addMapMarker(p_newMapMarker);
+    p_atlas_inout->addMapMarker(p_newMapMarker);
 
-    return newMapMarker;
+    return p_newMapMarker;
 }
 
 } // namespace core

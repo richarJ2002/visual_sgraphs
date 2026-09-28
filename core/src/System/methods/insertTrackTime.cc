@@ -31,9 +31,9 @@ namespace core
 {
 
 #ifdef REGISTER_TIMES
-void System::insertTrackTime(double &time)
+void System::insertTrackTime(double &time_inout)
 {
-    p_tracker->vdTrackTotal_ms.push_back(time);
+    p_tracker->trackTotalTimes_ms.push_back(time_inout);
 }
 #endif
 

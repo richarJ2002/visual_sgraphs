@@ -67,20 +67,20 @@ namespace vs_graphs
 namespace core
 {
 
-bool compareNodes(pair<int, ExtractorNode *> &e1,
-                  pair<int, ExtractorNode *> &e2)
+bool compareNodes(pair<int, ExtractorNode *> &e1_in,
+                  pair<int, ExtractorNode *> &e2_in)
 {
-    if (e1.first < e2.first)
+    if (e1_in.first < e2_in.first)
     {
         return true;
     }
-    else if (e1.first > e2.first)
+    else if (e1_in.first > e2_in.first)
     {
         return false;
     }
     else
     {
-        if (e1.second->topLeft.x < e2.second->topLeft.x)
+        if (e1_in.second->topLeft.x < e2_in.second->topLeft.x)
         {
             return true;
         }

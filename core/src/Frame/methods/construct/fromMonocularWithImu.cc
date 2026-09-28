@@ -45,47 +45,47 @@ namespace core
 
 /* NOTE: out-of-line to break the Frame<->KeyFrame/MapPoint include cycle. */
 
-Frame::Frame(const cv::Mat                                   &imColor,
-             const cv::Mat                                   &imGray,
-             const double                                    &timeStamp,
-             ORBextractor                                    *extractor,
-             ORBVocabulary                                   *voc,
-             camera_models::geometriccamera::GeometricCamera *pCamera,
-             cv::Mat                                         &distCoef,
-             const float                                     &bf,
-             const float                                     &thDepth,
-             Frame                                           *pPrevF,
-             const IMU::Calib                                &ImuCalib,
-             const std::vector<semantic::Marker *>            markers) :
+Frame::Frame(const cv::Mat                                   &imageColor_in,
+             const cv::Mat                                   &imageGray_in,
+             const double                                    &timeStamp_in,
+             ORBextractor                                    *p_extractor_in,
+             ORBVocabulary                                   *p_vocabulary_in,
+             camera_models::geometriccamera::GeometricCamera *p_camera_inout,
+             cv::Mat                              &distanceCoefficients_in,
+             const float                          &bf_in,
+             const float                          &thresholdDepth_in,
+             Frame                                *p_previousF_in,
+             const IMU::Calib                     &imuCalibration_in,
+             const std::vector<semantic::Marker *> markers_in) :
     p_poseImuConstraint(nullptr),
-    poseAvailable(false),
-    velocityAvailable(false),
-    p_orbVocabulary(voc),
-    p_orbExtractorLeft(extractor),
+    isPoseAvailable(false),
+    isVelocityAvailable(false),
+    p_orbVocabulary(p_vocabulary_in),
+    p_orbExtractorLeft(p_extractor_in),
     p_orbExtractorRight(static_cast<ORBextractor *>(nullptr)),
-    timeStamp(timeStamp),
+    timeStamp(timeStamp_in),
     calibrationMatrix(
-        static_cast<camera_models::pinhole::Pinhole *>(pCamera)->toK()),
+        static_cast<camera_models::pinhole::Pinhole *>(p_camera_inout)->toK()),
     calibrationMatrixEigen(
-        static_cast<camera_models::pinhole::Pinhole *>(pCamera)->toK_()),
-    distortionCoefficients(distCoef.clone()),
-    mbf(bf),
-    depthThreshold(thDepth),
-    imuCalibration(ImuCalib),
+        static_cast<camera_models::pinhole::Pinhole *>(p_camera_inout)->toK_()),
+    distortionCoefficients(distanceCoefficients_in.clone()),
+    mbf(bf_in),
+    depthThreshold(thresholdDepth_in),
+    imuCalibration(imuCalibration_in),
     p_imuPreintegrated(nullptr),
-    p_previousFrame(pPrevF),
+    p_previousFrame(p_previousF_in),
     p_imuPreintegratedFrame(nullptr),
     p_referenceKeyFrame(static_cast<KeyFrame *>(nullptr)),
     isFrameSet(false),
-    imuPreintegrated(false),
-    p_camera(pCamera),
+    hasImuPreintegration(false),
+    p_camera(p_camera_inout),
     p_camera2(nullptr)
 {
     // Setting the color image for Semantic Segmentation
-    colorImg = imColor.clone();
+    colorImg = imageColor_in.clone();
 
     // Frame ID
-    mnId = nNextId++;
+    id = nextId++;
 
     // Scale Level Info
     scaleLevelCount      = p_orbExtractorLeft->getLevelCount();
@@ -98,21 +98,21 @@ Frame::Frame(const cv::Mat                                   &imColor,
 
     // ORB extraction
 #ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartExtORB =
+    std::chrono::steady_clock::time_point timeStartExtOrb =
         std::chrono::steady_clock::now();
 #endif
-    extractOrbFeatures(0, imGray, 0, 1000);
+    extractOrbFeatures(0, imageGray_in, 0, 1000);
 #ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndExtORB =
+    std::chrono::steady_clock::time_point timeEndExtOrb =
         std::chrono::steady_clock::now();
 
     orbExtractionTime =
         std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            time_EndExtORB - time_StartExtORB)
+            timeEndExtOrb - timeStartExtOrb)
             .count();
 #endif
 
-    N = keyPoints.size();
+    keyPointCount = keyPoints.size();
 
     if (keyPoints.empty())
         return;
@@ -121,25 +121,26 @@ Frame::Frame(const cv::Mat                                   &imColor,
 
     // Set no stereo information
     closeMapPointCount = 0;
-    depths             = vector<float>(N, -1);
-    uRight             = vector<float>(N, -1);
+    depths             = vector<float>(keyPointCount, -1);
+    uRight             = vector<float>(keyPointCount, -1);
 
     // Initialize MapPoints
-    mapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(nullptr));
+    mapPoints =
+        vector<MapPoint *>(keyPointCount, static_cast<MapPoint *>(nullptr));
 
     // Initialize MapMarkers
-    mapMarkers = markers;
+    mapMarkers = markers_in;
 
     projectedPoints.clear();
     matchedPoints.clear();
 
-    outlierFlags = vector<bool>(N, false);
+    outlierFlags = vector<bool>(keyPointCount, false);
 
     // This is done only for the first Frame (or after a change in the
     // calibration)
-    if (initialComputationsDone)
+    if (areInitialComputationsDone)
     {
-        computeImageBounds(imGray);
+        computeImageBounds(imageGray_in);
 
         gridElementWidthInverse = static_cast<float>(FRAME_GRID_COLS) /
                                   static_cast<float>(gridMaxX - gridMinX);
@@ -161,14 +162,14 @@ Frame::Frame(const cv::Mat                                   &imColor,
         invfx = 1.0f / fx;
         invfy = 1.0f / fy;
 
-        initialComputationsDone = false;
+        areInitialComputationsDone = false;
     }
 
     mb = mbf / fx;
 
     // Set no stereo fisheye information
-    Nleft              = -1;
-    Nright             = -1;
+    leftKeyPointCount  = -1;
+    rightKeyPointCount = -1;
     monoLeft           = -1;
     monoRight          = -1;
     leftToRightMatches = vector<int>(0);
@@ -177,11 +178,11 @@ Frame::Frame(const cv::Mat                                   &imColor,
 
     assignFeaturesToGrid();
 
-    if (pPrevF)
+    if (p_previousF_in)
     {
-        if (pPrevF->hasVelocity())
+        if (p_previousF_in->hasVelocity())
         {
-            setVelocity(pPrevF->getVelocity());
+            setVelocity(p_previousF_in->getVelocity());
         }
     }
     else

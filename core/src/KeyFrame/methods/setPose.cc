@@ -35,16 +35,17 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::setPose(const Sophus::SE3f &Tcw)
+void KeyFrame::setPose(const Sophus::SE3f &Tcw_in)
 {
-    unique_lock<mutex> lock(mMutexPose);
+    unique_lock<mutex> lock(poseMutex);
 
-    poseTcw     = Tcw;
+    poseTcw     = Tcw_in;
     rotationRcw = poseTcw.rotationMatrix();
     twc         = poseTcw.inverse();
     rotationRwc = twc.rotationMatrix();
 
-    if (imuCalibration.mbIsSet) // TODO Use a flag instead of the OpenCV matrix
+    if (imuCalibration
+            .isCalibrationSet) // TODO Use a flag instead of the OpenCV matrix
     {
         owb =
             rotationRwc * imuCalibration.mTcb.translation() + twc.translation();

@@ -34,8 +34,8 @@ namespace semantic
 
 bool SemanticReportCache::isAvailable() const
 {
-    std::lock_guard<std::mutex> lock(mMutex);
-    return mIsAvailable;
+    std::lock_guard<std::mutex> lock(cacheMutex);
+    return hasCachedReport;
 }
 
 } // namespace semantic

@@ -69,7 +69,7 @@ namespace core
 
 const int HALF_PATCH_SIZE = 15;
 
-static int bit_pattern_31_[256 * 4] = {
+static int orbBitPattern31[256 * 4] = {
     8,   -3,  9,   5 /*mean (0), correlation (0)*/,
     4,   2,   7,   -12 /*mean (1.12461e-05), correlation (0.0437584)*/,
     -11, 9,   -8,  2 /*mean (3.37382e-05), correlation (0.0617409)*/,
@@ -343,40 +343,44 @@ ORBextractor::ORBextractor(int   featureCount_in,
     levelSigmaSquares.resize(levelCount);
     scaleFactors[0]      = 1.0f;
     levelSigmaSquares[0] = 1.0f;
-    for (int i = 1; i < levelCount; i++)
+    for (int levelIndex = 1; levelIndex < levelCount; levelIndex++)
     {
-        scaleFactors[i]      = scaleFactors[i - 1] * scaleFactor;
-        levelSigmaSquares[i] = scaleFactors[i] * scaleFactors[i];
+        scaleFactors[levelIndex] = scaleFactors[levelIndex - 1] * scaleFactor;
+        levelSigmaSquares[levelIndex] =
+            scaleFactors[levelIndex] * scaleFactors[levelIndex];
     }
 
     inverseScaleFactors.resize(levelCount);
     inverseLevelSigmaSquares.resize(levelCount);
-    for (int i = 0; i < levelCount; i++)
+    for (int levelIndex = 0; levelIndex < levelCount; levelIndex++)
     {
-        inverseScaleFactors[i]      = 1.0f / scaleFactors[i];
-        inverseLevelSigmaSquares[i] = 1.0f / levelSigmaSquares[i];
+        inverseScaleFactors[levelIndex] = 1.0f / scaleFactors[levelIndex];
+        inverseLevelSigmaSquares[levelIndex] =
+            1.0f / levelSigmaSquares[levelIndex];
     }
 
     imagePyramid.resize(levelCount);
 
     featuresPerLevel.resize(levelCount);
     float factor = 1.0f / scaleFactor;
-    float nDesiredFeaturesPerScale =
+    float desiredFeaturesPerScaleCount =
         featureCount * (1 - factor) /
         (1 - (float)pow((double)factor, (double)levelCount));
 
     int sumFeatures = 0;
     for (int level = 0; level < levelCount - 1; level++)
     {
-        featuresPerLevel[level] = cvRound(nDesiredFeaturesPerScale);
+        featuresPerLevel[level] = cvRound(desiredFeaturesPerScaleCount);
         sumFeatures += featuresPerLevel[level];
-        nDesiredFeaturesPerScale *= factor;
+        desiredFeaturesPerScaleCount *= factor;
     }
     featuresPerLevel[levelCount - 1] = std::max(featureCount - sumFeatures, 0);
 
-    const int    npoints  = 512;
-    const Point *pattern0 = (const Point *)bit_pattern_31_;
-    std::copy(pattern0, pattern0 + npoints, std::back_inserter(briefPattern));
+    const int    npoints    = 512;
+    const Point *p_pattern0 = (const Point *)orbBitPattern31;
+    std::copy(p_pattern0,
+              p_pattern0 + npoints,
+              std::back_inserter(briefPattern));
 
     // This is for orientation
     //  pre-compute the end of a row in a circular patch

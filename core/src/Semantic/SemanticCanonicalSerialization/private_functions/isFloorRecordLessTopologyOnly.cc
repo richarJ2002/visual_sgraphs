@@ -60,13 +60,16 @@ bool isFloorRecordLessTopologyOnly(const FloorRecord &lhs_in,
     {
         return lhsRoomRefs.size() < rhsRoomRefs.size();
     }
-    for (std::size_t i = 0U; i < lhsRoomRefs.size(); ++i)
+    for (std::size_t lhsRoomRefIndex = 0U; lhsRoomRefIndex < lhsRoomRefs.size();
+         ++lhsRoomRefIndex)
     {
-        if (isEntityRefLess(lhsRoomRefs[i], rhsRoomRefs[i]))
+        if (isEntityRefLess(lhsRoomRefs[lhsRoomRefIndex],
+                            rhsRoomRefs[lhsRoomRefIndex]))
         {
             return true;
         }
-        if (isEntityRefLess(rhsRoomRefs[i], lhsRoomRefs[i]))
+        if (isEntityRefLess(rhsRoomRefs[lhsRoomRefIndex],
+                            lhsRoomRefs[lhsRoomRefIndex]))
         {
             return false;
         }

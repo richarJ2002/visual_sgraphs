@@ -30,12 +30,14 @@ namespace vs_graphs
 namespace core
 {
 
-bool EdgeVertex2PlaneProjectSE3Room::write(std::ostream &os) const
+bool EdgeVertex2PlaneProjectSE3Room::write(
+    std::ostream &outputStream_inout) const
 {
-    for (int i = 0; i < information().rows(); i++)
-        for (int j = i; j < information().cols(); j++)
-            os << " " << information()(i, j);
-    return os.good();
+    for (int rowIndex = 0; rowIndex < information().rows(); rowIndex++)
+        for (int columnIndex = rowIndex; columnIndex < information().cols();
+             columnIndex++)
+            outputStream_inout << " " << information()(rowIndex, columnIndex);
+    return outputStream_inout.good();
 }
 
 } // namespace core

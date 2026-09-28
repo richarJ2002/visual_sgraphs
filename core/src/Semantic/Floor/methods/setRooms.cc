@@ -29,12 +29,12 @@ namespace semantic
 {
 
 void Floor::setRooms(
-    const std::vector<vs_graphs::core::semantic::Room *> &value)
+    const std::vector<vs_graphs::core::semantic::Room *> &value_in)
 {
     std::vector<Room *> newRooms;
-    newRooms.reserve(value.size());
+    newRooms.reserve(value_in.size());
 
-    for (Room *p_room : value)
+    for (Room *p_room : value_in)
     {
         if (p_room != nullptr &&
             std::find(newRooms.begin(), newRooms.end(), p_room) ==
@@ -51,7 +51,7 @@ void Floor::setRooms(
 
     std::vector<Room *> oldRooms;
     {
-        std::lock_guard<std::mutex> lock(mMutexRooms);
+        std::lock_guard<std::mutex> lock(roomsMutex);
         oldRooms = rooms;
         rooms    = newRooms;
     }

@@ -35,11 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::addMergeEdge(KeyFrame *pKF)
+void KeyFrame::addMergeEdge(KeyFrame *p_keyFrame_in)
 {
-    unique_lock<mutex> lockCon(mMutexConnections);
-    notErase = true;
-    mergeEdges.insert(pKF);
+    unique_lock<mutex> lockCon(connectionsMutex);
+    isEraseProtected = true;
+    mergeEdges.insert(p_keyFrame_in);
 }
 
 } // namespace core

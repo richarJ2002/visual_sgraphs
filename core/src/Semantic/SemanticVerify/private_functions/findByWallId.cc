@@ -34,12 +34,12 @@ const VerifyWallObservation *
     findByWallId(const std::vector<VerifyWallObservation> &walls_in,
                  const int                                 wallId_in)
 {
-    const auto it =
+    const auto wallIt =
         std::find_if(walls_in.begin(),
                      walls_in.end(),
                      [wallId_in](const VerifyWallObservation &wall_in)
                      { return wall_in.wallId == wallId_in; });
-    return it == walls_in.end() ? nullptr : &(*it);
+    return wallIt == walls_in.end() ? nullptr : &(*wallIt);
 }
 
 } // namespace semantic

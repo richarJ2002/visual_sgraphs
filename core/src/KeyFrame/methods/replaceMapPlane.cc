@@ -44,7 +44,7 @@ bool KeyFrame::replaceMapPlane(geometric::Plane *p_retiredPlane_in,
         return false;
     }
 
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
 
     bool                            replacedRetiredPlane = false;
     std::vector<geometric::Plane *> rebuiltPlanes;

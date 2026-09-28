@@ -34,7 +34,7 @@ namespace geometric
 
 std::set<core::MapPoint *> Plane::getMapPoints(void)
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return mapPoints;
 }
 

@@ -34,11 +34,14 @@ namespace camera_models
 {
 namespace pinhole
 {
-std::ostream &operator<<(std::ostream &os, const Pinhole &pinhole_in)
+std::ostream &operator<<(std::ostream  &outputStream_inout,
+                         const Pinhole &pinhole_in)
 {
-    os << pinhole_in.parameters[0] << " " << pinhole_in.parameters[1] << " "
-       << pinhole_in.parameters[2] << " " << pinhole_in.parameters[3];
-    return os;
+    outputStream_inout << pinhole_in.parameters[0] << " "
+                       << pinhole_in.parameters[1] << " "
+                       << pinhole_in.parameters[2] << " "
+                       << pinhole_in.parameters[3];
+    return outputStream_inout;
 }
 } // namespace pinhole
 } // namespace camera_models

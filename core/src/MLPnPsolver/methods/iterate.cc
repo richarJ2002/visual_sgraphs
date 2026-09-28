@@ -54,60 +54,60 @@ namespace vs_graphs
 namespace core
 {
 
-bool MLPnPsolver::iterate(int              nIterations,
-                          bool            &bNoMore,
-                          vector<bool>    &vbInliers,
-                          int             &nInliers,
-                          Eigen::Matrix4f &Tout)
+bool MLPnPsolver::iterate(int              iterationCount_in,
+                          bool            &areIterationsExhausted_out,
+                          vector<bool>    &inliersFlags_out,
+                          int             &inlierCount_out,
+                          Eigen::Matrix4f &Tout_out)
 {
-    Tout.setIdentity();
-    bNoMore = false;
-    vbInliers.clear();
-    nInliers = 0;
+    Tout_out.setIdentity();
+    areIterationsExhausted_out = false;
+    inliersFlags_out.clear();
+    inlierCount_out = 0;
 
-    if (N < ransacMinInliers)
+    if (correspondenceCount < ransacMinInliers)
     {
-        bNoMore = true;
+        areIterationsExhausted_out = true;
         return false;
     }
 
-    vector<size_t> vAvailableIndices;
+    vector<size_t> availableIndices;
 
-    int nCurrentIterations = 0;
+    int currentIterationCount = 0;
     while (iterationCount < ransacMaxIterations ||
-           nCurrentIterations < nIterations)
+           currentIterationCount < iterationCount_in)
     {
-        nCurrentIterations++;
+        currentIterationCount++;
         iterationCount++;
 
-        vAvailableIndices = allIndices;
+        availableIndices = allIndices;
 
         // Bearing vectors and 3D points used for this ransac iteration
-        bearingVectors_t bearingVecs(ransacMinSet);
-        points_t         p3DS(ransacMinSet);
-        vector<int>      indexes(ransacMinSet);
+        BearingVectors bearingVecs(ransacMinSet);
+        Points3        p3DS(ransacMinSet);
+        vector<int>    indexes(ransacMinSet);
 
         // Get min set of points
-        for (short i = 0; i < ransacMinSet; ++i)
+        for (short pointIndex = 0; pointIndex < ransacMinSet; ++pointIndex)
         {
             int randi =
-                DUtils::Random::RandomInt(0, vAvailableIndices.size() - 1);
+                DUtils::Random::RandomInt(0, availableIndices.size() - 1);
 
-            int idx = vAvailableIndices[randi];
+            int sampledIndex = availableIndices[randi];
 
-            bearingVecs[i] = bearingVectors[idx];
-            p3DS[i]        = points3Dw[idx];
-            indexes[i]     = i;
+            bearingVecs[pointIndex] = bearingVectors[sampledIndex];
+            p3DS[pointIndex]        = points3Dw[sampledIndex];
+            indexes[pointIndex]     = pointIndex;
 
-            vAvailableIndices[randi] = vAvailableIndices.back();
-            vAvailableIndices.pop_back();
+            availableIndices[randi] = availableIndices.back();
+            availableIndices.pop_back();
         }
 
         // By the moment, we are using MLPnP without covariance info
-        cov3_mats_t covs(1);
+        Covariance3Matrices covs(1);
 
         // Result
-        transformation_t result;
+        TransformationMatrix result;
 
         // Compute camera pose
         computePose(bearingVecs, p3DS, covs, indexes, result);
@@ -156,14 +156,15 @@ bool MLPnPsolver::iterate(int              nIterations,
 
             if (refine())
             {
-                nInliers  = refinedInlierCount;
-                vbInliers = vector<bool>(mapPointMatches.size(), false);
-                for (int i = 0; i < N; i++)
+                inlierCount_out  = refinedInlierCount;
+                inliersFlags_out = vector<bool>(mapPointMatches.size(), false);
+                for (int pointIndex = 0; pointIndex < correspondenceCount;
+                     pointIndex++)
                 {
-                    if (refinedInlierFlags[i])
-                        vbInliers[keypointIndices[i]] = true;
+                    if (refinedInlierFlags[pointIndex])
+                        inliersFlags_out[keypointIndices[pointIndex]] = true;
                 }
-                Tout = mRefinedTcw;
+                Tout_out = mRefinedTcw;
                 return true;
             }
         }
@@ -171,17 +172,18 @@ bool MLPnPsolver::iterate(int              nIterations,
 
     if (iterationCount >= ransacMaxIterations)
     {
-        bNoMore = true;
+        areIterationsExhausted_out = true;
         if (bestInlierCount >= ransacMinInliers)
         {
-            nInliers  = bestInlierCount;
-            vbInliers = vector<bool>(mapPointMatches.size(), false);
-            for (int i = 0; i < N; i++)
+            inlierCount_out  = bestInlierCount;
+            inliersFlags_out = vector<bool>(mapPointMatches.size(), false);
+            for (int pointIndex = 0; pointIndex < correspondenceCount;
+                 pointIndex++)
             {
-                if (bestInlierFlags[i])
-                    vbInliers[keypointIndices[i]] = true;
+                if (bestInlierFlags[pointIndex])
+                    inliersFlags_out[keypointIndices[pointIndex]] = true;
             }
-            Tout = mBestTcw;
+            Tout_out = mBestTcw;
             return true;
         }
     }

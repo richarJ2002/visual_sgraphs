@@ -34,7 +34,7 @@ namespace core
 
 LoopClosing::LoopCorrectionStatus LoopClosing::getLoopCorrectionStatus() const
 {
-    std::lock_guard<std::mutex> lock(mMutexLoopCorrectionStatus);
+    std::lock_guard<std::mutex> lock(loopCorrectionStatusMutex);
     return loopCorrectionStatus;
 }
 

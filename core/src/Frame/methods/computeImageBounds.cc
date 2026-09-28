@@ -44,42 +44,42 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::computeImageBounds(const cv::Mat &imLeft)
+void Frame::computeImageBounds(const cv::Mat &imageLeft_in)
 {
     if (distortionCoefficients.at<float>(0) != 0.0)
     {
-        cv::Mat mat(4, 2, CV_32F);
-        mat.at<float>(0, 0) = 0.0;
-        mat.at<float>(0, 1) = 0.0;
-        mat.at<float>(1, 0) = imLeft.cols;
-        mat.at<float>(1, 1) = 0.0;
-        mat.at<float>(2, 0) = 0.0;
-        mat.at<float>(2, 1) = imLeft.rows;
-        mat.at<float>(3, 0) = imLeft.cols;
-        mat.at<float>(3, 1) = imLeft.rows;
+        cv::Mat matrix(4, 2, CV_32F);
+        matrix.at<float>(0, 0) = 0.0;
+        matrix.at<float>(0, 1) = 0.0;
+        matrix.at<float>(1, 0) = imageLeft_in.cols;
+        matrix.at<float>(1, 1) = 0.0;
+        matrix.at<float>(2, 0) = 0.0;
+        matrix.at<float>(2, 1) = imageLeft_in.rows;
+        matrix.at<float>(3, 0) = imageLeft_in.cols;
+        matrix.at<float>(3, 1) = imageLeft_in.rows;
 
-        mat = mat.reshape(2);
+        matrix = matrix.reshape(2);
         cv::undistortPoints(
-            mat,
-            mat,
+            matrix,
+            matrix,
             static_cast<camera_models::pinhole::Pinhole *>(p_camera)->toK(),
             distortionCoefficients,
             cv::Mat(),
             calibrationMatrix);
-        mat = mat.reshape(1);
+        matrix = matrix.reshape(1);
 
         // Undistort corners
-        gridMinX = min(mat.at<float>(0, 0), mat.at<float>(2, 0));
-        gridMaxX = max(mat.at<float>(1, 0), mat.at<float>(3, 0));
-        gridMinY = min(mat.at<float>(0, 1), mat.at<float>(1, 1));
-        gridMaxY = max(mat.at<float>(2, 1), mat.at<float>(3, 1));
+        gridMinX = min(matrix.at<float>(0, 0), matrix.at<float>(2, 0));
+        gridMaxX = max(matrix.at<float>(1, 0), matrix.at<float>(3, 0));
+        gridMinY = min(matrix.at<float>(0, 1), matrix.at<float>(1, 1));
+        gridMaxY = max(matrix.at<float>(2, 1), matrix.at<float>(3, 1));
     }
     else
     {
         gridMinX = 0.0f;
-        gridMaxX = imLeft.cols;
+        gridMaxX = imageLeft_in.cols;
         gridMinY = 0.0f;
-        gridMaxY = imLeft.rows;
+        gridMaxY = imageLeft_in.rows;
     }
 }
 

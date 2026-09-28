@@ -32,10 +32,10 @@ namespace core
 {
 
 bool GeoSemHelpers::refitMappedPlaneFromCloud(
-    vs_graphs::core::geometric::Plane *plane)
+    vs_graphs::core::geometric::Plane *p_plane_inout)
 {
     /* Confirm the mapped plane is valid */
-    if (plane == nullptr || plane->isBad())
+    if (p_plane_inout == nullptr || p_plane_inout->isBad())
     {
         return false;
     }
@@ -43,7 +43,7 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(
     /* Claim one immutable generation; fitting never observes concurrent growth.
      */
     const std::optional<geometric::Plane::GeometrySnapshot> geometrySnapshot =
-        plane->beginMapCloudRefit();
+        p_plane_inout->beginMapCloudRefit();
 
     /* Require sufficient points for a stable covariance estimate */
     if (!geometrySnapshot.has_value() ||
@@ -53,7 +53,7 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(
         return false;
     }
 
-    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr cloud =
+    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud =
         geometrySnapshot->supportCloud;
 
     /* Calculate the centroid from all valid cloud points */
@@ -62,7 +62,7 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(
     /* Init a counter to count the number of valid point clouds */
     std::size_t validPointCount = 0;
 
-    for (const pcl::PointXYZRGBA &point : cloud->points)
+    for (const pcl::PointXYZRGBA &point : p_cloud->points)
     {
         if (!pcl::isFinite(point))
         {
@@ -87,7 +87,7 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(
     /* Calculate the covariance matrix of the mapped plane cloud */
     Eigen::Matrix3d covariance = Eigen::Matrix3d::Zero();
 
-    for (const pcl::PointXYZRGBA &point : cloud->points)
+    for (const pcl::PointXYZRGBA &point : p_cloud->points)
     {
         if (!pcl::isFinite(point))
         {
@@ -153,10 +153,11 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(
     fittedEquation(3) = -fittedNormal.dot(centroid);
 
     /* Publish the complete fitted geometry and recompute finite bounds once. */
-    return plane->completeMapCloudRefit(geometrySnapshot->cloudGeneration,
-                                        centroid,
-                                        g2o::Plane3D(fittedEquation),
-                                        validPointCount);
+    return p_plane_inout->completeMapCloudRefit(
+        geometrySnapshot->cloudGeneration,
+        centroid,
+        g2o::Plane3D(fittedEquation),
+        validPointCount);
 }
 
 } // namespace core

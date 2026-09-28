@@ -30,8 +30,8 @@ namespace semantic
 
 bool Passage::hasProspectiveRoom() const
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
-    return prospectiveRoom != nullptr;
+    std::lock_guard<std::mutex> lock(geometryMutex);
+    return p_prospectiveRoom != nullptr;
 }
 
 } // namespace semantic

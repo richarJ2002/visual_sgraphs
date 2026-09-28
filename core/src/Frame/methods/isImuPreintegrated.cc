@@ -46,7 +46,7 @@ namespace core
 bool Frame::isImuPreintegrated()
 {
     unique_lock<std::mutex> lock(*p_imuMutex);
-    return imuPreintegrated;
+    return hasImuPreintegration;
 }
 
 } // namespace core

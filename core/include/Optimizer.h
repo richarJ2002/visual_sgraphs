@@ -57,166 +57,170 @@ class Optimizer
 {
   public:
     void static bundleAdjustment(
-        const std::vector<vs_graphs::core::KeyFrame *>          &vpKF,
-        const std::vector<vs_graphs::core::MapPoint *>          &vpMP,
-        const std::vector<vs_graphs::core::semantic::Marker *>  &vpMarkers,
-        const std::vector<vs_graphs::core::geometric::Plane *>  &vpPlanes,
-        const std::vector<vs_graphs::core::semantic::Passage *> &vpDoorways,
-        const std::vector<vs_graphs::core::semantic::Room *>    &vpRooms,
-        const std::vector<vs_graphs::core::semantic::Floor *>   &vpFloors,
-        int                     nIterations       = 5,
-        bool                   *pbStopFlag        = nullptr,
-        const unsigned long     nLoopKF           = 0,
-        const bool              bRobust           = true,
-        double                  markerImpact      = 0.1,
-        const std::atomic_bool *pStopRequested_in = nullptr);
+        const std::vector<vs_graphs::core::KeyFrame *>          &keyFrames_in,
+        const std::vector<vs_graphs::core::MapPoint *>          &mapPoints_in,
+        const std::vector<vs_graphs::core::semantic::Marker *>  &markers_in,
+        const std::vector<vs_graphs::core::geometric::Plane *>  &planes_in,
+        const std::vector<vs_graphs::core::semantic::Passage *> &doorways_in,
+        const std::vector<vs_graphs::core::semantic::Room *>    &rooms_in,
+        const std::vector<vs_graphs::core::semantic::Floor *>   &floors_in,
+        int                     iterationCount_in  = 5,
+        bool                   *p_stopFlag_inout   = nullptr,
+        const unsigned long     loopKeyFrameId_in  = 0,
+        const bool              useRobustKernel_in = true,
+        double                  markerImpact_in    = 0.1,
+        const std::atomic_bool *p_stopRequested_in = nullptr);
 
     void static globalBundleAdjustment(
-        Map                    *pMap,
-        int                     nIterations       = 5,
-        bool                   *pbStopFlag        = nullptr,
-        const unsigned long     nLoopKF           = 0,
-        const bool              bRobust           = true,
-        double                  markerImpact      = 0.1,
-        const std::atomic_bool *pStopRequested_in = nullptr);
+        Map                    *p_map_in,
+        int                     iterationCount_in  = 5,
+        bool                   *p_stopFlag_inout   = nullptr,
+        const unsigned long     loopKeyFrameId_in  = 0,
+        const bool              useRobustKernel_in = true,
+        double                  markerImpact_in    = 0.1,
+        const std::atomic_bool *p_stopRequested_in = nullptr);
 
     void static fullInertialBA(
-        Map                    *pMap,
-        int                     its,
-        const bool              bFixLocal         = false,
-        const unsigned long     nLoopKF           = 0,
-        bool                   *pbStopFlag        = nullptr,
-        bool                    bInit             = false,
-        float                   priorG            = 1e2,
-        float                   priorA            = 1e6,
-        Eigen::VectorXd        *vSingVal          = nullptr,
-        bool                   *bHess             = nullptr,
-        const std::atomic_bool *pStopRequested_in = nullptr);
+        Map                    *p_map_inout,
+        int                     iterationCount_in,
+        const bool              fixLocalKeyFrames_in    = false,
+        const unsigned long     loopKeyFrameId_in       = 0,
+        bool                   *p_stopFlag_inout        = nullptr,
+        bool                    isImuInitialization_in  = false,
+        float                   gyroBiasPriorWeight_in  = 1e2,
+        float                   accelBiasPriorWeight_in = 1e6,
+        Eigen::VectorXd        *p_singularValues_in     = nullptr,
+        bool                   *p_hessianComputed_in    = nullptr,
+        const std::atomic_bool *p_stopRequested_in      = nullptr);
 
-    void static localBundleAdjustment(KeyFrame *pKF,
-                                      bool     *pbStopFlag,
-                                      Map      *pMap,
-                                      int      &countFixedKF,
-                                      int      &num_OptKF,
-                                      int      &num_MPs,
-                                      int      &num_edges,
-                                      double    markerImpact = 0.1);
+    void static localBundleAdjustment(KeyFrame *p_keyFrame_inout,
+                                      bool     *p_pbStopFlag_in,
+                                      Map      *p_map_inout,
+                                      int      &fixedKeyFrameCount_inout,
+                                      int      &optKeyFrameCount_out,
+                                      int      &mapPointCount_out,
+                                      int      &edgeCount_out,
+                                      double    markerImpact_in = 0.1);
 
     /*!
      * @brief Local Bundle Adjustment for loop closure detection
      *
-     * @param pMainKF Main KeyFrame
-     * @param vpAdjustKF Non-fixed KeyFrames to adjust
-     * @param vpFixedKF Fixed KeyFrames to set
-     * @param pbStopFlag Flag to forcely stop the optimization
+     * @param p_mainKeyFrame_in Main KeyFrame
+     * @param adjustKeyFrames_in Non-fixed KeyFrames to adjust
+     * @param fixedKeyFrames_in Fixed KeyFrames to set
+     * @param p_pbStopFlag_in Flag to forcely stop the optimization
      */
-    void static loopClosureLocalBundleAdjustment(KeyFrame          *pMainKF,
-                                                 vector<KeyFrame *> vpAdjustKF,
-                                                 vector<KeyFrame *> vpFixedKF,
-                                                 bool              *pbStopFlag);
+    void static loopClosureLocalBundleAdjustment(
+        KeyFrame          *p_mainKeyFrame_in,
+        vector<KeyFrame *> adjustKeyFrames_in,
+        vector<KeyFrame *> fixedKeyFrames_in,
+        bool              *p_pbStopFlag_in);
 
-    int static poseOptimization(Frame *pFrame);
-    int static poseInertialOptimizationLastKeyFrame(Frame *pFrame,
-                                                    bool   bRecInit = false);
-    int static poseInertialOptimizationLastFrame(Frame *pFrame,
-                                                 bool   bRecInit = false);
+    int static poseOptimization(Frame *p_frame_inout);
+    int static poseInertialOptimizationLastKeyFrame(
+        Frame *p_frame_inout,
+        bool   isRecentlyInitialized_in = false);
+    int static poseInertialOptimizationLastFrame(
+        Frame *p_frame_inout,
+        bool   isRecentlyInitialized_in = false);
 
     // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise
     // (mono)
     void static optimizeEssentialGraph(
-        Map                                    *pMap,
-        KeyFrame                               *pLoopKF,
-        KeyFrame                               *pCurKF,
-        const LoopClosing::KeyFrameAndPose     &NonCorrectedSim3,
-        const LoopClosing::KeyFrameAndPose     &CorrectedSim3,
-        const map<KeyFrame *, set<KeyFrame *>> &LoopConnections,
-        const bool                             &bFixScale);
+        Map                                    *p_map_inout,
+        KeyFrame                               *p_loopKeyFrame_in,
+        KeyFrame                               *p_currentKeyFrame_in,
+        const LoopClosing::KeyFrameAndPose     &NonCorrectedSim3_in,
+        const LoopClosing::KeyFrameAndPose     &CorrectedSim3_in,
+        const map<KeyFrame *, set<KeyFrame *>> &loopConnections_in,
+        const bool                             &isScaleFixed_in);
 
     /*!
      * @brief Optimize the Essential Graph when a loop closure is detected
      *
-     * @param pCurKF Current KeyFrame
-     * @param[in,out] p_sourceMap_inout Source map whose semantic graph follows
+     * @param p_currentKeyFrame_in Current KeyFrame
+     * @param[in]     p_sourceMap_in Source map whose semantic graph follows
      *                the optimized keyframe deformation.
-     * @param vpFixedKFs Fixed KeyFrames
-     * @param vpFixedCorrectedKFs Corrected Fixed KeyFrames
-     * @param vpNonFixedKFs Non-Fixed KeyFrames
-     * @param vpNonCorrectedMPs Non-Corrected MapPoints
+     * @param fixedKeyFrames_in Fixed KeyFrames
+     * @param fixedCorrectedKeyFrames_in Corrected Fixed KeyFrames
+     * @param nonFixedKeyFrames_in Non-Fixed KeyFrames
+     * @param nonCorrectedMapPoints_in Non-Corrected MapPoints
      * @param[in] transform_mergeWorldToCurrentWorld_in Baseline similarity
      * transform used when a semantic object has no valid reference
      * keyframe.
      */
     void static optimizeEssentialGraph(
-        vs_graphs::core::KeyFrame                *pCurKF,
-        vs_graphs::core::Map                     *p_sourceMap_inout,
-        std::vector<vs_graphs::core::KeyFrame *> &vpFixedKFs,
-        std::vector<vs_graphs::core::KeyFrame *> &vpFixedCorrectedKFs,
-        std::vector<vs_graphs::core::KeyFrame *> &vpNonFixedKFs,
-        std::vector<vs_graphs::core::MapPoint *> &vpNonCorrectedMPs,
+        vs_graphs::core::KeyFrame                *p_currentKeyFrame_in,
+        vs_graphs::core::Map                     *p_sourceMap_in,
+        std::vector<vs_graphs::core::KeyFrame *> &fixedKeyFrames_in,
+        std::vector<vs_graphs::core::KeyFrame *> &fixedCorrectedKeyFrames_in,
+        std::vector<vs_graphs::core::KeyFrame *> &nonFixedKeyFrames_in,
+        std::vector<vs_graphs::core::MapPoint *> &nonCorrectedMapPoints_in,
         const g2o::Sim3 &transform_mergeWorldToCurrentWorld_in);
 
     // For inertial loopclosing
     void static optimizeEssentialGraph4DoF(
-        Map                                    *pMap,
-        KeyFrame                               *pLoopKF,
-        KeyFrame                               *pCurKF,
-        const LoopClosing::KeyFrameAndPose     &NonCorrectedSim3,
-        const LoopClosing::KeyFrameAndPose     &CorrectedSim3,
-        const map<KeyFrame *, set<KeyFrame *>> &LoopConnections);
+        Map                                    *p_map_inout,
+        KeyFrame                               *p_loopKeyFrame_in,
+        KeyFrame                               *p_currentKeyFrame_in,
+        const LoopClosing::KeyFrameAndPose     &NonCorrectedSim3_in,
+        const LoopClosing::KeyFrameAndPose     &CorrectedSim3_in,
+        const map<KeyFrame *, set<KeyFrame *>> &loopConnections_in);
 
     // if bFixScale is true, optimize SE3 (stereo,rgbd), Sim3 otherwise (mono)
     // (NEW)
-    static int optimizeSim3(KeyFrame                    *pKF1,
-                            KeyFrame                    *pKF2,
-                            std::vector<MapPoint *>     &vpMatches1,
-                            g2o::Sim3                   &g2oS12,
-                            const float                  th2,
-                            const bool                   bFixScale,
-                            Eigen::Matrix<double, 7, 7> &mAcumHessian,
-                            const bool                   bAllPoints = false);
+    static int optimizeSim3(KeyFrame                    *p_keyFrame1_in,
+                            KeyFrame                    *p_keyFrame2_in,
+                            std::vector<MapPoint *>     &matches1_inout,
+                            g2o::Sim3                   &g2oS12_inout,
+                            const float                  threshold2_in,
+                            const bool                   isScaleFixed_in,
+                            Eigen::Matrix<double, 7, 7> &acumHessian_out,
+                            const bool shouldUseAllPoints_in = false);
 
     // For inertial systems
 
-    void static localInertialBA(KeyFrame *pKF,
-                                bool     *pbStopFlag,
-                                Map      *pMap,
-                                int      &countFixedKF,
-                                int      &num_OptKF,
-                                int      &num_MPs,
-                                int      &num_edges,
-                                bool      bLarge   = false,
-                                bool      bRecInit = false);
-    void static mergeInertialBA(KeyFrame                     *pCurrKF,
-                                KeyFrame                     *pMergeKF,
-                                bool                         *pbStopFlag,
-                                Map                          *pMap,
-                                LoopClosing::KeyFrameAndPose &corrPoses);
+    void static localInertialBA(KeyFrame *p_keyFrame_inout,
+                                bool     *p_pbStopFlag_in,
+                                Map      *p_map_inout,
+                                int      &fixedKeyFrameCount_in,
+                                int      &optKeyFrameCount_in,
+                                int      &mapPointCount_in,
+                                int      &edgeCount_in,
+                                bool      isLargeWindow_in         = false,
+                                bool      isRecentlyInitialized_in = false);
+    void static mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
+                                KeyFrame *p_mergeKeyFrame_inout,
+                                bool     *p_pbStopFlag_in,
+                                Map      *p_map_inout,
+                                LoopClosing::KeyFrameAndPose &corrPoses_inout);
 
     // Marginalize block element (start:end,start:end). Perform Schur
     // complement. Marginalized elements are filled with zeros.
-    static Eigen::MatrixXd
-        marginalize(const Eigen::MatrixXd &H, const int &start, const int &end);
+    static Eigen::MatrixXd marginalize(const Eigen::MatrixXd &H_in,
+                                       const int             &start_in,
+                                       const int             &end_in);
 
     // Inertial pose-graph
-    void static inertialOptimization(Map             *pMap,
-                                     Eigen::Matrix3d &Rwg,
-                                     double          &scale,
-                                     Eigen::Vector3d &bg,
-                                     Eigen::Vector3d &ba,
-                                     bool             bMono,
-                                     Eigen::MatrixXd &covInertial,
-                                     bool             bFixedVel = false,
-                                     bool             bGauss    = false,
-                                     float            priorG    = 1e2,
-                                     float            priorA    = 1e6);
-    void static inertialOptimization(Map             *pMap,
-                                     Eigen::Vector3d &bg,
-                                     Eigen::Vector3d &ba,
-                                     float            priorG = 1e2,
-                                     float            priorA = 1e6);
-    void static inertialOptimization(Map             *pMap,
-                                     Eigen::Matrix3d &Rwg,
-                                     double          &scale);
+    void static inertialOptimization(Map             *p_map_in,
+                                     Eigen::Matrix3d &Rwg_inout,
+                                     double          &scale_inout,
+                                     Eigen::Vector3d &bg_in,
+                                     Eigen::Vector3d &ba_in,
+                                     bool             isMono_in,
+                                     Eigen::MatrixXd &covInertial_in,
+                                     bool  isFixedVelocity_in      = false,
+                                     bool  shouldUseGaussNewton_in = false,
+                                     float priorG_in               = 1e2,
+                                     float priorA_in               = 1e6);
+    void static inertialOptimization(Map             *p_map_in,
+                                     Eigen::Vector3d &gyroBias_out,
+                                     Eigen::Vector3d &accelBias_out,
+                                     float gyroBiasPriorWeight_in  = 1e2,
+                                     float accelBiasPriorWeight_in = 1e6);
+    void static inertialOptimization(Map             *p_map_in,
+                                     Eigen::Matrix3d &Rwg_inout,
+                                     double          &scale_inout);
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

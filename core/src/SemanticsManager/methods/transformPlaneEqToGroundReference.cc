@@ -24,7 +24,7 @@ namespace core
 {
 
 Eigen::Vector3f SemanticsManager::transformPlaneEqToGroundReference(
-    const Eigen::Vector4d &planeEq)
+    const Eigen::Vector4d &planeEq_in)
 {
     /* extract the rotation matrix from the transformation matrix */
     Eigen::Matrix3f rotationMatrix = planePoseMat.block<3, 3>(0, 0);
@@ -35,7 +35,7 @@ Eigen::Vector3f SemanticsManager::transformPlaneEqToGroundReference(
 
     /* Transform the coefficients of the plane equation */
     Eigen::Vector3f transformedPlaneCoefficients =
-        inverseTransposeRotationMatrix * planeEq.head<3>().cast<float>();
+        inverseTransposeRotationMatrix * planeEq_in.head<3>().cast<float>();
 
     /* Find the normalized coefficients */
     transformedPlaneCoefficients.normalize();

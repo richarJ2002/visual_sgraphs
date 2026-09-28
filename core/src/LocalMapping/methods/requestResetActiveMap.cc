@@ -32,21 +32,21 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::requestResetActiveMap(Map *pMap)
+void LocalMapping::requestResetActiveMap(Map *p_map_in)
 {
     {
-        unique_lock<mutex> lock(mMutexReset);
+        unique_lock<mutex> resetLock(resetMutex);
         // Request to reset the active map
-        resetActiveMapRequested = true;
-        p_mapToReset            = pMap;
+        isResetActiveMapRequested = true;
+        p_mapToReset              = p_map_in;
     }
 
     // Wait until the mutex is free
     while (1)
     {
         {
-            unique_lock<mutex> lock2(mMutexReset);
-            if (!resetActiveMapRequested)
+            unique_lock<mutex> resetLock2(resetMutex);
+            if (!isResetActiveMapRequested)
                 break;
         }
         usleep(3000);

@@ -32,7 +32,7 @@ namespace core
 
 bool Tracking::getStepByStep()
 {
-    return stepByStep;
+    return isStepByStepMode;
 }
 
 } // namespace core

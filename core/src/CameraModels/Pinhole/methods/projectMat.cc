@@ -35,10 +35,10 @@ namespace camera_models
 {
 namespace pinhole
 {
-Eigen::Vector2f Pinhole::projectMat(const cv::Point3f &point3D_in)
+Eigen::Vector2f Pinhole::projectMat(const cv::Point3f &point3d_in)
 {
-    cv::Point2f point = this->project(point3D_in);
-    return Eigen::Vector2f(point.x, point.y);
+    cv::Point2f projectedPoint = this->project(point3d_in);
+    return Eigen::Vector2f(projectedPoint.x, projectedPoint.y);
 }
 } // namespace pinhole
 } // namespace camera_models

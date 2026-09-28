@@ -32,8 +32,8 @@ namespace core
 
 vs_graphs::core::Map *System::getCurrentMap()
 {
-    vs_graphs::core::Map *pActiveMap = p_atlas->getCurrentMap();
-    return pActiveMap;
+    vs_graphs::core::Map *p_activeMap = p_atlas->getCurrentMap();
+    return p_activeMap;
 }
 
 } // namespace core

@@ -34,12 +34,13 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::PostLoad(
-    KeyFrameDatabase *pKFDB,
-    ORBVocabulary
-        *pORBVoc /*, map<long unsigned int, KeyFrame*>& mpKeyFrameId*/,
+void Map::postLoad(
+    KeyFrameDatabase *p_keyFrameDatabase_inout,
+    ORBVocabulary *
+        p_orbVocabulary_in /*, map<long unsigned int, KeyFrame*>& mpKeyFrameId*/
+    ,
     map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
-        &mpCams)
+        &cams_inout)
 {
     std::copy(backupMapPoints.begin(),
               backupMapPoints.end(),
@@ -48,61 +49,64 @@ void Map::PostLoad(
               backupKeyFrames.end(),
               std::inserter(keyFrames, keyFrames.begin()));
 
-    map<long unsigned int, MapPoint *> mpMapPointId;
-    for (MapPoint *pMPi : mapPoints)
+    map<long unsigned int, MapPoint *> mapPointId;
+    for (MapPoint *p_mapPoint : mapPoints)
     {
-        if (!pMPi || pMPi->isBad())
+        if (!p_mapPoint || p_mapPoint->isBad())
             continue;
 
-        pMPi->updateMap(this);
-        mpMapPointId[pMPi->mnId] = pMPi;
+        p_mapPoint->updateMap(this);
+        mapPointId[p_mapPoint->id] = p_mapPoint;
     }
 
-    map<long unsigned int, KeyFrame *> mpKeyFrameId;
-    for (KeyFrame *pKFi : keyFrames)
+    map<long unsigned int, KeyFrame *> keyFrameId;
+    for (KeyFrame *p_keyFrame : keyFrames)
     {
-        if (!pKFi || pKFi->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
             continue;
 
-        pKFi->updateMap(this);
-        pKFi->setORBVocabulary(pORBVoc);
-        pKFi->setKeyFrameDatabase(pKFDB);
-        mpKeyFrameId[pKFi->mnId] = pKFi;
+        p_keyFrame->updateMap(this);
+        p_keyFrame->setORBVocabulary(p_orbVocabulary_in);
+        p_keyFrame->setKeyFrameDatabase(p_keyFrameDatabase_inout);
+        keyFrameId[p_keyFrame->id] = p_keyFrame;
     }
 
     // References reconstruction between different instances
-    for (MapPoint *pMPi : mapPoints)
+    for (MapPoint *p_mapPoint : mapPoints)
     {
-        if (!pMPi || pMPi->isBad())
+        if (!p_mapPoint || p_mapPoint->isBad())
             continue;
 
-        pMPi->PostLoad(mpKeyFrameId, mpMapPointId);
+        p_mapPoint->postLoad(keyFrameId, mapPointId);
     }
 
-    for (KeyFrame *pKFi : keyFrames)
+    for (KeyFrame *p_keyFrame : keyFrames)
     {
-        if (!pKFi || pKFi->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
             continue;
 
-        pKFi->PostLoad(mpKeyFrameId, mpMapPointId, mpCams);
-        pKFDB->add(pKFi);
+        p_keyFrame->postLoad(keyFrameId, mapPointId, cams_inout);
+        p_keyFrameDatabase_inout->add(p_keyFrame);
     }
 
     if (backupInitialKeyFrameId != -1)
     {
-        p_initialKeyFrame = mpKeyFrameId[backupInitialKeyFrameId];
+        p_initialKeyFrame = keyFrameId[backupInitialKeyFrameId];
     }
 
     if (backupLowerKeyFrameId != -1)
     {
-        p_lowerIdKeyFrame = mpKeyFrameId[backupLowerKeyFrameId];
+        p_lowerIdKeyFrame = keyFrameId[backupLowerKeyFrameId];
     }
 
     keyFrameOrigins.clear();
     keyFrameOrigins.reserve(backupKeyFrameOriginIds.size());
-    for (std::size_t i = 0; i < backupKeyFrameOriginIds.size(); ++i)
+    for (std::size_t backupKeyFrameOriginIdIndex = 0;
+         backupKeyFrameOriginIdIndex < backupKeyFrameOriginIds.size();
+         ++backupKeyFrameOriginIdIndex)
     {
-        keyFrameOrigins.push_back(mpKeyFrameId[backupKeyFrameOriginIds[i]]);
+        keyFrameOrigins.push_back(
+            keyFrameId[backupKeyFrameOriginIds[backupKeyFrameOriginIdIndex]]);
     }
 
     backupMapPoints.clear();

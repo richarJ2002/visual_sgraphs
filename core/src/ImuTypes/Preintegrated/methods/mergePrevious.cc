@@ -26,29 +26,39 @@ namespace core
 namespace IMU
 {
 
-void Preintegrated::mergePrevious(Preintegrated *pPrev)
+void Preintegrated::mergePrevious(Preintegrated *p_previousPreintegrated_in)
 {
-    if (pPrev == this)
+    if (p_previousPreintegrated_in == this)
         return;
 
-    std::unique_lock<std::mutex> lock1(mMutex);
-    std::unique_lock<std::mutex> lock2(pPrev->mMutex);
-    Bias                         bav;
-    bav.bwx = bu.bwx;
-    bav.bwy = bu.bwy;
-    bav.bwz = bu.bwz;
-    bav.bax = bu.bax;
-    bav.bay = bu.bay;
-    bav.baz = bu.baz;
+    std::unique_lock<std::mutex> currentLock(preintegrationMutex);
+    std::unique_lock<std::mutex> previousLock(
+        p_previousPreintegrated_in->preintegrationMutex);
+    Bias mergedBias;
+    mergedBias.bwx = bu.bwx;
+    mergedBias.bwy = bu.bwy;
+    mergedBias.bwz = bu.bwz;
+    mergedBias.bax = bu.bax;
+    mergedBias.bay = bu.bay;
+    mergedBias.baz = bu.baz;
 
-    const std::vector<Integrable> aux1 = pPrev->mvMeasurements;
-    const std::vector<Integrable> aux2 = mvMeasurements;
+    const std::vector<Integrable> previousMeasurements =
+        p_previousPreintegrated_in->measurements;
+    const std::vector<Integrable> currentMeasurements = measurements;
 
-    initialize(bav);
-    for (size_t i = 0; i < aux1.size(); i++)
-        integrateNewMeasurement(aux1[i].a, aux1[i].w, aux1[i].t);
-    for (size_t i = 0; i < aux2.size(); i++)
-        integrateNewMeasurement(aux2[i].a, aux2[i].w, aux2[i].t);
+    initialize(mergedBias);
+    for (size_t measurementIndex = 0;
+         measurementIndex < previousMeasurements.size();
+         measurementIndex++)
+        integrateNewMeasurement(previousMeasurements[measurementIndex].a,
+                                previousMeasurements[measurementIndex].w,
+                                previousMeasurements[measurementIndex].t);
+    for (size_t measurementIndex = 0;
+         measurementIndex < currentMeasurements.size();
+         measurementIndex++)
+        integrateNewMeasurement(currentMeasurements[measurementIndex].a,
+                                currentMeasurements[measurementIndex].w,
+                                currentMeasurements[measurementIndex].t);
 }
 
 } // namespace IMU

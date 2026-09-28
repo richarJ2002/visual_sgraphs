@@ -47,8 +47,8 @@ std::vector<MapCompletenessResult>
         MapCompletenessResult result =
             computeConservativeMapCompleteness(snapshot_in, mapSnapshot);
         result.legacy = computeLegacyMapCompleteness(snapshot_in, mapSnapshot);
-        result.legacyAndConservativeDiverge =
-            (result.legacy.mapFullyModeled != result.isComplete);
+        result.doLegacyAndConservativeDiverge =
+            (result.legacy.isMapFullyModeled != result.isComplete);
         results.push_back(std::move(result));
     }
 

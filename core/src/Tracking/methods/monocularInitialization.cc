@@ -34,17 +34,22 @@ namespace core
 
 void Tracking::monocularInitialization()
 {
-    if (!readyToInitialize)
+    if (!isReadyToInitialize)
     {
         // Set Reference Frame
         if (currentFrame.keyPoints.size() > 100)
         {
             initialFrame = Frame(currentFrame);
             lastFrame    = Frame(currentFrame);
-            mvbPrevMatched.resize(currentFrame.keyPointsUndistorted.size());
-            for (size_t i = 0; i < currentFrame.keyPointsUndistorted.size();
-                 i++)
-                mvbPrevMatched[i] = currentFrame.keyPointsUndistorted[i].pt;
+            previousMatchedPoints.resize(
+                currentFrame.keyPointsUndistorted.size());
+            for (size_t keyPointsUndistortedIndex = 0;
+                 keyPointsUndistortedIndex <
+                 currentFrame.keyPointsUndistorted.size();
+                 keyPointsUndistortedIndex++)
+                previousMatchedPoints[keyPointsUndistortedIndex] =
+                    currentFrame.keyPointsUndistorted[keyPointsUndistortedIndex]
+                        .pt;
 
             fill(iniMatches.begin(), iniMatches.end(), -1);
 
@@ -59,7 +64,7 @@ void Tracking::monocularInitialization()
                 currentFrame.p_imuPreintegrated = p_imuPreintegratedFromLastKF;
             }
 
-            readyToInitialize = true;
+            isReadyToInitialize = true;
             return;
         }
     }
@@ -69,7 +74,7 @@ void Tracking::monocularInitialization()
             ((sensor == System::IMU_MONOCULAR) &&
              (lastFrame.timeStamp - initialFrame.timeStamp > 1.0)))
         {
-            readyToInitialize = false;
+            isReadyToInitialize = false;
             return;
         }
 
@@ -77,33 +82,36 @@ void Tracking::monocularInitialization()
         ORBmatcher matcher(0.9, true);
         int        nmatches = matcher.searchForInitialization(initialFrame,
                                                        currentFrame,
-                                                       mvbPrevMatched,
+                                                       previousMatchedPoints,
                                                        iniMatches,
                                                        100);
 
         // Check if there are enough correspondences
         if (nmatches < 100)
         {
-            readyToInitialize = false;
+            isReadyToInitialize = false;
             return;
         }
 
         Sophus::SE3f Tcw;
         vector<bool>
-            vbTriangulated; // Triangulated Correspondences (mvIniMatches)
+            triangulatedFlags; // Triangulated Correspondences (mvIniMatches)
 
         if (p_camera->reconstructWithTwoViews(initialFrame.keyPointsUndistorted,
                                               currentFrame.keyPointsUndistorted,
                                               iniMatches,
                                               Tcw,
                                               iniP3D,
-                                              vbTriangulated))
+                                              triangulatedFlags))
         {
-            for (size_t i = 0, iend = iniMatches.size(); i < iend; i++)
+            for (size_t keyPointsUndistortedIndex = 0, iend = iniMatches.size();
+                 keyPointsUndistortedIndex < iend;
+                 keyPointsUndistortedIndex++)
             {
-                if (iniMatches[i] >= 0 && !vbTriangulated[i])
+                if (iniMatches[keyPointsUndistortedIndex] >= 0 &&
+                    !triangulatedFlags[keyPointsUndistortedIndex])
                 {
-                    iniMatches[i] = -1;
+                    iniMatches[keyPointsUndistortedIndex] = -1;
                     nmatches--;
                 }
             }

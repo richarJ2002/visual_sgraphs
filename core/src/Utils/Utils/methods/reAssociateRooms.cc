@@ -34,7 +34,7 @@ namespace utils
 namespace utils
 {
 
-void Utils::reAssociateRooms(Atlas *p_atlas_inout)
+void Utils::reAssociateRooms(Atlas *p_atlas_in)
 {
     /*!
      * Re-run the targeted provisional-room consolidation pass.
@@ -44,12 +44,12 @@ void Utils::reAssociateRooms(Atlas *p_atlas_inout)
      *              single-wall provisional structural elements.
      */
     const std::vector<vs_graphs::core::semantic::Room *> allRooms =
-        p_atlas_inout->getAllRooms();
+        p_atlas_in->getAllRooms();
 
-    for (vs_graphs::core::semantic::Room *room : allRooms)
+    for (vs_graphs::core::semantic::Room *p_room : allRooms)
     {
         /* Skip invalid structural elements */
-        if (room == nullptr || room->isBad())
+        if (p_room == nullptr || p_room->isBad())
         {
             continue;
         }
@@ -59,7 +59,7 @@ void Utils::reAssociateRooms(Atlas *p_atlas_inout)
          * structural elements.
          */
         const bool isConfirmedRoom =
-            room->getRoomVariant() ==
+            p_room->getRoomVariant() ==
             vs_graphs::core::semantic::Room::RoomVariant::ROOM;
 
         if (!isConfirmedRoom)
@@ -71,11 +71,11 @@ void Utils::reAssociateRooms(Atlas *p_atlas_inout)
         std::size_t validWallCount = 0;
 
         const std::vector<vs_graphs::core::geometric::Plane *> roomWalls =
-            room->getWalls();
+            p_room->getWalls();
 
-        for (vs_graphs::core::geometric::Plane *wall : roomWalls)
+        for (vs_graphs::core::geometric::Plane *p_wall : roomWalls)
         {
-            if (wall != nullptr && !wall->isBad())
+            if (p_wall != nullptr && !p_wall->isBad())
             {
                 validWallCount++;
             }
@@ -90,7 +90,7 @@ void Utils::reAssociateRooms(Atlas *p_atlas_inout)
          * Consolidate only redundant single-wall provisional structural
          * elements whose wall already belongs to this confirmed room.
          */
-        Utils::consolidateProvisionalRooms(room, p_atlas_inout);
+        Utils::consolidateProvisionalRooms(p_room, p_atlas_in);
     }
 }
 

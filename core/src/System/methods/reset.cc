@@ -32,8 +32,8 @@ namespace core
 
 void System::reset()
 {
-    unique_lock<mutex> lock(mMutexReset);
-    resetRequested = true;
+    unique_lock<mutex> lock(resetMutex);
+    isResetRequested = true;
 }
 
 } // namespace core

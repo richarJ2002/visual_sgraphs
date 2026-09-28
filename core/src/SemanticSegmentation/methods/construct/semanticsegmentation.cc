@@ -23,17 +23,18 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticSegmentation::SemanticSegmentation(Atlas *pAtlas)
+SemanticSegmentation::SemanticSegmentation(Atlas *p_atlas_in)
 {
     /* Store atlas object address */
-    p_atlas = pAtlas;
+    p_atlas = p_atlas_in;
 
     /* Get the system parameters */
     p_sysParams = types::SystemParams::getParams();
 
     /* Set the booleans according to the mode of operation */
-    geoRuns = !(p_sysParams->general.modeOfOperation ==
-                types::SystemParams::General::ModeOfOperation::SEM);
+    isGeometricSegmentationRunning =
+        !(p_sysParams->general.modeOfOperation ==
+          types::SystemParams::General::ModeOfOperation::SEM);
 }
 
 } // namespace core

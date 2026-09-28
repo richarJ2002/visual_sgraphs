@@ -30,36 +30,37 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::updateFrameIMU(const float      s,
-                              const IMU::Bias &b,
-                              KeyFrame        *pCurrentKeyFrame)
+void Tracking::updateFrameIMU(const float      s_in,
+                              const IMU::Bias &b_in,
+                              KeyFrame        *p_currentKeyFrame_in)
 {
-    Map *pMap = pCurrentKeyFrame->getMap();
-    list<vs_graphs::core::KeyFrame *>::iterator lRit = mlpReferences.begin();
-    list<bool>::iterator                        lbL  = mlbLost.begin();
+    Map *p_map = p_currentKeyFrame_in->getMap();
+    list<vs_graphs::core::KeyFrame *>::iterator rits =
+        referenceKeyFrames.begin();
+    list<bool>::iterator lbL = lostFlags.begin();
     for (auto lit = relativeFramePoses.begin(), lend = relativeFramePoses.end();
          lit != lend;
-         lit++, lRit++, lbL++)
+         lit++, rits++, lbL++)
     {
         if (*lbL)
             continue;
 
-        KeyFrame *pKF = *lRit;
+        KeyFrame *p_keyFrame = *rits;
 
-        while (pKF->isBad() && pKF->getParent())
+        while (p_keyFrame->isBad() && p_keyFrame->getParent())
         {
-            pKF = pKF->getParent();
+            p_keyFrame = p_keyFrame->getParent();
         }
 
-        if (pKF->getMap() == pMap)
+        if (p_keyFrame->getMap() == p_map)
         {
-            (*lit).translation() *= s;
+            (*lit).translation() *= s_in;
         }
     }
 
-    lastBias = b;
+    lastBias = b_in;
 
-    p_lastKeyFrame = pCurrentKeyFrame;
+    p_lastKeyFrame = p_currentKeyFrame_in;
 
     lastFrame.setNewBias(lastBias);
     currentFrame.setNewBias(lastBias);
@@ -69,7 +70,7 @@ void Tracking::updateFrameIMU(const float      s,
         usleep(500);
     }
 
-    if (lastFrame.mnId == lastFrame.p_lastKeyFrame->frameId)
+    if (lastFrame.id == lastFrame.p_lastKeyFrame->frameId)
     {
         lastFrame.setImuPoseVelocity(lastFrame.p_lastKeyFrame->getImuRotation(),
                                      lastFrame.p_lastKeyFrame->getImuPosition(),
@@ -84,7 +85,7 @@ void Tracking::updateFrameIMU(const float      s,
         float                 t12  = lastFrame.p_imuPreintegrated->dT;
 
         lastFrame.setImuPoseVelocity(
-            IMU::NormalizeRotation(
+            IMU::normalizeRotation(
                 Rwb1 * lastFrame.p_imuPreintegrated->getUpdatedDeltaRotation()),
             twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
                 Rwb1 * lastFrame.p_imuPreintegrated->getUpdatedDeltaPosition(),
@@ -104,7 +105,7 @@ void Tracking::updateFrameIMU(const float      s,
         float                 t12  = currentFrame.p_imuPreintegrated->dT;
 
         currentFrame.setImuPoseVelocity(
-            IMU::NormalizeRotation(
+            IMU::normalizeRotation(
                 Rwb1 *
                 currentFrame.p_imuPreintegrated->getUpdatedDeltaRotation()),
             twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
@@ -115,7 +116,7 @@ void Tracking::updateFrameIMU(const float      s,
                     currentFrame.p_imuPreintegrated->getUpdatedDeltaVelocity());
     }
 
-    firstImuFrameId = currentFrame.mnId;
+    firstImuFrameId = currentFrame.id;
 }
 
 } // namespace core

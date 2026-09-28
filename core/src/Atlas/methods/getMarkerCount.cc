@@ -32,7 +32,7 @@ namespace core
 
 long unsigned int Atlas::getMarkerCount()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     return p_activeMap->getMarkerCount();
 }
 

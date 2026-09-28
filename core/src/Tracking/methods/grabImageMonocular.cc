@@ -30,30 +30,30 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f
-    Tracking::grabImageMonocular(const cv::Mat &im,
-                                 const double  &timestamp,
-                                 string         filename,
-                                 const std::vector<semantic::Marker *> markers,
-                                 const std::vector<semantic::Room *>   rooms)
+Sophus::SE3f Tracking::grabImageMonocular(
+    const cv::Mat                        &image_in,
+    const double                         &timestamp_in,
+    string                                filename_in,
+    const std::vector<semantic::Marker *> markers_in,
+    const std::vector<semantic::Room *>   rooms_in)
 {
     // Set arguments to local variables
-    env_rooms = rooms;
+    env_rooms = rooms_in;
 
     // Adaptive FAST threshold: adjust before feature extraction
     adjustFASTThreshold();
 
-    imageGray = im;
+    imageGray = image_in;
     if (imageGray.channels() == 3)
     {
-        if (rgbEnabled)
+        if (isRgbEnabled)
             cvtColor(imageGray, imageGray, cv::COLOR_RGB2GRAY);
         else
             cvtColor(imageGray, imageGray, cv::COLOR_BGR2GRAY);
     }
     else if (imageGray.channels() == 4)
     {
-        if (rgbEnabled)
+        if (isRgbEnabled)
             cvtColor(imageGray, imageGray, cv::COLOR_RGBA2GRAY);
         else
             cvtColor(imageGray, imageGray, cv::COLOR_BGRA2GRAY);
@@ -63,9 +63,9 @@ Sophus::SE3f
     {
         if (state == NOT_INITIALIZED || state == NO_IMAGES_YET ||
             (lastId - initId) < maxFrames)
-            currentFrame = Frame(im,
+            currentFrame = Frame(image_in,
                                  imageGray,
-                                 timestamp,
+                                 timestamp_in,
                                  p_iniOrbExtractor,
                                  p_orbVocabulary,
                                  p_camera,
@@ -74,11 +74,11 @@ Sophus::SE3f
                                  depthThreshold,
                                  nullptr,
                                  IMU::Calib(),
-                                 markers);
+                                 markers_in);
         else
-            currentFrame = Frame(im,
+            currentFrame = Frame(image_in,
                                  imageGray,
-                                 timestamp,
+                                 timestamp_in,
                                  p_orbExtractorLeft,
                                  p_orbVocabulary,
                                  p_camera,
@@ -87,15 +87,15 @@ Sophus::SE3f
                                  depthThreshold,
                                  nullptr,
                                  IMU::Calib(),
-                                 markers);
+                                 markers_in);
     }
     else if (sensor == System::IMU_MONOCULAR)
     {
         if (state == NOT_INITIALIZED || state == NO_IMAGES_YET)
         {
-            currentFrame = Frame(im,
+            currentFrame = Frame(image_in,
                                  imageGray,
-                                 timestamp,
+                                 timestamp_in,
                                  p_iniOrbExtractor,
                                  p_orbVocabulary,
                                  p_camera,
@@ -104,12 +104,12 @@ Sophus::SE3f
                                  depthThreshold,
                                  &lastFrame,
                                  *p_imuCalibration,
-                                 markers);
+                                 markers_in);
         }
         else
-            currentFrame = Frame(im,
+            currentFrame = Frame(image_in,
                                  imageGray,
-                                 timestamp,
+                                 timestamp_in,
                                  p_orbExtractorLeft,
                                  p_orbVocabulary,
                                  p_camera,
@@ -118,20 +118,20 @@ Sophus::SE3f
                                  depthThreshold,
                                  &lastFrame,
                                  *p_imuCalibration,
-                                 markers);
+                                 markers_in);
     }
 
     if (state == NO_IMAGES_YET)
-        t0 = timestamp;
+        t0 = timestamp_in;
 
-    currentFrame.fileName  = filename;
+    currentFrame.fileName  = filename_in;
     currentFrame.datasetId = numDataset;
 
 #ifdef REGISTER_TIMES
-    vdORBExtract_ms.push_back(currentFrame.orbExtractionTime);
+    orbExtractionTimes_ms.push_back(currentFrame.orbExtractionTime);
 #endif
 
-    lastId = currentFrame.mnId;
+    lastId = currentFrame.id;
     track();
 
     return currentFrame.getPose();

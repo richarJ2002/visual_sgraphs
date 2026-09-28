@@ -84,69 +84,70 @@ class Tracking
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Tracking(System                    *pSys,
-             ORBVocabulary             *pVoc,
-             FrameDrawer               *pFrameDrawer,
-             MapDrawer                 *pMapDrawer,
-             Atlas                     *pAtlas,
-             KeyFrameDatabase          *pKFDB,
-             const string              &strSettingPath,
-             const int                  sensorType,
-             utils::settings::Settings *settings,
-             const string              &_nameSeq = std::string());
+    Tracking(System                    *p_sys_in,
+             ORBVocabulary             *p_vocabulary_in,
+             FrameDrawer               *p_frameDrawer_in,
+             MapDrawer                 *p_mapDrawer_in,
+             Atlas                     *p_atlas_in,
+             KeyFrameDatabase          *p_keyFrameDatabase_in,
+             const string              &settingPath_in,
+             const int                  sensorType_in,
+             utils::settings::Settings *p_settings_in,
+             const string              &nameSeq_in = std::string());
 
     ~Tracking();
 
     // Parse the config file
-    bool parseCamParamFile(cv::FileStorage &fSettings);
-    bool parseORBParamFile(cv::FileStorage &fSettings);
-    bool parseIMUParamFile(cv::FileStorage &fSettings);
+    bool parseCamParamFile(cv::FileStorage &settings_in);
+    bool parseORBParamFile(cv::FileStorage &settings_in);
+    bool parseIMUParamFile(cv::FileStorage &settings_in);
 
     // Preprocess the input and call Track(). Extract features and performs
     // stereo matching.
-    Sophus::SE3f grabImageStereo(const cv::Mat &imRectLeft,
-                                 const cv::Mat &imRectRight,
-                                 const double  &timestamp,
-                                 string         filename,
-                                 const std::vector<semantic::Marker *> markers,
-                                 const std::vector<semantic::Room *>   rooms);
     Sophus::SE3f
-        grabImageRGBD(const cv::Mat                                &imRGB,
-                      const cv::Mat                                &imD,
-                      const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &pointcloud,
-                      const double                                 &timestamp,
-                      string                                        filename,
-                      const std::vector<semantic::Marker *>         markers,
-                      const std::vector<semantic::Room *>           rooms);
+                 grabImageStereo(const cv::Mat &imageRectifiedLeft_in,
+                                 const cv::Mat &imageRectifiedRight_in,
+                                 const double  &timestamp_in,
+                                 string         filename_in,
+                                 const std::vector<semantic::Marker *> markers_in,
+                                 const std::vector<semantic::Room *>   rooms_in);
+    Sophus::SE3f grabImageRGBD(
+        const cv::Mat                                &imageRgb_in,
+        const cv::Mat                                &imageD_in,
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_pointcloud_in,
+        const double                                 &timestamp_in,
+        string                                        filename_in,
+        const std::vector<semantic::Marker *>         markers_in,
+        const std::vector<semantic::Room *>           rooms_in);
     Sophus::SE3f
-        grabImageMonocular(const cv::Mat                        &im,
-                           const double                         &timestamp,
-                           string                                filename,
-                           const std::vector<semantic::Marker *> markers,
-                           const std::vector<semantic::Room *>   rooms);
+        grabImageMonocular(const cv::Mat                        &image_in,
+                           const double                         &timestamp_in,
+                           string                                filename_in,
+                           const std::vector<semantic::Marker *> markers_in,
+                           const std::vector<semantic::Room *>   rooms_in);
 
-    void grabImuData(const IMU::Point &imuMeasurement);
+    void grabImuData(const IMU::Point &imuMeasurement_in);
 
     // Setters of various classes
-    void setViewer(Viewer *pViewer);
-    void setLoopClosing(LoopClosing *pLoopClosing);
-    void setLocalMapper(LocalMapping *pLocalMapper);
+    void setViewer(Viewer *p_viewer_in);
+    void setLoopClosing(LoopClosing *p_loopClosing_in);
+    void setLocalMapper(LocalMapping *p_localMapper_in);
 
-    void setStepByStep(bool bSet);
+    void setStepByStep(bool isEnabled_in);
     bool getStepByStep();
 
     // Load new settings
     // The focal lenght should be similar or scale prediction will fail when
     // projecting points
-    void changeCalibration(const string &strSettingPath);
+    void changeCalibration(const string &settingPath_in);
 
     // Use this function if you have deactivated local mapping and you only want
     // to localize the camera.
-    void informOnlyTracking(const bool &flag);
+    void informOnlyTracking(const bool &flag_in);
 
-    void      updateFrameIMU(const float      s,
-                             const IMU::Bias &b,
-                             KeyFrame        *pCurrentKeyFrame);
+    void      updateFrameIMU(const float      s_in,
+                             const IMU::Bias &b_in,
+                             KeyFrame        *p_currentKeyFrame_in);
     KeyFrame *getLastKeyFrame()
     {
         return p_lastKeyFrame;
@@ -166,37 +167,37 @@ class Tracking
     int  getMatchesInliers();
 
     // DEBUG
-    void saveSubTrajectory(string strNameFile_frames,
-                           string strNameFile_kf,
-                           string strFolder = "");
-    void saveSubTrajectory(string strNameFile_frames,
-                           string strNameFile_kf,
-                           Map   *pMap);
+    void saveSubTrajectory(string textNameFileFrames_in,
+                           string textNameFileKeyFrame_in,
+                           string folder_in = "");
+    void saveSubTrajectory(string textNameFileFrames_in,
+                           string textNameFileKeyFrame_in,
+                           Map   *p_map_in);
 
     float getImageScale();
 
     // Get parameters
     double getMarkerImpact() const;
-    void   setMarkerImpact(const double newValue);
+    void   setMarkerImpact(const double newValue_in);
 
     // Semantic Entities
     /*!
      * @brief Get the points close to a given marker
-     * @param currentMarker the address of the current marker
+     * @param p_currentMarker_in the address of the current marker
      */
     std::vector<MapPoint *>
-        findPointsCloseToMarker(const semantic::Marker *currentMarker);
+        findPointsCloseToMarker(const semantic::Marker *p_currentMarker_in);
 
     /*!
      * @brief Get the points close to a given location
-     * @param points the set of map-points
-     * @param location the given location
-     * @param distanceThreshold the pre-defined threshold
+     * @param points_in the set of map-points
+     * @param location_in the given location
+     * @param distanceThreshold_in the pre-defined threshold
      */
     std::vector<MapPoint *>
-        findPointsCloseToLocation(const std::vector<MapPoint *> &points,
-                                  const Eigen::Vector3f         &location,
-                                  double distanceThreshold);
+        findPointsCloseToLocation(const std::vector<MapPoint *> &points_in,
+                                  const Eigen::Vector3f         &location_in,
+                                  double distanceThreshold_in);
 
 #ifdef REGISTER_LOOP
     void requestStop();
@@ -207,7 +208,7 @@ class Tracking
 
   public:
     // Tracking states
-    enum eTrackingState
+    enum TrackingState
     {
         SYSTEM_NOT_READY = -1,
         NO_IMAGES_YET    = 0,
@@ -218,8 +219,8 @@ class Tracking
         OK_KLT           = 5
     };
 
-    eTrackingState state;
-    eTrackingState lastProcessedState;
+    TrackingState state;
+    TrackingState lastProcessedState;
 
     // Input sensor
     int sensor;
@@ -233,7 +234,7 @@ class Tracking
     // Initialization Variables (Monocular)
     std::vector<int>         iniLastMatches;
     std::vector<int>         iniMatches;
-    std::vector<cv::Point2f> mvbPrevMatched;
+    std::vector<cv::Point2f> previousMatchedPoints;
     std::vector<cv::Point3f> iniP3D;
     Frame                    initialFrame;
     Sophus::SE3f             poseTc0w;
@@ -242,31 +243,31 @@ class Tracking
     // execution. Basically we store the reference keyframe for each frame and
     // its relative transformation
     list<Sophus::SE3f> relativeFramePoses;
-    list<KeyFrame *>   mlpReferences;
+    list<KeyFrame *>   referenceKeyFrames;
     list<double>       frameTimes;
-    list<bool>         mlbLost;
+    list<bool>         lostFlags;
 
     // frames with estimated pose
     int  trackedFr;
-    bool step;
+    bool isStepRequested;
 
     // True if local mapping is deactivated and we are performing only
     // localization
-    bool onlyTracking;
+    bool isTrackingOnlyMode;
 
-    void reset(bool bLocMap = false);
-    void resetActiveMap(bool bLocMap = false);
+    void reset(bool isRequestedByLocalMapping_in = false);
+    void resetActiveMap(bool isRequestedByLocalMapping_in = false);
 
     float  meanTrack;
-    bool   initWith3KFs;
+    bool   shouldInitializeWithThreeKeyFrames;
     double t0;    // time-stamp of first read frame
     double t0vis; // time-stamp of first inserted keyframe
     double t0IMU; // time-stamp of IMU initialization
-    bool   fastInit = false;
+    bool   isFastInitEnabled = false;
 
     vector<MapPoint *> getLocalMapPoints();
 
-    bool writeStats;
+    bool shouldWriteStats;
 
     // Semantic map entities
     std::vector<vs_graphs::core::semantic::Room *> env_rooms;
@@ -276,15 +277,15 @@ class Tracking
     void trackStats2File();
     void printTimeStats();
 
-    vector<double> vdRectStereo_ms;
-    vector<double> vdResizeImage_ms;
-    vector<double> vdORBExtract_ms;
-    vector<double> vdStereoMatch_ms;
-    vector<double> vdIMUInteg_ms;
-    vector<double> vdPosePred_ms;
-    vector<double> vdLMTrack_ms;
-    vector<double> vdNewKF_ms;
-    vector<double> vdTrackTotal_ms;
+    vector<double> stereoRectificationTimes_ms;
+    vector<double> imageResizeTimes_ms;
+    vector<double> orbExtractionTimes_ms;
+    vector<double> stereoMatchTimes_ms;
+    vector<double> imuIntegrationTimes_ms;
+    vector<double> posePredictionTimes_ms;
+    vector<double> localMapTrackTimes_ms;
+    vector<double> newKeyFrameTimes_ms;
+    vector<double> trackTotalTimes_ms;
 #endif
 
   protected:
@@ -324,7 +325,7 @@ class Tracking
     // Reset IMU biases and compute frame velocity
     void resetFrameIMU();
 
-    bool mapUpdated;
+    bool isMapUpdated;
 
     // Imu preintegration from last frame
     IMU::Preintegrated *p_imuPreintegratedFromLastKF;
@@ -335,7 +336,7 @@ class Tracking
     // Vector of IMU measurements from previous to current frame (to be filled
     // by PreintegrateIMU)
     std::vector<IMU::Point> imuFromLastFrame;
-    std::mutex              mMutexImuQueue;
+    std::mutex              imuQueueMutex;
 
     // Imu calibration parameters
     IMU::Calib *p_imuCalibration;
@@ -348,7 +349,7 @@ class Tracking
     // are enough matches with temporal points. In that case we are doing visual
     // odometry. The system will try to do relocalization to recover
     // "zero-drift" localization to the map.
-    bool visualOdometry;
+    bool isVisualOdometry;
 
     // Other Thread Pointers
     LoopClosing  *p_loopClosing;
@@ -364,7 +365,7 @@ class Tracking
     KeyFrameDatabase *p_keyFrameDatabase;
 
     // Initalization (only for monocular)
-    bool readyToInitialize;
+    bool isReadyToInitialize;
     bool isInitSet;
 
     // Local Map
@@ -379,7 +380,7 @@ class Tracking
     Viewer      *p_viewer;
     FrameDrawer *p_frameDrawer;
     MapDrawer   *p_mapDrawer;
-    bool         stepByStep;
+    bool         isStepByStepMode;
 
     // Atlas
     Atlas *p_atlas;
@@ -394,7 +395,7 @@ class Tracking
     // IMU parameters
     float  imuFrequency;
     float  imuThresh;
-    bool   insertKFsLost;
+    bool   shouldInsertKeyFramesWhenLost;
     double imuPeriod = 0.001;
 
     // New KeyFrame rules (according to fps)
@@ -419,16 +420,16 @@ class Tracking
 
     // Keyframe insertion thresholds (configurable for aggressive corridor
     // tracking)
-    int    minInliersForKF        = 30;
-    int    minCloseInliersForKF   = 15;
-    double mdMinTemporalSpacingKF = 1.0;
+    int    minInliersForKF            = 30;
+    int    minCloseInliersForKF       = 15;
+    double minKeyFrameTemporalSpacing = 1.0;
 
     // Local map size (configurable)
     int maxKFsInLocalMap = 300;
 
     // Motion model search radius expansion
-    float mfMotionModelSearchRadiusMultiplier = 2.0F;
-    int   motionModelMaxSearchRadius          = 30;
+    float motionModelSearchRadiusMultiplier = 2.0F;
+    int   motionModelMaxSearchRadius        = 30;
 
     // Initialization parameters
     int initializationMinPoints = 100;
@@ -447,28 +448,28 @@ class Tracking
     unsigned int initialFrameId;
     unsigned int lastInitFrameId;
 
-    bool createdMap;
+    bool hasCreatedMap;
 
     // Motion Model
-    bool         velocityAvailable{false};
+    bool         isVelocityAvailable{false};
     Sophus::SE3f velocity;
 
     // Color order (true RGB, false BGR, ignored if grayscale)
-    bool rgbEnabled;
+    bool isRgbEnabled;
 
-    list<MapPoint *> mlpTemporalPoints;
+    list<MapPoint *> temporalMapPoints;
 
     // int nMapChangeIndex;
 
     int numDataset;
 
-    ofstream f_track_stats;
+    ofstream trackStatsFile;
 
-    ofstream f_track_times;
-    double   mTime_PreIntIMU;
-    double   mTime_PosePred;
-    double   mTime_LocalMapTrack;
-    double   mTime_NewKF_Dec;
+    ofstream trackTimesFile;
+    double   imuPreintegrationTime;
+    double   posePredictionTime;
+    double   localMapTrackTime;
+    double   newKeyFrameDecisionTime;
 
     // Adaptive FAST threshold: track feature count to adjust threshold
     int lastFrameFeatures;
@@ -482,18 +483,18 @@ class Tracking
 
     Sophus::SE3f poseTlr;
 
-    void newParameterLoader(utils::settings::Settings *settings);
-    void loadTrackingParameters(const string &strSettingPath);
+    void newParameterLoader(utils::settings::Settings *p_settings_inout);
+    void loadTrackingParameters(const string &settingPath_in);
     void adjustFASTThreshold(); // Adaptive threshold based on tracking
                                 // quality
 
 #ifdef REGISTER_LOOP
     bool stop();
 
-    bool       stopped;
-    bool       stopRequestedFlag;
-    bool       notStop;
-    std::mutex mMutexStop;
+    bool       hasStopped;
+    bool       isStopRequested;
+    bool       isStopBlocked;
+    std::mutex stopMutex;
 #endif
 
   public:

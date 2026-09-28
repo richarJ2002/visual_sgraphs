@@ -26,9 +26,9 @@ namespace core
 void SemanticsManager::submitVerificationVerdict(
     const semantic::VerificationVerdict &verdict_in)
 {
-    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-    verificationVerdict_        = verdict_in;
-    verificationVerdictPending_ = true;
+    std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+    verificationVerdict          = verdict_in;
+    isVerificationVerdictPending = true;
 }
 
 } // namespace core

@@ -32,14 +32,14 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f
-    System::trackRGBD(const cv::Mat                                &colorImg,
-                      const cv::Mat                                &depthmap,
-                      const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &mainCloud,
-                      const double                                 &timestamp,
-                      const vector<IMU::Point>                     &vImuMeas,
-                      string                                        filename,
-                      const std::vector<semantic::Marker *>         markers)
+Sophus::SE3f System::trackRGBD(
+    const cv::Mat                                &colorImage_in,
+    const cv::Mat                                &depthmap_in,
+    const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_mainCloud_in,
+    const double                                 &timestamp_in,
+    const vector<IMU::Point>                     &imuMeas_in,
+    string                                        filename_in,
+    const std::vector<semantic::Marker *>         markers_in)
 {
     // Check if the sensor is correctly set as RGB-D
     if (sensor != RGBD && sensor != IMU_RGBD)
@@ -51,91 +51,93 @@ Sophus::SE3f
     }
 
     // Obtain the images
-    cv::Mat imToFeed      = colorImg.clone();
-    cv::Mat imDepthToFeed = depthmap.clone();
-    if (settings_ && settings_->needToResize())
+    cv::Mat imToFeed      = colorImage_in.clone();
+    cv::Mat imDepthToFeed = depthmap_in.clone();
+    if (p_settings && p_settings->needToResize())
     {
         cv::Mat resizedImage;
-        cv::resize(colorImg, resizedImage, settings_->newImSize());
+        cv::resize(colorImage_in, resizedImage, p_settings->newImSize());
         imToFeed = resizedImage;
-        cv::resize(depthmap, imDepthToFeed, settings_->newImSize());
+        cv::resize(depthmap_in, imDepthToFeed, p_settings->newImSize());
     }
 
     // Check for mode change
     {
-        unique_lock<mutex> lock(mMutexMode);
-        if (activateLocalizationModeRequested)
+        unique_lock<mutex> lock(modeMutex);
+        if (isLocalizationModeActivationRequested)
         {
             p_localMapper->requestStop();
             // Wait until Local Mapping has effectively stopped
             while (!p_localMapper->isStopped())
                 usleep(1000);
             p_tracker->informOnlyTracking(true);
-            activateLocalizationModeRequested = false;
+            isLocalizationModeActivationRequested = false;
         }
-        if (deactivateLocalizationModeRequested)
+        if (isLocalizationModeDeactivationRequested)
         {
             p_tracker->informOnlyTracking(false);
             p_localMapper->release();
-            deactivateLocalizationModeRequested = false;
+            isLocalizationModeDeactivationRequested = false;
         }
     }
 
     // Check reset
     {
-        unique_lock<mutex> lock(mMutexReset);
-        if (resetRequested)
+        unique_lock<mutex> lock(resetMutex);
+        if (isResetRequested)
         {
             (void)consumeResetCause(this);
             p_tracker->reset();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
-            resetRequested          = false;
-            resetActiveMapRequested = false;
+            isResetRequested          = false;
+            isResetActiveMapRequested = false;
         }
-        else if (resetActiveMapRequested)
+        else if (isResetActiveMapRequested)
         {
             reportResetAttribution(consumeResetCause(this),
                                    ResetAction::RESET_ACTIVE_MAP_EXECUTION);
             p_tracker->resetActiveMap();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
-            resetActiveMapRequested = false;
+            isResetActiveMapRequested = false;
         }
     }
 
     // Apply IMU measurements
     if (sensor == System::IMU_RGBD)
-        for (size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
-            p_tracker->grabImuData(vImuMeas[i_imu]);
+        for (size_t imuMeasurementIndex = 0;
+             imuMeasurementIndex < imuMeas_in.size();
+             imuMeasurementIndex++)
+            p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]);
 
     // Track RGB-D images
     Sophus::SE3f Tcw = p_tracker->grabImageRGBD(imToFeed,
                                                 imDepthToFeed,
-                                                mainCloud,
-                                                timestamp,
-                                                filename,
-                                                markers,
+                                                p_mainCloud_in,
+                                                timestamp_in,
+                                                filename_in,
+                                                markers_in,
                                                 envRooms);
 
-    unique_lock<mutex> lock2(mMutexState);
+    unique_lock<mutex> lock2(stateMutex);
     trackingState      = p_tracker->state;
     trackingInliers    = p_tracker->getMatchesInliers();
-    lastFrameTimestamp = timestamp;
+    lastFrameTimestamp = timestamp_in;
     trackedMapPoints   = p_tracker->currentFrame.mapPoints;
     trackedKeyPointsUn = p_tracker->currentFrame.keyPointsUndistorted;
 
     currentCameraPose_World = Tcw.inverse();
-    currentCameraPoseValid =
+    isCurrentCameraPoseValid =
         trackingState == Tracking::OK &&
         currentCameraPose_World.translation().allFinite() &&
         currentCameraPose_World.rotationMatrix().allFinite();
 
     /* Feed the real per-frame tracking state to SemanticsManager's reset
-     * anchor (lastKnownRoomId_ via onTrackingLost()/onTrackingRecovered()).
+     * anchor (lastKnownRoomId via onTrackingLost()/onTrackingRecovered()).
      * Previously the ONLY caller of these was GetMissionHealthSnapshot(),
      * itself only invoked from the get_mission_health ROS service -- which
      * nothing calls unless scripts/sim_lockstep_controller.py's opt-in
      * --lockstep mode is running. Every run without --lockstep therefore
-     * left lastKnownRoomId_ at its unset default (-1) for the whole
+     * left lastKnownRoomId at its unset default (-1) for the whole
      * mission: SemanticCandidates::generate() silently fell back to
      * unanchored scoring on every single reset, never told which room the
      * UAV was actually in when tracking was lost. This is the same
@@ -157,14 +159,14 @@ Sophus::SE3f
      * The SemanticsManager::Run() thread performs the actual room
      * matching once rooms exist in the new map; we only log here. */
     {
-        Map *currentMap = p_atlas->getCurrentMap();
-        if (currentMap)
+        Map *p_currentMap = p_atlas->getCurrentMap();
+        if (p_currentMap)
         {
-            long unsigned int mapId = currentMap->getId();
-            if (firstMapInit)
+            long unsigned int mapId = p_currentMap->getId();
+            if (isAwaitingFirstMap)
             {
                 lastProcessedMapId = mapId;
-                firstMapInit       = false;
+                isAwaitingFirstMap = false;
             }
             else if (mapId != lastProcessedMapId)
             {

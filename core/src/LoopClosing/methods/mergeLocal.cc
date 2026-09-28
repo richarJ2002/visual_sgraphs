@@ -53,7 +53,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * ---------------------------------------------------------------------- */
 
     /* Constant used to determine the number of temporal keyframes */
-    constexpr int kNumTemporalKFs = 25;
+    constexpr int COUNT_TEMPORAL_KEY_FRAMES = 25;
 
     /* Extract the system parameters */
     p_sysParams = types::SystemParams::getParams();
@@ -66,13 +66,13 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         return semantic::SemanticMergeDecision::REJECT;
     }
 
-    Map *pCurrentMap = p_currentKF->getMap();
-    Map *pMergeMap   = p_mergeMatchedKF->getMap();
+    Map *p_currentMap = p_currentKF->getMap();
+    Map *p_mergeMap   = p_mergeMatchedKF->getMap();
 
-    if (pCurrentMap == nullptr || pMergeMap == nullptr ||
-        pCurrentMap == pMergeMap || pCurrentMap->isBad() ||
-        pMergeMap->isBad() || !p_atlas->isActiveMap(pCurrentMap) ||
-        !p_atlas->isActiveMap(pMergeMap))
+    if (p_currentMap == nullptr || p_mergeMap == nullptr ||
+        p_currentMap == p_mergeMap || p_currentMap->isBad() ||
+        p_mergeMap->isBad() || !p_atlas->isActiveMap(p_currentMap) ||
+        !p_atlas->isActiveMap(p_mergeMap))
     {
         return semantic::SemanticMergeDecision::REJECT;
     }
@@ -86,9 +86,9 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * ---------------------------------------------------------------------- */
 
     /* Flag to indicate if bundle adjustment should be relaunched */
-    bool bRelaunchBA = false;
+    bool shouldRelaunchBa = false;
 
-    bRelaunchBA = stopGlobalBundleAdjustment();
+    shouldRelaunchBa = stopGlobalBundleAdjustment();
 
     /* ---------------------------------------------------------------------- *
      * SECTION 3 - STOP LOCAL MAPPING
@@ -124,9 +124,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     /* Revalidate after quiescing workers; retained retired maps keep stale
      * raw pointers alive, so pointer non-nullness alone is insufficient. */
     if (p_currentKF->isBad() || p_mergeMatchedKF->isBad() ||
-        p_currentKF->getMap() != pCurrentMap ||
-        p_mergeMatchedKF->getMap() != pMergeMap ||
-        !p_atlas->isActiveMap(pCurrentMap) || !p_atlas->isActiveMap(pMergeMap))
+        p_currentKF->getMap() != p_currentMap ||
+        p_mergeMatchedKF->getMap() != p_mergeMap ||
+        !p_atlas->isActiveMap(p_currentMap) ||
+        !p_atlas->isActiveMap(p_mergeMap))
     {
         semanticUpdateLock.unlock();
         p_localMapper->release();
@@ -142,13 +143,13 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
 
     const semantic::SemanticMergeGateResult semanticMergeGate =
         semantic::SemanticVerify::evaluateMapMergeGate(
-            pCurrentMap,
-            pMergeMap,
+            p_currentMap,
+            p_mergeMap,
             g2oSwCurrentWMerge,
             semantic::SemanticVerify::configFromSystemParams());
     const std::string floorVerificationResult = semanticMergeGate.floorDecision;
-    std::cout << "[SemanticMergeGate] surviving_map=" << pCurrentMap->getId()
-              << " absorbed_map=" << pMergeMap->getId() << " decision="
+    std::cout << "[SemanticMergeGate] surviving_map=" << p_currentMap->getId()
+              << " absorbed_map=" << p_mergeMap->getId() << " decision="
               << semantic::SemanticVerify::mergeDecisionName(
                      semanticMergeGate.decision)
               << " reason="
@@ -163,9 +164,9 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     {
         semanticUpdateLock.unlock();
         p_localMapper->release();
-        if (bRelaunchBA)
+        if (shouldRelaunchBa)
         {
-            relaunchGlobalBundleAdjustment(pCurrentMap);
+            relaunchGlobalBundleAdjustment(p_currentMap);
         }
         return semanticMergeGate.decision;
     }
@@ -182,54 +183,54 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * This window forms the fixed reference side of the weld.
      * ---------------------------------------------------------------------- */
 
-    std::set<KeyFrame *> spLocalWindowKFs;
-    std::set<MapPoint *> spLocalWindowMPs;
+    std::set<KeyFrame *> localWindowKeyFrames;
+    std::set<MapPoint *> localWindowMapPoints;
 
     /*!
      * If using IMU, construct temporal inertial chain. Otherwise, start with
      * current keyframe for local window.
      */
-    if (pCurrentMap->isInertial() && pMergeMap->isInertial())
+    if (p_currentMap->isInertial() && p_mergeMap->isInertial())
     {
         /* ------------------------------------------------------------------ *
          * Walk backwards through the temporal chain
          * ------------------------------------------------------------------ */
 
-        KeyFrame *pKFi      = p_currentKF;
-        int       nInserted = 0;
+        KeyFrame *p_keyFrame    = p_currentKF;
+        int       insertedCount = 0;
 
-        while (pKFi && nInserted < kNumTemporalKFs)
+        while (p_keyFrame && insertedCount < COUNT_TEMPORAL_KEY_FRAMES)
         {
-            spLocalWindowKFs.insert(pKFi);
+            localWindowKeyFrames.insert(p_keyFrame);
 
-            const std::set<MapPoint *> spMPs = pKFi->getMapPoints();
-            spLocalWindowMPs.insert(spMPs.begin(), spMPs.end());
+            const std::set<MapPoint *> mapPoints = p_keyFrame->getMapPoints();
+            localWindowMapPoints.insert(mapPoints.begin(), mapPoints.end());
 
-            pKFi = pKFi->p_prevKF;
-            nInserted++;
+            p_keyFrame = p_keyFrame->p_prevKF;
+            insertedCount++;
         }
 
         /* ------------------------------------------------------------------ *
          * Walk forwards through the temporal chain
          * ------------------------------------------------------------------ */
 
-        pKFi      = p_currentKF->p_nextKF;
-        nInserted = 0;
+        p_keyFrame    = p_currentKF->p_nextKF;
+        insertedCount = 0;
 
-        while (pKFi && nInserted < kNumTemporalKFs)
+        while (p_keyFrame && insertedCount < COUNT_TEMPORAL_KEY_FRAMES)
         {
-            spLocalWindowKFs.insert(pKFi);
+            localWindowKeyFrames.insert(p_keyFrame);
 
-            const std::set<MapPoint *> spMPs = pKFi->getMapPoints();
-            spLocalWindowMPs.insert(spMPs.begin(), spMPs.end());
+            const std::set<MapPoint *> mapPoints = p_keyFrame->getMapPoints();
+            localWindowMapPoints.insert(mapPoints.begin(), mapPoints.end());
 
-            pKFi = pKFi->p_nextKF;
-            nInserted++;
+            p_keyFrame = p_keyFrame->p_nextKF;
+            insertedCount++;
         }
     }
     else
     {
-        spLocalWindowKFs.insert(p_currentKF);
+        localWindowKeyFrames.insert(p_currentKF);
     }
 
     /* ---------------------------------------------------------------------- *
@@ -237,21 +238,22 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * ---------------------------------------------------------------------- */
 
     /* Create list of strongest covisibility connectsion to current keyframe */
-    std::vector<KeyFrame *> vpCovisibleKFs =
-        p_currentKF->getBestCovisibilityKeyFrames(kNumTemporalKFs);
+    std::vector<KeyFrame *> covisibleKeyFrames =
+        p_currentKF->getBestCovisibilityKeyFrames(COUNT_TEMPORAL_KEY_FRAMES);
 
     /* Insert keyframes with best connections into local window */
-    spLocalWindowKFs.insert(vpCovisibleKFs.begin(), vpCovisibleKFs.end());
+    localWindowKeyFrames.insert(covisibleKeyFrames.begin(),
+                                covisibleKeyFrames.end());
 
     /*!
      * Insert the current keyframe as an unconditional safety measure.
      * `splocalWindowKF` is a set, hence duplicates will not be inserted.
      */
-    spLocalWindowKFs.insert(p_currentKF);
+    localWindowKeyFrames.insert(p_currentKF);
 
-    constexpr int kMaxExpansionIterations = 5;
+    constexpr int MAXIMUM_EXPANSION_ITERATIONS = 5;
 
-    int nExpansion = 0;
+    int expansionCount = 0;
 
     /*!
      * If there is not enough keyframes in the local window, then we look at the
@@ -263,53 +265,53 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * `kNumTemporalKFs` in `spLocalWindowKFs`, if the current keyframe doesn't
      * have enough covisible keyframes attached to it.
      */
-    while (spLocalWindowKFs.size() < kNumTemporalKFs &&
-           nExpansion < kMaxExpansionIterations)
+    while (localWindowKeyFrames.size() < COUNT_TEMPORAL_KEY_FRAMES &&
+           expansionCount < MAXIMUM_EXPANSION_ITERATIONS)
     {
-        std::vector<KeyFrame *> vpNewCovisible;
+        std::vector<KeyFrame *> newCovisibles;
 
-        for (KeyFrame *pKFi : spLocalWindowKFs)
+        for (KeyFrame *p_keyFrame : localWindowKeyFrames)
         {
-            const auto vpCovisible =
-                pKFi->getBestCovisibilityKeyFrames(kNumTemporalKFs / 2);
+            const auto covisibles = p_keyFrame->getBestCovisibilityKeyFrames(
+                COUNT_TEMPORAL_KEY_FRAMES / 2);
 
-            for (KeyFrame *pKFcov : vpCovisible)
+            for (KeyFrame *p_covisibleKeyFrame : covisibles)
             {
-                if (!pKFcov)
+                if (!p_covisibleKeyFrame)
                     continue;
 
-                if (pKFcov->isBad())
+                if (p_covisibleKeyFrame->isBad())
                     continue;
 
-                if (spLocalWindowKFs.count(pKFcov))
+                if (localWindowKeyFrames.count(p_covisibleKeyFrame))
                     continue;
 
-                vpNewCovisible.push_back(pKFcov);
+                newCovisibles.push_back(p_covisibleKeyFrame);
             }
         }
 
-        spLocalWindowKFs.insert(vpNewCovisible.begin(), vpNewCovisible.end());
+        localWindowKeyFrames.insert(newCovisibles.begin(), newCovisibles.end());
 
-        ++nExpansion;
+        ++expansionCount;
     }
 
     /* ---------------------------------------------------------------------- *
      * Collect all landmarks observed by the current-map welding window.
      * ---------------------------------------------------------------------- */
 
-    for (KeyFrame *pKFi : spLocalWindowKFs)
+    for (KeyFrame *p_keyFrame : localWindowKeyFrames)
     {
         /* Skip invalid keyframes. (Shouldn't need this but good for safety) */
-        if (!pKFi || pKFi->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
         {
             continue;
         }
 
         /* Extract the map points from the keyframe */
-        const std::set<MapPoint *> spMPs = pKFi->getMapPoints();
+        const std::set<MapPoint *> mapPoints = p_keyFrame->getMapPoints();
 
         /* Insert all the map points into the map point local window */
-        spLocalWindowMPs.insert(spMPs.begin(), spMPs.end());
+        localWindowMapPoints.insert(mapPoints.begin(), mapPoints.end());
     }
 
     /* ---------------------------------------------------------------------- *
@@ -320,49 +322,49 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * steps but with the merge map.
      * ---------------------------------------------------------------------- */
 
-    std::set<KeyFrame *> spMergeConnectedKFs;
-    std::set<MapPoint *> spMapPointMerge;
+    std::set<KeyFrame *> mergeConnectedKeyFrames;
+    std::set<MapPoint *> mapPointMerges;
 
     /*!
      * If using IMU, construct temporal inertial chain. Otherwise, start with
      * current keyframe for local window.
      */
-    if (pCurrentMap->isInertial() && pMergeMap->isInertial())
+    if (p_currentMap->isInertial() && p_mergeMap->isInertial())
     {
-        KeyFrame *pKFi      = p_mergeMatchedKF;
-        int       nInserted = 0;
+        KeyFrame *p_keyFrame    = p_mergeMatchedKF;
+        int       insertedCount = 0;
 
         /* ------------------------------------------------------------------ *
          * Walk backwards
          * ------------------------------------------------------------------ */
 
-        while (pKFi && nInserted < (kNumTemporalKFs / 2))
+        while (p_keyFrame && insertedCount < (COUNT_TEMPORAL_KEY_FRAMES / 2))
         {
-            spMergeConnectedKFs.insert(pKFi);
+            mergeConnectedKeyFrames.insert(p_keyFrame);
 
-            pKFi = pKFi->p_prevKF;
+            p_keyFrame = p_keyFrame->p_prevKF;
 
-            nInserted++;
+            insertedCount++;
         }
 
         /* ------------------------------------------------------------------ *
          * Walk forwards
          * ------------------------------------------------------------------ */
 
-        pKFi = p_mergeMatchedKF->p_nextKF;
+        p_keyFrame = p_mergeMatchedKF->p_nextKF;
 
-        while (pKFi && nInserted < kNumTemporalKFs)
+        while (p_keyFrame && insertedCount < COUNT_TEMPORAL_KEY_FRAMES)
         {
-            spMergeConnectedKFs.insert(pKFi);
+            mergeConnectedKeyFrames.insert(p_keyFrame);
 
-            pKFi = pKFi->p_nextKF;
+            p_keyFrame = p_keyFrame->p_nextKF;
 
-            nInserted++;
+            insertedCount++;
         }
     }
     else
     {
-        spMergeConnectedKFs.insert(p_mergeMatchedKF);
+        mergeConnectedKeyFrames.insert(p_mergeMatchedKF);
     }
 
     /* ---------------------------------------------------------------------- *
@@ -370,20 +372,21 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * ---------------------------------------------------------------------- */
 
     /* Create list of strongest covisibility connectsion to current keyframe */
-    vpCovisibleKFs =
-        p_mergeMatchedKF->getBestCovisibilityKeyFrames(kNumTemporalKFs);
+    covisibleKeyFrames = p_mergeMatchedKF->getBestCovisibilityKeyFrames(
+        COUNT_TEMPORAL_KEY_FRAMES);
 
     /* Insert keyframes with best connections into local window */
-    spMergeConnectedKFs.insert(vpCovisibleKFs.begin(), vpCovisibleKFs.end());
+    mergeConnectedKeyFrames.insert(covisibleKeyFrames.begin(),
+                                   covisibleKeyFrames.end());
 
     /*!
      * Insert the current keyframe as an unconditional safety measure.
      * `splocalWindowKF` is a set, hence duplicates will not be inserted.
      */
-    spMergeConnectedKFs.insert(p_mergeMatchedKF);
+    mergeConnectedKeyFrames.insert(p_mergeMatchedKF);
 
     /* Reset counter */
-    nExpansion = 0;
+    expansionCount = 0;
 
     /*!
      * If there is not enough keyframes in the merge connected window, then we
@@ -395,54 +398,54 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * `kNumTemporalKFs` in `spMergeConnectedKFs`, if the current keyframe
      * doesn't have enough covisible keyframes attached to it.
      */
-    while (spMergeConnectedKFs.size() < kNumTemporalKFs &&
-           nExpansion < kMaxExpansionIterations)
+    while (mergeConnectedKeyFrames.size() < COUNT_TEMPORAL_KEY_FRAMES &&
+           expansionCount < MAXIMUM_EXPANSION_ITERATIONS)
     {
-        std::vector<KeyFrame *> vpNewCovisible;
+        std::vector<KeyFrame *> newCovisibles;
 
-        for (KeyFrame *pKFi : spMergeConnectedKFs)
+        for (KeyFrame *p_keyFrame : mergeConnectedKeyFrames)
         {
-            const auto vpCovisible =
-                pKFi->getBestCovisibilityKeyFrames(kNumTemporalKFs / 2);
+            const auto covisibles = p_keyFrame->getBestCovisibilityKeyFrames(
+                COUNT_TEMPORAL_KEY_FRAMES / 2);
 
-            for (KeyFrame *pKFcov : vpCovisible)
+            for (KeyFrame *p_covisibleKeyFrame : covisibles)
             {
-                if (!pKFcov)
+                if (!p_covisibleKeyFrame)
                     continue;
 
-                if (pKFcov->isBad())
+                if (p_covisibleKeyFrame->isBad())
                     continue;
 
-                if (spMergeConnectedKFs.count(pKFcov))
+                if (mergeConnectedKeyFrames.count(p_covisibleKeyFrame))
                     continue;
 
-                vpNewCovisible.push_back(pKFcov);
+                newCovisibles.push_back(p_covisibleKeyFrame);
             }
         }
 
-        spMergeConnectedKFs.insert(vpNewCovisible.begin(),
-                                   vpNewCovisible.end());
+        mergeConnectedKeyFrames.insert(newCovisibles.begin(),
+                                       newCovisibles.end());
 
-        ++nExpansion;
+        ++expansionCount;
     }
 
     /* ---------------------------------------------------------------------- *
      * Collect all landmarks observed by the imported welding window.
      * ---------------------------------------------------------------------- */
 
-    for (KeyFrame *pKFi : spMergeConnectedKFs)
+    for (KeyFrame *p_keyFrame : mergeConnectedKeyFrames)
     {
         /* Skip invalid keyframes. (Shouldn't need this but good for safety) */
-        if (!pKFi || pKFi->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
         {
             continue;
         }
 
         /* Extract the map points from the keyframe */
-        const auto spMPs = pKFi->getMapPoints();
+        const auto mapPoints = p_keyFrame->getMapPoints();
 
         /* Insert all the map points into the map point local window */
-        spMapPointMerge.insert(spMPs.begin(), spMPs.end());
+        mapPointMerges.insert(mapPoints.begin(), mapPoints.end());
     }
 
     /*!
@@ -453,14 +456,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      */
 
     /* Init list of fused map points */
-    std::vector<MapPoint *> vpCheckFuseMapPoint;
+    std::vector<MapPoint *> checkFuseMapPoints;
 
     /* Reserve the memory for the fused map points */
-    vpCheckFuseMapPoint.reserve(spLocalWindowMPs.size());
+    checkFuseMapPoints.reserve(localWindowMapPoints.size());
 
     /* Copy the map points from the local window */
-    vpCheckFuseMapPoint.assign(spLocalWindowMPs.begin(),
-                               spLocalWindowMPs.end());
+    checkFuseMapPoints.assign(localWindowMapPoints.begin(),
+                              localWindowMapPoints.end());
 
     /* ---------------------------------------------------------------------- *
      * SECTION 7 - COMPUTE THE MAP-TO-MAP SIMILARITY TRANSFORM
@@ -513,16 +516,17 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     KeyFrameAndPose vCorrectedSim3;
 
     /* Iterate through every merge keyframe in the merge connected KF list */
-    for (KeyFrame *pKFi : spMergeConnectedKFs)
+    for (KeyFrame *p_keyFrame : mergeConnectedKeyFrames)
     {
         /* Skip invalid keyframes */
-        if (!pKFi || pKFi->isBad() || pKFi->getMap() != pMergeMap)
+        if (!p_keyFrame || p_keyFrame->isBad() ||
+            p_keyFrame->getMap() != p_mergeMap)
         {
             continue;
         }
 
         /* Extract the current pose of the merge keyframe iteration */
-        const Sophus::SE3d TiwMerge = pKFi->getPose().cast<double>();
+        const Sophus::SE3d TiwMerge = p_keyFrame->getPose().cast<double>();
 
         /* Convert to a g2o::Sim3 object type */
         const g2o::Sim3 g2oSiwMerge(TiwMerge.unit_quaternion(),
@@ -533,25 +537,25 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         const g2o::Sim3 g2oSiwCurrent = g2oSiwMerge * g2oSwMergeWCurrent;
 
         /* Store transforms */
-        vNonCorrectedSim3[pKFi] = g2oSiwMerge;
-        vCorrectedSim3[pKFi]    = g2oSiwCurrent;
+        vNonCorrectedSim3[p_keyFrame] = g2oSiwMerge;
+        vCorrectedSim3[p_keyFrame]    = g2oSiwCurrent;
 
         /* Find the scale of transform */
         const double s = g2oSiwCurrent.scale();
 
         /* Find the transform from merge to current map */
-        pKFi->correctedScale = s;
-        pKFi->tcwMerge       = Sophus::SE3d(g2oSiwCurrent.rotation(),
-                                      g2oSiwCurrent.translation() / s)
-                             .cast<float>();
+        p_keyFrame->correctedScale = s;
+        p_keyFrame->tcwMerge       = Sophus::SE3d(g2oSiwCurrent.rotation(),
+                                            g2oSiwCurrent.translation() / s)
+                                   .cast<float>();
 
         /* If there is IMU, extract velocity */
-        if (pCurrentMap->isImuInitialized())
+        if (p_currentMap->isImuInitialized())
         {
             const Eigen::Quaternionf Rcor =
                 (g2oSiwCurrent.rotation().inverse() * g2oSiwMerge.rotation())
                     .cast<float>();
-            pKFi->vwbMerge = Rcor * pKFi->getVelocity();
+            p_keyFrame->vwbMerge = Rcor * p_keyFrame->getVelocity();
         }
     }
 
@@ -570,35 +574,40 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * ---------------------------------------------------------------------- */
 
     /* Iterate through all the mapped points in the merge map */
-    for (auto itMP = spMapPointMerge.begin(); itMP != spMapPointMerge.end();)
+    for (auto itMapPoint = mapPointMerges.begin();
+         itMapPoint != mapPointMerges.end();)
     {
         /* Copy the map points */
-        MapPoint *pMPi = *itMP;
+        MapPoint *p_currentMapPoint = *itMapPoint;
 
         /* If the mapped points are invalud, erase and skip */
-        if (!pMPi || pMPi->isBad() || pMPi->getMap() != pMergeMap)
+        if (!p_currentMapPoint || p_currentMapPoint->isBad() ||
+            p_currentMapPoint->getMap() != p_mergeMap)
         {
-            itMP = spMapPointMerge.erase(itMP);
+            itMapPoint = mapPointMerges.erase(itMapPoint);
             continue;
         }
 
         /* Extract position of point */
-        const Eigen::Vector3d P3DwMerge = pMPi->getWorldPos().cast<double>();
+        const Eigen::Vector3d P3DwMerge =
+            p_currentMapPoint->getWorldPos().cast<double>();
 
         /* Transform the point into the current map world frame */
-        pMPi->posMerge = g2oSwCurrentWMerge.map(P3DwMerge).cast<float>();
+        p_currentMapPoint->posMerge =
+            g2oSwCurrentWMerge.map(P3DwMerge).cast<float>();
 
         /* Transform the points surface normal into current map world frame */
-        pMPi->normalVectorMerge =
-            g2oSwCurrentWMerge.rotation().cast<float>() * pMPi->getNormal();
+        p_currentMapPoint->normalVectorMerge =
+            g2oSwCurrentWMerge.rotation().cast<float>() *
+            p_currentMapPoint->getNormal();
 
         /* Step to next mapped point */
-        itMP++;
+        itMapPoint++;
     }
 
     /* Existing current-map landmarks are used as fusion candidates. */
-    vpCheckFuseMapPoint.assign(spLocalWindowMPs.begin(),
-                               spLocalWindowMPs.end());
+    checkFuseMapPoints.assign(localWindowMapPoints.begin(),
+                              localWindowMapPoints.end());
 
     /* ---------------------------------------------------------------------- *
      * SECTION 10 - TRANSFER THE WELDING WINDOW
@@ -612,8 +621,8 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         /*!
          * Lock both maps with deadlock-safe acquisition while ownership moves
          */
-        std::scoped_lock mapLocks(pCurrentMap->mMutexMapUpdate,
-                                  pMergeMap->mMutexMapUpdate);
+        std::scoped_lock mapLocks(p_currentMap->mapUpdateMutex,
+                                  p_mergeMap->mapUpdateMutex);
 
         /* ------------------------------------------------------------------ *
          * SECTION 11 - TRANSFER CORRECTED KEYFRAMES
@@ -627,37 +636,38 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
          * ------------------------------------------------------------------ */
 
         /* For every keyframe in merge map, iterate through and transfer */
-        for (KeyFrame *pKFi : spMergeConnectedKFs)
+        for (KeyFrame *p_keyFrame : mergeConnectedKeyFrames)
         {
             /* Skip invalud keyframes */
-            if (!pKFi || pKFi->isBad() || pKFi->getMap() != pMergeMap)
+            if (!p_keyFrame || p_keyFrame->isBad() ||
+                p_keyFrame->getMap() != p_mergeMap)
             {
                 continue;
             }
 
             /* Store the old pose of the keyframe */
-            pKFi->tcwBefMerge = pKFi->getPose();
-            pKFi->twcBefMerge = pKFi->getPoseInverse();
+            p_keyFrame->tcwBefMerge = p_keyFrame->getPose();
+            p_keyFrame->twcBefMerge = p_keyFrame->getPoseInverse();
 
             /* Apply corrected world-to-camera pose in the current-map frame */
-            pKFi->setPose(pKFi->tcwMerge);
+            p_keyFrame->setPose(p_keyFrame->tcwMerge);
 
             /* Change keyframe's internal owning-map pointer to current map */
-            pKFi->updateMap(pCurrentMap);
+            p_keyFrame->updateMap(p_currentMap);
 
             /* Record which current keyframe triggered this merge correction */
-            pKFi->mergeCorrectedKeyFrameId = p_currentKF->mnId;
+            p_keyFrame->mergeCorrectedKeyFrameId = p_currentKF->id;
 
             /* Insert the same keyframe pointer into surviving map container */
-            pCurrentMap->addKeyFrame(pKFi);
+            p_currentMap->addKeyFrame(p_keyFrame);
 
             /* Remove the keyframe pointer from the old merge-map container */
-            pMergeMap->eraseKeyFrame(pKFi);
+            p_mergeMap->eraseKeyFrame(p_keyFrame);
 
             /* If there is IMU, add velocity */
-            if (pCurrentMap->isImuInitialized())
+            if (p_currentMap->isImuInitialized())
             {
-                pKFi->setVelocity(pKFi->vwbMerge);
+                p_keyFrame->setVelocity(p_keyFrame->vwbMerge);
             }
         }
 
@@ -669,35 +679,37 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
          * ------------------------------------------------------------------ */
 
         /* Iterate over every merge-map point selected for transfer */
-        for (MapPoint *pMPi : spMapPointMerge)
+        for (MapPoint *p_currentMapPoint : mapPointMerges)
         {
             /* Skip null, invalid, or no-longer merge-owned map points */
-            if (!pMPi || pMPi->isBad() || pMPi->getMap() != pMergeMap)
+            if (!p_currentMapPoint || p_currentMapPoint->isBad() ||
+                p_currentMapPoint->getMap() != p_mergeMap)
             {
                 continue;
             }
 
             /* Apply position expressed in the surviving current-map frame */
-            pMPi->setWorldPos(pMPi->posMerge);
+            p_currentMapPoint->setWorldPos(p_currentMapPoint->posMerge);
 
             /* Apply the normal rotated into the surviving current-map frame */
-            pMPi->setNormalVector(pMPi->normalVectorMerge);
+            p_currentMapPoint->setNormalVector(
+                p_currentMapPoint->normalVectorMerge);
 
             /* Change the map point's internal owner to the current map */
-            pMPi->updateMap(pCurrentMap);
+            p_currentMapPoint->updateMap(p_currentMap);
 
             /* Register the same map-point pointer in the surviving map */
-            pCurrentMap->addMapPoint(pMPi);
+            p_currentMap->addMapPoint(p_currentMapPoint);
 
             /* Remove the map-point pointer from the obsolete merge map */
-            pMergeMap->eraseMapPoint(pMPi);
+            p_mergeMap->eraseMapPoint(p_currentMapPoint);
         }
 
         /* Set the map to be the current map */
-        p_atlas->changeMap(pCurrentMap);
+        p_atlas->changeMap(p_currentMap);
 
         /* Incrase index tracking the amount of times the maps been changed */
-        pCurrentMap->increaseChangeIndex();
+        p_currentMap->increaseChangeIndex();
     }
 
     /* ---------------------------------------------------------------------- *
@@ -717,42 +729,42 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * ---------------------------------------------------------------------- */
 
     /* If the oriign keyframe of the merp map is valid */
-    if (pMergeMap->getOriginKeyFrame())
+    if (p_mergeMap->getOriginKeyFrame())
     {
         /* Allow the former merge-map root to become a normal tree child */
-        pMergeMap->getOriginKeyFrame()->setFirstConnection(false);
+        p_mergeMap->getOriginKeyFrame()->setFirstConnection(false);
     }
 
     /* Init variables to track the new child and parent keyframes */
-    KeyFrame *pNewChild  = nullptr;
-    KeyFrame *pNewParent = nullptr;
+    KeyFrame *p_newChild  = nullptr;
+    KeyFrame *p_newParent = nullptr;
 
     /* Start with the original parent of the matched merge keyframe */
-    pNewChild = p_mergeMatchedKF->getParent();
+    p_newChild = p_mergeMatchedKF->getParent();
 
     /* The matched merge keyframe becomes the first reversed parent */
-    pNewParent = p_mergeMatchedKF;
+    p_newParent = p_mergeMatchedKF;
 
     /* Attach the matched merge keyframe beneath the current keyframe */
     p_mergeMatchedKF->changeParent(p_currentKF);
 
     /* Reverse each edge along the original merge-map parent chain */
-    while (pNewChild)
+    while (p_newChild)
     {
         /* Remove the old child edge before reversing its direction */
-        pNewChild->eraseChild(pNewParent);
+        p_newChild->eraseChild(p_newParent);
 
         /* Save the next original parent before changing this relation */
-        KeyFrame *pOldParent = pNewChild->getParent();
+        KeyFrame *p_oldParent = p_newChild->getParent();
 
         /* Make the former parent a child of the previous keyframe */
-        pNewChild->changeParent(pNewParent);
+        p_newChild->changeParent(p_newParent);
 
         /* Advance the new-parent pointer one level up the old chain */
-        pNewParent = pNewChild;
+        p_newParent = p_newChild;
 
         /* Continue with the next parent from the original tree chain */
-        pNewChild = pOldParent;
+        p_newChild = p_oldParent;
     }
 
     /* ---------------------------------------------------------------------- *
@@ -775,32 +787,32 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     vpMergeConnectedKFs.push_back(p_mergeMatchedKF);
 
     /* Fuse duplicate current-map points into corrected merge keyframes */
-    searchAndFuse(vCorrectedSim3, vpCheckFuseMapPoint);
+    searchAndFuse(vCorrectedSim3, checkFuseMapPoints);
 
     /* Refresh covisibility links for current-map local keyframes */
-    for (KeyFrame *pKFi : spLocalWindowKFs)
+    for (KeyFrame *p_keyFrame : localWindowKeyFrames)
     {
         /* Skip null keyframes and keyframes marked as invalid */
-        if (!pKFi || pKFi->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
         {
             continue;
         }
 
         /* Recompute graph connections from shared map-point observations */
-        pKFi->updateConnections();
+        p_keyFrame->updateConnections();
     }
 
     /* Refresh covisibility links for imported merge-side keyframes */
-    for (KeyFrame *pKFi : spMergeConnectedKFs)
+    for (KeyFrame *p_keyFrame : mergeConnectedKeyFrames)
     {
         /* Skip null keyframes and keyframes marked as invalid */
-        if (!pKFi || pKFi->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
         {
             continue;
         }
 
         /* Recompute graph connections from shared map-point observations */
-        pKFi->updateConnections();
+        p_keyFrame->updateConnections();
     }
 
     /* ---------------------------------------------------------------------- *
@@ -818,25 +830,25 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * ---------------------------------------------------------------------- */
 
     /* Shared stop flag passed to the selected optimisation routine */
-    bool bStop = false;
+    bool shouldStop = false;
 
     /* Init list of local keyframes in current window */
-    std::vector<KeyFrame *> vpLocalCurrentWindowKFs;
+    std::vector<KeyFrame *> localCurrentWindowKeyFrames;
 
     /* Remove keyframes stored by any previous merge operation */
-    vpLocalCurrentWindowKFs.clear();
+    localCurrentWindowKeyFrames.clear();
 
     /* Remove merge-connected keyframes stored by earlier processing */
     vpMergeConnectedKFs.clear();
 
     /* Copy current-side local keyframes into the optimiser vector */
-    std::copy(spLocalWindowKFs.begin(),
-              spLocalWindowKFs.end(),
-              std::back_inserter(vpLocalCurrentWindowKFs));
+    std::copy(localWindowKeyFrames.begin(),
+              localWindowKeyFrames.end(),
+              std::back_inserter(localCurrentWindowKeyFrames));
 
     /* Copy merge-side connected keyframes into the optimiser vector */
-    std::copy(spMergeConnectedKFs.begin(),
-              spMergeConnectedKFs.end(),
+    std::copy(mergeConnectedKeyFrames.begin(),
+              mergeConnectedKeyFrames.end(),
               std::back_inserter(vpMergeConnectedKFs));
 
     /* Check whether the active sensor configuration includes an IMU */
@@ -847,8 +859,8 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         /* Refine the merged region using visual and inertial constraints */
         Optimizer::mergeInertialBA(p_currentKF,
                                    p_mergeMatchedKF,
-                                   &bStop,
-                                   pCurrentMap,
+                                   &shouldStop,
+                                   p_currentMap,
                                    vCorrectedSim3);
     }
     else
@@ -856,8 +868,8 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         /* Refine the merged region using visual observations only */
         Optimizer::loopClosureLocalBundleAdjustment(p_mergeMatchedKF,
                                                     vpMergeConnectedKFs,
-                                                    vpLocalCurrentWindowKFs,
-                                                    &bStop);
+                                                    localCurrentWindowKeyFrames,
+                                                    &shouldStop);
     }
 
     /* Resume local mapping after merge optimisation is complete */
@@ -873,44 +885,44 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * ---------------------------------------------------------------------- */
 
     /* Copy all planes currently owned by the merge map */
-    std::vector<geometric::Plane *> vpCurrentMapPlanes =
-        pMergeMap->getAllPlanes();
+    std::vector<geometric::Plane *> currentMapPlanes =
+        p_mergeMap->getAllPlanes();
 
     /* Copy all keyframes currently owned by the merge map */
-    std::vector<KeyFrame *> vpCurrentMapKFs = pMergeMap->getAllKeyFrames();
+    std::vector<KeyFrame *> currentMapKeyFrames = p_mergeMap->getAllKeyFrames();
 
     const bool hasValidRemainingMergeKeyFrame =
-        std::any_of(vpCurrentMapKFs.begin(),
-                    vpCurrentMapKFs.end(),
-                    [pMergeMap](KeyFrame *p_keyFrame_in)
+        std::any_of(currentMapKeyFrames.begin(),
+                    currentMapKeyFrames.end(),
+                    [p_mergeMap](KeyFrame *p_keyFrame_in)
                     {
                         return p_keyFrame_in != nullptr &&
                                !p_keyFrame_in->isBad() &&
-                               p_keyFrame_in->getMap() == pMergeMap;
+                               p_keyFrame_in->getMap() == p_mergeMap;
                     });
 
     /* Copy all map points currently owned by the merge map */
-    std::vector<MapPoint *> vpCurrentMapMPs = pMergeMap->getAllMapPoints();
+    std::vector<MapPoint *> currentMapMapPoints = p_mergeMap->getAllMapPoints();
 
     /* Copy all markers currently owned by the merge map */
-    std::vector<semantic::Marker *> vpCurrentMapMarkers =
-        pMergeMap->getAllMarkers();
+    std::vector<semantic::Marker *> currentMapMarkers =
+        p_mergeMap->getAllMarkers();
 
     /* Copy all passages currently owned by the merge map */
-    std::vector<vs_graphs::core::semantic::Passage *> vpCurrentMapPassages =
-        pMergeMap->getAllPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> currentMapPassages =
+        p_mergeMap->getAllPassages();
 
     /* Copy all detected rooms currently owned by the merge map */
-    std::vector<semantic::Room *> vpCurrentDetectedMapRooms =
-        pMergeMap->getAllDetectedMapRooms();
+    std::vector<semantic::Room *> currentDetectedMapRooms =
+        p_mergeMap->getAllDetectedMapRooms();
 
     /* Copy all marker-based rooms currently owned by the merge map */
-    std::vector<semantic::Room *> vpCurrentMarkerBasedMapRooms =
-        pMergeMap->getAllMarkerBasedMapRooms();
+    std::vector<semantic::Room *> currentMarkerBasedMapRooms =
+        p_mergeMap->getAllMarkerBasedMapRooms();
 
     /* Copy all floors currently owned by the merge map */
-    std::vector<semantic::Floor *> vpCurrentMapFloors =
-        pMergeMap->getAllFloors();
+    std::vector<semantic::Floor *> currentMapFloors =
+        p_mergeMap->getAllFloors();
 
     /* Stop local mapping before any remaining ownership is transferred. */
     p_localMapper->requestStop();
@@ -935,19 +947,21 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         if (p_tracker->sensor == System::MONOCULAR)
         {
             /* Lock the merge map while updating its poses and landmarks */
-            std::unique_lock<std::mutex> mergeLock(pMergeMap->mMutexMapUpdate);
+            std::unique_lock<std::mutex> mergeLock(p_mergeMap->mapUpdateMutex);
 
             /* Correct each remaining merge keyframe into current world */
-            for (KeyFrame *pKFi : vpCurrentMapKFs)
+            for (KeyFrame *p_keyFrame : currentMapKeyFrames)
             {
                 /* Skip invalid keyframes or keyframes no longer in this map */
-                if (!pKFi || pKFi->isBad() || pKFi->getMap() != pMergeMap)
+                if (!p_keyFrame || p_keyFrame->isBad() ||
+                    p_keyFrame->getMap() != p_mergeMap)
                 {
                     continue;
                 }
 
                 /* Read the keyframe pose in the merge map world frame */
-                const Sophus::SE3d TiwMerge = pKFi->getPose().cast<double>();
+                const Sophus::SE3d TiwMerge =
+                    p_keyFrame->getPose().cast<double>();
 
                 /* Convert the rigid keyframe pose into a unit scale Sim3 */
                 const g2o::Sim3 g2oSiwMerge(TiwMerge.unit_quaternion(),
@@ -959,30 +973,31 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                     g2oSiwMerge * g2oSwMergeWCurrent;
 
                 /* Store the original keyframe pose before correction */
-                vNonCorrectedSim3[pKFi] = g2oSiwMerge;
+                vNonCorrectedSim3[p_keyFrame] = g2oSiwMerge;
 
                 /* Store the corrected keyframe pose for later processing */
-                vCorrectedSim3[pKFi] = g2oSiwCurrent;
+                vCorrectedSim3[p_keyFrame] = g2oSiwCurrent;
 
                 /* Extract the scale introduced by the map correction */
                 const double s = g2oSiwCurrent.scale();
 
                 /* Store the applied scale in the keyframe */
-                pKFi->correctedScale = s;
+                p_keyFrame->correctedScale = s;
 
                 /* Preserve the original world to camera pose */
-                pKFi->tcwBefMerge = pKFi->getPose();
+                p_keyFrame->tcwBefMerge = p_keyFrame->getPose();
 
                 /* Preserve the original camera to world pose */
-                pKFi->twcBefMerge = pKFi->getPoseInverse();
+                p_keyFrame->twcBefMerge = p_keyFrame->getPoseInverse();
 
                 /* Apply the corrected rigid pose in the current world frame */
-                pKFi->setPose(Sophus::SE3d(g2oSiwCurrent.rotation(),
-                                           g2oSiwCurrent.translation() / s)
-                                  .cast<float>());
+                p_keyFrame->setPose(
+                    Sophus::SE3d(g2oSiwCurrent.rotation(),
+                                 g2oSiwCurrent.translation() / s)
+                        .cast<float>());
 
                 /* Rotate velocity when the surviving map uses inertial data */
-                if (pCurrentMap->isImuInitialized())
+                if (p_currentMap->isImuInitialized())
                 {
                     /* Compute the rotation from old to corrected world frame */
                     const Eigen::Quaternionf Rcor =
@@ -991,35 +1006,37 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                             .cast<float>();
 
                     /* Express the keyframe velocity in the corrected frame */
-                    pKFi->setVelocity(Rcor * pKFi->getVelocity());
+                    p_keyFrame->setVelocity(Rcor * p_keyFrame->getVelocity());
                 }
             }
 
             /* Correct each remaining merge landmark into current world */
-            for (MapPoint *pMPi : vpCurrentMapMPs)
+            for (MapPoint *p_currentMapPoint : currentMapMapPoints)
             {
                 /* Skip invalid points or points no longer in this map */
-                if (!pMPi || pMPi->isBad() || pMPi->getMap() != pMergeMap)
+                if (!p_currentMapPoint || p_currentMapPoint->isBad() ||
+                    p_currentMapPoint->getMap() != p_mergeMap)
                 {
                     continue;
                 }
 
                 /* Read the landmark position in the merge world frame */
                 const Eigen::Vector3d P3DwMerge =
-                    pMPi->getWorldPos().cast<double>();
+                    p_currentMapPoint->getWorldPos().cast<double>();
 
-                const Eigen::Vector3f normal_mergeWorld = pMPi->getNormal();
+                const Eigen::Vector3f normal_mergeWorld =
+                    p_currentMapPoint->getNormal();
 
                 /* Transform the landmark into the current world frame */
-                pMPi->setWorldPos(
+                p_currentMapPoint->setWorldPos(
                     g2oSwCurrentWMerge.map(P3DwMerge).cast<float>());
 
-                pMPi->setNormalVector(
+                p_currentMapPoint->setNormalVector(
                     g2oSwCurrentWMerge.rotation().cast<float>() *
                     normal_mergeWorld);
 
                 /* Refresh the point normal and valid viewing depth range */
-                pMPi->updateNormalAndDepth();
+                p_currentMapPoint->updateNormalAndDepth();
             }
         }
 
@@ -1033,11 +1050,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         if (p_tracker->sensor != System::MONOCULAR)
         {
             Optimizer::optimizeEssentialGraph(p_mergeMatchedKF,
-                                              pMergeMap,
-                                              vpLocalCurrentWindowKFs,
+                                              p_mergeMap,
+                                              localCurrentWindowKeyFrames,
                                               vpMergeConnectedKFs,
-                                              vpCurrentMapKFs,
-                                              vpCurrentMapMPs,
+                                              currentMapKeyFrames,
+                                              currentMapMapPoints,
                                               g2oSwCurrentWMerge);
 
             /*!
@@ -1105,7 +1122,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         }
 
         utils::utils::Utils::propagateSemanticPoseCorrections(
-            pMergeMap,
+            p_mergeMap,
             vNonCorrectedSim3,
             finalKeyFramePoses_WorldToCamera,
             g2oSwCurrentWMerge);
@@ -1120,10 +1137,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      */
     if (!hasValidRemainingMergeKeyFrame)
     {
-        for (MapPoint *p_mapPoint : vpCurrentMapMPs)
+        for (MapPoint *p_mapPoint : currentMapMapPoints)
         {
             if (p_mapPoint == nullptr || p_mapPoint->isBad() ||
-                p_mapPoint->getMap() != pMergeMap)
+                p_mapPoint->getMap() != p_mergeMap)
             {
                 continue;
             }
@@ -1166,7 +1183,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             semanticGeometryWasOptimized || semanticGeometryWasPropagated;
 
         int nextPlaneId = 0;
-        for (geometric::Plane *p_existingPlane : pCurrentMap->getAllPlanes())
+        for (geometric::Plane *p_existingPlane : p_currentMap->getAllPlanes())
         {
             if (p_existingPlane != nullptr)
             {
@@ -1176,7 +1193,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         }
 
         int nextMarkerId = 0;
-        for (semantic::Marker *p_existingMarker : pCurrentMap->getAllMarkers())
+        for (semantic::Marker *p_existingMarker : p_currentMap->getAllMarkers())
         {
             if (p_existingMarker != nullptr)
             {
@@ -1186,31 +1203,33 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         }
 
         // Get Merge Map Mutex
-        std::scoped_lock mapLocks(pCurrentMap->mMutexMapUpdate,
-                                  pMergeMap->mMutexMapUpdate);
+        std::scoped_lock mapLocks(p_currentMap->mapUpdateMutex,
+                                  p_mergeMap->mapUpdateMutex);
 
         // Loop over the KeyFrames of the current map and move them to the
         // new map
-        for (KeyFrame *pKFi : vpCurrentMapKFs)
+        for (KeyFrame *p_keyFrame : currentMapKeyFrames)
         {
-            if (!pKFi || pKFi->isBad() || pKFi->getMap() != pMergeMap)
+            if (!p_keyFrame || p_keyFrame->isBad() ||
+                p_keyFrame->getMap() != p_mergeMap)
                 continue;
 
-            pKFi->updateMap(pCurrentMap);
-            pCurrentMap->addKeyFrame(pKFi);
-            pMergeMap->eraseKeyFrame(pKFi);
+            p_keyFrame->updateMap(p_currentMap);
+            p_currentMap->addKeyFrame(p_keyFrame);
+            p_mergeMap->eraseKeyFrame(p_keyFrame);
         }
 
         // Loop over the MapPoints of the current map and move them to the
         // new map
-        for (MapPoint *pMPi : vpCurrentMapMPs)
+        for (MapPoint *p_currentMapPoint : currentMapMapPoints)
         {
-            if (!pMPi || pMPi->isBad() || pMPi->getMap() != pMergeMap)
+            if (!p_currentMapPoint || p_currentMapPoint->isBad() ||
+                p_currentMapPoint->getMap() != p_mergeMap)
                 continue;
 
-            pMPi->updateMap(pCurrentMap);
-            pCurrentMap->addMapPoint(pMPi);
-            pMergeMap->eraseMapPoint(pMPi);
+            p_currentMapPoint->updateMap(p_currentMap);
+            p_currentMap->addMapPoint(p_currentMapPoint);
+            p_mergeMap->eraseMapPoint(p_currentMapPoint);
         }
 
         /* -------------------------------------------------------------- *
@@ -1221,10 +1240,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
          *
          * Geometry is preserved while map ownership is updated.
          * -------------------------------------------------------------- */
-        for (geometric::Plane *plane : vpCurrentMapPlanes)
+        for (geometric::Plane *p_plane : currentMapPlanes)
         {
             /* Skip invalid planes */
-            if (plane == nullptr || plane->isBad())
+            if (p_plane == nullptr || p_plane->isBad())
             {
                 continue;
             }
@@ -1235,51 +1254,51 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
              */
             if (!primarySemanticGeometryWasCorrected)
             {
-                plane->applyTransform(g2oSwCurrentWMerge);
+                p_plane->applyTransform(g2oSwCurrentWMerge);
             }
 
             /* Update the map the plane belongs to */
-            plane->setMap(pCurrentMap);
+            p_plane->setMap(p_currentMap);
 
             /*!
              * Take index size of planes in new map to find an id to add to
              * the map which hasn't been taken.
              */
-            plane->setId(nextPlaneId++);
+            p_plane->setId(nextPlaneId++);
 
             /* Add the plane to the map new merged plane to the new map */
-            pCurrentMap->addMapPlane(plane);
+            p_currentMap->addMapPlane(p_plane);
 
             /* Remove the current plane from the old map */
-            pMergeMap->eraseMapPlane(plane);
+            p_mergeMap->eraseMapPlane(p_plane);
         }
 
         // Loop over the Markers of the current map and move them to the new
         // map
-        for (semantic::Marker *pMarker : vpCurrentMapMarkers)
+        for (semantic::Marker *p_marker : currentMapMarkers)
         {
-            if (!pMarker)
+            if (!p_marker)
                 continue;
 
             if (!primarySemanticGeometryWasCorrected)
             {
-                pMarker->applyTransform(g2oSwCurrentWMerge);
+                p_marker->applyTransform(g2oSwCurrentWMerge);
             }
 
-            pMarker->setMap(pCurrentMap);
-            pMarker->setId(nextMarkerId++);
-            pCurrentMap->addMapMarker(pMarker);
-            pMergeMap->eraseMapMarker(pMarker);
+            p_marker->setMap(p_currentMap);
+            p_marker->setId(nextMarkerId++);
+            p_currentMap->addMapMarker(p_marker);
+            p_mergeMap->eraseMapMarker(p_marker);
         }
 
         /*!
          * Loop over the passages of the primary map and move them to the
          * secondary map.
          */
-        for (vs_graphs::core::semantic::Passage *passage : vpCurrentMapPassages)
+        for (vs_graphs::core::semantic::Passage *p_passage : currentMapPassages)
         {
             /* Skip invalid rooms */
-            if (passage == nullptr)
+            if (p_passage == nullptr)
             {
                 continue;
             }
@@ -1290,57 +1309,59 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
              */
             if (!primarySemanticGeometryWasCorrected)
             {
-                passage->applyTransform(g2oSwCurrentWMerge);
+                p_passage->applyTransform(g2oSwCurrentWMerge);
             }
 
             semantic::Passage *p_retainedPassage = nullptr;
             for (semantic::Passage *p_existingPassage :
-                 pCurrentMap->getAllPassages())
+                 p_currentMap->getAllPassages())
             {
                 if (p_existingPassage != nullptr &&
-                    p_existingPassage->getId() == passage->getId())
+                    p_existingPassage->getId() == p_passage->getId())
                 {
                     p_retainedPassage = p_existingPassage;
                     break;
                 }
             }
 
-            pMergeMap->eraseMapPassage(passage);
+            p_mergeMap->eraseMapPassage(p_passage);
             if (p_retainedPassage != nullptr)
             {
-                p_retainedPassage->mergeFromDuplicate(passage);
-                for (semantic::Room *p_room : vpCurrentDetectedMapRooms)
+                p_retainedPassage->mergeFromDuplicate(p_passage);
+                for (semantic::Room *p_room : currentDetectedMapRooms)
                 {
                     if (p_room != nullptr)
                     {
-                        p_room->replacePassageAssociation(passage,
+                        p_room->replacePassageAssociation(p_passage,
                                                           p_retainedPassage);
                     }
                 }
-                for (semantic::Room *p_room : vpCurrentMarkerBasedMapRooms)
+                for (semantic::Room *p_room : currentMarkerBasedMapRooms)
                 {
                     if (p_room != nullptr)
                     {
-                        p_room->replacePassageAssociation(passage,
+                        p_room->replacePassageAssociation(p_passage,
                                                           p_retainedPassage);
                     }
                 }
-                passage->setBad();
+                p_passage->setBad();
                 continue;
             }
 
-            passage->setMap(pCurrentMap);
-            pCurrentMap->addMapPassage(passage);
+            p_passage->setMap(p_currentMap);
+            p_currentMap->addMapPassage(p_passage);
         }
 
         /*!
          * Loop over the rooms of the primary map and move them to the
          * secondary map.
          */
-        for (vs_graphs::core::semantic::Room *room : vpCurrentDetectedMapRooms)
+        for (vs_graphs::core::semantic::Room *p_currentDetectedRoom :
+             currentDetectedMapRooms)
         {
             /* Skip invalid rooms */
-            if (room == nullptr || room->isBad())
+            if (p_currentDetectedRoom == nullptr ||
+                p_currentDetectedRoom->isBad())
             {
                 continue;
             }
@@ -1351,23 +1372,23 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
              */
             if (!primarySemanticGeometryWasCorrected)
             {
-                room->applyTransform(g2oSwCurrentWMerge);
+                p_currentDetectedRoom->applyTransform(g2oSwCurrentWMerge);
             }
 
             /* Set the map of the room in the current map */
-            room->setMap(pCurrentMap);
+            p_currentDetectedRoom->setMap(p_currentMap);
 
             /* Add the room to the current map */
-            pCurrentMap->addDetectedMapRoom(room);
+            p_currentMap->addDetectedMapRoom(p_currentDetectedRoom);
 
             /* Remove the room from the merged map */
-            pMergeMap->eraseDetectedMapRoom(room);
+            p_mergeMap->eraseDetectedMapRoom(p_currentDetectedRoom);
         }
 
         // Loop over the Marker-based Rooms of the current map and move them
         // to the new map
         for (vs_graphs::core::semantic::Room *pRoom :
-             vpCurrentMarkerBasedMapRooms)
+             currentMarkerBasedMapRooms)
         {
             if (!pRoom)
                 continue;
@@ -1377,12 +1398,12 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 pRoom->applyTransform(g2oSwCurrentWMerge);
             }
 
-            pRoom->setMap(pCurrentMap);
-            pCurrentMap->addCandidateMapRoom(pRoom);
-            pMergeMap->eraseMarkerBasedMapRoom(pRoom);
+            pRoom->setMap(p_currentMap);
+            p_currentMap->addCandidateMapRoom(pRoom);
+            p_mergeMap->eraseMarkerBasedMapRoom(pRoom);
         }
 
-        for (semantic::Floor *p_floor : vpCurrentMapFloors)
+        for (semantic::Floor *p_floor : currentMapFloors)
         {
             if (p_floor == nullptr)
             {
@@ -1393,9 +1414,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             {
                 p_floor->applyTransform(g2oSwCurrentWMerge);
             }
-            pMergeMap->eraseMapFloor(p_floor);
+            p_mergeMap->eraseMapFloor(p_floor);
             semantic::Floor *p_retainedFloor = nullptr;
-            for (semantic::Floor *p_existingFloor : pCurrentMap->getAllFloors())
+            for (semantic::Floor *p_existingFloor :
+                 p_currentMap->getAllFloors())
             {
                 if (p_existingFloor != nullptr &&
                     p_existingFloor->getId() == p_floor->getId())
@@ -1409,11 +1431,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 mergeFloorEvidenceAndRooms(p_retainedFloor, p_floor);
                 continue;
             }
-            p_floor->setMap(pCurrentMap);
-            pCurrentMap->addMapFloor(p_floor);
+            p_floor->setMap(p_currentMap);
+            p_currentMap->addMapFloor(p_floor);
         }
 
-        collapseMergedFloors(pCurrentMap);
+        collapseMergedFloors(p_currentMap);
 
         /*
          * Voxblox topology is derived from a TSDF/ESDF volume and is not an
@@ -1422,11 +1444,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
          * crossings. The external Voxblox node receives the map-revision event,
          * clears its volume, and supplies a fresh snapshot after reintegration.
          */
-        pCurrentMap->setSkeletonClusterPoints({});
-        pCurrentMap->setSkeletonEdges({});
+        p_currentMap->setSkeletonClusterPoints({});
+        p_currentMap->setSkeletonEdges({});
 
         /* Rebuild imported room-wall index entries before fusion. */
-        for (semantic::Room *p_room : pCurrentMap->getAllRooms())
+        for (semantic::Room *p_room : p_currentMap->getAllRooms())
         {
             if (p_room == nullptr || p_room->isBad())
             {
@@ -1437,7 +1459,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             {
                 if (p_wall != nullptr && !p_wall->isBad())
                 {
-                    pCurrentMap->addRoomWallPlane(p_wall);
+                    p_currentMap->addRoomWallPlane(p_wall);
                 }
             }
         }
@@ -1448,14 +1470,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             utils::utils::Utils::reAssociateSemanticPlanes(p_atlas);
         }
 
-        std::vector<semantic::Room *> importedRooms = vpCurrentDetectedMapRooms;
+        std::vector<semantic::Room *> importedRooms = currentDetectedMapRooms;
         importedRooms.insert(importedRooms.end(),
-                             vpCurrentMarkerBasedMapRooms.begin(),
-                             vpCurrentMarkerBasedMapRooms.end());
+                             currentMarkerBasedMapRooms.begin(),
+                             currentMarkerBasedMapRooms.end());
 
         /* Stable semantic identity reconciliation is a merge invariant, not
          * an optional geometry-reassociation feature. */
-        utils::utils::Utils::fuseDuplicateRoomsAfterMerge(pCurrentMap,
+        utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap,
                                                           importedRooms);
 
         if (p_sysParams->semSeg.reassociate.enabled)
@@ -1483,7 +1505,7 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     p_mergeMatchedKF->addMergeEdge(p_currentKF);
     p_currentKF->addMergeEdge(p_mergeMatchedKF);
 
-    pCurrentMap->increaseChangeIndex();
+    p_currentMap->increaseChangeIndex();
 
     /*!
      * A map merge changes the world-frame poses of previously integrated
@@ -1492,15 +1514,15 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * Voxblox uses this revision to discard TSDF/ESDF state expressed in the
      * pre-merge coordinate frame.
      */
-    pCurrentMap->informNewBigChange();
+    p_currentMap->informNewBigChange();
 
     /* All surviving objects now belong to pCurrentMap. */
-    p_atlas->changeMap(pCurrentMap);
-    p_atlas->setMapBad(pMergeMap);
+    p_atlas->changeMap(p_currentMap);
+    p_atlas->setMapBad(p_mergeMap);
     p_atlas->removeBadMaps();
 
-    std::cout << "[SemanticMergeGate] surviving_map=" << pCurrentMap->getId()
-              << " absorbed_map=" << pMergeMap->getId()
+    std::cout << "[SemanticMergeGate] surviving_map=" << p_currentMap->getId()
+              << " absorbed_map=" << p_mergeMap->getId()
               << " decision=ACCEPT reason=ALIGNED"
               << " floor=" << floorVerificationResult << " committed=1"
               << std::endl;
@@ -1508,11 +1530,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     semanticUpdateLock.unlock();
     p_localMapper->release();
 
-    if (bRelaunchBA &&
-        (!pCurrentMap->isImuInitialized() ||
-         (pCurrentMap->getKeyFrameCount() < 200 && p_atlas->countMaps() == 1)))
+    if (shouldRelaunchBa &&
+        (!p_currentMap->isImuInitialized() ||
+         (p_currentMap->getKeyFrameCount() < 200 && p_atlas->countMaps() == 1)))
     {
-        relaunchGlobalBundleAdjustment(pCurrentMap);
+        relaunchGlobalBundleAdjustment(p_currentMap);
     }
 
     return semantic::SemanticMergeDecision::ACCEPT;

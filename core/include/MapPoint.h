@@ -56,7 +56,7 @@ class MapPoint
     template <class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-        ar & mnId;
+        ar & id;
         ar & firstKeyFrameId;
         ar & firstFrameId;
         ar & observationCount;
@@ -103,7 +103,7 @@ class MapPoint
         // ar & mnVisible;
         // ar & mnFound;
 
-        ar & mbBad;
+        ar & isFlaggedBad;
         ar & backupReplacedId;
 
         ar & minDistance;
@@ -114,42 +114,44 @@ class MapPoint
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MapPoint();
 
-    MapPoint(const Eigen::Vector3f &Pos, KeyFrame *pRefKF, Map *pMap);
-    MapPoint(const double invDepth,
-             cv::Point2f  uv_init,
-             KeyFrame    *pRefKF,
-             KeyFrame    *pHostKF,
-             Map         *pMap);
-    MapPoint(const Eigen::Vector3f &Pos,
-             Map                   *pMap,
-             Frame                 *pFrame,
-             const int             &idxF);
+    MapPoint(const Eigen::Vector3f &Pos_in,
+             KeyFrame              *p_referenceKeyFrame_in,
+             Map                   *p_map_in);
+    MapPoint(const double invDepth_in,
+             cv::Point2f  initialPixel_in,
+             KeyFrame    *p_referenceKeyFrame_in,
+             KeyFrame    *p_hostKeyFrame_in,
+             Map         *p_map_in);
+    MapPoint(const Eigen::Vector3f &Pos_in,
+             Map                   *p_map_in,
+             Frame                 *p_frame_inout,
+             const int             &indexF_in);
 
-    void            setWorldPos(const Eigen::Vector3f &Pos);
+    void            setWorldPos(const Eigen::Vector3f &Pos_in);
     Eigen::Vector3f getWorldPos();
 
     Eigen::Vector3f getNormal();
-    void            setNormalVector(const Eigen::Vector3f &normal);
+    void            setNormalVector(const Eigen::Vector3f &normal_in);
 
     KeyFrame *getReferenceKeyFrame();
 
     std::map<KeyFrame *, std::tuple<int, int>> getObservations();
     int                                        getObservationCount();
 
-    void addObservation(KeyFrame *pKF, int idx);
-    void eraseObservation(KeyFrame *pKF);
+    void addObservation(KeyFrame *p_keyFrame_inout, int index_in);
+    void eraseObservation(KeyFrame *p_keyFrame_in);
 
-    std::tuple<int, int> getIndexInKeyFrame(KeyFrame *pKF);
-    bool                 isInKeyFrame(KeyFrame *pKF);
+    std::tuple<int, int> getIndexInKeyFrame(KeyFrame *p_keyFrame_in);
+    bool                 isInKeyFrame(KeyFrame *p_keyFrame_in);
 
     void setBadFlag();
     bool isBad();
 
-    void      replace(MapPoint *pMP);
+    void      replace(MapPoint *p_mapPoint_inout);
     MapPoint *getReplaced();
 
-    void       increaseVisible(int n = 1);
-    void       increaseFound(int n = 1);
+    void       increaseVisible(int n_in = 1);
+    void       increaseFound(int n_in = 1);
     float      getFoundRatio();
     inline int getFound()
     {
@@ -164,21 +166,21 @@ class MapPoint
 
     float getMinDistanceInvariance();
     float getMaxDistanceInvariance();
-    int   predictScale(const float &currentDist, KeyFrame *pKF);
-    int   predictScale(const float &currentDist, Frame *pF);
+    int predictScale(const float &currentDistance_in, KeyFrame *p_keyFrame_in);
+    int predictScale(const float &currentDistance_in, Frame *p_pF_in);
 
     Map *getMap();
-    void updateMap(Map *pMap);
+    void updateMap(Map *p_map_in);
 
     void printObservations();
 
-    void PreSave(set<KeyFrame *> &spKF, set<MapPoint *> &spMP);
-    void PostLoad(map<long unsigned int, KeyFrame *> &mpKFid,
-                  map<long unsigned int, MapPoint *> &mpMPid);
+    void preSave(set<KeyFrame *> &keyFrames_in, set<MapPoint *> &mapPoints_in);
+    void postLoad(map<long unsigned int, KeyFrame *> &keyFrameId_in,
+                  map<long unsigned int, MapPoint *> &mapPointId_in);
 
   public:
-    long unsigned int        mnId;
-    static long unsigned int nNextId;
+    long unsigned int        id;
+    static long unsigned int nextId;
     long int                 firstKeyFrameId;
     long int                 firstFrameId;
     int                      observationCount;
@@ -190,7 +192,7 @@ class MapPoint
     float             trackDepthR;
     float             trackProjXR;
     float             trackProjYR;
-    bool              trackInView, trackInViewR;
+    bool              isTrackedInView, isTrackedInRightView;
     int               trackScaleLevel, trackScaleLevelR;
     float             trackViewCos, trackViewCosR;
     long unsigned int trackReferenceFrameId;
@@ -218,7 +220,7 @@ class MapPoint
     double    initV;
     KeyFrame *p_hostKF;
 
-    static std::mutex mGlobalMutex;
+    static std::mutex globalMutex;
 
     unsigned int originMapId;
 
@@ -248,7 +250,7 @@ class MapPoint
     int foundCount;
 
     // Bad flag (we do not currently erase MapPoint from memory)
-    bool          mbBad;
+    bool          isFlaggedBad;
     MapPoint     *p_replaced;
     // For save relation without pointer, this is necessary for save/load
     // function
@@ -261,9 +263,9 @@ class MapPoint
     Map *p_map;
 
     // Mutex
-    std::mutex mMutexPos;
-    std::mutex mMutexFeatures;
-    std::mutex mMutexMap;
+    std::mutex positionMutex;
+    std::mutex featuresMutex;
+    std::mutex mapMutex;
 };
 
 } // namespace core

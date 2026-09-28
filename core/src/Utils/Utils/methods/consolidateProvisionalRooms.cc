@@ -40,7 +40,7 @@ namespace utils
 
 void Utils::consolidateProvisionalRooms(
     vs_graphs::core::semantic::Room *p_selectedRoom_inout,
-    Atlas                           *p_atlas_inout)
+    Atlas                           *p_atlas_in)
 {
     /* Confirm the selected room is valid */
     if (p_selectedRoom_inout == nullptr || p_selectedRoom_inout->isBad())
@@ -57,11 +57,11 @@ void Utils::consolidateProvisionalRooms(
     selectedWallIds.reserve(selectedWalls.size());
 
     /* Insert every valid selected wall ID into the set */
-    for (vs_graphs::core::geometric::Plane *wall : selectedWalls)
+    for (vs_graphs::core::geometric::Plane *p_wall : selectedWalls)
     {
-        if (wall != nullptr && !wall->isBad())
+        if (p_wall != nullptr && !p_wall->isBad())
         {
-            selectedWallIds.insert(wall->getId());
+            selectedWallIds.insert(p_wall->getId());
         }
     }
 
@@ -73,27 +73,27 @@ void Utils::consolidateProvisionalRooms(
 
     /* Extract all rooms and provisional structural elements */
     const std::vector<vs_graphs::core::semantic::Room *> allRooms =
-        p_atlas_inout->getAllRooms();
+        p_atlas_in->getAllRooms();
 
     /* Iterate through every possible redundant structural element */
-    for (vs_graphs::core::semantic::Room *candidateRoom : allRooms)
+    for (vs_graphs::core::semantic::Room *p_candidateRoom : allRooms)
     {
         /* Skip invalid rooms and the selected room itself */
-        if (candidateRoom == nullptr || candidateRoom == p_selectedRoom_inout ||
-            candidateRoom->isBad())
+        if (p_candidateRoom == nullptr ||
+            p_candidateRoom == p_selectedRoom_inout || p_candidateRoom->isBad())
         {
             continue;
         }
 
         const std::vector<vs_graphs::core::semantic::Passage *> activePassages =
-            p_atlas_inout->getAllPassages();
+            p_atlas_in->getAllPassages();
         const bool candidateIsLiveProspective = std::any_of(
             activePassages.begin(),
             activePassages.end(),
-            [candidateRoom](vs_graphs::core::semantic::Passage *p_passage)
+            [p_candidateRoom](vs_graphs::core::semantic::Passage *p_passage)
             {
                 return p_passage != nullptr &&
-                       p_passage->getProspectiveRoom() == candidateRoom;
+                       p_passage->getProspectiveRoom() == p_candidateRoom;
             });
 
         if (candidateIsLiveProspective)
@@ -105,7 +105,7 @@ void Utils::consolidateProvisionalRooms(
          * Only automatically absorb undefined structural elements.
          * Classified rooms and corridors must never be merged automatically.
          */
-        if (candidateRoom->getRoomVariant() !=
+        if (p_candidateRoom->getRoomVariant() !=
             vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
         {
             continue;
@@ -113,7 +113,7 @@ void Utils::consolidateProvisionalRooms(
 
         /* Extract the candidate room walls */
         const std::vector<vs_graphs::core::geometric::Plane *> candidateWalls =
-            candidateRoom->getWalls();
+            p_candidateRoom->getWalls();
 
         /*!
          * Orphan-wall fallback creates one provisional SE per wall. Restrict
@@ -124,11 +124,12 @@ void Utils::consolidateProvisionalRooms(
         std::vector<vs_graphs::core::geometric::Plane *> validCandidateWalls;
         validCandidateWalls.reserve(candidateWalls.size());
 
-        for (vs_graphs::core::geometric::Plane *candidateWall : candidateWalls)
+        for (vs_graphs::core::geometric::Plane *p_candidateWall :
+             candidateWalls)
         {
-            if (candidateWall != nullptr && !candidateWall->isBad())
+            if (p_candidateWall != nullptr && !p_candidateWall->isBad())
             {
-                validCandidateWalls.push_back(candidateWall);
+                validCandidateWalls.push_back(p_candidateWall);
             }
         }
 
@@ -139,11 +140,11 @@ void Utils::consolidateProvisionalRooms(
         }
 
         /* Extract the single wall represented by the provisional element */
-        vs_graphs::core::geometric::Plane *candidateWall =
+        vs_graphs::core::geometric::Plane *p_candidateWall =
             validCandidateWalls.front();
 
         /* The selected room must already contain the candidate wall */
-        if (selectedWallIds.count(candidateWall->getId()) == 0)
+        if (selectedWallIds.count(p_candidateWall->getId()) == 0)
         {
             continue;
         }
@@ -154,7 +155,7 @@ void Utils::consolidateProvisionalRooms(
          * cluster which may represent a genuine room on the opposite side.
          */
         Eigen::Vector4d wallEquation =
-            candidateWall->getGlobalEquation().coeffs();
+            p_candidateWall->getGlobalEquation().coeffs();
 
         const double normalNorm = wallEquation.head<3>().norm();
 
@@ -165,9 +166,9 @@ void Utils::consolidateProvisionalRooms(
 
         wallEquation /= normalNorm;
 
-        const double candidatePlaneDistance =
-            std::abs(wallEquation.head<3>().dot(candidateRoom->getCentroid()) +
-                     wallEquation(3));
+        const double candidatePlaneDistance = std::abs(
+            wallEquation.head<3>().dot(p_candidateRoom->getCentroid()) +
+            wallEquation(3));
 
         constexpr double provisionalWallDistanceThreshold = 0.25;
 
@@ -178,12 +179,13 @@ void Utils::consolidateProvisionalRooms(
 
         /* Preserve passage relationships before invalidating the candidate */
         const std::vector<vs_graphs::core::semantic::Passage *>
-            candidatePassages = candidateRoom->getPassages();
+            candidatePassages = p_candidateRoom->getPassages();
 
-        for (vs_graphs::core::semantic::Passage *passage : candidatePassages)
+        for (vs_graphs::core::semantic::Passage *p_candidatePassage :
+             candidatePassages)
         {
             /* Skip invalid passages */
-            if (passage == nullptr)
+            if (p_candidatePassage == nullptr)
             {
                 continue;
             }
@@ -195,31 +197,33 @@ void Utils::consolidateProvisionalRooms(
             const bool alreadyPresent = std::any_of(
                 selectedPassages.begin(),
                 selectedPassages.end(),
-                [passage](vs_graphs::core::semantic::Passage *existingPassage)
+                [p_candidatePassage](
+                    vs_graphs::core::semantic::Passage *p_existingPassage)
                 {
-                    return existingPassage != nullptr &&
-                           existingPassage->getId() == passage->getId();
+                    return p_existingPassage != nullptr &&
+                           p_existingPassage->getId() ==
+                               p_candidatePassage->getId();
                 });
 
             /* Copy the passage relationship if required */
             if (!alreadyPresent)
             {
-                p_selectedRoom_inout->setDoorways(passage);
+                p_selectedRoom_inout->setDoorways(p_candidatePassage);
             }
         }
 
         /* Preserve floor membership before retiring the provisional room. */
         for (vs_graphs::core::semantic::Floor *p_floor :
-             p_atlas_inout->getAllFloors())
+             p_atlas_in->getAllFloors())
         {
             if (p_floor != nullptr)
             {
-                p_floor->replaceRoom(candidateRoom, p_selectedRoom_inout);
+                p_floor->replaceRoom(p_candidateRoom, p_selectedRoom_inout);
             }
         }
 
         /* Mark the redundant provisional structural element as invalid */
-        candidateRoom->setBad();
+        p_candidateRoom->setBad();
     }
 }
 

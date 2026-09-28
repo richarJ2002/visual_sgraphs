@@ -32,7 +32,7 @@ namespace core
 
 void Atlas::setCurrentSemanticRoomIdentity(const int roomId_in)
 {
-    currentSemanticRoomIdentity_.store(roomId_in, std::memory_order_release);
+    currentSemanticRoomIdentity.store(roomId_in, std::memory_order_release);
     observeRoomIdentity(roomId_in);
 }
 

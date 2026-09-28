@@ -33,14 +33,14 @@ namespace core
 {
 
 #ifdef REGISTER_TIMES
-double calcDeviation(vector<double> v_times, double average)
+double calcDeviation(vector<double> times_in, double average_in)
 {
     double accum = 0;
-    for (double value : v_times)
+    for (double value : times_in)
     {
-        accum += pow(value - average, 2);
+        accum += pow(value - average_in, 2);
     }
-    return sqrt(accum / v_times.size());
+    return sqrt(accum / times_in.size());
 }
 #endif
 

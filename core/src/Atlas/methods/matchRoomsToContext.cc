@@ -34,9 +34,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::matchRoomsToContext(Map *pNewMap)
+void Atlas::matchRoomsToContext(Map *p_newMap_in)
 {
-    if (!pNewMap)
+    if (!p_newMap_in)
         return;
 
     /* Candidate generation is intentionally separate from P4 verification.
@@ -55,16 +55,17 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
 #endif
     const std::vector<Map *> allMaps = getAllMaps();
 
-    std::unique_lock<std::mutex> lock(mRoomContextMutex);
+    std::unique_lock<std::mutex> lock(roomContextMutex);
 
     if (roomContextHistory.empty())
         return;
 
     /* Match BOTH detected rooms AND candidate/prospective rooms.
      * Candidate rooms need identity tags for cross-restart continuity. */
-    std::vector<semantic::Room *> newRooms = pNewMap->getAllDetectedMapRooms();
+    std::vector<semantic::Room *> newRooms =
+        p_newMap_in->getAllDetectedMapRooms();
     std::vector<semantic::Room *> candidateRooms =
-        pNewMap->getAllCandidateMapRooms();
+        p_newMap_in->getAllCandidateMapRooms();
     newRooms.insert(newRooms.end(),
                     candidateRooms.begin(),
                     candidateRooms.end());
@@ -80,55 +81,55 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
     if (allContext.empty())
         return;
 
-    for (semantic::Room *room : newRooms)
+    for (semantic::Room *p_room : newRooms)
     {
-        if (!room || room->isBad())
+        if (!p_room || p_room->isBad())
             continue;
 
-        if (room->hasRoomTag())
+        if (p_room->hasRoomTag())
             continue;
 
-        Eigen::Vector3d roomCentroid = room->getCentroid();
-        double          bestDist     = std::numeric_limits<double>::max();
-        const semantic::RoomContextSnapshot *bestMatch = nullptr;
+        Eigen::Vector3d roomCentroid = p_room->getCentroid();
+        double          bestDistance = std::numeric_limits<double>::max();
+        const semantic::RoomContextSnapshot *p_bestMatch = nullptr;
 
         for (const semantic::RoomContextSnapshot &snap : allContext)
         {
             /* PREFER tag-based matching if snapshot has persistent tag.
              * This provides deterministic identity across restarts. */
-            if (!snap.roomTag.empty() && room->hasRoomTag())
+            if (!snap.roomTag.empty() && p_room->hasRoomTag())
             {
-                if (room->getRoomTag() == snap.roomTag)
+                if (p_room->getRoomTag() == snap.roomTag)
                 {
-                    bestMatch = &snap;
-                    bestDist  = 0.0;
+                    p_bestMatch  = &snap;
+                    bestDistance = 0.0;
                     break;
                 }
             }
 
-            double dist = (snap.centroid - roomCentroid).norm();
+            double distance = (snap.centroid - roomCentroid).norm();
 
-            if (dist > kRoomContextMatchThreshold_m)
+            if (distance > kRoomContextMatchThreshold_m)
                 continue;
 
             /* Verify wall-normal agreement: compare the first available
              * wall normal of the new room against each snapshot wall
              * normal. Accept when |cosθ| > kWallNormalAlignmentCosTheta. */
-            std::vector<geometric::Plane *> roomWalls = room->getWalls();
+            std::vector<geometric::Plane *> roomWalls = p_room->getWalls();
             if (roomWalls.empty() || snap.wallNormals.empty())
             {
                 /* Fallback: accept on centroid distance alone when no wall
                  * normals are available for normal validation. */
-                if (dist < bestDist)
+                if (distance < bestDistance)
                 {
-                    bestDist  = dist;
-                    bestMatch = &snap;
+                    bestDistance = distance;
+                    p_bestMatch  = &snap;
                 }
                 continue;
             }
 
             std::optional<Eigen::Vector3d> newRoomNormal =
-                room->getWallNormalTowardRoom_World(roomWalls[0]);
+                p_room->getWallNormalTowardRoom_World(roomWalls[0]);
             if (!newRoomNormal)
                 continue;
 
@@ -146,16 +147,16 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
             if (!normalOk)
                 continue;
 
-            if (dist < bestDist)
+            if (distance < bestDistance)
             {
-                bestDist  = dist;
-                bestMatch = &snap;
+                bestDistance = distance;
+                p_bestMatch  = &snap;
             }
         }
 
-        if (bestMatch)
+        if (p_bestMatch)
         {
-            room->setRoomTag("room_" + std::to_string(bestMatch->roomId));
+            p_room->setRoomTag("room_" + std::to_string(p_bestMatch->roomId));
 
             /* Locate the snapshot pointer in the stored history so the
              * room can hold a non-owning reference for WP3. */
@@ -163,10 +164,10 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
             {
                 for (auto &storedSnap : entry.second)
                 {
-                    if (storedSnap.roomId == bestMatch->roomId &&
-                        storedSnap.centroid.isApprox(bestMatch->centroid))
+                    if (storedSnap.roomId == p_bestMatch->roomId &&
+                        storedSnap.centroid.isApprox(p_bestMatch->centroid))
                     {
-                        room->setMatchedContext(&storedSnap);
+                        p_room->setMatchedContext(&storedSnap);
                         break;
                     }
                 }
@@ -184,11 +185,11 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
             semantic::Room *p_priorRoom = nullptr;
             for (Map *p_map : allMaps)
             {
-                if (!p_map || p_map->isBad() || p_map == pNewMap)
+                if (!p_map || p_map->isBad() || p_map == p_newMap_in)
                     continue;
                 for (semantic::Room *r : p_map->getAllDetectedMapRooms())
                 {
-                    if (r && !r->isBad() && r->getId() == bestMatch->roomId)
+                    if (r && !r->isBad() && r->getId() == p_bestMatch->roomId)
                     {
                         p_priorRoom = r;
                         p_priorMap  = p_map;
@@ -214,22 +215,22 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
 
                     /* Re-associate wall to new room */
                     p_priorRoom->removeWall(p_wall);
-                    room->setWalls(p_wall);
+                    p_room->setWalls(p_wall);
 
-                    std::cout << "[Atlas] Transferred Wall#" << p_wall->getId()
-                              << " from prior semantic::Room#"
-                              << p_priorRoom->getId()
-                              << " to matched semantic::Room#" << room->getId()
-                              << std::endl;
+                    std::cout
+                        << "[Atlas] Transferred Wall#" << p_wall->getId()
+                        << " from prior semantic::Room#" << p_priorRoom->getId()
+                        << " to matched semantic::Room#" << p_room->getId()
+                        << std::endl;
                 }
 
                 /* Passages will be re-associated by associatePassagesToRooms()
                  */
 
-                std::cout << "[Atlas] semantic::Room#" << room->getId()
-                          << " now has " << room->getWalls().size()
+                std::cout << "[Atlas] semantic::Room#" << p_room->getId()
+                          << " now has " << p_room->getWalls().size()
                           << " walls (continuing from prior semantic::Room#"
-                          << bestMatch->roomId << ")" << std::endl;
+                          << p_bestMatch->roomId << ")" << std::endl;
             }
             else
             {
@@ -239,11 +240,11 @@ void Atlas::matchRoomsToContext(Map *pNewMap)
                     << std::endl;
             }
 
-            std::cout << "[Atlas] Matched room " << room->getId()
+            std::cout << "[Atlas] Matched room " << p_room->getId()
                       << " in new map, tagged with identity \""
-                      << room->getRoomTag() << "\" (prior room "
-                      << bestMatch->roomId << ", dist=" << bestDist << " m)"
-                      << std::endl;
+                      << p_room->getRoomTag() << "\" (prior room "
+                      << p_bestMatch->roomId << ", dist=" << bestDistance
+                      << " m)" << std::endl;
         }
     }
 }

@@ -143,7 +143,7 @@ TEST(SemanticBootstrapPhase1,
     ASSERT_EQ(recoveredPassages.size(), 1U);
     EXPECT_EQ(recoveredPassages.front()->getId(), departedPassage.getId());
     EXPECT_TRUE(recoveredPassages.front()->isRecoveryProxy());
-    EXPECT_EQ(recoveredPassages.front()->getKnownSideProvenance().pRoom,
+    EXPECT_EQ(recoveredPassages.front()->getKnownSideProvenance().p_room,
               p_recoveredRoom);
     ASSERT_EQ(p_recoveredRoom->getPassages().size(), 1U);
     EXPECT_EQ(p_recoveredRoom->getPassages().front(),

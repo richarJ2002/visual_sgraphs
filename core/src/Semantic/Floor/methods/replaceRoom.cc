@@ -28,42 +28,42 @@ namespace core
 namespace semantic
 {
 
-bool Floor::replaceRoom(Room *p_retiredRoom_in, Room *p_retainedRoom_in)
+bool Floor::replaceRoom(Room *p_retiredRoom_inout, Room *p_retainedRoom_inout)
 {
-    if (p_retiredRoom_in == nullptr || p_retainedRoom_in == nullptr ||
-        p_retiredRoom_in == p_retainedRoom_in)
+    if (p_retiredRoom_inout == nullptr || p_retainedRoom_inout == nullptr ||
+        p_retiredRoom_inout == p_retainedRoom_inout)
     {
         return false;
     }
 
     {
-        std::lock_guard<std::mutex> lock(mMutexRooms);
-        if (std::find(rooms.begin(), rooms.end(), p_retiredRoom_in) ==
+        std::lock_guard<std::mutex> lock(roomsMutex);
+        if (std::find(rooms.begin(), rooms.end(), p_retiredRoom_inout) ==
             rooms.end())
         {
             return false;
         }
     }
 
-    Floor *p_previousRetainedFloor = p_retainedRoom_in->getFloor();
+    Floor *p_previousRetainedFloor = p_retainedRoom_inout->getFloor();
     if (p_previousRetainedFloor != nullptr && p_previousRetainedFloor != this)
     {
-        p_previousRetainedFloor->detachRoom(p_retainedRoom_in);
+        p_previousRetainedFloor->detachRoom(p_retainedRoom_inout);
     }
 
     bool                replacedRetiredRoom = false;
     std::vector<Room *> rebuiltRooms;
     {
-        std::lock_guard<std::mutex> lock(mMutexRooms);
+        std::lock_guard<std::mutex> lock(roomsMutex);
         rebuiltRooms.reserve(rooms.size());
 
         for (Room *p_existingRoom : rooms)
         {
             Room *p_candidateRoom = p_existingRoom;
 
-            if (p_existingRoom == p_retiredRoom_in)
+            if (p_existingRoom == p_retiredRoom_inout)
             {
-                p_candidateRoom     = p_retainedRoom_in;
+                p_candidateRoom     = p_retainedRoom_inout;
                 replacedRetiredRoom = true;
             }
 
@@ -86,11 +86,11 @@ bool Floor::replaceRoom(Room *p_retiredRoom_in, Room *p_retainedRoom_in)
 
     if (replacedRetiredRoom)
     {
-        if (p_retiredRoom_in->getFloor() == this)
+        if (p_retiredRoom_inout->getFloor() == this)
         {
-            p_retiredRoom_in->setFloor(nullptr);
+            p_retiredRoom_inout->setFloor(nullptr);
         }
-        p_retainedRoom_in->setFloor(this);
+        p_retainedRoom_inout->setFloor(this);
     }
 
     return replacedRetiredRoom;

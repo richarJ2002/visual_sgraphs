@@ -32,24 +32,24 @@ namespace core
 namespace geometric
 {
 
-void Plane::addObservation(core::KeyFrame    *p_keyFrame_in,
+void Plane::addObservation(core::KeyFrame    *p_keyFrame_inout,
                            const Observation &observation_in)
 {
     /* Confirm the keyframe is valid */
-    if (p_keyFrame_in == nullptr || p_keyFrame_in->isBad())
+    if (p_keyFrame_inout == nullptr || p_keyFrame_inout->isBad())
     {
         return;
     }
 
     /* Lock the plane observation data */
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
 
     /*!
      * Insert the observation only when the keyframe has not previously
      * observed this plane.
      */
     const auto insertionResult =
-        observations.insert({p_keyFrame_in, observation_in});
+        observations.insert({p_keyFrame_inout, observation_in});
 
     /* Increment the observation count after a successful insertion */
     if (insertionResult.second)
@@ -58,7 +58,7 @@ void Plane::addObservation(core::KeyFrame    *p_keyFrame_in,
 
         if (p_refKeyFrame == nullptr)
         {
-            p_refKeyFrame = p_keyFrame_in;
+            p_refKeyFrame = p_keyFrame_inout;
         }
     }
 }

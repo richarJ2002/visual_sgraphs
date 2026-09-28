@@ -32,10 +32,10 @@ namespace core
 namespace geometric
 {
 
-void Plane::setLocalEquation(const g2o::Plane3D &value)
+void Plane::setLocalEquation(const g2o::Plane3D &localEquation_in)
 {
-    unique_lock<mutex> lock(mMutexPos);
-    localEquation = value;
+    unique_lock<mutex> lock(positionMutex);
+    localEquation = localEquation_in;
 }
 
 } // namespace geometric

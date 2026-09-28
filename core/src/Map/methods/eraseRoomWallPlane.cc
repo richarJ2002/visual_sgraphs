@@ -34,14 +34,14 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane)
+void Map::eraseRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
 
     for (auto wallIterator = roomWallPlaneIndex.begin();
          wallIterator != roomWallPlaneIndex.end();)
     {
-        wallIterator = wallIterator->second == pPlane
+        wallIterator = wallIterator->second == p_plane_in
                            ? roomWallPlaneIndex.erase(wallIterator)
                            : std::next(wallIterator);
     }

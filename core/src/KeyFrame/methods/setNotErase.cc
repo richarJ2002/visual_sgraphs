@@ -37,8 +37,8 @@ namespace core
 
 void KeyFrame::setNotErase()
 {
-    unique_lock<mutex> lock(mMutexConnections);
-    notErase = true;
+    unique_lock<mutex> lock(connectionsMutex);
+    isEraseProtected = true;
 }
 
 } // namespace core

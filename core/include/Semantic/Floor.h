@@ -58,7 +58,7 @@ class Floor
                                  rooms; // Floor's rooms and corridors
     std::optional<PlaneIdentity> planeIdentity;
 
-    void detachRoom(vs_graphs::core::semantic::Room *p_room_in);
+    void detachRoom(vs_graphs::core::semantic::Room *p_room_inout);
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -85,19 +85,19 @@ class Floor
     void applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
 
     int  getId() const;
-    void setId(int value);
+    void setId(int value_in);
 
     int  getOpId() const;
-    void setOpId(int value);
+    void setOpId(int value_in);
 
     int  getOpIdG() const;
-    void setOpIdG(int value);
+    void setOpIdG(int value_in);
 
     std::string getName() const;
-    void        setName(std::string value);
+    void        setName(std::string value_in);
 
     Eigen::Vector3d getCentroid() const;
-    void            setCentroid(Eigen::Vector3d value);
+    void            setCentroid(Eigen::Vector3d value_in);
 
     /*! Returns true when a finite normalized ground-plane identity is stored.
      */
@@ -128,40 +128,41 @@ class Floor
                                      const PlaneIdentity &secondIdentity_in,
                                      double  maximumNormalAngle_deg_in,
                                      double  maximumOffset_m_in,
-                                     double &normalAngle_deg_out,
-                                     double &offset_m_out);
+                                     double &normalAngle_deg_inout,
+                                     double &offset_m_inout);
 
     /*! Selects the valid identity with most finite support, then observations.
      */
     static Floor *
         selectBestObservedFloor(const std::vector<Floor *> &floors_in);
 
-    void addRoom(vs_graphs::core::semantic::Room *value);
+    void addRoom(vs_graphs::core::semantic::Room *p_value_inout);
     std::vector<vs_graphs::core::semantic::Room *> getRooms() const;
-    void setRooms(const std::vector<vs_graphs::core::semantic::Room *> &value);
+    void                                           setRooms(
+                                                  const std::vector<vs_graphs::core::semantic::Room *> &value_in);
 
     /*!
      * @brief       Replaces a retired room association after consolidation.
      *
-     * @param[in]   p_retiredRoom_in
+     * @param[in,out] p_retiredRoom_inout
      *              Structural element which is being retired.
      *
-     * @param[in]   p_retainedRoom_in
+     * @param[in,out] p_retainedRoom_inout
      *              Structural element which absorbs the relationship.
      *
      * @return      True when the retired room was present.
      */
-    bool replaceRoom(vs_graphs::core::semantic::Room *p_retiredRoom_in,
-                     vs_graphs::core::semantic::Room *p_retainedRoom_in);
+    bool replaceRoom(vs_graphs::core::semantic::Room *p_retiredRoom_inout,
+                     vs_graphs::core::semantic::Room *p_retainedRoom_inout);
 
     vs_graphs::core::Map *getMap();
     void                  setMap(vs_graphs::core::Map *p_map_in);
 
   protected:
     vs_graphs::core::Map *p_map{nullptr};
-    std::mutex            mMutexMap;
-    mutable std::mutex    mMutexRooms;
-    mutable std::mutex    mMutexGeometry;
+    std::mutex            mapMutex;
+    mutable std::mutex    roomsMutex;
+    mutable std::mutex    geometryMutex;
 };
 } // namespace semantic
 } // namespace core

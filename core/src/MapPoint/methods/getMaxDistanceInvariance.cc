@@ -36,7 +36,7 @@ namespace core
 
 float MapPoint::getMaxDistanceInvariance()
 {
-    unique_lock<mutex> lock(mMutexPos);
+    unique_lock<mutex> lock(positionMutex);
     return 1.2f * maxDistance;
 }
 

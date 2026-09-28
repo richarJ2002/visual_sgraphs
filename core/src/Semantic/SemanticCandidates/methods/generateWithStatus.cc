@@ -22,17 +22,17 @@ namespace semantic
 SemanticCandidateGeneration SemanticCandidates::generateWithStatus(
     const std::map<long unsigned int, std::vector<RoomContextSnapshot>>
                                   &history_in,
-    const SemanticCandidateConfig &config_in,
+    const SemanticCandidateConfig &configuration_in,
     const std::optional<int>       anchorRoomId_in)
 {
     SemanticCandidateGeneration result;
-    result.rejectionReason = validateConfig(config_in);
+    result.rejectionReason = validateConfig(configuration_in);
     if (result.rejectionReason != SemanticCandidateConfigRejectionReason::NONE)
     {
         return result;
     }
 
-    const std::size_t roomCap = config_in.candidatePairCap;
+    const std::size_t roomCap = configuration_in.candidatePairCap;
     std::vector<std::tuple<long unsigned int, int, std::size_t>> roomRefs;
     roomRefs.reserve(roomCap);
     for (const auto &mapEntry : history_in)
@@ -108,38 +108,40 @@ SemanticCandidateGeneration SemanticCandidates::generateWithStatus(
         const RoomContextSnapshot &right = secondRoom_in.second;
         const std::vector<double>  leftAngles =
             angleSignature(left,
-                           config_in.angleTolerance_rad,
-                           config_in.descriptorElementsCap);
+                           configuration_in.angleTolerance_rad,
+                           configuration_in.descriptorElementsCap);
         const std::vector<double> rightAngles =
             angleSignature(right,
-                           config_in.angleTolerance_rad,
-                           config_in.descriptorElementsCap);
+                           configuration_in.angleTolerance_rad,
+                           configuration_in.descriptorElementsCap);
         const double leftMedian =
-            medianExtent(left, config_in.descriptorElementsCap);
+            medianExtent(left, configuration_in.descriptorElementsCap);
         const double rightMedian =
-            medianExtent(right, config_in.descriptorElementsCap);
+            medianExtent(right, configuration_in.descriptorElementsCap);
         const std::vector<double> leftExtents =
-            extentSignature(left, leftMedian, config_in.descriptorElementsCap);
+            extentSignature(left,
+                            leftMedian,
+                            configuration_in.descriptorElementsCap);
         const std::vector<double> rightExtents =
             extentSignature(right,
                             rightMedian,
-                            config_in.descriptorElementsCap);
+                            configuration_in.descriptorElementsCap);
         const std::vector<std::pair<double, double>> leftApertures =
             apertureSignature(left,
                               leftMedian,
-                              config_in.descriptorElementsCap);
+                              configuration_in.descriptorElementsCap);
         const std::vector<std::pair<double, double>> rightApertures =
             apertureSignature(right,
                               rightMedian,
-                              config_in.descriptorElementsCap);
+                              configuration_in.descriptorElementsCap);
         const std::vector<std::string> leftTopology =
             topologySignature(left,
-                              config_in.topologyNodesCap,
-                              config_in.topoRefinementIters);
+                              configuration_in.topologyNodesCap,
+                              configuration_in.topoRefinementIters);
         const std::vector<std::string> rightTopology =
             topologySignature(right,
-                              config_in.topologyNodesCap,
-                              config_in.topoRefinementIters);
+                              configuration_in.topologyNodesCap,
+                              configuration_in.topoRefinementIters);
 
         /* Minimum evidence: "at least 2 walls with valid normals and bounds,
          * or 1 wall + 1 passage." The "with valid normals and bounds"
@@ -162,36 +164,38 @@ SemanticCandidateGeneration SemanticCandidates::generateWithStatus(
         CandidateCueBreakdown cues;
         cues.angleDistance = paddedMeanL1(leftAngles,
                                           rightAngles,
-                                          config_in.angleMissingPenalty);
-        if (cues.angleDistance <= config_in.angleTolerance_rad)
+                                          configuration_in.angleMissingPenalty);
+        if (cues.angleDistance <= configuration_in.angleTolerance_rad)
         {
             cues.angleDistance = 0.0;
         }
-        cues.extentDistance = paddedMeanL1(leftExtents,
-                                           rightExtents,
-                                           config_in.extentMissingPenalty);
+        cues.extentDistance =
+            paddedMeanL1(leftExtents,
+                         rightExtents,
+                         configuration_in.extentMissingPenalty);
         cues.apertureDistance =
             pairedManhattanDistance(leftApertures,
                                     rightApertures,
-                                    config_in.apertureMissingPenalty);
-        cues.topologyAvailable =
+                                    configuration_in.apertureMissingPenalty);
+        cues.isTopologyAvailable =
             !leftTopology.empty() && !rightTopology.empty();
         cues.topologyDistance =
-            cues.topologyAvailable ? stringDistance(leftTopology, rightTopology)
-                                   : 0.0;
+            cues.isTopologyAvailable
+                ? stringDistance(leftTopology, rightTopology)
+                : 0.0;
         const double angleWeight = !leftAngles.empty() && !rightAngles.empty()
-                                       ? config_in.weightAngle
+                                       ? configuration_in.weightAngle
                                        : 0.0;
         const double extentWeight =
             !leftExtents.empty() && !rightExtents.empty()
-                ? config_in.weightExtent
+                ? configuration_in.weightExtent
                 : 0.0;
         const double apertureWeight =
             !leftApertures.empty() && !rightApertures.empty()
-                ? config_in.weightAperture
+                ? configuration_in.weightAperture
                 : 0.0;
         const double topologyWeight =
-            cues.topologyAvailable ? config_in.weightTopology : 0.0;
+            cues.isTopologyAvailable ? configuration_in.weightTopology : 0.0;
         const double denominator =
             angleWeight + extentWeight + apertureWeight + topologyWeight;
         if (!std::isfinite(denominator) || denominator <= 0.0)
@@ -211,11 +215,11 @@ SemanticCandidateGeneration SemanticCandidates::generateWithStatus(
         cues.weightDenominator = denominator;
         candidate.cues         = cues;
         candidate.distance     = cues.weightedNumerator / denominator;
-        candidate.minimumEvidenceSatisfied = true;
-        candidate.lowConfidence            = validNormalCount(left) < 2U ||
-                                  validNormalCount(right) < 2U ||
-                                  missingBoundsFraction(left) > 0.5 ||
-                                  missingBoundsFraction(right) > 0.5;
+        candidate.isMinimumEvidenceSatisfied = true;
+        candidate.hasLowConfidence           = validNormalCount(left) < 2U ||
+                                     validNormalCount(right) < 2U ||
+                                     missingBoundsFraction(left) > 0.5 ||
+                                     missingBoundsFraction(right) > 0.5;
         return candidate;
     };
 
@@ -265,12 +269,12 @@ SemanticCandidateGeneration SemanticCandidates::generateWithStatus(
     std::vector<SemanticCandidate> priorityCandidates;
     if (!priorityRoomIds.empty())
     {
-        priorityCandidates =
-            enumerate(config_in.candidatePairCap, /*priorityOnly_in=*/true);
+        priorityCandidates = enumerate(configuration_in.candidatePairCap,
+                                       /*priorityOnly_in=*/true);
     }
     result.candidates = !priorityCandidates.empty()
                             ? std::move(priorityCandidates)
-                            : enumerate(config_in.globalFallbackCap,
+                            : enumerate(configuration_in.globalFallbackCap,
                                         /*priorityOnly_in=*/false);
 
     std::sort(result.candidates.begin(),
@@ -287,14 +291,14 @@ SemanticCandidateGeneration SemanticCandidates::generateWithStatus(
                                                            right.mapBId,
                                                            right.roomBId);
               });
-    if (result.candidates.size() > config_in.topK)
-        result.candidates.resize(config_in.topK);
+    if (result.candidates.size() > configuration_in.topK)
+        result.candidates.resize(configuration_in.topK);
     if (!result.candidates.empty())
     {
-        const double threshold =
-            result.candidates.front().distance + config_in.ambiguityMargin;
+        const double threshold = result.candidates.front().distance +
+                                 configuration_in.ambiguityMargin;
         for (SemanticCandidate &candidate : result.candidates)
-            candidate.ambiguous = candidate.distance <= threshold;
+            candidate.isAmbiguous = candidate.distance <= threshold;
     }
     /* Runtime budgets are profiling metadata only. Deliberately do not read a
      * clock here: deterministic candidate bytes must not depend on scheduling.

@@ -34,8 +34,8 @@ namespace core
 
 bool LocalMapping::stopRequested()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    return stopRequestedFlag;
+    unique_lock<mutex> stopLock(stopMutex);
+    return isStopRequested;
 }
 
 } // namespace core

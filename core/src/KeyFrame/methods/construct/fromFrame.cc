@@ -37,14 +37,16 @@ namespace core
 
 /* NOTE: out-of-line to break the KeyFrame<->MapPoint/Map include cycle. */
 
-KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
-    isImu(pMap->isImuInitialized()),
-    frameId(F.mnId),
-    timeStamp(F.timeStamp),
+KeyFrame::KeyFrame(Frame            &F_inout,
+                   Map              *p_map_in,
+                   KeyFrameDatabase *p_keyFrameDatabase_in) :
+    isImu(p_map_in->isImuInitialized()),
+    frameId(F_inout.id),
+    timeStamp(F_inout.timeStamp),
     gridCols(FRAME_GRID_COLS),
     gridRows(FRAME_GRID_ROWS),
-    gridElementWidthInverse(F.gridElementWidthInverse),
-    gridElementHeightInverse(F.gridElementHeightInverse),
+    gridElementWidthInverse(F_inout.gridElementWidthInverse),
+    gridElementHeightInverse(F_inout.gridElementHeightInverse),
     trackReferenceFrameId(0),
     fuseTargetKeyFrameId(0),
     baLocalKeyFrameId(0),
@@ -57,106 +59,107 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB) :
     placeRecognitionQuery(0),
     placeRecognitionWords(0),
     placeRecognitionScore(0),
-    currentPlaceRecognition(false),
+    isInCurrentPlaceRecognition(false),
     baGlobalKeyFrameId(0),
     mergeCorrectedKeyFrameId(0),
     baLocalMergeId(0),
-    fx(F.fx),
-    fy(F.fy),
-    cx(F.cx),
-    cy(F.cy),
-    invfx(F.invfx),
-    invfy(F.invfy),
-    mbf(F.mbf),
-    mb(F.mb),
-    depthThreshold(F.depthThreshold),
-    distortionCoefficients(F.distortionCoefficients),
-    N(F.N),
-    keyPoints(F.keyPoints),
-    keyPointsUndistorted(F.keyPointsUndistorted),
-    uRight(F.uRight),
-    depths(F.depths),
-    descriptors(F.descriptors.clone()),
-    bowVector(F.bowVector),
-    featureVector(F.featureVector),
-    scaleLevelCount(F.scaleLevelCount),
-    scaleFactor(F.scaleFactor),
-    logScaleFactor(F.logScaleFactor),
-    scaleFactors(F.scaleFactors),
-    levelSigmaSquared(F.levelSigmaSquared),
-    invLevelSigmaSquared(F.invLevelSigmaSquared),
-    gridMinX(F.gridMinX),
-    gridMinY(F.gridMinY),
-    gridMaxX(F.gridMaxX),
-    gridMaxY(F.gridMaxY),
+    fx(F_inout.fx),
+    fy(F_inout.fy),
+    cx(F_inout.cx),
+    cy(F_inout.cy),
+    invfx(F_inout.invfx),
+    invfy(F_inout.invfy),
+    mbf(F_inout.mbf),
+    mb(F_inout.mb),
+    depthThreshold(F_inout.depthThreshold),
+    distortionCoefficients(F_inout.distortionCoefficients),
+    keyPointCount(F_inout.keyPointCount),
+    keyPoints(F_inout.keyPoints),
+    keyPointsUndistorted(F_inout.keyPointsUndistorted),
+    uRight(F_inout.uRight),
+    depths(F_inout.depths),
+    descriptors(F_inout.descriptors.clone()),
+    bowVector(F_inout.bowVector),
+    featureVector(F_inout.featureVector),
+    scaleLevelCount(F_inout.scaleLevelCount),
+    scaleFactor(F_inout.scaleFactor),
+    logScaleFactor(F_inout.logScaleFactor),
+    scaleFactors(F_inout.scaleFactors),
+    levelSigmaSquared(F_inout.levelSigmaSquared),
+    invLevelSigmaSquared(F_inout.invLevelSigmaSquared),
+    gridMinX(F_inout.gridMinX),
+    gridMinY(F_inout.gridMinY),
+    gridMaxX(F_inout.gridMaxX),
+    gridMaxY(F_inout.gridMaxY),
     p_prevKF(nullptr),
     p_nextKF(nullptr),
-    p_imuPreintegrated(F.p_imuPreintegrated),
-    imuCalibration(F.imuCalibration),
-    fileName(F.fileName),
-    datasetId(F.datasetId),
-    colorImg(F.colorImg),
+    p_imuPreintegrated(F_inout.p_imuPreintegrated),
+    imuCalibration(F_inout.imuCalibration),
+    fileName(F_inout.fileName),
+    datasetId(F_inout.datasetId),
+    colorImg(F_inout.colorImg),
     isPublished(false),
-    velocityAvailable(false),
-    poseTlr(F.getRelativePoseTlr()),
-    poseTrl(F.getRelativePoseTrl()),
-    mapPoints(F.mapPoints),
-    p_keyFrameDatabase(pKFDB),
-    p_orbVocabulary(F.p_orbVocabulary),
-    firstConnection(true),
+    isVelocityAvailable(false),
+    poseTlr(F_inout.getRelativePoseTlr()),
+    poseTrl(F_inout.getRelativePoseTrl()),
+    mapPoints(F_inout.mapPoints),
+    p_keyFrameDatabase(p_keyFrameDatabase_in),
+    p_orbVocabulary(F_inout.p_orbVocabulary),
+    isFirstConnection(true),
     p_parent(nullptr),
-    notErase(false),
-    toBeErased(false),
-    mbBad(false),
-    halfBaseline(F.mb / 2),
-    currentFrameMarkers(F.mapMarkers),
-    currentFrameMapPoints(F.mapPoints),
-    currentFramePointClouds(F.pointClouds),
-    p_map(pMap),
-    calibrationMatrixEigen(F.calibrationMatrixEigen),
-    p_camera(F.p_camera),
-    p_camera2(F.p_camera2),
-    leftToRightMatches(F.leftToRightMatches),
-    rightToLeftMatches(F.rightToLeftMatches),
-    keyPointsRight(F.keyPointsRight),
-    Nleft(F.Nleft),
-    Nright(F.Nright)
+    isEraseProtected(false),
+    isPendingErase(false),
+    isFlaggedBad(false),
+    halfBaseline(F_inout.mb / 2),
+    currentFrameMarkers(F_inout.mapMarkers),
+    currentFrameMapPoints(F_inout.mapPoints),
+    currentFramePointClouds(F_inout.pointClouds),
+    p_map(p_map_in),
+    calibrationMatrixEigen(F_inout.calibrationMatrixEigen),
+    p_camera(F_inout.p_camera),
+    p_camera2(F_inout.p_camera2),
+    leftToRightMatches(F_inout.leftToRightMatches),
+    rightToLeftMatches(F_inout.rightToLeftMatches),
+    keyPointsRight(F_inout.keyPointsRight),
+    leftKeyPointCount(F_inout.leftKeyPointCount),
+    rightKeyPointCount(F_inout.rightKeyPointCount)
 {
-    mnId = nNextId++;
+    id = nextId++;
 
     grid.resize(gridCols);
-    if (F.Nleft != -1)
+    if (F_inout.leftKeyPointCount != -1)
         gridRight.resize(gridCols);
-    for (int i = 0; i < gridCols; i++)
+    for (int columnIndex = 0; columnIndex < gridCols; columnIndex++)
     {
-        grid[i].resize(gridRows);
-        if (F.Nleft != -1)
-            gridRight[i].resize(gridRows);
-        for (int j = 0; j < gridRows; j++)
+        grid[columnIndex].resize(gridRows);
+        if (F_inout.leftKeyPointCount != -1)
+            gridRight[columnIndex].resize(gridRows);
+        for (int rowIndex = 0; rowIndex < gridRows; rowIndex++)
         {
-            grid[i][j] = F.grid[i][j];
-            if (F.Nleft != -1)
+            grid[columnIndex][rowIndex] = F_inout.grid[columnIndex][rowIndex];
+            if (F_inout.leftKeyPointCount != -1)
             {
-                gridRight[i][j] = F.gridRight[i][j];
+                gridRight[columnIndex][rowIndex] =
+                    F_inout.gridRight[columnIndex][rowIndex];
             }
         }
     }
 
-    if (!F.hasVelocity())
+    if (!F_inout.hasVelocity())
     {
         velocityVw.setZero();
-        velocityAvailable = false;
+        isVelocityAvailable = false;
     }
     else
     {
-        velocityVw        = F.getVelocity();
-        velocityAvailable = true;
+        velocityVw          = F_inout.getVelocity();
+        isVelocityAvailable = true;
     }
 
-    imuBias = F.imuBias;
-    setPose(F.getPose());
+    imuBias = F_inout.imuBias;
+    setPose(F_inout.getPose());
 
-    originMapId = pMap->getId();
+    originMapId = p_map_in->getId();
 }
 
 } // namespace core

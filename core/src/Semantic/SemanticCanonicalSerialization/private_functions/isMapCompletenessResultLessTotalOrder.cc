@@ -60,11 +60,12 @@ bool isMapCompletenessResultLessTotalOrder(const MapCompletenessResult &lhs_in,
     {
         return lhsReasons.size() < rhsReasons.size();
     }
-    for (std::size_t i = 0U; i < lhsReasons.size(); ++i)
+    for (std::size_t lhsReasonIndex = 0U; lhsReasonIndex < lhsReasons.size();
+         ++lhsReasonIndex)
     {
-        if (lhsReasons[i] != rhsReasons[i])
+        if (lhsReasons[lhsReasonIndex] != rhsReasons[lhsReasonIndex])
         {
-            return lhsReasons[i] < rhsReasons[i];
+            return lhsReasons[lhsReasonIndex] < rhsReasons[lhsReasonIndex];
         }
     }
 
@@ -76,11 +77,12 @@ bool isMapCompletenessResultLessTotalOrder(const MapCompletenessResult &lhs_in,
     {
         return lhsKeys.size() < rhsKeys.size();
     }
-    for (std::size_t i = 0U; i < lhsKeys.size(); ++i)
+    for (std::size_t lhsReasonIndex = 0U; lhsReasonIndex < lhsKeys.size();
+         ++lhsReasonIndex)
     {
-        if (lhsKeys[i] != rhsKeys[i])
+        if (lhsKeys[lhsReasonIndex] != rhsKeys[lhsReasonIndex])
         {
-            return lhsKeys[i] < rhsKeys[i];
+            return lhsKeys[lhsReasonIndex] < rhsKeys[lhsReasonIndex];
         }
     }
 
@@ -144,14 +146,14 @@ bool isMapCompletenessResultLessTotalOrder(const MapCompletenessResult &lhs_in,
         return lhsDangling < rhsDangling;
     }
 
-    if (lhsLegacy.mapFullyModeled != rhsLegacy.mapFullyModeled)
+    if (lhsLegacy.isMapFullyModeled != rhsLegacy.isMapFullyModeled)
     {
-        return static_cast<int>(lhsLegacy.mapFullyModeled) <
-               static_cast<int>(rhsLegacy.mapFullyModeled);
+        return static_cast<int>(lhsLegacy.isMapFullyModeled) <
+               static_cast<int>(rhsLegacy.isMapFullyModeled);
     }
 
-    return static_cast<int>(lhs_in.legacyAndConservativeDiverge) <
-           static_cast<int>(rhs_in.legacyAndConservativeDiverge);
+    return static_cast<int>(lhs_in.doLegacyAndConservativeDiverge) <
+           static_cast<int>(rhs_in.doLegacyAndConservativeDiverge);
 }
 
 } // namespace semantic

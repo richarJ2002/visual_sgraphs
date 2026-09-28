@@ -31,10 +31,14 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix4f Sim3Solver::find(vector<bool> &vbInliers12, int &nInliers)
+Eigen::Matrix4f Sim3Solver::find(vector<bool> &inliers12Flags_inout,
+                                 int          &inlierCount_inout)
 {
-    bool bFlag;
-    return iterate(ransacMaxIterations, bFlag, vbInliers12, nInliers);
+    bool areIterationsExhausted;
+    return iterate(ransacMaxIterations,
+                   areIterationsExhausted,
+                   inliers12Flags_inout,
+                   inlierCount_inout);
 }
 
 } // namespace core

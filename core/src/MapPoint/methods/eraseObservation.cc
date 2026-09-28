@@ -34,19 +34,20 @@ namespace vs_graphs
 namespace core
 {
 
-void MapPoint::eraseObservation(KeyFrame *pKF)
+void MapPoint::eraseObservation(KeyFrame *p_keyFrame_in)
 {
     bool bBad = false;
     {
-        unique_lock<mutex> lock(mMutexFeatures);
-        if (observations.count(pKF))
+        unique_lock<mutex> lock(featuresMutex);
+        if (observations.count(p_keyFrame_in))
         {
-            tuple<int, int> indexes = observations[pKF];
+            tuple<int, int> indexes = observations[p_keyFrame_in];
             int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
 
             if (leftIndex != -1)
             {
-                if (!pKF->p_camera2 && pKF->uRight[leftIndex] >= 0)
+                if (!p_keyFrame_in->p_camera2 &&
+                    p_keyFrame_in->uRight[leftIndex] >= 0)
                     observationCount -= 2;
                 else
                     observationCount--;
@@ -56,9 +57,9 @@ void MapPoint::eraseObservation(KeyFrame *pKF)
                 observationCount--;
             }
 
-            observations.erase(pKF);
+            observations.erase(p_keyFrame_in);
 
-            if (p_referenceKeyFrame == pKF)
+            if (p_referenceKeyFrame == p_keyFrame_in)
             {
                 p_referenceKeyFrame = nullptr;
 
@@ -74,7 +75,7 @@ void MapPoint::eraseObservation(KeyFrame *pKF)
                     }
 
                     if (p_referenceKeyFrame == nullptr ||
-                        p_candidateKeyFrame->mnId < p_referenceKeyFrame->mnId)
+                        p_candidateKeyFrame->id < p_referenceKeyFrame->id)
                     {
                         p_referenceKeyFrame = p_candidateKeyFrame;
                     }

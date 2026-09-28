@@ -62,7 +62,7 @@ ProjectedPlaneBounds projectPlaneBounds(
         bounds.maximumU_m = std::max(bounds.maximumU_m, coordinateU_m);
         bounds.minimumV_m = std::min(bounds.minimumV_m, coordinateV_m);
         bounds.maximumV_m = std::max(bounds.maximumV_m, coordinateV_m);
-        bounds.valid      = true;
+        bounds.isValid    = true;
     }
 
     return bounds;

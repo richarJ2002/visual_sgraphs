@@ -34,7 +34,7 @@ namespace core
 
 bool LocalMapping::checkNewKeyFrames()
 {
-    unique_lock<mutex> lock(mMutexNewKFs);
+    unique_lock<mutex> newKeyFramesLock(newKeyFramesMutex);
     return (!newKeyFrames.empty());
 }
 

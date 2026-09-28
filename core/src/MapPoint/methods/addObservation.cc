@@ -34,32 +34,33 @@ namespace vs_graphs
 namespace core
 {
 
-void MapPoint::addObservation(KeyFrame *pKF, int idx)
+void MapPoint::addObservation(KeyFrame *p_keyFrame_inout, int index_in)
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     tuple<int, int>    indexes;
 
-    if (observations.count(pKF))
+    if (observations.count(p_keyFrame_inout))
     {
-        indexes = observations[pKF];
+        indexes = observations[p_keyFrame_inout];
     }
     else
     {
         indexes = tuple<int, int>(-1, -1);
     }
 
-    if (pKF->Nleft != -1 && idx >= pKF->Nleft)
+    if (p_keyFrame_inout->leftKeyPointCount != -1 &&
+        index_in >= p_keyFrame_inout->leftKeyPointCount)
     {
-        get<1>(indexes) = idx;
+        get<1>(indexes) = index_in;
     }
     else
     {
-        get<0>(indexes) = idx;
+        get<0>(indexes) = index_in;
     }
 
-    observations[pKF] = indexes;
+    observations[p_keyFrame_inout] = indexes;
 
-    if (!pKF->p_camera2 && pKF->uRight[idx] >= 0)
+    if (!p_keyFrame_inout->p_camera2 && p_keyFrame_inout->uRight[index_in] >= 0)
         observationCount += 2;
     else
         observationCount++;

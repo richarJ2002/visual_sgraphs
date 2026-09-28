@@ -32,47 +32,52 @@ namespace vs_graphs
 namespace core
 {
 
-bool VertexPose::read(std::istream &is)
+bool VertexPose::read(std::istream &inputStream_inout)
 {
     std::vector<Eigen::Matrix<double, 3, 3>> Rcw;
     std::vector<Eigen::Matrix<double, 3, 1>> tcw;
     std::vector<Eigen::Matrix<double, 3, 3>> Rbc;
     std::vector<Eigen::Matrix<double, 3, 1>> tbc;
 
-    const int num_cams = _estimate.Rbc.size();
-    for (int idx = 0; idx < num_cams; idx++)
+    const int cameraCount = _estimate.Rbc.size();
+    for (int cameraIndex = 0; cameraIndex < cameraCount; cameraIndex++)
     {
-        for (int i = 0; i < 3; i++)
+        for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
-            for (int j = 0; j < 3; j++)
-                is >> Rcw[idx](i, j);
+            for (int columnIndex = 0; columnIndex < 3; columnIndex++)
+                inputStream_inout >>
+                    Rcw[cameraIndex](componentIndex, columnIndex);
         }
-        for (int i = 0; i < 3; i++)
+        for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
-            is >> tcw[idx](i);
+            inputStream_inout >> tcw[cameraIndex](componentIndex);
         }
 
-        for (int i = 0; i < 3; i++)
+        for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
-            for (int j = 0; j < 3; j++)
-                is >> Rbc[idx](i, j);
+            for (int columnIndex = 0; columnIndex < 3; columnIndex++)
+                inputStream_inout >>
+                    Rbc[cameraIndex](componentIndex, columnIndex);
         }
-        for (int i = 0; i < 3; i++)
+        for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
-            is >> tbc[idx](i);
+            inputStream_inout >> tbc[cameraIndex](componentIndex);
         }
 
         float nextParam;
-        for (size_t i = 0; i < _estimate.pCamera[idx]->size(); i++)
+        for (size_t componentIndex = 0;
+             componentIndex < _estimate.pCamera[cameraIndex]->size();
+             componentIndex++)
         {
-            is >> nextParam;
-            _estimate.pCamera[idx]->setParameter(nextParam, i);
+            inputStream_inout >> nextParam;
+            _estimate.pCamera[cameraIndex]->setParameter(nextParam,
+                                                         componentIndex);
         }
     }
 
-    double bf;
-    is >> bf;
-    _estimate.setParam(Rcw, tcw, Rbc, tbc, bf);
+    double baselineFocalProduct;
+    inputStream_inout >> baselineFocalProduct;
+    _estimate.setParam(Rcw, tcw, Rbc, tbc, baselineFocalProduct);
     updateCache();
 
     return true;

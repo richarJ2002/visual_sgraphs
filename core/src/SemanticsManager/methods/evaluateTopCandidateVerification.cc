@@ -35,7 +35,7 @@ void SemanticsManager::evaluateTopCandidateVerification(
     }
 
     const semantic::SemanticCandidate &topCandidate = candidates_in.front();
-    if (!topCandidate.minimumEvidenceSatisfied)
+    if (!topCandidate.isMinimumEvidenceSatisfied)
     {
         return;
     }
@@ -47,7 +47,7 @@ void SemanticsManager::evaluateTopCandidateVerification(
      * true and can never be read as a gate on its own. A genuine tie instead
      * shows up as a SECOND candidate also carrying `ambiguous == true`. */
     const bool topCandidateIsUniqueLeader =
-        candidates_in.size() == 1U || !candidates_in[1].ambiguous;
+        candidates_in.size() == 1U || !candidates_in[1].isAmbiguous;
     if (!topCandidateIsUniqueLeader)
     {
         return;
@@ -62,20 +62,20 @@ void SemanticsManager::evaluateTopCandidateVerification(
         return;
     }
 
-    const semantic::SemanticVerifyConfig verifyConfig =
+    const semantic::SemanticVerifyConfig verifyConfiguration =
         semantic::SemanticVerify::configFromSystemParams();
     const std::vector<semantic::VerifyWallObservation> wallsA =
         semantic::SemanticVerify::collectWallObservations(p_roomA,
-                                                          verifyConfig);
+                                                          verifyConfiguration);
     const std::vector<semantic::VerifyWallObservation> wallsB =
         semantic::SemanticVerify::collectWallObservations(p_roomB,
-                                                          verifyConfig);
+                                                          verifyConfiguration);
 
     semantic::SemanticVerifyResult result =
-        semantic::SemanticVerify::verify(wallsA, wallsB, verifyConfig);
+        semantic::SemanticVerify::verify(wallsA, wallsB, verifyConfiguration);
 
     /* The floor gate can only turn a geometric PASS into a final rejection
-     * (toVerificationVerdict() ANDs pass with floorGatePassed), so only run
+     * (toVerificationVerdict() ANDs pass with hasFloorGatePassed), so only run
      * it -- and only when both rooms actually carry a floor identity to
      * compare -- when that outcome is in play; skipping it here (as opposed
      * to skipping it when the two rooms could plausibly share a floor) would
@@ -83,7 +83,7 @@ void SemanticsManager::evaluateTopCandidateVerification(
      * real pass as a false negative. */
     semantic::Floor *p_floorA = p_roomA->getFloor();
     semantic::Floor *p_floorB = p_roomB->getFloor();
-    if (result.pass && p_floorA != nullptr && p_floorB != nullptr &&
+    if (result.hasPassed && p_floorA != nullptr && p_floorB != nullptr &&
         p_floorA->hasPlaneIdentity() && p_floorB->hasPlaneIdentity())
     {
         /* verify()'s transform_AToB maps room-A points into room B's frame,
@@ -126,7 +126,7 @@ void SemanticsManager::evaluateTopCandidateVerification(
               << " topInlierCount=" << result.topInlierCount
               << " runnerUpInlierCount=" << result.runnerUpInlierCount
               << " inlierRatio=" << result.inlierRatio
-              << " floorGateRan=" << result.floorGateRan
+              << " floorGateRan=" << result.hasFloorGateRun
               << " floorGateResult=\""
               << (result.floorGateResult.empty() ? "-" : result.floorGateResult)
               << "\"" << std::endl;

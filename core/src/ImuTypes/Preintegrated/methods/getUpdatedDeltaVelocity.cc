@@ -28,7 +28,7 @@ namespace IMU
 
 Eigen::Vector3f Preintegrated::getUpdatedDeltaVelocity()
 {
-    std::unique_lock<std::mutex> lock(mMutex);
+    std::unique_lock<std::mutex> lock(preintegrationMutex);
     return dV + JVg * db.head(3) + JVa * db.tail(3);
 }
 

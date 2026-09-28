@@ -34,190 +34,207 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
                             Frame              &F,
                             vector<MapPoint *> &vpMapPointMatches)
 {
-    const vector<MapPoint *> vpMapPointsKF = pKF->getMapPointMatches();
+    const vector<MapPoint *> mapPointsKeyFrames = pKF->getMapPointMatches();
 
     vpMapPointMatches =
-        vector<MapPoint *>(F.N, static_cast<MapPoint *>(nullptr));
+        vector<MapPoint *>(F.keyPointCount, static_cast<MapPoint *>(nullptr));
 
-    const DBoW2::FeatureVector &vFeatVecKF = pKF->featureVector;
+    const DBoW2::FeatureVector &featureVectorKeyFrame = pKF->featureVector;
 
     int nmatches = 0;
 
     vector<int> rotHist[HISTO_LENGTH];
-    for (int i = 0; i < HISTO_LENGTH; i++)
-        rotHist[i].reserve(500);
+    for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
+         histogramBinIndex++)
+        rotHist[histogramBinIndex].reserve(500);
     const float factor = 1.0f / HISTO_LENGTH;
 
     // We perform the matching over ORB that belong to the same vocabulary node
     // (at a certain level)
-    DBoW2::FeatureVector::const_iterator KFit  = vFeatVecKF.begin();
-    DBoW2::FeatureVector::const_iterator Fit   = F.featureVector.begin();
-    DBoW2::FeatureVector::const_iterator KFend = vFeatVecKF.end();
-    DBoW2::FeatureVector::const_iterator Fend  = F.featureVector.end();
+    DBoW2::FeatureVector::const_iterator KFit = featureVectorKeyFrame.begin();
+    DBoW2::FeatureVector::const_iterator Fit  = F.featureVector.begin();
+    DBoW2::FeatureVector::const_iterator keyFrameEnd =
+        featureVectorKeyFrame.end();
+    DBoW2::FeatureVector::const_iterator Fend = F.featureVector.end();
 
-    while (KFit != KFend && Fit != Fend)
+    while (KFit != keyFrameEnd && Fit != Fend)
     {
         if (KFit->first == Fit->first)
         {
-            const vector<unsigned int> vIndicesKF = KFit->second;
-            const vector<unsigned int> vIndicesF  = Fit->second;
+            const vector<unsigned int> indicesKeyFrames = KFit->second;
+            const vector<unsigned int> indicesFs        = Fit->second;
 
-            for (size_t iKF = 0; iKF < vIndicesKF.size(); iKF++)
+            for (size_t keyFrameFeatureListIndex = 0;
+                 keyFrameFeatureListIndex < indicesKeyFrames.size();
+                 keyFrameFeatureListIndex++)
             {
-                const unsigned int realIdxKF = vIndicesKF[iKF];
+                const unsigned int realIndexKeyFrame =
+                    indicesKeyFrames[keyFrameFeatureListIndex];
 
-                MapPoint *pMP = vpMapPointsKF[realIdxKF];
+                MapPoint *p_mapPoint = mapPointsKeyFrames[realIndexKeyFrame];
 
-                if (!pMP)
+                if (!p_mapPoint)
                     continue;
 
-                if (pMP->isBad())
+                if (p_mapPoint->isBad())
                     continue;
 
-                const cv::Mat &dKF = pKF->descriptors.row(realIdxKF);
+                const cv::Mat &keyFrameDescriptor =
+                    pKF->descriptors.row(realIndexKeyFrame);
 
-                int bestDist1 = 256;
-                int bestIdxF  = -1;
-                int bestDist2 = 256;
+                int bestDistance1 = 256;
+                int bestIndexF    = -1;
+                int bestDistance2 = 256;
 
-                int bestDist1R = 256;
-                int bestIdxFR  = -1;
-                int bestDist2R = 256;
+                int bestDistance1R = 256;
+                int bestIndexFr    = -1;
+                int bestDistance2R = 256;
 
-                for (size_t iF = 0; iF < vIndicesF.size(); iF++)
+                for (size_t iF = 0; iF < indicesFs.size(); iF++)
                 {
-                    if (F.Nleft == -1)
+                    if (F.leftKeyPointCount == -1)
                     {
-                        const unsigned int realIdxF = vIndicesF[iF];
+                        const unsigned int realIndexF = indicesFs[iF];
 
-                        if (vpMapPointMatches[realIdxF])
+                        if (vpMapPointMatches[realIndexF])
                             continue;
 
-                        const cv::Mat &dF = F.descriptors.row(realIdxF);
+                        const cv::Mat &dF = F.descriptors.row(realIndexF);
 
-                        const int dist = computeDescriptorDistance(dKF, dF);
+                        const int distance =
+                            computeDescriptorDistance(keyFrameDescriptor, dF);
 
-                        if (dist < bestDist1)
+                        if (distance < bestDistance1)
                         {
-                            bestDist2 = bestDist1;
-                            bestDist1 = dist;
-                            bestIdxF  = realIdxF;
+                            bestDistance2 = bestDistance1;
+                            bestDistance1 = distance;
+                            bestIndexF    = realIndexF;
                         }
-                        else if (dist < bestDist2)
+                        else if (distance < bestDistance2)
                         {
-                            bestDist2 = dist;
+                            bestDistance2 = distance;
                         }
                     }
                     else
                     {
-                        const unsigned int realIdxF = vIndicesF[iF];
+                        const unsigned int realIndexF = indicesFs[iF];
 
-                        if (vpMapPointMatches[realIdxF])
+                        if (vpMapPointMatches[realIndexF])
                             continue;
 
-                        const cv::Mat &dF = F.descriptors.row(realIdxF);
+                        const cv::Mat &dF = F.descriptors.row(realIndexF);
 
-                        const int dist = computeDescriptorDistance(dKF, dF);
+                        const int distance =
+                            computeDescriptorDistance(keyFrameDescriptor, dF);
 
-                        if (realIdxF < static_cast<unsigned int>(F.Nleft) &&
-                            dist < bestDist1)
+                        if (realIndexF < static_cast<unsigned int>(
+                                             F.leftKeyPointCount) &&
+                            distance < bestDistance1)
                         {
-                            bestDist2 = bestDist1;
-                            bestDist1 = dist;
-                            bestIdxF  = realIdxF;
+                            bestDistance2 = bestDistance1;
+                            bestDistance1 = distance;
+                            bestIndexF    = realIndexF;
                         }
-                        else if (realIdxF <
-                                     static_cast<unsigned int>(F.Nleft) &&
-                                 dist < bestDist2)
+                        else if (realIndexF < static_cast<unsigned int>(
+                                                  F.leftKeyPointCount) &&
+                                 distance < bestDistance2)
                         {
-                            bestDist2 = dist;
+                            bestDistance2 = distance;
                         }
 
-                        if (realIdxF >= static_cast<unsigned int>(F.Nleft) &&
-                            dist < bestDist1R)
+                        if (realIndexF >= static_cast<unsigned int>(
+                                              F.leftKeyPointCount) &&
+                            distance < bestDistance1R)
                         {
-                            bestDist2R = bestDist1R;
-                            bestDist1R = dist;
-                            bestIdxFR  = realIdxF;
+                            bestDistance2R = bestDistance1R;
+                            bestDistance1R = distance;
+                            bestIndexFr    = realIndexF;
                         }
-                        else if (realIdxF >=
-                                     static_cast<unsigned int>(F.Nleft) &&
-                                 dist < bestDist2R)
+                        else if (realIndexF >= static_cast<unsigned int>(
+                                                   F.leftKeyPointCount) &&
+                                 distance < bestDistance2R)
                         {
-                            bestDist2R = dist;
+                            bestDistance2R = distance;
                         }
                     }
                 }
 
-                if (bestDist1 <= TH_LOW)
+                if (bestDistance1 <= TH_LOW)
                 {
-                    if (static_cast<float>(bestDist1) <
-                        mfNNratio * static_cast<float>(bestDist2))
+                    if (static_cast<float>(bestDistance1) <
+                        nearestNeighborRatio *
+                            static_cast<float>(bestDistance2))
                     {
-                        vpMapPointMatches[bestIdxF] = pMP;
+                        vpMapPointMatches[bestIndexF] = p_mapPoint;
 
-                        const cv::KeyPoint &kp =
+                        const cv::KeyPoint &keyPoint =
                             (!pKF->p_camera2)
-                                ? pKF->keyPointsUndistorted[realIdxKF]
-                            : (realIdxKF >=
-                               static_cast<unsigned int>(pKF->Nleft))
-                                ? pKF->keyPointsRight[realIdxKF - pKF->Nleft]
-                                : pKF->keyPoints[realIdxKF];
+                                ? pKF->keyPointsUndistorted[realIndexKeyFrame]
+                            : (realIndexKeyFrame >= static_cast<unsigned int>(
+                                                        pKF->leftKeyPointCount))
+                                ? pKF->keyPointsRight[realIndexKeyFrame -
+                                                      pKF->leftKeyPointCount]
+                                : pKF->keyPoints[realIndexKeyFrame];
 
-                        if (mbCheckOrientation)
+                        if (shouldCheckOrientation)
                         {
                             cv::KeyPoint &Fkp =
-                                (!pKF->p_camera2 || F.Nleft == -1)
-                                    ? F.keyPoints[bestIdxF]
-                                : (bestIdxF >= F.Nleft)
-                                    ? F.keyPointsRight[bestIdxF - F.Nleft]
-                                    : F.keyPoints[bestIdxF];
+                                (!pKF->p_camera2 || F.leftKeyPointCount == -1)
+                                    ? F.keyPoints[bestIndexF]
+                                : (bestIndexF >= F.leftKeyPointCount)
+                                    ? F.keyPointsRight[bestIndexF -
+                                                       F.leftKeyPointCount]
+                                    : F.keyPoints[bestIndexF];
 
-                            float rot = kp.angle - Fkp.angle;
+                            float rot = keyPoint.angle - Fkp.angle;
                             if (rot < 0.0)
                                 rot += 360.0f;
                             int bin = round(rot * factor);
                             if (bin == HISTO_LENGTH)
                                 bin = 0;
                             assert(bin >= 0 && bin < HISTO_LENGTH);
-                            rotHist[bin].push_back(bestIdxF);
+                            rotHist[bin].push_back(bestIndexF);
                         }
                         nmatches++;
                     }
 
-                    if (bestDist1R <= TH_LOW)
+                    if (bestDistance1R <= TH_LOW)
                     {
-                        if (static_cast<float>(bestDist1R) <
-                                mfNNratio * static_cast<float>(bestDist2R) ||
+                        if (static_cast<float>(bestDistance1R) <
+                                nearestNeighborRatio *
+                                    static_cast<float>(bestDistance2R) ||
                             true)
                         {
-                            vpMapPointMatches[bestIdxFR] = pMP;
+                            vpMapPointMatches[bestIndexFr] = p_mapPoint;
 
-                            const cv::KeyPoint &kp =
-                                (!pKF->p_camera2)
-                                    ? pKF->keyPointsUndistorted[realIdxKF]
-                                : (realIdxKF >=
-                                   static_cast<unsigned int>(pKF->Nleft))
-                                    ? pKF->keyPointsRight[realIdxKF -
-                                                          pKF->Nleft]
-                                    : pKF->keyPoints[realIdxKF];
+                            const cv::KeyPoint &keyPoint =
+                                (!pKF->p_camera2) ? pKF->keyPointsUndistorted
+                                                        [realIndexKeyFrame]
+                                : (realIndexKeyFrame >=
+                                   static_cast<unsigned int>(
+                                       pKF->leftKeyPointCount))
+                                    ? pKF->keyPointsRight
+                                          [realIndexKeyFrame -
+                                           pKF->leftKeyPointCount]
+                                    : pKF->keyPoints[realIndexKeyFrame];
 
-                            if (mbCheckOrientation)
+                            if (shouldCheckOrientation)
                             {
                                 cv::KeyPoint &Fkp =
-                                    (!F.p_camera2) ? F.keyPoints[bestIdxFR]
-                                    : (bestIdxFR >= F.Nleft)
-                                        ? F.keyPointsRight[bestIdxFR - F.Nleft]
-                                        : F.keyPoints[bestIdxFR];
+                                    (!F.p_camera2) ? F.keyPoints[bestIndexFr]
+                                    : (bestIndexFr >= F.leftKeyPointCount)
+                                        ? F.keyPointsRight[bestIndexFr -
+                                                           F.leftKeyPointCount]
+                                        : F.keyPoints[bestIndexFr];
 
-                                float rot = kp.angle - Fkp.angle;
+                                float rot = keyPoint.angle - Fkp.angle;
                                 if (rot < 0.0)
                                     rot += 360.0f;
                                 int bin = round(rot * factor);
                                 if (bin == HISTO_LENGTH)
                                     bin = 0;
                                 assert(bin >= 0 && bin < HISTO_LENGTH);
-                                rotHist[bin].push_back(bestIdxFR);
+                                rotHist[bin].push_back(bestIndexFr);
                             }
                             nmatches++;
                         }
@@ -230,7 +247,7 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
         }
         else if (KFit->first < Fit->first)
         {
-            KFit = vFeatVecKF.lower_bound(Fit->first);
+            KFit = featureVectorKeyFrame.lower_bound(Fit->first);
         }
         else
         {
@@ -238,7 +255,7 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
         }
     }
 
-    if (mbCheckOrientation)
+    if (shouldCheckOrientation)
     {
         int ind1 = -1;
         int ind2 = -1;
@@ -246,13 +263,18 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
 
         computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3);
 
-        for (int i = 0; i < HISTO_LENGTH; i++)
+        for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
+             histogramBinIndex++)
         {
-            if (i == ind1 || i == ind2 || i == ind3)
+            if (histogramBinIndex == ind1 || histogramBinIndex == ind2 ||
+                histogramBinIndex == ind3)
                 continue;
-            for (size_t j = 0, jend = rotHist[i].size(); j < jend; j++)
+            for (size_t binEntryIndex = 0,
+                        jend          = rotHist[histogramBinIndex].size();
+                 binEntryIndex < jend;
+                 binEntryIndex++)
             {
-                vpMapPointMatches[rotHist[i][j]] =
+                vpMapPointMatches[rotHist[histogramBinIndex][binEntryIndex]] =
                     static_cast<MapPoint *>(nullptr);
                 nmatches--;
             }

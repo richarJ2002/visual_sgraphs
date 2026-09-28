@@ -32,7 +32,7 @@ namespace core
 
 std::vector<semantic::Floor *> Atlas::getAllFloors()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     return p_activeMap->getAllFloors();
 }
 

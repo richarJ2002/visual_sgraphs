@@ -31,53 +31,53 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix4f Sim3Solver::iterate(int           nIterations,
-                                    bool         &bNoMore,
-                                    vector<bool> &vbInliers,
-                                    int          &nInliers,
-                                    bool         &bConverge)
+Eigen::Matrix4f Sim3Solver::iterate(int           iterationCount_in,
+                                    bool         &areIterationsExhausted_out,
+                                    vector<bool> &inliersFlags_out,
+                                    int          &inlierCount_out,
+                                    bool         &hasConverged_out)
 {
-    bNoMore   = false;
-    bConverge = false;
-    vbInliers = vector<bool>(mN1, false);
-    nInliers  = 0;
+    areIterationsExhausted_out = false;
+    hasConverged_out           = false;
+    inliersFlags_out           = vector<bool>(firstMatchCount, false);
+    inlierCount_out            = 0;
 
-    if (N < ransacMinInliers)
+    if (correspondenceCount < ransacMinInliers)
     {
-        bNoMore = true;
+        areIterationsExhausted_out = true;
         return Eigen::Matrix4f::Identity();
     }
 
-    vector<size_t> vAvailableIndices;
+    vector<size_t> availableIndices;
 
     Eigen::Matrix3f P3Dc1i;
     Eigen::Matrix3f P3Dc2i;
 
-    int nCurrentIterations = 0;
+    int currentIterationCount = 0;
 
     Eigen::Matrix4f bestSim3;
 
     while (iterationCount < ransacMaxIterations &&
-           nCurrentIterations < nIterations)
+           currentIterationCount < iterationCount_in)
     {
-        nCurrentIterations++;
+        currentIterationCount++;
         iterationCount++;
 
-        vAvailableIndices = allIndices;
+        availableIndices = allIndices;
 
         // Get min set of points
-        for (short i = 0; i < 3; ++i)
+        for (short keyPointIndex = 0; keyPointIndex < 3; ++keyPointIndex)
         {
             int randi =
-                DUtils::Random::RandomInt(0, vAvailableIndices.size() - 1);
+                DUtils::Random::RandomInt(0, availableIndices.size() - 1);
 
-            int idx = vAvailableIndices[randi];
+            int sampledIndex = availableIndices[randi];
 
-            P3Dc1i.col(i) = points3Dc1[idx];
-            P3Dc2i.col(i) = points3Dc2[idx];
+            P3Dc1i.col(keyPointIndex) = points3Dc1[sampledIndex];
+            P3Dc2i.col(keyPointIndex) = points3Dc2[sampledIndex];
 
-            vAvailableIndices[randi] = vAvailableIndices.back();
-            vAvailableIndices.pop_back();
+            availableIndices[randi] = availableIndices.back();
+            availableIndices.pop_back();
         }
 
         computeSim3(P3Dc1i, P3Dc2i);
@@ -86,20 +86,21 @@ Eigen::Matrix4f Sim3Solver::iterate(int           nIterations,
 
         if (inlierCount >= bestInlierCount)
         {
-            bestInlierFlags  = inlierFlags;
-            bestInlierCount  = inlierCount;
-            mBestT12         = mT12i;
-            mBestRotation    = mR12i;
-            mBestTranslation = mt12i;
-            mBestScale       = ms12i;
+            bestInlierFlags = inlierFlags;
+            bestInlierCount = inlierCount;
+            mBestT12        = mT12i;
+            bestRotation    = mR12i;
+            bestTranslation = mt12i;
+            bestScale       = ms12i;
 
             if (inlierCount > ransacMinInliers)
             {
-                nInliers = inlierCount;
-                for (int i = 0; i < N; i++)
-                    if (inlierFlags[i])
-                        vbInliers[indices1[i]] = true;
-                bConverge = true;
+                inlierCount_out = inlierCount;
+                for (int keyPointIndex = 0; keyPointIndex < correspondenceCount;
+                     keyPointIndex++)
+                    if (inlierFlags[keyPointIndex])
+                        inliersFlags_out[indices1[keyPointIndex]] = true;
+                hasConverged_out = true;
                 return mBestT12;
             }
             else
@@ -110,7 +111,7 @@ Eigen::Matrix4f Sim3Solver::iterate(int           nIterations,
     }
 
     if (iterationCount >= ransacMaxIterations)
-        bNoMore = true;
+        areIterationsExhausted_out = true;
 
     return bestSim3;
 }

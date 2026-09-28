@@ -32,36 +32,36 @@ namespace core
 namespace geometric
 {
 
-void Plane::castWeightedVote(Plane::PlaneVariant semanticType,
-                             double              voteWeight)
+void Plane::castWeightedVote(Plane::PlaneVariant semanticType_in,
+                             double              voteWeight_in)
 {
-    unique_lock<mutex> lock(mMutexType);
+    unique_lock<mutex> lock(typeMutex);
 
-    if (semanticType == PlaneVariant::UNDEFINED)
+    if (semanticType_in == PlaneVariant::UNDEFINED)
         return;
 
     // check if semantic type is already in the semanticVotes map
-    if (semanticVotes.find(semanticType) == semanticVotes.end())
-        semanticVotes[semanticType] = voteWeight;
+    if (semanticVotes.find(semanticType_in) == semanticVotes.end())
+        semanticVotes[semanticType_in] = voteWeight_in;
     else
-        semanticVotes[semanticType] += voteWeight;
+        semanticVotes[semanticType_in] += voteWeight_in;
 
     // update based on new vote rankings
     // find the semantic type with the maximum votes
-    double       maxVotes = 0;
-    PlaneVariant maxType  = PlaneVariant::UNDEFINED;
+    double       maximumVotes = 0;
+    PlaneVariant maximumType  = PlaneVariant::UNDEFINED;
     for (const auto &vote : semanticVotes)
     {
-        if (vote.second > maxVotes)
+        if (vote.second > maximumVotes)
         {
-            maxVotes = vote.second;
-            maxType  = vote.first;
+            maximumVotes = vote.second;
+            maximumType  = vote.first;
         }
     }
 
     // set the plane type if votes above a certain threshold
-    if (maxVotes >= types::SystemParams::getParams()->semSeg.minVotes)
-        planeType = maxType;
+    if (maximumVotes >= types::SystemParams::getParams()->semSeg.minVotes)
+        planeType = maximumType;
     else
         planeType = PlaneVariant::UNDEFINED;
 }

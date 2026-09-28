@@ -40,24 +40,24 @@ void Tracking::searchLocalPoints()
          vit != vend;
          vit++)
     {
-        MapPoint *pMP = *vit;
-        if (pMP)
+        MapPoint *p_mapPoint = *vit;
+        if (p_mapPoint)
         {
-            if (pMP->isBad())
+            if (p_mapPoint->isBad())
             {
                 *vit = static_cast<MapPoint *>(nullptr);
             }
             else
             {
-                pMP->increaseVisible();
-                pMP->lastSeenFrameId = currentFrame.mnId;
-                pMP->trackInView     = false;
-                pMP->trackInViewR    = false;
+                p_mapPoint->increaseVisible();
+                p_mapPoint->lastSeenFrameId      = currentFrame.id;
+                p_mapPoint->isTrackedInView      = false;
+                p_mapPoint->isTrackedInRightView = false;
             }
         }
     }
 
-    int nToMatch = 0;
+    int toMatchCount = 0;
 
     // Project points in frame and check its visibility
     for (vector<MapPoint *>::iterator vit  = localMapPoints.begin(),
@@ -65,62 +65,62 @@ void Tracking::searchLocalPoints()
          vit != vend;
          vit++)
     {
-        MapPoint *pMP = *vit;
+        MapPoint *p_mapPoint = *vit;
 
-        if (pMP->lastSeenFrameId == currentFrame.mnId)
+        if (p_mapPoint->lastSeenFrameId == currentFrame.id)
             continue;
-        if (pMP->isBad())
+        if (p_mapPoint->isBad())
             continue;
         // Project (this fills MapPoint variables for matching)
-        if (currentFrame.isInFrustum(pMP, 0.5))
+        if (currentFrame.isInFrustum(p_mapPoint, 0.5))
         {
-            pMP->increaseVisible();
-            nToMatch++;
+            p_mapPoint->increaseVisible();
+            toMatchCount++;
         }
-        if (pMP->trackInView)
+        if (p_mapPoint->isTrackedInView)
         {
-            currentFrame.projectedPoints[pMP->mnId] =
-                cv::Point2f(pMP->trackProjX, pMP->trackProjY);
+            currentFrame.projectedPoints[p_mapPoint->id] =
+                cv::Point2f(p_mapPoint->trackProjX, p_mapPoint->trackProjY);
         }
     }
 
-    if (nToMatch > 0)
+    if (toMatchCount > 0)
     {
         ORBmatcher matcher(0.8);
-        int        th = 1;
+        int        threshold = 1;
         if (sensor == System::RGBD || sensor == System::IMU_RGBD)
-            th = 3;
+            threshold = 3;
         if (p_atlas->isImuInitialized())
         {
             if (p_atlas->getCurrentMap()->getInertialBA2())
-                th = 2;
+                threshold = 2;
             else
-                th = 6;
+                threshold = 6;
         }
         else if (!p_atlas->isImuInitialized() &&
                  (sensor == System::IMU_MONOCULAR ||
                   sensor == System::IMU_STEREO || sensor == System::IMU_RGBD))
         {
-            th = 10;
+            threshold = 10;
         }
 
         // If the camera has been relocalised recently, perform a coarser search
-        if (currentFrame.mnId < lastRelocFrameId + 2)
-            th = 5;
+        if (currentFrame.id < lastRelocFrameId + 2)
+            threshold = 5;
 
         if (state == LOST ||
             state == RECENTLY_LOST) // Lost for less than 1 second
-            th = 15;                // 15
+            threshold = 15;         // 15
 
         // AGGRESSIVE: Even wider search during degraded tracking in corridors
         // If we have very few inliers, expand search radius significantly
         if (matchesInliers < 30 && matchesInliers > 0)
         {
-            th = std::min(th * 3, motionModelMaxSearchRadius);
-            Verbose::printMess(
-                "[Tracking] Expanded search radius to " + std::to_string(th) +
-                    " (inliers: " + std::to_string(matchesInliers) + ")",
-                Verbose::VERBOSITY_NORMAL);
+            threshold = std::min(threshold * 3, motionModelMaxSearchRadius);
+            Verbose::printMess("[Tracking] Expanded search radius to " +
+                                   std::to_string(threshold) + " (inliers: " +
+                                   std::to_string(matchesInliers) + ")",
+                               Verbose::VERBOSITY_NORMAL);
         }
 
         // DEPTH-AIDED TRACKING: For RGB-D, use depth to guide matching window
@@ -134,8 +134,8 @@ void Tracking::searchLocalPoints()
             matcher.searchByProjectionWithDepth(
                 currentFrame,
                 localMapPoints,
-                th,
-                p_localMapper->farPoints,
+                threshold,
+                p_localMapper->shouldSkipFarPoints,
                 p_localMapper->farPointsThreshold,
                 depthThreshold);
         }
@@ -143,8 +143,8 @@ void Tracking::searchLocalPoints()
         {
             matcher.searchByProjection(currentFrame,
                                        localMapPoints,
-                                       th,
-                                       p_localMapper->farPoints,
+                                       threshold,
+                                       p_localMapper->shouldSkipFarPoints,
                                        p_localMapper->farPointsThreshold);
         }
     }

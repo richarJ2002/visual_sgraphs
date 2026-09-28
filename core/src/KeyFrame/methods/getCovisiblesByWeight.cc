@@ -35,27 +35,27 @@ namespace vs_graphs
 namespace core
 {
 
-vector<KeyFrame *> KeyFrame::getCovisiblesByWeight(const int &w)
+vector<KeyFrame *> KeyFrame::getCovisiblesByWeight(const int &w_in)
 {
-    unique_lock<mutex> lock(mMutexConnections);
+    unique_lock<mutex> lock(connectionsMutex);
 
     if (orderedConnectedKeyFrames.empty())
     {
         return vector<KeyFrame *>();
     }
 
-    vector<int>::iterator it = upper_bound(orderedWeights.begin(),
-                                           orderedWeights.end(),
-                                           w,
-                                           KeyFrame::weightComp);
+    vector<int>::iterator weightIt = upper_bound(orderedWeights.begin(),
+                                                 orderedWeights.end(),
+                                                 w_in,
+                                                 KeyFrame::weightComp);
 
-    if (it == orderedWeights.end() && orderedWeights.back() < w)
+    if (weightIt == orderedWeights.end() && orderedWeights.back() < w_in)
     {
         return vector<KeyFrame *>();
     }
     else
     {
-        int n = it - orderedWeights.begin();
+        int n = weightIt - orderedWeights.begin();
         return vector<KeyFrame *>(orderedConnectedKeyFrames.begin(),
                                   orderedConnectedKeyFrames.begin() + n);
     }

@@ -43,11 +43,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::setNewBias(const IMU::Bias &b)
+void Frame::setNewBias(const IMU::Bias &b_in)
 {
-    imuBias = b;
+    imuBias = b_in;
     if (p_imuPreintegrated)
-        p_imuPreintegrated->setNewBias(b);
+        p_imuPreintegrated->setNewBias(b_in);
 }
 
 } // namespace core

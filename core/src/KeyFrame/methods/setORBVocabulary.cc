@@ -35,9 +35,9 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::setORBVocabulary(ORBVocabulary *pORBVoc)
+void KeyFrame::setORBVocabulary(ORBVocabulary *p_orbVocabulary_in)
 {
-    p_orbVocabulary = pORBVoc;
+    p_orbVocabulary = p_orbVocabulary_in;
 }
 
 } // namespace core

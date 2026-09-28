@@ -35,14 +35,14 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::addConnection(KeyFrame *pKF, const int &weight)
+void KeyFrame::addConnection(KeyFrame *p_keyFrame_inout, const int &weight_in)
 {
     {
-        unique_lock<mutex> lock(mMutexConnections);
-        if (!connectedKeyFrameWeights.count(pKF))
-            connectedKeyFrameWeights[pKF] = weight;
-        else if (connectedKeyFrameWeights[pKF] != weight)
-            connectedKeyFrameWeights[pKF] = weight;
+        unique_lock<mutex> lock(connectionsMutex);
+        if (!connectedKeyFrameWeights.count(p_keyFrame_inout))
+            connectedKeyFrameWeights[p_keyFrame_inout] = weight_in;
+        else if (connectedKeyFrameWeights[p_keyFrame_inout] != weight_in)
+            connectedKeyFrameWeights[p_keyFrame_inout] = weight_in;
         else
             return;
     }

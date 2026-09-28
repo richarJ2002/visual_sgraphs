@@ -36,7 +36,7 @@ namespace core
 
 void Map::setInertialSensor()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     isInertialMode = true;
 }
 

@@ -43,9 +43,9 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f Frame::inReferenceCoordinates(Eigen::Vector3f pCw)
+Eigen::Vector3f Frame::inReferenceCoordinates(Eigen::Vector3f pCw_in)
 {
-    return rotationRcw * pCw + translationTcw;
+    return rotationRcw * pCw_in + translationTcw;
 }
 
 } // namespace core

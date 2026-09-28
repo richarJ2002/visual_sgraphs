@@ -40,7 +40,7 @@ bool KannalaBrandt8::epipolarConstrain(
     const float                       sigmaLevel_in,
     const float                       uncertainty_in)
 {
-    Eigen::Vector3f point3D;
+    Eigen::Vector3f point3d;
     return this->triangulateMatches(p_otherCamera_in,
                                     keypoint1_in,
                                     keypoint2_in,
@@ -48,6 +48,6 @@ bool KannalaBrandt8::epipolarConstrain(
                                     translation12_in,
                                     sigmaLevel_in,
                                     uncertainty_in,
-                                    point3D) > 0.0001f;
+                                    point3d) > 0.0001f;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

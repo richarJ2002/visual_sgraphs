@@ -36,7 +36,7 @@ namespace core
 
 bool Map::getInertialBA1()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return hasInertialBA1;
 }
 

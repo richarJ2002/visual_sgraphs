@@ -37,15 +37,15 @@ bool Room::removePassageAssociation(
 
     std::lock_guard<std::mutex> lock(mapMutex);
 
-    const auto removedIterator =
+    const auto passageIt =
         std::find(doorways.begin(), doorways.end(), p_removedPassage_in);
 
-    if (removedIterator == doorways.end())
+    if (passageIt == doorways.end())
     {
         return false;
     }
 
-    doorways.erase(removedIterator);
+    doorways.erase(passageIt);
     return true;
 }
 

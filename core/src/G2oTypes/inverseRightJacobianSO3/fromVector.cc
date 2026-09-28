@@ -32,9 +32,12 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3d InverseRightJacobianSO3(const Eigen::Vector3d &v)
+Eigen::Matrix3d
+    inverseRightJacobianSO3(const Eigen::Vector3d &rotationVector_in)
 {
-    return InverseRightJacobianSO3(v[0], v[1], v[2]);
+    return inverseRightJacobianSO3(rotationVector_in[0],
+                                   rotationVector_in[1],
+                                   rotationVector_in[2]);
 }
 
 } // namespace core

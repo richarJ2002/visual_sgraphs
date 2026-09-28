@@ -37,7 +37,7 @@ namespace core
 
 Eigen::Matrix3f KeyFrame::getImuRotation()
 {
-    unique_lock<mutex> lock(mMutexPose);
+    unique_lock<mutex> lock(poseMutex);
     return (twc * imuCalibration.mTcb).rotationMatrix();
 }
 

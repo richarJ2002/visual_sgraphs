@@ -34,15 +34,15 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseMapMarker(semantic::Marker *pMarker)
+void Map::eraseMapMarker(semantic::Marker *p_marker_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    markers.erase(pMarker);
+    unique_lock<mutex> lock(mapMutex);
+    markers.erase(p_marker_in);
 
     for (auto markerIterator = markerIndex.begin();
          markerIterator != markerIndex.end();)
     {
-        markerIterator = markerIterator->second == pMarker
+        markerIterator = markerIterator->second == p_marker_in
                              ? markerIndex.erase(markerIterator)
                              : std::next(markerIterator);
     }

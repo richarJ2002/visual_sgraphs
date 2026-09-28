@@ -30,7 +30,7 @@ namespace semantic
 
 std::optional<Floor::PlaneIdentity> Floor::getPlaneIdentity() const
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
     return planeIdentity;
 }
 

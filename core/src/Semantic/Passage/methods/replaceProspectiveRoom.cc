@@ -38,19 +38,19 @@ bool Passage::replaceProspectiveRoom(
         return false;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
 
     bool replaced = false;
-    if (prospectiveRoom == p_retiredRoom_in)
+    if (p_prospectiveRoom == p_retiredRoom_in)
     {
-        prospectiveRoom = p_retainedRoom_in;
-        replaced        = true;
+        p_prospectiveRoom = p_retainedRoom_in;
+        replaced          = true;
     }
 
-    if (knownSideProvenance.pRoom == p_retiredRoom_in)
+    if (knownSideProvenance.p_room == p_retiredRoom_in)
     {
-        knownSideProvenance.pRoom = p_retainedRoom_in;
-        replaced                  = true;
+        knownSideProvenance.p_room = p_retainedRoom_in;
+        replaced                   = true;
     }
 
     return replaced;

@@ -30,7 +30,7 @@ namespace semantic
 
 void Floor::clearPlaneIdentity(void)
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
     planeIdentity.reset();
 }
 

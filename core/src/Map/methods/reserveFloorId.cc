@@ -36,7 +36,7 @@ namespace core
 
 int Map::reserveFloorId(void)
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
 
     while (floorIndex.count(nextAvailableFloorId) > 0)
     {

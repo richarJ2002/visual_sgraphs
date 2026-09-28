@@ -143,17 +143,17 @@ PassageFloorAgreement
 
     bool knownSideReciprocal       = false;
     bool prospectiveSideReciprocal = false;
-    for (const EntityRef &memberRef : p_floor->roomRefs)
+    for (const EntityRef &memberReference : p_floor->roomRefs)
     {
-        if (!memberRef.key.has_value())
+        if (!memberReference.key.has_value())
         {
             continue;
         }
-        if (*memberRef.key == *knownSide_in.key)
+        if (*memberReference.key == *knownSide_in.key)
         {
             knownSideReciprocal = true;
         }
-        if (*memberRef.key == *prospective_in.key)
+        if (*memberReference.key == *prospective_in.key)
         {
             prospectiveSideReciprocal = true;
         }

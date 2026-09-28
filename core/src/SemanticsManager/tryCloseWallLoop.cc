@@ -39,7 +39,7 @@ namespace core
  */
 WallLoopClosure tryCloseWallLoop(
     std::vector<FiniteWallSegment2d> wallSegments_in,
-    const Eigen::Vector2d           &roomCentroid_Ground_m_in,
+    const Eigen::Vector2d           &roomCentroidGround_m_in,
     const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters_in)
 {
     WallLoopClosure result;
@@ -52,16 +52,16 @@ WallLoopClosure tryCloseWallLoop(
     std::sort(
         wallSegments_in.begin(),
         wallSegments_in.end(),
-        [&roomCentroid_Ground_m_in](const FiniteWallSegment2d &firstSegment,
-                                    const FiniteWallSegment2d &secondSegment)
+        [&roomCentroidGround_m_in](const FiniteWallSegment2d &firstSegment,
+                                   const FiniteWallSegment2d &secondSegment)
         {
             const Eigen::Vector2d firstMidpoint =
                 0.5 * (firstSegment.start_World_m + firstSegment.end_World_m) -
-                roomCentroid_Ground_m_in;
+                roomCentroidGround_m_in;
             const Eigen::Vector2d secondMidpoint =
                 0.5 *
                     (secondSegment.start_World_m + secondSegment.end_World_m) -
-                roomCentroid_Ground_m_in;
+                roomCentroidGround_m_in;
 
             return std::atan2(firstMidpoint.y(), firstMidpoint.x()) <
                    std::atan2(secondMidpoint.y(), secondMidpoint.x());
@@ -106,7 +106,7 @@ WallLoopClosure tryCloseWallLoop(
                  {currentWall.end_World_m, nextWall.start_World_m},
                  {currentWall.end_World_m, nextWall.end_World_m}}};
 
-        auto nearestEndpointPair = std::min_element(
+        auto p_nearestEndpointPair = std::min_element(
             endpointPairs.begin(),
             endpointPairs.end(),
             [](const auto &firstPair, const auto &secondPair)
@@ -115,12 +115,12 @@ WallLoopClosure tryCloseWallLoop(
                        (secondPair.first - secondPair.second).squaredNorm();
             });
 
-        if ((nearestEndpointPair->first - nearestEndpointPair->second).norm() <=
-            topologyParameters_in.maximumCornerGap_m)
+        if ((p_nearestEndpointPair->first - p_nearestEndpointPair->second)
+                .norm() <= topologyParameters_in.maximumCornerGap_m)
         {
             result.corners_World_m.push_back(
                 0.5 *
-                (nearestEndpointPair->first + nearestEndpointPair->second));
+                (p_nearestEndpointPair->first + p_nearestEndpointPair->second));
             continue;
         }
 

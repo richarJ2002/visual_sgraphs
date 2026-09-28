@@ -32,7 +32,7 @@ semantic::VerificationVerdict passVerdict()
 {
     semantic::VerificationVerdict verdict;
     verdict.status      = semantic::VerificationStatus::PASS;
-    verdict.pass        = true;
+    verdict.hasPassed   = true;
     verdict.inlierCount = 3U;
     verdict.inlierRatio = 1.0;
     verdict.confidence  = 1.0;
@@ -54,7 +54,7 @@ std::size_t countAcceptedEvents(
         history_in.begin(),
         history_in.end(),
         [event_in](const semantic::TransitionEvent &record_in)
-        { return record_in.accepted && record_in.event == event_in; }));
+        { return record_in.isAccepted && record_in.event == event_in; }));
 }
 
 class ProductionCrossingScene
@@ -135,11 +135,11 @@ class ProductionCrossingScene
         addKeyFrame(farSideKeyFrame,
                     keyFrameIdBase_in + 1U,
                     Eigen::Vector3f(1.0F, 0.0F, 1.0F));
-        returnSideKeyFrame.mnId = keyFrameIdBase_in + 2U;
+        returnSideKeyFrame.id = keyFrameIdBase_in + 2U;
         returnSideKeyFrame.setPose(
             Sophus::SE3f(Eigen::Matrix3f::Identity(),
                          Eigen::Vector3f(1.0F, 0.0F, -1.0F)));
-        thirdCrossingKeyFrame.mnId = keyFrameIdBase_in + 3U;
+        thirdCrossingKeyFrame.id = keyFrameIdBase_in + 3U;
         thirdCrossingKeyFrame.setPose(
             Sophus::SE3f(Eigen::Matrix3f::Identity(),
                          Eigen::Vector3f(-1.0F, 0.0F, 1.0F)));
@@ -177,7 +177,7 @@ class ProductionCrossingScene
     void addAlternatingCrossing(unsigned long keyFrameId_in, bool farSide_in)
     {
         std::unique_ptr<KeyFrame> p_keyFrame(new KeyFrame());
-        p_keyFrame->mnId = keyFrameId_in;
+        p_keyFrame->id = keyFrameId_in;
         const Eigen::Vector3f cameraCenter_World_m =
             farSide_in ? Eigen::Vector3f(1.0F, 0.0F, 1.0F)
                        : Eigen::Vector3f(-1.0F, 0.0F, 1.0F);
@@ -212,7 +212,7 @@ class ProductionCrossingScene
                      unsigned long          keyFrameId_in,
                      const Eigen::Vector3f &cameraCenter_World_m_in)
     {
-        keyFrame_inout.mnId = keyFrameId_in;
+        keyFrame_inout.id = keyFrameId_in;
         keyFrame_inout.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
                                             -cameraCenter_World_m_in));
         p_map->addKeyFrame(&keyFrame_inout);
@@ -451,7 +451,7 @@ TEST(RoomTrackerProductionIntegration,
     EXPECT_FALSE(scene.farRoom.hasRoomTag());
     EXPECT_EQ(scene.knownRoom.getWalls(), knownWallsBefore);
     EXPECT_EQ(scene.farRoom.getWalls(), farWallsBefore);
-    EXPECT_EQ(scene.passage.getKnownSideProvenance().pRoom, &scene.knownRoom);
+    EXPECT_EQ(scene.passage.getKnownSideProvenance().p_room, &scene.knownRoom);
     EXPECT_EQ(scene.passage.getProspectiveRoom(), &scene.farRoom);
     EXPECT_EQ(scene.atlas.getAllMaps(), mapsBefore);
     ASSERT_EQ(mapsBefore.size(), 2U);
@@ -667,13 +667,13 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
     /* Camera trajectory crossing the aperture from the known side. SetPose
      * takes world-to-camera, so the translation is the negated center. */
     KeyFrame nearKeyFrame;
-    nearKeyFrame.mnId = 0U;
+    nearKeyFrame.id = 0U;
     nearKeyFrame.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
                                       Eigen::Vector3f(1.0F, 0.0F, -1.0F)));
     p_map->addKeyFrame(&nearKeyFrame);
 
     KeyFrame farKeyFrame;
-    farKeyFrame.mnId = 1U;
+    farKeyFrame.id = 1U;
     farKeyFrame.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
                                      Eigen::Vector3f(-1.0F, 0.0F, -1.0F)));
     p_map->addKeyFrame(&farKeyFrame);

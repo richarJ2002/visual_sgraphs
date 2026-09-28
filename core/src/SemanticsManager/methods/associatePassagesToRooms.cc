@@ -116,15 +116,15 @@ void SemanticsManager::associatePassagesToRooms(void)
             const semantic::Passage::KnownSideProvenance knownSide =
                 p_passage->getKnownSideProvenance();
             semantic::Room *p_farSideRoom = p_passage->getProspectiveRoom();
-            if (knownSide.pRoom != nullptr && !knownSide.pRoom->isBad())
+            if (knownSide.p_room != nullptr && !knownSide.p_room->isBad())
             {
-                knownSide.pRoom->setDoorways(p_passage);
+                knownSide.p_room->setDoorways(p_passage);
             }
             if (p_farSideRoom != nullptr && !p_farSideRoom->isBad())
             {
                 p_farSideRoom->setDoorways(p_passage);
             }
-            passageZeroRoomCycles_.erase(p_passage->getId());
+            passageZeroRoomCycles.erase(p_passage->getId());
             continue;
         }
 
@@ -672,7 +672,7 @@ void SemanticsManager::associatePassagesToRooms(void)
             return roomSide_m * knownSideSign > 0.0;
         };
 
-        if (knownSide.pRoom == nullptr)
+        if (knownSide.p_room == nullptr)
         {
             semantic::Room *p_knownSideRoom =
                 roomIsOnKnownSide(p_negativeSideRoom)
@@ -698,12 +698,12 @@ void SemanticsManager::associatePassagesToRooms(void)
              * convention (see Passage::setBad()'s own comment). */
             constexpr std::size_t maximumZeroRoomCycles = 5U;
             const std::size_t     zeroRoomCycles =
-                ++passageZeroRoomCycles_[p_passage->getId()];
+                ++passageZeroRoomCycles[p_passage->getId()];
 
             if (zeroRoomCycles > maximumZeroRoomCycles)
             {
                 p_passage->setBad();
-                passageZeroRoomCycles_.erase(p_passage->getId());
+                passageZeroRoomCycles.erase(p_passage->getId());
                 std::cout << "[SemMgr] semantic::Passage#" << p_passage->getId()
                           << " invalidated: 0 associated rooms for "
                           << zeroRoomCycles << " consecutive cycles."
@@ -721,7 +721,7 @@ void SemanticsManager::associatePassagesToRooms(void)
         }
         else
         {
-            passageZeroRoomCycles_.erase(p_passage->getId());
+            passageZeroRoomCycles.erase(p_passage->getId());
         }
 
         if (associatedRoomCount > 2)
@@ -770,7 +770,7 @@ void SemanticsManager::associatePassagesToRooms(void)
         {
             /* Promotion/replacement keeps the same far-side resolution. */
             p_existingProspective->setDoorways(p_passage);
-            prospectiveRoomCycles_.erase(p_existingProspective->getId());
+            prospectiveRoomCycles.erase(p_existingProspective->getId());
         }
 
         semantic::Room *p_currentFarSideHandle =
@@ -788,11 +788,11 @@ void SemanticsManager::associatePassagesToRooms(void)
         if (confirmedAssociatedRoomCount == 2U)
         {
             semantic::Room *p_farSideConfirmedRoom = nullptr;
-            if (knownSide.pRoom == p_negativeSideRoom)
+            if (knownSide.p_room == p_negativeSideRoom)
             {
                 p_farSideConfirmedRoom = p_positiveSideRoom;
             }
-            else if (knownSide.pRoom == p_positiveSideRoom)
+            else if (knownSide.p_room == p_positiveSideRoom)
             {
                 p_farSideConfirmedRoom = p_negativeSideRoom;
             }
@@ -1083,12 +1083,12 @@ void SemanticsManager::associatePassagesToRooms(void)
                                 }
                                 const Eigen::Vector3d candidateCentroid =
                                     p_candidate->getCentroid();
-                                const double dist =
+                                const double distance =
                                     (candidateCentroid - prospectiveCentroid)
                                         .norm();
 
                                 bool passageIdentityMatches = false;
-                                if (dist <= kProspectiveDedupDistance_m)
+                                if (distance <= kProspectiveDedupDistance_m)
                                 {
                                     for (semantic::Passage *p_candidatePassage :
                                          allPassages)
@@ -1155,7 +1155,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                                     std::cout << "[SemMgr] Reusing existing "
                                                  "prospective semantic::Room#"
                                               << p_candidate->getId()
-                                              << " (dist=" << dist
+                                              << " (dist=" << distance
                                               << "m) for semantic::Passage#"
                                               << p_passage->getId()
                                               << std::endl;
@@ -1196,8 +1196,8 @@ void SemanticsManager::associatePassagesToRooms(void)
 
                                     /* Register the live passage-created handle.
                                      */
-                                    prospectiveRoomCycles_[p_prospectiveRoom
-                                                               ->getId()] = 0;
+                                    prospectiveRoomCycles[p_prospectiveRoom
+                                                              ->getId()] = 0;
 
                                     std::cout << "[SemMgr] Created prospective "
                                                  "semantic::Room#"
@@ -1306,7 +1306,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                  * near side must never be matched as its far side.
                  */
                 vs_graphs::core::semantic::Room *p_knownSideRoom =
-                    p_passage->getKnownSideProvenance().pRoom;
+                    p_passage->getKnownSideProvenance().p_room;
 
                 geometric::Plane *p_groundPlane =
                     p_atlas->getBiggestGroundPlane();
@@ -1414,7 +1414,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                         p_prospectiveRoom->removeWall(p_wall);
                     }
 
-                    prospectiveRoomCycles_.erase(p_prospectiveRoom->getId());
+                    prospectiveRoomCycles.erase(p_prospectiveRoom->getId());
 
                     Map *p_roomMap = p_prospectiveRoom->getMap();
                     if (p_roomMap != nullptr)
@@ -1439,7 +1439,7 @@ void SemanticsManager::associatePassagesToRooms(void)
     }
 
     /* Report, but never fabricate, missing passage connectivity. */
-    std::unordered_set<int> disconnectedRoomIds;
+    std::unordered_set<int> computedDisconnectedRoomIds;
 
     for (vs_graphs::core::semantic::Room *p_room : allRooms)
     {
@@ -1451,9 +1451,9 @@ void SemanticsManager::associatePassagesToRooms(void)
             continue;
         }
 
-        disconnectedRoomIds.insert(p_room->getId());
+        computedDisconnectedRoomIds.insert(p_room->getId());
 
-        if (disconnectedRoomIds_.count(p_room->getId()) == 0U)
+        if (disconnectedRoomIds.count(p_room->getId()) == 0U)
         {
             std::cout << "[SemMgr] semantic::Room#" << p_room->getId()
                       << " is not yet connected by a confirmed passage; "
@@ -1462,7 +1462,7 @@ void SemanticsManager::associatePassagesToRooms(void)
         }
     }
 
-    disconnectedRoomIds_ = std::move(disconnectedRoomIds);
+    disconnectedRoomIds = std::move(computedDisconnectedRoomIds);
 }
 
 } // namespace core

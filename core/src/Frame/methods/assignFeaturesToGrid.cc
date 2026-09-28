@@ -46,33 +46,38 @@ namespace core
 void Frame::assignFeaturesToGrid()
 {
     // Fill matrix with points
-    const int nCells = FRAME_GRID_COLS * FRAME_GRID_ROWS;
+    const int cellCount = FRAME_GRID_COLS * FRAME_GRID_ROWS;
 
-    int nReserve = 0.5f * N / (nCells);
+    int reserveCount = 0.5f * keyPointCount / (cellCount);
 
-    for (unsigned int i = 0; i < FRAME_GRID_COLS; i++)
-        for (unsigned int j = 0; j < FRAME_GRID_ROWS; j++)
+    for (unsigned int columnIndex = 0; columnIndex < FRAME_GRID_COLS;
+         columnIndex++)
+        for (unsigned int rowIndex = 0; rowIndex < FRAME_GRID_ROWS; rowIndex++)
         {
-            grid[i][j].reserve(nReserve);
-            if (Nleft != -1)
+            grid[columnIndex][rowIndex].reserve(reserveCount);
+            if (leftKeyPointCount != -1)
             {
-                gridRight[i][j].reserve(nReserve);
+                gridRight[columnIndex][rowIndex].reserve(reserveCount);
             }
         }
 
-    for (int i = 0; i < N; i++)
+    for (int columnIndex = 0; columnIndex < keyPointCount; columnIndex++)
     {
-        const cv::KeyPoint &kp = (Nleft == -1) ? keyPointsUndistorted[i]
-                                 : (i < Nleft) ? keyPoints[i]
-                                               : keyPointsRight[i - Nleft];
+        const cv::KeyPoint &keyPoint =
+            (leftKeyPointCount == -1) ? keyPointsUndistorted[columnIndex]
+            : (columnIndex < leftKeyPointCount)
+                ? keyPoints[columnIndex]
+                : keyPointsRight[columnIndex - leftKeyPointCount];
 
-        int nGridPosX, nGridPosY;
-        if (isPositionInGrid(kp, nGridPosX, nGridPosY))
+        int gridPositionXCount, gridPositionYCount;
+        if (isPositionInGrid(keyPoint, gridPositionXCount, gridPositionYCount))
         {
-            if (Nleft == -1 || i < Nleft)
-                grid[nGridPosX][nGridPosY].push_back(i);
+            if (leftKeyPointCount == -1 || columnIndex < leftKeyPointCount)
+                grid[gridPositionXCount][gridPositionYCount].push_back(
+                    columnIndex);
             else
-                gridRight[nGridPosX][nGridPosY].push_back(i - Nleft);
+                gridRight[gridPositionXCount][gridPositionYCount].push_back(
+                    columnIndex - leftKeyPointCount);
         }
     }
 }

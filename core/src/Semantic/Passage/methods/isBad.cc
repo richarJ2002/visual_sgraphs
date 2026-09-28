@@ -30,8 +30,8 @@ namespace semantic
 
 bool Passage::isBad()
 {
-    std::lock_guard<std::mutex> lock(mMutexMap);
-    return mbBad;
+    std::lock_guard<std::mutex> lock(mapMutex);
+    return isFlaggedBad;
 }
 
 } // namespace semantic

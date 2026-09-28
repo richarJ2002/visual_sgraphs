@@ -376,30 +376,30 @@ class Utils
      *
      * @param[in]    p_cloud_in
      *               Point cloud to be clustered.
-     * @param[out]   clusterIndices_out
+     * @param[in,out] clusterIndices_inout
      *               Vector of point indices for each cluster.
      */
     static void clusterPlaneClouds(
         const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &p_cloud_in,
-        std::vector<pcl::PointIndices>                &clusterIndices_out);
+        std::vector<pcl::PointIndices>                &clusterIndices_inout);
 
     /*!
      * @brief        Re-associates semantically classified planes if they get
      *               closer after optimization
      *
-     * @param[in]    p_atlas_inout
+     * @param[in]    p_atlas_in
      *               A pointer to the Atlas
      */
-    static void reAssociateSemanticPlanes(Atlas *p_atlas_inout);
+    static void reAssociateSemanticPlanes(Atlas *p_atlas_in);
 
     /*!
      * @brief        Re-associates semantically classified planes if they get
      *               closer after optimization
      *
-     * @param[in]    p_atlas_inout
+     * @param[in]    p_atlas_in
      *               a pointer to the Atlas
      */
-    static void reAssociateRooms(Atlas *p_atlas_inout);
+    static void reAssociateRooms(Atlas *p_atlas_in);
 
     /*!
      * @brief        Fuses duplicate confirmed rooms introduced by a
@@ -425,10 +425,10 @@ class Utils
      * @brief        Fuses duplicate passage entities after optimization or map
      *               merge and rewires all room/keyframe associations.
      *
-     * @param[in,out] p_atlas_inout
+     * @param[in]     p_atlas_in
      *                 Atlas whose active semantic graph is reconciled.
      */
-    static void reAssociatePassages(Atlas *p_atlas_inout);
+    static void reAssociatePassages(Atlas *p_atlas_in);
 
     /*!
      * @brief        Propagates keyframe pose corrections to the
@@ -465,15 +465,15 @@ class Utils
      * @brief        Consolidates redundant single-wall provisional structural
      *               elements into a room supported by a free-space cluster.
      *
-     * @param[in]    p_selectedRoom_inout
+     * @param[in,out] p_selectedRoom_inout
      *               The cluster-backed room which has absorbed the walls
      *
-     * @param[in]    p_atlas_inout
+     * @param[in]    p_atlas_in
      *               a pointer to the Atlas
      */
     static void consolidateProvisionalRooms(
         vs_graphs::core::semantic::Room *p_selectedRoom_inout,
-        Atlas                           *p_atlas_inout);
+        Atlas                           *p_atlas_in);
 
     /*!
      * @brief        Gets the PlaneVariant type from the class id.
@@ -533,13 +533,13 @@ class Utils
      * @param[in]    p_roomB_in
      *               Same physical room in the map to be absorbed; may
      *               be null.
-     * @param[out]   normalsA_out
+     * @param[in,out] normalsA_inout
      *               Matched wall normals of room A.
-     * @param[out]   centroidsA_out
+     * @param[in,out] centroidsA_inout
      *               Matched wall centroids of room A.
-     * @param[out]   normalsB_out
+     * @param[in,out] normalsB_inout
      *               Matched wall normals of room B.
-     * @param[out]   centroidsB_out
+     * @param[in,out] centroidsB_inout
      *               Matched wall centroids of room B.
      *
      * @return       Number of accepted wall pairs; zero when either
@@ -548,10 +548,10 @@ class Utils
     static std::size_t
         matchWallsBetweenRooms(const semantic::Room         *p_roomA_in,
                                const semantic::Room         *p_roomB_in,
-                               std::vector<Eigen::Vector3d> &normalsA_out,
-                               std::vector<Eigen::Vector3d> &centroidsA_out,
-                               std::vector<Eigen::Vector3d> &normalsB_out,
-                               std::vector<Eigen::Vector3d> &centroidsB_out);
+                               std::vector<Eigen::Vector3d> &normalsA_inout,
+                               std::vector<Eigen::Vector3d> &centroidsA_inout,
+                               std::vector<Eigen::Vector3d> &normalsB_inout,
+                               std::vector<Eigen::Vector3d> &centroidsB_inout);
 
     /*!
      * @brief        Gathers wall correspondences across two maps using
@@ -561,25 +561,25 @@ class Utils
      *               Surviving map; may be null.
      * @param[in]    p_mapB_in
      *               Map to be absorbed; may be null.
-     * @param[out]   normalsA_out
+     * @param[in,out] normalsA_inout
      *               Matched wall normals of map A.
-     * @param[out]   centroidsA_out
+     * @param[in,out] centroidsA_inout
      *               Matched wall centroids of map A.
-     * @param[out]   normalsB_out
+     * @param[in,out] normalsB_inout
      *               Matched wall normals of map B.
-     * @param[out]   centroidsB_out
+     * @param[in,out] centroidsB_inout
      *               Matched wall centroids of map B.
      *
      * @return       True when at least three valid correspondences were
      *               collected.
      */
-    static bool
-        collectCorrespondingWalls(Map                          *p_mapA_in,
-                                  Map                          *p_mapB_in,
-                                  std::vector<Eigen::Vector3d> &normalsA_out,
-                                  std::vector<Eigen::Vector3d> &centroidsA_out,
-                                  std::vector<Eigen::Vector3d> &normalsB_out,
-                                  std::vector<Eigen::Vector3d> &centroidsB_out);
+    static bool collectCorrespondingWalls(
+        Map                          *p_mapA_in,
+        Map                          *p_mapB_in,
+        std::vector<Eigen::Vector3d> &normalsA_inout,
+        std::vector<Eigen::Vector3d> &centroidsA_inout,
+        std::vector<Eigen::Vector3d> &normalsB_inout,
+        std::vector<Eigen::Vector3d> &centroidsB_inout);
 
     /*!
      * @brief        Calculates the soft-min approximation of the given

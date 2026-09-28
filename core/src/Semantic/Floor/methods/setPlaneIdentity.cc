@@ -43,7 +43,7 @@ bool Floor::setPlaneIdentity(const Eigen::Vector4d &equation_World_in,
 
     normalizedEquation_World /= normalNorm;
 
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
     planeIdentity = PlaneIdentity{normalizedEquation_World,
                                   finiteSupportCount_in,
                                   observationCount_in};

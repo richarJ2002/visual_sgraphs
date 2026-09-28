@@ -32,8 +32,8 @@ namespace core
 
 vector<semantic::Marker *> System::getAllMarkers()
 {
-    Map *pActiveMap = p_atlas->getCurrentMap();
-    return pActiveMap->getAllMarkers();
+    Map *p_activeMap = p_atlas->getCurrentMap();
+    return p_activeMap->getAllMarkers();
 }
 
 } // namespace core

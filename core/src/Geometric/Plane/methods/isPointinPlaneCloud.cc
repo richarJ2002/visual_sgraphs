@@ -32,7 +32,7 @@ namespace core
 namespace geometric
 {
 
-bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &point)
+bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &queryPoint_in)
 {
     /*!
      * A NaN/Inf point (e.g. from a near-degenerate plane/line intersection
@@ -44,28 +44,28 @@ bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &point)
      * check) -- a point that isn't finite cannot be "in" the cloud, so
      * false is the correct answer, not a crash.
      */
-    if (!point.allFinite())
+    if (!queryPoint_in.allFinite())
     {
         return false;
     }
 
-    unique_lock<mutex> lock(mMutexFeatures);
-    pcl::PointXYZRGBA  pointPCL;
-    pointPCL.x = point(0);
-    pointPCL.y = point(1);
-    pointPCL.z = point(2);
+    unique_lock<mutex> lock(featuresMutex);
+    pcl::PointXYZRGBA  queryPointPcl;
+    queryPointPcl.x = queryPoint_in(0);
+    queryPointPcl.y = queryPoint_in(1);
+    queryPointPcl.z = queryPoint_in(2);
 
-    types::SystemParams *p_sysParams = types::SystemParams::getParams();
-    std::vector<int>     pointIdxRadiusSearch;
-    std::vector<float>   pointRadiusSquaredDistance;
+    types::SystemParams *p_systemParams = types::SystemParams::getParams();
+    std::vector<int>     radiusSearchPointIndices;
+    std::vector<float>   radiusSearchSquaredDistances;
 
-    if (octree->radiusSearch(
-            pointPCL,
-            p_sysParams->refineMapPoints.octree.searchRadius,
-            pointIdxRadiusSearch,
-            pointRadiusSquaredDistance,
-            p_sysParams->refineMapPoints.octree.minNeighbors) ==
-        p_sysParams->refineMapPoints.octree.minNeighbors)
+    if (p_octree->radiusSearch(
+            queryPointPcl,
+            p_systemParams->refineMapPoints.octree.searchRadius,
+            radiusSearchPointIndices,
+            radiusSearchSquaredDistances,
+            p_systemParams->refineMapPoints.octree.minNeighbors) ==
+        p_systemParams->refineMapPoints.octree.minNeighbors)
     {
         return true;
     }

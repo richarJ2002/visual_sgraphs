@@ -34,7 +34,7 @@ void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
 /*!
  * @brief        Collapses duplicate floors in the surviving map.
  */
-void collapseMergedFloors(Map *p_survivingMap_in);
+void collapseMergedFloors(Map *p_survivingMap_inout);
 
 } // namespace core
 } // namespace vs_graphs

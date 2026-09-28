@@ -35,18 +35,19 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::addMapPlane(geometric::Plane *plane)
+void KeyFrame::addMapPlane(geometric::Plane *p_plane_in)
 {
-    if (plane == nullptr)
+    if (p_plane_in == nullptr)
     {
         return;
     }
 
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
 
-    if (std::find(mapPlanes.begin(), mapPlanes.end(), plane) == mapPlanes.end())
+    if (std::find(mapPlanes.begin(), mapPlanes.end(), p_plane_in) ==
+        mapPlanes.end())
     {
-        mapPlanes.push_back(plane);
+        mapPlanes.push_back(p_plane_in);
     }
 }
 

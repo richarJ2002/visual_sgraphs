@@ -15,7 +15,7 @@ namespace semantic
 {
 struct WallBounds
 {
-    bool   valid{false};
+    bool   isValid{false};
     double minU_m{0.0};
     double maxU_m{0.0};
     double minV_m{0.0};
@@ -25,10 +25,10 @@ struct WallBounds
 struct PassageContext
 {
     int             id{0};
-    bool            passable{false};
+    bool            isPassable{false};
     bool            hasFarSideRoom{false};
     int             secondaryRoomId{0};
-    bool            apertureValid{false};
+    bool            isApertureValid{false};
     double          width_m{0.0};
     double          height_m{0.0};
     Eigen::Vector3d centroid_World{Eigen::Vector3d::Zero()};

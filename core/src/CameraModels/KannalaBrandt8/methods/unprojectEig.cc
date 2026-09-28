@@ -29,9 +29,11 @@
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
-Eigen::Vector3f KannalaBrandt8::unprojectEig(const cv::Point2f &point2D_in)
+Eigen::Vector3f KannalaBrandt8::unprojectEig(const cv::Point2f &point2d_in)
 {
-    cv::Point3f ray = this->unproject(point2D_in);
-    return Eigen::Vector3f(ray.x, ray.y, ray.z);
+    cv::Point3f unprojectedRay = this->unproject(point2d_in);
+    return Eigen::Vector3f(unprojectedRay.x,
+                           unprojectedRay.y,
+                           unprojectedRay.z);
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

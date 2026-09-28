@@ -30,8 +30,8 @@ void SemanticsManager::seedCurrentRoomFromActiveMap(Map *p_activeMap_in)
         return;
     }
 
-    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-    if (currentRoomId_ != -1)
+    std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+    if (currentRoomId != -1)
     {
         return;
     }
@@ -42,8 +42,8 @@ void SemanticsManager::seedCurrentRoomFromActiveMap(Map *p_activeMap_in)
         if (p_room != nullptr && !p_room->isBad() &&
             p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM)
         {
-            currentRoomId_ = p_room->getId();
-            p_atlas->setCurrentSemanticRoomIdentity(currentRoomId_);
+            currentRoomId = p_room->getId();
+            p_atlas->setCurrentSemanticRoomIdentity(currentRoomId);
             return;
         }
     }

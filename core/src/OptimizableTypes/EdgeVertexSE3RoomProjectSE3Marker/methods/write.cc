@@ -30,12 +30,13 @@ namespace vs_graphs
 namespace core
 {
 
-bool EdgeVertexSE3RoomProjectSE3Marker::write(std::ostream &os) const
+bool EdgeVertexSE3RoomProjectSE3Marker::write(
+    std::ostream &outputStream_inout) const
 {
-    for (int i = 0; i < 4; i++)
-        for (int j = i; j < 4; j++)
-            os << " " << information()(i, j);
-    return os.good();
+    for (int rowIndex = 0; rowIndex < 4; rowIndex++)
+        for (int columnIndex = rowIndex; columnIndex < 4; columnIndex++)
+            outputStream_inout << " " << information()(rowIndex, columnIndex);
+    return outputStream_inout.good();
 }
 
 } // namespace core

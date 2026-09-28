@@ -32,7 +32,7 @@ namespace core
 
 int Atlas::reservePassageIdentity(void)
 {
-    return nextPassageIdentity_.fetch_add(1, std::memory_order_relaxed);
+    return nextPassageIdentity.fetch_add(1, std::memory_order_relaxed);
 }
 
 } // namespace core

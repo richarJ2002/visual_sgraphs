@@ -34,27 +34,27 @@ namespace vs_graphs
 namespace core
 {
 
-void MapDrawer::getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M,
-                                             pangolin::OpenGlMatrix &MOw)
+void MapDrawer::getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M_in,
+                                             pangolin::OpenGlMatrix &MOw_inout)
 {
     Eigen::Matrix4f Twc;
     {
-        unique_lock<mutex> lock(mMutexCamera);
+        unique_lock<mutex> lock(cameraMutex);
         Twc = cameraPose.matrix();
     }
 
     for (int i = 0; i < 4; i++)
     {
-        M.m[4 * i]     = Twc(0, i);
-        M.m[4 * i + 1] = Twc(1, i);
-        M.m[4 * i + 2] = Twc(2, i);
-        M.m[4 * i + 3] = Twc(3, i);
+        M_in.m[4 * i]     = Twc(0, i);
+        M_in.m[4 * i + 1] = Twc(1, i);
+        M_in.m[4 * i + 2] = Twc(2, i);
+        M_in.m[4 * i + 3] = Twc(3, i);
     }
 
-    MOw.SetIdentity();
-    MOw.m[12] = Twc(0, 3);
-    MOw.m[13] = Twc(1, 3);
-    MOw.m[14] = Twc(2, 3);
+    MOw_inout.SetIdentity();
+    MOw_inout.m[12] = Twc(0, 3);
+    MOw_inout.m[13] = Twc(1, 3);
+    MOw_inout.m[14] = Twc(2, 3);
 }
 
 } // namespace core

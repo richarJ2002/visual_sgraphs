@@ -56,36 +56,39 @@ namespace core
 
 bool MLPnPsolver::refine()
 {
-    vector<int> vIndices;
-    vIndices.reserve(bestInlierFlags.size());
+    vector<int> indices;
+    indices.reserve(bestInlierFlags.size());
 
-    for (size_t i = 0; i < bestInlierFlags.size(); i++)
+    for (size_t bestInlierFlagIndex = 0;
+         bestInlierFlagIndex < bestInlierFlags.size();
+         bestInlierFlagIndex++)
     {
-        if (bestInlierFlags[i])
+        if (bestInlierFlags[bestInlierFlagIndex])
         {
-            vIndices.push_back(i);
+            indices.push_back(bestInlierFlagIndex);
         }
     }
 
     // Bearing vectors and 3D points used for this ransac iteration
-    bearingVectors_t bearingVecs;
-    points_t         p3DS;
-    vector<int>      indexes;
+    BearingVectors bearingVecs;
+    Points3        p3DS;
+    vector<int>    indexes;
 
-    for (size_t i = 0; i < vIndices.size(); i++)
+    for (size_t bestInlierFlagIndex = 0; bestInlierFlagIndex < indices.size();
+         bestInlierFlagIndex++)
     {
-        int idx = vIndices[i];
+        int featureIndex = indices[bestInlierFlagIndex];
 
-        bearingVecs.push_back(bearingVectors[idx]);
-        p3DS.push_back(points3Dw[idx]);
-        indexes.push_back(i);
+        bearingVecs.push_back(bearingVectors[featureIndex]);
+        p3DS.push_back(points3Dw[featureIndex]);
+        indexes.push_back(bestInlierFlagIndex);
     }
 
     // By the moment, we are using MLPnP without covariance info
-    cov3_mats_t covs(1);
+    Covariance3Matrices covs(1);
 
     // Result
-    transformation_t result;
+    TransformationMatrix result;
 
     // Compute camera pose
     computePose(bearingVecs, p3DS, covs, indexes, result);

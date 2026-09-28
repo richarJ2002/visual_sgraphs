@@ -54,19 +54,19 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3d MLPnPsolver::rodrigues2rot(const Eigen::Vector3d &omega)
+Eigen::Matrix3d MLPnPsolver::rodrigues2rot(const Eigen::Vector3d &omega_in)
 {
-    rotation_t R = Eigen::Matrix3d::Identity();
+    RotationMatrix R = Eigen::Matrix3d::Identity();
 
     Eigen::Matrix3d skewW;
-    skewW << 0.0, -omega(2), omega(1), omega(2), 0.0, -omega(0), -omega(1),
-        omega(0), 0.0;
+    skewW << 0.0, -omega_in(2), omega_in(1), omega_in(2), 0.0, -omega_in(0),
+        -omega_in(1), omega_in(0), 0.0;
 
-    double omega_norm = omega.norm();
+    double omegaNorm = omega_in.norm();
 
-    if (omega_norm > std::numeric_limits<double>::epsilon())
-        R = R + sin(omega_norm) / omega_norm * skewW +
-            (1 - cos(omega_norm)) / (omega_norm * omega_norm) * (skewW * skewW);
+    if (omegaNorm > std::numeric_limits<double>::epsilon())
+        R = R + sin(omegaNorm) / omegaNorm * skewW +
+            (1 - cos(omegaNorm)) / (omegaNorm * omegaNorm) * (skewW * skewW);
 
     return R;
 }

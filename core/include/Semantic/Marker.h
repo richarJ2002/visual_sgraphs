@@ -49,11 +49,11 @@ class Marker
     };
 
   private:
-    int    id;           // The marker's identifier
-    int    opId;         // The marker's identifier in the local optimizer
-    int    opIdG;        // The marker's identifier in the global optimizer
-    double time;         // The timestamp (in seconds) of observing the marker
-    bool   markerInGMap; // Check if the marker is in the Global Map or not
+    int    id;            // The marker's identifier
+    int    opId;          // The marker's identifier in the local optimizer
+    int    opIdG;         // The marker's identifier in the global optimizer
+    double time;          // The timestamp (in seconds) of observing the marker
+    bool   isInGlobalMap; // Check if the marker is in the Global Map or not
     Sophus::SE3f
         localPose; // Marker's pose (position and orientation) in the Local Map
     Sophus::SE3f  globalPose; // Marker's pose (position and orientation) in the
@@ -69,7 +69,7 @@ class Marker
         opId(-1),
         opIdG(-1),
         time(0.0),
-        markerInGMap(false),
+        isInGlobalMap(false),
         localPose(Sophus::SE3f()),
         globalPose(Sophus::SE3f()),
         markerType(MarkerVariant::UNKNOWN),
@@ -86,28 +86,28 @@ class Marker
     void applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
 
     int  getId() const;
-    void setId(int value);
+    void setId(int id_in);
 
     int  getOpId() const;
-    void setOpId(int value);
+    void setOpId(int opId_in);
 
     int  getOpIdG() const;
-    void setOpIdG(int value);
+    void setOpIdG(int opIdG_in);
 
     double getTime() const;
-    void   setTime(double value);
+    void   setTime(double timestamp_in);
 
     MarkerVariant getMarkerType() const;
-    void          setMarkerType(MarkerVariant newType);
+    void          setMarkerType(MarkerVariant newType_in);
 
     bool isMarkerInGMap() const;
-    void setMarkerInGMap(bool value);
+    void setMarkerInGMap(bool isInGlobalMap_in);
 
     Sophus::SE3f getLocalPose() const;
-    void         setLocalPose(const Sophus::SE3f &value);
+    void         setLocalPose(const Sophus::SE3f &localPose_in);
 
     Sophus::SE3f getGlobalPose() const;
-    void         setGlobalPose(const Sophus::SE3f &value);
+    void         setGlobalPose(const Sophus::SE3f &globalPose_in);
 
     /*!
      * @brief       Adds or replaces a marker observation from one keyframe.
@@ -138,10 +138,10 @@ class Marker
 
   protected:
     Map               *p_map{nullptr};
-    std::mutex         mMutexMap;
-    mutable std::mutex mMutexGeometry;
-    mutable std::mutex mMutexState;
-    mutable std::mutex mMutexObservations;
+    std::mutex         mapMutex;
+    mutable std::mutex geometryMutex;
+    mutable std::mutex stateMutex;
+    mutable std::mutex observationsMutex;
 };
 
 } // namespace semantic

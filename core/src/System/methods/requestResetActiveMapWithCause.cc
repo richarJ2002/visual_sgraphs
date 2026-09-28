@@ -32,9 +32,9 @@ namespace core
 
 void System::requestResetActiveMapWithCause(const ResetCause cause_in)
 {
-    unique_lock<mutex> lock(mMutexReset);
+    unique_lock<mutex> lock(resetMutex);
     retainResetCause(this, cause_in);
-    resetActiveMapRequested = true;
+    isResetActiveMapRequested = true;
     reportResetAttribution(cause_in, ResetAction::RESET_ACTIVE_MAP_REQUEST);
 }
 

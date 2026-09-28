@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-void Sim3Solver::computeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2)
+void Sim3Solver::computeSim3(Eigen::Matrix3f &P1_inout,
+                             Eigen::Matrix3f &P2_inout)
 {
     // Custom implementation of:
     // Horn 1987, Closed-form solution of absolute orientataion using unit
@@ -44,8 +45,8 @@ void Sim3Solver::computeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2)
     Eigen::Vector3f O1;  // Centroid of P1
     Eigen::Vector3f O2;  // Centroid of P2
 
-    computeCentroid(P1, Pr1, O1);
-    computeCentroid(P2, Pr2, O2);
+    computeCentroid(P1_inout, Pr1, O1);
+    computeCentroid(P2_inout, Pr2, O2);
 
     // Step 2: Compute M matrix
 
@@ -79,27 +80,29 @@ void Sim3Solver::computeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2)
         eigSolver.eigenvectors()
             .real(); // evec[0] is the quaternion of the desired rotation
 
-    int maxIndex; // should be zero
-    eval.maxCoeff(&maxIndex);
+    int maximumIndex; // should be zero
+    eval.maxCoeff(&maximumIndex);
 
-    Eigen::Vector3f vec = evec.block<3, 1>(
+    Eigen::Vector3f vector = evec.block<3, 1>(
         1,
-        maxIndex); // extract imaginary part of the quaternion (sin*axis)
+        maximumIndex); // extract imaginary part of the quaternion (sin*axis)
 
     // Rotation angle. sin is the norm of the imaginary part, cos is the real
     // part
-    double ang = atan2(vec.norm(), evec(0, maxIndex));
+    double angle = atan2(vector.norm(), evec(0, maximumIndex));
 
-    vec = 2 * ang * vec /
-          vec.norm(); // Angle-axis representation. quaternion angle is the half
-    mR12i = Sophus::SO3f::exp(vec).matrix();
+    vector =
+        2 * angle * vector /
+        vector
+            .norm(); // Angle-axis representation. quaternion angle is the half
+    mR12i = Sophus::SO3f::exp(vector).matrix();
 
     // Step 5: Rotate set 2
     Eigen::Matrix3f P3 = mR12i * Pr2;
 
     // Step 6: Scale
 
-    if (!fixScale)
+    if (!isScaleFixed)
     {
         double cvnom = utils::converter::Converter::toCvMat(Pr1).dot(
             utils::converter::Converter::toCvMat(P3));
@@ -130,12 +133,12 @@ void Sim3Solver::computeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2)
 
     // Step 8.2 T21
     mT21i.setIdentity();
-    Eigen::Matrix3f sRinv = (1.0 / ms12i) * mR12i.transpose();
+    Eigen::Matrix3f rinv = (1.0 / ms12i) * mR12i.transpose();
 
     // sRinv.copyTo(mT21i.rowRange(0,3).colRange(0,3));
-    mT21i.block<3, 3>(0, 0) = sRinv;
+    mT21i.block<3, 3>(0, 0) = rinv;
 
-    Eigen::Vector3f tinv    = -sRinv * mt12i;
+    Eigen::Vector3f tinv    = -rinv * mt12i;
     mT21i.block<3, 1>(0, 3) = tinv;
 }
 

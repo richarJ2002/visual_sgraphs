@@ -30,64 +30,64 @@ namespace vs_graphs
 namespace core
 {
 
-LoopClosing::LoopClosing(Atlas            *pAtlas,
-                         KeyFrameDatabase *pDB,
-                         ORBVocabulary    *pVoc,
-                         const bool        bFixScale,
-                         const bool        bActiveLC) :
-    resetRequested(false),
-    resetActiveMapRequested(false),
-    finishRequested(false),
-    finished(true),
-    p_atlas(pAtlas),
-    p_keyFrameDatabase(pDB),
-    p_orbVocabulary(pVoc),
+LoopClosing::LoopClosing(Atlas            *p_atlas_in,
+                         KeyFrameDatabase *p_database_in,
+                         ORBVocabulary    *p_vocabulary_in,
+                         const bool        isScaleFixed_in,
+                         const bool        isActiveLc_in) :
+    isResetRequested(false),
+    isResetActiveMapRequested(false),
+    isFinishRequested(false),
+    hasFinished(true),
+    p_atlas(p_atlas_in),
+    p_keyFrameDatabase(p_database_in),
+    p_orbVocabulary(p_vocabulary_in),
     p_matchedKF(nullptr),
-    loopDetected(false),
+    isLoopDetected(false),
     loopNumCoincidences(0),
     loopNumNotFound(0),
-    mergeDetected(false),
-    mergeInProgress(false),
+    isMergeDetected(false),
+    hasMergeInProgress(false),
     mergeNumCoincidences(0),
     mergeNumNotFound(0),
     lastLoopKeyFrameId(0),
-    runningGBA(false),
-    finishedGBA(true),
+    isGbaRunning(false),
+    hasGbaFinished(true),
     p_threadGBA(nullptr),
-    fixScale(bFixScale),
+    isScaleFixed(isScaleFixed_in),
     fullBundleAdjustmentIndex(0),
-    activeLC(bActiveLC)
+    isLoopClosingActive(isActiveLc_in)
 {
     covisibilityConsistencyThreshold = 3;
     p_lastCurrentKF                  = static_cast<KeyFrame *>(nullptr);
 
 #ifdef REGISTER_TIMES
 
-    vdDataQuery_ms.clear();
-    vdEstSim3_ms.clear();
-    vdPRTotal_ms.clear();
+    dataQueryTimes_ms.clear();
+    sim3EstimationTimes_ms.clear();
+    placeRecognitionTotalTimes_ms.clear();
 
-    vdMergeMaps_ms.clear();
-    vdWeldingBA_ms.clear();
-    vdMergeOptEss_ms.clear();
-    vdMergeTotal_ms.clear();
-    vnMergeKFs.clear();
-    vnMergeMPs.clear();
-    nMerges = 0;
+    mergeMapsTimes_ms.clear();
+    weldingBaTimes_ms.clear();
+    mergeEssentialGraphTimes_ms.clear();
+    mergeTotalTimes_ms.clear();
+    mergeKeyFrameCounts.clear();
+    mergeMapPointCounts.clear();
+    mergeCount = 0;
 
-    vdLoopFusion_ms.clear();
-    vdLoopOptEss_ms.clear();
-    vdLoopTotal_ms.clear();
-    vnLoopKFs.clear();
-    nLoop = 0;
+    loopFusionTimes_ms.clear();
+    loopEssentialGraphTimes_ms.clear();
+    loopTotalTimes_ms.clear();
+    loopKeyFrameCounts.clear();
+    loopCount = 0;
 
-    vdGBA_ms.clear();
-    vdUpdateMap_ms.clear();
-    vdFGBATotal_ms.clear();
-    vnGBAKFs.clear();
-    vnGBAMPs.clear();
-    nFGBA_exec  = 0;
-    nFGBA_abort = 0;
+    gbaTimes_ms.clear();
+    updateMapTimes_ms.clear();
+    fullGbaTotalTimes_ms.clear();
+    gbaKeyFrameCounts.clear();
+    gbaMapPointCounts.clear();
+    fullGbaExecutionCount = 0;
+    fullGbaAbortCount     = 0;
 
 #endif
 

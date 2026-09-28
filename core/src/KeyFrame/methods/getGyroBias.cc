@@ -37,7 +37,7 @@ namespace core
 
 Eigen::Vector3f KeyFrame::getGyroBias()
 {
-    unique_lock<mutex> lock(mMutexPose);
+    unique_lock<mutex> lock(poseMutex);
     return Eigen::Vector3f(imuBias.bwx, imuBias.bwy, imuBias.bwz);
 }
 

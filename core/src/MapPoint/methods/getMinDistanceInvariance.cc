@@ -36,7 +36,7 @@ namespace core
 
 float MapPoint::getMinDistanceInvariance()
 {
-    unique_lock<mutex> lock(mMutexPos);
+    unique_lock<mutex> lock(positionMutex);
     return 0.8f * minDistance;
 }
 

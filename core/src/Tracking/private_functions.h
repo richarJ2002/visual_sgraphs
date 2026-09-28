@@ -24,22 +24,22 @@ namespace core
 /*!
  * @brief        Averages per-frame millisecond timings.
  */
-double calcAverage(std::vector<double> v_times);
+double calcAverage(std::vector<double> times_in);
 
 /*!
  * @brief        Standard deviation of per-frame millisecond timings.
  */
-double calcDeviation(std::vector<double> v_times, double average);
+double calcDeviation(std::vector<double> times_in, double average_in);
 
 /*!
  * @brief        Averages integer counters, skipping zero entries.
  */
-double calcAverage(std::vector<int> v_values);
+double calcAverage(std::vector<int> values_in);
 
 /*!
  * @brief        Standard deviation of integer counters, skipping zeros.
  */
-double calcDeviation(std::vector<int> v_values, double average);
+double calcDeviation(std::vector<int> values_in, double average_in);
 #endif
 
 } // namespace core

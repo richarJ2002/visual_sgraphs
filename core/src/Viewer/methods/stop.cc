@@ -36,15 +36,15 @@ namespace core
 
 bool Viewer::stop()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    unique_lock<mutex> lock2(mMutexFinish);
+    unique_lock<mutex> lock(stopMutex);
+    unique_lock<mutex> lock2(finishMutex);
 
-    if (finishRequested)
+    if (isFinishRequested)
         return false;
-    else if (stopRequestedFlag)
+    else if (isStopRequested)
     {
-        stopped           = true;
-        stopRequestedFlag = false;
+        hasStopped      = true;
+        isStopRequested = false;
         return true;
     }
 

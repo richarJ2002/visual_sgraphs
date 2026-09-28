@@ -32,14 +32,14 @@ namespace core
 
 long unsigned int Atlas::getLivedMapPointCount()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
-    long unsigned int  num = 0;
-    for (Map *pMap_i : maps)
+    unique_lock<mutex> lock(atlasMutex);
+    long unsigned int  count = 0;
+    for (Map *p_atlasMap : maps)
     {
-        num += pMap_i->getAllMapPoints().size();
+        count += p_atlasMap->getAllMapPoints().size();
     }
 
-    return num;
+    return count;
 }
 
 } // namespace core

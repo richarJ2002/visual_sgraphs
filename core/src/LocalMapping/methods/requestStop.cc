@@ -34,10 +34,10 @@ namespace core
 
 void LocalMapping::requestStop()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    stopRequestedFlag = true;
-    unique_lock<mutex> lock2(mMutexNewKFs);
-    abortBA = true;
+    unique_lock<mutex> stopLock(stopMutex);
+    isStopRequested = true;
+    unique_lock<mutex> newKeyFramesLock(newKeyFramesMutex);
+    shouldAbortBa = true;
 }
 
 } // namespace core

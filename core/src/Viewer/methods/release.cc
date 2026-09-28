@@ -36,8 +36,8 @@ namespace core
 
 void Viewer::release()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    stopped = false;
+    unique_lock<mutex> lock(stopMutex);
+    hasStopped = false;
 }
 
 } // namespace core

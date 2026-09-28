@@ -31,24 +31,25 @@ namespace core
 {
 
 bool LoopClosing::detectCommonRegionsFromLastKF(
-    KeyFrame                *pCurrentKF,
-    KeyFrame                *pMatchedKF,
-    g2o::Sim3               &gScw,
-    int                     &nNumProjMatches,
-    std::vector<MapPoint *> &vpMPs,
-    std::vector<MapPoint *> &vpMatchedMPs)
+    KeyFrame                *p_currentKeyFrame_in,
+    KeyFrame                *p_matchedKeyFrame_in,
+    g2o::Sim3               &gScw_inout,
+    int                     &countProjectionMatchCount_out,
+    std::vector<MapPoint *> &mapPoints_inout,
+    std::vector<MapPoint *> &matchedMapPoints_inout)
 {
-    set<MapPoint *> spAlreadyMatchedMPs(vpMatchedMPs.begin(),
-                                        vpMatchedMPs.end());
-    nNumProjMatches = findMatchesByProjection(pCurrentKF,
-                                              pMatchedKF,
-                                              gScw,
-                                              spAlreadyMatchedMPs,
-                                              vpMPs,
-                                              vpMatchedMPs);
+    set<MapPoint *> alreadyMatchedMapPoints(matchedMapPoints_inout.begin(),
+                                            matchedMapPoints_inout.end());
+    countProjectionMatchCount_out =
+        findMatchesByProjection(p_currentKeyFrame_in,
+                                p_matchedKeyFrame_in,
+                                gScw_inout,
+                                alreadyMatchedMapPoints,
+                                mapPoints_inout,
+                                matchedMapPoints_inout);
 
-    int nProjMatches = 30;
-    if (nNumProjMatches >= nProjMatches)
+    int projectionMatchCount = 30;
+    if (countProjectionMatchCount_out >= projectionMatchCount)
     {
         return true;
     }

@@ -41,13 +41,13 @@ void Room::setWalls(geometric::Plane *p_wall_in)
 
     /* Deduplicate membership within this room; the manager owns global policy.
      */
-    const bool alreadyAssociated =
+    const bool isAlreadyAssociated =
         std::any_of(walls.begin(),
                     walls.end(),
                     [p_wall_in](const geometric::Plane *p_existingWall)
                     { return p_existingWall == p_wall_in; });
 
-    if (!alreadyAssociated)
+    if (!isAlreadyAssociated)
     {
         walls.push_back(p_wall_in);
     }

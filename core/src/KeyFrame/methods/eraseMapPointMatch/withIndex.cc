@@ -35,10 +35,10 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::eraseMapPointMatch(const int &idx)
+void KeyFrame::eraseMapPointMatch(const int &index_in)
 {
-    unique_lock<mutex> lock(mMutexFeatures);
-    mapPoints[idx] = static_cast<MapPoint *>(nullptr);
+    unique_lock<mutex> lock(featuresMutex);
+    mapPoints[index_in] = static_cast<MapPoint *>(nullptr);
 }
 
 } // namespace core

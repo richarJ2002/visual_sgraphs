@@ -38,7 +38,7 @@ namespace core
 void Tracking::stereoInitialization()
 {
     // Require more points for robust initialization in corridors
-    if (currentFrame.N > initializationMinPoints)
+    if (currentFrame.keyPointCount > initializationMinPoints)
     {
         if (sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
         {
@@ -52,7 +52,7 @@ void Tracking::stereoInitialization()
             }
 
             // Check acceleration difference for fast initialization
-            if (!fastInit)
+            if (!isFastInitEnabled)
             {
                 const double accelDiff =
                     (currentFrame.p_imuPreintegratedFrame->avgA -
@@ -93,66 +93,82 @@ void Tracking::stereoInitialization()
             currentFrame.setPose(Sophus::SE3f());
 
         // Create KeyFrame
-        vs_graphs::core::KeyFrame *pKFini =
+        vs_graphs::core::KeyFrame *p_keyFrameInitial =
             new vs_graphs::core::KeyFrame(currentFrame,
                                           p_atlas->getCurrentMap(),
                                           p_keyFrameDatabase);
 
         // Insert KeyFrame in the map
-        p_atlas->addKeyFrame(pKFini);
+        p_atlas->addKeyFrame(p_keyFrameInitial);
 
         // Create MapPoints and asscoiate to KeyFrame
-        int nPointsCreated = 0;
+        int pointsCreatedCount = 0;
         if (!p_camera2)
         {
-            for (int i = 0; i < currentFrame.N; i++)
+            for (int keyPointIndex = 0;
+                 keyPointIndex < currentFrame.keyPointCount;
+                 keyPointIndex++)
             {
-                float z = currentFrame.depths[i];
+                float z = currentFrame.depths[keyPointIndex];
                 if (z > 0)
                 {
                     Eigen::Vector3f x3D;
-                    currentFrame.unprojectStereo(i, x3D);
-                    MapPoint *pNewMP =
-                        new MapPoint(x3D, pKFini, p_atlas->getCurrentMap());
-                    pNewMP->addObservation(pKFini, i);
-                    pKFini->addMapPoint(pNewMP, i);
-                    pNewMP->computeDistinctiveDescriptors();
-                    pNewMP->updateNormalAndDepth();
-                    p_atlas->addMapPoint(pNewMP);
+                    currentFrame.unprojectStereo(keyPointIndex, x3D);
+                    MapPoint *p_newMapPoint =
+                        new MapPoint(x3D,
+                                     p_keyFrameInitial,
+                                     p_atlas->getCurrentMap());
+                    p_newMapPoint->addObservation(p_keyFrameInitial,
+                                                  keyPointIndex);
+                    p_keyFrameInitial->addMapPoint(p_newMapPoint,
+                                                   keyPointIndex);
+                    p_newMapPoint->computeDistinctiveDescriptors();
+                    p_newMapPoint->updateNormalAndDepth();
+                    p_atlas->addMapPoint(p_newMapPoint);
 
-                    currentFrame.mapPoints[i] = pNewMP;
-                    nPointsCreated++;
+                    currentFrame.mapPoints[keyPointIndex] = p_newMapPoint;
+                    pointsCreatedCount++;
                 }
             }
         }
         else
         {
-            for (int i = 0; i < currentFrame.Nleft; i++)
+            for (int keyPointIndex = 0;
+                 keyPointIndex < currentFrame.leftKeyPointCount;
+                 keyPointIndex++)
             {
-                int rightIndex = currentFrame.leftToRightMatches[i];
+                int rightIndex = currentFrame.leftToRightMatches[keyPointIndex];
                 if (rightIndex != -1)
                 {
-                    Eigen::Vector3f x3D = currentFrame.stereoPoints3D[i];
+                    Eigen::Vector3f x3D =
+                        currentFrame.stereoPoints3D[keyPointIndex];
 
-                    MapPoint *pNewMP =
-                        new MapPoint(x3D, pKFini, p_atlas->getCurrentMap());
+                    MapPoint *p_newMapPoint =
+                        new MapPoint(x3D,
+                                     p_keyFrameInitial,
+                                     p_atlas->getCurrentMap());
 
-                    pNewMP->addObservation(pKFini, i);
-                    pNewMP->addObservation(pKFini,
-                                           rightIndex + currentFrame.Nleft);
+                    p_newMapPoint->addObservation(p_keyFrameInitial,
+                                                  keyPointIndex);
+                    p_newMapPoint->addObservation(
+                        p_keyFrameInitial,
+                        rightIndex + currentFrame.leftKeyPointCount);
 
-                    pKFini->addMapPoint(pNewMP, i);
-                    pKFini->addMapPoint(pNewMP,
-                                        rightIndex + currentFrame.Nleft);
+                    p_keyFrameInitial->addMapPoint(p_newMapPoint,
+                                                   keyPointIndex);
+                    p_keyFrameInitial->addMapPoint(
+                        p_newMapPoint,
+                        rightIndex + currentFrame.leftKeyPointCount);
 
-                    pNewMP->computeDistinctiveDescriptors();
-                    pNewMP->updateNormalAndDepth();
-                    p_atlas->addMapPoint(pNewMP);
+                    p_newMapPoint->computeDistinctiveDescriptors();
+                    p_newMapPoint->updateNormalAndDepth();
+                    p_atlas->addMapPoint(p_newMapPoint);
 
-                    currentFrame.mapPoints[i] = pNewMP;
-                    currentFrame.mapPoints[rightIndex + currentFrame.Nleft] =
-                        pNewMP;
-                    nPointsCreated++;
+                    currentFrame.mapPoints[keyPointIndex] = p_newMapPoint;
+                    currentFrame.mapPoints[rightIndex +
+                                           currentFrame.leftKeyPointCount] =
+                        p_newMapPoint;
+                    pointsCreatedCount++;
                 }
             }
         }
@@ -162,30 +178,30 @@ void Tracking::stereoInitialization()
                   << std::endl;
 
         // Require minimum points for successful initialization
-        if (nPointsCreated < initializationMinPoints)
+        if (pointsCreatedCount < initializationMinPoints)
         {
             std::cout << "[Tracking] Insufficient points for initialization ("
-                      << nPointsCreated << " < " << initializationMinPoints
+                      << pointsCreatedCount << " < " << initializationMinPoints
                       << "), resetting..." << std::endl;
             p_system->requestResetActiveMapWithCause(
                 ResetCause::INITIALIZATION_INSUFFICIENT_POINTS);
             return;
         }
 
-        p_localMapper->insertKeyFrame(pKFini);
+        p_localMapper->insertKeyFrame(p_keyFrameInitial);
 
         lastFrame      = Frame(currentFrame);
-        lastKeyFrameId = currentFrame.mnId;
-        p_lastKeyFrame = pKFini;
+        lastKeyFrameId = currentFrame.id;
+        p_lastKeyFrame = p_keyFrameInitial;
 
-        localKeyFrames.push_back(pKFini);
+        localKeyFrames.push_back(p_keyFrameInitial);
         localMapPoints                   = p_atlas->getAllMapPoints();
-        p_referenceKF                    = pKFini;
-        currentFrame.p_referenceKeyFrame = pKFini;
+        p_referenceKF                    = p_keyFrameInitial;
+        currentFrame.p_referenceKeyFrame = p_keyFrameInitial;
 
         p_atlas->setReferenceMapPoints(localMapPoints);
 
-        p_atlas->getCurrentMap()->keyFrameOrigins.push_back(pKFini);
+        p_atlas->getCurrentMap()->keyFrameOrigins.push_back(p_keyFrameInitial);
 
         p_mapDrawer->setCurrentCameraPose(currentFrame.getPose());
 

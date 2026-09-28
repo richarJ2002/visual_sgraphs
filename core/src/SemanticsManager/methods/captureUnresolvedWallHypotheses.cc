@@ -32,8 +32,8 @@ std::vector<semantic::UnresolvedWallHypothesisRecord>
     SemanticsManager::captureUnresolvedWallHypotheses(void) const
 {
     std::vector<semantic::UnresolvedWallHypothesisRecord> records;
-    records.reserve(undefendedWalls_.size());
-    for (const auto &[wallId, state] : undefendedWalls_)
+    records.reserve(undefendedWalls.size());
+    for (const auto &[wallId, state] : undefendedWalls)
     {
         semantic::UnresolvedWallHypothesisRecord record;
         record.wallRef          = semantic::rawPlaneRef(state.p_wall);

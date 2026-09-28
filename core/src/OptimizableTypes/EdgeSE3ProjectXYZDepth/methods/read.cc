@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-bool EdgeSE3ProjectXYZDepth::read(std::istream &is)
+bool EdgeSE3ProjectXYZDepth::read(std::istream &inputStream_inout)
 {
-    is >> _measurement;
-    is >> information()(0, 0);
+    inputStream_inout >> _measurement;
+    inputStream_inout >> information()(0, 0);
     return true;
 }
 

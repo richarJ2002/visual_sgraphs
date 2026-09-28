@@ -35,28 +35,29 @@ namespace core
 {
 
 void vs_graphs::core::Map::addMapPassage(
-    vs_graphs::core::semantic::Passage *pPassage)
+    vs_graphs::core::semantic::Passage *p_passage_inout)
 {
-    if (pPassage == nullptr)
+    if (p_passage_inout == nullptr)
     {
         return;
     }
 
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
 
-    const auto existingPassage = passageIndex.find(pPassage->getId());
-    if (pPassage->getId() < 0 || (existingPassage != passageIndex.end() &&
-                                  existingPassage->second != pPassage))
+    const auto existingPassage = passageIndex.find(p_passage_inout->getId());
+    if (p_passage_inout->getId() < 0 ||
+        (existingPassage != passageIndex.end() &&
+         existingPassage->second != p_passage_inout))
     {
         std::cerr << "[Map] semantic::Passage ID collision for "
-                  << pPassage->getId()
+                  << p_passage_inout->getId()
                   << "; caller must resolve it before destination insertion."
                   << std::endl;
         return;
     }
 
-    passages.insert(pPassage);
-    passageIndex.insert_or_assign(pPassage->getId(), pPassage);
+    passages.insert(p_passage_inout);
+    passageIndex.insert_or_assign(p_passage_inout->getId(), p_passage_inout);
 }
 
 } // namespace core

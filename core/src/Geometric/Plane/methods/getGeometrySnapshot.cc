@@ -34,16 +34,16 @@ namespace geometric
 
 Plane::GeometrySnapshot Plane::getGeometrySnapshot(void) const
 {
-    std::scoped_lock                        lock(mMutexPos, mMutexFeatures);
+    std::scoped_lock                        lock(positionMutex, featuresMutex);
     GeometrySnapshot                        snapshot;
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloudCopy(
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_cloudCopy(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
     if (planeCloud != nullptr)
     {
-        *cloudCopy = *planeCloud;
+        *p_cloudCopy = *planeCloud;
     }
 
-    snapshot.supportCloud              = cloudCopy;
+    snapshot.supportCloud              = p_cloudCopy;
     snapshot.equation_World            = globalEquation.coeffs();
     snapshot.centroid_World_m          = centroid;
     snapshot.minPlaneU_m               = minPlaneU;

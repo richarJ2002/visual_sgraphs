@@ -32,7 +32,7 @@ namespace core
 
 int Atlas::getLastBigChangeIndex()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     return p_activeMap->getLastBigChangeIndex();
 }
 

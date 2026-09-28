@@ -37,7 +37,7 @@ void GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas *p_atlas_inout,
 
     // Create a new floor object
     Eigen::Vector3d                   centroid = Eigen::Vector3d::Zero();
-    vs_graphs::core::semantic::Floor *newMapFloor =
+    vs_graphs::core::semantic::Floor *p_newMapFloor =
         new vs_graphs::core::semantic::Floor();
 
     // Variables
@@ -47,18 +47,18 @@ void GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas *p_atlas_inout,
     p_atlas_inout->observeFloorIdentity(floorId);
 
     // Fill the floor entity
-    newMapFloor->setOpId(-1);
-    newMapFloor->setOpIdG(-1);
-    newMapFloor->setId(floorId);
-    newMapFloor->setCentroid(centroid);
-    newMapFloor->setMap(p_currentMap);
-    newMapFloor->setName("semantic::Floor#" + std::to_string(floorId));
+    p_newMapFloor->setOpId(-1);
+    p_newMapFloor->setOpIdG(-1);
+    p_newMapFloor->setId(floorId);
+    p_newMapFloor->setCentroid(centroid);
+    p_newMapFloor->setMap(p_currentMap);
+    p_newMapFloor->setName("semantic::Floor#" + std::to_string(floorId));
 
     // Add the floor to the map
-    p_atlas_inout->addMapFloor(newMapFloor);
+    p_atlas_inout->addMapFloor(p_newMapFloor);
 
     std::cout << "[GeoSemHelper] Creating semantic::Floor#"
-              << newMapFloor->getId() << " ..." << std::endl;
+              << p_newMapFloor->getId() << " ..." << std::endl;
 }
 
 } // namespace core

@@ -32,86 +32,97 @@
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
 float KannalaBrandt8::triangulateMatches(
-    geometriccamera::GeometricCamera *p_otherCamera_in,
+    geometriccamera::GeometricCamera *p_otherCamera_inout,
     const cv::KeyPoint               &keypoint1_in,
     const cv::KeyPoint               &keypoint2_in,
     const Eigen::Matrix3f            &rotation12_in,
     const Eigen::Vector3f            &translation12_in,
     const float                       sigmaLevel_in,
     const float                       uncertainty_in,
-    Eigen::Vector3f                  &point3D_out)
+    Eigen::Vector3f                  &point3d_out)
 {
 
-    Eigen::Vector3f r1 = this->unprojectEig(keypoint1_in.pt);
-    Eigen::Vector3f r2 = p_otherCamera_in->unprojectEig(keypoint2_in.pt);
+    Eigen::Vector3f cameraRay1 = this->unprojectEig(keypoint1_in.pt);
+    Eigen::Vector3f cameraRay2 =
+        p_otherCamera_inout->unprojectEig(keypoint2_in.pt);
 
     // Check parallax
-    Eigen::Vector3f r21 = rotation12_in * r2;
+    Eigen::Vector3f ray2InFrame1 = rotation12_in * cameraRay2;
 
-    const float cosParallaxRays = r1.dot(r21) / (r1.norm() * r21.norm());
+    const float parallaxCosine = cameraRay1.dot(ray2InFrame1) /
+                                 (cameraRay1.norm() * ray2InFrame1.norm());
 
-    if (cosParallaxRays > 0.9998)
+    if (parallaxCosine > 0.9998)
     {
         return -1;
     }
 
     // Parallax is good, so we try to triangulate
-    cv::Point2f p11, p22;
+    cv::Point2f imagePoint1, imagePoint2;
 
-    p11.x = r1[0];
-    p11.y = r1[1];
+    imagePoint1.x = cameraRay1[0];
+    imagePoint1.y = cameraRay1[1];
 
-    p22.x = r2[0];
-    p22.y = r2[1];
+    imagePoint2.x = cameraRay2[0];
+    imagePoint2.y = cameraRay2[1];
 
-    Eigen::Vector3f            x3D;
-    Eigen::Matrix<float, 3, 4> pose1_in;
-    pose1_in << Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero();
+    Eigen::Vector3f            triangulatedPoint3D;
+    Eigen::Matrix<float, 3, 4> projectionMatrix1;
+    projectionMatrix1 << Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero();
 
-    Eigen::Matrix<float, 3, 4> pose2_in;
+    Eigen::Matrix<float, 3, 4> projectionMatrix2;
 
     Eigen::Matrix3f R21 = rotation12_in.transpose();
-    pose2_in << R21, -R21 * translation12_in;
+    projectionMatrix2 << R21, -R21 * translation12_in;
 
-    triangulate(p11, p22, pose1_in, pose2_in, x3D);
+    triangulate(imagePoint1,
+                imagePoint2,
+                projectionMatrix1,
+                projectionMatrix2,
+                triangulatedPoint3D);
     // cv::Mat x3Dt = x3D.t();
 
-    float z1 = x3D(2);
-    if (z1 <= 0)
+    float cameraDepth1 = triangulatedPoint3D(2);
+    if (cameraDepth1 <= 0)
     {
         return -2;
     }
 
-    float z2 = R21.row(2).dot(x3D) + pose2_in(2, 3);
-    if (z2 <= 0)
+    float cameraDepth2 =
+        R21.row(2).dot(triangulatedPoint3D) + projectionMatrix2(2, 3);
+    if (cameraDepth2 <= 0)
     {
         return -3;
     }
 
     // Check reprojection error
-    Eigen::Vector2f uv1 = this->project(x3D);
+    Eigen::Vector2f projectedPoint1 = this->project(triangulatedPoint3D);
 
-    float errX1 = uv1(0) - keypoint1_in.pt.x;
-    float errY1 = uv1(1) - keypoint1_in.pt.y;
+    float reprojectionErrorX1 = projectedPoint1(0) - keypoint1_in.pt.x;
+    float reprojectionErrorY1 = projectedPoint1(1) - keypoint1_in.pt.y;
 
-    if ((errX1 * errX1 + errY1 * errY1) > 5.991 * sigmaLevel_in)
+    if ((reprojectionErrorX1 * reprojectionErrorX1 +
+         reprojectionErrorY1 * reprojectionErrorY1) > 5.991 * sigmaLevel_in)
     { // Reprojection error is high
         return -4;
     }
 
-    Eigen::Vector3f x3D2 = R21 * x3D + pose2_in.col(3);
-    Eigen::Vector2f uv2  = p_otherCamera_in->project(x3D2);
+    Eigen::Vector3f pointInCamera2 =
+        R21 * triangulatedPoint3D + projectionMatrix2.col(3);
+    Eigen::Vector2f projectedPoint2 =
+        p_otherCamera_inout->project(pointInCamera2);
 
-    float errX2 = uv2(0) - keypoint2_in.pt.x;
-    float errY2 = uv2(1) - keypoint2_in.pt.y;
+    float reprojectionErrorX2 = projectedPoint2(0) - keypoint2_in.pt.x;
+    float reprojectionErrorY2 = projectedPoint2(1) - keypoint2_in.pt.y;
 
-    if ((errX2 * errX2 + errY2 * errY2) > 5.991 * uncertainty_in)
+    if ((reprojectionErrorX2 * reprojectionErrorX2 +
+         reprojectionErrorY2 * reprojectionErrorY2) > 5.991 * uncertainty_in)
     { // Reprojection error is high
         return -5;
     }
 
-    point3D_out = x3D;
+    point3d_out = triangulatedPoint3D;
 
-    return z1;
+    return cameraDepth1;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

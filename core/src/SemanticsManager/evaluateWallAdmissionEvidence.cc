@@ -78,10 +78,10 @@ WallAdmissionEvidence
         return evidence;
     }
 
-    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud =
+    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_supportCloud =
         geometry.supportCloud;
 
-    if (p_cloud == nullptr)
+    if (p_supportCloud == nullptr)
     {
         return evidence;
     }
@@ -125,7 +125,7 @@ WallAdmissionEvidence
     double minimumV_m = std::numeric_limits<double>::infinity();
     double maximumV_m = -std::numeric_limits<double>::infinity();
 
-    for (const pcl::PointXYZRGBA &point : p_cloud->points)
+    for (const pcl::PointXYZRGBA &point : p_supportCloud->points)
     {
         if (!pcl::isFinite(point))
         {
@@ -165,7 +165,7 @@ WallAdmissionEvidence
                   static_cast<double>(evidence.finitePointCount)
             : 0.0;
 
-    evidence.adequateFiniteFit =
+    evidence.hasAdequateFiniteFit =
         evidence.fittedPointCount >= 20U &&
         fitSupportRatio >= p_systemParams_in->roomSeg.minimumWallSupportRatio &&
         std::isfinite(majorExtent_m) && std::isfinite(minorExtent_m) &&
@@ -181,7 +181,7 @@ WallAdmissionEvidence
                   wallCreation.connectivity.minimumComponentPointCount)
             : wallCreation.minimumPointCount;
     const bool strongFirstObservationEvidence =
-        evidence.adequateFiniteFit &&
+        evidence.hasAdequateFiniteFit &&
         evidence.fittedPointCount >= strongObservationPointCount;
     const bool repeatedObservationEvidence =
         evidence.observationCount >=
@@ -193,8 +193,8 @@ WallAdmissionEvidence
         p_wall_in->getExpectedPlaneType() ==
             geometric::Plane::PlaneVariant::WALL;
 
-    evidence.admissible =
-        wallDominatesSemantics && evidence.adequateFiniteFit &&
+    evidence.isAdmissible =
+        wallDominatesSemantics && evidence.hasAdequateFiniteFit &&
         (repeatedObservationEvidence || strongFirstObservationEvidence);
     return evidence;
 }

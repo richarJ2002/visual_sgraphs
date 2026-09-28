@@ -58,7 +58,7 @@ KeyFrame::KeyFrame() :
     placeRecognitionQuery(0),
     placeRecognitionWords(0),
     placeRecognitionScore(0),
-    currentPlaceRecognition(false),
+    isInCurrentPlaceRecognition(false),
     baGlobalKeyFrameId(0),
     mergeCorrectedKeyFrameId(0),
     baLocalMergeId(0),
@@ -71,7 +71,7 @@ KeyFrame::KeyFrame() :
     mbf(0),
     mb(0),
     depthThreshold(0),
-    N(0),
+    keyPointCount(0),
     keyPoints(),
     keyPointsUndistorted(),
     uRight(),
@@ -88,15 +88,15 @@ KeyFrame::KeyFrame() :
     gridMaxY(0),
     p_prevKF(static_cast<KeyFrame *>(nullptr)),
     p_nextKF(static_cast<KeyFrame *>(nullptr)),
-    velocityAvailable(false),
-    firstConnection(true),
+    isVelocityAvailable(false),
+    isFirstConnection(true),
     p_parent(nullptr),
-    notErase(false),
-    toBeErased(false),
-    mbBad(false),
+    isEraseProtected(false),
+    isPendingErase(false),
+    isFlaggedBad(false),
     halfBaseline(0),
-    Nleft(0),
-    Nright(0)
+    leftKeyPointCount(0),
+    rightKeyPointCount(0)
 {}
 
 } // namespace core

@@ -30,47 +30,70 @@
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
 Eigen::Matrix<double, 2, 3>
-    KannalaBrandt8::computeProjectionJacobian(const Eigen::Vector3d &point3D_in)
+    KannalaBrandt8::computeProjectionJacobian(const Eigen::Vector3d &point3d_in)
 {
     /* Declare loval variables */
-    double x2    = point3D_in[0] * point3D_in[0];
-    double y2    = point3D_in[1] * point3D_in[1];
-    double z2    = point3D_in[2] * point3D_in[2];
-    double r2    = x2 + y2;
-    double r     = sqrt(r2);
-    double r3    = r2 * r;
-    double theta = atan2(r, point3D_in[2]);
+    double pointXSquared       = point3d_in[0] * point3d_in[0];
+    double pointYSquared       = point3d_in[1] * point3d_in[1];
+    double pointZSquared       = point3d_in[2] * point3d_in[2];
+    double planarRadiusSquared = pointXSquared + pointYSquared;
+    double planarRadius        = sqrt(planarRadiusSquared);
+    double planarRadiusCubed   = planarRadiusSquared * planarRadius;
+    double incidenceAngle      = atan2(planarRadius, point3d_in[2]);
 
-    double theta2 = theta * theta;
-    double theta3 = theta2 * theta;
-    double theta4 = theta2 * theta2;
-    double theta5 = theta4 * theta;
-    double theta6 = theta2 * theta4;
-    double theta7 = theta6 * theta;
-    double theta8 = theta4 * theta4;
-    double theta9 = theta8 * theta;
+    double incidenceAngleSquared = incidenceAngle * incidenceAngle;
+    double incidenceAngleCubed   = incidenceAngleSquared * incidenceAngle;
+    double incidenceAnglePow4 = incidenceAngleSquared * incidenceAngleSquared;
+    double incidenceAnglePow5 = incidenceAnglePow4 * incidenceAngle;
+    double incidenceAnglePow6 = incidenceAngleSquared * incidenceAnglePow4;
+    double incidenceAnglePow7 = incidenceAnglePow6 * incidenceAngle;
+    double incidenceAnglePow8 = incidenceAnglePow4 * incidenceAnglePow4;
+    double incidenceAnglePow9 = incidenceAnglePow8 * incidenceAngle;
 
-    double f = theta + theta3 * parameters[4] + theta5 * parameters[5] +
-               theta7 * parameters[6] + theta9 * parameters[7];
-    double fd = 1 + 3 * parameters[4] * theta2 + 5 * parameters[5] * theta4 +
-                7 * parameters[6] * theta6 + 9 * parameters[7] * theta8;
+    double distortedIncidenceAngle =
+        incidenceAngle + incidenceAngleCubed * parameters[4] +
+        incidenceAnglePow5 * parameters[5] +
+        incidenceAnglePow7 * parameters[6] + incidenceAnglePow9 * parameters[7];
+    double distortedIncidenceAngleDerivative =
+        1 + 3 * parameters[4] * incidenceAngleSquared +
+        5 * parameters[5] * incidenceAnglePow4 +
+        7 * parameters[6] * incidenceAnglePow6 +
+        9 * parameters[7] * incidenceAnglePow8;
 
-    Eigen::Matrix<double, 2, 3> JacGood;
-    JacGood(0, 0) = parameters[0] *
-                    (fd * point3D_in[2] * x2 / (r2 * (r2 + z2)) + f * y2 / r3);
-    JacGood(1, 0) = parameters[1] * (fd * point3D_in[2] * point3D_in[1] *
-                                         point3D_in[0] / (r2 * (r2 + z2)) -
-                                     f * point3D_in[1] * point3D_in[0] / r3);
+    Eigen::Matrix<double, 2, 3> projectionJacobian;
+    projectionJacobian(0, 0) =
+        parameters[0] *
+        (distortedIncidenceAngleDerivative * point3d_in[2] * pointXSquared /
+             (planarRadiusSquared * (planarRadiusSquared + pointZSquared)) +
+         distortedIncidenceAngle * pointYSquared / planarRadiusCubed);
+    projectionJacobian(1, 0) =
+        parameters[1] *
+        (distortedIncidenceAngleDerivative * point3d_in[2] * point3d_in[1] *
+             point3d_in[0] /
+             (planarRadiusSquared * (planarRadiusSquared + pointZSquared)) -
+         distortedIncidenceAngle * point3d_in[1] * point3d_in[0] /
+             planarRadiusCubed);
 
-    JacGood(0, 1) = parameters[0] * (fd * point3D_in[2] * point3D_in[1] *
-                                         point3D_in[0] / (r2 * (r2 + z2)) -
-                                     f * point3D_in[1] * point3D_in[0] / r3);
-    JacGood(1, 1) = parameters[1] *
-                    (fd * point3D_in[2] * y2 / (r2 * (r2 + z2)) + f * x2 / r3);
+    projectionJacobian(0, 1) =
+        parameters[0] *
+        (distortedIncidenceAngleDerivative * point3d_in[2] * point3d_in[1] *
+             point3d_in[0] /
+             (planarRadiusSquared * (planarRadiusSquared + pointZSquared)) -
+         distortedIncidenceAngle * point3d_in[1] * point3d_in[0] /
+             planarRadiusCubed);
+    projectionJacobian(1, 1) =
+        parameters[1] *
+        (distortedIncidenceAngleDerivative * point3d_in[2] * pointYSquared /
+             (planarRadiusSquared * (planarRadiusSquared + pointZSquared)) +
+         distortedIncidenceAngle * pointXSquared / planarRadiusCubed);
 
-    JacGood(0, 2) = -parameters[0] * fd * point3D_in[0] / (r2 + z2);
-    JacGood(1, 2) = -parameters[1] * fd * point3D_in[1] / (r2 + z2);
+    projectionJacobian(0, 2) =
+        -parameters[0] * distortedIncidenceAngleDerivative * point3d_in[0] /
+        (planarRadiusSquared + pointZSquared);
+    projectionJacobian(1, 2) =
+        -parameters[1] * distortedIncidenceAngleDerivative * point3d_in[1] /
+        (planarRadiusSquared + pointZSquared);
 
-    return JacGood;
+    return projectionJacobian;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

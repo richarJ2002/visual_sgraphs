@@ -30,9 +30,9 @@ namespace vs_graphs
 namespace core
 {
 
-bool System::saveMap(const string &filename)
+bool System::saveMap(const string &filename_in)
 {
-    saveAtlasFile = filename;
+    saveAtlasFile = filename_in;
     if (!saveAtlasFile.empty())
     {
         Verbose::printMess("Atlas saving to file " + saveAtlasFile,

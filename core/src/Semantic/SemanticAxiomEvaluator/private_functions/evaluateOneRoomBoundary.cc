@@ -113,9 +113,10 @@ void evaluateOneRoomBoundary(const RoomRecord            &room_in,
 
     std::size_t validWallEvidenceCount = 0U;
     bool        anyInvalidWallEvidence = false;
-    for (const RawPlaneRef &wallRef : room_in.wallRefs)
+    for (const RawPlaneRef &wallReference : room_in.wallRefs)
     {
-        switch (isValidBoundaryWallEvidence(wallRef, room_in, snapshot_in))
+        switch (
+            isValidBoundaryWallEvidence(wallReference, room_in, snapshot_in))
         {
         case RoomBoundaryWallEvidenceStatus::VALID:
             ++validWallEvidenceCount;

@@ -34,8 +34,8 @@ namespace core
 
 bool LoopClosing::checkNewKeyFrames()
 {
-    unique_lock<mutex> lock(mMutexLoopQueue);
-    return (!mlpLoopKeyFrameQueue.empty());
+    unique_lock<mutex> lock(loopQueueMutex);
+    return (!loopKeyFrameQueue.empty());
 }
 
 } // namespace core

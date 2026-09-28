@@ -25,18 +25,18 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::updatePassages(vs_graphs::core::Atlas *pAtlas)
+void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
 {
     // Get the ground plane
-    vs_graphs::core::geometric::Plane *groundPlane =
-        pAtlas->getBiggestGroundPlane();
-    if (groundPlane == nullptr)
+    vs_graphs::core::geometric::Plane *p_groundPlane =
+        p_atlas_in->getBiggestGroundPlane();
+    if (p_groundPlane == nullptr)
         return;
 
     // Get all passages and update their global pose to be consistent with the
     // ground plane
     std::vector<vs_graphs::core::semantic::Passage *> allPassages =
-        pAtlas->getAllPassages();
+        p_atlas_in->getAllPassages();
 
     for (const auto &passage : allPassages)
     {
@@ -47,14 +47,14 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *pAtlas)
 
         // Updating the dimensions of the passage based on the associated door
         // plane
-        vs_graphs::core::geometric::Plane *doorPlane =
+        vs_graphs::core::geometric::Plane *p_doorPlane =
             passage->getAssociateDoor();
 
         // Blocked passages (closed doors) should be aligned with the ground
         // plane normal
         if (!passage->isPassable())
         {
-            if (doorPlane == nullptr)
+            if (p_doorPlane == nullptr)
             {
                 continue;
             }
@@ -62,43 +62,44 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *pAtlas)
             /* Extract width height supple of door */
             std::pair<double, double> widthHeight =
                 utils::utils::Utils::computePlaneWidthHeight(
-                    doorPlane->getGeometrySnapshot().supportCloud);
+                    p_doorPlane->getGeometrySnapshot().supportCloud);
 
             /* Extract the measured height and width */
             const double measuredWidth  = widthHeight.first;
             const double measuredHeight = widthHeight.second;
 
             /* Extract the max width */
-            const double maxWidth =
+            const double maximumWidth =
                 static_cast<double>(p_sysParams->semSeg.maxDoorWidth);
 
             /* Extract the max height */
-            const double maxHeight =
+            const double maximumHeight =
                 static_cast<double>(p_sysParams->semSeg.maxDoorHeight);
 
             /* Determine if dimensions are valid */
             const bool validDimensions =
                 std::isfinite(measuredWidth) && std::isfinite(measuredHeight) &&
                 measuredWidth > 0.0 && measuredHeight > 0.0 &&
-                measuredWidth <= maxWidth && measuredHeight <= maxHeight;
+                measuredWidth <= maximumWidth &&
+                measuredHeight <= maximumHeight;
 
             if (!validDimensions)
             {
                 std::cout << "[SemanticsManager] Rejecting door plane "
-                          << doorPlane->getId() << " for passage "
+                          << p_doorPlane->getId() << " for passage "
                           << passage->getId() << ": measured dimensions "
                           << measuredWidth << "x" << measuredHeight
-                          << " m exceed limits " << maxWidth << "x" << maxHeight
-                          << " m." << std::endl;
+                          << " m exceed limits " << maximumWidth << "x"
+                          << maximumHeight << " m." << std::endl;
 
                 continue;
             }
 
             /* Set centroid of the door plane */
-            passage->setCentroid(doorPlane->getCentroid());
+            passage->setCentroid(p_doorPlane->getCentroid());
 
             /* Get the plane global equation */
-            passage->setGlobalEquation(doorPlane->getGlobalEquation());
+            passage->setGlobalEquation(p_doorPlane->getGlobalEquation());
 
             /* Set width & height of the passage */
             passage->setWidth(measuredWidth);
@@ -208,7 +209,7 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *pAtlas)
                 passagePlane.setGlobalEquation(g2o::Plane3D(midPlaneEquation));
 
                 if (utils::utils::Utils::arePlanesPerpendicular(&passagePlane,
-                                                                groundPlane))
+                                                                p_groundPlane))
                 {
                     passage->setGlobalEquation(g2o::Plane3D(midPlaneEquation));
                 }
@@ -254,12 +255,12 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *pAtlas)
             vs_graphs::core::geometric::Plane passagePlane;
             passagePlane.setGlobalEquation(passage->getGlobalEquation());
             if (!utils::utils::Utils::arePlanesPerpendicular(&passagePlane,
-                                                             groundPlane))
+                                                             p_groundPlane))
             {
                 // Project the passage normal onto the horizontal plane to
                 // remove tilt
                 const Eigen::Vector3d groundNormal =
-                    groundPlane->getGlobalEquation()
+                    p_groundPlane->getGlobalEquation()
                         .coeffs()
                         .head<3>()
                         .normalized();

@@ -24,9 +24,11 @@ namespace core
 namespace IMU
 {
 
-Eigen::Matrix3f RightJacobianSO3(const Eigen::Vector3f &v)
+Eigen::Matrix3f rightJacobianSO3(const Eigen::Vector3f &rotationVector_in)
 {
-    return RightJacobianSO3(v(0), v(1), v(2));
+    return rightJacobianSO3(rotationVector_in(0),
+                            rotationVector_in(1),
+                            rotationVector_in(2));
 }
 
 } // namespace IMU

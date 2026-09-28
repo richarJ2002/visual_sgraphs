@@ -80,7 +80,7 @@ nlohmann::json
     json["fullyValidPassageCount"] = value_in.fullyValidPassageCount;
     json["legacy"] = serializeLegacyMapCompletenessResult(value_in.legacy);
     json["legacyAndConservativeDiverge"] =
-        value_in.legacyAndConservativeDiverge;
+        value_in.doLegacyAndConservativeDiverge;
 
     return json;
 }

@@ -32,8 +32,8 @@ namespace core
 
 bool Atlas::peekNewMapCreatedEvent() const
 {
-    std::lock_guard<std::mutex> contextLock(mRoomContextMutex);
-    return newMapCreatedPending_;
+    std::lock_guard<std::mutex> contextLock(roomContextMutex);
+    return isNewMapCreatedPending;
 }
 
 } // namespace core

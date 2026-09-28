@@ -34,8 +34,8 @@ namespace core
 
 bool LocalMapping::isAcceptingKeyFrames()
 {
-    unique_lock<mutex> lock(mMutexAccept);
-    return acceptKeyFrames;
+    unique_lock<mutex> acceptLock(acceptMutex);
+    return shouldAcceptKeyFrames;
 }
 
 } // namespace core

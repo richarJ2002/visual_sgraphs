@@ -34,10 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-void MapPoint::updateMap(Map *pMap)
+void MapPoint::updateMap(Map *p_map_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    p_map = pMap;
+    unique_lock<mutex> lock(mapMutex);
+    p_map = p_map_in;
 }
 
 } // namespace core

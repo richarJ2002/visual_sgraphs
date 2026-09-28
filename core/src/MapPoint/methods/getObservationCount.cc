@@ -36,7 +36,7 @@ namespace core
 
 int MapPoint::getObservationCount()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return observationCount;
 }
 

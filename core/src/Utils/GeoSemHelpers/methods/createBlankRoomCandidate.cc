@@ -28,7 +28,7 @@ namespace core
 
 vs_graphs::core::semantic::Room *GeoSemHelpers::createBlankRoomCandidate(
     vs_graphs::core::Atlas *p_atlas_inout,
-    Eigen::Vector3d         centroid,
+    Eigen::Vector3d         centroid_in,
     std::optional<int>      stableRoomId_in)
 {
     /* Confirm that the p_atlas_inout is valid */
@@ -103,7 +103,7 @@ vs_graphs::core::semantic::Room *GeoSemHelpers::createBlankRoomCandidate(
     p_atlas_inout->observeRoomIdentity(roomId);
 
     /* Create new room */
-    vs_graphs::core::semantic::Room *newRoom =
+    vs_graphs::core::semantic::Room *p_newRoom =
         new vs_graphs::core::semantic::Room();
 
     /*!
@@ -112,20 +112,20 @@ vs_graphs::core::semantic::Room *GeoSemHelpers::createBlankRoomCandidate(
      *      p_atlas_inout->AddCandidateMapRoom(newRoom);
      */
 
-    newRoom->setId(roomId);
-    newRoom->setCentroid(centroid);
-    newRoom->setMap(p_atlas_inout->getCurrentMap());
+    p_newRoom->setId(roomId);
+    p_newRoom->setCentroid(centroid_in);
+    p_newRoom->setMap(p_atlas_inout->getCurrentMap());
 
-    newRoom->setName("SE#" + std::to_string(roomId));
+    p_newRoom->setName("SE#" + std::to_string(roomId));
 
-    newRoom->setRoomVariant(
+    p_newRoom->setRoomVariant(
         vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED);
 
-    std::cout << "[GeoSemHelper] Created provisional SE#" << newRoom->getId()
-              << " at " << newRoom->getCentroid().transpose() << "."
+    std::cout << "[GeoSemHelper] Created provisional SE#" << p_newRoom->getId()
+              << " at " << p_newRoom->getCentroid().transpose() << "."
               << std::endl;
 
-    return newRoom;
+    return p_newRoom;
 }
 
 } // namespace core

@@ -32,31 +32,33 @@ namespace core
 
 void EdgeSE3ProjectXYZ::linearizeOplus()
 {
-    g2o::VertexSE3Expmap *vj =
+    g2o::VertexSE3Expmap *p_poseVertex =
         static_cast<g2o::VertexSE3Expmap *>(_vertices[1]);
-    g2o::SE3Quat            T(vj->estimate());
-    g2o::VertexSBAPointXYZ *vi =
+    g2o::SE3Quat            poseTransform(p_poseVertex->estimate());
+    g2o::VertexSBAPointXYZ *p_pointVertex =
         static_cast<g2o::VertexSBAPointXYZ *>(_vertices[0]);
-    Eigen::Vector3d xyz       = vi->estimate();
-    Eigen::Vector3d xyz_trans = T.map(xyz);
+    Eigen::Vector3d pointPosition            = p_pointVertex->estimate();
+    Eigen::Vector3d transformedPointPosition = poseTransform.map(pointPosition);
 
-    double x = xyz_trans[0];
-    double y = xyz_trans[1];
-    double z = xyz_trans[2];
+    double transformedX = transformedPointPosition[0];
+    double transformedY = transformedPointPosition[1];
+    double transformedZ = transformedPointPosition[2];
 
     // Materialize eagerly: computeProjectionJacobian() returns by value,
     // so `auto` would capture a lazy expression referencing a dead
     // temporary (stack-use-after-scope under vectorized evaluation).
     const Eigen::Matrix<double, 2, 3> projectionJacobian =
-        -pCamera->computeProjectionJacobian(xyz_trans);
+        -p_camera->computeProjectionJacobian(transformedPointPosition);
 
-    _jacobianOplusXi = projectionJacobian * T.rotation().toRotationMatrix();
+    _jacobianOplusXi =
+        projectionJacobian * poseTransform.rotation().toRotationMatrix();
 
-    Eigen::Matrix<double, 3, 6> SE3deriv;
-    SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f, -z, 0.f, x, 0.f, 1.f, 0.f, y, -x,
-        0.f, 0.f, 0.f, 1.f;
+    Eigen::Matrix<double, 3, 6> se3Derivative;
+    se3Derivative << 0.f, transformedZ, -transformedY, 1.f, 0.f, 0.f,
+        -transformedZ, 0.f, transformedX, 0.f, 1.f, 0.f, transformedY,
+        -transformedX, 0.f, 0.f, 0.f, 1.f;
 
-    _jacobianOplusXj = projectionJacobian * SE3deriv;
+    _jacobianOplusXj = projectionJacobian * se3Derivative;
 }
 
 } // namespace core

@@ -37,7 +37,7 @@ namespace core
 
 set<KeyFrame *> KeyFrame::getConnectedKeyFrames()
 {
-    unique_lock<mutex> lock(mMutexConnections);
+    unique_lock<mutex> lock(connectionsMutex);
     set<KeyFrame *>    s;
     for (map<KeyFrame *, int>::iterator mit = connectedKeyFrameWeights.begin();
          mit != connectedKeyFrameWeights.end();

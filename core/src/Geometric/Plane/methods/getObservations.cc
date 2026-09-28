@@ -35,7 +35,7 @@ namespace geometric
 std::map<core::KeyFrame *, Plane::Observation>
     Plane::getObservations(void) const
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return observations;
 }
 

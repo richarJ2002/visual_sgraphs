@@ -32,7 +32,7 @@ namespace semantic
 
 std::vector<VerifyWallObservation> SemanticVerify::collectWallObservations(
     const Room                 *p_room_in,
-    const SemanticVerifyConfig &config_in)
+    const SemanticVerifyConfig &configuration_in)
 {
     std::vector<VerifyWallObservation> observations;
     if (p_room_in == nullptr)
@@ -48,7 +48,7 @@ std::vector<VerifyWallObservation> SemanticVerify::collectWallObservations(
 
     for (geometric::Plane *p_wall : p_room_in->getWalls())
     {
-        if (observations.size() == config_in.maxWallsPerRoom)
+        if (observations.size() == configuration_in.maxWallsPerRoom)
         {
             break;
         }
@@ -101,10 +101,10 @@ std::vector<VerifyWallObservation> SemanticVerify::collectWallObservations(
             const std::size_t total  = snapshot.supportCloud->size();
             const std::size_t stride = std::max<std::size_t>(
                 1U,
-                total / config_in.maxSupportSamplePerWall);
+                total / configuration_in.maxSupportSamplePerWall);
             for (std::size_t index = 0U;
                  index < total && observation.supportSample_World.size() <
-                                      config_in.maxSupportSamplePerWall;
+                                      configuration_in.maxSupportSamplePerWall;
                  index += stride)
             {
                 const auto &point = snapshot.supportCloud->points[index];

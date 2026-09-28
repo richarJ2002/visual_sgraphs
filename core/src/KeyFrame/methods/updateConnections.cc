@@ -35,15 +35,15 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::updateConnections(bool upParent)
+void KeyFrame::updateConnections(bool upParent_in)
 {
-    map<KeyFrame *, int> KFcounter;
+    map<KeyFrame *, int> keyFrameCounter;
 
-    vector<MapPoint *> vpMP;
+    vector<MapPoint *> keyFrameMapPoints;
 
     {
-        unique_lock<mutex> lockMPs(mMutexFeatures);
-        vpMP = mapPoints;
+        unique_lock<mutex> lockMapPoints(featuresMutex);
+        keyFrameMapPoints = mapPoints;
     }
 
     // for all plane observations in the keyframe check in which other keyframes
@@ -57,13 +57,13 @@ void KeyFrame::updateConnections(bool upParent)
              vit != vend;
              vit++)
         {
-            geometric::Plane *pPlane = *vit;
+            geometric::Plane *p_plane = *vit;
 
-            if (!pPlane)
+            if (!p_plane)
                 continue;
 
             map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
-                observations = pPlane->getObservations();
+                observations = p_plane->getObservations();
 
             for (map<KeyFrame *,
                      vs_graphs::core::geometric::Plane::Observation>::iterator
@@ -72,36 +72,38 @@ void KeyFrame::updateConnections(bool upParent)
                  mit != mend;
                  mit++)
             {
-                if (mit->first->mnId == mnId || mit->first->isBad() ||
+                if (mit->first->id == id || mit->first->isBad() ||
                     mit->first->getMap() != p_map)
                     continue;
 
-                if (pPlane->getPlaneType() ==
+                if (p_plane->getPlaneType() ==
                     geometric::Plane::PlaneVariant::UNDEFINED)
-                    KFcounter[mit->first] += static_cast<int>(
+                    keyFrameCounter[mit->first] += static_cast<int>(
                         scorePerPlane *
                         0.2); // undefined planes have less weight
                 else
-                    KFcounter[mit->first] += scorePerPlane;
+                    keyFrameCounter[mit->first] += scorePerPlane;
             }
         }
     }
 
     // For all map points in keyframe check in which other keyframes are they
     // seen Increase counter for those keyframes
-    for (vector<MapPoint *>::iterator vit = vpMP.begin(), vend = vpMP.end();
+    for (vector<MapPoint *>::iterator vit  = keyFrameMapPoints.begin(),
+                                      vend = keyFrameMapPoints.end();
          vit != vend;
          vit++)
     {
-        MapPoint *pMP = *vit;
+        MapPoint *p_mapPoint = *vit;
 
-        if (!pMP)
+        if (!p_mapPoint)
             continue;
 
-        if (pMP->isBad())
+        if (p_mapPoint->isBad())
             continue;
 
-        map<KeyFrame *, tuple<int, int>> observations = pMP->getObservations();
+        map<KeyFrame *, tuple<int, int>> observations =
+            p_mapPoint->getObservations();
 
         for (map<KeyFrame *, tuple<int, int>>::iterator
                  mit  = observations.begin(),
@@ -109,76 +111,76 @@ void KeyFrame::updateConnections(bool upParent)
              mit != mend;
              mit++)
         {
-            if (mit->first->mnId == mnId || mit->first->isBad() ||
+            if (mit->first->id == id || mit->first->isBad() ||
                 mit->first->getMap() != p_map)
                 continue;
-            KFcounter[mit->first]++;
+            keyFrameCounter[mit->first]++;
         }
     }
 
     // This should not happen
-    if (KFcounter.empty())
+    if (keyFrameCounter.empty())
         return;
 
     // If the counter is greater than threshold add connection
     // In case no keyframe counter is over threshold add the one with maximum
     // counter
-    int       nmax   = 0;
-    KeyFrame *pKFmax = nullptr;
-    int       th     = 15;
+    int       nmax              = 0;
+    KeyFrame *p_keyFrameMaximum = nullptr;
+    int       threshold         = 15;
 
-    vector<pair<int, KeyFrame *>> vPairs;
-    vPairs.reserve(KFcounter.size());
-    if (!upParent)
-        cout << "UPDATE_CONN: current KF " << mnId << endl;
-    for (map<KeyFrame *, int>::iterator mit  = KFcounter.begin(),
-                                        mend = KFcounter.end();
+    vector<pair<int, KeyFrame *>> pairs;
+    pairs.reserve(keyFrameCounter.size());
+    if (!upParent_in)
+        cout << "UPDATE_CONN: current KF " << id << endl;
+    for (map<KeyFrame *, int>::iterator mit  = keyFrameCounter.begin(),
+                                        mend = keyFrameCounter.end();
          mit != mend;
          mit++)
     {
-        if (!upParent)
-            cout << "  UPDATE_CONN: KF " << mit->first->mnId
+        if (!upParent_in)
+            cout << "  UPDATE_CONN: KF " << mit->first->id
                  << " ; num matches: " << mit->second << endl;
         if (mit->second > nmax)
         {
-            nmax   = mit->second;
-            pKFmax = mit->first;
+            nmax              = mit->second;
+            p_keyFrameMaximum = mit->first;
         }
-        if (mit->second >= th)
+        if (mit->second >= threshold)
         {
-            vPairs.push_back(make_pair(mit->second, mit->first));
+            pairs.push_back(make_pair(mit->second, mit->first));
             (mit->first)->addConnection(this, mit->second);
         }
     }
 
-    if (vPairs.empty())
+    if (pairs.empty())
     {
-        vPairs.push_back(make_pair(nmax, pKFmax));
-        pKFmax->addConnection(this, nmax);
+        pairs.push_back(make_pair(nmax, p_keyFrameMaximum));
+        p_keyFrameMaximum->addConnection(this, nmax);
     }
 
-    sort(vPairs.begin(), vPairs.end());
-    list<KeyFrame *> lKFs;
-    list<int>        lWs;
-    for (size_t i = 0; i < vPairs.size(); i++)
+    sort(pairs.begin(), pairs.end());
+    list<KeyFrame *> keyFrames;
+    list<int>        weights;
+    for (size_t pairIndex = 0; pairIndex < pairs.size(); pairIndex++)
     {
-        lKFs.push_front(vPairs[i].second);
-        lWs.push_front(vPairs[i].first);
+        keyFrames.push_front(pairs[pairIndex].second);
+        weights.push_front(pairs[pairIndex].first);
     }
 
     {
-        unique_lock<mutex> lockCon(mMutexConnections);
+        unique_lock<mutex> lockCon(connectionsMutex);
 
-        connectedKeyFrameWeights = KFcounter;
+        connectedKeyFrameWeights = keyFrameCounter;
         orderedConnectedKeyFrames =
-            vector<KeyFrame *>(lKFs.begin(), lKFs.end());
-        orderedWeights = vector<int>(lWs.begin(), lWs.end());
+            vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
+        orderedWeights = vector<int>(weights.begin(), weights.end());
 
-        if (firstConnection && mnId != p_map->getInitKeyFrameId())
+        if (isFirstConnection && id != p_map->getInitKeyFrameId())
         {
             p_parent = orderedConnectedKeyFrames.front();
             p_parent->addChild(this);
-            firstConnection = false;
+            isFirstConnection = false;
         }
     }
 }

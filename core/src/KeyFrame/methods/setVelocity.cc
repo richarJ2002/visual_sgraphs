@@ -35,11 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::setVelocity(const Eigen::Vector3f &Vw)
+void KeyFrame::setVelocity(const Eigen::Vector3f &Vw_in)
 {
-    unique_lock<mutex> lock(mMutexPose);
-    velocityVw        = Vw;
-    velocityAvailable = true;
+    unique_lock<mutex> lock(poseMutex);
+    velocityVw          = Vw_in;
+    isVelocityAvailable = true;
 }
 
 } // namespace core

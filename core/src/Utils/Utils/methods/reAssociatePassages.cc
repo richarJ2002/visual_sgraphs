@@ -39,14 +39,14 @@ namespace utils
 namespace utils
 {
 
-void Utils::reAssociatePassages(Atlas *p_atlas_inout)
+void Utils::reAssociatePassages(Atlas *p_atlas_in)
 {
-    if (p_atlas_inout == nullptr)
+    if (p_atlas_in == nullptr)
     {
         return;
     }
 
-    Map *p_activeMap = p_atlas_inout->getCurrentMap();
+    Map *p_activeMap = p_atlas_in->getCurrentMap();
 
     if (p_activeMap == nullptr)
     {

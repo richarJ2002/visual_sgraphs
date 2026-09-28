@@ -30,7 +30,7 @@ namespace semantic
 void Room::setPreviouslyVisited(const bool visited_in)
 {
     std::lock_guard<std::mutex> lock(stateMutex);
-    previouslyVisited = visited_in;
+    wasPreviouslyVisited = visited_in;
 }
 
 } // namespace semantic

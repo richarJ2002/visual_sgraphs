@@ -152,7 +152,7 @@ enum class VerifyRejectReason
 struct SemanticVerifyResult
 {
     VerificationStatus status{VerificationStatus::UNAVAILABLE};
-    bool               pass{false};
+    bool               hasPassed{false};
 
     /*! Maps room-A-frame points into room B's frame: x_B = R x_A + t. */
     Eigen::Isometry3d transform_AToB{Eigen::Isometry3d::Identity()};
@@ -178,8 +178,8 @@ struct SemanticVerifyResult
      *  topInlierCount. */
     std::size_t        runnerUpInlierCount{0U};
 
-    bool floorGateRan{false};
-    bool floorGatePassed{false};
+    bool hasFloorGateRun{false};
+    bool hasFloorGatePassed{false};
     std::string
         floorGateResult; // "ACCEPTED"/"REJECTED"/"DEFERRED"/"" (not run)
 
@@ -210,25 +210,25 @@ class SemanticVerify
      * bounded by config.maxWallsPerRoom / maxSupportSamplePerWall. */
     static std::vector<VerifyWallObservation>
         collectWallObservations(const Room                 *p_room_in,
-                                const SemanticVerifyConfig &config_in);
+                                const SemanticVerifyConfig &configuration_in);
 
     /*! Core verifier. Rooms are already resolved to wall observations by the
      * caller; no Atlas/Map lookups happen here. Deterministic: no locks
      * held, no randomness, stable hypothesis enumeration order. */
-    static SemanticVerifyResult
-        verify(const std::vector<VerifyWallObservation> &wallsA_in,
-               const std::vector<VerifyWallObservation> &wallsB_in,
-               const SemanticVerifyConfig &config_in = SemanticVerifyConfig());
+    static SemanticVerifyResult verify(
+        const std::vector<VerifyWallObservation> &wallsA_in,
+        const std::vector<VerifyWallObservation> &wallsB_in,
+        const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
 
     /*! Floor gate wrapper: caller supplies the live Maps (SemanticVerify
      * itself never looks up Atlas/Map state). Thin adapter over the shared
      * verifyLoopMergeFloors (LoopClosing.h) so both the legacy merge path and
      * this phase use the exact same floor-identity check. Writes its outcome
-     * onto result_inout's floorGateRan/floorGatePassed/floorGateResult
+     * onto result_inout's hasFloorGateRun/hasFloorGatePassed/floorGateResult
      * fields -- these are exactly what toVerificationVerdict() combines with
      * the geometric pass/fail, so calling this (instead of the standalone
      * verifyLoopMergeFloors) is what makes that combination correct: without
-     * it, floorGatePassed stays at its default false and
+     * it, hasFloorGatePassed stays at its default false and
      * toVerificationVerdict() reports a false negative even when both gates
      * genuinely passed. */
     static bool
@@ -245,7 +245,7 @@ class SemanticVerify
         const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
         const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
         const g2o::Sim3            &transform_absorbedToSurviving_in,
-        const SemanticVerifyConfig &config_in = SemanticVerifyConfig());
+        const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
 
     /*! Runs the complete floor and semantic gate against two live maps.
      * Caller must prevent concurrent semantic mutation for both maps. */
@@ -253,7 +253,7 @@ class SemanticVerify
         Map                        *p_survivingMap_in,
         Map                        *p_absorbedMap_in,
         const g2o::Sim3            &transform_absorbedToSurviving_in,
-        const SemanticVerifyConfig &config_in = SemanticVerifyConfig());
+        const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
 
     /*! Tolerances for consecutive-map (post-reset) merge validation. Sourced
      * from the mapMerge SystemParams section via
@@ -288,7 +288,8 @@ class SemanticVerify
         Map                  *p_survivingMap_in,
         Map                  *p_absorbedMap_in,
         const g2o::Sim3      &transform_absorbedToSurviving_in,
-        const MapMergeConfig &config_in = mapMergeConfigFromSystemParams());
+        const MapMergeConfig &configuration_in =
+            mapMergeConfigFromSystemParams());
 
     /*! Returns a stable parseable name for a merge decision. */
     static const char *mergeDecisionName(SemanticMergeDecision decision_in);

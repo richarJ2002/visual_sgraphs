@@ -37,8 +37,8 @@ namespace core
 
 bool KeyFrame::isBad()
 {
-    unique_lock<mutex> lock(mMutexConnections);
-    return mbBad;
+    unique_lock<mutex> lock(connectionsMutex);
+    return isFlaggedBad;
 }
 
 } // namespace core

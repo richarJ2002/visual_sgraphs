@@ -34,26 +34,30 @@ namespace core
 void Sim3Solver::checkInliers()
 {
     vector<Eigen::Vector2f> vP1im2, vP2im1;
-    project(points3Dc2, vP2im1, mT12i, pCamera1);
-    project(points3Dc1, vP1im2, mT21i, pCamera2);
+    project(points3Dc2, vP2im1, mT12i, p_firstCamera);
+    project(points3Dc1, vP1im2, mT21i, p_secondCamera);
 
     inlierCount = 0;
 
-    for (size_t i = 0; i < points1im1.size(); i++)
+    for (size_t points1im1Index = 0; points1im1Index < points1im1.size();
+         points1im1Index++)
     {
-        Eigen::Vector2f dist1 = points1im1[i] - vP2im1[i];
-        Eigen::Vector2f dist2 = vP1im2[i] - points2im2[i];
+        Eigen::Vector2f distance1 =
+            points1im1[points1im1Index] - vP2im1[points1im1Index];
+        Eigen::Vector2f distance2 =
+            vP1im2[points1im1Index] - points2im2[points1im1Index];
 
-        const float err1 = dist1.dot(dist1);
-        const float err2 = dist2.dot(dist2);
+        const float error1 = distance1.dot(distance1);
+        const float error2 = distance2.dot(distance2);
 
-        if (err1 < maxError1[i] && err2 < maxError2[i])
+        if (error1 < maxError1[points1im1Index] &&
+            error2 < maxError2[points1im1Index])
         {
-            inlierFlags[i] = true;
+            inlierFlags[points1im1Index] = true;
             inlierCount++;
         }
         else
-            inlierFlags[i] = false;
+            inlierFlags[points1im1Index] = false;
     }
 }
 

@@ -48,7 +48,7 @@ typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudOutlierRemoval(
         return p_cloud_in;
 
     // Create a container for the filtered p_cloud_in
-    typename pcl::PointCloud<PointT>::Ptr filteredCloud(
+    typename pcl::PointCloud<PointT>::Ptr p_filteredCloud(
         new pcl::PointCloud<PointT>);
 
     // Create the filtering object: StatisticalOutlierRemoval
@@ -56,14 +56,14 @@ typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudOutlierRemoval(
     outlierRemoval.setInputCloud(p_cloud_in);
     outlierRemoval.setMeanK(meanThreshold_in);
     outlierRemoval.setStddevMulThresh(stdDevThreshold_in);
-    outlierRemoval.filter(*filteredCloud);
+    outlierRemoval.filter(*p_filteredCloud);
 
-    filteredCloud->header = p_cloud_in->header;
-    filteredCloud->width  = filteredCloud->size();
-    filteredCloud->height = 1;
+    p_filteredCloud->header = p_cloud_in->header;
+    p_filteredCloud->width  = p_filteredCloud->size();
+    p_filteredCloud->height = 1;
 
     // Return the filtered p_cloud_in
-    return filteredCloud;
+    return p_filteredCloud;
 }
 template pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
     Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(

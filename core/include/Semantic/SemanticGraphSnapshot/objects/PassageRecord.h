@@ -80,7 +80,7 @@ struct PassageRecord
     double height_m{0.0};
 
     /*! @brief Passage::isPassable() at capture time. */
-    bool passable{false};
+    bool isPassable{false};
 
     /*! @brief One RawPlaneRef per non-null Passage::getAssociateWalls()
      *  entry, sorted deterministically by (mapId, planeId, planeType). See
@@ -94,7 +94,7 @@ struct PassageRecord
      *  set, the ordinary case. */
     RawPlaneRef associateDoorRef;
 
-    /*! @brief Passage::KnownSideProvenance::pRoom. reason ==
+    /*! @brief Passage::KnownSideProvenance::p_room. reason ==
      *  NULL_REFERENCE is the ordinary "no known-side room yet" case. */
     EntityRef knownSideRoomRef;
 

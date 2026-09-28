@@ -29,26 +29,28 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::erase(KeyFrame *pKF)
+void KeyFrameDatabase::erase(KeyFrame *p_keyFrame_in)
 {
-    unique_lock<mutex> lock(mMutex);
+    unique_lock<mutex> lock(databaseMutex);
 
     // Erase elements in the Inverse File for the entry
-    for (DBoW2::BowVector::const_iterator vit  = pKF->bowVector.begin(),
-                                          vend = pKF->bowVector.end();
-         vit != vend;
-         vit++)
+    for (DBoW2::BowVector::const_iterator
+             wordIt  = p_keyFrame_in->bowVector.begin(),
+             wordEnd = p_keyFrame_in->bowVector.end();
+         wordIt != wordEnd;
+         wordIt++)
     {
         // List of keyframes that share the word
-        list<KeyFrame *> &lKFs = invertedFile[vit->first];
+        list<KeyFrame *> &keyFramesForWord = invertedFile[wordIt->first];
 
-        for (list<KeyFrame *>::iterator lit = lKFs.begin(), lend = lKFs.end();
-             lit != lend;
-             lit++)
+        for (list<KeyFrame *>::iterator keyFrameIt  = keyFramesForWord.begin(),
+                                        keyFrameEnd = keyFramesForWord.end();
+             keyFrameIt != keyFrameEnd;
+             keyFrameIt++)
         {
-            if (pKF == *lit)
+            if (p_keyFrame_in == *keyFrameIt)
             {
-                lKFs.erase(lit);
+                keyFramesForWord.erase(keyFrameIt);
                 break;
             }
         }

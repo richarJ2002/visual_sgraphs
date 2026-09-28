@@ -24,25 +24,31 @@ namespace core
 namespace IMU
 {
 
-Eigen::Matrix3f
-    InverseRightJacobianSO3(const float &x, const float &y, const float &z)
+Eigen::Matrix3f inverseRightJacobianSO3(const float &angleAxisX_in,
+                                        const float &angleAxisY_in,
+                                        const float &angleAxisZ_in)
 {
-    Eigen::Matrix3f I;
-    I.setIdentity();
-    const float     d2 = x * x + y * y + z * z;
-    const float     d  = sqrt(d2);
-    Eigen::Vector3f v;
-    v << x, y, z;
-    Eigen::Matrix3f W = Sophus::SO3f::hat(v);
+    Eigen::Matrix3f identityMatrix;
+    identityMatrix.setIdentity();
+    const float rotationAngleSquared = angleAxisX_in * angleAxisX_in +
+                                       angleAxisY_in * angleAxisY_in +
+                                       angleAxisZ_in * angleAxisZ_in;
+    const float     rotationAngle = sqrt(rotationAngleSquared);
+    Eigen::Vector3f angleAxisVector;
+    angleAxisVector << angleAxisX_in, angleAxisY_in, angleAxisZ_in;
+    Eigen::Matrix3f skewSymmetricMatrix = Sophus::SO3f::hat(angleAxisVector);
 
-    if (d < eps)
+    if (rotationAngle < eps)
     {
-        return I;
+        return identityMatrix;
     }
     else
     {
-        return I + W / 2 +
-               W * W * (1.0f / d2 - (1.0f + cos(d)) / (2.0f * d * sin(d)));
+        return identityMatrix + skewSymmetricMatrix / 2 +
+               skewSymmetricMatrix * skewSymmetricMatrix *
+                   (1.0f / rotationAngleSquared -
+                    (1.0f + cos(rotationAngle)) /
+                        (2.0f * rotationAngle * sin(rotationAngle)));
     }
 }
 

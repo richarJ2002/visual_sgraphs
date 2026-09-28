@@ -34,34 +34,35 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::PreSave(
-    std::set<camera_models::geometriccamera::GeometricCamera *> &spCams)
+void Map::preSave(
+    std::set<camera_models::geometriccamera::GeometricCamera *> &cams_inout)
 {
-    int nMPWithoutObs = 0;
+    int mapPointWithoutObservationCount = 0;
 
-    std::set<MapPoint *> tmp_mspMapPoints1;
-    tmp_mspMapPoints1.insert(mapPoints.begin(), mapPoints.end());
+    std::set<MapPoint *> temporaryMspMapPoints1;
+    temporaryMspMapPoints1.insert(mapPoints.begin(), mapPoints.end());
 
-    for (MapPoint *pMPi : tmp_mspMapPoints1)
+    for (MapPoint *p_mapPoint : temporaryMspMapPoints1)
     {
-        if (!pMPi || pMPi->isBad())
+        if (!p_mapPoint || p_mapPoint->isBad())
             continue;
 
-        if (pMPi->getObservations().size() == 0)
+        if (p_mapPoint->getObservations().size() == 0)
         {
-            nMPWithoutObs++;
+            mapPointWithoutObservationCount++;
         }
         map<KeyFrame *, std::tuple<int, int>> observations =
-            pMPi->getObservations();
+            p_mapPoint->getObservations();
         for (map<KeyFrame *, std::tuple<int, int>>::iterator
-                 it  = observations.begin(),
-                 end = observations.end();
-             it != end;
-             ++it)
+                 observationIt = observations.begin(),
+                 end           = observations.end();
+             observationIt != end;
+             ++observationIt)
         {
-            if (it->first->getMap() != this || it->first->isBad())
+            if (observationIt->first->getMap() != this ||
+                observationIt->first->isBad())
             {
-                pMPi->eraseObservation(it->first);
+                p_mapPoint->eraseObservation(observationIt->first);
             }
         }
     }
@@ -69,47 +70,48 @@ void Map::PreSave(
     // Saves the id of KF origins
     backupKeyFrameOriginIds.clear();
     backupKeyFrameOriginIds.reserve(keyFrameOrigins.size());
-    for (int i = 0, numEl = keyFrameOrigins.size(); i < numEl; ++i)
+    for (int elIndex = 0, elCount = keyFrameOrigins.size(); elIndex < elCount;
+         ++elIndex)
     {
-        backupKeyFrameOriginIds.push_back(keyFrameOrigins[i]->mnId);
+        backupKeyFrameOriginIds.push_back(keyFrameOrigins[elIndex]->id);
     }
 
     // Backup of MapPoints
     backupMapPoints.clear();
 
-    std::set<MapPoint *> tmp_mspMapPoints2;
-    tmp_mspMapPoints2.insert(mapPoints.begin(), mapPoints.end());
+    std::set<MapPoint *> temporaryMspMapPoints2;
+    temporaryMspMapPoints2.insert(mapPoints.begin(), mapPoints.end());
 
-    for (MapPoint *pMPi : tmp_mspMapPoints2)
+    for (MapPoint *p_mapPoint : temporaryMspMapPoints2)
     {
-        if (!pMPi || pMPi->isBad())
+        if (!p_mapPoint || p_mapPoint->isBad())
             continue;
 
-        backupMapPoints.push_back(pMPi);
-        pMPi->PreSave(keyFrames, mapPoints);
+        backupMapPoints.push_back(p_mapPoint);
+        p_mapPoint->preSave(keyFrames, mapPoints);
     }
 
     // Backup of KeyFrames
     backupKeyFrames.clear();
-    for (KeyFrame *pKFi : keyFrames)
+    for (KeyFrame *p_keyFrame : keyFrames)
     {
-        if (!pKFi || pKFi->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
             continue;
 
-        backupKeyFrames.push_back(pKFi);
-        pKFi->PreSave(keyFrames, mapPoints, spCams);
+        backupKeyFrames.push_back(p_keyFrame);
+        p_keyFrame->preSave(keyFrames, mapPoints, cams_inout);
     }
 
     backupInitialKeyFrameId = -1;
     if (p_initialKeyFrame)
     {
-        backupInitialKeyFrameId = p_initialKeyFrame->mnId;
+        backupInitialKeyFrameId = p_initialKeyFrame->id;
     }
 
     backupLowerKeyFrameId = -1;
     if (p_lowerIdKeyFrame)
     {
-        backupLowerKeyFrameId = p_lowerIdKeyFrame->mnId;
+        backupLowerKeyFrameId = p_lowerIdKeyFrame->id;
     }
 }
 

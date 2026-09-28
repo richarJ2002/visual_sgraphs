@@ -252,12 +252,12 @@ void SemanticsManager::validateRoomBoundaries(void)
             const Eigen::Vector3d gapCentroid_World_m = p_room->getCentroid();
             if (gapCentroid_World_m.allFinite())
             {
-                const Eigen::Vector2d gapCentroid_Ground_m(
+                const Eigen::Vector2d gapCentroidGround_m(
                     gapCentroid_World_m.dot(groundAxisU_World),
                     gapCentroid_World_m.dot(groundAxisV_World));
                 p_room->setObservationGaps(
                     computeRoomObservationGaps(wallSegments,
-                                               gapCentroid_Ground_m));
+                                               gapCentroidGround_m));
             }
             else
             {
@@ -288,12 +288,12 @@ void SemanticsManager::validateRoomBoundaries(void)
             continue;
         }
 
-        const Eigen::Vector2d roomCentroid_Ground_m(
+        const Eigen::Vector2d roomCentroidGround_m(
             roomCentroid_World_m.dot(groundAxisU_World),
             roomCentroid_World_m.dot(groundAxisV_World));
 
         WallLoopClosure closure = tryCloseWallLoop(wallSegments,
-                                                   roomCentroid_Ground_m,
+                                                   roomCentroidGround_m,
                                                    topologyParameters);
 
         /* User rule: a wall the room owns but which does not belong to the
@@ -347,7 +347,7 @@ void SemanticsManager::validateRoomBoundaries(void)
 
                 WallLoopClosure reducedClosure =
                     tryCloseWallLoop(reducedWallSegments,
-                                     roomCentroid_Ground_m,
+                                     roomCentroidGround_m,
                                      topologyParameters);
 
                 if (!reducedClosure.hasOpenBoundary)
@@ -461,8 +461,8 @@ void SemanticsManager::validateRoomBoundaries(void)
              * own 2D coordinates were built from), and each corner's height
              * is the mean of its two meeting walls' own position along the
              * ground normal. */
-            std::vector<Eigen::Vector3d> boundaryCorners3D_World_m;
-            boundaryCorners3D_World_m.reserve(boundaryCorners_World_m.size());
+            std::vector<Eigen::Vector3d> boundaryCorners3d_World_m;
+            boundaryCorners3d_World_m.reserve(boundaryCorners_World_m.size());
             for (std::size_t cornerIndex = 0U;
                  cornerIndex < boundaryCorners_World_m.size();
                  ++cornerIndex)
@@ -483,7 +483,7 @@ void SemanticsManager::validateRoomBoundaries(void)
                          p_nextCornerWall->getCentroid().cast<double>().dot(
                              groundNormal_World));
                 }
-                boundaryCorners3D_World_m.push_back(
+                boundaryCorners3d_World_m.push_back(
                     boundaryCorners_World_m[cornerIndex].x() *
                         groundAxisU_World +
                     boundaryCorners_World_m[cornerIndex].y() *
@@ -492,7 +492,7 @@ void SemanticsManager::validateRoomBoundaries(void)
             }
             updateBoundaryStatus(p_room,
                                  semantic::Room::BoundaryStatus::COMPLETE,
-                                 boundaryCorners3D_World_m);
+                                 boundaryCorners3d_World_m);
 
             /* User rule: once a room's boundary is a genuine closed loop,
              * any wall it still owns that is NOT one of that loop's own

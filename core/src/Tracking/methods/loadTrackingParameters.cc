@@ -32,16 +32,16 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::loadTrackingParameters(const string &strSettingPath)
+void Tracking::loadTrackingParameters(const string &settingPath_in)
 {
-    cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+    cv::FileStorage settings(settingPath_in, cv::FileStorage::READ);
 
-    auto readInt = [&fSettings](const char *name,
-                                int         minimum,
-                                int         maximum,
-                                int         defaultValue)
+    auto readInt = [&settings](const char *p_name,
+                               int         minimum,
+                               int         maximum,
+                               int         defaultValue)
     {
-        const cv::FileNode node = fSettings[name];
+        const cv::FileNode node = settings[p_name];
         if (node.empty())
         {
             return defaultValue;
@@ -49,7 +49,7 @@ void Tracking::loadTrackingParameters(const string &strSettingPath)
 
         if (!node.isInt())
         {
-            std::cerr << "[Tracking] Ignoring '" << name
+            std::cerr << "[Tracking] Ignoring '" << p_name
                       << "': expected an integer in [" << minimum << ", "
                       << maximum << "]. Using " << defaultValue << "."
                       << std::endl;
@@ -59,7 +59,7 @@ void Tracking::loadTrackingParameters(const string &strSettingPath)
         const int value = node.operator int();
         if (value < minimum || value > maximum)
         {
-            std::cerr << "[Tracking] Ignoring '" << name << "': " << value
+            std::cerr << "[Tracking] Ignoring '" << p_name << "': " << value
                       << " is outside [" << minimum << ", " << maximum
                       << "]. Using " << defaultValue << "." << std::endl;
             return defaultValue;
@@ -67,12 +67,12 @@ void Tracking::loadTrackingParameters(const string &strSettingPath)
         return value;
     };
 
-    auto readReal = [&fSettings](const char *name,
-                                 double      minimum,
-                                 double      maximum,
-                                 double      defaultValue)
+    auto readReal = [&settings](const char *p_name,
+                                double      minimum,
+                                double      maximum,
+                                double      defaultValue)
     {
-        const cv::FileNode node = fSettings[name];
+        const cv::FileNode node = settings[p_name];
         if (node.empty())
         {
             return defaultValue;
@@ -80,7 +80,7 @@ void Tracking::loadTrackingParameters(const string &strSettingPath)
 
         if (!node.isReal())
         {
-            std::cerr << "[Tracking] Ignoring '" << name
+            std::cerr << "[Tracking] Ignoring '" << p_name
                       << "': expected a real number in [" << minimum << ", "
                       << maximum << "]. Using " << defaultValue << "."
                       << std::endl;
@@ -90,7 +90,7 @@ void Tracking::loadTrackingParameters(const string &strSettingPath)
         const double value = node.real();
         if (!std::isfinite(value) || value < minimum || value > maximum)
         {
-            std::cerr << "[Tracking] Ignoring '" << name << "': " << value
+            std::cerr << "[Tracking] Ignoring '" << p_name << "': " << value
                       << " is outside [" << minimum << ", " << maximum
                       << "]. Using " << defaultValue << "." << std::endl;
             return defaultValue;
@@ -110,17 +110,17 @@ void Tracking::loadTrackingParameters(const string &strSettingPath)
         minCloseInliersForKF = minInliersForKF;
     }
 
-    mdMinTemporalSpacingKF = readReal("Tracking.MinTemporalSpacingKF",
-                                      0.0,
-                                      60.0,
-                                      mdMinTemporalSpacingKF);
+    minKeyFrameTemporalSpacing = readReal("Tracking.MinTemporalSpacingKF",
+                                          0.0,
+                                          60.0,
+                                          minKeyFrameTemporalSpacing);
     maxKFsInLocalMap =
         readInt("Tracking.MaxKFsInLocalMap", 1, 10000, maxKFsInLocalMap);
-    mfMotionModelSearchRadiusMultiplier = static_cast<float>(
+    motionModelSearchRadiusMultiplier = static_cast<float>(
         readReal("Tracking.MotionModelSearchRadiusMultiplier",
                  1.0,
                  4.0,
-                 mfMotionModelSearchRadiusMultiplier));
+                 motionModelSearchRadiusMultiplier));
     motionModelMaxSearchRadius = readInt("Tracking.MotionModelMaxSearchRadius",
                                          15,
                                          200,
@@ -137,11 +137,11 @@ void Tracking::loadTrackingParameters(const string &strSettingPath)
     cout << endl << "Effective Tracking Parameters:" << endl;
     cout << "- Min Inliers for KF: " << minInliersForKF << endl;
     cout << "- Min Close Inliers for KF: " << minCloseInliersForKF << endl;
-    cout << "- Min Temporal Spacing KF: " << mdMinTemporalSpacingKF << " s"
+    cout << "- Min Temporal Spacing KF: " << minKeyFrameTemporalSpacing << " s"
          << endl;
     cout << "- Max KFs in Local Map: " << maxKFsInLocalMap << endl;
     cout << "- Motion Model Search Radius Multiplier: "
-         << mfMotionModelSearchRadiusMultiplier << endl;
+         << motionModelSearchRadiusMultiplier << endl;
     cout << "- Motion Model Max Search Radius: " << motionModelMaxSearchRadius
          << endl;
     cout << "- Initialization Min Points: " << initializationMinPoints << endl;

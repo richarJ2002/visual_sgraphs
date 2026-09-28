@@ -35,9 +35,10 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::replaceMapPointMatch(const int &idx, MapPoint *pMP)
+void KeyFrame::replaceMapPointMatch(const int &index_in,
+                                    MapPoint  *p_mapPoint_in)
 {
-    mapPoints[idx] = pMP;
+    mapPoints[index_in] = p_mapPoint_in;
 }
 
 } // namespace core

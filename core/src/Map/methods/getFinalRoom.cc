@@ -36,7 +36,7 @@ namespace core
 
 semantic::Room *Map::getFinalRoom()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return p_finalRoom;
 }
 

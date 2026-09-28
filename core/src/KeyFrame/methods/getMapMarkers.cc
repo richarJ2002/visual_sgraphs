@@ -37,7 +37,7 @@ namespace core
 
 vector<semantic::Marker *> KeyFrame::getMapMarkers()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return mapMarkers;
 }
 

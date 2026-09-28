@@ -30,20 +30,21 @@ namespace vs_graphs
 namespace core
 {
 
-void TwoViewReconstruction::normalize(const vector<cv::KeyPoint> &vKeys,
-                                      vector<cv::Point2f> &vNormalizedPoints,
-                                      Eigen::Matrix3f     &T)
+void TwoViewReconstruction::normalize(
+    const vector<cv::KeyPoint> &keys_in,
+    vector<cv::Point2f>        &normalizedPoints_inout,
+    Eigen::Matrix3f            &T_out)
 {
     float     meanX = 0;
     float     meanY = 0;
-    const int N     = vKeys.size();
+    const int N     = keys_in.size();
 
-    vNormalizedPoints.resize(N);
+    normalizedPoints_inout.resize(N);
 
-    for (int i = 0; i < N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
     {
-        meanX += vKeys[i].pt.x;
-        meanY += vKeys[i].pt.y;
+        meanX += keys_in[keyPointIndex].pt.x;
+        meanY += keys_in[keyPointIndex].pt.y;
     }
 
     meanX = meanX / N;
@@ -52,13 +53,15 @@ void TwoViewReconstruction::normalize(const vector<cv::KeyPoint> &vKeys,
     float meanDevX = 0;
     float meanDevY = 0;
 
-    for (int i = 0; i < N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
     {
-        vNormalizedPoints[i].x = vKeys[i].pt.x - meanX;
-        vNormalizedPoints[i].y = vKeys[i].pt.y - meanY;
+        normalizedPoints_inout[keyPointIndex].x =
+            keys_in[keyPointIndex].pt.x - meanX;
+        normalizedPoints_inout[keyPointIndex].y =
+            keys_in[keyPointIndex].pt.y - meanY;
 
-        meanDevX += fabs(vNormalizedPoints[i].x);
-        meanDevY += fabs(vNormalizedPoints[i].y);
+        meanDevX += fabs(normalizedPoints_inout[keyPointIndex].x);
+        meanDevY += fabs(normalizedPoints_inout[keyPointIndex].y);
     }
 
     meanDevX = meanDevX / N;
@@ -67,18 +70,20 @@ void TwoViewReconstruction::normalize(const vector<cv::KeyPoint> &vKeys,
     float sX = 1.0 / meanDevX;
     float sY = 1.0 / meanDevY;
 
-    for (int i = 0; i < N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
     {
-        vNormalizedPoints[i].x = vNormalizedPoints[i].x * sX;
-        vNormalizedPoints[i].y = vNormalizedPoints[i].y * sY;
+        normalizedPoints_inout[keyPointIndex].x =
+            normalizedPoints_inout[keyPointIndex].x * sX;
+        normalizedPoints_inout[keyPointIndex].y =
+            normalizedPoints_inout[keyPointIndex].y * sY;
     }
 
-    T.setZero();
-    T(0, 0) = sX;
-    T(1, 1) = sY;
-    T(0, 2) = -meanX * sX;
-    T(1, 2) = -meanY * sY;
-    T(2, 2) = 1.f;
+    T_out.setZero();
+    T_out(0, 0) = sX;
+    T_out(1, 1) = sY;
+    T_out(0, 2) = -meanX * sX;
+    T_out(1, 2) = -meanY * sY;
+    T_out(2, 2) = 1.f;
 }
 
 } // namespace core

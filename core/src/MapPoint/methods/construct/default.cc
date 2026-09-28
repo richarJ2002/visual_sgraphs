@@ -51,7 +51,7 @@ MapPoint::MapPoint() :
     baGlobalKeyFrameId(0),
     visibleCount(1),
     foundCount(1),
-    mbBad(false),
+    isFlaggedBad(false),
     p_replaced(static_cast<MapPoint *>(nullptr))
 {
     p_replaced = static_cast<MapPoint *>(nullptr);

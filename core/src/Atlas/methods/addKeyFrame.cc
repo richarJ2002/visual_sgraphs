@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addKeyFrame(KeyFrame *pKF)
+void Atlas::addKeyFrame(KeyFrame *p_keyFrame_in)
 {
-    Map *pMapKF = pKF->getMap();
-    pMapKF->addKeyFrame(pKF);
+    Map *p_ownerMap = p_keyFrame_in->getMap();
+    p_ownerMap->addKeyFrame(p_keyFrame_in);
 }
 
 } // namespace core

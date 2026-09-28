@@ -127,7 +127,7 @@ semantic::SemanticMergeRoomEvidence
 
     semantic::PassageContext passage;
     passage.id                       = 7;
-    passage.passable                 = true;
+    passage.isPassable               = true;
     passage.hasKnownSideRoom         = true;
     passage.knownSideRoomId          = roomId_in;
     passage.hasFarSideRoom           = true;
@@ -197,7 +197,7 @@ TEST(GeometricVerify, AcceptsGroundTruthCorrelatedRooms)
         semantic::SemanticVerify::verify(observationsA, observationsB, config);
 
     ASSERT_EQ(result.status, semantic::VerificationStatus::PASS);
-    EXPECT_TRUE(result.pass);
+    EXPECT_TRUE(result.hasPassed);
     EXPECT_GE(result.inliers.size(), 3U);
     EXPECT_LT(
         result.transform_AToB.translation().isApprox(translationTrue, 0.05)
@@ -245,7 +245,7 @@ TEST(GeometricVerify, RejectsRankDeficientCorrespondences)
     const semantic::SemanticVerifyResult result =
         semantic::SemanticVerify::verify(observationsA, observationsB, config);
     EXPECT_EQ(result.status, semantic::VerificationStatus::REJECTED);
-    EXPECT_FALSE(result.pass);
+    EXPECT_FALSE(result.hasPassed);
     /* Only 2 walls per side -- never reaches hypothesis search. */
     EXPECT_EQ(result.rejectReason, semantic::VerifyRejectReason::TOO_FEW_WALLS);
 }
@@ -401,8 +401,8 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
                                                        &survivingMap,
                                                        &absorbedMap,
                                                        identity));
-    EXPECT_TRUE(acceptedResult.floorGateRan);
-    EXPECT_TRUE(acceptedResult.floorGatePassed);
+    EXPECT_TRUE(acceptedResult.hasFloorGateRun);
+    EXPECT_TRUE(acceptedResult.hasFloorGatePassed);
     EXPECT_EQ(acceptedResult.floorGateResult, "ACCEPTED");
 
     Map             mismatchedMap;
@@ -419,8 +419,8 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
                                                         &survivingMap,
                                                         &mismatchedMap,
                                                         identity));
-    EXPECT_TRUE(rejectedResult.floorGateRan);
-    EXPECT_FALSE(rejectedResult.floorGatePassed);
+    EXPECT_TRUE(rejectedResult.hasFloorGateRun);
+    EXPECT_FALSE(rejectedResult.hasFloorGatePassed);
     EXPECT_EQ(rejectedResult.floorGateResult, "REJECTED");
 }
 
@@ -593,7 +593,7 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
 
 TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
 {
-    /* toVerificationVerdict() ANDs the geometric pass with floorGatePassed
+    /* toVerificationVerdict() ANDs the geometric pass with hasFloorGatePassed
      * -- this test exercises that combination through the real public API
      * (verify() -> runFloorGate() -> toVerificationVerdict()), not just each
      * half in isolation, since the wiring between them is exactly what a
@@ -635,7 +635,7 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
     semantic::SemanticVerifyResult result =
         semantic::SemanticVerify::verify(observationsA, observationsB, config);
     ASSERT_EQ(result.status, semantic::VerificationStatus::PASS);
-    ASSERT_TRUE(result.pass);
+    ASSERT_TRUE(result.hasPassed);
 
     Map             survivingMap;
     Map             absorbedMap;
@@ -659,14 +659,14 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
                                                        &survivingMap,
                                                        &absorbedMap,
                                                        result.transform_AToB));
-    EXPECT_TRUE(result.floorGateRan);
-    EXPECT_TRUE(result.floorGatePassed);
+    EXPECT_TRUE(result.hasFloorGateRun);
+    EXPECT_TRUE(result.hasFloorGatePassed);
     EXPECT_EQ(result.floorGateResult, "ACCEPTED");
 
     /* This is the exact combination that was silently broken: a genuine
      * geometric pass plus a genuine floor-gate accept must yield an
      * accepted combined verdict. */
-    EXPECT_TRUE(result.toVerificationVerdict().pass);
+    EXPECT_TRUE(result.toVerificationVerdict().hasPassed);
 
     /* Same genuine geometric pass, but the floor gate rejects -- the
      * combined verdict must follow the floor gate down. */
@@ -685,7 +685,7 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
                                                         &mismatchedMap,
                                                         result.transform_AToB));
     EXPECT_EQ(mismatchedResult.floorGateResult, "REJECTED");
-    EXPECT_FALSE(mismatchedResult.toVerificationVerdict().pass);
+    EXPECT_FALSE(mismatchedResult.toVerificationVerdict().hasPassed);
 }
 
 TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)

@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-KeyFrame *Atlas::getKeyFrameById(long unsigned int mnId)
+KeyFrame *Atlas::getKeyFrameById(long unsigned int idCount_in)
 {
-    unique_lock<mutex> lock(mMutexAtlas);
-    return p_activeMap != nullptr ? p_activeMap->getKeyFrameById(mnId)
+    unique_lock<mutex> lock(atlasMutex);
+    return p_activeMap != nullptr ? p_activeMap->getKeyFrameById(idCount_in)
                                   : nullptr;
 }
 

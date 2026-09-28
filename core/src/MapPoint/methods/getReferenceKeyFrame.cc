@@ -36,7 +36,7 @@ namespace core
 
 KeyFrame *MapPoint::getReferenceKeyFrame()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return p_referenceKeyFrame;
 }
 

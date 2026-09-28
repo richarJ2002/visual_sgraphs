@@ -35,8 +35,8 @@ namespace core
 #ifdef REGISTER_LOOP
 bool Tracking::stopRequested()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    return stopRequestedFlag;
+    unique_lock<mutex> lock(stopMutex);
+    return isStopRequested;
 }
 #endif
 

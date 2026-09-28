@@ -32,12 +32,12 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveDebugData(const int &initIdx)
+void System::saveDebugData(const int &initialIndex_in)
 {
     // 0. Save initialization trajectory
     saveTrajectoryEuRoC("init_FrameTrajectoy_" +
                         to_string(p_localMapper->initSection) + "_" +
-                        to_string(initIdx) + ".txt");
+                        to_string(initialIndex_in) + ".txt");
 
     // 1. Save scale
     ofstream f;
@@ -78,16 +78,20 @@ void System::saveDebugData(const int &initIdx)
 
     // 5. Save covariance matrix
     f.open("init_CovMatrix_" + to_string(p_localMapper->initSection) + "_" +
-               to_string(initIdx) + ".txt",
+               to_string(initialIndex_in) + ".txt",
            ios_base::app);
     f << fixed;
-    for (int i = 0; i < p_localMapper->mcovInertial.rows(); i++)
+    for (int rowIndex = 0; rowIndex < p_localMapper->mcovInertial.rows();
+         rowIndex++)
     {
-        for (int j = 0; j < p_localMapper->mcovInertial.cols(); j++)
+        for (int columnIndex = 0;
+             columnIndex < p_localMapper->mcovInertial.cols();
+             columnIndex++)
         {
-            if (j != 0)
+            if (columnIndex != 0)
                 f << ",";
-            f << setprecision(15) << p_localMapper->mcovInertial(i, j);
+            f << setprecision(15)
+              << p_localMapper->mcovInertial(rowIndex, columnIndex);
         }
         f << endl;
     }

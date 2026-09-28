@@ -32,7 +32,7 @@ bool Passage::addTraversalObservation(TraversalDirection direction_in,
                                       unsigned long      frameId_in,
                                       unsigned long      keyFrameId_in)
 {
-    std::lock_guard<std::mutex>                   lock(mMutexType);
+    std::lock_guard<std::mutex>                   lock(typeMutex);
     const std::pair<unsigned long, unsigned long> segmentId(frameId_in,
                                                             keyFrameId_in);
     if (std::find(traversalSegmentHistory.begin(),

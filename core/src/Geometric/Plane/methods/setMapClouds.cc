@@ -33,17 +33,17 @@ namespace geometric
 {
 
 void Plane::setMapClouds(
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud_in)
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_additionalCloud_in)
 {
-    if (!p_planeCloud_in || p_planeCloud_in->empty())
+    if (!p_additionalCloud_in || p_additionalCloud_in->empty())
     {
         return;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexFeatures);
+    std::lock_guard<std::mutex> lock(featuresMutex);
 
     /* Add the new points to the plane cloud */
-    for (const auto &point : p_planeCloud_in->points)
+    for (const auto &point : p_additionalCloud_in->points)
     {
         planeCloud->points.push_back(point);
     }
@@ -56,9 +56,9 @@ void Plane::setMapClouds(
     planeCloud->height = 1;
 
     /* Update the octree */
-    octree->deleteTree();
-    octree->setInputCloud(planeCloud);
-    octree->addPointsFromInputCloud();
+    p_octree->deleteTree();
+    p_octree->setInputCloud(planeCloud);
+    p_octree->addPointsFromInputCloud();
     ++cloudGeneration;
 }
 

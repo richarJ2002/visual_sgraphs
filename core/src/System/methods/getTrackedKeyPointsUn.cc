@@ -32,7 +32,7 @@ namespace core
 
 vector<cv::KeyPoint> System::getTrackedKeyPointsUn()
 {
-    unique_lock<mutex> lock(mMutexState);
+    unique_lock<mutex> lock(stateMutex);
     return trackedKeyPointsUn;
 }
 

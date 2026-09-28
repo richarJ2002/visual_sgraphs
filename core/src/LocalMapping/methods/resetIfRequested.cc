@@ -35,38 +35,38 @@ namespace core
 void LocalMapping::resetIfRequested()
 {
     {
-        unique_lock<mutex> lock(mMutexReset);
-        if (resetRequested)
+        unique_lock<mutex> resetLock(resetMutex);
+        if (isResetRequested)
         {
             cout << "[Mapping] Reseting Atlas in 'LocalMapping' ..." << endl;
             newKeyFrames.clear();
-            mlpRecentAddedMapPoints.clear();
-            resetRequested          = false;
-            resetActiveMapRequested = false;
+            recentAddedMapPoints.clear();
+            isResetRequested          = false;
+            isResetActiveMapRequested = false;
 
             // Inertial parameters
             initializationStartTime = 0.f;
             initIndex               = 0;
-            notBA2                  = true;
-            notBA1                  = true;
-            badImu                  = false;
+            isSecondImuBaPending    = true;
+            isFirstImuBaPending     = true;
+            isImuBad                = false;
         }
 
-        if (resetActiveMapRequested)
+        if (isResetActiveMapRequested)
         {
             cout << "[Mapping] Reseting the Current Map in 'LocalMapping' ..."
                  << endl;
 
             newKeyFrames.clear();
-            mlpRecentAddedMapPoints.clear();
+            recentAddedMapPoints.clear();
 
             // Inertial parameters
-            initializationStartTime = 0.f;
-            notBA2                  = true;
-            notBA1                  = true;
-            badImu                  = false;
-            resetRequested          = false;
-            resetActiveMapRequested = false;
+            initializationStartTime   = 0.f;
+            isSecondImuBaPending      = true;
+            isFirstImuBaPending       = true;
+            isImuBad                  = false;
+            isResetRequested          = false;
+            isResetActiveMapRequested = false;
         }
     }
 }

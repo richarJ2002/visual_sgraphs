@@ -55,7 +55,7 @@
 
 vs_graphs::core::System *p_slamSystem = nullptr;
 
-vs_graphs::core::System::eSensor sensorType = vs_graphs::core::System::NOT_SET;
+vs_graphs::core::System::SensorType sensorType = vs_graphs::core::System::NOT_SET;
 
 /* -------------------------------------------------------------------------- *
  * COMMON CONFIGURATION
@@ -2499,22 +2499,22 @@ namespace
  *              nlohmann::json rejects non-finite values, so they are stored
  *              as strings following the MissionHealthTopologyJson convention.
  */
-json sanitiseArchiveDouble(const double value_in)
+Json sanitiseArchiveDouble(const double value_in)
 {
     if (std::isnan(value_in))
     {
-        return json("NaN");
+        return Json("NaN");
     }
     if (std::isinf(value_in))
     {
-        return json(value_in > 0.0 ? "Infinity" : "-Infinity");
+        return Json(value_in > 0.0 ? "Infinity" : "-Infinity");
     }
-    return json(value_in);
+    return Json(value_in);
 }
 
-json archiveVector3(const Eigen::Vector3d &vector_in)
+Json archiveVector3(const Eigen::Vector3d &vector_in)
 {
-    json array = json::array();
+    Json array = Json::array();
     array.push_back(sanitiseArchiveDouble(vector_in.x()));
     array.push_back(sanitiseArchiveDouble(vector_in.y()));
     array.push_back(sanitiseArchiveDouble(vector_in.z()));
@@ -2681,7 +2681,7 @@ void maybeArchiveSGraph(
         mapInputs.push_back(std::move(fallbackInput));
     }
 
-    json        archive;
+    Json        archive;
     std::size_t totalFloors   = 0U;
     std::size_t totalRooms    = 0U;
     std::size_t totalPassages = 0U;
@@ -2888,14 +2888,14 @@ void maybeArchiveSGraph(
             }
         }
 
-        json mapJson;
+        Json mapJson;
         mapJson["map_id"]            = mapInput.mapId;
         mapJson["is_active"]         = mapInput.isActive;
         mapJson["world_frame_epoch"] = mapInput.worldFrameEpoch;
 
         for (std::size_t floorIndex = 0U; floorIndex < floorCount; ++floorIndex)
         {
-            json              floorJson;
+            Json              floorJson;
             vs_graphs::core::semantic::Floor *p_floor =
                 hasFloors ? floors[floorIndex] : nullptr;
             if (p_floor != nullptr)
@@ -2932,7 +2932,7 @@ void maybeArchiveSGraph(
                 const std::string roomKey =
                     "room" + std::to_string(roomOrdinal);
 
-                json roomJson;
+                Json roomJson;
                 roomJson["room_id"]   = p_room->getId();
                 roomJson["room_name"] = p_room->getName();
                 roomJson["room_variant"] =
@@ -2975,11 +2975,11 @@ void maybeArchiveSGraph(
                         equation_World.normal().y(),
                         equation_World.normal().z());
 
-                    json wallJson;
+                    Json wallJson;
                     wallJson["wall_id"] = p_wall->getId();
                     wallJson["wall_centroid"] =
                         archiveVector3(geometry.centroid_World_m);
-                    json wallLimits;
+                    Json wallLimits;
                     wallLimits["min_u_m"] =
                         sanitiseArchiveDouble(geometry.minPlaneU_m);
                     wallLimits["max_u_m"] =
@@ -3001,7 +3001,7 @@ void maybeArchiveSGraph(
                         geometry.maxPlaneV_m - geometry.minPlaneV_m);
                     wallJson["parent_room"] = roomKey;
 
-                    json       passageList = json::array();
+                    Json       passageList = Json::array();
                     const auto wallPassages =
                         floorWallPassages[floorIndex].find(p_wall->getId());
                     if (wallPassages != floorWallPassages[floorIndex].end())
@@ -3018,7 +3018,7 @@ void maybeArchiveSGraph(
                 floorJson[roomKey] = std::move(roomJson);
             }
 
-            json passagesJson = json::object();
+            Json passagesJson = Json::object();
             for (std::size_t passageOrdinal = 0U;
                  passageOrdinal < floorPassages[floorIndex].size();
                  ++passageOrdinal)
@@ -3033,7 +3033,7 @@ void maybeArchiveSGraph(
                 vs_graphs::core::semantic::Room *p_prospectiveRoom =
                     p_passage->getProspectiveRoom();
 
-                json passageJson;
+                Json passageJson;
                 passageJson["passage_id"] = p_passage->getId();
                 passageJson["centroid"] =
                     archiveVector3(p_passage->getCentroid());
@@ -3043,7 +3043,7 @@ void maybeArchiveSGraph(
                     sanitiseArchiveDouble(p_passage->getHeight());
                 passageJson["passable"] = p_passage->isPassable();
 
-                json connects = json::array();
+                Json connects = Json::array();
                 for (std::size_t roomOrdinal = 0U;
                      roomOrdinal < floorRooms[floorIndex].size();
                      ++roomOrdinal)
@@ -3086,7 +3086,7 @@ void maybeArchiveSGraph(
                 }
                 passageJson["connects"] = std::move(connects);
 
-                json associatedWalls = json::array();
+                Json associatedWalls = Json::array();
                 for (const int wallId : wallIds)
                 {
                     associatedWalls.push_back(wallId);
@@ -3106,7 +3106,7 @@ void maybeArchiveSGraph(
         totalPassages += passages.size();
     }
 
-    json metadata;
+    Json metadata;
     metadata["schema_version"]        = 2;
     metadata["sim_timestamp_sec"]     = stampSeconds;
     metadata["sim_timestamp_nanosec"] = stampNanoseconds;
@@ -3690,7 +3690,7 @@ void publishKeyFrameImages(
             RCLCPP_WARN(
                 rclcpp::get_logger("visual_sgraphs"),
                 "Failed to convert KeyFrame#%lu image into a ROS message.",
-                static_cast<unsigned long>(keyFrame->mnId));
+                static_cast<unsigned long>(keyFrame->id));
 
             continue;
         }
@@ -3698,7 +3698,7 @@ void publishKeyFrameImages(
         /* Create the persistent keyframe identifier message */
         std_msgs::msg::UInt64 keyFrameIdMessage;
 
-        keyFrameIdMessage.data = keyFrame->mnId;
+        keyFrameIdMessage.data = keyFrame->id;
 
         /* Package the keyframe identifier and image for segmentation */
         segmenter_ros::msg::VSGraphDataMsg segmentationInputMessage;
@@ -6014,9 +6014,9 @@ static void getMissionHealthService(
     response_out->frame_timestamp      = snapshot.frameTimestamp;
     response_out->tracking_state       = snapshot.trackingState;
     response_out->tracking_inliers     = snapshot.trackingInliers;
-    response_out->inertial             = snapshot.inertial;
-    response_out->inertial_initialized = snapshot.inertialInitialized;
-    response_out->pose_valid           = snapshot.poseValid;
+    response_out->inertial             = snapshot.isInertial;
+    response_out->inertial_initialized = snapshot.isInertialInitialized;
+    response_out->pose_valid           = snapshot.isPoseValid;
     response_out->map_id               = snapshot.mapId;
     response_out->map_count            = snapshot.mapCount;
     response_out->keyframe_count       = snapshot.keyFrameCount;
@@ -6028,7 +6028,7 @@ static void getMissionHealthService(
     response_out->rgbd_frontend_overwritten_count =
         snapshot.rgbdFrontendOverwrittenCount;
     response_out->rgbd_frontend_worker_in_flight =
-        snapshot.rgbdFrontendWorkerInFlight;
+        snapshot.isRgbdFrontendWorkerInFlight;
     response_out->rgbd_frontend_last_processed_sensor_timestamp_nanoseconds =
         snapshot.rgbdFrontendLastProcessedSensorTimestampNanoseconds;
     response_out->segmentation_published_count =
@@ -6057,7 +6057,7 @@ static void getMissionHealthService(
     response_out->segmentation_queue_high_watermark =
         snapshot.segmentationQueueHighWatermark;
 
-    if (snapshot.poseValid)
+    if (snapshot.isPoseValid)
     {
         const Eigen::Vector3f translation =
             snapshot.cameraPose_World.translation();
@@ -6076,7 +6076,7 @@ static void getMissionHealthService(
     response_out->accepted_loop_count = snapshot.acceptedLoopCount;
     response_out->rejected_loop_count = snapshot.rejectedLoopCount;
     response_out->has_loop_event      = snapshot.hasLoopEvent;
-    response_out->last_loop_accepted  = snapshot.lastLoopAccepted;
+    response_out->last_loop_accepted  = snapshot.wasLastLoopAccepted;
     response_out->last_loop_map_id    = snapshot.lastLoopMapId;
     response_out->last_loop_current_keyframe_id =
         snapshot.lastLoopCurrentKeyFrameId;
@@ -6098,16 +6098,16 @@ static void getMissionHealthService(
     response_out->passage_count =
         static_cast<std::uint32_t>(snapshot.passages.size());
 
-    json topology = {{"schema", 1},
+    Json topology = {{"schema", 1},
                      {"map_id", snapshot.mapId},
                      {"active_maps", snapshot.mapCount},
                      {"reset_count", snapshot.resetCount},
                      {"confirmed_rooms", snapshot.confirmedRoomCount},
                      {"unresolved_rooms", snapshot.unresolvedRoomCount},
                      {"floor_room_links", snapshot.floorRoomLinkCount},
-                     {"rooms", json::array()},
-                     {"floors", json::array()},
-                     {"passages", json::array()}};
+                     {"rooms", Json::array()},
+                     {"floors", Json::array()},
+                     {"passages", Json::array()}};
     for (const vs_graphs::core::System::RoomHealth &room : snapshot.rooms)
     {
         topology["rooms"].push_back(
@@ -6125,7 +6125,7 @@ static void getMissionHealthService(
                                passage.unknownCount > 0U;
         const bool bidirectional = passage.primaryTraversalCount > 0U &&
                                    passage.secondaryTraversalCount > 0U;
-        if (passage.passable)
+        if (passage.isPassable)
         {
             ++response_out->passable_passage_count;
         }
@@ -6145,7 +6145,7 @@ static void getMissionHealthService(
 
         topology["passages"].push_back(
             {{"id", passage.id},
-             {"passable", passage.passable},
+             {"passable", passage.isPassable},
              {"primary_room_id", passage.primaryRoomId},
              {"secondary_room_id", passage.secondaryRoomId},
              {"primary_traversal_count", passage.primaryTraversalCount},

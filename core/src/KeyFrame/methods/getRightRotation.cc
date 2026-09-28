@@ -37,7 +37,7 @@ namespace core
 
 Eigen::Matrix<float, 3, 3> KeyFrame::getRightRotation()
 {
-    unique_lock<mutex> lock(mMutexPose);
+    unique_lock<mutex> lock(poseMutex);
 
     return (poseTrl.so3() * poseTcw.so3()).matrix();
 }

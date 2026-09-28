@@ -43,10 +43,10 @@ bool Tracking::trackReferenceKeyFrame()
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
     ORBmatcher         matcher(0.7, true);
-    vector<MapPoint *> vpMapPointMatches;
+    vector<MapPoint *> mapPointMatches;
 
     int nmatches =
-        matcher.searchByBoW(p_referenceKF, currentFrame, vpMapPointMatches);
+        matcher.searchByBoW(p_referenceKF, currentFrame, mapPointMatches);
 
     if (nmatches < 8)
     {
@@ -55,7 +55,7 @@ bool Tracking::trackReferenceKeyFrame()
         return false;
     }
 
-    currentFrame.mapPoints = vpMapPointMatches;
+    currentFrame.mapPoints = mapPointMatches;
     currentFrame.setPose(lastFrame.getPose());
 
     // mCurrentFrame.printPointDistribution();
@@ -64,30 +64,33 @@ bool Tracking::trackReferenceKeyFrame()
 
     // Discard outliers
     int nmatchesMap = 0;
-    for (int i = 0; i < currentFrame.N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
+         keyPointIndex++)
     {
         // if(i >= mCurrentFrame.Nleft) break;
-        if (currentFrame.mapPoints[i])
+        if (currentFrame.mapPoints[keyPointIndex])
         {
-            if (currentFrame.outlierFlags[i])
+            if (currentFrame.outlierFlags[keyPointIndex])
             {
-                MapPoint *pMP = currentFrame.mapPoints[i];
+                MapPoint *p_mapPoint = currentFrame.mapPoints[keyPointIndex];
 
-                currentFrame.mapPoints[i]    = static_cast<MapPoint *>(nullptr);
-                currentFrame.outlierFlags[i] = false;
-                if (i < currentFrame.Nleft)
+                currentFrame.mapPoints[keyPointIndex] =
+                    static_cast<MapPoint *>(nullptr);
+                currentFrame.outlierFlags[keyPointIndex] = false;
+                if (keyPointIndex < currentFrame.leftKeyPointCount)
                 {
-                    pMP->trackInView = false;
+                    p_mapPoint->isTrackedInView = false;
                 }
                 else
                 {
-                    pMP->trackInViewR = false;
+                    p_mapPoint->isTrackedInRightView = false;
                 }
-                pMP->trackInView     = false;
-                pMP->lastSeenFrameId = currentFrame.mnId;
+                p_mapPoint->isTrackedInView = false;
+                p_mapPoint->lastSeenFrameId = currentFrame.id;
                 nmatches--;
             }
-            else if (currentFrame.mapPoints[i]->getObservationCount() > 0)
+            else if (currentFrame.mapPoints[keyPointIndex]
+                         ->getObservationCount() > 0)
                 nmatchesMap++;
         }
     }

@@ -80,12 +80,12 @@ void evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
         return;
     }
 
-    if ((knownSide.referencePresent && knownSide.isCrossMap) ||
-        (prospective.referencePresent && prospective.isCrossMap))
+    if ((knownSide.isReferencePresent && knownSide.isCrossMap) ||
+        (prospective.isReferencePresent && prospective.isCrossMap))
     {
         /* No longer gated on
          * isRealPassageEndpoint -- mirrors AX-PASS-02's own
-         * unconditional-on-referencePresent cross-map check, since an
+         * unconditional-on-isReferencePresent cross-map check, since an
          * unenumerated or unconfirmed cross-map reference is just as much a
          * known contradiction as a confirmed one. */
         findings_inout.push_back(

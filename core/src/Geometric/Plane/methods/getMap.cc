@@ -34,7 +34,7 @@ namespace geometric
 
 core::Map *Plane::getMap(void)
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return p_map;
 }
 

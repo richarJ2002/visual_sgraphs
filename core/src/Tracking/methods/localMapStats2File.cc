@@ -39,14 +39,16 @@ void Tracking::localMapStats2File()
     f << "#Stereo rect[ms], MP culling[ms], MP creation[ms], LBA[ms], KF "
          "culling[ms], Total[ms]"
       << endl;
-    for (int i = 0; i < p_localMapper->vdLMTotal_ms.size(); ++i)
+    for (int sampleIndex = 0;
+         sampleIndex < p_localMapper->localMappingTotalTimes_ms.size();
+         ++sampleIndex)
     {
-        f << p_localMapper->vdKFInsert_ms[i] << ","
-          << p_localMapper->vdMPCulling_ms[i] << ","
-          << p_localMapper->vdMPCreation_ms[i] << ","
-          << p_localMapper->vdLBASync_ms[i] << ","
-          << p_localMapper->vdKFCullingSync_ms[i] << ","
-          << p_localMapper->vdLMTotal_ms[i] << endl;
+        f << p_localMapper->keyFrameInsertTimes_ms[sampleIndex] << ","
+          << p_localMapper->mapPointCullingTimes_ms[sampleIndex] << ","
+          << p_localMapper->mapPointCreationTimes_ms[sampleIndex] << ","
+          << p_localMapper->localBaSyncTimes_ms[sampleIndex] << ","
+          << p_localMapper->keyFrameCullingSyncTimes_ms[sampleIndex] << ","
+          << p_localMapper->localMappingTotalTimes_ms[sampleIndex] << endl;
     }
 
     f.close();
@@ -54,13 +56,15 @@ void Tracking::localMapStats2File()
     f.open("LBA_Stats.txt");
     f << fixed << setprecision(6);
     f << "#LBA time[ms], KF opt[#], KF fixed[#], MP[#], Edges[#]" << endl;
-    for (int i = 0; i < p_localMapper->vdLBASync_ms.size(); ++i)
+    for (int sampleIndex = 0;
+         sampleIndex < p_localMapper->localBaSyncTimes_ms.size();
+         ++sampleIndex)
     {
-        f << p_localMapper->vdLBASync_ms[i] << ","
-          << p_localMapper->vnLBA_KFopt[i] << ","
-          << p_localMapper->vnLBA_KFfixed[i] << ","
-          << p_localMapper->vnLBA_MPs[i] << "," << p_localMapper->vnLBA_edges[i]
-          << endl;
+        f << p_localMapper->localBaSyncTimes_ms[sampleIndex] << ","
+          << p_localMapper->localBaOptimizedKeyFrameCounts[sampleIndex] << ","
+          << p_localMapper->localBaFixedKeyFrameCounts[sampleIndex] << ","
+          << p_localMapper->localBaMapPointCounts[sampleIndex] << ","
+          << p_localMapper->localBaEdgeCounts[sampleIndex] << endl;
     }
 
     f.close();

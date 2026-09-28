@@ -32,9 +32,9 @@ namespace vs_graphs
 namespace core
 {
 
-void InvDepthPoint::update(const double *pu)
+void InvDepthPoint::update(const double *p_inverseDepthDelta_in)
 {
-    rho += *pu;
+    rho += *p_inverseDepthDelta_in;
 }
 
 } // namespace core

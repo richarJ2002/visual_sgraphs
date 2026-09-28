@@ -46,16 +46,16 @@ nlohmann::json serializePassageRecord(const PassageRecord &value_in,
         json["declaredMapId"] = *value_in.declaredMapId;
     }
     json["passageType"] = static_cast<int>(value_in.passageType);
-    json["passable"]    = value_in.passable;
+    json["passable"]    = value_in.isPassable;
 
     std::vector<RawPlaneRef> associateWallRefs = value_in.associateWallRefs;
     std::sort(associateWallRefs.begin(),
               associateWallRefs.end(),
               &isRawPlaneRefLess);
     nlohmann::json associateWallRefsJson = nlohmann::json::array();
-    for (const RawPlaneRef &wallRef : associateWallRefs)
+    for (const RawPlaneRef &wallReference : associateWallRefs)
     {
-        associateWallRefsJson.push_back(serializeRawPlaneRef(wallRef));
+        associateWallRefsJson.push_back(serializeRawPlaneRef(wallReference));
     }
     json["associateWallRefs"] = std::move(associateWallRefsJson);
 

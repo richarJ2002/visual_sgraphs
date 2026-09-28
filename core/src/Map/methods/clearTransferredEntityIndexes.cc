@@ -36,7 +36,7 @@ namespace core
 
 void Map::clearTransferredEntityIndexes()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     floorIndex.clear();
     planeIndex.clear();
     markerIndex.clear();

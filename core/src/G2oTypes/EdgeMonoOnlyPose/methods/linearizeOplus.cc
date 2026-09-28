@@ -34,26 +34,29 @@ namespace core
 
 void EdgeMonoOnlyPose::linearizeOplus()
 {
-    const VertexPose *VPose = static_cast<const VertexPose *>(_vertices[0]);
+    const VertexPose *p_poseVertex =
+        static_cast<const VertexPose *>(_vertices[0]);
 
-    const Eigen::Matrix3d &Rcw = VPose->estimate().Rcw[cam_idx];
-    const Eigen::Vector3d &tcw = VPose->estimate().tcw[cam_idx];
+    const Eigen::Matrix3d &Rcw = p_poseVertex->estimate().Rcw[cam_idx];
+    const Eigen::Vector3d &tcw = p_poseVertex->estimate().tcw[cam_idx];
     const Eigen::Vector3d  Xc  = Rcw * Xw + tcw;
-    const Eigen::Vector3d  Xb =
-        VPose->estimate().Rbc[cam_idx] * Xc + VPose->estimate().tbc[cam_idx];
-    const Eigen::Matrix3d &Rcb = VPose->estimate().Rcb[cam_idx];
+    const Eigen::Vector3d  Xb  = p_poseVertex->estimate().Rbc[cam_idx] * Xc +
+                               p_poseVertex->estimate().tbc[cam_idx];
+    const Eigen::Matrix3d &Rcb = p_poseVertex->estimate().Rcb[cam_idx];
 
-    Eigen::Matrix<double, 2, 3> proj_jac =
-        VPose->estimate().pCamera[cam_idx]->computeProjectionJacobian(Xc);
+    Eigen::Matrix<double, 2, 3> projectionJacobian =
+        p_poseVertex->estimate().pCamera[cam_idx]->computeProjectionJacobian(
+            Xc);
 
-    Eigen::Matrix<double, 3, 6> SE3deriv;
-    double                      x = Xb(0);
-    double                      y = Xb(1);
-    double                      z = Xb(2);
-    SE3deriv << 0.0, z, -y, 1.0, 0.0, 0.0, -z, 0.0, x, 0.0, 1.0, 0.0, y, -x,
-        0.0, 0.0, 0.0, 1.0;
-    _jacobianOplusXi =
-        proj_jac * Rcb * SE3deriv; // symbol different becasue of update mode
+    Eigen::Matrix<double, 3, 6> se3Derivative;
+    double                      bodyPointX = Xb(0);
+    double                      bodyPointY = Xb(1);
+    double                      bodyPointZ = Xb(2);
+    se3Derivative << 0.0, bodyPointZ, -bodyPointY, 1.0, 0.0, 0.0, -bodyPointZ,
+        0.0, bodyPointX, 0.0, 1.0, 0.0, bodyPointY, -bodyPointX, 0.0, 0.0, 0.0,
+        1.0;
+    _jacobianOplusXi = projectionJacobian * Rcb *
+                       se3Derivative; // symbol different becasue of update mode
 }
 
 } // namespace core

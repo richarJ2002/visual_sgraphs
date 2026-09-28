@@ -13,28 +13,32 @@ namespace vs_graphs
 namespace core
 {
 
-void rejectOutlierStereoMatches(std::vector<std::pair<int, int>> &vDistIdx,
-                                std::vector<float>               &mvuRight,
-                                std::vector<float>               &mvDepth)
+void rejectOutlierStereoMatches(
+    std::vector<std::pair<int, int>> &distanceIndices_inout,
+    std::vector<float>               &mvuRight_inout,
+    std::vector<float>               &depths_inout)
 {
-    if (vDistIdx.empty())
+    if (distanceIndices_inout.empty())
     {
         return;
     }
 
-    std::sort(vDistIdx.begin(), vDistIdx.end());
-    const float median = vDistIdx[vDistIdx.size() / 2].first;
-    const float thDist = 1.5f * 1.4f * median;
+    std::sort(distanceIndices_inout.begin(), distanceIndices_inout.end());
+    const float median =
+        distanceIndices_inout[distanceIndices_inout.size() / 2].first;
+    const float thresholdDistance = 1.5f * 1.4f * median;
 
-    for (int i = static_cast<int>(vDistIdx.size()) - 1; i >= 0; i--)
+    for (int distanceIndex = static_cast<int>(distanceIndices_inout.size()) - 1;
+         distanceIndex >= 0;
+         distanceIndex--)
     {
-        if (vDistIdx[i].first < thDist)
+        if (distanceIndices_inout[distanceIndex].first < thresholdDistance)
         {
             break;
         }
 
-        mvuRight[vDistIdx[i].second] = -1;
-        mvDepth[vDistIdx[i].second]  = -1;
+        mvuRight_inout[distanceIndices_inout[distanceIndex].second] = -1;
+        depths_inout[distanceIndices_inout[distanceIndex].second]   = -1;
     }
 }
 

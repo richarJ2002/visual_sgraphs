@@ -43,14 +43,16 @@ namespace vs_graphs
 namespace core
 {
 
-bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
+bool Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
+                              float     viewingCosLimit_in,
+                              bool      isRightCamera_in)
 {
     // 3D in absolute coordinates
-    Eigen::Vector3f P = pMP->getWorldPos();
+    Eigen::Vector3f P = p_mapPoint_inout->getWorldPos();
 
     Eigen::Matrix3f mR;
     Eigen::Vector3f mt, twc;
-    if (bRight)
+    if (isRightCamera_in)
     {
         Eigen::Matrix3f Rrl = poseTrl.rotationMatrix();
         Eigen::Vector3f trl = poseTrl.translation();
@@ -76,7 +78,7 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
 
     // Project in image and check it is not outside
     Eigen::Vector2f uv;
-    if (bRight)
+    if (isRightCamera_in)
         uv = p_camera2->project(Pc);
     else
         uv = p_camera->project(Pc);
@@ -87,40 +89,41 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
         return false;
 
     // Check distance is in the scale invariance region of the MapPoint
-    const float           maxDistance = pMP->getMaxDistanceInvariance();
-    const float           minDistance = pMP->getMinDistanceInvariance();
-    const Eigen::Vector3f PO          = P - twc;
-    const float           dist        = PO.norm();
+    const float maximumDistance = p_mapPoint_inout->getMaxDistanceInvariance();
+    const float minimumDistance = p_mapPoint_inout->getMinDistanceInvariance();
+    const Eigen::Vector3f PO    = P - twc;
+    const float           distance = PO.norm();
 
-    if (dist < minDistance || dist > maxDistance)
+    if (distance < minimumDistance || distance > maximumDistance)
         return false;
 
     // Check viewing angle
-    Eigen::Vector3f Pn = pMP->getNormal();
+    Eigen::Vector3f Pn = p_mapPoint_inout->getNormal();
 
-    const float viewCos = PO.dot(Pn) / dist;
+    const float viewCos = PO.dot(Pn) / distance;
 
-    if (viewCos < viewingCosLimit)
+    if (viewCos < viewingCosLimit_in)
         return false;
 
     // Predict scale in the image
-    const int nPredictedLevel = pMP->predictScale(dist, this);
+    const int predictedLevelCount =
+        p_mapPoint_inout->predictScale(distance, this);
 
-    if (bRight)
+    if (isRightCamera_in)
     {
-        pMP->trackProjXR      = uv(0);
-        pMP->trackProjYR      = uv(1);
-        pMP->trackScaleLevelR = nPredictedLevel;
-        pMP->trackViewCosR    = viewCos;
-        pMP->trackDepthR      = Pc_dist;
+        p_mapPoint_inout->trackProjXR      = uv(0);
+        p_mapPoint_inout->trackProjYR      = uv(1);
+        p_mapPoint_inout->trackScaleLevelR = predictedLevelCount;
+        p_mapPoint_inout->trackViewCosR    = viewCos;
+        p_mapPoint_inout->trackDepthR      = Pc_dist;
     }
     else
     {
-        pMP->trackProjX      = uv(0);
-        pMP->trackProjY      = uv(1);
-        pMP->trackScaleLevel = nPredictedLevel;
-        pMP->trackViewCos    = viewCos;
-        pMP->trackDepth      = Pc_dist;
+        p_mapPoint_inout->trackProjX      = uv(0);
+        p_mapPoint_inout->trackProjY      = uv(1);
+        p_mapPoint_inout->trackScaleLevel = predictedLevelCount;
+        p_mapPoint_inout->trackViewCos    = viewCos;
+        p_mapPoint_inout->trackDepth      = Pc_dist;
     }
 
     return true;

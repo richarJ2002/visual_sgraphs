@@ -32,7 +32,7 @@ namespace core
 
 int Atlas::getCurrentSemanticRoomIdentity(void) const
 {
-    return currentSemanticRoomIdentity_.load(std::memory_order_acquire);
+    return currentSemanticRoomIdentity.load(std::memory_order_acquire);
 }
 
 } // namespace core

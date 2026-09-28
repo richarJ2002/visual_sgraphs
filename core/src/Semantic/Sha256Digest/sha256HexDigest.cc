@@ -48,11 +48,11 @@ std::string sha256HexDigest(const std::string &bytes_in)
 
     std::string hex;
     hex.reserve(static_cast<std::size_t>(digestLength) * 2U);
-    static const char kHexChars[] = "0123456789abcdef";
-    for (unsigned int i = 0U; i < digestLength; ++i)
+    static const char HEX_CHARS[] = "0123456789abcdef";
+    for (unsigned int byteIndex = 0U; byteIndex < digestLength; ++byteIndex)
     {
-        hex.push_back(kHexChars[(digest[i] >> 4U) & 0x0FU]);
-        hex.push_back(kHexChars[digest[i] & 0x0FU]);
+        hex.push_back(HEX_CHARS[(digest[byteIndex] >> 4U) & 0x0FU]);
+        hex.push_back(HEX_CHARS[digest[byteIndex] & 0x0FU]);
     }
     return hex;
 }

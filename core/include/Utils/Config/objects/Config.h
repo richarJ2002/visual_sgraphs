@@ -76,13 +76,13 @@ class ConfigParser
     /*!
      * @brief        Parses the configuration file at the given path.
      *
-     * @param[in]    configFilePath_in
+     * @param[in]    configurationFilePath_in
      *               Path of the configuration file to parse.
      *
      * @return       True when parsing succeeded. The stub
      *               implementation always reports success.
      */
-    bool parseConfigFile(const std::string &configFilePath_in);
+    bool parseConfigFile(const std::string &configurationFilePath_in);
 
   private:
     /*!

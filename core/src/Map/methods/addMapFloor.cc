@@ -34,28 +34,29 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addMapFloor(semantic::Floor *pFloor)
+void Map::addMapFloor(semantic::Floor *p_floor_inout)
 {
-    if (pFloor == nullptr)
+    if (p_floor_inout == nullptr)
     {
         return;
     }
 
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
 
     for (auto floorIterator = floorIndex.begin();
          floorIterator != floorIndex.end();)
     {
-        floorIterator = floorIterator->second == pFloor &&
-                                floorIterator->first != pFloor->getId()
+        floorIterator = floorIterator->second == p_floor_inout &&
+                                floorIterator->first != p_floor_inout->getId()
                             ? floorIndex.erase(floorIterator)
                             : std::next(floorIterator);
     }
 
-    const auto existingFloorIterator = floorIndex.find(pFloor->getId());
+    const auto existingFloorIterator = floorIndex.find(p_floor_inout->getId());
 
-    if (pFloor->getId() < 0 || (existingFloorIterator != floorIndex.end() &&
-                                existingFloorIterator->second != pFloor))
+    if (p_floor_inout->getId() < 0 ||
+        (existingFloorIterator != floorIndex.end() &&
+         existingFloorIterator->second != p_floor_inout))
     {
         while (floorIndex.count(nextAvailableFloorId) > 0)
         {
@@ -65,19 +66,19 @@ void Map::addMapFloor(semantic::Floor *pFloor)
         const int replacementFloorId = nextAvailableFloorId++;
 
         std::cerr << "[Map] semantic::Floor ID collision for "
-                  << pFloor->getId() << "; reassigned to " << replacementFloorId
-                  << "." << std::endl;
+                  << p_floor_inout->getId() << "; reassigned to "
+                  << replacementFloorId << "." << std::endl;
 
-        pFloor->setId(replacementFloorId);
+        p_floor_inout->setId(replacementFloorId);
     }
     else
     {
         nextAvailableFloorId =
-            std::max(nextAvailableFloorId, pFloor->getId() + 1);
+            std::max(nextAvailableFloorId, p_floor_inout->getId() + 1);
     }
 
-    floors.insert(pFloor);
-    floorIndex.insert_or_assign(pFloor->getId(), pFloor);
+    floors.insert(p_floor_inout);
+    floorIndex.insert_or_assign(p_floor_inout->getId(), p_floor_inout);
 }
 
 } // namespace core

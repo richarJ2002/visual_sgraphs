@@ -36,7 +36,7 @@ namespace core
 
 void Map::setStartingRoom(semantic::Room *p_room_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     p_startingRoom = p_room_in;
 }
 

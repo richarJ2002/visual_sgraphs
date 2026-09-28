@@ -34,10 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseDetectedMapRoom(semantic::Room *pRoom)
+void Map::eraseDetectedMapRoom(semantic::Room *p_room_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    detectedRooms.erase(pRoom);
+    unique_lock<mutex> lock(mapMutex);
+    detectedRooms.erase(p_room_in);
 }
 
 } // namespace core

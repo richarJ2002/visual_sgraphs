@@ -50,36 +50,41 @@ void Tracking::trackStats2File()
          "IMU preint[ms], Pose pred[ms], LM track[ms], KF dec[ms], Total[ms]"
       << endl;
 
-    for (int i = 0; i < vdTrackTotal_ms.size(); ++i)
+    for (int trackTotalTimeIndex = 0;
+         trackTotalTimeIndex < trackTotalTimes_ms.size();
+         ++trackTotalTimeIndex)
     {
-        double stereo_rect = 0.0;
-        if (!vdRectStereo_ms.empty())
+        double stereoRectified = 0.0;
+        if (!stereoRectificationTimes_ms.empty())
         {
-            stereo_rect = vdRectStereo_ms[i];
+            stereoRectified = stereoRectificationTimes_ms[trackTotalTimeIndex];
         }
 
-        double resize_image = 0.0;
-        if (!vdResizeImage_ms.empty())
+        double resizeImage = 0.0;
+        if (!imageResizeTimes_ms.empty())
         {
-            resize_image = vdResizeImage_ms[i];
+            resizeImage = imageResizeTimes_ms[trackTotalTimeIndex];
         }
 
-        double stereo_match = 0.0;
-        if (!vdStereoMatch_ms.empty())
+        double stereoMatch = 0.0;
+        if (!stereoMatchTimes_ms.empty())
         {
-            stereo_match = vdStereoMatch_ms[i];
+            stereoMatch = stereoMatchTimes_ms[trackTotalTimeIndex];
         }
 
-        double imu_preint = 0.0;
-        if (!vdIMUInteg_ms.empty())
+        double imuPreint = 0.0;
+        if (!imuIntegrationTimes_ms.empty())
         {
-            imu_preint = vdIMUInteg_ms[i];
+            imuPreint = imuIntegrationTimes_ms[trackTotalTimeIndex];
         }
 
-        f << stereo_rect << "," << resize_image << "," << vdORBExtract_ms[i]
-          << "," << stereo_match << "," << imu_preint << "," << vdPosePred_ms[i]
-          << "," << vdLMTrack_ms[i] << "," << vdNewKF_ms[i] << ","
-          << vdTrackTotal_ms[i] << endl;
+        f << stereoRectified << "," << resizeImage << ","
+          << orbExtractionTimes_ms[trackTotalTimeIndex] << "," << stereoMatch
+          << "," << imuPreint << ","
+          << posePredictionTimes_ms[trackTotalTimeIndex] << ","
+          << localMapTrackTimes_ms[trackTotalTimeIndex] << ","
+          << newKeyFrameTimes_ms[trackTotalTimeIndex] << ","
+          << trackTotalTimes_ms[trackTotalTimeIndex] << endl;
     }
 
     f.close();

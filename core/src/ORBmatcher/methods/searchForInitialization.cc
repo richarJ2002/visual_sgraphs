@@ -30,89 +30,92 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::searchForInitialization(Frame               &F1,
-                                        Frame               &F2,
-                                        vector<cv::Point2f> &vbPrevMatched,
-                                        vector<int>         &vnMatches12,
-                                        int                  windowSize)
+int ORBmatcher::searchForInitialization(
+    Frame               &F1,
+    Frame               &F2,
+    vector<cv::Point2f> &previousMatched_inout,
+    vector<int>         &vnMatches12,
+    int                  windowSize)
 {
     int nmatches = 0;
     vnMatches12  = vector<int>(F1.keyPointsUndistorted.size(), -1);
 
     vector<int> rotHist[HISTO_LENGTH];
-    for (int i = 0; i < HISTO_LENGTH; i++)
-        rotHist[i].reserve(500);
+    for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
+         histogramBinIndex++)
+        rotHist[histogramBinIndex].reserve(500);
     const float factor = 1.0f / HISTO_LENGTH;
 
-    vector<int> vMatchedDistance(F2.keyPointsUndistorted.size(), INT_MAX);
-    vector<int> vnMatches21(F2.keyPointsUndistorted.size(), -1);
+    vector<int> matchedDistances(F2.keyPointsUndistorted.size(), INT_MAX);
+    vector<int> matchIndices21(F2.keyPointsUndistorted.size(), -1);
 
     for (size_t i1 = 0, iend1 = F1.keyPointsUndistorted.size(); i1 < iend1;
          i1++)
     {
-        cv::KeyPoint kp1    = F1.keyPointsUndistorted[i1];
-        int          level1 = kp1.octave;
+        cv::KeyPoint keyPoint1 = F1.keyPointsUndistorted[i1];
+        int          level1    = keyPoint1.octave;
         if (level1 > 0)
             continue;
 
-        vector<size_t> vIndices2 = F2.getFeaturesInArea(vbPrevMatched[i1].x,
-                                                        vbPrevMatched[i1].y,
-                                                        windowSize,
-                                                        level1,
-                                                        level1);
+        vector<size_t> indices2 =
+            F2.getFeaturesInArea(previousMatched_inout[i1].x,
+                                 previousMatched_inout[i1].y,
+                                 windowSize,
+                                 level1,
+                                 level1);
 
-        if (vIndices2.empty())
+        if (indices2.empty())
             continue;
 
         cv::Mat d1 = F1.descriptors.row(i1);
 
-        int bestDist  = INT_MAX;
-        int bestDist2 = INT_MAX;
-        int bestIdx2  = -1;
+        int bestDistance  = INT_MAX;
+        int bestDistance2 = INT_MAX;
+        int bestIndex2    = -1;
 
-        for (vector<size_t>::iterator vit = vIndices2.begin();
-             vit != vIndices2.end();
+        for (vector<size_t>::iterator vit = indices2.begin();
+             vit != indices2.end();
              vit++)
         {
             size_t i2 = *vit;
 
             cv::Mat d2 = F2.descriptors.row(i2);
 
-            int dist = computeDescriptorDistance(d1, d2);
+            int distance = computeDescriptorDistance(d1, d2);
 
-            if (vMatchedDistance[i2] <= dist)
+            if (matchedDistances[i2] <= distance)
                 continue;
 
-            if (dist < bestDist)
+            if (distance < bestDistance)
             {
-                bestDist2 = bestDist;
-                bestDist  = dist;
-                bestIdx2  = i2;
+                bestDistance2 = bestDistance;
+                bestDistance  = distance;
+                bestIndex2    = i2;
             }
-            else if (dist < bestDist2)
+            else if (distance < bestDistance2)
             {
-                bestDist2 = dist;
+                bestDistance2 = distance;
             }
         }
 
-        if (bestDist <= TH_LOW)
+        if (bestDistance <= TH_LOW)
         {
-            if (bestDist < (float)bestDist2 * mfNNratio)
+            if (bestDistance < (float)bestDistance2 * nearestNeighborRatio)
             {
-                if (vnMatches21[bestIdx2] >= 0)
+                if (matchIndices21[bestIndex2] >= 0)
                 {
-                    vnMatches12[vnMatches21[bestIdx2]] = -1;
+                    vnMatches12[matchIndices21[bestIndex2]] = -1;
                     nmatches--;
                 }
-                vnMatches12[i1]            = bestIdx2;
-                vnMatches21[bestIdx2]      = i1;
-                vMatchedDistance[bestIdx2] = bestDist;
+                vnMatches12[i1]              = bestIndex2;
+                matchIndices21[bestIndex2]   = i1;
+                matchedDistances[bestIndex2] = bestDistance;
                 nmatches++;
 
-                if (mbCheckOrientation)
+                if (shouldCheckOrientation)
                 {
                     float rot = F1.keyPointsUndistorted[i1].angle -
-                                F2.keyPointsUndistorted[bestIdx2].angle;
+                                F2.keyPointsUndistorted[bestIndex2].angle;
                     if (rot < 0.0)
                         rot += 360.0f;
                     int bin = round(rot * factor);
@@ -125,7 +128,7 @@ int ORBmatcher::searchForInitialization(Frame               &F1,
         }
     }
 
-    if (mbCheckOrientation)
+    if (shouldCheckOrientation)
     {
         int ind1 = -1;
         int ind2 = -1;
@@ -133,16 +136,21 @@ int ORBmatcher::searchForInitialization(Frame               &F1,
 
         computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3);
 
-        for (int i = 0; i < HISTO_LENGTH; i++)
+        for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
+             histogramBinIndex++)
         {
-            if (i == ind1 || i == ind2 || i == ind3)
+            if (histogramBinIndex == ind1 || histogramBinIndex == ind2 ||
+                histogramBinIndex == ind3)
                 continue;
-            for (size_t j = 0, jend = rotHist[i].size(); j < jend; j++)
+            for (size_t binEntryIndex = 0,
+                        jend          = rotHist[histogramBinIndex].size();
+                 binEntryIndex < jend;
+                 binEntryIndex++)
             {
-                int idx1 = rotHist[i][j];
-                if (vnMatches12[idx1] >= 0)
+                int index1 = rotHist[histogramBinIndex][binEntryIndex];
+                if (vnMatches12[index1] >= 0)
                 {
-                    vnMatches12[idx1] = -1;
+                    vnMatches12[index1] = -1;
                     nmatches--;
                 }
             }
@@ -152,7 +160,8 @@ int ORBmatcher::searchForInitialization(Frame               &F1,
     // Update prev matched
     for (size_t i1 = 0, iend1 = vnMatches12.size(); i1 < iend1; i1++)
         if (vnMatches12[i1] >= 0)
-            vbPrevMatched[i1] = F2.keyPointsUndistorted[vnMatches12[i1]].pt;
+            previousMatched_inout[i1] =
+                F2.keyPointsUndistorted[vnMatches12[i1]].pt;
 
     return nmatches;
 }

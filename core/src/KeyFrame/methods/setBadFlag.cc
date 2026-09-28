@@ -38,14 +38,14 @@ namespace core
 void KeyFrame::setBadFlag()
 {
     {
-        unique_lock<mutex> lock(mMutexConnections);
-        if (mnId == p_map->getInitKeyFrameId())
+        unique_lock<mutex> lock(connectionsMutex);
+        if (id == p_map->getInitKeyFrameId())
         {
             return;
         }
-        else if (notErase)
+        else if (isEraseProtected)
         {
-            toBeErased = true;
+            isPendingErase = true;
             return;
         }
     }
@@ -81,17 +81,18 @@ void KeyFrame::setBadFlag()
         }
     }
 
-    for (size_t i = 0; i < mapPoints.size(); i++)
+    for (size_t mapPointIndex = 0; mapPointIndex < mapPoints.size();
+         mapPointIndex++)
     {
-        if (mapPoints[i])
+        if (mapPoints[mapPointIndex])
         {
-            mapPoints[i]->eraseObservation(this);
+            mapPoints[mapPointIndex]->eraseObservation(this);
         }
     }
 
     {
-        unique_lock<mutex> lock(mMutexConnections);
-        unique_lock<mutex> lock1(mMutexFeatures);
+        unique_lock<mutex> lock(connectionsMutex);
+        unique_lock<mutex> lock1(featuresMutex);
 
         connectedKeyFrameWeights.clear();
         orderedConnectedKeyFrames.clear();
@@ -99,18 +100,18 @@ void KeyFrame::setBadFlag()
         mapMarkers.clear();
 
         // Update Spanning Tree
-        set<KeyFrame *> sParentCandidates;
+        set<KeyFrame *> parentCandidates;
         if (p_parent)
-            sParentCandidates.insert(p_parent);
+            parentCandidates.insert(p_parent);
 
         // Assign at each iteration one children with a parent (the pair with
         // highest covisibility weight) Include that children as new parent
         // candidate for the rest
         while (!childrens.empty())
         {
-            bool bContinue = false;
+            bool shouldContinue = false;
 
-            int       max = -1;
+            int       maximum = -1;
             KeyFrame *pC;
             KeyFrame *pP;
 
@@ -119,40 +120,43 @@ void KeyFrame::setBadFlag()
                  sit != send;
                  sit++)
             {
-                KeyFrame *pKF = *sit;
-                if (pKF->isBad())
+                KeyFrame *p_keyFrame = *sit;
+                if (p_keyFrame->isBad())
                     continue;
 
                 // Check if a parent candidate is connected to the keyframe
-                vector<KeyFrame *> vpConnected =
-                    pKF->getVectorCovisibleKeyFrames();
-                for (size_t i = 0, iend = vpConnected.size(); i < iend; i++)
+                vector<KeyFrame *> connecteds =
+                    p_keyFrame->getVectorCovisibleKeyFrames();
+                for (size_t mapPointIndex = 0, iend = connecteds.size();
+                     mapPointIndex < iend;
+                     mapPointIndex++)
                 {
                     for (set<KeyFrame *>::iterator
-                             spcit  = sParentCandidates.begin(),
-                             spcend = sParentCandidates.end();
+                             spcit  = parentCandidates.begin(),
+                             spcend = parentCandidates.end();
                          spcit != spcend;
                          spcit++)
                     {
-                        if (vpConnected[i]->mnId == (*spcit)->mnId)
+                        if (connecteds[mapPointIndex]->id == (*spcit)->id)
                         {
-                            int w = pKF->getWeight(vpConnected[i]);
-                            if (w > max)
+                            int w = p_keyFrame->getWeight(
+                                connecteds[mapPointIndex]);
+                            if (w > maximum)
                             {
-                                pC        = pKF;
-                                pP        = vpConnected[i];
-                                max       = w;
-                                bContinue = true;
+                                pC             = p_keyFrame;
+                                pP             = connecteds[mapPointIndex];
+                                maximum        = w;
+                                shouldContinue = true;
                             }
                         }
                     }
                 }
             }
 
-            if (bContinue)
+            if (shouldContinue)
             {
                 pC->changeParent(pP);
-                sParentCandidates.insert(pC);
+                parentCandidates.insert(pC);
                 childrens.erase(pC);
             }
             else
@@ -176,7 +180,7 @@ void KeyFrame::setBadFlag()
             p_parent->eraseChild(this);
             tcp = poseTcw * p_parent->getPoseInverse();
         }
-        mbBad = true;
+        isFlaggedBad = true;
     }
 
     p_map->eraseKeyFrame(this);

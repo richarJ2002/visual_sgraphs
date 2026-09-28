@@ -35,11 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::addLoopEdge(KeyFrame *pKF)
+void KeyFrame::addLoopEdge(KeyFrame *p_keyFrame_in)
 {
-    unique_lock<mutex> lockCon(mMutexConnections);
-    notErase = true;
-    loopEdges.insert(pKF);
+    unique_lock<mutex> lockCon(connectionsMutex);
+    isEraseProtected = true;
+    loopEdges.insert(p_keyFrame_in);
 }
 
 } // namespace core

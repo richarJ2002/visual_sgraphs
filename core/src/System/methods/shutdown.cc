@@ -33,8 +33,8 @@ namespace core
 void System::shutdown()
 {
     {
-        unique_lock<mutex> lock(mMutexReset);
-        shutdownRequested = true;
+        unique_lock<mutex> lock(resetMutex);
+        isShutdownRequested = true;
     }
 
     cout << "Shutdown" << endl;

@@ -183,14 +183,14 @@ class Room
      * @brief        True while identity and topology were restored
      *               without fresh map geometry.
      */
-    bool recoveryProxy{false};
+    bool isMarkedRecoveryProxy{false};
 
     /*!
      * @brief        True once the UAV has entered this room.
      *               Observed mission state only; never consulted by
      *               creation, promotion, retirement, or merge paths.
      */
-    bool previouslyVisited{false};
+    bool wasPreviouslyVisited{false};
 
     /*!
      * @brief        The meta-marker assigned for the room.
@@ -550,10 +550,10 @@ class Room
     /*!
      * @brief        Marks that the UAV has entered this room.
      *
-     * @param[in]    visited_in
+     * @param[in]    wasPreviouslyVisited_in
      *               New visited flag.
      */
-    void setPreviouslyVisited(bool visited_in);
+    void setPreviouslyVisited(bool wasPreviouslyVisited_in);
 
     /*!
      * @brief        Returns whether the UAV has entered this room.

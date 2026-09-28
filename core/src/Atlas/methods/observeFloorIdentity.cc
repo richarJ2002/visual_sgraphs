@@ -34,7 +34,7 @@ namespace core
 
 void Atlas::observeFloorIdentity(const int floorId_in)
 {
-    advanceIdentityAllocator(nextFloorIdentity_, floorId_in);
+    advanceIdentityAllocator(nextFloorIdentity, floorId_in);
 }
 
 } // namespace core

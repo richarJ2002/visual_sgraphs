@@ -48,10 +48,10 @@ namespace core
 {
 
 std::vector<Map *> Atlas::getCoherentMapView(
-    std::optional<long unsigned int> &currentMapId_out,
+    std::optional<long unsigned int> &currentMapId_inout,
     AtlasCurrentMapStatus            &currentMapStatus_out)
 {
-    std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
+    std::unique_lock<std::mutex> atlasLock(atlasMutex);
 
     std::vector<Map *> activeMaps(maps.begin(), maps.end());
     std::sort(activeMaps.begin(),
@@ -59,11 +59,11 @@ std::vector<Map *> Atlas::getCoherentMapView(
               [](Map *p_lhs_in, Map *p_rhs_in)
               { return p_lhs_in->getId() < p_rhs_in->getId(); });
 
-    currentMapId_out.reset();
+    currentMapId_inout.reset();
     currentMapStatus_out = AtlasCurrentMapStatus::NO_CURRENT_MAP;
     if (p_activeMap != nullptr)
     {
-        currentMapId_out = p_activeMap->getId();
+        currentMapId_inout = p_activeMap->getId();
         const bool isCurrentMapActive =
             std::find(activeMaps.begin(), activeMaps.end(), p_activeMap) !=
             activeMaps.end();

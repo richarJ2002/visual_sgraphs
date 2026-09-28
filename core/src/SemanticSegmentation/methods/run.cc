@@ -42,7 +42,7 @@ void SemanticSegmentation::run()
         WorkItem workItem;
         bool     hasWorkItem = false;
         {
-            std::lock_guard<std::mutex> lock(mMutexNewKFs);
+            std::lock_guard<std::mutex> lock(newKeyFramesMutex);
             if (!segmentedImageBuffer.empty())
             {
                 workItem = std::move(segmentedImageBuffer.front());
@@ -92,13 +92,13 @@ void SemanticSegmentation::run()
         }
 
         /* Extract point cloud from keyframe */
-        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr thisKFPointCloud =
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_thisKeyFramePointCloud =
             p_thisKeyFrame->getCurrentFramePointCloud();
 
         /* If no point cloud in keyframe, skip to next frame */
-        if (thisKFPointCloud == nullptr)
+        if (p_thisKeyFramePointCloud == nullptr)
         {
-            std::cerr << "[SemSeg] Skipping keyframe " << p_thisKeyFrame->mnId
+            std::cerr << "[SemSeg] Skipping keyframe " << p_thisKeyFrame->id
                       << ": the RGB-D point cloud is unavailable." << std::endl;
             recordTerminalOutcome(workItem.keyFrameId,
                                   TerminalOutcome::MISSING_CLOUD);
@@ -109,10 +109,10 @@ void SemanticSegmentation::run()
         pcl::PCLPointCloud2::Ptr pclPc2SegPrb = workItem.segmentationCloud;
 
         /* Extract the segmentation uncertainties from the image */
-        cv::Mat segImgUncertainity = workItem.uncertaintyImage;
+        cv::Mat segImageUncertainity = workItem.uncertaintyImage;
 
         /* Init an object of point clouds for seperated classes */
-        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> clsCloudPtrs;
+        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> p_clsCloudPtrs;
 
         /*!
          * Seperate points into classes and filtering based on thresholds.
@@ -122,9 +122,9 @@ void SemanticSegmentation::run()
          * representing the semantic type of each point.
          */
         threshSeparatePointCloud(pclPc2SegPrb,
-                                 segImgUncertainity,
-                                 clsCloudPtrs,
-                                 thisKFPointCloud);
+                                 segImageUncertainity,
+                                 p_clsCloudPtrs,
+                                 p_thisKeyFramePointCloud);
 
         /*!
          * Diagnostic visibility for a previously-silent failure mode: if the
@@ -138,18 +138,20 @@ void SemanticSegmentation::run()
          * on a small count, not just empty, so this stays quiet on ordinary
          * frames.
          */
-        constexpr std::size_t kWallClassIndex          = 1U;
-        constexpr std::size_t kWallSilentDropLogThresh = 50U;
-        if (clsCloudPtrs.size() > kWallClassIndex &&
-            clsCloudPtrs[kWallClassIndex]->size() < kWallSilentDropLogThresh)
+        constexpr std::size_t WALL_CLASS_INDEX               = 1U;
+        constexpr std::size_t WALL_SILENT_DROP_LOG_THRESHOLD = 50U;
+        if (p_clsCloudPtrs.size() > WALL_CLASS_INDEX &&
+            p_clsCloudPtrs[WALL_CLASS_INDEX]->size() <
+                WALL_SILENT_DROP_LOG_THRESHOLD)
         {
             const Eigen::Vector3f cameraCenter_World =
                 p_thisKeyFrame->getCameraCenter();
-            std::cout << "[SemSeg] KF#" << p_thisKeyFrame->mnId
+            std::cout << "[SemSeg] KF#" << p_thisKeyFrame->id
                       << " wall-class points after confidence gating: "
-                      << clsCloudPtrs[kWallClassIndex]->size() << " (camera at "
-                      << cameraCenter_World.x() << ',' << cameraCenter_World.y()
-                      << ',' << cameraCenter_World.z() << ')' << std::endl;
+                      << p_clsCloudPtrs[WALL_CLASS_INDEX]->size()
+                      << " (camera at " << cameraCenter_World.x() << ','
+                      << cameraCenter_World.y() << ',' << cameraCenter_World.z()
+                      << ')' << std::endl;
         }
 
         /*!
@@ -168,7 +170,7 @@ void SemanticSegmentation::run()
          *              classified point-cloud data are no longer needed and can
          *              be released to reduce memory usage.
          */
-        if (p_thisKeyFrame->mnId - lastProcessedKeyFrameId > 5)
+        if (p_thisKeyFrame->id - lastProcessedKeyFrameId > 5)
         {
             /*!
              * A keyframe more than 5 ids behind the one just processed is
@@ -189,31 +191,31 @@ void SemanticSegmentation::run()
              */
             std::unordered_set<uint64_t> pendingKeyFrameIds;
             {
-                std::lock_guard<std::mutex> lock(mMutexNewKFs);
+                std::lock_guard<std::mutex> lock(newKeyFramesMutex);
                 for (const WorkItem &bufferedItem : segmentedImageBuffer)
                 {
                     pendingKeyFrameIds.insert(bufferedItem.keyFrameId);
                 }
             }
 
-            for (unsigned long int i = lastProcessedKeyFrameId + 1;
-                 i < p_thisKeyFrame->mnId - 5;
-                 i++)
+            for (unsigned long int keyFrameId = lastProcessedKeyFrameId + 1;
+                 keyFrameId < p_thisKeyFrame->id - 5;
+                 keyFrameId++)
             {
-                if (pendingKeyFrameIds.count(i) > 0U)
+                if (pendingKeyFrameIds.count(keyFrameId) > 0U)
                 {
                     continue;
                 }
 
-                KeyFrame *pKF = p_atlas->getKeyFrameById(i);
-                if (pKF != nullptr &&
-                    pKF->getCurrentFramePointCloud() != nullptr)
+                KeyFrame *p_keyFrame = p_atlas->getKeyFrameById(keyFrameId);
+                if (p_keyFrame != nullptr &&
+                    p_keyFrame->getCurrentFramePointCloud() != nullptr)
                 {
-                    pKF->clearPointCloud();
-                    pKF->clearClsClouds();
+                    p_keyFrame->clearPointCloud();
+                    p_keyFrame->clearClsClouds();
                 }
             }
-            lastProcessedKeyFrameId = p_thisKeyFrame->mnId - 5;
+            lastProcessedKeyFrameId = p_thisKeyFrame->id - 5;
         }
 
         /* ------------------------------------------------------------------ *
@@ -228,10 +230,10 @@ void SemanticSegmentation::run()
         std::vector<
             std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
                                   Eigen::Vector4d>>>
-            clsPlanes = getPlanesFromClassClouds(clsCloudPtrs);
+            p_clsPlanes = getPlanesFromClassClouds(p_clsCloudPtrs);
 
         /* Set the class specific point clouds to the keyframe */
-        p_thisKeyFrame->setCurrentClsCloudPtrs(clsCloudPtrs);
+        p_thisKeyFrame->setCurrentClsCloudPtrs(p_clsCloudPtrs);
 
         {
             /*!
@@ -266,7 +268,7 @@ void SemanticSegmentation::run()
             }
 
             /* Add the planes to Atlas. */
-            updatePlaneData(p_thisKeyFrame, clsPlanes);
+            updatePlaneData(p_thisKeyFrame, p_clsPlanes);
         }
         recordTerminalOutcome(workItem.keyFrameId, TerminalOutcome::ACCEPTED);
     }

@@ -36,7 +36,7 @@ namespace core
 
 Eigen::Vector3f MapPoint::getWorldPos()
 {
-    unique_lock<mutex> lock(mMutexPos);
+    unique_lock<mutex> lock(positionMutex);
     return worldPos;
 }
 

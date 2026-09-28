@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-long unsigned int Map::nNextId = 0;
+long unsigned int Map::nextId = 0;
 
 } // namespace core
 } // namespace vs_graphs

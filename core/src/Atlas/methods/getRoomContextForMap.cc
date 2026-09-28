@@ -31,15 +31,15 @@ namespace core
 {
 
 const std::vector<semantic::RoomContextSnapshot> &
-    Atlas::getRoomContextForMap(long unsigned int mapId) const
+    Atlas::getRoomContextForMap(long unsigned int mapId_in) const
 {
     /* Compatibility API: callers requiring synchronization must use the copy
      * API. The historical reference lifetime cannot be made lock-safe. */
     static const std::vector<semantic::RoomContextSnapshot> empty;
-    auto it = roomContextHistory.find(mapId);
-    if (it == roomContextHistory.end())
+    auto roomContextIt = roomContextHistory.find(mapId_in);
+    if (roomContextIt == roomContextHistory.end())
         return empty;
-    return it->second;
+    return roomContextIt->second;
 }
 
 } // namespace core

@@ -44,22 +44,22 @@ namespace vs_graphs
 namespace core
 {
 
-System::System(const string         &strVocFile,
-               const string         &strSettingsFile,
-               const string         &strSysParamsFile,
-               const eSensor         sensor,
-               const bool            bUseViewer,
-               const int             initFr,
-               const string         &strSequence,
-               const Verbose::eLevel verboseLevel) :
-    sensor(sensor),
+System::System(const string                 &vocabularyFile_in,
+               const string                 &settingsFile_in,
+               const string                 &sysParamsFile_in,
+               const SensorType              sensor_in,
+               const bool                    shouldUseViewer_in,
+               const int                     initialFr_in,
+               const string                 &sequence_in,
+               const Verbose::VerbosityLevel verboseLevel_in) :
+    sensor(sensor_in),
     p_viewer(static_cast<Viewer *>(nullptr)),
-    mptGeometricSegmentation(static_cast<std::thread *>(nullptr)),
-    resetRequested(false),
-    resetActiveMapRequested(false),
-    activateLocalizationModeRequested(false),
-    deactivateLocalizationModeRequested(false),
-    shutdownRequested(false)
+    p_geometricSegmentationThread(static_cast<std::thread *>(nullptr)),
+    isResetRequested(false),
+    isResetActiveMapRequested(false),
+    isLocalizationModeActivationRequested(false),
+    isLocalizationModeDeactivationRequested(false),
+    isShutdownRequested(false)
 {
     /* Output welcome message */
     std::cout << std::endl
@@ -81,51 +81,51 @@ System::System(const string         &strVocFile,
 
     /* Output msg of what sensor is being used */
     std::cout << "[System] Input sensor is set to: ";
-    if (sensor == MONOCULAR)
+    if (sensor_in == MONOCULAR)
     {
         std::cout << "Monocular" << std::endl;
     }
-    else if (sensor == STEREO)
+    else if (sensor_in == STEREO)
     {
         std::cout << "Stereo" << std::endl;
     }
-    else if (sensor == RGBD)
+    else if (sensor_in == RGBD)
     {
         std::cout << "RGB-D" << std::endl;
     }
-    else if (sensor == IMU_MONOCULAR)
+    else if (sensor_in == IMU_MONOCULAR)
     {
         std::cout << "Monocular-Inertial" << std::endl;
     }
-    else if (sensor == IMU_STEREO)
+    else if (sensor_in == IMU_STEREO)
     {
         std::cout << "Stereo-Inertial" << std::endl;
     }
-    else if (sensor == IMU_RGBD)
+    else if (sensor_in == IMU_RGBD)
     {
         std::cout << "RGB-D-Inertial" << std::endl;
     }
 
     /* Check settings file can be opened */
-    cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
+    cv::FileStorage fsSettings(settingsFile_in.c_str(), cv::FileStorage::READ);
     if (!fsSettings.isOpened())
     {
         std::cerr << "[System] Failed to open settings file at '"
-                  << strSettingsFile << "'! Exiting ..." << std::endl;
+                  << settingsFile_in << "'! Exiting ..." << std::endl;
         exit(-1);
     }
 
     cv::FileNode node = fsSettings["File.version"];
     if (!node.empty() && node.isString() && node.string() == "1.0")
     {
-        settings_     = new utils::settings::Settings(strSettingsFile, sensor);
-        loadAtlasFile = settings_->atlasLoadFile();
-        saveAtlasFile = settings_->atlasSaveFile();
-        std::cout << (*settings_) << std::endl;
+        p_settings = new utils::settings::Settings(settingsFile_in, sensor_in);
+        loadAtlasFile = p_settings->atlasLoadFile();
+        saveAtlasFile = p_settings->atlasSaveFile();
+        std::cout << (*p_settings) << std::endl;
     }
     else
     {
-        settings_         = nullptr;
+        p_settings        = nullptr;
         cv::FileNode node = fsSettings["System.LoadAtlasFromFile"];
         if (!node.empty() && node.isString())
             loadAtlasFile = (string)node;
@@ -135,31 +135,32 @@ System::System(const string         &strVocFile,
             saveAtlasFile = (string)node;
     }
 
-    if ((sensor == RGBD || sensor == IMU_RGBD) && settings_ != nullptr)
+    if ((sensor_in == RGBD || sensor_in == IMU_RGBD) && p_settings != nullptr)
     {
-        const double stereoDepthThreshold = settings_->thDepth();
-        const double metricCloseDepth_m = settings_->b() * stereoDepthThreshold;
+        const double stereoDepthThreshold = p_settings->thDepth();
+        const double metricCloseDepth_m =
+            p_settings->b() * stereoDepthThreshold;
         std::cout << "Stereo.ThDepth=" << stereoDepthThreshold
                   << " closeDepthMeters=" << metricCloseDepth_m << std::endl;
     }
 
     node          = fsSettings["loopClosing"];
-    bool activeLC = true;
+    bool activeLc = true;
     if (!node.empty())
     {
-        activeLC = static_cast<int>(fsSettings["loopClosing"]) != 0;
+        activeLc = static_cast<int>(fsSettings["loopClosing"]) != 0;
     }
 
-    vocabularyFilePath = strVocFile;
+    vocabularyFilePath = vocabularyFile_in;
 
     /* Init the ORB vocabulary */
     std::cout << "[System] Loading ORB Vocabulary ..." << std::endl;
-    p_vocabulary  = new ORBVocabulary();
-    bool bVocLoad = p_vocabulary->loadFromBinFile(strVocFile);
-    if (!bVocLoad)
+    p_vocabulary            = new ORBVocabulary();
+    bool isVocabularyLoaded = p_vocabulary->loadFromBinFile(vocabularyFile_in);
+    if (!isVocabularyLoaded)
     {
         cerr << "- Wrong path to vocabulary. " << endl;
-        cerr << "- Failed to open at: " << strVocFile << endl;
+        cerr << "- Failed to open at: " << vocabularyFile_in << endl;
         exit(-1);
     }
 
@@ -196,13 +197,14 @@ System::System(const string         &strVocFile,
 
     /* Load the system parameters */
     types::SystemParams *p_sysParams = types::SystemParams::getParams();
-    p_sysParams->setParams(strSysParamsFile);
+    p_sysParams->setParams(sysParamsFile_in);
 
     /* Parse the environment database, if provided */
     parseJsonDatabase(p_sysParams->general.envDatabase);
 
     /* If the sensor is integrated with IMU, initialize the IMU first */
-    if (sensor == IMU_STEREO || sensor == IMU_MONOCULAR || sensor == IMU_RGBD)
+    if (sensor_in == IMU_STEREO || sensor_in == IMU_MONOCULAR ||
+        sensor_in == IMU_RGBD)
     {
         p_atlas->setInertialSensor();
     }
@@ -213,7 +215,7 @@ System::System(const string         &strVocFile,
 
     /* Create Drawers. These are used by the Viewer */
     p_frameDrawer = new FrameDrawer(p_atlas);
-    p_mapDrawer   = new MapDrawer(p_atlas, strSettingsFile, settings_);
+    p_mapDrawer   = new MapDrawer(p_atlas, settingsFile_in, p_settings);
 
     /* Initialize the Tracking thread */
     p_tracker = new Tracking(this,
@@ -222,10 +224,10 @@ System::System(const string         &strVocFile,
                              p_mapDrawer,
                              p_atlas,
                              p_keyFrameDatabase,
-                             strSettingsFile,
-                             sensor,
-                             settings_,
-                             strSequence);
+                             settingsFile_in,
+                             sensor_in,
+                             p_settings,
+                             sequence_in);
 
     /* Set the value of marker impact */
     p_tracker->setMarkerImpact(p_sysParams->markers.impact);
@@ -235,21 +237,22 @@ System::System(const string         &strVocFile,
      * ---------------------------------------------------------------------- */
 
     /* Initialize the Local Mapping object */
-    p_localMapper = new LocalMapping(
-        this,
-        p_atlas,
-        sensor == MONOCULAR || sensor == IMU_MONOCULAR,
-        sensor == IMU_MONOCULAR || sensor == IMU_STEREO || sensor == IMU_RGBD,
-        strSequence);
+    p_localMapper =
+        new LocalMapping(this,
+                         p_atlas,
+                         sensor_in == MONOCULAR || sensor_in == IMU_MONOCULAR,
+                         sensor_in == IMU_MONOCULAR ||
+                             sensor_in == IMU_STEREO || sensor_in == IMU_RGBD,
+                         sequence_in);
 
     /* Set up thread to run the mpLocalMapper and call Run() method */
-    mptLocalMapping =
+    p_localMappingThread =
         new thread(&vs_graphs::core::LocalMapping::run, p_localMapper);
 
-    p_localMapper->initFrame = initFr;
-    if (settings_)
+    p_localMapper->initFrame = initialFr_in;
+    if (p_settings)
     {
-        p_localMapper->farPointsThreshold = settings_->thFarPoints();
+        p_localMapper->farPointsThreshold = p_settings->thFarPoints();
     }
     else
     {
@@ -261,11 +264,11 @@ System::System(const string         &strVocFile,
         cout << "Discard points further than "
              << p_localMapper->farPointsThreshold << " m from current camera"
              << endl;
-        p_localMapper->farPoints = true;
+        p_localMapper->shouldSkipFarPoints = true;
     }
     else
     {
-        p_localMapper->farPoints = false;
+        p_localMapper->shouldSkipFarPoints = false;
     }
 
     /* ---------------------------------------------------------------------- *
@@ -276,11 +279,11 @@ System::System(const string         &strVocFile,
     p_loopCloser = new LoopClosing(p_atlas,
                                    p_keyFrameDatabase,
                                    p_vocabulary,
-                                   sensor != MONOCULAR,
-                                   activeLC);
+                                   sensor_in != MONOCULAR,
+                                   activeLc);
 
     /* Launch the loop closing thread */
-    mptLoopClosing =
+    p_loopClosingThread =
         new thread(&vs_graphs::core::LoopClosing::run, p_loopCloser);
 
     /* ---------------------------------------------------------------------- *
@@ -291,7 +294,7 @@ System::System(const string         &strVocFile,
     p_semanticSegmentation = new SemanticSegmentation(p_atlas);
 
     /* Launch the Semantic Segmentation thread */
-    mptSemanticSegmentation =
+    p_semanticSegmentationThread =
         new thread(&SemanticSegmentation::run, p_semanticSegmentation);
 
     /* ---------------------------------------------------------------------- *
@@ -302,7 +305,7 @@ System::System(const string         &strVocFile,
     p_semanticsManager = new SemanticsManager(p_atlas);
 
     /* Launch the Semantic Manager thread */
-    mptSemanticsManager =
+    p_semanticsManagerThread =
         new thread(&SemanticsManager::run, p_semanticsManager);
 
     /* ---------------------------------------------------------------------- *
@@ -322,22 +325,22 @@ System::System(const string         &strVocFile,
     p_loopCloser->setLocalMapper(p_localMapper);
 
     /* If enabled, init the viewer */
-    if (bUseViewer)
+    if (shouldUseViewer_in)
     {
-        p_viewer  = new Viewer(this,
+        p_viewer       = new Viewer(this,
                               p_frameDrawer,
                               p_mapDrawer,
                               p_tracker,
-                              strSettingsFile,
-                              settings_);
-        mptViewer = new thread(&Viewer::run, p_viewer);
+                              settingsFile_in,
+                              p_settings);
+        p_viewerThread = new thread(&Viewer::run, p_viewer);
         p_tracker->setViewer(p_viewer);
-        p_loopCloser->p_viewer = p_viewer;
-        p_viewer->both         = p_frameDrawer->both;
+        p_loopCloser->p_viewer         = p_viewer;
+        p_viewer->shouldDrawBothImages = p_frameDrawer->shouldDrawBothImages;
     }
 
     /* Set verbosity level */
-    Verbose::setTh(verboseLevel);
+    Verbose::setTh(verboseLevel_in);
 }
 
 } // namespace core

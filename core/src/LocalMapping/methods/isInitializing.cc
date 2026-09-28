@@ -32,7 +32,7 @@ namespace core
 
 bool LocalMapping::isInitializing()
 {
-    return bInitializing;
+    return isInitializationInProgress;
 }
 
 } // namespace core

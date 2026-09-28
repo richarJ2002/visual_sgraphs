@@ -359,10 +359,10 @@ TEST(SerializationImu, CalibRoundTrip)
                                  Eigen::Vector3f(0.1F, 0.2F, 0.3F));
     IMU::Calib         original;
     original.setCalibration(known_tbc, 0.01F, 0.02F, 0.001F, 0.002F);
-    EXPECT_TRUE(original.mbIsSet);
+    EXPECT_TRUE(original.isCalibrationSet);
 
     const IMU::Calib loaded = RoundTripBinaryCopyable(original);
-    EXPECT_TRUE(loaded.mbIsSet);
+    EXPECT_TRUE(loaded.isCalibrationSet);
     ExpectSophusEqual(original.mTbc, loaded.mTbc);
     ExpectSophusEqual(original.mTcb, loaded.mTcb);
     EXPECT_TRUE(
@@ -371,9 +371,9 @@ TEST(SerializationImu, CalibRoundTrip)
                                                      1.0e-6F));
 
     const IMU::Calib unset;
-    EXPECT_FALSE(unset.mbIsSet);
+    EXPECT_FALSE(unset.isCalibrationSet);
     const IMU::Calib unset_loaded = RoundTripBinaryCopyable(unset);
-    EXPECT_FALSE(unset_loaded.mbIsSet);
+    EXPECT_FALSE(unset_loaded.isCalibrationSet);
 }
 
 TEST(SerializationImu, PreintegratedRoundTrip)
@@ -515,22 +515,22 @@ TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
 {
     Map      map;
     KeyFrame ref_keyframe;
-    ref_keyframe.mnId               = 7U;
+    ref_keyframe.id                 = 7U;
     ref_keyframe.p_camera           = nullptr;
     ref_keyframe.p_camera2          = nullptr;
     ref_keyframe.p_imuPreintegrated = nullptr;
 
     MapPoint original(Eigen::Vector3f(1.0F, 2.0F, 3.0F), &ref_keyframe, &map);
     original.setNormalVector(Eigen::Vector3f(0.0F, 0.0F, 1.0F));
-    const long unsigned int original_id = original.mnId;
+    const long unsigned int original_id = original.id;
 
     std::set<KeyFrame *> keyframe_set{&ref_keyframe};
     std::set<MapPoint *> mappoint_set{&original};
-    original.PreSave(keyframe_set, mappoint_set);
+    original.preSave(keyframe_set, mappoint_set);
 
     MapPoint loaded;
     RoundTripBinaryInto(original, loaded);
-    EXPECT_EQ(original_id, loaded.mnId);
+    EXPECT_EQ(original_id, loaded.id);
     EXPECT_EQ(original.firstKeyFrameId, loaded.firstKeyFrameId);
     EXPECT_EQ(original.observationCount, loaded.observationCount);
     EXPECT_TRUE(original.getWorldPos().isApprox(loaded.getWorldPos(), 1.0e-6F));
@@ -540,14 +540,14 @@ TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
                     loaded.getMinDistanceInvariance());
     EXPECT_FLOAT_EQ(original.getMaxDistanceInvariance(),
                     loaded.getMaxDistanceInvariance());
-    // SKIP mutexes (mMutexPos/mMutexFeatures/mMutexMap): post-load object
+    // SKIP mutexes (positionMutex/featuresMutex/mapMutex): post-load object
     // must be usable through its public getters (exercised above).
     EXPECT_NO_THROW(loaded.setWorldPos(Eigen::Vector3f(4.0F, 5.0F, 6.0F)));
 }
 
 TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
 {
-    // NB: KeyFrameDatabase::PreSave() is declared in KeyFrameDatabase.h:82
+    // NB: KeyFrameDatabase::preSave() is declared in KeyFrameDatabase.h:82
     // but has no definition in KeyFrameDatabase.cc on this branch, so it
     // must not be called (would fail to link). The empty DB backup vector
     // is already deterministically empty without it.
@@ -580,7 +580,7 @@ TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
 TEST(SerializationKeyFrame, DefaultRoundTrip)
 {
     KeyFrame original;
-    original.mnId               = 11U;
+    original.id                 = 11U;
     original.isImu              = false;
     original.p_camera           = nullptr;
     original.p_camera2          = nullptr;
@@ -593,15 +593,15 @@ TEST(SerializationKeyFrame, DefaultRoundTrip)
     std::set<KeyFrame *>                                        keyframe_set;
     std::set<MapPoint *>                                        mappoint_set;
     std::set<camera_models::geometriccamera::GeometricCamera *> camera_set;
-    original.PreSave(keyframe_set, mappoint_set, camera_set);
+    original.preSave(keyframe_set, mappoint_set, camera_set);
 
     KeyFrame loaded;
     loaded.p_camera           = nullptr;
     loaded.p_camera2          = nullptr;
     loaded.p_imuPreintegrated = nullptr;
     RoundTripBinaryInto(original, loaded);
-    EXPECT_EQ(original.mnId, loaded.mnId);
-    EXPECT_EQ(original.N, loaded.N);
+    EXPECT_EQ(original.id, loaded.id);
+    EXPECT_EQ(original.keyPointCount, loaded.keyPointCount);
     EXPECT_EQ(original.isBad(), loaded.isBad());
     ExpectSophusEqual(original.getPose(), loaded.getPose());
     EXPECT_TRUE(original.getVelocity().isApprox(loaded.getVelocity(), 1.0e-5F));
@@ -659,8 +659,8 @@ TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
     original.addCamera(camera);
     ASSERT_EQ(1U, original.getAllCameras().size());
 
-    // Direct serialize saves backup maps (empty until PreSave) + cameras +
-    // static IDs. Active sets are rebuilt by PostLoad, so compare the
+    // Direct serialize saves backup maps (empty until preSave) + cameras +
+    // static IDs. Active sets are rebuilt by postLoad, so compare the
     // serialized state (cameras + init ID), not the transient active set.
     const std::string path = TmpPath("atlas.bin");
     Atlas             loaded;

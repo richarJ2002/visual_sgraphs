@@ -34,7 +34,7 @@ AlignmentCheck checkFixedTransformWalls(
     const std::vector<VerifyWallObservation> &survivingWalls_in,
     const std::vector<VerifyWallObservation> &absorbedWalls_in,
     const g2o::Sim3                          &transform_in,
-    const SemanticVerifyConfig               &config_in,
+    const SemanticVerifyConfig               &configuration_in,
     std::size_t                              &matchedCount_out)
 {
     matchedCount_out = 0U;
@@ -87,14 +87,15 @@ AlignmentCheck checkFixedTransformWalls(
                 std::acos(cosine) * 180.0 / std::acos(-1.0);
             const double offset_m =
                 std::abs(transformedOffset - survivingWall.d);
-            if (angle_deg > config_in.maxNormalAngle_deg ||
-                offset_m > config_in.maxOffset_m)
+            if (angle_deg > configuration_in.maxNormalAngle_deg ||
+                offset_m > configuration_in.maxOffset_m)
             {
                 continue;
             }
             const double residual =
-                angle_deg / std::max(config_in.maxNormalAngle_deg, 1e-9) +
-                offset_m / std::max(config_in.maxOffset_m, 1e-9);
+                angle_deg /
+                    std::max(configuration_in.maxNormalAngle_deg, 1e-9) +
+                offset_m / std::max(configuration_in.maxOffset_m, 1e-9);
             if (residual < bestResidual)
             {
                 bestResidual = residual;
@@ -112,7 +113,8 @@ AlignmentCheck checkFixedTransformWalls(
         std::max(survivingWalls_in.size(), absorbedWalls_in.size());
     const double inlierRatio = static_cast<double>(matchedCount_out) /
                                static_cast<double>(evidenceCount);
-    return matchedCount_out >= 3U && inlierRatio >= config_in.minInlierRatio
+    return matchedCount_out >= 3U &&
+                   inlierRatio >= configuration_in.minInlierRatio
                ? AlignmentCheck::ALIGNED
                : AlignmentCheck::CONTRADICTION;
 }

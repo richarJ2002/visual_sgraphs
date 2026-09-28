@@ -40,9 +40,9 @@ void SemanticsManager::associateAllWallsToRooms(void)
     /* Extract all current rooms and provisional structural elements */
     std::vector<vs_graphs::core::semantic::Room *> allRooms =
         p_atlas->getAllRooms();
-    Map            *p_activeMap   = p_atlas->getCurrentMap();
-    semantic::Room *p_currentRoom = nullptr;
-    const int       currentRoomId = getCurrentRoomId();
+    Map            *p_activeMap           = p_atlas->getCurrentMap();
+    semantic::Room *p_currentRoom         = nullptr;
+    const int       currentRoomIdSnapshot = getCurrentRoomId();
     const auto      planeClassName =
         [](const geometric::Plane::PlaneVariant variant_in)
     {
@@ -65,7 +65,7 @@ void SemanticsManager::associateAllWallsToRooms(void)
     {
         if (p_room != nullptr && !p_room->isBad() &&
             p_room->getMap() == p_activeMap &&
-            p_room->getId() == currentRoomId &&
+            p_room->getId() == currentRoomIdSnapshot &&
             p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM)
         {
             p_currentRoom = p_room;
@@ -81,22 +81,23 @@ void SemanticsManager::associateAllWallsToRooms(void)
     if (p_groundPlaneForEvidence != nullptr &&
         !p_groundPlaneForEvidence->isBad())
     {
-        const Eigen::Vector4d groundEq =
+        const Eigen::Vector4d groundEquation =
             p_groundPlaneForEvidence->getGlobalEquation().coeffs();
-        const double groundNorm = groundEq.head<3>().norm();
-        if (groundEq.allFinite() && groundNorm > 1e-8)
+        const double groundEquationNormalNorm = groundEquation.head<3>().norm();
+        if (groundEquation.allFinite() && groundEquationNormalNorm > 1e-8)
         {
-            groundNormalForEvidence_World = groundEq.head<3>() / groundNorm;
+            groundNormalForEvidence_World =
+                groundEquation.head<3>() / groundEquationNormalNorm;
         }
     }
 
     /* Helper which confirms that a room already contains a wall */
     const auto roomContainsWall =
         [](vs_graphs::core::semantic::Room   *room,
-           vs_graphs::core::geometric::Plane *wall) -> bool
+           vs_graphs::core::geometric::Plane *p_wall) -> bool
     {
         /* Return false if either object is invalid */
-        if (room == nullptr || wall == nullptr)
+        if (room == nullptr || p_wall == nullptr)
         {
             return false;
         }
@@ -109,47 +110,50 @@ void SemanticsManager::associateAllWallsToRooms(void)
         return std::any_of(
             roomWalls.begin(),
             roomWalls.end(),
-            [wall](vs_graphs::core::geometric::Plane *existingWall) {
-                return existingWall != nullptr &&
-                       existingWall->getId() == wall->getId();
+            [p_wall](vs_graphs::core::geometric::Plane *p_existingWall)
+            {
+                return p_existingWall != nullptr &&
+                       p_existingWall->getId() == p_wall->getId();
             });
     };
 
     /* Iterate through every mapped plane */
-    for (vs_graphs::core::geometric::Plane *wall : allPlanes)
+    for (vs_graphs::core::geometric::Plane *p_wall : allPlanes)
     {
         /* Skip invalid planes */
-        if (wall == nullptr || wall->isBad())
+        if (p_wall == nullptr || p_wall->isBad())
         {
             continue;
         }
 
         /* Only fitted walls with semantic and observation evidence enter. */
         const WallAdmissionEvidence admissionEvidence =
-            evaluateWallAdmissionEvidence(wall,
+            evaluateWallAdmissionEvidence(p_wall,
                                           p_sysParams,
                                           groundNormalForEvidence_World);
-        if (!admissionEvidence.admissible)
+        if (!admissionEvidence.isAdmissible)
         {
             const std::string reason =
-                wall->getPlaneType() != geometric::Plane::PlaneVariant::WALL ||
-                        wall->getExpectedPlaneType() !=
+                p_wall->getPlaneType() !=
+                            geometric::Plane::PlaneVariant::WALL ||
+                        p_wall->getExpectedPlaneType() !=
                             geometric::Plane::PlaneVariant::WALL
                     ? "CLASS_NOT_WALL"
-                : !admissionEvidence.adequateFiniteFit
+                : !admissionEvidence.hasAdequateFiniteFit
                     ? "INADEQUATE_FINITE_FIT"
                     : "INSUFFICIENT_OBSERVATIONS";
-            if (loggedWallRejectionReasons_[wall->getId()] != reason)
+            if (loggedWallRejectionReasons[p_wall->getId()] != reason)
             {
-                loggedWallRejectionReasons_[wall->getId()] = reason;
+                loggedWallRejectionReasons[p_wall->getId()] = reason;
                 std::cout << "SG_PIPELINE {\"event\":\"wall_rejection\","
                              "\"map_id\":"
                           << (p_activeMap != nullptr
                                   ? static_cast<long long>(p_activeMap->getId())
                                   : -1)
-                          << ",\"semantic_cycle\":" << pipelineSemanticCycle_
-                          << ",\"wall_id\":" << wall->getId() << ",\"class\":\""
-                          << planeClassName(wall->getPlaneType())
+                          << ",\"semantic_cycle\":" << pipelineSemanticCycle
+                          << ",\"wall_id\":" << p_wall->getId()
+                          << ",\"class\":\""
+                          << planeClassName(p_wall->getPlaneType())
                           << "\",\"lifecycle\":\"REJECTED\","
                              "\"owner\":\"NONE\",\"reason\":\""
                           << reason << "\",\"support\":"
@@ -160,7 +164,7 @@ void SemanticsManager::associateAllWallsToRooms(void)
             }
             continue;
         }
-        loggedWallRejectionReasons_.erase(wall->getId());
+        loggedWallRejectionReasons.erase(p_wall->getId());
 
         /* Init flag which confirms whether the wall already has a parent */
         bool wallHasRoom = false;
@@ -175,7 +179,7 @@ void SemanticsManager::associateAllWallsToRooms(void)
             }
 
             /* If the room contains the wall, the hierarchy is complete */
-            if (roomContainsWall(room, wall))
+            if (roomContainsWall(room, p_wall))
             {
                 wallHasRoom = true;
                 break;
@@ -189,12 +193,12 @@ void SemanticsManager::associateAllWallsToRooms(void)
         }
 
         const bool admitted =
-            p_currentRoom != nullptr && admitWallToRoom(p_currentRoom, wall);
+            p_currentRoom != nullptr && admitWallToRoom(p_currentRoom, p_wall);
         semantic::Room *p_selectedOwner = nullptr;
         for (semantic::Room *p_room : p_atlas->getAllRooms())
         {
             if (p_room != nullptr && !p_room->isBad() &&
-                roomContainsWall(p_room, wall))
+                roomContainsWall(p_room, p_wall))
             {
                 p_selectedOwner = p_room;
                 break;
@@ -203,17 +207,17 @@ void SemanticsManager::associateAllWallsToRooms(void)
 
         if (admitted && p_selectedOwner != nullptr)
         {
-            if (p_atlas->getRoomWallPlaneById(wall->getId()) == nullptr)
+            if (p_atlas->getRoomWallPlaneById(p_wall->getId()) == nullptr)
             {
-                p_atlas->addRoomWallPlane(wall);
+                p_atlas->addRoomWallPlane(p_wall);
             }
-            undefendedWalls_.erase(wall->getId());
-            loggedOrphanWallIds_.erase(wall->getId());
+            undefendedWalls.erase(p_wall->getId());
+            loggedOrphanWallIds.erase(p_wall->getId());
             std::cout << "SG_PIPELINE {\"event\":\"wall_admission\","
                          "\"map_id\":"
                       << p_activeMap->getId()
-                      << ",\"semantic_cycle\":" << pipelineSemanticCycle_
-                      << ",\"wall_id\":" << wall->getId()
+                      << ",\"semantic_cycle\":" << pipelineSemanticCycle
+                      << ",\"wall_id\":" << p_wall->getId()
                       << ",\"class\":\"WALL\","
                          "\"lifecycle\":\"COMMITTED\",\"owner_room_id\":"
                       << p_selectedOwner->getId() << ",\"reason\":\""
@@ -234,20 +238,20 @@ void SemanticsManager::associateAllWallsToRooms(void)
          */
 
         /* Register the uniquely owned wall in the room-wall collection. */
-        if (p_atlas->getRoomWallPlaneById(wall->getId()) == nullptr)
+        if (p_atlas->getRoomWallPlaneById(p_wall->getId()) == nullptr)
         {
-            p_atlas->addRoomWallPlane(wall);
+            p_atlas->addRoomWallPlane(p_wall);
         }
 
-        if (loggedOrphanWallIds_.insert(wall->getId()).second)
+        if (loggedOrphanWallIds.insert(p_wall->getId()).second)
         {
             std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                          "\"map_id\":"
                       << (p_activeMap != nullptr
                               ? static_cast<long long>(p_activeMap->getId())
                               : -1)
-                      << ",\"semantic_cycle\":" << pipelineSemanticCycle_
-                      << ",\"wall_id\":" << wall->getId()
+                      << ",\"semantic_cycle\":" << pipelineSemanticCycle
+                      << ",\"wall_id\":" << p_wall->getId()
                       << ",\"class\":\"WALL\","
                          "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
                          "\"reason\":\""

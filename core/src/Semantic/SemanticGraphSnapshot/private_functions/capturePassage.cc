@@ -53,7 +53,7 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
     record.centroid_World_m = p_passage_in->getCentroid();
     record.width_m          = p_passage_in->getWidth();
     record.height_m         = p_passage_in->getHeight();
-    record.passable         = p_passage_in->isPassable();
+    record.isPassable       = p_passage_in->isPassable();
 
     for (geometric::Plane *p_wall : p_passage_in->getAssociateWalls())
     {
@@ -67,7 +67,7 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
 
     const Passage::KnownSideProvenance provenance =
         p_passage_in->getKnownSideProvenance();
-    record.knownSideRoomRef = entityRefForRoom(provenance.pRoom);
+    record.knownSideRoomRef = entityRefForRoom(provenance.p_room);
     if (provenance.hasDirection())
     {
         record.knownSideDirection_World = provenance.direction_World;

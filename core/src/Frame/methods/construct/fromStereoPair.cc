@@ -45,48 +45,48 @@ namespace core
 
 /* NOTE: out-of-line to break the Frame<->KeyFrame/MapPoint include cycle. */
 
-Frame::Frame(const cv::Mat                                   &imColor,
-             const cv::Mat                                   &imLeft,
-             const cv::Mat                                   &imRight,
-             const double                                    &timeStamp,
-             ORBextractor                                    *extractorLeft,
-             ORBextractor                                    *extractorRight,
-             ORBVocabulary                                   *voc,
-             cv::Mat                                         &K,
-             cv::Mat                                         &distCoef,
-             const float                                     &bf,
-             const float                                     &thDepth,
-             camera_models::geometriccamera::GeometricCamera *pCamera,
-             Frame                                           *pPrevF,
-             const IMU::Calib                                &ImuCalib,
-             const std::vector<semantic::Marker *>            markers) :
+Frame::Frame(const cv::Mat &imageColor_in,
+             const cv::Mat &imageLeft_in,
+             const cv::Mat &imageRight_in,
+             const double  &timeStamp_in,
+             ORBextractor  *p_extractorLeft_in,
+             ORBextractor  *p_extractorRight_in,
+             ORBVocabulary *p_vocabulary_in,
+             cv::Mat       &K_in,
+             cv::Mat       &distanceCoefficients_in,
+             const float   &bf_in,
+             const float   &thresholdDepth_in,
+             camera_models::geometriccamera::GeometricCamera *p_camera_in,
+             Frame                                           *p_previousF_in,
+             const IMU::Calib                                &imuCalibration_in,
+             const std::vector<semantic::Marker *>            markers_in) :
     p_poseImuConstraint(nullptr),
-    poseAvailable(false),
-    velocityAvailable(false),
-    p_orbVocabulary(voc),
-    p_orbExtractorLeft(extractorLeft),
-    p_orbExtractorRight(extractorRight),
-    timeStamp(timeStamp),
-    calibrationMatrix(K.clone()),
-    calibrationMatrixEigen(utils::converter::Converter::toMatrix3f(K)),
-    distortionCoefficients(distCoef.clone()),
-    mbf(bf),
-    depthThreshold(thDepth),
-    imuCalibration(ImuCalib),
+    isPoseAvailable(false),
+    isVelocityAvailable(false),
+    p_orbVocabulary(p_vocabulary_in),
+    p_orbExtractorLeft(p_extractorLeft_in),
+    p_orbExtractorRight(p_extractorRight_in),
+    timeStamp(timeStamp_in),
+    calibrationMatrix(K_in.clone()),
+    calibrationMatrixEigen(utils::converter::Converter::toMatrix3f(K_in)),
+    distortionCoefficients(distanceCoefficients_in.clone()),
+    mbf(bf_in),
+    depthThreshold(thresholdDepth_in),
+    imuCalibration(imuCalibration_in),
     p_imuPreintegrated(nullptr),
-    p_previousFrame(pPrevF),
+    p_previousFrame(p_previousF_in),
     p_imuPreintegratedFrame(nullptr),
     p_referenceKeyFrame(static_cast<KeyFrame *>(nullptr)),
     isFrameSet(false),
-    imuPreintegrated(false),
-    p_camera(pCamera),
+    hasImuPreintegration(false),
+    p_camera(p_camera_in),
     p_camera2(nullptr)
 {
     // Setting the color image for Semantic Segmentation
-    colorImg = imColor.clone();
+    colorImg = imageColor_in.clone();
 
     // Frame ID
-    mnId = nNextId++;
+    id = nextId++;
 
     // Scale Level Info
     scaleLevelCount      = p_orbExtractorLeft->getLevelCount();
@@ -99,82 +99,88 @@ Frame::Frame(const cv::Mat                                   &imColor,
 
     // ORB extraction
 #ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartExtORB =
+    std::chrono::steady_clock::time_point timeStartExtOrb =
         std::chrono::steady_clock::now();
 #endif
-    thread threadLeft(&Frame::extractOrbFeatures, this, 0, imLeft, 0, 0);
-    thread threadRight(&Frame::extractOrbFeatures, this, 1, imRight, 0, 0);
+    thread threadLeft(&Frame::extractOrbFeatures, this, 0, imageLeft_in, 0, 0);
+    thread threadRight(&Frame::extractOrbFeatures,
+                       this,
+                       1,
+                       imageRight_in,
+                       0,
+                       0);
     threadLeft.join();
     threadRight.join();
 #ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndExtORB =
+    std::chrono::steady_clock::time_point timeEndExtOrb =
         std::chrono::steady_clock::now();
 
     orbExtractionTime =
         std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            time_EndExtORB - time_StartExtORB)
+            timeEndExtOrb - timeStartExtOrb)
             .count();
 #endif
 
-    N = keyPoints.size();
+    keyPointCount = keyPoints.size();
     if (keyPoints.empty())
         return;
 
     undistortKeyPoints();
 
 #ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartStereoMatches =
+    std::chrono::steady_clock::time_point timeStartStereoMatches =
         std::chrono::steady_clock::now();
 #endif
     computeStereoMatches();
 #ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndStereoMatches =
+    std::chrono::steady_clock::time_point timeEndStereoMatches =
         std::chrono::steady_clock::now();
 
     stereoMatchTime =
         std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            time_EndStereoMatches - time_StartStereoMatches)
+            timeEndStereoMatches - timeStartStereoMatches)
             .count();
 #endif
 
     // Initialize MapPoints
-    mapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(nullptr));
+    mapPoints =
+        vector<MapPoint *>(keyPointCount, static_cast<MapPoint *>(nullptr));
 
     // Initialize MapMarkers
-    mapMarkers = markers;
+    mapMarkers = markers_in;
 
     projectedPoints.clear();
     matchedPoints.clear();
 
-    outlierFlags = vector<bool>(N, false);
+    outlierFlags = vector<bool>(keyPointCount, false);
 
     // This is done only for the first Frame (or after a change in the
     // calibration)
-    if (initialComputationsDone)
+    if (areInitialComputationsDone)
     {
-        computeImageBounds(imLeft);
+        computeImageBounds(imageLeft_in);
 
         gridElementWidthInverse =
             static_cast<float>(FRAME_GRID_COLS) / (gridMaxX - gridMinX);
         gridElementHeightInverse =
             static_cast<float>(FRAME_GRID_ROWS) / (gridMaxY - gridMinY);
 
-        fx    = K.at<float>(0, 0);
-        fy    = K.at<float>(1, 1);
-        cx    = K.at<float>(0, 2);
-        cy    = K.at<float>(1, 2);
+        fx    = K_in.at<float>(0, 0);
+        fy    = K_in.at<float>(1, 1);
+        cx    = K_in.at<float>(0, 2);
+        cy    = K_in.at<float>(1, 2);
         invfx = 1.0f / fx;
         invfy = 1.0f / fy;
 
-        initialComputationsDone = false;
+        areInitialComputationsDone = false;
     }
 
     mb = mbf / fx;
 
-    if (pPrevF)
+    if (p_previousF_in)
     {
-        if (pPrevF->hasVelocity())
-            setVelocity(pPrevF->getVelocity());
+        if (p_previousF_in->hasVelocity())
+            setVelocity(p_previousF_in->getVelocity());
     }
     else
     {
@@ -182,8 +188,8 @@ Frame::Frame(const cv::Mat                                   &imColor,
     }
 
     // Set no stereo fisheye information
-    Nleft              = -1;
-    Nright             = -1;
+    leftKeyPointCount  = -1;
+    rightKeyPointCount = -1;
     monoLeft           = -1;
     monoRight          = -1;
     leftToRightMatches = vector<int>(0);

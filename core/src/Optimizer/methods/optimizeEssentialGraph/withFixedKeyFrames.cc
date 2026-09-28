@@ -36,12 +36,12 @@ namespace core
 {
 
 void Optimizer::optimizeEssentialGraph(
-    vs_graphs::core::KeyFrame                *pCurKF,
-    vs_graphs::core::Map                     *p_sourceMap_inout,
-    std::vector<vs_graphs::core::KeyFrame *> &vpFixedKFs,
-    std::vector<vs_graphs::core::KeyFrame *> &vpFixedCorrectedKFs,
-    std::vector<vs_graphs::core::KeyFrame *> &vpNonFixedKFs,
-    std::vector<vs_graphs::core::MapPoint *> &vpNonCorrectedMPs,
+    vs_graphs::core::KeyFrame                *p_currentKeyFrame_in,
+    vs_graphs::core::Map                     *p_sourceMap_in,
+    std::vector<vs_graphs::core::KeyFrame *> &fixedKeyFrames_in,
+    std::vector<vs_graphs::core::KeyFrame *> &fixedCorrectedKeyFrames_in,
+    std::vector<vs_graphs::core::KeyFrame *> &nonFixedKeyFrames_in,
+    std::vector<vs_graphs::core::MapPoint *> &nonCorrectedMapPoints_in,
     const g2o::Sim3 &transform_mergeWorldToCurrentWorld_in)
 {
     // Variables
@@ -49,17 +49,17 @@ void Optimizer::optimizeEssentialGraph(
     optimizer.setVerbose(false);
 
     // Linear solver and block solver
-    g2o::BlockSolver_7_3::LinearSolverType *linearSolver =
+    g2o::BlockSolver_7_3::LinearSolverType *p_linearSolver =
         new g2o::LinearSolverEigen<g2o::BlockSolver_7_3::PoseMatrixType>();
-    g2o::BlockSolver_7_3 *solver_ptr = new g2o::BlockSolver_7_3(linearSolver);
-    g2o::OptimizationAlgorithmLevenberg *solver =
+    g2o::BlockSolver_7_3 *solver_ptr = new g2o::BlockSolver_7_3(p_linearSolver);
+    g2o::OptimizationAlgorithmLevenberg *p_solver =
         new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
 
-    solver->setUserLambdaInit(1e-16);
-    optimizer.setAlgorithm(solver);
+    p_solver->setUserLambdaInit(1e-16);
+    optimizer.setAlgorithm(p_solver);
 
     // Get map
-    Map *pMap = pCurKF->getMap();
+    Map *p_map = p_currentKeyFrame_in->getMap();
 
     /*
      * Keyframe identifiers are Atlas-global. A source map can therefore
@@ -67,304 +67,311 @@ void Optimizer::optimizeEssentialGraph(
      * previous merge or loading a serialized Atlas. Size every ID-indexed
      * table from all optimizer inputs rather than from only the current map.
      */
-    unsigned long maxKeyFrameId = pMap->getMaxKeyFrameId();
+    unsigned long maximumKeyFrameId = p_map->getMaxKeyFrameId();
 
     const auto includeMaximumKeyFrameId =
-        [&maxKeyFrameId](const std::vector<KeyFrame *> &keyFrames_in)
+        [&maximumKeyFrameId](const std::vector<KeyFrame *> &keyFrames_in)
     {
         for (const KeyFrame *p_keyFrame : keyFrames_in)
         {
             if (p_keyFrame != nullptr)
             {
-                maxKeyFrameId = std::max(maxKeyFrameId, p_keyFrame->mnId);
+                maximumKeyFrameId = std::max(maximumKeyFrameId, p_keyFrame->id);
             }
         }
     };
 
-    includeMaximumKeyFrameId(vpFixedKFs);
-    includeMaximumKeyFrameId(vpFixedCorrectedKFs);
-    includeMaximumKeyFrameId(vpNonFixedKFs);
+    includeMaximumKeyFrameId(fixedKeyFrames_in);
+    includeMaximumKeyFrameId(fixedCorrectedKeyFrames_in);
+    includeMaximumKeyFrameId(nonFixedKeyFrames_in);
 
     const std::size_t poseTableSize =
-        static_cast<std::size_t>(maxKeyFrameId) + 1U;
+        static_cast<std::size_t>(maximumKeyFrameId) + 1U;
 
     vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vScw(poseTableSize);
     vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vCorrectedSwc(
         poseTableSize);
 
-    vector<bool> vpGoodPose(poseTableSize);
-    vector<bool> vpBadPose(poseTableSize);
+    vector<bool> goodPoses(poseTableSize);
+    vector<bool> badPoses(poseTableSize);
 
-    const int minFeat = 100;
+    const int minimumFeature = 100;
 
     // Loop over fixed KeyFrames
-    for (KeyFrame *pKFi : vpFixedKFs)
+    for (KeyFrame *p_fixedKeyFrame : fixedKeyFrames_in)
     {
-        if (pKFi == nullptr || pKFi->isBad())
+        if (p_fixedKeyFrame == nullptr || p_fixedKeyFrame->isBad())
             continue;
 
-        g2o::VertexSim3Expmap *VSim3 = new g2o::VertexSim3Expmap();
+        g2o::VertexSim3Expmap *p_sim3Vertex = new g2o::VertexSim3Expmap();
 
-        const int nIDi = pKFi->mnId;
+        const int idCount = p_fixedKeyFrame->id;
 
-        Sophus::SE3d Tcw = pKFi->getPose().cast<double>();
+        Sophus::SE3d Tcw = p_fixedKeyFrame->getPose().cast<double>();
         g2o::Sim3    Siw(Tcw.unit_quaternion(), Tcw.translation(), 1.0);
 
-        vCorrectedSwc[nIDi] = Siw.inverse();
-        VSim3->setEstimate(Siw);
+        vCorrectedSwc[idCount] = Siw.inverse();
+        p_sim3Vertex->setEstimate(Siw);
 
-        VSim3->setFixed(true);
+        p_sim3Vertex->setFixed(true);
 
-        VSim3->setId(nIDi);
-        VSim3->setMarginalized(false);
-        VSim3->_fix_scale = true;
+        p_sim3Vertex->setId(idCount);
+        p_sim3Vertex->setMarginalized(false);
+        p_sim3Vertex->_fix_scale = true;
 
-        optimizer.addVertex(VSim3);
+        optimizer.addVertex(p_sim3Vertex);
 
-        vpGoodPose[nIDi] = true;
-        vpBadPose[nIDi]  = false;
+        goodPoses[idCount] = true;
+        badPoses[idCount]  = false;
     }
 
     // Loop over fixed corrected KeyFrames
-    set<unsigned long> sIdKF;
-    for (KeyFrame *pKFi : vpFixedCorrectedKFs)
+    set<unsigned long> idKeyFrames;
+    for (KeyFrame *p_fixedKeyFrame : fixedCorrectedKeyFrames_in)
     {
-        if (pKFi == nullptr || pKFi->isBad())
+        if (p_fixedKeyFrame == nullptr || p_fixedKeyFrame->isBad())
             continue;
 
-        g2o::VertexSim3Expmap *VSim3 = new g2o::VertexSim3Expmap();
+        g2o::VertexSim3Expmap *p_sim3Vertex = new g2o::VertexSim3Expmap();
 
-        const int nIDi = pKFi->mnId;
+        const int idCount = p_fixedKeyFrame->id;
 
-        Sophus::SE3d Tcw = pKFi->getPose().cast<double>();
+        Sophus::SE3d Tcw = p_fixedKeyFrame->getPose().cast<double>();
         g2o::Sim3    Siw(Tcw.unit_quaternion(), Tcw.translation(), 1.0);
 
-        vCorrectedSwc[nIDi] = Siw.inverse();
-        VSim3->setEstimate(Siw);
+        vCorrectedSwc[idCount] = Siw.inverse();
+        p_sim3Vertex->setEstimate(Siw);
 
-        Sophus::SE3d Tcw_bef = pKFi->tcwBefMerge.cast<double>();
-        vScw[nIDi] =
+        Sophus::SE3d Tcw_bef = p_fixedKeyFrame->tcwBefMerge.cast<double>();
+        vScw[idCount] =
             g2o::Sim3(Tcw_bef.unit_quaternion(), Tcw_bef.translation(), 1.0);
 
-        VSim3->setFixed(true);
+        p_sim3Vertex->setFixed(true);
 
-        VSim3->setId(nIDi);
-        VSim3->setMarginalized(false);
-        VSim3->_fix_scale = true;
+        p_sim3Vertex->setId(idCount);
+        p_sim3Vertex->setMarginalized(false);
+        p_sim3Vertex->_fix_scale = true;
 
-        optimizer.addVertex(VSim3);
+        optimizer.addVertex(p_sim3Vertex);
 
-        sIdKF.insert(nIDi);
+        idKeyFrames.insert(idCount);
 
-        vpGoodPose[nIDi] = true;
-        vpBadPose[nIDi]  = true;
+        goodPoses[idCount] = true;
+        badPoses[idCount]  = true;
     }
 
     // Loop over non-fixed KeyFrames
-    for (KeyFrame *pKFi : vpNonFixedKFs)
+    for (KeyFrame *p_fixedKeyFrame : nonFixedKeyFrames_in)
     {
-        if (pKFi == nullptr || pKFi->isBad())
+        if (p_fixedKeyFrame == nullptr || p_fixedKeyFrame->isBad())
             continue;
 
-        const int nIDi = pKFi->mnId;
+        const int idCount = p_fixedKeyFrame->id;
 
-        if (sIdKF.count(
-                nIDi)) // It has already added in the corrected merge KFs
+        if (idKeyFrames.count(
+                idCount)) // It has already added in the corrected merge KFs
             continue;
 
-        g2o::VertexSim3Expmap *VSim3 = new g2o::VertexSim3Expmap();
+        g2o::VertexSim3Expmap *p_sim3Vertex = new g2o::VertexSim3Expmap();
 
-        Sophus::SE3d Tcw = pKFi->getPose().cast<double>();
+        Sophus::SE3d Tcw = p_fixedKeyFrame->getPose().cast<double>();
         g2o::Sim3    Siw(Tcw.unit_quaternion(), Tcw.translation(), 1.0);
 
-        vScw[nIDi] = Siw;
-        VSim3->setEstimate(Siw);
+        vScw[idCount] = Siw;
+        p_sim3Vertex->setEstimate(Siw);
 
-        VSim3->setFixed(false);
+        p_sim3Vertex->setFixed(false);
 
-        VSim3->setId(nIDi);
-        VSim3->setMarginalized(false);
-        VSim3->_fix_scale = true;
+        p_sim3Vertex->setId(idCount);
+        p_sim3Vertex->setMarginalized(false);
+        p_sim3Vertex->_fix_scale = true;
 
-        optimizer.addVertex(VSim3);
+        optimizer.addVertex(p_sim3Vertex);
 
-        sIdKF.insert(nIDi);
+        idKeyFrames.insert(idCount);
 
-        vpGoodPose[nIDi] = false;
-        vpBadPose[nIDi]  = true;
+        goodPoses[idCount] = false;
+        badPoses[idCount]  = true;
     }
 
-    vector<KeyFrame *> vpKFs;
-    set<KeyFrame *>    spKFs;
-    vpKFs.reserve(vpFixedKFs.size() + vpFixedCorrectedKFs.size() +
-                  vpNonFixedKFs.size());
+    vector<KeyFrame *> mapKeyFrames;
+    set<KeyFrame *>    keyFrames;
+    mapKeyFrames.reserve(fixedKeyFrames_in.size() +
+                         fixedCorrectedKeyFrames_in.size() +
+                         nonFixedKeyFrames_in.size());
 
     const auto appendOptimizedKeyFrames =
-        [&optimizer, &vpKFs, &spKFs](const vector<KeyFrame *> &keyFrames_in)
+        [&optimizer, &mapKeyFrames, &keyFrames](
+            const vector<KeyFrame *> &keyFrames_in)
     {
         for (KeyFrame *p_keyFrame : keyFrames_in)
         {
             if (p_keyFrame == nullptr || p_keyFrame->isBad() ||
-                optimizer.vertex(p_keyFrame->mnId) == nullptr ||
-                !spKFs.insert(p_keyFrame).second)
+                optimizer.vertex(p_keyFrame->id) == nullptr ||
+                !keyFrames.insert(p_keyFrame).second)
             {
                 continue;
             }
 
-            vpKFs.push_back(p_keyFrame);
+            mapKeyFrames.push_back(p_keyFrame);
         }
     };
 
-    appendOptimizedKeyFrames(vpFixedKFs);
-    appendOptimizedKeyFrames(vpFixedCorrectedKFs);
-    appendOptimizedKeyFrames(vpNonFixedKFs);
+    appendOptimizedKeyFrames(fixedKeyFrames_in);
+    appendOptimizedKeyFrames(fixedCorrectedKeyFrames_in);
+    appendOptimizedKeyFrames(nonFixedKeyFrames_in);
 
-    const Eigen::Matrix<double, 7, 7> matLambda =
+    const Eigen::Matrix<double, 7, 7> matrixLambda =
         Eigen::Matrix<double, 7, 7>::Identity();
 
-    for (KeyFrame *pKFi : vpKFs)
+    for (KeyFrame *p_fixedKeyFrame : mapKeyFrames)
     {
-        int       num_connections = 0;
-        const int nIDi            = pKFi->mnId;
+        int       connectionCount = 0;
+        const int idCount         = p_fixedKeyFrame->id;
 
         g2o::Sim3 correctedSwi;
         g2o::Sim3 Swi;
 
-        if (vpGoodPose[nIDi])
-            correctedSwi = vCorrectedSwc[nIDi];
-        if (vpBadPose[nIDi])
-            Swi = vScw[nIDi].inverse();
+        if (goodPoses[idCount])
+            correctedSwi = vCorrectedSwc[idCount];
+        if (badPoses[idCount])
+            Swi = vScw[idCount].inverse();
 
-        KeyFrame *pParentKFi = pKFi->getParent();
+        KeyFrame *p_parentKeyFrame = p_fixedKeyFrame->getParent();
 
         // Spanning tree edge
-        if (pParentKFi && spKFs.find(pParentKFi) != spKFs.end())
+        if (p_parentKeyFrame &&
+            keyFrames.find(p_parentKeyFrame) != keyFrames.end())
         {
-            int nIDj = pParentKFi->mnId;
+            int parentKeyFrameId = p_parentKeyFrame->id;
 
             g2o::Sim3 Sji;
-            bool      bHasRelation = false;
+            bool      hasRelation = false;
 
-            if (vpGoodPose[nIDi] && vpGoodPose[nIDj])
+            if (goodPoses[idCount] && goodPoses[parentKeyFrameId])
             {
-                Sji          = vCorrectedSwc[nIDj].inverse() * correctedSwi;
-                bHasRelation = true;
+                Sji = vCorrectedSwc[parentKeyFrameId].inverse() * correctedSwi;
+                hasRelation = true;
             }
-            else if (vpBadPose[nIDi] && vpBadPose[nIDj])
+            else if (badPoses[idCount] && badPoses[parentKeyFrameId])
             {
-                Sji          = vScw[nIDj] * Swi;
-                bHasRelation = true;
+                Sji         = vScw[parentKeyFrameId] * Swi;
+                hasRelation = true;
             }
 
-            if (bHasRelation)
+            if (hasRelation)
             {
                 g2o::EdgeSim3 *e = new g2o::EdgeSim3();
                 e->setVertex(1,
                              dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                                 optimizer.vertex(nIDj)));
+                                 optimizer.vertex(parentKeyFrameId)));
                 e->setVertex(0,
                              dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                                 optimizer.vertex(nIDi)));
+                                 optimizer.vertex(idCount)));
                 e->setMeasurement(Sji);
 
-                e->information() = matLambda;
+                e->information() = matrixLambda;
                 optimizer.addEdge(e);
-                num_connections++;
+                connectionCount++;
             }
         }
 
         // Loop edges
-        const set<KeyFrame *> sLoopEdges = pKFi->getLoopEdges();
-        for (set<KeyFrame *>::const_iterator sit  = sLoopEdges.begin(),
-                                             send = sLoopEdges.end();
+        const set<KeyFrame *> loopEdges = p_fixedKeyFrame->getLoopEdges();
+        for (set<KeyFrame *>::const_iterator sit  = loopEdges.begin(),
+                                             send = loopEdges.end();
              sit != send;
              sit++)
         {
-            KeyFrame *pLKF = *sit;
-            if (spKFs.find(pLKF) != spKFs.end() && pLKF->mnId < pKFi->mnId)
+            KeyFrame *p_loopKeyFrame = *sit;
+            if (keyFrames.find(p_loopKeyFrame) != keyFrames.end() &&
+                p_loopKeyFrame->id < p_fixedKeyFrame->id)
             {
                 g2o::Sim3 Sli;
-                bool      bHasRelation = false;
+                bool      hasRelation = false;
 
-                if (vpGoodPose[nIDi] && vpGoodPose[pLKF->mnId])
+                if (goodPoses[idCount] && goodPoses[p_loopKeyFrame->id])
                 {
-                    Sli = vCorrectedSwc[pLKF->mnId].inverse() * correctedSwi;
-                    bHasRelation = true;
+                    Sli = vCorrectedSwc[p_loopKeyFrame->id].inverse() *
+                          correctedSwi;
+                    hasRelation = true;
                 }
-                else if (vpBadPose[nIDi] && vpBadPose[pLKF->mnId])
+                else if (badPoses[idCount] && badPoses[p_loopKeyFrame->id])
                 {
-                    Sli          = vScw[pLKF->mnId] * Swi;
-                    bHasRelation = true;
+                    Sli         = vScw[p_loopKeyFrame->id] * Swi;
+                    hasRelation = true;
                 }
 
-                if (bHasRelation)
+                if (hasRelation)
                 {
                     g2o::EdgeSim3 *el = new g2o::EdgeSim3();
                     el->setVertex(1,
                                   dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                                      optimizer.vertex(pLKF->mnId)));
+                                      optimizer.vertex(p_loopKeyFrame->id)));
                     el->setVertex(0,
                                   dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                                      optimizer.vertex(nIDi)));
+                                      optimizer.vertex(idCount)));
                     el->setMeasurement(Sli);
-                    el->information() = matLambda;
+                    el->information() = matrixLambda;
                     optimizer.addEdge(el);
-                    num_connections++;
+                    connectionCount++;
                 }
             }
         }
 
         // Covisibility graph edges
-        const vector<KeyFrame *> vpConnectedKFs =
-            pKFi->getCovisiblesByWeight(minFeat);
-        for (vector<KeyFrame *>::const_iterator vit = vpConnectedKFs.begin();
-             vit != vpConnectedKFs.end();
+        const vector<KeyFrame *> connectedKeyFrames =
+            p_fixedKeyFrame->getCovisiblesByWeight(minimumFeature);
+        for (vector<KeyFrame *>::const_iterator vit =
+                 connectedKeyFrames.begin();
+             vit != connectedKeyFrames.end();
              vit++)
         {
             KeyFrame *pKFn = *vit;
-            if (pKFn && pKFn != pParentKFi && !pKFi->hasChild(pKFn) &&
-                !sLoopEdges.count(pKFn) && spKFs.find(pKFn) != spKFs.end())
+            if (pKFn && pKFn != p_parentKeyFrame &&
+                !p_fixedKeyFrame->hasChild(pKFn) && !loopEdges.count(pKFn) &&
+                keyFrames.find(pKFn) != keyFrames.end())
             {
-                if (!pKFn->isBad() && pKFn->mnId < pKFi->mnId)
+                if (!pKFn->isBad() && pKFn->id < p_fixedKeyFrame->id)
                 {
 
                     g2o::Sim3 Sni;
-                    bool      bHasRelation = false;
+                    bool      hasRelation = false;
 
-                    if (vpGoodPose[nIDi] && vpGoodPose[pKFn->mnId])
+                    if (goodPoses[idCount] && goodPoses[pKFn->id])
                     {
-                        Sni =
-                            vCorrectedSwc[pKFn->mnId].inverse() * correctedSwi;
-                        bHasRelation = true;
+                        Sni = vCorrectedSwc[pKFn->id].inverse() * correctedSwi;
+                        hasRelation = true;
                     }
-                    else if (vpBadPose[nIDi] && vpBadPose[pKFn->mnId])
+                    else if (badPoses[idCount] && badPoses[pKFn->id])
                     {
-                        Sni          = vScw[pKFn->mnId] * Swi;
-                        bHasRelation = true;
+                        Sni         = vScw[pKFn->id] * Swi;
+                        hasRelation = true;
                     }
 
-                    if (bHasRelation)
+                    if (hasRelation)
                     {
                         g2o::EdgeSim3 *en = new g2o::EdgeSim3();
                         en->setVertex(
                             1,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                                optimizer.vertex(pKFn->mnId)));
+                                optimizer.vertex(pKFn->id)));
                         en->setVertex(
                             0,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                                optimizer.vertex(nIDi)));
+                                optimizer.vertex(idCount)));
                         en->setMeasurement(Sni);
-                        en->information() = matLambda;
+                        en->information() = matrixLambda;
                         optimizer.addEdge(en);
-                        num_connections++;
+                        connectionCount++;
                     }
                 }
             }
         }
 
-        if (num_connections == 0)
-            Verbose::printMess("Opt_Essential: KF " + to_string(pKFi->mnId) +
+        if (connectionCount == 0)
+            Verbose::printMess("Opt_Essential: KF " +
+                                   to_string(p_fixedKeyFrame->id) +
                                    " has 0 connections",
                                Verbose::VERBOSITY_DEBUG);
     }
@@ -373,7 +380,7 @@ void Optimizer::optimizeEssentialGraph(
     optimizer.initializeOptimization();
     optimizer.optimize(20);
 
-    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+    unique_lock<mutex> lock(p_map->mapUpdateMutex);
 
     // Inform the user
     std::cout << "\n[Optimizer]" << std::endl;
@@ -381,38 +388,38 @@ void Optimizer::optimizeEssentialGraph(
     // Loop over non-fixed KeyFrames to correct them
     // [hint] Sim3 [sR t | 0 1] --> SE3 [R t/s| 0 1]
     std::cout << "- Correcting the poses of KeyFrames ..." << std::endl;
-    for (KeyFrame *pKFi : vpNonFixedKFs)
+    for (KeyFrame *p_fixedKeyFrame : nonFixedKeyFrames_in)
     {
-        if (pKFi == nullptr || pKFi->isBad())
+        if (p_fixedKeyFrame == nullptr || p_fixedKeyFrame->isBad())
             continue;
 
-        const int nIDi = pKFi->mnId;
+        const int idCount = p_fixedKeyFrame->id;
 
-        g2o::VertexSim3Expmap *VSim3 =
-            static_cast<g2o::VertexSim3Expmap *>(optimizer.vertex(nIDi));
+        g2o::VertexSim3Expmap *p_sim3Vertex =
+            static_cast<g2o::VertexSim3Expmap *>(optimizer.vertex(idCount));
 
-        if (VSim3 == nullptr)
+        if (p_sim3Vertex == nullptr)
         {
             continue;
         }
 
-        g2o::Sim3 CorrectedSiw = VSim3->estimate();
-        vCorrectedSwc[nIDi]    = CorrectedSiw.inverse();
+        g2o::Sim3 CorrectedSiw = p_sim3Vertex->estimate();
+        vCorrectedSwc[idCount] = CorrectedSiw.inverse();
         double       s         = CorrectedSiw.scale();
         Sophus::SE3d Tiw(CorrectedSiw.rotation(),
                          CorrectedSiw.translation() / s);
 
-        pKFi->tcwBefMerge = pKFi->getPose();
-        pKFi->twcBefMerge = pKFi->getPoseInverse();
-        pKFi->setPose(Tiw.cast<float>());
+        p_fixedKeyFrame->tcwBefMerge = p_fixedKeyFrame->getPose();
+        p_fixedKeyFrame->twcBefMerge = p_fixedKeyFrame->getPoseInverse();
+        p_fixedKeyFrame->setPose(Tiw.cast<float>());
     }
 
     // Transform to "non-optimized" reference keyframe pose and transform back
     // with optimized pose
     std::cout << "- Correcting the poses of 3D mapped points ..." << std::endl;
-    for (MapPoint *pMPi : vpNonCorrectedMPs)
+    for (MapPoint *p_mapPoint : nonCorrectedMapPoints_in)
     {
-        if (pMPi == nullptr || pMPi->isBad())
+        if (p_mapPoint == nullptr || p_mapPoint->isBad())
         {
             continue;
         }
@@ -420,20 +427,20 @@ void Optimizer::optimizeEssentialGraph(
         bool mapPointWasTransformed = false;
 
         const auto canCorrectFromReference =
-            [&vpBadPose](KeyFrame *p_keyFrame_in)
+            [&badPoses](KeyFrame *p_keyFrame_in)
         {
             return p_keyFrame_in != nullptr && !p_keyFrame_in->isBad() &&
-                   p_keyFrame_in->mnId < vpBadPose.size() &&
-                   vpBadPose[p_keyFrame_in->mnId];
+                   p_keyFrame_in->id < badPoses.size() &&
+                   badPoses[p_keyFrame_in->id];
         };
 
-        KeyFrame *pRefKF = pMPi->getReferenceKeyFrame();
+        KeyFrame *p_referenceKeyFrame = p_mapPoint->getReferenceKeyFrame();
 
-        if (!canCorrectFromReference(pRefKF))
+        if (!canCorrectFromReference(p_referenceKeyFrame))
         {
-            pRefKF = nullptr;
+            p_referenceKeyFrame = nullptr;
 
-            const auto observations = pMPi->getObservations();
+            const auto observations = p_mapPoint->getObservations();
             for (const auto &[p_observingKeyFrame, featureIndexes] :
                  observations)
             {
@@ -441,28 +448,28 @@ void Optimizer::optimizeEssentialGraph(
 
                 if (canCorrectFromReference(p_observingKeyFrame))
                 {
-                    pRefKF = p_observingKeyFrame;
+                    p_referenceKeyFrame = p_observingKeyFrame;
                     break;
                 }
             }
         }
 
-        if (pRefKF == nullptr)
+        if (p_referenceKeyFrame == nullptr)
         {
-            Verbose::printMess("MP " + to_string(pMPi->mnId) +
+            Verbose::printMess("MP " + to_string(p_mapPoint->id) +
                                    " without a valid reference KF",
                                Verbose::VERBOSITY_DEBUG);
         }
         else
         {
-            Sophus::SE3f TNonCorrectedwr = pRefKF->twcBefMerge;
-            Sophus::SE3f Twr             = pRefKF->getPoseInverse();
+            Sophus::SE3f TNonCorrectedwr = p_referenceKeyFrame->twcBefMerge;
+            Sophus::SE3f Twr = p_referenceKeyFrame->getPoseInverse();
 
             Eigen::Vector3f eigCorrectedP3Dw =
-                Twr * TNonCorrectedwr.inverse() * pMPi->getWorldPos();
-            pMPi->setWorldPos(eigCorrectedP3Dw);
+                Twr * TNonCorrectedwr.inverse() * p_mapPoint->getWorldPos();
+            p_mapPoint->setWorldPos(eigCorrectedP3Dw);
 
-            pMPi->updateNormalAndDepth();
+            p_mapPoint->updateNormalAndDepth();
             mapPointWasTransformed = true;
         }
 
@@ -473,18 +480,20 @@ void Optimizer::optimizeEssentialGraph(
          */
         if (!mapPointWasTransformed)
         {
-            const Eigen::Vector3f position_mergeWorld_m = pMPi->getWorldPos();
-            const Eigen::Vector3f normal_mergeWorld     = pMPi->getNormal();
+            const Eigen::Vector3f position_mergeWorld_m =
+                p_mapPoint->getWorldPos();
+            const Eigen::Vector3f normal_mergeWorld = p_mapPoint->getNormal();
 
-            pMPi->setWorldPos(transform_mergeWorldToCurrentWorld_in
-                                  .map(position_mergeWorld_m.cast<double>())
-                                  .cast<float>());
+            p_mapPoint->setWorldPos(
+                transform_mergeWorldToCurrentWorld_in
+                    .map(position_mergeWorld_m.cast<double>())
+                    .cast<float>());
 
-            pMPi->setNormalVector(
+            p_mapPoint->setNormalVector(
                 transform_mergeWorldToCurrentWorld_in.rotation().cast<float>() *
                 normal_mergeWorld);
 
-            pMPi->updateNormalAndDepth();
+            p_mapPoint->updateNormalAndDepth();
         }
     }
 
@@ -526,13 +535,13 @@ void Optimizer::optimizeEssentialGraph(
         }
     };
 
-    appendSemanticDeformationNodes(vpFixedCorrectedKFs);
-    appendSemanticDeformationNodes(vpNonFixedKFs);
+    appendSemanticDeformationNodes(fixedCorrectedKeyFrames_in);
+    appendSemanticDeformationNodes(nonFixedKeyFrames_in);
 
-    if (p_sourceMap_inout != nullptr)
+    if (p_sourceMap_in != nullptr)
     {
         utils::utils::Utils::propagateSemanticPoseCorrections(
-            p_sourceMap_inout,
+            p_sourceMap_in,
             keyFramePosesBefore_WorldToCamera,
             keyFramePosesAfter_WorldToCamera,
             transform_mergeWorldToCurrentWorld_in);

@@ -465,7 +465,7 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator,
      FindingIdsAreDeterministicRegardlessOfConstructionOrder)
 {
-    /* A separate Atlas assigns its Map a different id (Map::nNextId is a
+    /* A separate Atlas assigns its Map a different id (Map::nextId is a
      * process-wide monotonic counter), which would make two independently
      * constructed "equivalent" fixtures genuinely differ in every mapId-
      * bearing field -- not the permutation-independence this test targets.
@@ -4497,8 +4497,8 @@ TEST(SemanticAxiomEvaluator,
     EXPECT_EQ(results.front().confirmedRoomCount, 2U);
     EXPECT_EQ(results.front().completeRoomCount, 2U);
     EXPECT_EQ(results.front().fullyValidPassageCount, 0U);
-    EXPECT_TRUE(results.front().legacy.mapFullyModeled);
-    EXPECT_TRUE(results.front().legacyAndConservativeDiverge);
+    EXPECT_TRUE(results.front().legacy.isMapFullyModeled);
+    EXPECT_TRUE(results.front().doLegacyAndConservativeDiverge);
 }
 
 TEST(SemanticAxiomEvaluator, LegacyReproducesDoubleRegisteredRoomMultiplicity)
@@ -4572,10 +4572,10 @@ TEST(SemanticAxiomEvaluator,
     const std::vector<MapCompletenessResult> results =
         evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
     ASSERT_EQ(results.size(), 1U);
-    EXPECT_TRUE(results.front().legacy.mapFullyModeled);
+    EXPECT_TRUE(results.front().legacy.isMapFullyModeled);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::FAIL);
     EXPECT_FALSE(results.front().isComplete);
-    EXPECT_TRUE(results.front().legacyAndConservativeDiverge);
+    EXPECT_TRUE(results.front().doLegacyAndConservativeDiverge);
 }
 
 TEST(SemanticAxiomEvaluator,
@@ -4639,10 +4639,10 @@ TEST(SemanticAxiomEvaluator,
     const std::vector<MapCompletenessResult> results =
         evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
     ASSERT_EQ(results.size(), 1U);
-    EXPECT_TRUE(results.front().legacy.mapFullyModeled);
+    EXPECT_TRUE(results.front().legacy.isMapFullyModeled);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::UNKNOWN);
     EXPECT_FALSE(results.front().isComplete);
-    EXPECT_TRUE(results.front().legacyAndConservativeDiverge);
+    EXPECT_TRUE(results.front().doLegacyAndConservativeDiverge);
 }
 
 /* A hard contradiction (multiple wall owners) in mapA must not affect

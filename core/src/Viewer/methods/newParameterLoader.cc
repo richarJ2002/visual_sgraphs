@@ -34,24 +34,24 @@ namespace vs_graphs
 namespace core
 {
 
-void Viewer::newParameterLoader(utils::settings::Settings *settings)
+void Viewer::newParameterLoader(utils::settings::Settings *p_settings_inout)
 {
     imageViewerScale = 1.f;
 
-    float fps = settings->getFramesPerSecond();
+    float fps = p_settings_inout->getFramesPerSecond();
     if (fps < 1)
         fps = 30;
     framePeriod = 1e3 / fps;
 
-    cv::Size imSize = settings->newImSize();
-    imageHeight     = imSize.height;
-    imageWidth      = imSize.width;
+    cv::Size imageSize = p_settings_inout->newImSize();
+    imageHeight        = imageSize.height;
+    imageWidth         = imageSize.width;
 
-    imageViewerScale = settings->imageViewerScale();
-    viewpointX       = settings->viewPointX();
-    viewpointY       = settings->viewPointY();
-    viewpointZ       = settings->viewPointZ();
-    viewpointF       = settings->viewPointF();
+    imageViewerScale = p_settings_inout->imageViewerScale();
+    viewpointX       = p_settings_inout->viewPointX();
+    viewpointY       = p_settings_inout->viewPointY();
+    viewpointZ       = p_settings_inout->viewPointZ();
+    viewpointF       = p_settings_inout->viewPointF();
 }
 
 } // namespace core

@@ -34,9 +34,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addKeyFrame(KeyFrame *pKF)
+void Map::addKeyFrame(KeyFrame *p_keyFrame_inout)
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
 
     // First keyframe seeds the map (origin and lowest-id keyframe references);
     // later keyframes are inserted with no id-duplicate check.
@@ -44,22 +44,22 @@ void Map::addKeyFrame(KeyFrame *pKF)
     {
         std::cout << "\n[Mapping] Map initialized with initial KeyFrame #"
                   << initKeyFrameId << "." << std::endl;
-        initKeyFrameId    = pKF->mnId;
-        p_initialKeyFrame = pKF;
-        p_lowerIdKeyFrame = pKF;
+        initKeyFrameId    = p_keyFrame_inout->id;
+        p_initialKeyFrame = p_keyFrame_inout;
+        p_lowerIdKeyFrame = p_keyFrame_inout;
     }
 
     // Add the KeyFrame to the map
-    keyFrames.insert(pKF);
+    keyFrames.insert(p_keyFrame_inout);
 
     // Update the maximum KeyFrame id
-    if (pKF->mnId > maxKeyFrameId)
-        maxKeyFrameId = pKF->mnId;
+    if (p_keyFrame_inout->id > maxKeyFrameId)
+        maxKeyFrameId = p_keyFrame_inout->id;
 
-    if (pKF->mnId < p_lowerIdKeyFrame->mnId)
-        p_lowerIdKeyFrame = pKF;
+    if (p_keyFrame_inout->id < p_lowerIdKeyFrame->id)
+        p_lowerIdKeyFrame = p_keyFrame_inout;
 
-    keyFrameIndex[pKF->mnId] = pKF;
+    keyFrameIndex[p_keyFrame_inout->id] = p_keyFrame_inout;
 }
 
 } // namespace core

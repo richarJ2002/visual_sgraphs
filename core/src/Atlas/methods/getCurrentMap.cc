@@ -32,7 +32,7 @@ namespace core
 
 Map *Atlas::getCurrentMap()
 {
-    std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
+    std::unique_lock<std::mutex> atlasLock(atlasMutex);
 
     if (!p_activeMap)
     {

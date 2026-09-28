@@ -31,39 +31,39 @@ namespace core
 {
 
 Eigen::Matrix3f
-    TwoViewReconstruction::computeH21(const vector<cv::Point2f> &vP1,
-                                      const vector<cv::Point2f> &vP2)
+    TwoViewReconstruction::computeH21(const vector<cv::Point2f> &points1_in,
+                                      const vector<cv::Point2f> &points2_in)
 {
-    const int N = vP1.size();
+    const int N = points1_in.size();
 
     Eigen::MatrixXf A(2 * N, 9);
 
-    for (int i = 0; i < N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
     {
-        const float u1 = vP1[i].x;
-        const float v1 = vP1[i].y;
-        const float u2 = vP2[i].x;
-        const float v2 = vP2[i].y;
+        const float u1 = points1_in[keyPointIndex].x;
+        const float v1 = points1_in[keyPointIndex].y;
+        const float u2 = points2_in[keyPointIndex].x;
+        const float v2 = points2_in[keyPointIndex].y;
 
-        A(2 * i, 0) = 0.0;
-        A(2 * i, 1) = 0.0;
-        A(2 * i, 2) = 0.0;
-        A(2 * i, 3) = -u1;
-        A(2 * i, 4) = -v1;
-        A(2 * i, 5) = -1;
-        A(2 * i, 6) = v2 * u1;
-        A(2 * i, 7) = v2 * v1;
-        A(2 * i, 8) = v2;
+        A(2 * keyPointIndex, 0) = 0.0;
+        A(2 * keyPointIndex, 1) = 0.0;
+        A(2 * keyPointIndex, 2) = 0.0;
+        A(2 * keyPointIndex, 3) = -u1;
+        A(2 * keyPointIndex, 4) = -v1;
+        A(2 * keyPointIndex, 5) = -1;
+        A(2 * keyPointIndex, 6) = v2 * u1;
+        A(2 * keyPointIndex, 7) = v2 * v1;
+        A(2 * keyPointIndex, 8) = v2;
 
-        A(2 * i + 1, 0) = u1;
-        A(2 * i + 1, 1) = v1;
-        A(2 * i + 1, 2) = 1;
-        A(2 * i + 1, 3) = 0.0;
-        A(2 * i + 1, 4) = 0.0;
-        A(2 * i + 1, 5) = 0.0;
-        A(2 * i + 1, 6) = -u2 * u1;
-        A(2 * i + 1, 7) = -u2 * v1;
-        A(2 * i + 1, 8) = -u2;
+        A(2 * keyPointIndex + 1, 0) = u1;
+        A(2 * keyPointIndex + 1, 1) = v1;
+        A(2 * keyPointIndex + 1, 2) = 1;
+        A(2 * keyPointIndex + 1, 3) = 0.0;
+        A(2 * keyPointIndex + 1, 4) = 0.0;
+        A(2 * keyPointIndex + 1, 5) = 0.0;
+        A(2 * keyPointIndex + 1, 6) = -u2 * u1;
+        A(2 * keyPointIndex + 1, 7) = -u2 * v1;
+        A(2 * keyPointIndex + 1, 8) = -u2;
     }
 
     Eigen::JacobiSVD<Eigen::MatrixXf> svd(A, Eigen::ComputeFullV);

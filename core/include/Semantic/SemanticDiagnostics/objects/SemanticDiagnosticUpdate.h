@@ -50,7 +50,7 @@ struct SemanticDiagnosticUpdate
     /*! @brief True when this cycle's state changed (a "summary" eventType)
      *  or the heartbeat is due (a "heartbeat" eventType); false when
      *  neither condition holds and the caller must print nothing. */
-    bool emit{false};
+    bool shouldEmit{false};
 
     /*! @brief The complete SG_AXIOM summary object; only meaningful when
      *  \c emit is true. */

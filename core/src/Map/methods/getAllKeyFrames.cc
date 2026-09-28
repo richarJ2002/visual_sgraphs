@@ -36,7 +36,7 @@ namespace core
 
 vector<KeyFrame *> Map::getAllKeyFrames()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
 }
 

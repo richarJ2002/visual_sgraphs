@@ -69,18 +69,19 @@ namespace vs_graphs
 namespace core
 {
 
-void computeDescriptors(const Mat           &image,
-                        vector<KeyPoint>    &keypoints,
-                        Mat                 &descriptors,
-                        const vector<Point> &briefPattern)
+void computeDescriptors(const Mat           &image_in,
+                        vector<KeyPoint>    &keypoints_in,
+                        Mat                 &descriptors_out,
+                        const vector<Point> &briefPattern_in)
 {
-    descriptors = Mat::zeros((int)keypoints.size(), 32, CV_8UC1);
+    descriptors_out = Mat::zeros((int)keypoints_in.size(), 32, CV_8UC1);
 
-    for (size_t i = 0; i < keypoints.size(); i++)
-        computeOrbDescriptor(keypoints[i],
-                             image,
-                             &briefPattern[0],
-                             descriptors.ptr((int)i));
+    for (size_t keypointIndex = 0; keypointIndex < keypoints_in.size();
+         keypointIndex++)
+        computeOrbDescriptor(keypoints_in[keypointIndex],
+                             image_in,
+                             &briefPattern_in[0],
+                             descriptors_out.ptr((int)keypointIndex));
 }
 
 } // namespace core

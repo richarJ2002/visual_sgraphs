@@ -126,10 +126,10 @@ void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
          * UNKNOWN. */
         for (const FloorRecord &floor : mapSnapshot_in.floors)
         {
-            for (const EntityRef &reverseRoomRef : floor.roomRefs)
+            for (const EntityRef &reverseRoomReference : floor.roomRefs)
             {
-                if (reverseRoomRef.key.has_value() &&
-                    *reverseRoomRef.key == room_in.key)
+                if (reverseRoomReference.key.has_value() &&
+                    *reverseRoomReference.key == room_in.key)
                 {
                     findings_inout.push_back(makeFinding(
                         AxiomCode::AX_FLOOR_01,
@@ -219,14 +219,14 @@ void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
     std::size_t reverseMembershipCount         = 0U;
     std::size_t livenessUnavailableMemberCount = 0U;
     bool        anyReverseMemberMalformed      = false;
-    for (const EntityRef &roomRef : p_floor->roomRefs)
+    for (const EntityRef &roomReference : p_floor->roomRefs)
     {
-        if (!roomRef.key.has_value() || *roomRef.key != room_in.key)
+        if (!roomReference.key.has_value() || *roomReference.key != room_in.key)
         {
             continue;
         }
-        if (roomRef.reason != UnavailableReason::NONE ||
-            (roomRef.isLive.has_value() && !(*roomRef.isLive)))
+        if (roomReference.reason != UnavailableReason::NONE ||
+            (roomReference.isLive.has_value() && !(*roomReference.isLive)))
         {
             /* A keyed reverse member naming this room whose own reason is
              * inconsistent (EntityRef invariant violation), or whose own
@@ -235,7 +235,7 @@ void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
             anyReverseMemberMalformed = true;
             continue;
         }
-        if (!roomRef.isLive.has_value())
+        if (!roomReference.isLive.has_value())
         {
             /* "Missing liveness is unavailable, not live": never silently
              * counted as a confirmed reciprocal member. */
@@ -298,9 +298,10 @@ void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
         {
             continue;
         }
-        for (const EntityRef &roomRef : otherFloor.roomRefs)
+        for (const EntityRef &roomReference : otherFloor.roomRefs)
         {
-            if (roomRef.key.has_value() && *roomRef.key == room_in.key)
+            if (roomReference.key.has_value() &&
+                *roomReference.key == room_in.key)
             {
                 findings_inout.push_back(makeFinding(
                     AxiomCode::AX_FLOOR_01,

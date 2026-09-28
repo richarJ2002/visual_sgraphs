@@ -38,7 +38,7 @@ bool Room::replaceWall(geometric::Plane *p_retiredWall_in,
 
     std::lock_guard<std::mutex> lock(wallsMutex);
 
-    bool                            replacedRetiredWall = false;
+    bool                            wasRetiredWallReplaced = false;
     std::vector<geometric::Plane *> rebuiltWalls;
     rebuiltWalls.reserve(walls.size());
 
@@ -48,8 +48,8 @@ bool Room::replaceWall(geometric::Plane *p_retiredWall_in,
 
         if (p_existingWall == p_retiredWall_in)
         {
-            p_candidateWall     = p_retainedWall_in;
-            replacedRetiredWall = true;
+            p_candidateWall        = p_retainedWall_in;
+            wasRetiredWallReplaced = true;
         }
 
         if (p_candidateWall == nullptr ||
@@ -63,12 +63,12 @@ bool Room::replaceWall(geometric::Plane *p_retiredWall_in,
         rebuiltWalls.push_back(p_candidateWall);
     }
 
-    if (replacedRetiredWall)
+    if (wasRetiredWallReplaced)
     {
         walls.swap(rebuiltWalls);
     }
 
-    return replacedRetiredWall;
+    return wasRetiredWallReplaced;
 }
 
 } // namespace semantic

@@ -32,11 +32,11 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::insertKeyFrame(KeyFrame *pKF)
+void LocalMapping::insertKeyFrame(KeyFrame *p_keyFrame_in)
 {
-    unique_lock<mutex> lock(mMutexNewKFs);
-    newKeyFrames.push_back(pKF);
-    abortBA = true;
+    unique_lock<mutex> newKeyFramesLock(newKeyFramesMutex);
+    newKeyFrames.push_back(p_keyFrame_in);
+    shouldAbortBa = true;
 }
 
 } // namespace core

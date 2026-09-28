@@ -36,20 +36,20 @@ namespace core
 
 geometric::Plane *Map::getBiggestGroundPlane()
 {
-    geometric::Plane                         *bestGroundPlane = nullptr;
+    geometric::Plane                         *p_bestGroundPlane = nullptr;
     std::tuple<std::size_t, std::size_t, int> bestEvidence{0U, 0U, 0};
     bool                                      hasBestEvidence = false;
 
-    for (geometric::Plane *pPlane : getAllPlanes())
+    for (geometric::Plane *p_plane : getAllPlanes())
     {
-        if (pPlane == nullptr || pPlane->isBad() ||
-            pPlane->getPlaneType() != geometric::Plane::PlaneVariant::GROUND)
+        if (p_plane == nullptr || p_plane->isBad() ||
+            p_plane->getPlaneType() != geometric::Plane::PlaneVariant::GROUND)
         {
             continue;
         }
 
         const geometric::Plane::GeometrySnapshot geometry =
-            pPlane->getGeometrySnapshot();
+            p_plane->getGeometrySnapshot();
         const double normalNorm = geometry.equation_World.head<3>().norm();
         if (!geometry.equation_World.allFinite() ||
             !std::isfinite(normalNorm) || normalNorm < 1e-8)
@@ -66,15 +66,15 @@ geometric::Plane *Map::getBiggestGroundPlane()
 
         const auto evidence = std::make_tuple(geometry.finiteSupportCount,
                                               geometry.observationCount,
-                                              -pPlane->getId());
+                                              -p_plane->getId());
         if (!hasBestEvidence || evidence > bestEvidence)
         {
-            bestEvidence    = evidence;
-            bestGroundPlane = pPlane;
-            hasBestEvidence = true;
+            bestEvidence      = evidence;
+            p_bestGroundPlane = p_plane;
+            hasBestEvidence   = true;
         }
     }
-    return bestGroundPlane;
+    return p_bestGroundPlane;
 }
 
 } // namespace core

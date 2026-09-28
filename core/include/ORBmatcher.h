@@ -56,8 +56,8 @@ class ORBmatcher
      *               consistency.
      */
     ORBmatcher(float nnRatio_in = 0.6, bool checkOrientation_in = true) :
-        mfNNratio(nnRatio_in),
-        mbCheckOrientation(checkOrientation_in)
+        nearestNeighborRatio(nnRatio_in),
+        shouldCheckOrientation(checkOrientation_in)
     {}
 
     /*!
@@ -149,12 +149,12 @@ class ORBmatcher
      * @param[in]    p_keyframe_in
      *               Non-owning keyframe receiving projections;
      *               shall be non-null.
-     * @param[in,out] similarity_in
+     * @param[in]     similarity_in
      *                Similarity mapping points into the
      *                keyframe.
      * @param[in]    points_in
      *               Non-owning candidate map points.
-     * @param[out]   matched_out
+     * @param[in,out] matched_inout
      *               Matched map point per candidate entry.
      * @param[in]    threshold_in
      *               Search radius in pixels.
@@ -167,7 +167,7 @@ class ORBmatcher
     int searchByProjection(KeyFrame                      *p_keyframe_in,
                            Sophus::Sim3<float>           &similarity_in,
                            const std::vector<MapPoint *> &points_in,
-                           std::vector<MapPoint *>       &matched_out,
+                           std::vector<MapPoint *>       &matched_inout,
                            int                            threshold_in,
                            float hammingRatio_in = 1.0);
 
@@ -178,16 +178,16 @@ class ORBmatcher
      * @param[in]    p_keyframe_in
      *               Non-owning keyframe receiving projections;
      *               shall be non-null.
-     * @param[in,out] similarity_in
+     * @param[in]     similarity_in
      *                Similarity mapping points into the
      *                keyframe.
      * @param[in]    points_in
      *               Non-owning candidate map points.
      * @param[in]    pointsKeyframes_in
      *               Non-owning keyframe owning each candidate.
-     * @param[out]   matched_out
+     * @param[in,out] matched_inout
      *               Matched map point per candidate entry.
-     * @param[out]   matchedKeyframes_out
+     * @param[in,out] matchedKeyframes_inout
      *               Keyframe matched per candidate entry.
      * @param[in]    threshold_in
      *               Search radius in pixels.
@@ -201,10 +201,10 @@ class ORBmatcher
                            Sophus::Sim3<float>           &similarity_in,
                            const std::vector<MapPoint *> &points_in,
                            const std::vector<KeyFrame *> &pointsKeyframes_in,
-                           std::vector<MapPoint *>       &matched_out,
-                           std::vector<KeyFrame *>       &matchedKeyframes_out,
-                           int                            threshold_in,
-                           float hammingRatio_in = 1.0);
+                           std::vector<MapPoint *>       &matched_inout,
+                           std::vector<KeyFrame *> &matchedKeyframes_inout,
+                           int                      threshold_in,
+                           float                    hammingRatio_in = 1.0);
 
     /*!
      * @brief        Matches frame keypoints against projected
@@ -281,7 +281,7 @@ class ORBmatcher
      *                First frame receiving the matches.
      * @param[in,out] frame2_inout
      *                Second frame receiving the matches.
-     * @param[out]   prevMatched_out
+     * @param[in,out] previousMatched_inout
      *               Matched locations in the first frame.
      * @param[out]   matches12_out
      *               Match index per first-frame keypoint.
@@ -292,7 +292,7 @@ class ORBmatcher
      */
     int searchForInitialization(Frame                    &frame1_inout,
                                 Frame                    &frame2_inout,
-                                std::vector<cv::Point2f> &prevMatched_out,
+                                std::vector<cv::Point2f> &previousMatched_inout,
                                 std::vector<int>         &matches12_out,
                                 int                       windowSize_in = 10);
 
@@ -337,7 +337,7 @@ class ORBmatcher
      * @param[in]    p_keyframe2_in
      *               Non-owning second keyframe; shall be
      *               non-null.
-     * @param[out]   matches12_out
+     * @param[in,out] matches12_inout
      *               Matched map point per first-keyframe point.
      * @param[in]    transform12_in
      *               Similarity from the first keyframe into the
@@ -349,7 +349,7 @@ class ORBmatcher
      */
     int searchBySim3(KeyFrame                *p_keyframe1_in,
                      KeyFrame                *p_keyframe2_in,
-                     std::vector<MapPoint *> &matches12_out,
+                     std::vector<MapPoint *> &matches12_inout,
                      const Sophus::Sim3f     &transform12_in,
                      const float              threshold_in);
 
@@ -357,7 +357,7 @@ class ORBmatcher
      * @brief        Fuses duplicated map points projected into
      *               a keyframe.
      *
-     * @param[in]    p_keyframe_in
+     * @param[in,out] p_keyframe_inout
      *               Non-owning keyframe receiving projections;
      *               shall be non-null.
      * @param[in]    mapPoints_in
@@ -369,7 +369,7 @@ class ORBmatcher
      *
      * @return       Number of fused points.
      */
-    int fuse(KeyFrame                 *p_keyframe_in,
+    int fuse(KeyFrame                 *p_keyframe_inout,
              const vector<MapPoint *> &mapPoints_in,
              const float               threshold_in = 3.0,
              const bool                right_in     = false);
@@ -378,26 +378,26 @@ class ORBmatcher
      * @brief        Fuses duplicated map points projected under
      *               a Sim3 transform.
      *
-     * @param[in]    p_keyframe_in
+     * @param[in,out] p_keyframe_inout
      *               Non-owning keyframe receiving projections;
      *               shall be non-null.
-     * @param[in,out] similarity_in
+     * @param[in]     similarity_in
      *                Similarity mapping points into the
      *                keyframe.
      * @param[in]    points_in
      *               Non-owning candidate map points.
      * @param[in]    threshold_in
      *               Search radius in pixels.
-     * @param[out]   replacePoints_out
+     * @param[in,out] replacePoints_inout
      *               Replacement map point per fused candidate.
      *
      * @return       Number of fused points.
      */
-    int fuse(KeyFrame                      *p_keyframe_in,
+    int fuse(KeyFrame                      *p_keyframe_inout,
              Sophus::Sim3f                 &similarity_in,
              const std::vector<MapPoint *> &points_in,
              float                          threshold_in,
-             vector<MapPoint *>            &replacePoints_out);
+             vector<MapPoint *>            &replacePoints_inout);
 
   public:
     /*!
@@ -430,32 +430,32 @@ class ORBmatcher
      * @brief        Finds the three fullest orientation
      *               histogram bins.
      *
-     * @param[in]    histogram_in
+     * @param[in]    p_histogram_in
      *               Orientation histogram; shall be non-null.
      * @param[in]    length_in
      *               Number of histogram bins.
-     * @param[out]   max1_out
+     * @param[in,out] maximum1_inout
      *               Index of the fullest bin.
-     * @param[out]   max2_out
+     * @param[in,out] maximum2_inout
      *               Index of the second fullest bin.
-     * @param[out]   max3_out
+     * @param[out]   maximum3_out
      *               Index of the third fullest bin.
      */
-    void computeThreeMaxima(std::vector<int> *histogram_in,
+    void computeThreeMaxima(std::vector<int> *p_histogram_in,
                             const int         length_in,
-                            int              &max1_out,
-                            int              &max2_out,
-                            int              &max3_out);
+                            int              &maximum1_inout,
+                            int              &maximum2_inout,
+                            int              &maximum3_out);
 
     /*!
      * @brief        Nearest-neighbour ratio test threshold.
      */
-    float mfNNratio;
+    float nearestNeighborRatio;
     /*!
      * @brief        True to enforce rotation-histogram
      *               consistency.
      */
-    bool  mbCheckOrientation;
+    bool  shouldCheckOrientation;
 };
 
 } // namespace core

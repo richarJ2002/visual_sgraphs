@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
+Verbose::VerbosityLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
 } // namespace core
 } // namespace vs_graphs

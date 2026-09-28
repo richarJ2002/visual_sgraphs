@@ -88,13 +88,17 @@ bool isWallRecordLessTopologyOnly(const WallRecord &lhs_in,
     {
         return lhsOwnerRoomRefs.size() < rhsOwnerRoomRefs.size();
     }
-    for (std::size_t i = 0U; i < lhsOwnerRoomRefs.size(); ++i)
+    for (std::size_t lhsOwnerRoomRefIndex = 0U;
+         lhsOwnerRoomRefIndex < lhsOwnerRoomRefs.size();
+         ++lhsOwnerRoomRefIndex)
     {
-        if (isEntityRefLess(lhsOwnerRoomRefs[i], rhsOwnerRoomRefs[i]))
+        if (isEntityRefLess(lhsOwnerRoomRefs[lhsOwnerRoomRefIndex],
+                            rhsOwnerRoomRefs[lhsOwnerRoomRefIndex]))
         {
             return true;
         }
-        if (isEntityRefLess(rhsOwnerRoomRefs[i], lhsOwnerRoomRefs[i]))
+        if (isEntityRefLess(rhsOwnerRoomRefs[lhsOwnerRoomRefIndex],
+                            lhsOwnerRoomRefs[lhsOwnerRoomRefIndex]))
         {
             return false;
         }

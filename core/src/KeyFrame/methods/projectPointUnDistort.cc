@@ -35,14 +35,14 @@ namespace vs_graphs
 namespace core
 {
 
-bool KeyFrame::projectPointUnDistort(MapPoint    *pMP,
-                                     cv::Point2f &kp,
-                                     float       &u,
-                                     float       &v)
+bool KeyFrame::projectPointUnDistort(MapPoint    *p_mapPoint_in,
+                                     cv::Point2f &keyPoint_out,
+                                     float       &u_out,
+                                     float       &v_out)
 {
 
     // 3D in absolute coordinates
-    Eigen::Vector3f P = pMP->getWorldPos();
+    Eigen::Vector3f P = p_mapPoint_in->getWorldPos();
 
     // 3D in camera coordinates
     Eigen::Vector3f Pc  = rotationRcw * P + poseTcw.translation();
@@ -59,15 +59,15 @@ bool KeyFrame::projectPointUnDistort(MapPoint    *pMP,
 
     // Project in image and check it is not outside
     const float invz = 1.0f / PcZ;
-    u                = fx * PcX * invz + cx;
-    v                = fy * PcY * invz + cy;
+    u_out            = fx * PcX * invz + cx;
+    v_out            = fy * PcY * invz + cy;
 
-    if (u < gridMinX || u > gridMaxX)
+    if (u_out < gridMinX || u_out > gridMaxX)
         return false;
-    if (v < gridMinY || v > gridMaxY)
+    if (v_out < gridMinY || v_out > gridMaxY)
         return false;
 
-    kp = cv::Point2f(u, v);
+    keyPoint_out = cv::Point2f(u_out, v_out);
 
     return true;
 }

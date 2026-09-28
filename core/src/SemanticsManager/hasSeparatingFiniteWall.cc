@@ -95,10 +95,10 @@ bool hasSeparatingFiniteWall(
             firstPoint_World_m_in +
             interpolation * (secondPoint_World_m_in - firstPoint_World_m_in);
 
-        const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallCloud =
+        const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallSupportCloud =
             wallGeometry.supportCloud;
 
-        if (p_wallCloud == nullptr || p_wallCloud->empty())
+        if (p_wallSupportCloud == nullptr || p_wallSupportCloud->empty())
         {
             continue;
         }
@@ -115,7 +115,7 @@ bool hasSeparatingFiniteWall(
         double minimumWallV_m = std::numeric_limits<double>::infinity();
         double maximumWallV_m = -std::numeric_limits<double>::infinity();
 
-        for (const pcl::PointXYZRGBA &wallPoint : p_wallCloud->points)
+        for (const pcl::PointXYZRGBA &wallPoint : p_wallSupportCloud->points)
         {
             if (!pcl::isFinite(wallPoint))
             {

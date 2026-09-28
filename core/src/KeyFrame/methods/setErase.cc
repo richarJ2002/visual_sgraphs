@@ -38,14 +38,14 @@ namespace core
 void KeyFrame::setErase()
 {
     {
-        unique_lock<mutex> lock(mMutexConnections);
+        unique_lock<mutex> lock(connectionsMutex);
         if (loopEdges.empty())
         {
-            notErase = false;
+            isEraseProtected = false;
         }
     }
 
-    if (toBeErased)
+    if (isPendingErase)
     {
         setBadFlag();
     }

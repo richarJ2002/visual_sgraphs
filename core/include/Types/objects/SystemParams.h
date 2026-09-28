@@ -48,7 +48,7 @@ class SystemParams
 {
   public:
     static SystemParams *getParams();
-    void                 setParams(const std::string &configFilePath_in);
+    void                 setParams(const std::string &configurationFilePath_in);
 
     // Common struct definitions
     struct Constraint
@@ -93,7 +93,7 @@ class SystemParams
 
     struct Optimization
     {
-        bool       marginalizePlanes = false;
+        bool       shouldMarginalizePlanes = false;
         Constraint planeMapPoint;
         Constraint planeKf;
         Constraint planePoint;
@@ -390,7 +390,7 @@ class SystemParams
              */
             float minimumSideDistance_m = 0.10f;
             /*! @brief Enables repair of pre-confirmation wall associations. */
-            bool  detachWallsBeyondPassages = true;
+            bool  shouldDetachWallsBeyondPassages = true;
             /*! @brief Room/wall side-test distance threshold, in metres. */
             float wallCentroidMinimumSideDistance_m = 0.30f;
         } passagePartition;

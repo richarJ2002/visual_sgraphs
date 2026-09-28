@@ -28,9 +28,9 @@ namespace core
 namespace semantic
 {
 
-const char *stateLiteral(RoomTrackingState state)
+const char *stateLiteral(RoomTrackingState state_in)
 {
-    switch (state)
+    switch (state_in)
     {
     case RoomTrackingState::UNKNOWN:
         return "UNKNOWN";

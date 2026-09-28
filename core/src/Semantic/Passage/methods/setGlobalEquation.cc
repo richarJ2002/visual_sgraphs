@@ -28,10 +28,10 @@ namespace core
 namespace semantic
 {
 
-void Passage::setGlobalEquation(const g2o::Plane3D &value)
+void Passage::setGlobalEquation(const g2o::Plane3D &value_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
-    globalEquation = value;
+    std::lock_guard<std::mutex> lock(geometryMutex);
+    globalEquation = value_in;
 }
 
 } // namespace semantic

@@ -32,7 +32,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::resetActiveMap(bool bLocMap)
+void Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
 {
     if (p_loopClosing)
     {
@@ -52,13 +52,13 @@ void Tracking::resetActiveMap(bool bLocMap)
         }
     }
 
-    Map *pMap = p_atlas->getCurrentMap();
+    Map *p_map = p_atlas->getCurrentMap();
 
-    if (!bLocMap)
+    if (!isRequestedByLocalMapping_in)
     {
         Verbose::printMess("[Tracking] Reseting 'LocalMapping' ...",
                            Verbose::VERBOSITY_VERY_VERBOSE);
-        p_localMapper->requestResetActiveMap(pMap);
+        p_localMapper->requestResetActiveMap(p_map);
         Verbose::printMess("[Tracking] Finished resetting 'LocalMapping'!",
                            Verbose::VERBOSITY_VERY_VERBOSE);
     }
@@ -66,35 +66,35 @@ void Tracking::resetActiveMap(bool bLocMap)
     // Reset Loop Closing
     Verbose::printMess("[Tracking] Reseting 'LoopClosing' ...",
                        Verbose::VERBOSITY_NORMAL);
-    p_loopClosing->requestResetActiveMap(pMap);
+    p_loopClosing->requestResetActiveMap(p_map);
     Verbose::printMess("[Tracking] Finished resetting 'LocalMapping'!",
                        Verbose::VERBOSITY_NORMAL);
 
     // Clear BoW Database
     Verbose::printMess("[Tracking] Reseting 'Database' ...",
                        Verbose::VERBOSITY_NORMAL);
-    p_keyFrameDatabase->clearMap(pMap);
+    p_keyFrameDatabase->clearMap(p_map);
     Verbose::printMess("[Tracking] Finished resetting 'Database'!",
                        Verbose::VERBOSITY_NORMAL);
 
     // Clear Map (this erase MapPoints and KeyFrames)
     p_atlas->clearMap();
 
-    lastInitFrameId = Frame::nNextId;
+    lastInitFrameId = Frame::nextId;
     state           = NO_IMAGES_YET;
 
-    readyToInitialize = false;
+    isReadyToInitialize = false;
 
     unsigned int index = firstFrameId;
-    for (Map *pMap : p_atlas->getAllMaps())
-        if (pMap->getAllKeyFrames().size() > 0)
-            if (index > pMap->getLowerKeyFrameId())
-                index = pMap->getLowerKeyFrameId();
+    for (Map *p_map : p_atlas->getAllMaps())
+        if (p_map->getAllKeyFrames().size() > 0)
+            if (index > p_map->getLowerKeyFrameId())
+                index = p_map->getLowerKeyFrameId();
 
     // Count lost frames
     std::list<bool> lbLost;
     int             lostFrameCount = 0;
-    for (list<bool>::iterator ilbL = mlbLost.begin(); ilbL != mlbLost.end();
+    for (list<bool>::iterator ilbL = lostFlags.begin(); ilbL != lostFlags.end();
          ilbL++)
     {
         if (index < initialFrameId)
@@ -109,10 +109,10 @@ void Tracking::resetActiveMap(bool bLocMap)
     std::cout << "[Tracking] " << lostFrameCount << " frames were set to lost!"
               << endl;
 
-    mlbLost = lbLost;
+    lostFlags = lbLost;
 
-    initialFrameId   = currentFrame.mnId;
-    lastRelocFrameId = currentFrame.mnId;
+    initialFrameId   = currentFrame.id;
+    lastRelocFrameId = currentFrame.id;
 
     currentFrame   = Frame();
     lastFrame      = Frame();
@@ -120,7 +120,7 @@ void Tracking::resetActiveMap(bool bLocMap)
     p_lastKeyFrame = static_cast<KeyFrame *>(nullptr);
     iniMatches.clear();
 
-    velocityAvailable = false;
+    isVelocityAvailable = false;
 
     if (p_viewer)
         p_viewer->release();

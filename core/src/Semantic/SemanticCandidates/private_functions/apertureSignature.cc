@@ -39,7 +39,7 @@ std::vector<std::pair<double, double>>
         {
             break;
         }
-        if (passage.apertureValid && finiteNonnegative(passage.width_m) &&
+        if (passage.isApertureValid && finiteNonnegative(passage.width_m) &&
             finiteNonnegative(passage.height_m) && passage.width_m > 0.0 &&
             passage.height_m > 0.0)
         {

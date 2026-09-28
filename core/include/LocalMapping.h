@@ -50,33 +50,33 @@ class LocalMapping
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    LocalMapping(System       *pSys,
-                 Atlas        *pAtlas,
-                 const float   bMonocular,
-                 bool          bInertial,
-                 const string &_strSeqName = std::string());
+    LocalMapping(System       *p_system_in,
+                 Atlas        *p_atlas_in,
+                 const float   monocular_in,
+                 bool          inertial_in,
+                 const string &sequenceName_in = std::string());
 
-    void setLoopCloser(LoopClosing *pLoopCloser);
+    void setLoopCloser(LoopClosing *p_loopCloser_in);
 
-    void setTracker(Tracking *pTracker);
+    void setTracker(Tracking *p_tracker_in);
 
     // Main function
     void run();
 
-    void insertKeyFrame(KeyFrame *pKF);
+    void insertKeyFrame(KeyFrame *p_keyFrame_in);
     void emptyQueue();
 
     // Thread Synch
     void requestStop();
     void requestReset();
-    void requestResetActiveMap(Map *pMap);
+    void requestResetActiveMap(Map *p_map_in);
     bool stop();
     void release();
     bool isStopped();
     bool stopRequested();
     bool isAcceptingKeyFrames();
-    void setAcceptKeyFrames(bool flag);
-    bool setNotStop(bool flag);
+    void setAcceptKeyFrames(bool shouldAcceptKeyFrames_in);
+    bool setNotStop(bool shouldPreventStop_in);
 
     void interruptBA();
 
@@ -85,7 +85,7 @@ class LocalMapping
 
     int keyframesInQueue()
     {
-        unique_lock<std::mutex> lock(mMutexNewKFs);
+        unique_lock<std::mutex> lock(newKeyFramesMutex);
         return newKeyFrames.size();
     }
 
@@ -93,7 +93,7 @@ class LocalMapping
     double    getCurrentKeyFrameTime();
     KeyFrame *getCurrentKeyFrame();
 
-    std::mutex mMutexImuInit;
+    std::mutex imuInitMutex;
 
     Eigen::MatrixXd mcovInertial;
     Eigen::Matrix3d mRwg;
@@ -114,32 +114,32 @@ class LocalMapping
     int    iterationIndex;
     string sequence;
 
-    bool notBA1;
-    bool notBA2;
-    bool badImu;
+    bool isFirstImuBaPending;
+    bool isSecondImuBaPending;
+    bool isImuBad;
 
-    bool writeStats;
+    bool shouldWriteStats;
 
     // not consider far points (clouds)
-    bool  farPoints;
+    bool  shouldSkipFarPoints;
     float farPointsThreshold;
 
 #ifdef REGISTER_TIMES
-    vector<double> vdKFInsert_ms;
-    vector<double> vdMPCulling_ms;
-    vector<double> vdMPCreation_ms;
-    vector<double> vdLBA_ms;
-    vector<double> vdKFCulling_ms;
-    vector<double> vdLMTotal_ms;
+    vector<double> keyFrameInsertTimes_ms;
+    vector<double> mapPointCullingTimes_ms;
+    vector<double> mapPointCreationTimes_ms;
+    vector<double> localBaTimes_ms;
+    vector<double> keyFrameCullingTimes_ms;
+    vector<double> localMappingTotalTimes_ms;
 
-    vector<double> vdLBASync_ms;
-    vector<double> vdKFCullingSync_ms;
-    vector<int>    vnLBA_edges;
-    vector<int>    vnLBA_KFopt;
-    vector<int>    vnLBA_KFfixed;
-    vector<int>    vnLBA_MPs;
-    int            nLBA_exec;
-    int            nLBA_abort;
+    vector<double> localBaSyncTimes_ms;
+    vector<double> keyFrameCullingSyncTimes_ms;
+    vector<int>    localBaEdgeCounts;
+    vector<int>    localBaOptimizedKeyFrameCounts;
+    vector<int>    localBaFixedKeyFrameCounts;
+    vector<int>    localBaMapPointCounts;
+    int            localBaExecutionCount;
+    int            localBaAbortCount;
 #endif
   protected:
     bool checkNewKeyFrames();
@@ -152,20 +152,20 @@ class LocalMapping
 
     System *p_system;
 
-    bool monocular;
-    bool inertial;
+    bool isMonocular;
+    bool isInertial;
 
     void       resetIfRequested();
-    bool       resetRequested;
-    bool       resetActiveMapRequested;
+    bool       isResetRequested;
+    bool       isResetActiveMapRequested;
     Map       *p_mapToReset;
-    std::mutex mMutexReset;
+    std::mutex resetMutex;
 
     bool       checkFinish();
     void       setFinish();
-    bool       finishRequested;
-    bool       finished;
-    std::mutex mMutexFinish;
+    bool       isFinishRequested;
+    bool       hasFinished;
+    std::mutex finishMutex;
 
     Atlas *p_atlas;
 
@@ -176,27 +176,27 @@ class LocalMapping
 
     KeyFrame *p_currentKeyFrame;
 
-    std::list<MapPoint *> mlpRecentAddedMapPoints;
+    std::list<MapPoint *> recentAddedMapPoints;
 
-    std::mutex mMutexNewKFs;
-    std::mutex mMutexNewRooms;
+    std::mutex newKeyFramesMutex;
+    std::mutex newRoomsMutex;
 
-    bool abortBA;
+    bool shouldAbortBa;
 
-    bool       stopped;
-    bool       stopRequestedFlag;
-    bool       notStop;
-    std::mutex mMutexStop;
+    bool       hasStopped;
+    bool       isStopRequested;
+    bool       isStopBlocked;
+    std::mutex stopMutex;
 
-    bool       acceptKeyFrames;
-    std::mutex mMutexAccept;
+    bool       shouldAcceptKeyFrames;
+    std::mutex acceptMutex;
 
-    void initializeIMU(float priorG = 1e2,
-                       float priorA = 1e6,
-                       bool  bFirst = false);
+    void initializeIMU(float gyroPriorWeight_in         = 1e2,
+                       float accelPriorWeight_in        = 1e6,
+                       bool  shouldRunFullInertialBa_in = false);
     void scaleRefinement();
 
-    bool bInitializing;
+    bool isInitializationInProgress;
 
     Eigen::MatrixXd infoInertial;
     int             localMappingCount;
@@ -207,7 +207,7 @@ class LocalMapping
     int countRefinement;
 
     // DEBUG
-    ofstream f_lm;
+    ofstream localMappingStatsFile;
 };
 
 } // namespace core

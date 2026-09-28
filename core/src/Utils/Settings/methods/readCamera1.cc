@@ -51,106 +51,107 @@ namespace utils
 namespace settings
 {
 
-void Settings::readCamera1(cv::FileStorage &storage_in)
+void Settings::readCamera1(cv::FileStorage &storage_inout)
 {
     // Variables
     bool               found;
-    std::vector<float> vCalibration;
+    std::vector<float> calibrations;
 
     // Camera model
     std::string cameraModelName =
-        readParameter<std::string>(storage_in, "Camera.type", found);
+        readParameter<std::string>(storage_inout, "Camera.type", found);
 
     if (cameraModelName == "PinHole")
     {
         cameraModel = CameraType::PINHOLE;
 
         // Intrinsic parameters
-        float fx     = readParameter<float>(storage_in, "Camera1.fx", found);
-        float fy     = readParameter<float>(storage_in, "Camera1.fy", found);
-        float cx     = readParameter<float>(storage_in, "Camera1.cx", found);
-        float cy     = readParameter<float>(storage_in, "Camera1.cy", found);
-        vCalibration = {fx, fy, cx, cy};
+        float fx     = readParameter<float>(storage_inout, "Camera1.fx", found);
+        float fy     = readParameter<float>(storage_inout, "Camera1.fy", found);
+        float cx     = readParameter<float>(storage_inout, "Camera1.cx", found);
+        float cy     = readParameter<float>(storage_inout, "Camera1.cy", found);
+        calibrations = {fx, fy, cx, cy};
 
-        calibration1 = new camera_models::pinhole::Pinhole(vCalibration);
-        originalCalibration1 =
-            new camera_models::pinhole::Pinhole(vCalibration);
+        p_calibration1 = new camera_models::pinhole::Pinhole(calibrations);
+        p_originalCalibration1 =
+            new camera_models::pinhole::Pinhole(calibrations);
 
         // Check if the Pinhole is distorted
-        readParameter<float>(storage_in, "Camera1.k1", found, false);
+        readParameter<float>(storage_inout, "Camera1.k1", found, false);
         if (found)
         {
-            readParameter<float>(storage_in, "Camera1.k3", found, false);
+            readParameter<float>(storage_inout, "Camera1.k3", found, false);
             if (found)
             {
                 pinholeDistortion1.resize(5);
                 pinholeDistortion1[4] =
-                    readParameter<float>(storage_in, "Camera1.k3", found);
+                    readParameter<float>(storage_inout, "Camera1.k3", found);
             }
             else
                 pinholeDistortion1.resize(4);
             pinholeDistortion1[0] =
-                readParameter<float>(storage_in, "Camera1.k1", found);
+                readParameter<float>(storage_inout, "Camera1.k1", found);
             pinholeDistortion1[1] =
-                readParameter<float>(storage_in, "Camera1.k2", found);
+                readParameter<float>(storage_inout, "Camera1.k2", found);
             pinholeDistortion1[2] =
-                readParameter<float>(storage_in, "Camera1.p1", found);
+                readParameter<float>(storage_inout, "Camera1.p1", found);
             pinholeDistortion1[3] =
-                readParameter<float>(storage_in, "Camera1.p2", found);
+                readParameter<float>(storage_inout, "Camera1.p2", found);
         }
 
         // Check if we need to correct distortion from the images
         if ((sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR) &&
             pinholeDistortion1.size() != 0)
-            undistortNeeded = true;
+            isUndistortionNeeded = true;
     }
     else if (cameraModelName == "Rectified")
     {
         cameraModel = CameraType::RECTIFIED;
 
         // Intrinsic parameters
-        float fx     = readParameter<float>(storage_in, "Camera1.fx", found);
-        float fy     = readParameter<float>(storage_in, "Camera1.fy", found);
-        float cx     = readParameter<float>(storage_in, "Camera1.cx", found);
-        float cy     = readParameter<float>(storage_in, "Camera1.cy", found);
-        vCalibration = {fx, fy, cx, cy};
+        float fx     = readParameter<float>(storage_inout, "Camera1.fx", found);
+        float fy     = readParameter<float>(storage_inout, "Camera1.fy", found);
+        float cx     = readParameter<float>(storage_inout, "Camera1.cx", found);
+        float cy     = readParameter<float>(storage_inout, "Camera1.cy", found);
+        calibrations = {fx, fy, cx, cy};
 
-        calibration1 = new camera_models::pinhole::Pinhole(vCalibration);
-        originalCalibration1 =
-            new camera_models::pinhole::Pinhole(vCalibration);
+        p_calibration1 = new camera_models::pinhole::Pinhole(calibrations);
+        p_originalCalibration1 =
+            new camera_models::pinhole::Pinhole(calibrations);
     }
     else if (cameraModelName == "camera_models::KannalaBrandt8")
     {
         cameraModel = CameraType::KANNALA_BRANDT;
 
         // Read intrinsic parameters
-        float fx = readParameter<float>(storage_in, "Camera1.fx", found);
-        float fy = readParameter<float>(storage_in, "Camera1.fy", found);
-        float cx = readParameter<float>(storage_in, "Camera1.cx", found);
-        float cy = readParameter<float>(storage_in, "Camera1.cy", found);
+        float fx = readParameter<float>(storage_inout, "Camera1.fx", found);
+        float fy = readParameter<float>(storage_inout, "Camera1.fy", found);
+        float cx = readParameter<float>(storage_inout, "Camera1.cx", found);
+        float cy = readParameter<float>(storage_inout, "Camera1.cy", found);
 
-        float k0 = readParameter<float>(storage_in, "Camera1.k1", found);
-        float k1 = readParameter<float>(storage_in, "Camera1.k2", found);
-        float k2 = readParameter<float>(storage_in, "Camera1.k3", found);
-        float k3 = readParameter<float>(storage_in, "Camera1.k4", found);
+        float k0 = readParameter<float>(storage_inout, "Camera1.k1", found);
+        float k1 = readParameter<float>(storage_inout, "Camera1.k2", found);
+        float k2 = readParameter<float>(storage_inout, "Camera1.k3", found);
+        float k3 = readParameter<float>(storage_inout, "Camera1.k4", found);
 
-        vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
-        calibration1 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(vCalibration);
-        originalCalibration1 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(vCalibration);
+        calibrations = {fx, fy, cx, cy, k0, k1, k2, k3};
+        p_calibration1 =
+            new camera_models::kannalabrandt8::KannalaBrandt8(calibrations);
+        p_originalCalibration1 =
+            new camera_models::kannalabrandt8::KannalaBrandt8(calibrations);
 
         if (sensor == System::STEREO || sensor == System::IMU_STEREO)
         {
-            int colBegin = readParameter<int>(storage_in,
+            int              colBegin     = readParameter<int>(storage_inout,
                                               "Camera1.overlappingBegin",
                                               found);
-            int colEnd =
-                readParameter<int>(storage_in, "Camera1.overlappingEnd", found);
-            std::vector<int> vOverlapping = {colBegin, colEnd};
+            int              colEnd       = readParameter<int>(storage_inout,
+                                            "Camera1.overlappingEnd",
+                                            found);
+            std::vector<int> overlappings = {colBegin, colEnd};
             static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
-                calibration1)
-                ->lappingArea = vOverlapping;
+                p_calibration1)
+                ->lappingArea = overlappings;
         }
     }
     else

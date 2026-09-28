@@ -38,20 +38,20 @@ namespace utils
 namespace utils
 {
 
-std::size_t
-    Utils::matchWallsBetweenRooms(const semantic::Room         *p_roomA_in,
-                                  const semantic::Room         *p_roomB_in,
-                                  std::vector<Eigen::Vector3d> &normalsA_out,
-                                  std::vector<Eigen::Vector3d> &centroidsA_out,
-                                  std::vector<Eigen::Vector3d> &normalsB_out,
-                                  std::vector<Eigen::Vector3d> &centroidsB_out)
+std::size_t Utils::matchWallsBetweenRooms(
+    const semantic::Room         *p_roomA_in,
+    const semantic::Room         *p_roomB_in,
+    std::vector<Eigen::Vector3d> &normalsA_inout,
+    std::vector<Eigen::Vector3d> &centroidsA_inout,
+    std::vector<Eigen::Vector3d> &normalsB_inout,
+    std::vector<Eigen::Vector3d> &centroidsB_inout)
 {
     if (p_roomA_in == nullptr || p_roomB_in == nullptr)
     {
         return 0;
     }
 
-    constexpr double kWallCorrespondenceCosTheta = 0.85;
+    constexpr double WALL_CORRESPONDENCE_COS_THETA = 0.85;
 
     const auto collectValidWalls = [](const semantic::Room *p_room_in)
         -> std::vector<std::pair<geometric::Plane *, Eigen::Vector3d>>
@@ -128,7 +128,7 @@ std::size_t
             }
         }
 
-        if (bestNormalAlignment <= kWallCorrespondenceCosTheta)
+        if (bestNormalAlignment <= WALL_CORRESPONDENCE_COS_THETA)
         {
             break;
         }
@@ -136,10 +136,12 @@ std::size_t
         matchedA[bestIndexA] = true;
         matchedB[bestIndexB] = true;
 
-        normalsA_out.push_back(validWallsA[bestIndexA].second);
-        centroidsA_out.push_back(validWallsA[bestIndexA].first->getCentroid());
-        normalsB_out.push_back(validWallsB[bestIndexB].second);
-        centroidsB_out.push_back(validWallsB[bestIndexB].first->getCentroid());
+        normalsA_inout.push_back(validWallsA[bestIndexA].second);
+        centroidsA_inout.push_back(
+            validWallsA[bestIndexA].first->getCentroid());
+        normalsB_inout.push_back(validWallsB[bestIndexB].second);
+        centroidsB_inout.push_back(
+            validWallsB[bestIndexB].first->getCentroid());
 
         acceptedPairCount++;
     }

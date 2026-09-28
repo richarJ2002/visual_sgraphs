@@ -81,7 +81,7 @@ enum class RoomTrackingEvent
  * @param[in]    confidence
  *               Traversal/verification confidence in [0, 1].
  *
- * @param[in]    passageDetected
+ * @param[in]    isPassageDetected
  *               A trajectory segment crossed a passable passage
  *               aperture (segmentCrossesPassageOpening()).
  *
@@ -89,16 +89,16 @@ enum class RoomTrackingEvent
  *               The crossed passage is passable
  *               (Passage::isPassable()).
  *
- * @param[in]    bothSidesObserved
+ * @param[in]    areBothSidesObserved
  *               Both sides of the passage have been observed.
  */
 struct TraversalGuardValues
 {
-    double dwell_s           = 0.0;
-    double confidence        = 0.0;
-    bool   passageDetected   = false;
-    bool   passable          = false;
-    bool   bothSidesObserved = false;
+    double dwell_s              = 0.0;
+    double confidence           = 0.0;
+    bool   isPassageDetected    = false;
+    bool   isPassable           = false;
+    bool   areBothSidesObserved = false;
 };
 
 /*!
@@ -120,7 +120,7 @@ enum class VerificationStatus
 struct VerificationVerdict
 {
     VerificationStatus status      = VerificationStatus::UNAVAILABLE;
-    bool               pass        = false;
+    bool               hasPassed   = false;
     unsigned int       inlierCount = 0U;
     double             inlierRatio = 0.0;
     double             normalisedConditionNumber = 0.0;
@@ -130,7 +130,7 @@ struct VerificationVerdict
     /*! Returns true only for a finite, internally consistent PASS. */
     bool isPass() const
     {
-        return status == VerificationStatus::PASS && pass &&
+        return status == VerificationStatus::PASS && hasPassed &&
                std::isfinite(inlierRatio) && inlierRatio >= 0.0 &&
                inlierRatio <= 1.0 && std::isfinite(normalisedConditionNumber) &&
                normalisedConditionNumber >= 0.0 &&
@@ -146,13 +146,13 @@ struct VerificationVerdict
  *
  * @param lost
  *                  Tracking was declared lost for the current cycle.
- * @param newMapCreated
+ * @param isNewMapCreated
  *                  A new map was created while tracking was lost.
  */
 struct TrackingStatusInput
 {
-    bool lost          = false;
-    bool newMapCreated = false;
+    bool isLost          = false;
+    bool isNewMapCreated = false;
 };
 
 /*!
@@ -170,8 +170,8 @@ struct TransitionEvent
     RoomTrackingEvent event       = RoomTrackingEvent::FIRST_ROOM_CONFIRMED;
     double            dwell_s     = 0.0;
     double            confidence  = 0.0;
-    bool              verificationPass = false;
-    bool              accepted         = false;
+    bool              hasVerificationPassed = false;
+    bool              isAccepted            = false;
 };
 
 /*!
@@ -218,14 +218,14 @@ class RoomTracker
      * @brief       Constructs a tracker with the given configuration.
      */
     explicit RoomTracker(
-        const RoomTrackerConfig &config_in = RoomTrackerConfig()) :
-        config_(config_in)
+        const RoomTrackerConfig &configuration_in = RoomTrackerConfig()) :
+        config(configuration_in)
     {}
 
     /*!
      * @brief       Resets state, timers, retry counters and event history.
      */
-    void reset(double now_s);
+    void reset(double now_s_in);
 
     /*!
      * @brief        Per-cycle integration entry point.
@@ -240,26 +240,26 @@ class RoomTracker
      *
      *               At most one transition is committed per cycle.
      *
-     * @param[in]    now_s
+     * @param[in]    now_s_in
      *               Monotonic seconds since an arbitrary epoch.
      *
-     * @param[in]    crossing
+     * @param[in]    crossing_in
      *               Passage crossing evidence from
      *               updateTraversalEvidence().
      *
-     * @param[in]    verification
+     * @param[in]    verification_in
      *               Abstract verification verdict (verification
      *               stub).
      *
-     * @param[in]    tracking
+     * @param[in]    tracking_in
      *               Tracking-loss and new-map lifecycle signals.
      *
      * @return       The state after the cycle.
      */
-    RoomTrackingState step(double                      now_s,
-                           const TraversalGuardValues &crossing,
-                           const VerificationVerdict  &verification,
-                           const TrackingStatusInput  &tracking);
+    RoomTrackingState step(double                      now_s_in,
+                           const TraversalGuardValues &crossing_in,
+                           const VerificationVerdict  &verification_in,
+                           const TrackingStatusInput  &tracking_in);
 
     /*!
      * @brief        Discrete transition oracle: applies exactly one
@@ -271,25 +271,25 @@ class RoomTracker
      *               rejected TransitionEvent is recorded and a WARN is
      *               logged.
      *
-     * @param[in]    event
+     * @param[in]    event_in
      *               The event to apply.
      *
-     * @param[in]    now_s
+     * @param[in]    now_s_in
      *               Monotonic seconds used as the record timestamp.
      *
-     * @param[in]    crossing
+     * @param[in]    crossing_in
      *               Explicit guard values for the guarded rows.
      *
-     * @param[in]    verification
+     * @param[in]    verification_in
      *               Explicit verification verdict for the guarded
      *               rows.
      *
      * @return       The state after applying the row.
      */
-    RoomTrackingState applyEvent(RoomTrackingEvent           event,
-                                 double                      now_s,
-                                 const TraversalGuardValues &crossing,
-                                 const VerificationVerdict  &verification);
+    RoomTrackingState applyEvent(RoomTrackingEvent           event_in,
+                                 double                      now_s_in,
+                                 const TraversalGuardValues &crossing_in,
+                                 const VerificationVerdict  &verification_in);
 
     /*!
      * @brief       Returns the current state.
@@ -315,17 +315,17 @@ class RoomTracker
     /*!
      * @brief       Renders a state as a stable literal name.
      */
-    static std::string stateToString(RoomTrackingState state);
+    static std::string stateToString(RoomTrackingState state_in);
 
     /*!
      * @brief       Renders an event as a stable literal name.
      */
-    static std::string eventToString(RoomTrackingEvent event);
+    static std::string eventToString(RoomTrackingEvent event_in);
 
     /*!
      * @brief       Serialises a TransitionEvent as one JSON object line.
      */
-    static std::string eventToJSON(const TransitionEvent &event);
+    static std::string eventToJSON(const TransitionEvent &event_in);
 
     /*!
      * @brief        Confidence formula:
@@ -338,56 +338,56 @@ class RoomTracker
      *               non-positive sigma results in 1.0 for a zero
      *               residual and 0.0 otherwise.
      */
-    static double computeConfidence(double inlier_ratio,
-                                    double normalised_condition_number,
-                                    double angular_residual_rad,
-                                    double sigma_theta_rad);
+    static double computeConfidence(double inlierRatio_in,
+                                    double normalizedConditionNumber_in,
+                                    double angularResidual_rad_in,
+                                    double sigmaTheta_rad_in);
 
   private:
     /*!
      * @brief       Central row engine: applies the source row for (state,
      *              event). Returns true when the transition was committed.
      */
-    bool applyRow(RoomTrackingState           source,
-                  RoomTrackingEvent           event,
-                  double                      now_s,
-                  const TraversalGuardValues &crossing,
-                  const VerificationVerdict  &verification);
+    bool applyRow(RoomTrackingState           source_in,
+                  RoomTrackingEvent           event_in,
+                  double                      now_s_in,
+                  const TraversalGuardValues &crossing_in,
+                  const VerificationVerdict  &verification_in);
 
     /*!
      * @brief       Commits target as the new state and records the event.
      */
-    void commit(RoomTrackingState           source,
-                RoomTrackingEvent           event,
-                double                      now_s,
-                const TraversalGuardValues &crossing,
-                const VerificationVerdict  &verification,
-                bool                        accepted);
+    void commit(RoomTrackingState           source_in,
+                RoomTrackingEvent           event_in,
+                double                      now_s_in,
+                const TraversalGuardValues &crossing_in,
+                const VerificationVerdict  &verification_in,
+                bool                        accepted_in);
 
     /*!
      * @brief       Accumulates the crossing/dwell timer for the given state.
      *
      * @return      Dwell seconds elapsed so far (accumulated countdown).
      */
-    double accumulateDwell(RoomTrackingState state,
-                           double            now_s,
-                           bool              guardSatisfied);
+    double accumulateDwell(RoomTrackingState state_in,
+                           double            now_s_in,
+                           bool              guardSatisfied_in);
 
   private:
-    RoomTrackerConfig            config_;
-    RoomTrackingState            state_ = RoomTrackingState::UNKNOWN;
-    std::vector<TransitionEvent> eventHistory_;
-    TransitionEvent              lastEvent_;
+    RoomTrackerConfig            config;
+    RoomTrackingState            trackingState = RoomTrackingState::UNKNOWN;
+    std::vector<TransitionEvent> eventHistory;
+    TransitionEvent              lastEvent;
 
-    double lastReceivedTime_s_       = 0.0;
-    double lastEnterStateTime_s_     = 0.0;
-    double crossingDwellStartTime_s_ = -1.0;
+    double lastReceivedTime_s       = 0.0;
+    double lastEnterStateTime_s     = 0.0;
+    double crossingDwellStartTime_s = -1.0;
 
-    unsigned int reacquireRetryCount_      = 0U;
-    double       reacquireLastRetryTime_s_ = -1.0;
+    unsigned int reacquireRetryCount      = 0U;
+    double       reacquireLastRetryTime_s = -1.0;
 
-    bool hasObservedBothSides_ = false;
-    bool wasTrackingLost_      = false;
+    bool hasObservedBothSides = false;
+    bool wasTrackingLost      = false;
 };
 
 } // namespace semantic

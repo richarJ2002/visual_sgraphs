@@ -30,9 +30,9 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::setTracker(Tracking *pTracker)
+void LocalMapping::setTracker(Tracking *p_tracker_in)
 {
-    p_tracker = pTracker;
+    p_tracker = p_tracker_in;
 }
 
 } // namespace core

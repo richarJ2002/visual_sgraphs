@@ -37,7 +37,7 @@ namespace core
 
 set<KeyFrame *> KeyFrame::getLoopEdges()
 {
-    unique_lock<mutex> lockCon(mMutexConnections);
+    unique_lock<mutex> lockCon(connectionsMutex);
     return loopEdges;
 }
 

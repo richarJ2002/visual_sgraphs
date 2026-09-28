@@ -43,21 +43,22 @@ void SemanticReportCache::update(
     const std::string                        &canonicalFullGeometryDigest_in,
     std::chrono::milliseconds                 evaluationDuration_in)
 {
-    std::lock_guard<std::mutex> lock(mMutex);
+    std::lock_guard<std::mutex> lock(cacheMutex);
 
     const bool geometryChanged =
-        mIsAvailable &&
-        (canonicalFullGeometryDigest_in != mLatest.canonicalFullGeometryDigest);
+        hasCachedReport && (canonicalFullGeometryDigest_in !=
+                            latestEntry.canonicalFullGeometryDigest);
     const std::uint64_t nextGeometryRevision =
-        mIsAvailable ? (mLatest.geometryRevision + (geometryChanged ? 1U : 0U))
-                     : 0U;
+        hasCachedReport
+            ? (latestEntry.geometryRevision + (geometryChanged ? 1U : 0U))
+            : 0U;
 
     SemanticReportCacheEntry entry;
     entry.snapshot                    = snapshot_in;
     entry.evaluationReport            = evaluationReport_in;
     entry.completenessResults         = completenessResults_in;
     entry.semanticCycle               = semanticCycle_in;
-    entry.updateSequence              = mLatest.updateSequence + 1U;
+    entry.updateSequence              = latestEntry.updateSequence + 1U;
     entry.currentMapId                = currentMapId_in;
     entry.mapRevision                 = mapRevision_in;
     entry.canonicalTopologyDigest     = canonicalTopologyDigest_in;
@@ -66,8 +67,8 @@ void SemanticReportCache::update(
     entry.evaluationDuration          = evaluationDuration_in;
     entry.updateInstant               = std::chrono::steady_clock::now();
 
-    mLatest      = std::move(entry);
-    mIsAvailable = true;
+    latestEntry     = std::move(entry);
+    hasCachedReport = true;
 }
 
 } // namespace semantic

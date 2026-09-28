@@ -32,7 +32,7 @@ namespace core
 
 std::vector<vs_graphs::core::semantic::Passage *> Atlas::getAllPassages()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     return p_activeMap->getAllPassages();
 }
 

@@ -36,7 +36,7 @@ void SemanticsManager::suppressUndefendedWalls(void)
 
     if (p_currentMap == nullptr)
     {
-        undefendedWalls_.clear();
+        undefendedWalls.clear();
         return;
     }
 
@@ -79,7 +79,7 @@ void SemanticsManager::suppressUndefendedWalls(void)
         if (p_wall->isBad() ||
             p_wall->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
         {
-            undefendedWalls_.erase(wallId);
+            undefendedWalls.erase(wallId);
             continue;
         }
 
@@ -183,14 +183,14 @@ void SemanticsManager::suppressUndefendedWalls(void)
         if (ownedByLiveRoom || associatedWithPassage ||
             hasCompatibleLiveCluster)
         {
-            undefendedWalls_.erase(wallId);
+            undefendedWalls.erase(wallId);
             if (hasCompatibleLiveCluster && !ownedByLiveRoom &&
                 !associatedWithPassage)
             {
                 std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                              "\"map_id\":"
                           << p_currentMap->getId()
-                          << ",\"semantic_cycle\":" << pipelineSemanticCycle_
+                          << ",\"semantic_cycle\":" << pipelineSemanticCycle
                           << ",\"wall_id\":" << wallId
                           << ",\"class\":\"WALL\","
                              "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
@@ -206,7 +206,7 @@ void SemanticsManager::suppressUndefendedWalls(void)
         const std::size_t cloudPointCount =
             p_cloud != nullptr ? p_cloud->size() : 0U;
         const std::size_t observationCount = p_wall->getObservationCount();
-        auto [stateIterator, inserted]     = undefendedWalls_.try_emplace(
+        auto [stateIterator, inserted]     = undefendedWalls.try_emplace(
             wallId,
             UndefendedWallState{p_wall, 0U, cloudPointCount, observationCount});
 
@@ -232,7 +232,7 @@ void SemanticsManager::suppressUndefendedWalls(void)
         state.cloudPointCount      = cloudPointCount;
         state.observationCount     = observationCount;
 
-        if ((evidence.adequateFiniteFit && cloudGrew) || observationGrew)
+        if ((evidence.hasAdequateFiniteFit && cloudGrew) || observationGrew)
         {
             state.unresolvedCycles = 0U;
             continue;
@@ -246,7 +246,7 @@ void SemanticsManager::suppressUndefendedWalls(void)
             std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                          "\"map_id\":"
                       << p_currentMap->getId()
-                      << ",\"semantic_cycle\":" << pipelineSemanticCycle_
+                      << ",\"semantic_cycle\":" << pipelineSemanticCycle
                       << ",\"wall_id\":" << wallId
                       << ",\"class\":\"WALL\","
                          "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
@@ -292,14 +292,14 @@ void SemanticsManager::suppressUndefendedWalls(void)
         p_currentMap->eraseMapPlane(p_wall);
         p_wall->p_refKeyFrame = nullptr;
         p_wall->setMap(nullptr);
-        undefendedWalls_.erase(wallId);
+        undefendedWalls.erase(wallId);
 
-        if (loggedRetiredWallIds_.insert(wallId).second)
+        if (loggedRetiredWallIds.insert(wallId).second)
         {
             std::cout << "SG_PIPELINE {\"event\":\"wall_retirement\","
                          "\"map_id\":"
                       << p_currentMap->getId()
-                      << ",\"semantic_cycle\":" << pipelineSemanticCycle_
+                      << ",\"semantic_cycle\":" << pipelineSemanticCycle
                       << ",\"wall_id\":" << wallId
                       << ",\"class\":\"WALL\",\"lifecycle\":\"RETIRED\","
                          "\"reason\":\"GRACE_EXPIRED_NO_GROWTH_NO_OWNER_NO_"
@@ -312,11 +312,11 @@ void SemanticsManager::suppressUndefendedWalls(void)
         }
     }
 
-    for (auto stateIterator = undefendedWalls_.begin();
-         stateIterator != undefendedWalls_.end();)
+    for (auto stateIterator = undefendedWalls.begin();
+         stateIterator != undefendedWalls.end();)
     {
         stateIterator = mappedWallIds.count(stateIterator->first) == 0U
-                            ? undefendedWalls_.erase(stateIterator)
+                            ? undefendedWalls.erase(stateIterator)
                             : std::next(stateIterator);
     }
 }

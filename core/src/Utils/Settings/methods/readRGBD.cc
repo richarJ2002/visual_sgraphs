@@ -47,17 +47,19 @@ namespace utils
 namespace settings
 {
 
-void Settings::readRGBD(cv::FileStorage &storage_in)
+void Settings::readRGBD(cv::FileStorage &storage_inout)
 {
     bool found;
 
     depthMapScale =
-        readParameter<float>(storage_in, "RGBD.DepthMapFactor", found);
-    depthThreshold = readParameter<float>(storage_in, "Stereo.ThDepth", found);
-    stereoBaseline = readParameter<float>(storage_in, "Stereo.b", found);
-    baselineFocal  = stereoBaseline * calibration1->getParameter(0);
-    nearThreshold  = readParameter<float>(storage_in, "RGBD.NearThresh", found);
-    farThreshold   = readParameter<float>(storage_in, "RGBD.FarThresh", found);
+        readParameter<float>(storage_inout, "RGBD.DepthMapFactor", found);
+    depthThreshold =
+        readParameter<float>(storage_inout, "Stereo.ThDepth", found);
+    stereoBaseline = readParameter<float>(storage_inout, "Stereo.b", found);
+    baselineFocal  = stereoBaseline * p_calibration1->getParameter(0);
+    nearThreshold =
+        readParameter<float>(storage_inout, "RGBD.NearThresh", found);
+    farThreshold = readParameter<float>(storage_inout, "RGBD.FarThresh", found);
 
     // set distance threshold in the system params
     types::SystemParams::getParams()->pointcloud.distanceThresh =

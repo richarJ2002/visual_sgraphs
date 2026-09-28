@@ -76,20 +76,20 @@ void ORBextractor::computePyramid(cv::Mat image_in)
     for (int level = 0; level < levelCount; ++level)
     {
         float scale = inverseScaleFactors[level];
-        Size  sz(cvRound((float)image_in.cols * scale),
-                cvRound((float)image_in.rows * scale));
-        Size  wholeSize(sz.width + EDGE_THRESHOLD * 2,
-                       sz.height + EDGE_THRESHOLD * 2);
+        Size  size(cvRound((float)image_in.cols * scale),
+                  cvRound((float)image_in.rows * scale));
+        Size  wholeSize(size.width + EDGE_THRESHOLD * 2,
+                       size.height + EDGE_THRESHOLD * 2);
         Mat   temp(wholeSize, image_in.type()), masktemp;
         imagePyramid[level] =
-            temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
+            temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, size.width, size.height));
 
         // Compute the resized image_in
         if (level != 0)
         {
             resize(imagePyramid[level - 1],
                    imagePyramid[level],
-                   sz,
+                   size,
                    0,
                    0,
                    INTER_LINEAR);

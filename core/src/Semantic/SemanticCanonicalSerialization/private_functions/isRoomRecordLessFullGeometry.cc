@@ -67,15 +67,17 @@ bool isRoomRecordLessFullGeometry(const RoomRecord &lhs_in,
         return lhs_in.boundaryCorners_World_m.size() <
                rhs_in.boundaryCorners_World_m.size();
     }
-    for (std::size_t i = 0U; i < lhs_in.boundaryCorners_World_m.size(); ++i)
+    for (std::size_t boundaryCornerIndex = 0U;
+         boundaryCornerIndex < lhs_in.boundaryCorners_World_m.size();
+         ++boundaryCornerIndex)
     {
-        if (isVector3dLess(lhs_in.boundaryCorners_World_m[i],
-                           rhs_in.boundaryCorners_World_m[i]))
+        if (isVector3dLess(lhs_in.boundaryCorners_World_m[boundaryCornerIndex],
+                           rhs_in.boundaryCorners_World_m[boundaryCornerIndex]))
         {
             return true;
         }
-        if (isVector3dLess(rhs_in.boundaryCorners_World_m[i],
-                           lhs_in.boundaryCorners_World_m[i]))
+        if (isVector3dLess(rhs_in.boundaryCorners_World_m[boundaryCornerIndex],
+                           lhs_in.boundaryCorners_World_m[boundaryCornerIndex]))
         {
             return false;
         }
@@ -85,10 +87,14 @@ bool isRoomRecordLessFullGeometry(const RoomRecord &lhs_in,
     {
         return lhs_in.observationGaps.size() < rhs_in.observationGaps.size();
     }
-    for (std::size_t i = 0U; i < lhs_in.observationGaps.size(); ++i)
+    for (std::size_t boundaryCornerIndex = 0U;
+         boundaryCornerIndex < lhs_in.observationGaps.size();
+         ++boundaryCornerIndex)
     {
-        const Room::ObservationGap &lhsGap = lhs_in.observationGaps[i];
-        const Room::ObservationGap &rhsGap = rhs_in.observationGaps[i];
+        const Room::ObservationGap &lhsGap =
+            lhs_in.observationGaps[boundaryCornerIndex];
+        const Room::ObservationGap &rhsGap =
+            rhs_in.observationGaps[boundaryCornerIndex];
         if (isDoubleLess(lhsGap.startAngle_rad, rhsGap.startAngle_rad))
         {
             return true;

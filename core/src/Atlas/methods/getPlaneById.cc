@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-geometric::Plane *Atlas::getPlaneById(int planeId)
+geometric::Plane *Atlas::getPlaneById(int planeId_in)
 {
-    unique_lock<mutex> lock(mMutexAtlas);
-    return p_activeMap != nullptr ? p_activeMap->getPlaneById(planeId)
+    unique_lock<mutex> lock(atlasMutex);
+    return p_activeMap != nullptr ? p_activeMap->getPlaneById(planeId_in)
                                   : nullptr;
 }
 

@@ -30,15 +30,15 @@ namespace vs_graphs::core::camera_models::kannalabrandt8
 {
 cv::Mat KannalaBrandt8::toK()
 {
-    cv::Mat K = (cv::Mat_<float>(3, 3) << parameters[0],
-                 0.f,
-                 parameters[2],
-                 0.f,
-                 parameters[1],
-                 parameters[3],
-                 0.f,
-                 0.f,
-                 1.f);
-    return K;
+    cv::Mat calibrationMatrix = (cv::Mat_<float>(3, 3) << parameters[0],
+                                 0.f,
+                                 parameters[2],
+                                 0.f,
+                                 parameters[1],
+                                 parameters[3],
+                                 0.f,
+                                 0.f,
+                                 1.f);
+    return calibrationMatrix;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

@@ -34,38 +34,39 @@ namespace vs_graphs
 namespace core
 {
 
-void MapDrawer::drawKeyFrames(const bool bDrawKF,
-                              const bool bDrawGraph,
-                              const bool bDrawInertialGraph,
-                              const bool bDrawOptLba)
+void MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
+                              const bool shouldDrawGraph_in,
+                              const bool shouldDrawInertialGraph_in,
+                              const bool shouldDrawOptimizedLba_in)
 {
     const float &w = keyFrameSize;
     const float  h = w * 0.75;
     const float  z = w * 0.6;
 
-    Map                        *pActiveMap = p_atlas->getCurrentMap();
+    Map                        *p_activeMap = p_atlas->getCurrentMap();
     // DEBUG LBA
-    std::set<long unsigned int> sOptKFs   = pActiveMap->optKeyFrameIds;
-    std::set<long unsigned int> sFixedKFs = pActiveMap->fixedKeyFrameIds;
+    std::set<long unsigned int> optKeyFrames   = p_activeMap->optKeyFrameIds;
+    std::set<long unsigned int> fixedKeyFrames = p_activeMap->fixedKeyFrameIds;
 
-    if (!pActiveMap)
+    if (!p_activeMap)
         return;
 
-    const vector<KeyFrame *> vpKFs = pActiveMap->getAllKeyFrames();
+    const vector<KeyFrame *> keyFrames = p_activeMap->getAllKeyFrames();
 
-    if (bDrawKF)
+    if (shouldDrawKeyFrames_in)
     {
-        for (size_t i = 0; i < vpKFs.size(); i++)
+        for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
+             keyFrameIndex++)
         {
-            KeyFrame       *pKF         = vpKFs[i];
-            Eigen::Matrix4f Twc         = pKF->getPoseInverse().matrix();
-            unsigned int    index_color = pKF->originMapId;
+            KeyFrame       *p_keyFrame = keyFrames[keyFrameIndex];
+            Eigen::Matrix4f Twc        = p_keyFrame->getPoseInverse().matrix();
+            unsigned int    indexColor = p_keyFrame->originMapId;
 
             glPushMatrix();
 
             glMultMatrixf((GLfloat *)Twc.data());
 
-            if (!pKF->getParent()) // It is the first KF in the map
+            if (!p_keyFrame->getParent()) // It is the first KF in the map
             {
                 glLineWidth(keyFrameLineWidth * 5);
                 glColor3f(1.0f, 0.0f, 0.0f);
@@ -73,15 +74,16 @@ void MapDrawer::drawKeyFrames(const bool bDrawKF,
             }
             else
             {
-                // cout << "Child KF: " << vpKFs[i]->mnId << endl;
+                // cout << "Child KF: " << vpKFs[i]->id << endl;
                 glLineWidth(keyFrameLineWidth);
-                if (bDrawOptLba)
+                if (shouldDrawOptimizedLba_in)
                 {
-                    if (sOptKFs.find(pKF->mnId) != sOptKFs.end())
+                    if (optKeyFrames.find(p_keyFrame->id) != optKeyFrames.end())
                     {
                         glColor3f(0.0f, 1.0f, 0.0f); // Green -> Opt KFs
                     }
-                    else if (sFixedKFs.find(pKF->mnId) != sFixedKFs.end())
+                    else if (fixedKeyFrames.find(p_keyFrame->id) !=
+                             fixedKeyFrames.end())
                     {
                         glColor3f(1.0f, 0.0f, 0.0f); // Red -> Fixed KFs
                     }
@@ -125,27 +127,29 @@ void MapDrawer::drawKeyFrames(const bool bDrawKF,
         }
     }
 
-    if (bDrawGraph)
+    if (shouldDrawGraph_in)
     {
         glLineWidth(graphLineWidth);
         glColor4f(0.0f, 1.0f, 0.0f, 0.6f);
         glBegin(GL_LINES);
 
         // cout << "-----------------Draw graph-----------------" << endl;
-        for (size_t i = 0; i < vpKFs.size(); i++)
+        for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
+             keyFrameIndex++)
         {
             // Covisibility Graph
-            const vector<KeyFrame *> vCovKFs =
-                vpKFs[i]->getCovisiblesByWeight(100);
-            Eigen::Vector3f Ow = vpKFs[i]->getCameraCenter();
-            if (!vCovKFs.empty())
+            const vector<KeyFrame *> covisibleKeyFrames =
+                keyFrames[keyFrameIndex]->getCovisiblesByWeight(100);
+            Eigen::Vector3f Ow = keyFrames[keyFrameIndex]->getCameraCenter();
+            if (!covisibleKeyFrames.empty())
             {
-                for (vector<KeyFrame *>::const_iterator vit  = vCovKFs.begin(),
-                                                        vend = vCovKFs.end();
+                for (vector<KeyFrame *>::const_iterator
+                         vit  = covisibleKeyFrames.begin(),
+                         vend = covisibleKeyFrames.end();
                      vit != vend;
                      vit++)
                 {
-                    if ((*vit)->mnId < vpKFs[i]->mnId)
+                    if ((*vit)->id < keyFrames[keyFrameIndex]->id)
                         continue;
                     Eigen::Vector3f Ow2 = (*vit)->getCameraCenter();
                     glVertex3f(Ow(0), Ow(1), Ow(2));
@@ -154,22 +158,23 @@ void MapDrawer::drawKeyFrames(const bool bDrawKF,
             }
 
             // Spanning tree
-            KeyFrame *pParent = vpKFs[i]->getParent();
-            if (pParent)
+            KeyFrame *p_parent = keyFrames[keyFrameIndex]->getParent();
+            if (p_parent)
             {
-                Eigen::Vector3f Owp = pParent->getCameraCenter();
+                Eigen::Vector3f Owp = p_parent->getCameraCenter();
                 glVertex3f(Ow(0), Ow(1), Ow(2));
                 glVertex3f(Owp(0), Owp(1), Owp(2));
             }
 
             // Loops
-            set<KeyFrame *> sLoopKFs = vpKFs[i]->getLoopEdges();
-            for (set<KeyFrame *>::iterator sit  = sLoopKFs.begin(),
-                                           send = sLoopKFs.end();
+            set<KeyFrame *> loopKeyFrames =
+                keyFrames[keyFrameIndex]->getLoopEdges();
+            for (set<KeyFrame *>::iterator sit  = loopKeyFrames.begin(),
+                                           send = loopKeyFrames.end();
                  sit != send;
                  sit++)
             {
-                if ((*sit)->mnId < vpKFs[i]->mnId)
+                if ((*sit)->id < keyFrames[keyFrameIndex]->id)
                     continue;
                 Eigen::Vector3f Owl = (*sit)->getCameraCenter();
                 glVertex3f(Ow(0), Ow(1), Ow(2));
@@ -180,21 +185,22 @@ void MapDrawer::drawKeyFrames(const bool bDrawKF,
         glEnd();
     }
 
-    if (bDrawInertialGraph && pActiveMap->isImuInitialized())
+    if (shouldDrawInertialGraph_in && p_activeMap->isImuInitialized())
     {
         glLineWidth(graphLineWidth);
         glColor4f(1.0f, 0.0f, 0.0f, 0.6f);
         glBegin(GL_LINES);
 
         // Draw inertial links
-        for (size_t i = 0; i < vpKFs.size(); i++)
+        for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
+             keyFrameIndex++)
         {
-            KeyFrame       *pKFi  = vpKFs[i];
-            Eigen::Vector3f Ow    = pKFi->getCameraCenter();
-            KeyFrame       *pNext = pKFi->p_nextKF;
-            if (pNext)
+            KeyFrame       *p_drawnKeyFrame = keyFrames[keyFrameIndex];
+            Eigen::Vector3f Ow     = p_drawnKeyFrame->getCameraCenter();
+            KeyFrame       *p_next = p_drawnKeyFrame->p_nextKF;
+            if (p_next)
             {
-                Eigen::Vector3f Owp = pNext->getCameraCenter();
+                Eigen::Vector3f Owp = p_next->getCameraCenter();
                 glVertex3f(Ow(0), Ow(1), Ow(2));
                 glVertex3f(Owp(0), Owp(1), Owp(2));
             }
@@ -203,28 +209,30 @@ void MapDrawer::drawKeyFrames(const bool bDrawKF,
         glEnd();
     }
 
-    vector<Map *> vpMaps = p_atlas->getAllMaps();
+    vector<Map *> maps = p_atlas->getAllMaps();
 
-    if (bDrawKF)
+    if (shouldDrawKeyFrames_in)
     {
-        for (Map *pMap : vpMaps)
+        for (Map *p_map : maps)
         {
-            if (pMap == pActiveMap)
+            if (p_map == p_activeMap)
                 continue;
 
-            vector<KeyFrame *> vpKFs = pMap->getAllKeyFrames();
+            vector<KeyFrame *> keyFrames = p_map->getAllKeyFrames();
 
-            for (size_t i = 0; i < vpKFs.size(); i++)
+            for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
+                 keyFrameIndex++)
             {
-                KeyFrame       *pKF         = vpKFs[i];
-                Eigen::Matrix4f Twc         = pKF->getPoseInverse().matrix();
-                unsigned int    index_color = pKF->originMapId;
+                KeyFrame       *p_keyFrame = keyFrames[keyFrameIndex];
+                Eigen::Matrix4f Twc = p_keyFrame->getPoseInverse().matrix();
+                unsigned int    indexColor = p_keyFrame->originMapId;
 
                 glPushMatrix();
 
                 glMultMatrixf((GLfloat *)Twc.data());
 
-                if (!vpKFs[i]->getParent()) // It is the first KF in the map
+                if (!keyFrames[keyFrameIndex]
+                         ->getParent()) // It is the first KF in the map
                 {
                     glLineWidth(keyFrameLineWidth * 5);
                     glColor3f(1.0f, 0.0f, 0.0f);
@@ -233,9 +241,9 @@ void MapDrawer::drawKeyFrames(const bool bDrawKF,
                 else
                 {
                     glLineWidth(keyFrameLineWidth);
-                    glColor3f(mfFrameColors[index_color][0],
-                              mfFrameColors[index_color][1],
-                              mfFrameColors[index_color][2]);
+                    glColor3f(frameColors[indexColor][0],
+                              frameColors[indexColor][1],
+                              frameColors[indexColor][2]);
                     glBegin(GL_LINES);
                 }
 

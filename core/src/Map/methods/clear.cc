@@ -41,8 +41,8 @@ void Map::clear()
          sit != send;
          sit++)
     {
-        KeyFrame *pKF = *sit;
-        pKF->updateMap(static_cast<Map *>(nullptr));
+        KeyFrame *p_keyFrame = *sit;
+        p_keyFrame->updateMap(static_cast<Map *>(nullptr));
     }
 
     planes.clear();

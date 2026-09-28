@@ -29,11 +29,11 @@ namespace core
 
 vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     Atlas                                          *p_atlas_inout,
-    vs_graphs::core::KeyFrame                      *pKF,
-    const g2o::Plane3D                              estimatedPlane,
-    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr   planeCloud,
-    vs_graphs::core::geometric::Plane::PlaneVariant semanticType,
-    double                                          confidence)
+    vs_graphs::core::KeyFrame                      *p_keyFrame_inout,
+    const g2o::Plane3D                              estimatedPlane_in,
+    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr   p_planeCloud_in,
+    vs_graphs::core::geometric::Plane::PlaneVariant semanticType_in,
+    double                                          confidence_in)
 {
     vs_graphs::core::Map *p_currentMap = p_atlas_inout->getCurrentMap();
 
@@ -42,27 +42,28 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
         return nullptr;
     }
 
-    vs_graphs::core::geometric::Plane *newMapPlane =
+    vs_graphs::core::geometric::Plane *p_newMapPlane =
         new vs_graphs::core::geometric::Plane();
-    newMapPlane->setColor();
-    newMapPlane->setLocalEquation(estimatedPlane);
-    newMapPlane->setMap(p_currentMap);
-    newMapPlane->setId(p_currentMap->reservePlaneId());
-    newMapPlane->p_refKeyFrame = pKF;
+    p_newMapPlane->setColor();
+    p_newMapPlane->setLocalEquation(estimatedPlane_in);
+    p_newMapPlane->setMap(p_currentMap);
+    p_newMapPlane->setId(p_currentMap->reservePlaneId());
+    p_newMapPlane->p_refKeyFrame = p_keyFrame_inout;
 
     /* Stamp which face of the physical surface this is, from the camera that
      * observed it. Only the side turned toward a camera can ever be seen, so
      * this position permanently identifies the face -- and therefore which
      * room it bounds -- without any later re-derivation from observation
      * history (see Plane::observationOrigin_World_m). */
-    if (pKF != nullptr)
+    if (p_keyFrame_inout != nullptr)
     {
         const Eigen::Vector3d observationOrigin_World_m =
-            pKF->getCameraCenter().cast<double>();
+            p_keyFrame_inout->getCameraCenter().cast<double>();
 
         if (observationOrigin_World_m.allFinite())
         {
-            newMapPlane->setObservationOrigin_World(observationOrigin_World_m);
+            p_newMapPlane->setObservationOrigin_World(
+                observationOrigin_World_m);
         }
     }
 
@@ -80,16 +81,16 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     if (types::SystemParams::getParams()->optimization.planePoint.enabled)
     {
         /* Iterate through points in point cloud */
-        for (auto &point : planeCloud->points)
+        for (auto &point : p_planeCloud_in->points)
         {
             /* Create the homogeneous coordinate point vector object */
-            Eigen::Vector4d pointVec;
+            Eigen::Vector4d pointVector;
 
             /* Load the point into the vector */
-            pointVec << point.x, point.y, point.z, 1;
+            pointVector << point.x, point.y, point.z, 1;
 
             /* Accumulate the square matrix from poitns */
-            pointPlaneConstraintMatrix += pointVec * pointVec.transpose();
+            pointPlaneConstraintMatrix += pointVector * pointVector.transpose();
         }
     }
 
@@ -98,49 +99,50 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
      * ---------------------------------------------------------------------- */
 
     /* Init observation struct to store information about the plane */
-    vs_graphs::core::geometric::Plane::Observation obs;
+    vs_graphs::core::geometric::Plane::Observation observation;
 
     /* Store the result of the plane constaint matrix */
-    obs.pointPlaneConstraintMatrix = pointPlaneConstraintMatrix;
+    observation.pointPlaneConstraintMatrix = pointPlaneConstraintMatrix;
 
     /* Store the observes semantic type of the plane */
-    obs.semanticType = semanticType;
+    observation.semanticType = semanticType_in;
 
     /* Store the aggregatede confidence of the plane */
-    obs.confidence = confidence;
+    observation.confidence = confidence_in;
 
     /* Store the equation of the plane with respect to the camera */
-    obs.localPlane = estimatedPlane;
+    observation.localPlane = estimatedPlane_in;
 
     /* ---------------------------------------------------------------------- *
      * UPDATE OBSERVATIONS OF NEW PLANE
      * ---------------------------------------------------------------------- */
 
     /* Add observation and keyframe to plane */
-    newMapPlane->addObservation(pKF, obs);
+    p_newMapPlane->addObservation(p_keyFrame_inout, observation);
 
     /* Set the plane type */
-    newMapPlane->setPlaneType(semanticType);
+    p_newMapPlane->setPlaneType(semanticType_in);
 
     /* Get the global equation of the plane */
     g2o::Plane3D globalEquation_World = utils::utils::Utils::applyPoseToPlane(
-        pKF->getPoseInverse().matrix().cast<double>(),
-        estimatedPlane);
+        p_keyFrame_inout->getPoseInverse().matrix().cast<double>(),
+        estimatedPlane_in);
 
     /* Set the global equation of the plane in the map world plane */
-    newMapPlane->setGlobalEquation(globalEquation_World);
+    p_newMapPlane->setGlobalEquation(globalEquation_World);
 
     /* Transform the plane cloud to the global frame */
-    pcl::transformPointCloud(*planeCloud,
-                             *planeCloud,
-                             pKF->getPoseInverse().matrix().cast<float>());
+    pcl::transformPointCloud(
+        *p_planeCloud_in,
+        *p_planeCloud_in,
+        p_keyFrame_inout->getPoseInverse().matrix().cast<float>());
 
     /* Fill the plane with the pointcloud */
-    if (!planeCloud->points.empty())
+    if (!p_planeCloud_in->points.empty())
     {
         /* Add the point clouds to the new map plane */
-        newMapPlane->replaceMapClouds(planeCloud);
-        refitMappedPlaneFromCloud(newMapPlane);
+        p_newMapPlane->replaceMapClouds(p_planeCloud_in);
+        refitMappedPlaneFromCloud(p_newMapPlane);
     }
 
     /* ---------------------------------------------------------------------- *
@@ -155,24 +157,24 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     if (types::SystemParams::getParams()->optimization.planeMapPoint.enabled)
     {
         /* Iterate through the orb points (expressed in global frame) */
-        for (const auto &mapPoint : pKF->getMapPoints())
+        for (const auto &mapPoint : p_keyFrame_inout->getMapPoints())
         {
             /* If the orb feature is within the plane, set as map point */
-            if (newMapPlane->isPointinPlaneCloud(
+            if (p_newMapPlane->isPointinPlaneCloud(
                     mapPoint->getWorldPos().cast<double>()))
             {
-                newMapPlane->setMapPoints(mapPoint);
+                p_newMapPlane->setMapPoints(mapPoint);
             }
         }
     }
 
     /* Add the plane to the keyframe */
-    pKF->addMapPlane(newMapPlane);
+    p_keyFrame_inout->addMapPlane(p_newMapPlane);
 
     /* Add the palne to the current map */
-    p_atlas_inout->addMapPlane(newMapPlane);
+    p_atlas_inout->addMapPlane(p_newMapPlane);
 
-    return newMapPlane;
+    return p_newMapPlane;
 }
 
 } // namespace core

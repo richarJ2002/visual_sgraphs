@@ -37,7 +37,7 @@ namespace core
 
 Sophus::SE3f KeyFrame::getPose()
 {
-    unique_lock<mutex> lock(mMutexPose);
+    unique_lock<mutex> lock(poseMutex);
     return poseTcw;
 }
 

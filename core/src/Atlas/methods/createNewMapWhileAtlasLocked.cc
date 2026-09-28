@@ -33,7 +33,7 @@ namespace core
 void Atlas::createNewMapWhileAtlasLocked()
 {
     std::cout << "\n[Atlas]" << std::endl;
-    std::cout << "- Creating a new map (MapId: " << Map::nNextId
+    std::cout << "- Creating a new map (MapId: " << Map::nextId
               << ", Init KeyFrame: " << lastInitKeyFrameId << ") ..."
               << std::endl;
 
@@ -64,8 +64,8 @@ void Atlas::createNewMapWhileAtlasLocked()
         p_previousMap->setFollowingMap(p_activeMap);
     }
     {
-        std::lock_guard<std::mutex> contextLock(mRoomContextMutex);
-        newMapCreatedPending_ = true;
+        std::lock_guard<std::mutex> contextLock(roomContextMutex);
+        isNewMapCreatedPending = true;
     }
 }
 

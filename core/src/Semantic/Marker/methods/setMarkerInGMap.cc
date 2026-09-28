@@ -25,10 +25,10 @@ namespace core
 namespace semantic
 {
 
-void Marker::setMarkerInGMap(bool value)
+void Marker::setMarkerInGMap(bool isInGlobalMap_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
-    markerInGMap = value;
+    std::lock_guard<std::mutex> lock(stateMutex);
+    isInGlobalMap = isInGlobalMap_in;
 }
 
 } // namespace semantic

@@ -36,7 +36,7 @@ namespace core
 
 vector<geometric::Plane *> Map::getAllPlanes()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return vector<geometric::Plane *>(planes.begin(), planes.end());
 }
 

@@ -39,12 +39,15 @@ void KeyFrame::computeBagOfWords()
 {
     if (bowVector.empty() || featureVector.empty())
     {
-        vector<cv::Mat> vCurrentDesc =
+        vector<cv::Mat> currentDescriptors =
             utils::converter::Converter::toDescriptorVector(descriptors);
         // Feature vector associate features with nodes in the 4th level (from
         // leaves up) We assume the vocabulary tree has 6 levels, change the 4
         // otherwise
-        p_orbVocabulary->transform(vCurrentDesc, bowVector, featureVector, 4);
+        p_orbVocabulary->transform(currentDescriptors,
+                                   bowVector,
+                                   featureVector,
+                                   4);
     }
 }
 

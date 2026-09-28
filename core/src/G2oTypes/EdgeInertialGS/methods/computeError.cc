@@ -36,46 +36,56 @@ void EdgeInertialGS::computeError()
 {
     // TODO Maybe Reintegrate inertial measurments when difference between
     // linearization point and current estimate is too big
-    const VertexPose     *VP1 = static_cast<const VertexPose *>(_vertices[0]);
-    const VertexVelocity *VV1 =
+    const VertexPose *p_previousPoseVertex =
+        static_cast<const VertexPose *>(_vertices[0]);
+    const VertexVelocity *p_previousVelocityVertex =
         static_cast<const VertexVelocity *>(_vertices[1]);
-    const VertexGyroBias *VG =
+    const VertexGyroBias *p_gyroBiasVertex =
         static_cast<const VertexGyroBias *>(_vertices[2]);
-    const VertexAccBias  *VA = static_cast<const VertexAccBias *>(_vertices[3]);
-    const VertexPose     *VP2 = static_cast<const VertexPose *>(_vertices[4]);
-    const VertexVelocity *VV2 =
+    const VertexAccBias *p_accBiasVertex =
+        static_cast<const VertexAccBias *>(_vertices[3]);
+    const VertexPose *p_currentPoseVertex =
+        static_cast<const VertexPose *>(_vertices[4]);
+    const VertexVelocity *p_currentVelocityVertex =
         static_cast<const VertexVelocity *>(_vertices[5]);
-    const VertexGDir  *VGDir = static_cast<const VertexGDir *>(_vertices[6]);
-    const VertexScale *VS    = static_cast<const VertexScale *>(_vertices[7]);
-    const IMU::Bias    b(VA->estimate()[0],
-                      VA->estimate()[1],
-                      VA->estimate()[2],
-                      VG->estimate()[0],
-                      VG->estimate()[1],
-                      VG->estimate()[2]);
-    g                       = VGDir->estimate().Rwg * gI;
-    const double          s = VS->estimate();
-    const Eigen::Matrix3d dR =
-        p_preintegrated->getDeltaRotation(b).cast<double>();
-    const Eigen::Vector3d dV =
-        p_preintegrated->getDeltaVelocity(b).cast<double>();
-    const Eigen::Vector3d dP =
-        p_preintegrated->getDeltaPosition(b).cast<double>();
+    const VertexGDir *p_gravityDirectionVertex =
+        static_cast<const VertexGDir *>(_vertices[6]);
+    const VertexScale *p_scaleVertex =
+        static_cast<const VertexScale *>(_vertices[7]);
+    const IMU::Bias biasEstimate(p_accBiasVertex->estimate()[0],
+                                 p_accBiasVertex->estimate()[1],
+                                 p_accBiasVertex->estimate()[2],
+                                 p_gyroBiasVertex->estimate()[0],
+                                 p_gyroBiasVertex->estimate()[1],
+                                 p_gyroBiasVertex->estimate()[2]);
+    g = p_gravityDirectionVertex->estimate().Rwg * gI;
+    const double          scaleEstimate = p_scaleVertex->estimate();
+    const Eigen::Matrix3d deltaRotation =
+        p_preintegrated->getDeltaRotation(biasEstimate).cast<double>();
+    const Eigen::Vector3d deltaVelocity =
+        p_preintegrated->getDeltaVelocity(biasEstimate).cast<double>();
+    const Eigen::Vector3d deltaPosition =
+        p_preintegrated->getDeltaPosition(biasEstimate).cast<double>();
 
-    const Eigen::Vector3d er = LogSO3(
-        dR.transpose() * VP1->estimate().Rwb.transpose() * VP2->estimate().Rwb);
-    const Eigen::Vector3d ev =
-        VP1->estimate().Rwb.transpose() *
-            (s * (VV2->estimate() - VV1->estimate()) - g * dt) -
-        dV;
-    const Eigen::Vector3d ep =
-        VP1->estimate().Rwb.transpose() *
-            (s * (VP2->estimate().twb - VP1->estimate().twb -
-                  VV1->estimate() * dt) -
+    const Eigen::Vector3d rotationError =
+        logSO3(deltaRotation.transpose() *
+               p_previousPoseVertex->estimate().Rwb.transpose() *
+               p_currentPoseVertex->estimate().Rwb);
+    const Eigen::Vector3d velocityError =
+        p_previousPoseVertex->estimate().Rwb.transpose() *
+            (scaleEstimate * (p_currentVelocityVertex->estimate() -
+                              p_previousVelocityVertex->estimate()) -
+             g * dt) -
+        deltaVelocity;
+    const Eigen::Vector3d positionError =
+        p_previousPoseVertex->estimate().Rwb.transpose() *
+            (scaleEstimate * (p_currentPoseVertex->estimate().twb -
+                              p_previousPoseVertex->estimate().twb -
+                              p_previousVelocityVertex->estimate() * dt) -
              g * dt * dt / 2) -
-        dP;
+        deltaPosition;
 
-    _error << er, ev, ep;
+    _error << rotationError, velocityError, positionError;
 }
 
 } // namespace core

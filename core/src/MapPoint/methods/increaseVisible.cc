@@ -34,10 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-void MapPoint::increaseVisible(int n)
+void MapPoint::increaseVisible(int n_in)
 {
-    unique_lock<mutex> lock(mMutexFeatures);
-    visibleCount += n;
+    unique_lock<mutex> lock(featuresMutex);
+    visibleCount += n_in;
 }
 
 } // namespace core

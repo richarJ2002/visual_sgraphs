@@ -51,19 +51,19 @@ class ExtractorNode
     /*!
      * @brief        Splits the node into four quadrant children.
      *
-     * @param[out]   node1_out
+     * @param[in,out] node1_inout
      *               Top-left child.
-     * @param[out]   node2_out
+     * @param[in,out] node2_inout
      *               Top-right child.
-     * @param[out]   node3_out
+     * @param[in,out] node3_inout
      *               Bottom-left child.
-     * @param[out]   node4_out
+     * @param[in,out] node4_inout
      *               Bottom-right child.
      */
-    void divideNode(ExtractorNode &node1_out,
-                    ExtractorNode &node2_out,
-                    ExtractorNode &node3_out,
-                    ExtractorNode &node4_out);
+    void divideNode(ExtractorNode &node1_inout,
+                    ExtractorNode &node2_inout,
+                    ExtractorNode &node3_inout,
+                    ExtractorNode &node4_inout);
 
     /*!
      * @brief        Keypoints falling inside the node.
@@ -142,9 +142,9 @@ class ORBextractor
      *               eight-bit single-channel image.
      * @param[in]    mask_in
      *               Ignored by the current implementation.
-     * @param[out]   keypoints_out
+     * @param[in,out] keypoints_inout
      *               Extracted keypoints in image coordinates.
-     * @param[out]   descriptors_out
+     * @param[in]    descriptors_in
      *               One thirty-two-byte row per keypoint;
      *               released when no keypoint is found.
      * @param[in]    lappingArea_in
@@ -156,8 +156,8 @@ class ORBextractor
      */
     int operator()(cv::InputArray             image_in,
                    cv::InputArray             mask_in,
-                   std::vector<cv::KeyPoint> &keypoints_out,
-                   cv::OutputArray            descriptors_out,
+                   std::vector<cv::KeyPoint> &keypoints_inout,
+                   cv::OutputArray            descriptors_in,
                    std::vector<int>          &lappingArea_in);
 
     /*!
@@ -239,24 +239,24 @@ class ORBextractor
      * @brief        Detects keypoints on every pyramid level
      *               with the octree distribution.
      *
-     * @param[out]   keypointsPerLevel_out
+     * @param[in,out] keypointsPerLevel_inout
      *               Detected keypoints grouped by level.
      */
     void computeKeyPointsOctTree(
-        std::vector<std::vector<cv::KeyPoint>> &keypointsPerLevel_out);
+        std::vector<std::vector<cv::KeyPoint>> &keypointsPerLevel_inout);
     /*!
      * @brief        Distributes keypoints inside a region with
      *               the octree.
      *
      * @param[in]    keysToDistribute_in
      *               Candidate keypoints of the region.
-     * @param[in]    minX_in
+     * @param[in]    minimumX_in
      *               Region left bound in pixels.
-     * @param[in]    maxX_in
+     * @param[in]    maximumX_in
      *               Region right bound in pixels.
-     * @param[in]    minY_in
+     * @param[in]    minimumY_in
      *               Region top bound in pixels.
-     * @param[in]    maxY_in
+     * @param[in]    maximumY_in
      *               Region bottom bound in pixels.
      * @param[in]    featureCount_in
      *               Keypoint budget of the region.
@@ -267,10 +267,10 @@ class ORBextractor
      */
     std::vector<cv::KeyPoint>
         distributeOctTree(const std::vector<cv::KeyPoint> &keysToDistribute_in,
-                          const int                       &minX_in,
-                          const int                       &maxX_in,
-                          const int                       &minY_in,
-                          const int                       &maxY_in,
+                          const int                       &minimumX_in,
+                          const int                       &maximumX_in,
+                          const int                       &minimumY_in,
+                          const int                       &maximumY_in,
                           const int                       &featureCount_in,
                           const int                       &level_in);
 
@@ -278,11 +278,11 @@ class ORBextractor
      * @brief        Detects keypoints on every pyramid level
      *               without the octree distribution.
      *
-     * @param[out]   keypointsPerLevel_out
+     * @param[in,out] keypointsPerLevel_inout
      *               Detected keypoints grouped by level.
      */
     void computeKeyPointsOld(
-        std::vector<std::vector<cv::KeyPoint>> &keypointsPerLevel_out);
+        std::vector<std::vector<cv::KeyPoint>> &keypointsPerLevel_inout);
     /*!
      * @brief        Sampling pattern of the BRIEF descriptor.
      */

@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addMapPoint(MapPoint *pMP)
+void Atlas::addMapPoint(MapPoint *p_mapPoint_in)
 {
-    Map *pMapMP = pMP->getMap();
-    pMapMP->addMapPoint(pMP);
+    Map *p_ownerMap = p_mapPoint_in->getMap();
+    p_ownerMap->addMapPoint(p_mapPoint_in);
 }
 
 } // namespace core

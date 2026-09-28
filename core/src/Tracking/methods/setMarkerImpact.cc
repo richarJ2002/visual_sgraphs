@@ -30,9 +30,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::setMarkerImpact(const double newValue)
+void Tracking::setMarkerImpact(const double newValue_in)
 {
-    markerImpact = newValue;
+    markerImpact = newValue_in;
 };
 
 } // namespace core

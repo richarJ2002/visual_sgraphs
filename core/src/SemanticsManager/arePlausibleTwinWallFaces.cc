@@ -153,28 +153,30 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
         axisV_World = equation1.head<3>().cross(axisU_World).normalized();
     }
 
-    double minU1 = 0.0, maxU1 = 0.0, minV1 = 0.0, maxV1 = 0.0;
-    double minU2 = 0.0, maxU2 = 0.0, minV2 = 0.0, maxV2 = 0.0;
+    double minimumU1 = 0.0, maximumU1 = 0.0, minimumV1 = 0.0, maximumV1 = 0.0;
+    double minimumU2 = 0.0, maximumU2 = 0.0, minimumV2 = 0.0, maximumV2 = 0.0;
     if (!projectPlaneFootprintOntoSharedAxes(p_first_in,
                                              axisU_World,
                                              axisV_World,
-                                             minU1,
-                                             maxU1,
-                                             minV1,
-                                             maxV1) ||
+                                             minimumU1,
+                                             maximumU1,
+                                             minimumV1,
+                                             maximumV1) ||
         !projectPlaneFootprintOntoSharedAxes(p_second_in,
                                              axisU_World,
                                              axisV_World,
-                                             minU2,
-                                             maxU2,
-                                             minV2,
-                                             maxV2))
+                                             minimumU2,
+                                             maximumU2,
+                                             minimumV2,
+                                             maximumV2))
     {
         return false;
     }
 
-    const double overlapU_m = std::min(maxU1, maxU2) - std::max(minU1, minU2);
-    const double overlapV_m = std::min(maxV1, maxV2) - std::max(minV1, minV2);
+    const double overlapU_m =
+        std::min(maximumU1, maximumU2) - std::max(minimumU1, minimumU2);
+    const double overlapV_m =
+        std::min(maximumV1, maximumV2) - std::max(minimumV1, minimumV2);
 
     if (overlapU_m <= 0.0 || overlapV_m <= 0.0)
     {
@@ -182,8 +184,8 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
     }
 
     const double overlapArea_m2 = overlapU_m * overlapV_m;
-    const double area1_m2       = (maxU1 - minU1) * (maxV1 - minV1);
-    const double area2_m2       = (maxU2 - minU2) * (maxV2 - minV2);
+    const double area1_m2 = (maximumU1 - minimumU1) * (maximumV1 - minimumV1);
+    const double area2_m2 = (maximumU2 - minimumU2) * (maximumV2 - minimumV2);
     const double smallerArea_m2 = std::min(area1_m2, area2_m2);
 
     if (!std::isfinite(smallerArea_m2) || smallerArea_m2 < 1e-6)

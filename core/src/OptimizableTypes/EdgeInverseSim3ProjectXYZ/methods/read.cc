@@ -30,16 +30,17 @@ namespace vs_graphs
 namespace core
 {
 
-bool EdgeInverseSim3ProjectXYZ::read(std::istream &is)
+bool EdgeInverseSim3ProjectXYZ::read(std::istream &inputStream_inout)
 {
-    for (int i = 0; i < 2; i++)
-        is >> _measurement[i];
-    for (int i = 0; i < 2; i++)
-        for (int j = i; j < 2; j++)
+    for (int rowIndex = 0; rowIndex < 2; rowIndex++)
+        inputStream_inout >> _measurement[rowIndex];
+    for (int rowIndex = 0; rowIndex < 2; rowIndex++)
+        for (int columnIndex = rowIndex; columnIndex < 2; columnIndex++)
         {
-            is >> information()(i, j);
-            if (i != j)
-                information()(j, i) = information()(i, j);
+            inputStream_inout >> information()(rowIndex, columnIndex);
+            if (rowIndex != columnIndex)
+                information()(columnIndex, rowIndex) =
+                    information()(rowIndex, columnIndex);
         }
     return true;
 }

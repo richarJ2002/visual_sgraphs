@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setReferenceMapPoints(const std::vector<MapPoint *> &vpMPs)
+void Atlas::setReferenceMapPoints(const std::vector<MapPoint *> &mapPoints_in)
 {
-    unique_lock<mutex> lock(mMutexAtlas);
-    p_activeMap->setReferenceMapPoints(vpMPs);
+    unique_lock<mutex> lock(atlasMutex);
+    p_activeMap->setReferenceMapPoints(mapPoints_in);
 }
 
 } // namespace core

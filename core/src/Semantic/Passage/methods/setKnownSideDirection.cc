@@ -37,7 +37,7 @@ bool Passage::setKnownSideDirection(const Eigen::Vector3d &direction_World_in)
         return false;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
     knownSideProvenance.direction_World = direction_World_in / directionNorm;
     return true;
 }

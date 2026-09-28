@@ -37,10 +37,10 @@ namespace core
 
 void KeyFrame::clearClsClouds()
 {
-    for (auto &clsCloud : currentClsCloudPtrs)
+    for (auto &p_clsCloud : currentClsCloudPtrs)
     {
-        clsCloud->clear();
-        clsCloud = nullptr;
+        p_clsCloud->clear();
+        p_clsCloud = nullptr;
     }
     currentClsCloudPtrs.clear();
 }

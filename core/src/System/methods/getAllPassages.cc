@@ -32,8 +32,8 @@ namespace core
 
 std::vector<vs_graphs::core::semantic::Passage *> System::getAllPassages()
 {
-    Map *pActiveMap = p_atlas->getCurrentMap();
-    return pActiveMap->getAllPassages();
+    Map *p_activeMap = p_atlas->getCurrentMap();
+    return p_activeMap->getAllPassages();
 }
 
 } // namespace core

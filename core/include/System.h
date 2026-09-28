@@ -76,7 +76,7 @@ namespace core
 class Verbose
 {
   public:
-    enum eLevel
+    enum VerbosityLevel
     {
         /*!
          * @brief       Quiet mode: only warning-level messages are emitted.
@@ -110,7 +110,7 @@ class Verbose
         VERBOSITY_DEBUG = 4
     };
 
-    static eLevel th;
+    static VerbosityLevel th;
 
   public:
     /*!
@@ -119,28 +119,28 @@ class Verbose
      *              The static gate `th` still filters by level: only messages
      *              with `lev <= th` are emitted.
      */
-    static void printMess(std::string str, eLevel lev)
+    static void printMess(std::string message_in, VerbosityLevel level_in)
     {
-        if (lev <= th)
+        if (level_in <= th)
         {
-            switch (lev)
+            switch (level_in)
             {
             case VERBOSITY_QUIET:
                 RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
                             "%s",
-                            str.c_str());
+                            message_in.c_str());
                 break;
             case VERBOSITY_NORMAL:
                 RCLCPP_INFO(rclcpp::get_logger("visual_sgraphs"),
                             "%s",
-                            str.c_str());
+                            message_in.c_str());
                 break;
             case VERBOSITY_VERBOSE:
             case VERBOSITY_VERY_VERBOSE:
             case VERBOSITY_DEBUG:
                 RCLCPP_DEBUG(rclcpp::get_logger("visual_sgraphs"),
                              "%s",
-                             str.c_str());
+                             message_in.c_str());
                 break;
             }
         }
@@ -152,41 +152,41 @@ class Verbose
      *              with a level less than or equal to this threshold will
      *              be emitted.
      *
-     * @param[in]   _th_in
-     *              The verbose level threshold. See @ref Verbose::eLevel
-     * "VERBOSITY_QUIET", VERBOSITY_NORMAL, VERBOSITY_VERBOSE,
-     * VERBOSITY_VERY_VERBOSE, or VERBOSITY_DEBUG.
+     * @param[in]   threshold_in
+     *              The verbose level threshold. See @ref
+     * Verbose::VerbosityLevel "VERBOSITY_QUIET", VERBOSITY_NORMAL,
+     * VERBOSITY_VERBOSE, VERBOSITY_VERY_VERBOSE, or VERBOSITY_DEBUG.
      */
-    static void setTh(eLevel _th_in)
+    static void setTh(VerbosityLevel threshold_in)
     {
-        th = _th_in;
+        th = threshold_in;
     }
 
     /*!
      * @brief       Map a user-supplied log level string ("quiet", "error",
-     *              "warn", "info", "debug") to the matching `eLevel` threshold.
-     *              Unknown strings default to `VERBOSITY_QUIET` so an unset or
+     *              "warn", "info", "debug") to the matching `VerbosityLevel`
+     * threshold. Unknown strings default to `VERBOSITY_QUIET` so an unset or
      *              invalid value preserves the current quiet behaviour.
      */
-    static eLevel parseVerbosityLevel(const std::string &level)
+    static VerbosityLevel parseVerbosityLevel(const std::string &level_in)
     {
-        if (level == "debug")
+        if (level_in == "debug")
         {
             return VERBOSITY_DEBUG;
         }
-        if (level == "info")
+        if (level_in == "info")
         {
             return VERBOSITY_NORMAL;
         }
-        if (level == "warn")
+        if (level_in == "warn")
         {
             return VERBOSITY_QUIET;
         }
-        if (level == "error")
+        if (level_in == "error")
         {
             return VERBOSITY_QUIET;
         }
-        if (level == "quiet")
+        if (level_in == "quiet")
         {
             return VERBOSITY_QUIET;
         }
@@ -247,7 +247,7 @@ class System
      * @brief       Enumerator to indicate which sensor is being used by the
      *              system.
      */
-    enum eSensor
+    enum SensorType
     {
         /*!
          * @brief       A sensor is not set. This is considered invalid.
@@ -322,7 +322,7 @@ class System
          * @frame       N/A
          * @unit        N/A
          */
-        bool passable{false};
+        bool isPassable{false};
 
         /*!
          * @brief       Room id from which the passage was first observed
@@ -494,7 +494,7 @@ class System
          * @frame       N/A
          * @unit        N/A
          */
-        bool inertial{false};
+        bool isInertial{false};
 
         /*!
          * @brief       Whether the IMU has been initialized and its bias
@@ -504,7 +504,7 @@ class System
          * @frame       N/A
          * @unit        N/A
          */
-        bool inertialInitialized{false};
+        bool isInertialInitialized{false};
 
         /*!
          * @brief       Whether the camera pose is currently valid. If `false`,
@@ -513,7 +513,7 @@ class System
          * @frame       N/A
          * @unit        N/A
          */
-        bool poseValid{false};
+        bool isPoseValid{false};
 
         /*!
          * @brief       Current camera pose in the world frame, representing the
@@ -572,7 +572,7 @@ class System
         std::uint64_t rgbdFrontendOverwrittenCount{0U};
 
         /*! True while the RGB-D worker owns a packet. */
-        bool rgbdFrontendWorkerInFlight{false};
+        bool isRgbdFrontendWorkerInFlight{false};
 
         /*! Sensor timestamp of the latest successfully tracked RGB-D packet. */
         std::int64_t rgbdFrontendLastProcessedSensorTimestampNanoseconds{0};
@@ -650,7 +650,7 @@ class System
          * @frame       N/A
          * @unit        N/A
          */
-        bool latestKeyFramePoseValid{false};
+        bool isLatestKeyFramePoseValid{false};
 
         /*!
          * @brief       Timestamp of the latest keyframe that has been
@@ -792,7 +792,7 @@ class System
          * @frame       N/A
          * @unit        N/A
          */
-        bool lastLoopAccepted{false};
+        bool wasLastLoopAccepted{false};
 
         /*!
          * @brief       Map ID associated with the most recent loop closure
@@ -872,7 +872,7 @@ class System
      *
      * @param[in]   sensor
      *              Sensor type enum indicating the camera/IMU configuration.
-     *              Valid values are @ref eSensor "MONOCULAR, STEREO, RGBD,
+     *              Valid values are @ref SensorType "MONOCULAR, STEREO, RGBD,
      *              IMU_MONOCULAR, IMU_STEREO, IMU_RGBD". The sensor type
      *              determines which tracking method (TrackStereo, TrackRGBD,
      *              TrackMonocular) is used.
@@ -895,18 +895,19 @@ class System
      * @param[in]   verboseLevel
      *              Verbose threshold for core logging routed through ROS 2's
      *              "visual_sgraphs" logger. Levels range from
-     *              @ref Verbose::eLevel "VERBOSITY_QUIET (default)" to
+     *              @ref Verbose::VerbosityLevel "VERBOSITY_QUIET (default)" to
      *              VERBOSITY_DEBUG. Set to QUIET to suppress informational
      *              messages and preserve the current quiet behaviour.
      */
-    System(const string         &strVocFile,
-           const string         &strSettingsFile,
-           const string         &strSysParamsFile,
-           const eSensor         sensor,
-           const bool            bUseViewer   = true,
-           const int             initFr       = 0,
-           const string         &strSequence  = std::string(),
-           const Verbose::eLevel verboseLevel = Verbose::VERBOSITY_QUIET);
+    System(const string                 &vocabularyFile_in,
+           const string                 &settingsFile_in,
+           const string                 &sysParamsFile_in,
+           const SensorType              sensor_in,
+           const bool                    shouldUseViewer_in = true,
+           const int                     initialFr_in       = 0,
+           const string                 &sequence_in        = std::string(),
+           const Verbose::VerbosityLevel verboseLevel_in =
+               Verbose::VERBOSITY_QUIET);
 
     /*!
      * @brief       Stops and joins all worker threads and frees the thread
@@ -919,102 +920,102 @@ class System
      * @brief       Process the given stereo frame for tracking. Images must be
      *              synchronized and rectified.
      *
-     * @param       imLeft
+     * @param       imageLeft_in
      *              The input RGB image (CV_8UC3) or grayscale (CV_8U) from the
      *              left camera.
      *
-     * @param       imRight
+     * @param       imageRight_in
      *              The input RGB image (CV_8UC3) or grayscale (CV_8U) from the
      *              right camera.
      *
-     * @param       timestamp
+     * @param       timestamp_in
      *              the timestamp of the frame.
      *
-     * @param       vImuMeas
+     * @param       imuMeas_in
      *              the vector of IMU measurements.
      *
-     * @param       filename
+     * @param       filename_in
      *              the name of the file.
      *
-     * @param       markers
+     * @param       markers_in
      *              the vector of fiducial markers.
      *
      * @return      The camera pose (empty if tracking fails)
      */
     Sophus::SE3f
-        trackStereo(const cv::Mat            &imLeft,
-                    const cv::Mat            &imRight,
-                    const double             &timestamp,
-                    const vector<IMU::Point> &vImuMeas = vector<IMU::Point>(),
-                    string                    filename = "",
-                    const vector<semantic::Marker *> markers =
+        trackStereo(const cv::Mat            &imageLeft_in,
+                    const cv::Mat            &imageRight_in,
+                    const double             &timestamp_in,
+                    const vector<IMU::Point> &imuMeas_in = vector<IMU::Point>(),
+                    string                    filename_in = "",
+                    const vector<semantic::Marker *> markers_in =
                         vector<semantic::Marker *>{});
 
     /*!
      * @brief       Process the given rgbd frame for tracking. The DepthMap must
      *              be registered to the RGB frame.
      *
-     * @param       im
+     * @param       colorImage_in
      *              The input RGB image (CV_8UC3) or grayscale (CV_8U).
      *
-     * @param       depthmap
+     * @param       depthmap_in
      *              The input DepthMap (CV_32F).
      *
-     * @param       mainCloud
+     * @param       p_mainCloud_in
      *              The main input PointCloud before filtering.
      *
-     * @param       timestamp
+     * @param       timestamp_in
      *              The timestamp of the frame.
      *
-     * @param       vImuMeas
+     * @param       imuMeas_in
      *              The vector of IMU measurements.
      *
-     * @param       filename
+     * @param       filename_in
      *              The name of the file.
      *
-     * @param       markers
+     * @param       markers_in
      *              The vector of fiducial markers.
      *
      * @return      The camera pose (empty if tracking fails)
      */
     Sophus::SE3f
-        trackRGBD(const cv::Mat                                &im,
-                  const cv::Mat                                &depthmap,
-                  const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &mainCloud,
-                  const double                                 &timestamp,
-                  const vector<IMU::Point> &vImuMeas = vector<IMU::Point>(),
-                  string                    filename = "",
-                  const vector<semantic::Marker *> markers =
+        trackRGBD(const cv::Mat                                &colorImage_in,
+                  const cv::Mat                                &depthmap_in,
+                  const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_mainCloud_in,
+                  const double                                 &timestamp_in,
+                  const vector<IMU::Point> &imuMeas_in  = vector<IMU::Point>(),
+                  string                    filename_in = "",
+                  const vector<semantic::Marker *> markers_in =
                       vector<semantic::Marker *>{});
 
     /*!
      * @brief       Process the given stereo frame for tracking. Images must be
      *              synchronized and rectified.
      *
-     * @param       im
+     * @param       image_in
      *              The input RGB image (CV_8UC3) or grayscale (CV_8U) from the
      *              left camera.
      *
-     * @param       timestamp
+     * @param       timestamp_in
      *              The timestamp of the frame.
      *
-     * @param       vImuMeas
+     * @param       imuMeas_in
      *              The vector of IMU measurements.
      *
-     * @param       filename
+     * @param       filename_in
      *              The name of the file.
      *
-     * @param       markers
+     * @param       markers_in
      *              The vector of fiducial markers.
      *
      * @return      The camera pose (empty if tracking fails)
      */
     Sophus::SE3f trackMonocular(
-        const cv::Mat                   &im,
-        const double                    &timestamp,
-        const vector<IMU::Point>        &vImuMeas = vector<IMU::Point>(),
-        string                           filename = "",
-        const vector<semantic::Marker *> markers =
+        const cv::Mat                   &image_in,
+        const double                    &timestamp_in,
+        const vector<IMU::Point>        &imuMeas_in  = vector<IMU::Point>(),
+        string                           filename_in = "",
+        const vector<semantic::Marker *> markers_in =
             vector<semantic::Marker *>{});
 
     /*!
@@ -1054,7 +1055,7 @@ class System
     bool mapChanged();
 
     MissionHealthSnapshot
-        getMissionHealthSnapshot(bool includeSemantics = true);
+        getMissionHealthSnapshot(bool includeSemantics_in = true);
 
     /*!
      * @brief       Updates RGB-D frontend progress exposed through mission
@@ -1089,7 +1090,7 @@ class System
     semantic::SemanticReportCacheEntry getSemanticReportCacheEntry() const;
 
     /*!
-     * @brief       True once mpSemanticsManager exists and has cached at least
+     * @brief       True once p_semanticsManager exists and has cached at least
      *              one complete semantic evaluation cycle.
      */
     bool isSemanticReportCacheAvailable() const;
@@ -1145,7 +1146,7 @@ class System
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
-    void saveTrajectoryTUM(const string &filename);
+    void saveTrajectoryTUM(const string &filename_in);
 
     /*!
      * @brief       Save keyframe poses in the TUM RGB-D dataset format. This
@@ -1156,14 +1157,14 @@ class System
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
-    void saveKeyFrameTrajectoryTUM(const string &filename);
+    void saveKeyFrameTrajectoryTUM(const string &filename_in);
 
     /*!
      * @brief       Save camera trajectory in the EuRoC MAV dataset format.
      *              Only for stereo and RGB-D. This method does not work for
      *              monocular. Call Shutdown() before saving.
      *
-     * @param[in]   filename
+     * @param[in]   filename_in
      *              Path to the output file where the trajectory will be saved
      *              in EuRoC format.
      *
@@ -1171,14 +1172,14 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void saveTrajectoryEuRoC(const string &filename);
+    void saveTrajectoryEuRoC(const string &filename_in);
 
     /*!
      * @brief       Save keyframe poses in the EuRoC MAV dataset format. This
      *              method works for all sensor input. Call Shutdown() before
      *              saving.
      *
-     * @param[in]   filename
+     * @param[in]   filename_in
      *              Path to the output file where the keyframe poses will be
      *              saved in EuRoC format.
      *
@@ -1186,35 +1187,35 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void saveKeyFrameTrajectoryEuRoC(const string &filename);
+    void saveKeyFrameTrajectoryEuRoC(const string &filename_in);
 
     /*!
      * @brief       Save camera trajectory in the EuRoC MAV dataset format,
      *              including map data. Only for stereo and RGB-D. Call
      *              Shutdown() before saving.
      *
-     * @param[in]   filename
+     * @param[in]   filename_in
      *              Path to the output file where the trajectory will be saved.
      *
-     * @param[in]   pMap
+     * @param[in]   p_map_in
      *              Pointer to the map to include in the trajectory save.
      *
      * @note        Call first Shutdown()
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void saveTrajectoryEuRoC(const string &filename, Map *pMap);
+    void saveTrajectoryEuRoC(const string &filename_in, Map *p_map_in);
 
     /*!
      * @brief       Save keyframe poses in the EuRoC MAV dataset format,
      *              including map data. Works for all sensor input. Call
      *              Shutdown() before saving.
      *
-     * @param[in]   filename
+     * @param[in]   filename_in
      *              Path to the output file where the keyframe poses will be
      *              saved.
      *
-     * @param[in]   pMap
+     * @param[in]   p_map_in
      *              Pointer to the map to include in the keyframe trajectory
      * save.
      *
@@ -1222,19 +1223,19 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void saveKeyFrameTrajectoryEuRoC(const string &filename, Map *pMap);
+    void saveKeyFrameTrajectoryEuRoC(const string &filename_in, Map *p_map_in);
 
     /*!
      * @brief       Save data used for initialization debug. This dump includes
      *              keyframe poses, map point positions, and other debugging
      *              information useful for diagnosing the initialization phase.
      *
-     * @param[in]   iniIdx
+     * @param[in]   initialIndex_in
      *              Index specifying which initialization debug data to save.
      *              Multiple debug dumps may be available for different
      *              initialization attempts.
      */
-    void saveDebugData(const int &iniIdx);
+    void saveDebugData(const int &initialIndex_in);
 
     /*!
      * @brief       Save camera trajectory in the KITTI dataset format. Only for
@@ -1245,13 +1246,13 @@ class System
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
-    void saveTrajectoryKITTI(const string &filename);
+    void saveTrajectoryKITTI(const string &filename_in);
 
     /*!
      * @brief       Save the map to a file. The format (text or binary) is
      *              determined by the system configuration.
      *
-     * @param[in]   filename
+     * @param[in]   filename_in
      *              Path to the output file where the map will be saved.
      *
      * @return      `true` if the map was saved successfully, `false`
@@ -1259,21 +1260,21 @@ class System
      *              initialized or if saving is not supported for the current
      *              sensor configuration.
      */
-    bool saveMap(const string &filename);
+    bool saveMap(const string &filename_in);
 
     /*!
      * @brief       Save map points as a PCD (Point Cloud Data) file. This can
      *              be used for offline analysis or visualization of the map
      *              points.
      *
-     * @param[in]   filename
+     * @param[in]   filename_in
      *              Path to the output PCD file where map points will be saved.
      *
      * @return      `true` if the map points were saved successfully, `false`
      *              otherwise. Returns `false` if the system is not properly
      *              initialized or if there are no map points to save.
      */
-    bool saveMapPointsAsPCD(const string &filename);
+    bool saveMapPointsAsPCD(const string &filename_in);
 
     /*!
      * @brief       Get the current tracking state code. This reflects the
@@ -1403,14 +1404,14 @@ class System
     /*!
      * @brief       Get the pose of a specific keyframe.
      *
-     * @param[in]   pKF
+     * @param[in]   p_keyFrame_in
      *              Pointer to the KeyFrame whose pose is requested. Must not
      *              be null and must belong to the current map.
      *
      * @return      The camera pose (Sophus::SE3f) of the requested keyframe.
      *              Returns an empty pose if the keyframe pointer is invalid.
      */
-    Sophus::SE3f getKeyFramePose(KeyFrame *pKF);
+    Sophus::SE3f getKeyFramePose(KeyFrame *p_keyFrame_in);
 
     /*!
      * @brief       Get the camera pose in the world frame. This is the
@@ -1519,20 +1520,20 @@ class System
     /*!
      * @brief       Parse the JSON file containing the environment data
      *
-     * @param[in]   jsonFilePath
+     * @param[in]   jsonFilePath_in
      *              The path to the JSON file
      */
-    void parseJsonDatabase(string jsonFilePath);
+    void parseJsonDatabase(string jsonFilePath_in);
 
     /*!
      * @brief       Add the segmented image to the buffer in the
      *              SemanticSegmentation
      *
-     * @param[in]   tuple
+     * @param[in]   p_tuple_in
      *              The address of the tuple of segmented image and pointcloud
      */
     void addSegmentedImage(
-        std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *tuple);
+        std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in);
 
     /*!
      * @brief       Get the skeleton cluster coming from the current map
@@ -1564,12 +1565,12 @@ class System
      */
     void setGNNRoomCandidates(
         const std::vector<vs_graphs::core::semantic::Room *>
-            &gnnRoomCandidates);
+            &gnnRoomCandidates_in);
 
 #ifdef REGISTER_TIMES
-    void insertRectTime(double &time);
-    void insertResizeTime(double &time);
-    void insertTrackTime(double &time);
+    void insertRectTime(double &time_inout);
+    void insertResizeTime(double &time_inout);
+    void insertTrackTime(double &time_inout);
 #endif
 
   private:
@@ -1579,7 +1580,7 @@ class System
      *              IMU_STEREO, IMU_RGBD). Determines which tracking method
      *              is used (TrackStereo, TrackRGBD, TrackMonocular).
      */
-    eSensor sensor;
+    SensorType sensor;
 
     /*!
      * @brief       ORB vocabulary used for place recognition and feature
@@ -1597,7 +1598,7 @@ class System
      * @brief       Save the current Atlas to a file. The type parameter
      * determines the format (text or binary) and which map data to persist.
      *
-     * @param[in]   type
+     * @param[in]   type_in
      *              Format/type specifier for saving. See @ref FileType
      * "FileType" for valid values (TEXT_FILE, BINARY_FILE).
      *
@@ -1607,13 +1608,13 @@ class System
      * @frame       N/A
      * @unit        N/A
      */
-    bool saveAtlas(int type);
+    bool saveAtlas(int type_in);
 
     /*!
      * @brief       Load an Atlas from a file. The type parameter determines the
      *              format and which map data to restore.
      *
-     * @param[in]   type
+     * @param[in]   type_in
      *              Format/type specifier for loading. See @ref FileType
      * "FileType" for valid values (TEXT_FILE, BINARY_FILE).
      *
@@ -1623,17 +1624,17 @@ class System
      * @frame       N/A
      * @unit        N/A
      */
-    bool loadAtlas(int type);
+    bool loadAtlas(int type_in);
 
     /*!
      * @brief       Calculate a checksum for a file to verify data integrity.
      *              Used when loading/saving Atlas data to ensure the file has
      *              not been corrupted.
      *
-     * @param[in]   filename
+     * @param[in]   filename_in
      *              Path to the file for which to calculate the checksum.
      *
-     * @param[in]   type
+     * @param[in]   type_in
      *              Format/type specifier affecting the checksum algorithm. See
      *              @ref FileType "FileType" for valid values.
      *
@@ -1642,7 +1643,7 @@ class System
      * @frame       N/A
      * @unit        N/A
      */
-    string calculateCheckSum(string filename, int type);
+    string calculateCheckSum(string filename_in, int type_in);
 
     /*!
      * @brief       Atlas pointer. Owned by the System class. Provides access to
@@ -1713,7 +1714,7 @@ class System
      *              `true`. Handles visualization of the map and camera pose.
      *              Set to `nullptr` when viewer is disabled.
      */
-    std::thread *mptViewer;
+    std::thread *p_viewerThread;
 
     /*!
      * @brief       Loop Closing thread. Processes new keyframes for loop
@@ -1721,76 +1722,76 @@ class System
      *              optimization and full bundle adjustment in a separate
      * thread.
      */
-    std::thread *mptLoopClosing;
+    std::thread *p_loopClosingThread;
 
     /*!
      * @brief       Local Mapping thread. Performs local bundle adjustment and
      *              manages the local map. Runs concurrently with tracking.
      */
-    std::thread *mptLocalMapping;
+    std::thread *p_localMappingThread;
 
     /*!
      * @brief       Semantic Segmentation thread. Processes incoming RGB-D
      * frames and produces semantic segmentations. Communicates with the main
      * system through shared atomic counters.
      */
-    std::thread *mptSemanticSegmentation;
+    std::thread *p_semanticSegmentationThread;
 
     /*!
      * @brief       Semantics Manager thread. Manages the semantic evaluation
      *              pipeline, including room/floor/passage topology updates and
      *              segmentation result caching.
      */
-    std::thread *mptSemanticsManager;
+    std::thread *p_semanticsManagerThread;
 
     /*!
      * @brief       Geometric Segmentation thread. Handles geometric scene
      *              segmentation (e.g., plane, floor, wall detection).
      */
-    std::thread *mptGeometricSegmentation;
+    std::thread *p_geometricSegmentationThread;
 
     /*!
      * @brief       Reset mutex. Protects the reset operation to ensure thread-
      *              safe shutdown and map clearing.
      */
-    std::mutex mMutexReset;
+    std::mutex resetMutex;
 
     /*!
      * @brief       Reset flag. When `true`, requests a full system reset
      * (clears Atlas and active map). Must be handled carefully across threads.
      */
-    bool resetRequested;
+    bool isResetRequested;
 
     /*!
      * @brief       Reset active map flag. When `true`, requests a reset of only
      *              the active map while retaining the overall Atlas state.
      */
-    bool resetActiveMapRequested;
+    bool isResetActiveMapRequested;
 
     /*!
      * @brief       Mode mutex. Protects mode transitions (e.g. localization
      *              mode activation/deactivation) to ensure thread safety.
      */
-    std::mutex mMutexMode;
+    std::mutex modeMutex;
 
     /*!
      * @brief       Localization mode activation flag. When `true`, the local
      *              mapping thread is paused and only camera tracking runs.
      */
-    bool activateLocalizationModeRequested;
+    bool isLocalizationModeActivationRequested;
 
     /*!
      * @brief       Localization mode deactivation flag. When `true`, resumes
      * the local mapping thread and resumes full SLAM operation.
      */
-    bool deactivateLocalizationModeRequested;
+    bool isLocalizationModeDeactivationRequested;
 
     /*!
      * @brief       Shutdown flag. When `true`, requests all threads to finish.
      *              After all threads have been joined via @ref Shutdown(), the
      *              system is fully shut down.
      */
-    bool shutdownRequested;
+    bool isShutdownRequested;
 
     /*!
      * @brief       Current tracking state. Updated by the tracker and read by
@@ -1822,7 +1823,7 @@ class System
      * @brief       Whether the current camera pose is valid. If `false`, the
      * pose should not be relied upon for navigation or planning.
      */
-    bool currentCameraPoseValid{false};
+    bool isCurrentCameraPoseValid{false};
 
     /*!
      * @brief       Reset counter. Atomic counter tracking the number of system
@@ -1835,7 +1836,7 @@ class System
     std::atomic<std::uint64_t> rgbdFrontendAcceptedCount{0U};
     std::atomic<std::uint64_t> rgbdFrontendProcessedCount{0U};
     std::atomic<std::uint64_t> rgbdFrontendOverwrittenCount{0U};
-    std::atomic<bool>          rgbdFrontendWorkerInFlight{false};
+    std::atomic<bool>          isRgbdFrontendWorkerInFlight{false};
     std::atomic<std::int64_t>
         rgbdFrontendLastProcessedSensorTimestampNanoseconds{0};
 
@@ -1891,7 +1892,7 @@ class System
      *              map management. Ensures exclusive access when modifying
      *              tracking-related data structures.
      */
-    std::mutex mMutexState;
+    std::mutex stateMutex;
 
     /*!
      * @brief       Map ID of the most recently processed frame, used to detect
@@ -1904,7 +1905,7 @@ class System
      *              build is in progress. Set to `false` once the initial map
      *              has been built and the system is tracking.
      */
-    bool firstMapInit{true};
+    bool isAwaitingFirstMap{true};
 
     /*!
      * @brief       File path for loading an Atlas from disk. Used to resume
@@ -1935,7 +1936,7 @@ class System
      * @brief       Settings object. Contains all configuration parameters for
      * the SLAM system, read from the YAML settings file.
      */
-    utils::settings::Settings *settings_;
+    utils::settings::Settings *p_settings;
 };
 
 } // namespace core

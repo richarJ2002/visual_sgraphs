@@ -36,16 +36,16 @@ void Room::setDoorways(vs_graphs::core::semantic::Passage *p_passage_in)
 
     std::lock_guard<std::mutex> lock(mapMutex);
 
-    const bool alreadyPresent = std::any_of(
+    const bool isAlreadyPresent = std::any_of(
         doorways.begin(),
         doorways.end(),
-        [p_passage_in](vs_graphs::core::semantic::Passage *existingPassage)
+        [p_passage_in](vs_graphs::core::semantic::Passage *p_existingPassage)
         {
-            return existingPassage != nullptr &&
-                   existingPassage->getId() == p_passage_in->getId();
+            return p_existingPassage != nullptr &&
+                   p_existingPassage->getId() == p_passage_in->getId();
         });
 
-    if (!alreadyPresent)
+    if (!isAlreadyPresent)
     {
         doorways.push_back(p_passage_in);
     }

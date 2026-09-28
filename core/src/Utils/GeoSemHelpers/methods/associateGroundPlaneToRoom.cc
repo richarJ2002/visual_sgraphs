@@ -25,12 +25,12 @@ namespace core
 
 void GeoSemHelpers::associateGroundPlaneToRoom(
     Atlas                           *p_atlas_in,
-    vs_graphs::core::semantic::Room *givenRoom)
+    vs_graphs::core::semantic::Room *p_givenRoom_inout)
 {
     std::vector<vs_graphs::core::geometric::Plane *> allWalls =
-        givenRoom->getWalls();
-    vs_graphs::core::geometric::Plane *associatedGroundPlane = nullptr;
-    size_t                             maxInliers            = 0;
+        p_givenRoom_inout->getWalls();
+    vs_graphs::core::geometric::Plane *p_associatedGroundPlane = nullptr;
+    size_t                             maximumInliers          = 0;
 
     // get the ground planes from the Atlas
     std::vector<vs_graphs::core::geometric::Plane *> groundPlanes;
@@ -52,20 +52,21 @@ void GeoSemHelpers::associateGroundPlaneToRoom(
 
             // update the associated ground plane if the current plane has more
             // inliers
-            if (inliers > maxInliers)
+            if (inliers > maximumInliers)
             {
-                maxInliers            = inliers;
-                associatedGroundPlane = plane;
+                maximumInliers          = inliers;
+                p_associatedGroundPlane = plane;
             }
         }
 
-        if (associatedGroundPlane != nullptr)
-            givenRoom->setGroundPlane(associatedGroundPlane);
+        if (p_associatedGroundPlane != nullptr)
+            p_givenRoom_inout->setGroundPlane(p_associatedGroundPlane);
         else
             // set the biggest ground plane as the ground plane of the room
             // [TODO] - logic for when ground plane is not found within the
             // walls
-            givenRoom->setGroundPlane(p_atlas_in->getBiggestGroundPlane());
+            p_givenRoom_inout->setGroundPlane(
+                p_atlas_in->getBiggestGroundPlane());
     }
 }
 

@@ -37,32 +37,34 @@ namespace core
 
 void KeyFrame::updateBestCovisibles()
 {
-    unique_lock<mutex>            lock(mMutexConnections);
-    vector<pair<int, KeyFrame *>> vPairs;
-    vPairs.reserve(connectedKeyFrameWeights.size());
+    unique_lock<mutex>            lock(connectionsMutex);
+    vector<pair<int, KeyFrame *>> pairs;
+    pairs.reserve(connectedKeyFrameWeights.size());
     for (map<KeyFrame *, int>::iterator mit  = connectedKeyFrameWeights.begin(),
                                         mend = connectedKeyFrameWeights.end();
          mit != mend;
          mit++)
-        vPairs.push_back(make_pair(mit->second, mit->first));
+        pairs.push_back(make_pair(mit->second, mit->first));
 
-    sort(vPairs.begin(), vPairs.end());
-    list<KeyFrame *> lKFs;
-    list<int>        lWs;
-    for (size_t i = 0, iend = vPairs.size(); i < iend; i++)
+    sort(pairs.begin(), pairs.end());
+    list<KeyFrame *> keyFrames;
+    list<int>        weights;
+    for (size_t pairIndex = 0, iend = pairs.size(); pairIndex < iend;
+         pairIndex++)
     {
-        if (vPairs[i].second != nullptr)
+        if (pairs[pairIndex].second != nullptr)
         {
-            if (!vPairs[i].second->isBad())
+            if (!pairs[pairIndex].second->isBad())
             {
-                lKFs.push_front(vPairs[i].second);
-                lWs.push_front(vPairs[i].first);
+                keyFrames.push_front(pairs[pairIndex].second);
+                weights.push_front(pairs[pairIndex].first);
             }
         }
     }
 
-    orderedConnectedKeyFrames = vector<KeyFrame *>(lKFs.begin(), lKFs.end());
-    orderedWeights            = vector<int>(lWs.begin(), lWs.end());
+    orderedConnectedKeyFrames =
+        vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
+    orderedWeights = vector<int>(weights.begin(), weights.end());
 }
 
 } // namespace core

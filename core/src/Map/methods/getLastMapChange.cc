@@ -36,7 +36,7 @@ namespace core
 
 int Map::getLastMapChange()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return mapChangeNotified;
 }
 

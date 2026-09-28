@@ -35,9 +35,9 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::eraseMapPointMatch(MapPoint *pMP)
+void KeyFrame::eraseMapPointMatch(MapPoint *p_mapPoint_in)
 {
-    tuple<int, int> indexes   = pMP->getIndexInKeyFrame(this);
+    tuple<int, int> indexes   = p_mapPoint_in->getIndexInKeyFrame(this);
     int             leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
     if (leftIndex != -1)
         mapPoints[leftIndex] = static_cast<MapPoint *>(nullptr);

@@ -30,10 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool EdgeSE3ProjectSE3::write(std::ostream &os) const
+bool EdgeSE3ProjectSE3::write(std::ostream &outputStream_inout) const
 {
-    g2o::internal::writeVector(os, g2o::internal::toVectorQT(measurement()));
-    return writeInformationMatrix(os);
+    g2o::internal::writeVector(outputStream_inout,
+                               g2o::internal::toVectorQT(measurement()));
+    return writeInformationMatrix(outputStream_inout);
 }
 
 } // namespace core

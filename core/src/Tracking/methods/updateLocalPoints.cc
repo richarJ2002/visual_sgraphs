@@ -34,33 +34,33 @@ void Tracking::updateLocalPoints()
 {
     localMapPoints.clear();
 
-    int count_pts = 0;
+    int pointCount = 0;
 
     for (vector<KeyFrame *>::const_reverse_iterator
-             itKF    = localKeyFrames.rbegin(),
-             itEndKF = localKeyFrames.rend();
-         itKF != itEndKF;
-         ++itKF)
+             itKeyFrame    = localKeyFrames.rbegin(),
+             itEndKeyFrame = localKeyFrames.rend();
+         itKeyFrame != itEndKeyFrame;
+         ++itKeyFrame)
     {
-        KeyFrame                *pKF   = *itKF;
-        const vector<MapPoint *> vpMPs = pKF->getMapPointMatches();
+        KeyFrame                *p_keyFrame = *itKeyFrame;
+        const vector<MapPoint *> mapPoints  = p_keyFrame->getMapPointMatches();
 
-        for (vector<MapPoint *>::const_iterator itMP    = vpMPs.begin(),
-                                                itEndMP = vpMPs.end();
-             itMP != itEndMP;
-             itMP++)
+        for (vector<MapPoint *>::const_iterator itMapPoint = mapPoints.begin(),
+                                                itEndMapPoint = mapPoints.end();
+             itMapPoint != itEndMapPoint;
+             itMapPoint++)
         {
 
-            MapPoint *pMP = *itMP;
-            if (!pMP)
+            MapPoint *p_mapPoint = *itMapPoint;
+            if (!p_mapPoint)
                 continue;
-            if (pMP->trackReferenceFrameId == currentFrame.mnId)
+            if (p_mapPoint->trackReferenceFrameId == currentFrame.id)
                 continue;
-            if (!pMP->isBad())
+            if (!p_mapPoint->isBad())
             {
-                count_pts++;
-                localMapPoints.push_back(pMP);
-                pMP->trackReferenceFrameId = currentFrame.mnId;
+                pointCount++;
+                localMapPoints.push_back(p_mapPoint);
+                p_mapPoint->trackReferenceFrameId = currentFrame.id;
             }
         }
     }

@@ -23,9 +23,9 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::processRoomTrackerPendingForTest(double now_s)
+void SemanticsManager::processRoomTrackerPendingForTest(double now_s_in)
 {
-    updateRoomTrackerState(now_s);
+    updateRoomTrackerState(now_s_in);
 }
 
 } // namespace core

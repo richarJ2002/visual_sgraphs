@@ -30,14 +30,15 @@ namespace vs_graphs
 namespace core
 {
 
-bool EdgeSE3ProjectXYZOnlyPoseToBody::write(std::ostream &os) const
+bool EdgeSE3ProjectXYZOnlyPoseToBody::write(
+    std::ostream &outputStream_inout) const
 {
-    for (int i = 0; i < 2; i++)
-        os << measurement()[i] << " ";
-    for (int i = 0; i < 2; i++)
-        for (int j = i; j < 2; j++)
-            os << " " << information()(i, j);
-    return os.good();
+    for (int rowIndex = 0; rowIndex < 2; rowIndex++)
+        outputStream_inout << measurement()[rowIndex] << " ";
+    for (int rowIndex = 0; rowIndex < 2; rowIndex++)
+        for (int columnIndex = rowIndex; columnIndex < 2; columnIndex++)
+            outputStream_inout << " " << information()(rowIndex, columnIndex);
+    return outputStream_inout.good();
 }
 
 } // namespace core

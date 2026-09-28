@@ -35,10 +35,10 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::setFirstConnection(bool bFirst)
+void KeyFrame::setFirstConnection(bool isFirst_in)
 {
-    unique_lock<mutex> lockCon(mMutexConnections);
-    firstConnection = bFirst;
+    unique_lock<mutex> lockCon(connectionsMutex);
+    isFirstConnection = isFirst_in;
 }
 
 } // namespace core

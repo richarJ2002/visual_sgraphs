@@ -32,10 +32,10 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveTrajectoryKITTI(const string &filename)
+void System::saveTrajectoryKITTI(const string &filename_in)
 {
     cout << endl
-         << "Saving camera trajectory to " << filename << " ..." << endl;
+         << "Saving camera trajectory to " << filename_in << " ..." << endl;
     if (sensor == MONOCULAR)
     {
         cerr << "ERROR: SaveTrajectoryKITTI cannot be used for monocular."
@@ -43,15 +43,15 @@ void System::saveTrajectoryKITTI(const string &filename)
         return;
     }
 
-    vector<KeyFrame *> vpKFs = p_atlas->getAllKeyFrames();
-    sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
+    vector<KeyFrame *> keyFrames = p_atlas->getAllKeyFrames();
+    sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
-    Sophus::SE3f Tow = vpKFs[0]->getPoseInverse();
+    Sophus::SE3f Tow = keyFrames[0]->getPoseInverse();
 
     ofstream f;
-    f.open(filename.c_str());
+    f.open(filename_in.c_str());
     f << fixed;
 
     // Frame pose is stored relative to its reference keyframe (which is
@@ -61,29 +61,29 @@ void System::saveTrajectoryKITTI(const string &filename)
 
     // For each frame we have a reference keyframe (lRit), the timestamp (lT)
     // and a flag which is true when tracking failed (lbL).
-    list<vs_graphs::core::KeyFrame *>::iterator lRit =
-        p_tracker->mlpReferences.begin();
+    list<vs_graphs::core::KeyFrame *>::iterator rits =
+        p_tracker->referenceKeyFrames.begin();
     list<double>::iterator lT = p_tracker->frameTimes.begin();
     for (list<Sophus::SE3f>::iterator
              lit  = p_tracker->relativeFramePoses.begin(),
              lend = p_tracker->relativeFramePoses.end();
          lit != lend;
-         lit++, lRit++, lT++)
+         lit++, rits++, lT++)
     {
-        vs_graphs::core::KeyFrame *pKF = *lRit;
+        vs_graphs::core::KeyFrame *p_keyFrame = *rits;
 
         Sophus::SE3f Trw;
 
-        if (!pKF)
+        if (!p_keyFrame)
             continue;
 
-        while (pKF->isBad())
+        while (p_keyFrame->isBad())
         {
-            Trw = Trw * pKF->tcp;
-            pKF = pKF->getParent();
+            Trw        = Trw * p_keyFrame->tcp;
+            p_keyFrame = p_keyFrame->getParent();
         }
 
-        Trw = Trw * pKF->getPose() * Tow;
+        Trw = Trw * p_keyFrame->getPose() * Tow;
 
         Sophus::SE3f    Tcw = (*lit) * Trw;
         Sophus::SE3f    Twc = Tcw.inverse();

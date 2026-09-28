@@ -33,7 +33,7 @@
 
 #include "Semantic/Room.h"
 
-using json = nlohmann::json;
+using Json = nlohmann::json;
 
 namespace vs_graphs
 {
@@ -73,7 +73,7 @@ class DBParser
      *
      * @return       Parsed JSON document.
      */
-    json parseJsonFile(std::string jsonFilePath_in);
+    Json parseJsonFile(std::string jsonFilePath_in);
 
     /*!
      * @brief        Builds the environment rooms described by parsed
@@ -87,7 +87,7 @@ class DBParser
      *
      * @return       Non-owning views of the parser-retained rooms.
      */
-    std::vector<semantic::Room *> getEnvironmentRooms(json environmentData_in);
+    std::vector<semantic::Room *> getEnvironmentRooms(Json environmentData_in);
 };
 } // namespace core
 } // namespace vs_graphs

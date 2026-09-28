@@ -47,12 +47,13 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
     Eigen::Vector3d   farSideGroundNormal_World = Eigen::Vector3d::Zero();
     if (p_farSideGroundPlane != nullptr && !p_farSideGroundPlane->isBad())
     {
-        const Eigen::Vector4d groundEq =
+        const Eigen::Vector4d groundEquation =
             p_farSideGroundPlane->getGlobalEquation().coeffs();
-        const double groundNorm = groundEq.head<3>().norm();
-        if (groundEq.allFinite() && groundNorm > 1e-8)
+        const double groundEquationNormalNorm = groundEquation.head<3>().norm();
+        if (groundEquation.allFinite() && groundEquationNormalNorm > 1e-8)
         {
-            farSideGroundNormal_World = groundEq.head<3>() / groundNorm;
+            farSideGroundNormal_World =
+                groundEquation.head<3>() / groundEquationNormalNorm;
         }
     }
 
@@ -78,11 +79,11 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
                                            allPassages,
                                            farSideGroundNormal_World))
     {
-    case PassageSideEnforcementOutcome::RemovedUnbound:
+    case PassageSideEnforcementOutcome::REMOVED_UNBOUND:
         return false;
-    case PassageSideEnforcementOutcome::Rerouted:
+    case PassageSideEnforcementOutcome::REROUTED:
         return true;
-    case PassageSideEnforcementOutcome::NoViolation:
+    case PassageSideEnforcementOutcome::NO_VIOLATION:
         break;
     }
 
@@ -94,7 +95,7 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
     if (!evaluateWallAdmissionEvidence(p_candidateWall_in,
                                        p_sysParams,
                                        farSideGroundNormal_World)
-             .admissible)
+             .isAdmissible)
     {
         return false;
     }

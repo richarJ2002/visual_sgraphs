@@ -27,7 +27,7 @@ namespace semantic
 
 core::Map *Marker::getMap()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return p_map;
 }
 

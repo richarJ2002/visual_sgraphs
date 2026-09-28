@@ -7,11 +7,11 @@ namespace vs_graphs
 namespace testing
 {
 
-bool CheckFault(const std::string &name_in)
+bool checkFault(const std::string &name_in)
 {
 #ifdef VS_GRAPHS_ENABLE_FAULT_INJECTION
-    const auto foundIt = FaultRegistry().find(name_in);
-    if (foundIt == FaultRegistry().end())
+    const auto foundIt = getFaultRegistry().find(name_in);
+    if (foundIt == getFaultRegistry().end())
     {
         return false;
     }

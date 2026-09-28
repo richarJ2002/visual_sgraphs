@@ -31,9 +31,9 @@ namespace core
 {
 
 #ifdef REGISTER_TIMES
-void System::insertResizeTime(double &time)
+void System::insertResizeTime(double &time_inout)
 {
-    p_tracker->vdResizeImage_ms.push_back(time);
+    p_tracker->imageResizeTimes_ms.push_back(time_inout);
 }
 #endif
 

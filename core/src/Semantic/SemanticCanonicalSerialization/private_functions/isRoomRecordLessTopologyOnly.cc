@@ -85,13 +85,16 @@ bool isRoomRecordLessTopologyOnly(const RoomRecord &lhs_in,
     {
         return lhsWallRefs.size() < rhsWallRefs.size();
     }
-    for (std::size_t i = 0U; i < lhsWallRefs.size(); ++i)
+    for (std::size_t lhsWallRefIndex = 0U; lhsWallRefIndex < lhsWallRefs.size();
+         ++lhsWallRefIndex)
     {
-        if (isRawPlaneRefLess(lhsWallRefs[i], rhsWallRefs[i]))
+        if (isRawPlaneRefLess(lhsWallRefs[lhsWallRefIndex],
+                              rhsWallRefs[lhsWallRefIndex]))
         {
             return true;
         }
-        if (isRawPlaneRefLess(rhsWallRefs[i], lhsWallRefs[i]))
+        if (isRawPlaneRefLess(rhsWallRefs[lhsWallRefIndex],
+                              lhsWallRefs[lhsWallRefIndex]))
         {
             return false;
         }
@@ -105,13 +108,17 @@ bool isRoomRecordLessTopologyOnly(const RoomRecord &lhs_in,
     {
         return lhsPassageRefs.size() < rhsPassageRefs.size();
     }
-    for (std::size_t i = 0U; i < lhsPassageRefs.size(); ++i)
+    for (std::size_t lhsWallRefIndex = 0U;
+         lhsWallRefIndex < lhsPassageRefs.size();
+         ++lhsWallRefIndex)
     {
-        if (isEntityRefLess(lhsPassageRefs[i], rhsPassageRefs[i]))
+        if (isEntityRefLess(lhsPassageRefs[lhsWallRefIndex],
+                            rhsPassageRefs[lhsWallRefIndex]))
         {
             return true;
         }
-        if (isEntityRefLess(rhsPassageRefs[i], lhsPassageRefs[i]))
+        if (isEntityRefLess(rhsPassageRefs[lhsWallRefIndex],
+                            lhsPassageRefs[lhsWallRefIndex]))
         {
             return false;
         }

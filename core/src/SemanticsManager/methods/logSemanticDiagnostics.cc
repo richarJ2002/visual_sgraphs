@@ -28,12 +28,12 @@ void SemanticsManager::logSemanticDiagnostics(
 {
     /* Pure diff/JSON construction lives in SemanticDiagnostics; this
      * method's only job is deciding whether/what to print.
-     * mSemanticDiagnosticState_ is the only mutable state carried across
+     * semanticDiagnosticState is the only mutable state carried across
      * calls. */
     const semantic::SemanticDiagnosticUpdate update =
         semantic::buildSemanticDiagnosticUpdate(entry_in,
-                                                mSemanticDiagnosticState_);
-    if (!update.emit)
+                                                semanticDiagnosticState);
+    if (!update.shouldEmit)
     {
         return;
     }

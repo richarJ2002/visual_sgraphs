@@ -36,7 +36,7 @@ namespace core
 
 semantic::Room *Map::getStartingRoom()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return p_startingRoom;
 }
 

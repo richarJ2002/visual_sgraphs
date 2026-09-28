@@ -32,7 +32,7 @@ namespace core
 
 void LoopClosing::setMergeStatus(bool mergeStatus_in)
 {
-    mergeInProgress.store(mergeStatus_in);
+    hasMergeInProgress.store(mergeStatus_in);
 }
 
 } // namespace core

@@ -42,7 +42,7 @@
  *                 (reproduced via resolveRoomEndpoint() against the
  *                 whole snapshot, ignoring its isCrossMap output exactly
  *                 as the live code ignores map membership here); and
- *               - mapFullyModeled combines both exactly as the legacy
+ *               - isMapFullyModeled combines both exactly as the legacy
  *                 boolean expression does.
  *
  *               Known residual gap in the "exact reproduction" claim:
@@ -137,7 +137,7 @@ LegacyMapCompletenessResult
         }
     }
 
-    result.mapFullyModeled =
+    result.isMapFullyModeled =
         result.confirmedRoomCount > 0U &&
         result.completeRoomCount == result.confirmedRoomCount &&
         result.fullyLinkedPassageCount == result.passageCount;

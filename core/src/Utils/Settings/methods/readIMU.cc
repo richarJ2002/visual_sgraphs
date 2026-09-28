@@ -45,32 +45,32 @@ namespace utils
 namespace settings
 {
 
-void Settings::readIMU(cv::FileStorage &storage_in)
+void Settings::readIMU(cv::FileStorage &storage_inout)
 {
     bool found;
-    accelWalkNoise = readParameter<float>(storage_in, "IMU.AccWalk", found);
-    accelNoise     = readParameter<float>(storage_in, "IMU.NoiseAcc", found);
-    gyroWalkNoise  = readParameter<float>(storage_in, "IMU.GyroWalk", found);
-    gyroNoise      = readParameter<float>(storage_in, "IMU.NoiseGyro", found);
+    accelWalkNoise = readParameter<float>(storage_inout, "IMU.AccWalk", found);
+    accelNoise     = readParameter<float>(storage_inout, "IMU.NoiseAcc", found);
+    gyroWalkNoise  = readParameter<float>(storage_inout, "IMU.GyroWalk", found);
+    gyroNoise = readParameter<float>(storage_inout, "IMU.NoiseGyro", found);
     imuErrorThreshold =
-        readParameter<float>(storage_in, "IMU.Threshold", found);
-    imuSampleRate = readParameter<float>(storage_in, "IMU.Frequency", found);
+        readParameter<float>(storage_inout, "IMU.Threshold", found);
+    imuSampleRate = readParameter<float>(storage_inout, "IMU.Frequency", found);
 
-    cv::Mat cvTbc = readParameter<cv::Mat>(storage_in, "IMU.T_b_c1", found);
+    cv::Mat cvTbc = readParameter<cv::Mat>(storage_inout, "IMU.T_b_c1", found);
     bodyToCamera  = converter::Converter::toSophus(cvTbc);
 
-    readParameter<int>(storage_in, "IMU.InsertKFsWhenLost", found, false);
+    readParameter<int>(storage_inout, "IMU.InsertKFsWhenLost", found, false);
     if (found)
-        insertKeyframesWhenLost =
-            (bool)readParameter<int>(storage_in,
+        shouldInsertKeyFramesWhenLost =
+            (bool)readParameter<int>(storage_inout,
                                      "IMU.InsertKFsWhenLost",
                                      found,
                                      false);
     else
-        insertKeyframesWhenLost = true;
+        shouldInsertKeyFramesWhenLost = true;
 
-    fastInitEnabled =
-        readParameter<int>(storage_in, "IMU.FastInit", found, false) != 0;
+    isFastInitEnabled =
+        readParameter<int>(storage_inout, "IMU.FastInit", found, false) != 0;
 }
 
 } // namespace settings

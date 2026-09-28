@@ -34,24 +34,25 @@ namespace vs_graphs
 namespace core
 {
 
-int MapPoint::predictScale(const float &currentDist, KeyFrame *pKF)
+int MapPoint::predictScale(const float &currentDistance_in,
+                           KeyFrame    *p_keyFrame_in)
 {
-    if (currentDist == 0.0f)
+    if (currentDistance_in == 0.0f)
         return 0;
 
     float ratio;
     {
-        unique_lock<mutex> lock(mMutexPos);
-        ratio = maxDistance / currentDist;
+        unique_lock<mutex> lock(positionMutex);
+        ratio = maxDistance / currentDistance_in;
     }
 
-    int nScale = ceil(log(ratio) / pKF->logScaleFactor);
-    if (nScale < 0)
-        nScale = 0;
-    else if (nScale >= pKF->scaleLevelCount)
-        nScale = pKF->scaleLevelCount - 1;
+    int scaleCount = ceil(log(ratio) / p_keyFrame_in->logScaleFactor);
+    if (scaleCount < 0)
+        scaleCount = 0;
+    else if (scaleCount >= p_keyFrame_in->scaleLevelCount)
+        scaleCount = p_keyFrame_in->scaleLevelCount - 1;
 
-    return nScale;
+    return scaleCount;
 }
 
 } // namespace core

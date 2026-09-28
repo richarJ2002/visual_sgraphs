@@ -40,7 +40,7 @@ SemanticSegmentation::ProcessingStats SemanticSegmentation::getProcessingStats()
     stats.queueHighWatermark =
         queueHighWatermark.load(std::memory_order_relaxed);
     {
-        std::lock_guard<std::mutex> lock(mMutexNewKFs);
+        std::lock_guard<std::mutex> lock(newKeyFramesMutex);
         stats.queueDepth =
             static_cast<std::uint32_t>(segmentedImageBuffer.size());
     }

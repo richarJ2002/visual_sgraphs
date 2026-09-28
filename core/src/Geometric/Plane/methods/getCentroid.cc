@@ -34,7 +34,7 @@ namespace geometric
 
 Eigen::Vector3d Plane::getCentroid(void) const
 {
-    unique_lock<mutex> lock(mMutexPos);
+    unique_lock<mutex> lock(positionMutex);
     return centroid;
 }
 

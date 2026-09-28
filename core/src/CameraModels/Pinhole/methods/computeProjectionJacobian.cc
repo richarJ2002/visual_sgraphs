@@ -35,19 +35,19 @@ namespace camera_models
 namespace pinhole
 {
 Eigen::Matrix<double, 2, 3>
-    Pinhole::computeProjectionJacobian(const Eigen::Vector3d &point3D_in)
+    Pinhole::computeProjectionJacobian(const Eigen::Vector3d &point3d_in)
 {
-    Eigen::Matrix<double, 2, 3> Jac;
-    Jac(0, 0) = parameters[0] / point3D_in[2];
-    Jac(0, 1) = 0.f;
-    Jac(0, 2) =
-        -parameters[0] * point3D_in[0] / (point3D_in[2] * point3D_in[2]);
-    Jac(1, 0) = 0.f;
-    Jac(1, 1) = parameters[1] / point3D_in[2];
-    Jac(1, 2) =
-        -parameters[1] * point3D_in[1] / (point3D_in[2] * point3D_in[2]);
+    Eigen::Matrix<double, 2, 3> jacobianMatrix;
+    jacobianMatrix(0, 0) = parameters[0] / point3d_in[2];
+    jacobianMatrix(0, 1) = 0.f;
+    jacobianMatrix(0, 2) =
+        -parameters[0] * point3d_in[0] / (point3d_in[2] * point3d_in[2]);
+    jacobianMatrix(1, 0) = 0.f;
+    jacobianMatrix(1, 1) = parameters[1] / point3d_in[2];
+    jacobianMatrix(1, 2) =
+        -parameters[1] * point3d_in[1] / (point3d_in[2] * point3d_in[2]);
 
-    return Jac;
+    return jacobianMatrix;
 }
 } // namespace pinhole
 } // namespace camera_models

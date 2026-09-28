@@ -28,21 +28,24 @@ namespace core
 namespace semantic
 {
 
-std::string RoomTracker::eventToJSON(const TransitionEvent &event)
+std::string RoomTracker::eventToJSON(const TransitionEvent &event_in)
 {
-    std::ostringstream stream;
-    stream << "{";
-    stream << "\"timestamp\":" << formatDouble(event.timestamp_s) << ",";
-    stream << "\"source\":\"" << stateLiteral(event.sourceState) << "\",";
-    stream << "\"event\":\"" << eventLiteral(event.event) << "\",";
-    stream << "\"target\":\"" << stateLiteral(event.targetState) << "\",";
-    stream << "\"accepted\":" << (event.accepted ? "true" : "false") << ",";
-    stream << "\"dwell_s\":" << formatDouble(event.dwell_s) << ",";
-    stream << "\"confidence\":" << formatDouble(event.confidence) << ",";
-    stream << "\"verification_pass\":"
-           << (event.verificationPass ? "true" : "false");
-    stream << "}";
-    return stream.str();
+    std::ostringstream textStream;
+    textStream << "{";
+    textStream << "\"timestamp\":" << formatDouble(event_in.timestamp_s) << ",";
+    textStream << "\"source\":\"" << stateLiteral(event_in.sourceState)
+               << "\",";
+    textStream << "\"event\":\"" << eventLiteral(event_in.event) << "\",";
+    textStream << "\"target\":\"" << stateLiteral(event_in.targetState)
+               << "\",";
+    textStream << "\"accepted\":" << (event_in.isAccepted ? "true" : "false")
+               << ",";
+    textStream << "\"dwell_s\":" << formatDouble(event_in.dwell_s) << ",";
+    textStream << "\"confidence\":" << formatDouble(event_in.confidence) << ",";
+    textStream << "\"verification_pass\":"
+               << (event_in.hasVerificationPassed ? "true" : "false");
+    textStream << "}";
+    return textStream.str();
 }
 
 } // namespace semantic

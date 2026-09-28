@@ -33,7 +33,7 @@ void Marker::addObservation(core::KeyFrame     *p_keyFrame_in,
         return;
     }
 
-    std::lock_guard<std::mutex> lock(mMutexObservations);
+    std::lock_guard<std::mutex> lock(observationsMutex);
     observations.insert_or_assign(p_keyFrame_in, markerPose_markerToCamera_in);
 }
 

@@ -34,10 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addCandidateMapRoom(semantic::Room *pRoom)
+void Map::addCandidateMapRoom(semantic::Room *p_room_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    markerBasedRooms.insert(pRoom);
+    unique_lock<mutex> lock(mapMutex);
+    markerBasedRooms.insert(p_room_in);
 }
 
 } // namespace core

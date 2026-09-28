@@ -165,7 +165,7 @@ void makeKeyFrameAt(KeyFrame              &keyFrame_inout,
                     Map                   *p_map_in,
                     const Eigen::Vector3f &cameraCenter_World_m_in)
 {
-    keyFrame_inout.mnId = id_in;
+    keyFrame_inout.id = id_in;
     /* KeyFrame::SetPose takes T_camera_World (world -> camera); a camera
      * sitting at cameraCenter_World_m_in under identity orientation has
      * translation -cameraCenter_World_m_in in that convention. */

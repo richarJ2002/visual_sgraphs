@@ -116,20 +116,20 @@ AlignmentCheck checkFixedTransformWalls(
     const std::vector<VerifyWallObservation> &survivingWalls_in,
     const std::vector<VerifyWallObservation> &absorbedWalls_in,
     const g2o::Sim3                          &transform_in,
-    const SemanticVerifyConfig               &config_in,
+    const SemanticVerifyConfig               &configuration_in,
     std::size_t                              &matchedCount_out);
 
 AlignmentCheck
     checkPassageTopology(const RoomContextSnapshot  &survivingContext_in,
                          const RoomContextSnapshot  &absorbedContext_in,
                          const g2o::Sim3            &transform_in,
-                         const SemanticVerifyConfig &config_in,
+                         const SemanticVerifyConfig &configuration_in,
                          std::size_t                &matchedCount_out,
                          SemanticMergeReason        &contradictionReason_out);
 
 SemanticMergeRoomEvidence
     copyMergeRoomEvidence(const Room                 *p_room_in,
-                          const SemanticVerifyConfig &config_in);
+                          const SemanticVerifyConfig &configuration_in);
 
 std::vector<ConsecutiveAnchorPair> collectConsecutiveAnchors(
     const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,

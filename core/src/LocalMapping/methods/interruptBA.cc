@@ -32,7 +32,7 @@ namespace core
 
 void LocalMapping::interruptBA()
 {
-    abortBA = true;
+    shouldAbortBa = true;
 }
 
 } // namespace core

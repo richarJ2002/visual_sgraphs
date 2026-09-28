@@ -32,7 +32,7 @@ namespace semantic
 
 SemanticMergeRoomEvidence
     copyMergeRoomEvidence(const Room                 *p_room_in,
-                          const SemanticVerifyConfig &config_in)
+                          const SemanticVerifyConfig &configuration_in)
 {
     SemanticMergeRoomEvidence evidence;
     evidence.context.roomId   = p_room_in->getId();
@@ -41,7 +41,7 @@ SemanticMergeRoomEvidence
     Floor *p_floor            = p_room_in->getFloor();
     evidence.context.floorId  = p_floor != nullptr ? p_floor->getId() : -1;
     evidence.walls =
-        SemanticVerify::collectWallObservations(p_room_in, config_in);
+        SemanticVerify::collectWallObservations(p_room_in, configuration_in);
     for (Passage *p_passage : p_room_in->getPassages())
     {
         if (p_passage == nullptr || p_passage->isBad())
@@ -50,20 +50,20 @@ SemanticMergeRoomEvidence
         }
         PassageContext context;
         context.id              = p_passage->getId();
-        context.passable        = p_passage->isPassable();
+        context.isPassable      = p_passage->isPassable();
         context.centroid_World  = p_passage->getCentroid();
         context.width_m         = p_passage->getWidth();
         context.height_m        = p_passage->getHeight();
         context.isRecoveryProxy = p_passage->isRecoveryProxy();
-        context.apertureValid   = std::isfinite(context.width_m) &&
-                                std::isfinite(context.height_m) &&
-                                context.width_m > 0.0 && context.height_m > 0.0;
+        context.isApertureValid =
+            std::isfinite(context.width_m) && std::isfinite(context.height_m) &&
+            context.width_m > 0.0 && context.height_m > 0.0;
         const Passage::KnownSideProvenance knownSide =
             p_passage->getKnownSideProvenance();
-        context.hasKnownSideRoom = knownSide.pRoom != nullptr;
+        context.hasKnownSideRoom = knownSide.p_room != nullptr;
         if (context.hasKnownSideRoom)
         {
-            context.knownSideRoomId = knownSide.pRoom->getId();
+            context.knownSideRoomId = knownSide.p_room->getId();
         }
         context.hasKnownSideDirection = knownSide.hasDirection();
         if (context.hasKnownSideDirection)

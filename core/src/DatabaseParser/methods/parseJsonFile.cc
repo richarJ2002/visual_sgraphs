@@ -25,7 +25,7 @@ namespace vs_graphs
 namespace core
 {
 
-json DBParser::parseJsonFile(std::string jsonFilePath_in)
+Json DBParser::parseJsonFile(std::string jsonFilePath_in)
 {
     try
     {
@@ -34,11 +34,11 @@ json DBParser::parseJsonFile(std::string jsonFilePath_in)
         // Reading the JSON file from the given path
         ifstream jsonFile(jsonFilePath_in);
         // Parsing the JSON file to get the envrionment data
-        json     environmentData = json::parse(jsonFile);
+        Json     environmentData = Json::parse(jsonFile);
         // Return parsed data
         return environmentData;
     }
-    catch (json::parse_error &ex)
+    catch (Json::parse_error &ex)
     {
         VSLAM_LOG_ERROR("- Error parsing the environment JSON file: %s\n",
                         ex.what());

@@ -48,13 +48,13 @@ bool isRecordVectorLess(std::vector<RecordT> lhs_in,
     {
         return lhs_in.size() < rhs_in.size();
     }
-    for (std::size_t i = 0U; i < lhs_in.size(); ++i)
+    for (std::size_t lhIndex = 0U; lhIndex < lhs_in.size(); ++lhIndex)
     {
-        if (isLess_in(lhs_in[i], rhs_in[i]))
+        if (isLess_in(lhs_in[lhIndex], rhs_in[lhIndex]))
         {
             return true;
         }
-        if (isLess_in(rhs_in[i], lhs_in[i]))
+        if (isLess_in(rhs_in[lhIndex], lhs_in[lhIndex]))
         {
             return false;
         }
@@ -86,30 +86,30 @@ bool isMapSnapshotLessTotalOrder(const MapSnapshot &lhs_in,
                static_cast<int>(rhs_in.isCurrentMap);
     }
 
-    auto roomLess    = includeGeometry_in ? &isRoomRecordLessFullGeometry
-                                          : &isRoomRecordLessTopologyOnly;
-    auto wallLess    = includeGeometry_in ? &isWallRecordLessFullGeometry
-                                          : &isWallRecordLessTopologyOnly;
-    auto passageLess = includeGeometry_in ? &isPassageRecordLessFullGeometry
-                                          : &isPassageRecordLessTopologyOnly;
-    auto floorLess   = includeGeometry_in ? &isFloorRecordLessFullGeometry
-                                          : &isFloorRecordLessTopologyOnly;
+    auto p_roomLess    = includeGeometry_in ? &isRoomRecordLessFullGeometry
+                                            : &isRoomRecordLessTopologyOnly;
+    auto p_wallLess    = includeGeometry_in ? &isWallRecordLessFullGeometry
+                                            : &isWallRecordLessTopologyOnly;
+    auto p_passageLess = includeGeometry_in ? &isPassageRecordLessFullGeometry
+                                            : &isPassageRecordLessTopologyOnly;
+    auto p_floorLess   = includeGeometry_in ? &isFloorRecordLessFullGeometry
+                                            : &isFloorRecordLessTopologyOnly;
 
-    if (!isRecordVectorEqual(lhs_in.rooms, rhs_in.rooms, roomLess))
+    if (!isRecordVectorEqual(lhs_in.rooms, rhs_in.rooms, p_roomLess))
     {
-        return isRecordVectorLess(lhs_in.rooms, rhs_in.rooms, roomLess);
+        return isRecordVectorLess(lhs_in.rooms, rhs_in.rooms, p_roomLess);
     }
-    if (!isRecordVectorEqual(lhs_in.walls, rhs_in.walls, wallLess))
+    if (!isRecordVectorEqual(lhs_in.walls, rhs_in.walls, p_wallLess))
     {
-        return isRecordVectorLess(lhs_in.walls, rhs_in.walls, wallLess);
+        return isRecordVectorLess(lhs_in.walls, rhs_in.walls, p_wallLess);
     }
-    if (!isRecordVectorEqual(lhs_in.passages, rhs_in.passages, passageLess))
+    if (!isRecordVectorEqual(lhs_in.passages, rhs_in.passages, p_passageLess))
     {
         return isRecordVectorLess(lhs_in.passages,
                                   rhs_in.passages,
-                                  passageLess);
+                                  p_passageLess);
     }
-    return isRecordVectorLess(lhs_in.floors, rhs_in.floors, floorLess);
+    return isRecordVectorLess(lhs_in.floors, rhs_in.floors, p_floorLess);
 }
 
 } // namespace semantic

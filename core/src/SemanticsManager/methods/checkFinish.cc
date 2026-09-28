@@ -25,8 +25,8 @@ namespace core
 
 bool SemanticsManager::checkFinish(void)
 {
-    std::unique_lock<std::mutex> lock(mMutexFinish);
-    return finishRequested;
+    std::unique_lock<std::mutex> lock(finishMutex);
+    return isFinishRequested;
 }
 
 } // namespace core

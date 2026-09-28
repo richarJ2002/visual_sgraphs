@@ -31,31 +31,31 @@ namespace core
 {
 
 System::MissionHealthSnapshot
-    System::getMissionHealthSnapshot(bool includeSemantics)
+    System::getMissionHealthSnapshot(bool includeSemantics_in)
 {
     MissionHealthSnapshot snapshot;
-    snapshot.inertial =
+    snapshot.isInertial =
         sensor == IMU_MONOCULAR || sensor == IMU_STEREO || sensor == IMU_RGBD;
 
     {
-        std::lock_guard<std::mutex> stateLock(mMutexState);
+        std::lock_guard<std::mutex> stateLock(stateMutex);
         snapshot.frameTimestamp   = lastFrameTimestamp;
         snapshot.trackingState    = trackingState;
         snapshot.trackingInliers  = trackingInliers;
-        snapshot.poseValid        = currentCameraPoseValid;
+        snapshot.isPoseValid      = isCurrentCameraPoseValid;
         snapshot.cameraPose_World = currentCameraPose_World;
     }
 
     std::unique_lock<std::mutex> semanticUpdateLock;
-    if (includeSemantics)
+    if (includeSemantics_in)
     {
         semanticUpdateLock = p_atlas->acquireSemanticUpdateLock();
     }
     Map *p_activeMap = p_atlas->getCurrentMap();
     snapshot.mapCount =
         static_cast<std::uint32_t>(std::max(0, p_atlas->countMaps()));
-    snapshot.inertialInitialized =
-        snapshot.inertial && p_atlas->isImuInitialized();
+    snapshot.isInertialInitialized =
+        snapshot.isInertial && p_atlas->isImuInitialized();
     snapshot.resetCount = resetCount.load(std::memory_order_relaxed);
     snapshot.rgbdFrontendAcceptedCount =
         rgbdFrontendAcceptedCount.load(std::memory_order_relaxed);
@@ -63,8 +63,8 @@ System::MissionHealthSnapshot
         rgbdFrontendProcessedCount.load(std::memory_order_relaxed);
     snapshot.rgbdFrontendOverwrittenCount =
         rgbdFrontendOverwrittenCount.load(std::memory_order_relaxed);
-    snapshot.rgbdFrontendWorkerInFlight =
-        rgbdFrontendWorkerInFlight.load(std::memory_order_relaxed);
+    snapshot.isRgbdFrontendWorkerInFlight =
+        isRgbdFrontendWorkerInFlight.load(std::memory_order_relaxed);
     snapshot.rgbdFrontendLastProcessedSensorTimestampNanoseconds =
         rgbdFrontendLastProcessedSensorTimestampNanoseconds.load(
             std::memory_order_relaxed);
@@ -127,7 +127,7 @@ System::MissionHealthSnapshot
         {
             if (p_keyFrame != nullptr && !p_keyFrame->isBad() &&
                 (p_latestKeyFrame == nullptr ||
-                 p_keyFrame->mnId > p_latestKeyFrame->mnId))
+                 p_keyFrame->id > p_latestKeyFrame->id))
             {
                 p_latestKeyFrame = p_keyFrame;
             }
@@ -137,12 +137,12 @@ System::MissionHealthSnapshot
             snapshot.latestKeyFrameTimestamp = p_latestKeyFrame->timeStamp;
             snapshot.latestKeyFramePose_World =
                 p_latestKeyFrame->getPoseInverse();
-            snapshot.latestKeyFramePoseValid =
+            snapshot.isLatestKeyFramePoseValid =
                 snapshot.latestKeyFramePose_World.translation().allFinite() &&
                 snapshot.latestKeyFramePose_World.rotationMatrix().allFinite();
         }
 
-        if (includeSemantics)
+        if (includeSemantics_in)
         {
             for (semantic::Room *p_room : p_activeMap->getAllRooms())
             {
@@ -200,11 +200,11 @@ System::MissionHealthSnapshot
                     continue;
                 }
                 PassageHealth passage;
-                passage.id       = p_passage->getId();
-                passage.passable = p_passage->isPassable();
+                passage.id         = p_passage->getId();
+                passage.isPassable = p_passage->isPassable();
                 passage.primaryRoomId =
-                    p_passage->getKnownSideProvenance().pRoom
-                        ? p_passage->getKnownSideProvenance().pRoom->getId()
+                    p_passage->getKnownSideProvenance().p_room
+                        ? p_passage->getKnownSideProvenance().p_room->getId()
                         : -1;
                 passage.secondaryRoomId =
                     p_passage->getProspectiveRoom()
@@ -217,9 +217,9 @@ System::MissionHealthSnapshot
                 passage.unknownCount = p_passage->getTraversalUnknownCount();
                 const semantic::Passage::KnownSideProvenance knownSide =
                     p_passage->getKnownSideProvenance();
-                if (knownSide.pRoom != nullptr)
+                if (knownSide.p_room != nullptr)
                 {
-                    passage.primaryRoomId = knownSide.pRoom->getId();
+                    passage.primaryRoomId = knownSide.p_room->getId();
                 }
                 semantic::Room *p_farSideRoom = p_passage->getProspectiveRoom();
                 if (p_farSideRoom != nullptr)
@@ -243,7 +243,7 @@ System::MissionHealthSnapshot
         snapshot.acceptedLoopCount         = loop.acceptedCount;
         snapshot.rejectedLoopCount         = loop.rejectedCount;
         snapshot.hasLoopEvent              = loop.hasEvent;
-        snapshot.lastLoopAccepted          = loop.lastAccepted;
+        snapshot.wasLastLoopAccepted       = loop.wasLastAccepted;
         snapshot.lastLoopMapId             = loop.lastMapId;
         snapshot.lastLoopCurrentKeyFrameId = loop.lastCurrentKeyFrameId;
         snapshot.lastLoopMatchedKeyFrameId = loop.lastMatchedKeyFrameId;

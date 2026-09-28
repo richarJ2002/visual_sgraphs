@@ -36,7 +36,7 @@ namespace core
 
 void Map::setImuInitialized()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     hasImuInitialization = true;
 }
 

@@ -32,17 +32,17 @@ namespace core
 
 vector<Map *> Atlas::getAllMaps()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     struct CompFunctor
     {
-        inline bool operator()(Map *elem1, Map *elem2)
+        inline bool operator()(Map *p_elem1_inout, Map *p_elem2_inout)
         {
-            return elem1->getId() < elem2->getId();
+            return p_elem1_inout->getId() < p_elem2_inout->getId();
         }
     };
-    vector<Map *> vMaps(maps.begin(), maps.end());
-    sort(vMaps.begin(), vMaps.end(), CompFunctor());
-    return vMaps;
+    vector<Map *> mapList(maps.begin(), maps.end());
+    sort(mapList.begin(), mapList.end(), CompFunctor());
+    return mapList;
 }
 
 } // namespace core

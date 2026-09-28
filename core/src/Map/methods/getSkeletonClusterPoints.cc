@@ -36,7 +36,7 @@ namespace core
 
 std::vector<std::vector<Eigen::Vector3d>> Map::getSkeletonClusterPoints()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return skeletonClusterPoints;
 }
 

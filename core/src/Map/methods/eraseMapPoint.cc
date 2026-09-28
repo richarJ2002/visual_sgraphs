@@ -34,13 +34,14 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseMapPoint(MapPoint *pMP)
+void Map::eraseMapPoint(MapPoint *p_mapPoint_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    mapPoints.erase(pMP);
-    referenceMapPoints.erase(
-        std::remove(referenceMapPoints.begin(), referenceMapPoints.end(), pMP),
-        referenceMapPoints.end());
+    unique_lock<mutex> lock(mapMutex);
+    mapPoints.erase(p_mapPoint_in);
+    referenceMapPoints.erase(std::remove(referenceMapPoints.begin(),
+                                         referenceMapPoints.end(),
+                                         p_mapPoint_in),
+                             referenceMapPoints.end());
 
     // TODO: This only erase the pointer.
     // Delete the MapPoint

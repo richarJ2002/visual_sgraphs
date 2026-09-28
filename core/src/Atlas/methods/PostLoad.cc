@@ -30,22 +30,23 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::PostLoad()
+void Atlas::postLoad()
 {
-    map<unsigned int, camera_models::geometriccamera::GeometricCamera *> mpCams;
-    for (camera_models::geometriccamera::GeometricCamera *pCam : cameras)
+    map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
+        camerasById;
+    for (camera_models::geometriccamera::GeometricCamera *p_camera : cameras)
     {
-        mpCams[pCam->getId()] = pCam;
+        camerasById[p_camera->getId()] = p_camera;
     }
 
     maps.clear();
-    unsigned long int numKF = 0, numMP = 0;
-    for (Map *pMi : backupMaps)
+    unsigned long int keyFrameCount = 0, mapPointCount = 0;
+    for (Map *p_map : backupMaps)
     {
-        maps.insert(pMi);
-        pMi->PostLoad(p_keyFrameDatabase, p_orbVocabulary, mpCams);
-        numKF += pMi->getAllKeyFrames().size();
-        numMP += pMi->getAllMapPoints().size();
+        maps.insert(p_map);
+        p_map->postLoad(p_keyFrameDatabase, p_orbVocabulary, camerasById);
+        keyFrameCount += p_map->getAllKeyFrames().size();
+        mapPointCount += p_map->getAllMapPoints().size();
     }
     backupMaps.clear();
 }

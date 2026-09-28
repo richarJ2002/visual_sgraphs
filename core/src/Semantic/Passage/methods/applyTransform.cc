@@ -30,7 +30,7 @@ namespace semantic
 
 void Passage::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
 
     centroid = transform_oldWorldToNewWorld_in.map(centroid);
 

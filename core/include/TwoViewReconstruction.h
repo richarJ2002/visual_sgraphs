@@ -36,87 +36,87 @@ class TwoViewReconstruction
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Fix the reference frame
-    TwoViewReconstruction(const Eigen::Matrix3f &k,
-                          float                  sigma      = 1.0,
-                          int                    iterations = 200)
+    TwoViewReconstruction(const Eigen::Matrix3f &calibrationMatrix_in,
+                          float                  sigma_in             = 1.0,
+                          int                    maxIterationCount_in = 200)
     {
-        calibrationMatrix = k;
+        calibrationMatrix = calibrationMatrix_in;
 
-        this->sigma   = sigma;
-        sigmaSquared  = sigma * sigma;
-        maxIterations = iterations;
+        this->sigma   = sigma_in;
+        sigmaSquared  = sigma_in * sigma_in;
+        maxIterations = maxIterationCount_in;
     }
 
     // Computes in parallel a fundamental matrix and a homography
     // Selects a model and tries to recover the motion and the structure from
     // motion
-    bool Reconstruct(const std::vector<cv::KeyPoint> &vKeys1,
-                     const std::vector<cv::KeyPoint> &vKeys2,
-                     const std::vector<int>          &vMatches12,
-                     Sophus::SE3f                    &T21,
-                     std::vector<cv::Point3f>        &vP3D,
-                     std::vector<bool>               &vbTriangulated);
+    bool reconstruct(const std::vector<cv::KeyPoint> &keys1_in,
+                     const std::vector<cv::KeyPoint> &keys2_in,
+                     const std::vector<int>          &matches12_in,
+                     Sophus::SE3f                    &T21_inout,
+                     std::vector<cv::Point3f>        &vP3D_inout,
+                     std::vector<bool>               &triangulatedFlags_inout);
 
   private:
-    void findHomography(std::vector<bool> &vbMatchesInliers,
-                        float             &score,
-                        Eigen::Matrix3f   &H21);
-    void findFundamental(std::vector<bool> &vbInliers,
-                         float             &score,
-                         Eigen::Matrix3f   &F21);
+    void findHomography(std::vector<bool> &matchesInliersFlags_out,
+                        float             &score_inout,
+                        Eigen::Matrix3f   &H21_out);
+    void findFundamental(std::vector<bool> &inliersFlags_inout,
+                         float             &score_inout,
+                         Eigen::Matrix3f   &F21_out);
 
-    Eigen::Matrix3f computeH21(const std::vector<cv::Point2f> &vP1,
-                               const std::vector<cv::Point2f> &vP2);
-    Eigen::Matrix3f computeF21(const std::vector<cv::Point2f> &vP1,
-                               const std::vector<cv::Point2f> &vP2);
+    Eigen::Matrix3f computeH21(const std::vector<cv::Point2f> &points1_in,
+                               const std::vector<cv::Point2f> &points2_in);
+    Eigen::Matrix3f computeF21(const std::vector<cv::Point2f> &points1_in,
+                               const std::vector<cv::Point2f> &points2_in);
 
-    float checkHomography(const Eigen::Matrix3f &H21,
-                          const Eigen::Matrix3f &H12,
-                          std::vector<bool>     &vbMatchesInliers,
-                          float                  sigma);
+    float checkHomography(const Eigen::Matrix3f &H21_in,
+                          const Eigen::Matrix3f &H12_in,
+                          std::vector<bool>     &matchesInliersFlags_inout,
+                          float                  sigma_in);
 
-    float checkFundamental(const Eigen::Matrix3f &F21,
-                           std::vector<bool>     &vbMatchesInliers,
-                           float                  sigma);
+    float checkFundamental(const Eigen::Matrix3f &F21_in,
+                           std::vector<bool>     &matchesInliersFlags_inout,
+                           float                  sigma_in);
 
-    bool reconstructF(std::vector<bool>        &vbMatchesInliers,
-                      Eigen::Matrix3f          &F21,
-                      Eigen::Matrix3f          &K,
-                      Sophus::SE3f             &T21,
-                      std::vector<cv::Point3f> &vP3D,
-                      std::vector<bool>        &vbTriangulated,
-                      float                     minParallax,
-                      int                       minTriangulated);
+    bool reconstructF(std::vector<bool>        &matchesInliersFlags_inout,
+                      Eigen::Matrix3f          &F21_in,
+                      Eigen::Matrix3f          &K_in,
+                      Sophus::SE3f             &T21_out,
+                      std::vector<cv::Point3f> &vP3D_out,
+                      std::vector<bool>        &triangulatedFlags_out,
+                      float                     minimumParallax_in,
+                      int                       minimumTriangulated_in);
 
-    bool reconstructH(std::vector<bool>        &vbMatchesInliers,
-                      Eigen::Matrix3f          &H21,
-                      Eigen::Matrix3f          &K,
-                      Sophus::SE3f             &T21,
-                      std::vector<cv::Point3f> &vP3D,
-                      std::vector<bool>        &vbTriangulated,
-                      float                     minParallax,
-                      int                       minTriangulated);
+    bool reconstructH(std::vector<bool>        &matchesInliersFlags_inout,
+                      Eigen::Matrix3f          &H21_in,
+                      Eigen::Matrix3f          &K_in,
+                      Sophus::SE3f             &T21_out,
+                      std::vector<cv::Point3f> &vP3D_inout,
+                      std::vector<bool>        &triangulatedFlags_out,
+                      float                     minimumParallax_in,
+                      int                       minimumTriangulated_in);
 
-    void normalize(const std::vector<cv::KeyPoint> &vKeys,
-                   std::vector<cv::Point2f>        &vNormalizedPoints,
-                   Eigen::Matrix3f                 &T);
+    void normalize(const std::vector<cv::KeyPoint> &keys_in,
+                   std::vector<cv::Point2f>        &normalizedPoints_inout,
+                   Eigen::Matrix3f                 &T_out);
 
-    int checkRT(const Eigen::Matrix3f           &R,
-                const Eigen::Vector3f           &t,
-                const std::vector<cv::KeyPoint> &vKeys1,
-                const std::vector<cv::KeyPoint> &vKeys2,
-                const std::vector<Match>        &vMatches12,
-                std::vector<bool>               &vbMatchesInliers,
-                const Eigen::Matrix3f           &K,
-                std::vector<cv::Point3f>        &vP3D,
-                float                            th2,
-                std::vector<bool>               &vbGood,
-                float                           &parallax);
+    int checkRT(const Eigen::Matrix3f           &R_in,
+                const Eigen::Vector3f           &t_in,
+                const std::vector<cv::KeyPoint> &keys1_in,
+                const std::vector<cv::KeyPoint> &keys2_in,
+                const std::vector<Match>        &matches12_in,
+                std::vector<bool>               &matchesInliersFlags_in,
+                const Eigen::Matrix3f           &K_in,
+                std::vector<cv::Point3f>        &vP3D_inout,
+                float                            threshold2_in,
+                std::vector<bool>               &goodFlags_out,
+                float                           &parallax_out);
 
-    void decomposeE(const Eigen::Matrix3f &E,
-                    Eigen::Matrix3f       &R1,
-                    Eigen::Matrix3f       &R2,
-                    Eigen::Vector3f       &t);
+    void decomposeE(const Eigen::Matrix3f &E_in,
+                    Eigen::Matrix3f       &R1_out,
+                    Eigen::Matrix3f       &R2_out,
+                    Eigen::Vector3f       &t_out);
 
     // Keypoints from Reference Frame (Frame 1)
     std::vector<cv::KeyPoint> keys1;

@@ -43,13 +43,13 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::setPose(const Sophus::SE3<float> &Tcw)
+void Frame::setPose(const Sophus::SE3<float> &Tcw_in)
 {
-    poseTcw = Tcw;
+    poseTcw = Tcw_in;
 
     updatePoseMatrices();
-    isFrameSet    = true;
-    poseAvailable = true;
+    isFrameSet      = true;
+    isPoseAvailable = true;
 }
 
 } // namespace core

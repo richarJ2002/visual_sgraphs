@@ -33,70 +33,75 @@ namespace core
 {
 
 bool LoopClosing::detectAndReffineSim3FromLastKF(
-    KeyFrame                *pCurrentKF,
-    KeyFrame                *pMatchedKF,
-    g2o::Sim3               &gScw,
-    int                     &nNumProjMatches,
-    std::vector<MapPoint *> &vpMPs,
-    std::vector<MapPoint *> &vpMatchedMPs)
+    KeyFrame                *p_currentKeyFrame_in,
+    KeyFrame                *p_matchedKeyFrame_in,
+    g2o::Sim3               &gScw_inout,
+    int                     &countProjectionMatchCount_out,
+    std::vector<MapPoint *> &mapPoints_inout,
+    std::vector<MapPoint *> &matchedMapPoints_inout)
 {
-    set<MapPoint *> spAlreadyMatchedMPs;
-    nNumProjMatches = findMatchesByProjection(pCurrentKF,
-                                              pMatchedKF,
-                                              gScw,
-                                              spAlreadyMatchedMPs,
-                                              vpMPs,
-                                              vpMatchedMPs);
+    set<MapPoint *> alreadyMatchedMapPoints;
+    countProjectionMatchCount_out =
+        findMatchesByProjection(p_currentKeyFrame_in,
+                                p_matchedKeyFrame_in,
+                                gScw_inout,
+                                alreadyMatchedMapPoints,
+                                mapPoints_inout,
+                                matchedMapPoints_inout);
 
-    int nProjMatches    = 30;
-    int nProjOptMatches = 50;
-    int nProjMatchesRep = 100;
+    int projectionMatchCount      = 30;
+    int projectionOptMatchCount   = 50;
+    int projectionMatchesRepCount = 100;
 
-    if (nNumProjMatches >= nProjMatches)
+    if (countProjectionMatchCount_out >= projectionMatchCount)
     {
         // Verbose::PrintMess("Sim3 reffine: There are " +
         // to_string(nNumProjMatches) + " initial matches ",
         // Verbose::VERBOSITY_DEBUG);
-        Sophus::SE3d mTwm = pMatchedKF->getPoseInverse().cast<double>();
-        g2o::Sim3    gSwm(mTwm.unit_quaternion(), mTwm.translation(), 1.0);
-        g2o::Sim3    gScm = gScw * gSwm;
-        Eigen::Matrix<double, 7, 7> mHessian7x7;
+        Sophus::SE3d mTwm =
+            p_matchedKeyFrame_in->getPoseInverse().cast<double>();
+        g2o::Sim3 gSwm(mTwm.unit_quaternion(), mTwm.translation(), 1.0);
+        g2o::Sim3 gScm = gScw_inout * gSwm;
+        Eigen::Matrix<double, 7, 7> hessian7x7;
 
-        bool bFixedScale =
-            fixScale; // TODO CHECK; Solo para el monocular inertial
+        bool isFixedScale =
+            isScaleFixed; // TODO CHECK; Solo para el monocular inertial
         if (p_tracker->sensor == System::IMU_MONOCULAR &&
-            !pCurrentKF->getMap()->getInertialBA2())
-            bFixedScale = false;
-        int numOptMatches = Optimizer::optimizeSim3(p_currentKF,
-                                                    pMatchedKF,
-                                                    vpMatchedMPs,
+            !p_currentKeyFrame_in->getMap()->getInertialBA2())
+            isFixedScale = false;
+        int optMatchCount = Optimizer::optimizeSim3(p_currentKF,
+                                                    p_matchedKeyFrame_in,
+                                                    matchedMapPoints_inout,
                                                     gScm,
                                                     10,
-                                                    bFixedScale,
-                                                    mHessian7x7,
+                                                    isFixedScale,
+                                                    hessian7x7,
                                                     true);
 
         // Verbose::PrintMess("Sim3 reffine: There are " +
         // to_string(numOptMatches) + " matches after of the optimization ",
         // Verbose::VERBOSITY_DEBUG);
 
-        if (numOptMatches > nProjOptMatches)
+        if (optMatchCount > projectionOptMatchCount)
         {
-            g2o::Sim3 gScw_estimation(gScw.rotation(), gScw.translation(), 1.0);
+            g2o::Sim3 gScw_estimation(gScw_inout.rotation(),
+                                      gScw_inout.translation(),
+                                      1.0);
 
-            vector<MapPoint *> vpMatchedMP;
-            vpMatchedMP.resize(p_currentKF->getMapPointMatches().size(),
-                               static_cast<MapPoint *>(nullptr));
+            vector<MapPoint *> matchedMapPoints;
+            matchedMapPoints.resize(p_currentKF->getMapPointMatches().size(),
+                                    static_cast<MapPoint *>(nullptr));
 
-            nNumProjMatches = findMatchesByProjection(pCurrentKF,
-                                                      pMatchedKF,
-                                                      gScw_estimation,
-                                                      spAlreadyMatchedMPs,
-                                                      vpMPs,
-                                                      vpMatchedMPs);
-            if (nNumProjMatches >= nProjMatchesRep)
+            countProjectionMatchCount_out =
+                findMatchesByProjection(p_currentKeyFrame_in,
+                                        p_matchedKeyFrame_in,
+                                        gScw_estimation,
+                                        alreadyMatchedMapPoints,
+                                        mapPoints_inout,
+                                        matchedMapPoints_inout);
+            if (countProjectionMatchCount_out >= projectionMatchesRepCount)
             {
-                gScw = gScw_estimation;
+                gScw_inout = gScw_estimation;
                 return true;
             }
         }

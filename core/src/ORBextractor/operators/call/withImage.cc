@@ -71,8 +71,8 @@ namespace core
 
 int ORBextractor::operator()(InputArray                  image_in,
                              [[maybe_unused]] InputArray mask_in,
-                             vector<KeyPoint>           &keypoints_out,
-                             OutputArray                 descriptors_out,
+                             vector<KeyPoint>           &keypoints_inout,
+                             OutputArray                 descriptors_in,
                              std::vector<int>           &lappingArea_in)
 {
     // cout << "[ORBextractor]: Max Features: " << featureCount << endl;
@@ -95,16 +95,16 @@ int ORBextractor::operator()(InputArray                  image_in,
     for (int level = 0; level < levelCount; ++level)
         nkeypoints += (int)allKeypoints[level].size();
     if (nkeypoints == 0)
-        descriptors_out.release();
+        descriptors_in.release();
     else
     {
-        descriptors_out.create(nkeypoints, 32, CV_8U);
-        descriptors = descriptors_out.getMat();
+        descriptors_in.create(nkeypoints, 32, CV_8U);
+        descriptors = descriptors_in.getMat();
     }
 
     // keypoints_out.clear();
     // keypoints_out.reserve(nkeypoints);
-    keypoints_out = vector<cv::KeyPoint>(nkeypoints);
+    keypoints_inout = vector<cv::KeyPoint>(nkeypoints);
 
     int offset = 0;
     // Modified for speeding up stereo fisheye matching
@@ -118,9 +118,9 @@ int ORBextractor::operator()(InputArray                  image_in,
             continue;
 
         // preprocess the resized image
-        Mat workingMat = imagePyramid[level].clone();
-        GaussianBlur(workingMat,
-                     workingMat,
+        Mat workingMatrix = imagePyramid[level].clone();
+        GaussianBlur(workingMatrix,
+                     workingMatrix,
                      Size(7, 7),
                      2,
                      2,
@@ -128,8 +128,8 @@ int ORBextractor::operator()(InputArray                  image_in,
 
         // Compute the descriptors
         // Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
-        Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
-        computeDescriptors(workingMat, keypoints, desc, briefPattern);
+        Mat descriptor = cv::Mat(nkeypointsLevel, 32, CV_8U);
+        computeDescriptors(workingMatrix, keypoints, descriptor, briefPattern);
 
         offset += nkeypointsLevel;
 
@@ -151,14 +151,14 @@ int ORBextractor::operator()(InputArray                  image_in,
             if (keypoint->pt.x >= lappingArea_in[0] &&
                 keypoint->pt.x <= lappingArea_in[1])
             {
-                keypoints_out.at(stereoIndex) = (*keypoint);
-                desc.row(i).copyTo(descriptors.row(stereoIndex));
+                keypoints_inout.at(stereoIndex) = (*keypoint);
+                descriptor.row(i).copyTo(descriptors.row(stereoIndex));
                 stereoIndex--;
             }
             else
             {
-                keypoints_out.at(monoIndex) = (*keypoint);
-                desc.row(i).copyTo(descriptors.row(monoIndex));
+                keypoints_inout.at(monoIndex) = (*keypoint);
+                descriptor.row(i).copyTo(descriptors.row(monoIndex));
                 monoIndex++;
             }
             i++;

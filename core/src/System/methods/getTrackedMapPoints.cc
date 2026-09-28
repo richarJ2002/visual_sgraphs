@@ -32,7 +32,7 @@ namespace core
 
 vector<MapPoint *> System::getTrackedMapPoints()
 {
-    unique_lock<mutex> lock(mMutexState);
+    unique_lock<mutex> lock(stateMutex);
     return trackedMapPoints;
 }
 

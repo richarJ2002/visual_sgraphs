@@ -28,9 +28,9 @@ namespace core
 namespace semantic
 {
 
-std::string RoomTracker::stateToString(RoomTrackingState state)
+std::string RoomTracker::stateToString(RoomTrackingState state_in)
 {
-    return stateLiteral(state);
+    return stateLiteral(state_in);
 }
 
 } // namespace semantic

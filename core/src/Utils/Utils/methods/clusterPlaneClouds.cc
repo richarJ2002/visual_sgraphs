@@ -39,20 +39,20 @@ namespace utils
 
 void Utils::clusterPlaneClouds(
     const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &p_cloud_in,
-    std::vector<pcl::PointIndices>                &clusterIndices_out)
+    std::vector<pcl::PointIndices>                &clusterIndices_inout)
 {
-    pcl::search::KdTree<pcl::PointXYZRGBA>::Ptr tree(
+    pcl::search::KdTree<pcl::PointXYZRGBA>::Ptr p_tree(
         new pcl::search::KdTree<pcl::PointXYZRGBA>);
-    tree->setInputCloud(p_cloud_in);
+    p_tree->setInputCloud(p_cloud_in);
     pcl::EuclideanClusterExtraction<pcl::PointXYZRGBA> ec;
     ec.setClusterTolerance(
         types::SystemParams::getParams()
             ->seg.planeAssociation.clusterSeparation.tolerance);
     ec.setMinClusterSize(10);
     ec.setMaxClusterSize(2500000);
-    ec.setSearchMethod(tree);
+    ec.setSearchMethod(p_tree);
     ec.setInputCloud(p_cloud_in);
-    ec.extract(clusterIndices_out);
+    ec.extract(clusterIndices_inout);
 }
 
 } // namespace utils

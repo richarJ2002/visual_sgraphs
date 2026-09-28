@@ -32,7 +32,7 @@ namespace core
 
 void Atlas::informNewBigChange()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     p_activeMap->informNewBigChange();
 }
 

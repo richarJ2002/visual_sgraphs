@@ -34,16 +34,16 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::promoteCandidateMapRoom(semantic::Room *pRoom)
+void Map::promoteCandidateMapRoom(semantic::Room *p_room_in)
 {
-    if (pRoom == nullptr)
+    if (p_room_in == nullptr)
     {
         return;
     }
 
-    unique_lock<mutex> lock(mMutexMap);
-    markerBasedRooms.erase(pRoom);
-    detectedRooms.insert(pRoom);
+    unique_lock<mutex> lock(mapMutex);
+    markerBasedRooms.erase(p_room_in);
+    detectedRooms.insert(p_room_in);
 }
 
 } // namespace core

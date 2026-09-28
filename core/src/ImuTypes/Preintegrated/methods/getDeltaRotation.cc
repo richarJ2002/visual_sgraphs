@@ -26,16 +26,18 @@ namespace core
 namespace IMU
 {
 
-Eigen::Matrix3f Preintegrated::getDeltaRotation(const Bias &b_)
+Eigen::Matrix3f Preintegrated::getDeltaRotation(const Bias &referenceBias_in)
 {
-    std::unique_lock<std::mutex> lock(mMutex);
-    Eigen::Vector3f              dbg;
-    dbg << b_.bwx - b.bwx, b_.bwy - b.bwy, b_.bwz - b.bwz;
-    if (dbg.array().isNaN()[0])
-        dbg = Eigen::Vector3f(0, 0, 0);
+    std::unique_lock<std::mutex> lock(preintegrationMutex);
+    Eigen::Vector3f              gyroBiasDelta;
+    gyroBiasDelta << referenceBias_in.bwx - b.bwx, referenceBias_in.bwy - b.bwy,
+        referenceBias_in.bwz - b.bwz;
+    if (gyroBiasDelta.array().isNaN()[0])
+        gyroBiasDelta = Eigen::Vector3f(0, 0, 0);
     if (JRg.array().isNaN()(0, 0))
         JRg.setZero();
-    return NormalizeRotation(dR * Sophus::SO3f::exp(JRg * dbg).matrix());
+    return normalizeRotation(dR *
+                             Sophus::SO3f::exp(JRg * gyroBiasDelta).matrix());
 }
 
 } // namespace IMU

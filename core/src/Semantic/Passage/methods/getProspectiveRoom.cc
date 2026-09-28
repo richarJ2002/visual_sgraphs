@@ -30,8 +30,8 @@ namespace semantic
 
 vs_graphs::core::semantic::Room *Passage::getProspectiveRoom() const
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
-    return prospectiveRoom;
+    std::lock_guard<std::mutex> lock(geometryMutex);
+    return p_prospectiveRoom;
 }
 
 } // namespace semantic

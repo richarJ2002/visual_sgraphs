@@ -32,8 +32,8 @@ namespace core
 
 std::vector<vs_graphs::core::semantic::Floor *> System::getAllFloors()
 {
-    vs_graphs::core::Map *pActiveMap = p_atlas->getCurrentMap();
-    return pActiveMap->getAllFloors();
+    vs_graphs::core::Map *p_activeMap = p_atlas->getCurrentMap();
+    return p_activeMap->getAllFloors();
 }
 
 } // namespace core

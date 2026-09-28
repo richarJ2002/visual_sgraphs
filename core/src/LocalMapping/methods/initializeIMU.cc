@@ -34,104 +34,115 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::initializeIMU(float priorG, float priorA, bool bFIBA)
+void LocalMapping::initializeIMU(float gyroPriorWeight_in,
+                                 float accelPriorWeight_in,
+                                 bool  shouldRunFullInertialBa_in)
 {
-    if (resetRequested)
+    if (isResetRequested)
         return;
 
-    float       minTime;
-    std::size_t nMinKF;
-    if (monocular)
+    float       minInitializationTime;
+    std::size_t minKeyFrameCount;
+    if (isMonocular)
     {
-        minTime = 2.0;
-        nMinKF  = 10;
+        minInitializationTime = 2.0;
+        minKeyFrameCount      = 10;
     }
     else
     {
-        minTime = 1.0;
-        nMinKF  = 10;
+        minInitializationTime = 1.0;
+        minKeyFrameCount      = 10;
     }
 
-    if (p_atlas->getKeyFrameCount() < nMinKF)
+    if (p_atlas->getKeyFrameCount() < minKeyFrameCount)
         return;
 
     // Retrieve all keyframe in temporal order
-    list<KeyFrame *> lpKF;
-    KeyFrame        *pKF = p_currentKeyFrame;
-    while (pKF->p_prevKF)
+    list<KeyFrame *> temporalKeyFrames;
+    KeyFrame        *p_walkKeyFrame = p_currentKeyFrame;
+    while (p_walkKeyFrame->p_prevKF)
     {
-        lpKF.push_front(pKF);
-        pKF = pKF->p_prevKF;
+        temporalKeyFrames.push_front(p_walkKeyFrame);
+        p_walkKeyFrame = p_walkKeyFrame->p_prevKF;
     }
-    lpKF.push_front(pKF);
-    vector<KeyFrame *> vpKF(lpKF.begin(), lpKF.end());
+    temporalKeyFrames.push_front(p_walkKeyFrame);
+    vector<KeyFrame *> orderedKeyFrames(temporalKeyFrames.begin(),
+                                        temporalKeyFrames.end());
 
-    if (vpKF.size() < nMinKF)
+    if (orderedKeyFrames.size() < minKeyFrameCount)
         return;
 
-    firstTimestamp = vpKF.front()->timeStamp;
-    if (p_currentKeyFrame->timeStamp - firstTimestamp < minTime)
+    firstTimestamp = orderedKeyFrames.front()->timeStamp;
+    if (p_currentKeyFrame->timeStamp - firstTimestamp < minInitializationTime)
         return;
 
     double accumulatedTranslation_m = 0.0;
-    for (std::size_t keyFrameIndex = 1; keyFrameIndex < vpKF.size();
+    for (std::size_t keyFrameIndex = 1; keyFrameIndex < orderedKeyFrames.size();
          ++keyFrameIndex)
     {
-        accumulatedTranslation_m += (vpKF[keyFrameIndex]->getCameraCenter() -
-                                     vpKF[keyFrameIndex - 1]->getCameraCenter())
-                                        .norm();
+        accumulatedTranslation_m +=
+            (orderedKeyFrames[keyFrameIndex]->getCameraCenter() -
+             orderedKeyFrames[keyFrameIndex - 1]->getCameraCenter())
+                .norm();
     }
 
     constexpr double minimumInitializationTranslation_m = 0.05;
     if (accumulatedTranslation_m < minimumInitializationTranslation_m)
         return;
 
-    bInitializing = true;
+    isInitializationInProgress = true;
 
     while (checkNewKeyFrames())
     {
         processNewKeyFrame();
-        vpKF.push_back(p_currentKeyFrame);
-        lpKF.push_back(p_currentKeyFrame);
+        orderedKeyFrames.push_back(p_currentKeyFrame);
+        temporalKeyFrames.push_back(p_currentKeyFrame);
     }
 
-    const int N = vpKF.size();
-    IMU::Bias b(0, 0, 0, 0, 0, 0);
+    const int orderedKeyFrameCount = orderedKeyFrames.size();
+    IMU::Bias zeroImuBias(0, 0, 0, 0, 0, 0);
 
     // Compute and KF velocities mRwg estimation
     if (!p_currentKeyFrame->getMap()->isImuInitialized())
     {
         Eigen::Matrix3f Rwg;
-        Eigen::Vector3f dirG;
-        dirG.setZero();
-        for (vector<KeyFrame *>::iterator itKF = vpKF.begin();
-             itKF != vpKF.end();
-             itKF++)
+        Eigen::Vector3f gravityDirection;
+        gravityDirection.setZero();
+        for (vector<KeyFrame *>::iterator orderedKeyFrameIt =
+                 orderedKeyFrames.begin();
+             orderedKeyFrameIt != orderedKeyFrames.end();
+             orderedKeyFrameIt++)
         {
-            if (!(*itKF)->p_imuPreintegrated)
+            if (!(*orderedKeyFrameIt)->p_imuPreintegrated)
                 continue;
-            if (!(*itKF)->p_prevKF)
+            if (!(*orderedKeyFrameIt)->p_prevKF)
                 continue;
 
-            dirG -= (*itKF)->p_prevKF->getImuRotation() *
-                    (*itKF)->p_imuPreintegrated->getUpdatedDeltaVelocity();
-            Eigen::Vector3f _vel = ((*itKF)->getImuPosition() -
-                                    (*itKF)->p_prevKF->getImuPosition()) /
-                                   (*itKF)->p_imuPreintegrated->dT;
-            (*itKF)->setVelocity(_vel);
-            (*itKF)->p_prevKF->setVelocity(_vel);
+            gravityDirection -=
+                (*orderedKeyFrameIt)->p_prevKF->getImuRotation() *
+                (*orderedKeyFrameIt)
+                    ->p_imuPreintegrated->getUpdatedDeltaVelocity();
+            Eigen::Vector3f keyFrameVelocity =
+                ((*orderedKeyFrameIt)->getImuPosition() -
+                 (*orderedKeyFrameIt)->p_prevKF->getImuPosition()) /
+                (*orderedKeyFrameIt)->p_imuPreintegrated->dT;
+            (*orderedKeyFrameIt)->setVelocity(keyFrameVelocity);
+            (*orderedKeyFrameIt)->p_prevKF->setVelocity(keyFrameVelocity);
         }
 
-        dirG = dirG / dirG.norm();
-        Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
-        Eigen::Vector3f v    = gI.cross(dirG);
-        const float     nv   = v.norm();
-        const float     cosg = gI.dot(dirG);
-        const float     ang  = acos(cosg);
-        Eigen::Vector3f vzg(0.0f, 0.0f, 0.0f); // = v*ang/nv;
-        if (nv != 0 && !isnan(cosg) && !isnan(ang))
-            vzg = v * ang / nv;
-        Rwg                     = Sophus::SO3f::exp(vzg).matrix();
+        gravityDirection = gravityDirection / gravityDirection.norm();
+        Eigen::Vector3f referenceGravityDirection(0.0f, 0.0f, -1.0f);
+        Eigen::Vector3f rotationAxis =
+            referenceGravityDirection.cross(gravityDirection);
+        const float rotationAxisNorm = rotationAxis.norm();
+        const float gravityCosine =
+            referenceGravityDirection.dot(gravityDirection);
+        const float     rotationAngle = acos(gravityCosine);
+        Eigen::Vector3f rotationVector(0.0f, 0.0f, 0.0f); // = v*ang/nv;
+        if (rotationAxisNorm != 0 && !isnan(gravityCosine) &&
+            !isnan(rotationAngle))
+            rotationVector = rotationAxis * rotationAngle / rotationAxisNorm;
+        Rwg                     = Sophus::SO3f::exp(rotationVector).matrix();
         mRwg                    = Rwg.cast<double>();
         initializationStartTime = p_currentKeyFrame->timeStamp - firstTimestamp;
     }
@@ -144,24 +155,25 @@ void LocalMapping::initializeIMU(float priorG, float priorA, bool bFIBA)
 
     scale = 1.0;
 
-    initTime = p_tracker->lastFrame.timeStamp - vpKF.front()->timeStamp;
+    initTime =
+        p_tracker->lastFrame.timeStamp - orderedKeyFrames.front()->timeStamp;
 
     Optimizer::inertialOptimization(p_atlas->getCurrentMap(),
                                     mRwg,
                                     scale,
                                     mbg,
                                     mba,
-                                    monocular,
+                                    isMonocular,
                                     infoInertial,
                                     false,
                                     false,
-                                    priorG,
-                                    priorA);
+                                    gyroPriorWeight_in,
+                                    accelPriorWeight_in);
 
     if (scale < 1e-1)
     {
         cout << "scale too small" << endl;
-        bInitializing = false;
+        isInitializationInProgress = false;
         return;
     }
 
@@ -173,32 +185,35 @@ void LocalMapping::initializeIMU(float priorG, float priorA, bool bFIBA)
 
         if (p_activeMap == nullptr)
         {
-            bInitializing = false;
+            isInitializationInProgress = false;
             return;
         }
 
         const bool         imuWasInitialized = p_atlas->isImuInitialized();
-        unique_lock<mutex> lock(p_activeMap->mMutexMapUpdate);
-        if ((fabs(scale - 1.f) > 0.00001) || !monocular)
+        unique_lock<mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
+        if ((fabs(scale - 1.f) > 0.00001) || !isMonocular)
         {
             Sophus::SE3f Twg(mRwg.cast<float>().transpose(),
                              Eigen::Vector3f::Zero());
             p_activeMap->applyScaledRotation(Twg, scale, true);
             p_tracker->updateFrameIMU(scale,
-                                      vpKF[0]->getImuBias(),
+                                      orderedKeyFrames[0]->getImuBias(),
                                       p_currentKeyFrame);
         }
 
         // Check if initialization OK
         if (!imuWasInitialized)
-            for (int i = 0; i < N; i++)
+            for (int elementIndex = 0; elementIndex < orderedKeyFrameCount;
+                 elementIndex++)
             {
-                KeyFrame *pKF2 = vpKF[i];
-                pKF2->isImu    = true;
+                KeyFrame *p_orderedKeyFrame = orderedKeyFrames[elementIndex];
+                p_orderedKeyFrame->isImu    = true;
             }
     }
 
-    p_tracker->updateFrameIMU(1.0, vpKF[0]->getImuBias(), p_currentKeyFrame);
+    p_tracker->updateFrameIMU(1.0,
+                              orderedKeyFrames[0]->getImuBias(),
+                              p_currentKeyFrame);
     if (!p_atlas->isImuInitialized())
     {
         p_atlas->setImuInitialized();
@@ -206,22 +221,22 @@ void LocalMapping::initializeIMU(float priorG, float priorA, bool bFIBA)
         p_currentKeyFrame->isImu = true;
     }
 
-    if (bFIBA)
+    if (shouldRunFullInertialBa_in)
     {
-        if (priorA != 0.f)
+        if (accelPriorWeight_in != 0.f)
             Optimizer::fullInertialBA(p_atlas->getCurrentMap(),
                                       100,
                                       false,
-                                      p_currentKeyFrame->mnId,
+                                      p_currentKeyFrame->id,
                                       nullptr,
                                       true,
-                                      priorG,
-                                      priorA);
+                                      gyroPriorWeight_in,
+                                      accelPriorWeight_in);
         else
             Optimizer::fullInertialBA(p_atlas->getCurrentMap(),
                                       100,
                                       false,
-                                      p_currentKeyFrame->mnId,
+                                      p_currentKeyFrame->id,
                                       nullptr,
                                       false);
     }
@@ -234,46 +249,48 @@ void LocalMapping::initializeIMU(float priorG, float priorA, bool bFIBA)
         p_atlas->acquireSemanticUpdateLock();
 
     // Get Map Mutex
-    unique_lock<mutex> lock(p_atlas->getCurrentMap()->mMutexMapUpdate);
+    unique_lock<mutex> mapUpdateLock(p_atlas->getCurrentMap()->mapUpdateMutex);
 
-    unsigned long GBAid = p_currentKeyFrame->mnId;
+    unsigned long globalBaId = p_currentKeyFrame->id;
 
     // Process keyframes in the queue
     while (checkNewKeyFrames())
     {
         processNewKeyFrame();
-        vpKF.push_back(p_currentKeyFrame);
-        lpKF.push_back(p_currentKeyFrame);
+        orderedKeyFrames.push_back(p_currentKeyFrame);
+        temporalKeyFrames.push_back(p_currentKeyFrame);
     }
 
     // Correct keyframes starting at map first keyframe
-    list<KeyFrame *> lpKFtoCheck(
+    list<KeyFrame *> keyFramesToCorrect(
         p_atlas->getCurrentMap()->keyFrameOrigins.begin(),
         p_atlas->getCurrentMap()->keyFrameOrigins.end());
 
-    while (!lpKFtoCheck.empty())
+    while (!keyFramesToCorrect.empty())
     {
-        KeyFrame             *pKF     = lpKFtoCheck.front();
-        const set<KeyFrame *> sChilds = pKF->getChilds();
-        Sophus::SE3f          Twc     = pKF->getPoseInverse();
-        for (set<KeyFrame *>::const_iterator sit = sChilds.begin();
-             sit != sChilds.end();
-             sit++)
+        KeyFrame             *p_walkKeyFrame = keyFramesToCorrect.front();
+        const set<KeyFrame *> childKeyFrames = p_walkKeyFrame->getChilds();
+        Sophus::SE3f          Twc            = p_walkKeyFrame->getPoseInverse();
+        for (set<KeyFrame *>::const_iterator childKeyFrameIt =
+                 childKeyFrames.begin();
+             childKeyFrameIt != childKeyFrames.end();
+             childKeyFrameIt++)
         {
-            KeyFrame *pChild = *sit;
-            if (!pChild || pChild->isBad())
+            KeyFrame *p_childKeyFrame = *childKeyFrameIt;
+            if (!p_childKeyFrame || p_childKeyFrame->isBad())
                 continue;
 
-            if (pChild->baGlobalKeyFrameId != GBAid)
+            if (p_childKeyFrame->baGlobalKeyFrameId != globalBaId)
             {
-                Sophus::SE3f Tchildc = pChild->getPose() * Twc;
-                pChild->tcwGBA       = Tchildc * pKF->tcwGBA;
+                Sophus::SE3f Tchildc    = p_childKeyFrame->getPose() * Twc;
+                p_childKeyFrame->tcwGBA = Tchildc * p_walkKeyFrame->tcwGBA;
 
-                Sophus::SO3f Rcor =
-                    pChild->tcwGBA.so3().inverse() * pChild->getPose().so3();
-                if (pChild->isVelocitySet())
+                Sophus::SO3f Rcor = p_childKeyFrame->tcwGBA.so3().inverse() *
+                                    p_childKeyFrame->getPose().so3();
+                if (p_childKeyFrame->isVelocitySet())
                 {
-                    pChild->vwbGBA = Rcor * pChild->getVelocity();
+                    p_childKeyFrame->vwbGBA =
+                        Rcor * p_childKeyFrame->getVelocity();
                 }
                 else
                 {
@@ -281,78 +298,80 @@ void LocalMapping::initializeIMU(float priorG, float priorA, bool bFIBA)
                                        Verbose::VERBOSITY_NORMAL);
                 }
 
-                pChild->biasGBA            = pChild->getImuBias();
-                pChild->baGlobalKeyFrameId = GBAid;
+                p_childKeyFrame->biasGBA = p_childKeyFrame->getImuBias();
+                p_childKeyFrame->baGlobalKeyFrameId = globalBaId;
             }
-            lpKFtoCheck.push_back(pChild);
+            keyFramesToCorrect.push_back(p_childKeyFrame);
         }
 
-        pKF->tcwBefGBA = pKF->getPose();
-        pKF->setPose(pKF->tcwGBA);
+        p_walkKeyFrame->tcwBefGBA = p_walkKeyFrame->getPose();
+        p_walkKeyFrame->setPose(p_walkKeyFrame->tcwGBA);
 
-        if (pKF->isImu)
+        if (p_walkKeyFrame->isImu)
         {
-            pKF->vwbBefGBA = pKF->getVelocity();
-            pKF->setVelocity(pKF->vwbGBA);
-            pKF->setNewBias(pKF->biasGBA);
+            p_walkKeyFrame->vwbBefGBA = p_walkKeyFrame->getVelocity();
+            p_walkKeyFrame->setVelocity(p_walkKeyFrame->vwbGBA);
+            p_walkKeyFrame->setNewBias(p_walkKeyFrame->biasGBA);
         }
         else
         {
-            cout << "KF " << pKF->mnId << " not set to inertial!! \n";
+            cout << "KF " << p_walkKeyFrame->id << " not set to inertial!! \n";
         }
 
-        lpKFtoCheck.pop_front();
+        keyFramesToCorrect.pop_front();
     }
 
     // Correct MapPoints
-    const vector<MapPoint *> vpMPs =
+    const vector<MapPoint *> allMapPoints =
         p_atlas->getCurrentMap()->getAllMapPoints();
 
-    for (size_t i = 0; i < vpMPs.size(); i++)
+    for (size_t elementIndex = 0; elementIndex < allMapPoints.size();
+         elementIndex++)
     {
-        MapPoint *pMP = vpMPs[i];
+        MapPoint *p_mapPoint = allMapPoints[elementIndex];
 
-        if (pMP->isBad())
+        if (p_mapPoint->isBad())
             continue;
 
-        if (pMP->baGlobalKeyFrameId == GBAid)
+        if (p_mapPoint->baGlobalKeyFrameId == globalBaId)
         {
             // If optimized by Global BA, just update
-            pMP->setWorldPos(pMP->posGBA);
+            p_mapPoint->setWorldPos(p_mapPoint->posGBA);
         }
         else
         {
             // Update according to the correction of its reference keyframe
-            KeyFrame *pRefKF = pMP->getReferenceKeyFrame();
+            KeyFrame *p_referenceKeyFrame = p_mapPoint->getReferenceKeyFrame();
 
-            if (pRefKF->baGlobalKeyFrameId != GBAid)
+            if (p_referenceKeyFrame->baGlobalKeyFrameId != globalBaId)
                 continue;
 
             // Map to non-corrected camera
-            Eigen::Vector3f Xc = pRefKF->tcwBefGBA * pMP->getWorldPos();
+            Eigen::Vector3f Xc =
+                p_referenceKeyFrame->tcwBefGBA * p_mapPoint->getWorldPos();
 
             // Backproject using corrected camera
-            pMP->setWorldPos(pRefKF->getPoseInverse() * Xc);
+            p_mapPoint->setWorldPos(p_referenceKeyFrame->getPoseInverse() * Xc);
         }
     }
 
     Verbose::printMess("Map updated!", Verbose::VERBOSITY_NORMAL);
 
-    keyFrameCount = vpKF.size();
+    keyFrameCount = orderedKeyFrames.size();
     initIndex++;
 
-    for (list<KeyFrame *>::iterator lit  = newKeyFrames.begin(),
-                                    lend = newKeyFrames.end();
-         lit != lend;
-         lit++)
+    for (list<KeyFrame *>::iterator newKeyFrameIt  = newKeyFrames.begin(),
+                                    newKeyFrameEnd = newKeyFrames.end();
+         newKeyFrameIt != newKeyFrameEnd;
+         newKeyFrameIt++)
     {
-        (*lit)->setBadFlag();
-        delete *lit;
+        (*newKeyFrameIt)->setBadFlag();
+        delete *newKeyFrameIt;
     }
     newKeyFrames.clear();
 
-    p_tracker->state = Tracking::OK;
-    bInitializing    = false;
+    p_tracker->state           = Tracking::OK;
+    isInitializationInProgress = false;
 
     p_currentKeyFrame->getMap()->increaseChangeIndex();
 

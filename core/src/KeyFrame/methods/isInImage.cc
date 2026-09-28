@@ -35,9 +35,10 @@ namespace vs_graphs
 namespace core
 {
 
-bool KeyFrame::isInImage(const float &x, const float &y) const
+bool KeyFrame::isInImage(const float &x_in, const float &y_in) const
 {
-    return (x >= gridMinX && x < gridMaxX && y >= gridMinY && y < gridMaxY);
+    return (x_in >= gridMinX && x_in < gridMaxX && y_in >= gridMinY &&
+            y_in < gridMaxY);
 }
 
 } // namespace core

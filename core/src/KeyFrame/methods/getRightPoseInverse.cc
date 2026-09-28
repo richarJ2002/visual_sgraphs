@@ -37,7 +37,7 @@ namespace core
 
 Sophus::SE3<float> KeyFrame::getRightPoseInverse()
 {
-    unique_lock<mutex> lock(mMutexPose);
+    unique_lock<mutex> lock(poseMutex);
 
     return twc * poseTlr;
 }

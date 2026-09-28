@@ -34,17 +34,17 @@ namespace vs_graphs
 namespace core
 {
 
-bool Viewer::parseViewerParamFile(cv::FileStorage &fSettings)
+bool Viewer::parseViewerParamFile(cv::FileStorage &settings_in)
 {
-    bool b_miss_params = false;
-    imageViewerScale   = 1.f;
+    bool isParameterMissing = false;
+    imageViewerScale        = 1.f;
 
-    float fps = fSettings["Camera.fps"];
+    float fps = settings_in["Camera.fps"];
     if (fps < 1)
         fps = 30;
     framePeriod = 1e3 / fps;
 
-    cv::FileNode node = fSettings["Camera.width"];
+    cv::FileNode node = settings_in["Camera.width"];
     if (!node.empty())
     {
         imageWidth = node.real();
@@ -54,10 +54,10 @@ bool Viewer::parseViewerParamFile(cv::FileStorage &fSettings)
         std::cerr
             << "*Camera.width parameter doesn't exist or is not a real number*"
             << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["Camera.height"];
+    node = settings_in["Camera.height"];
     if (!node.empty())
     {
         imageHeight = node.real();
@@ -67,16 +67,16 @@ bool Viewer::parseViewerParamFile(cv::FileStorage &fSettings)
         std::cerr
             << "*Camera.height parameter doesn't exist or is not a real number*"
             << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["Viewer.imageViewScale"];
+    node = settings_in["Viewer.imageViewScale"];
     if (!node.empty())
     {
         imageViewerScale = node.real();
     }
 
-    node = fSettings["Viewer.ViewpointX"];
+    node = settings_in["Viewer.ViewpointX"];
     if (!node.empty())
     {
         viewpointX = node.real();
@@ -86,10 +86,10 @@ bool Viewer::parseViewerParamFile(cv::FileStorage &fSettings)
         std::cerr << "*Viewer.ViewpointX parameter doesn't exist or is not a "
                      "real number*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["Viewer.ViewpointY"];
+    node = settings_in["Viewer.ViewpointY"];
     if (!node.empty())
     {
         viewpointY = node.real();
@@ -99,10 +99,10 @@ bool Viewer::parseViewerParamFile(cv::FileStorage &fSettings)
         std::cerr << "*Viewer.ViewpointY parameter doesn't exist or is not a "
                      "real number*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["Viewer.ViewpointZ"];
+    node = settings_in["Viewer.ViewpointZ"];
     if (!node.empty())
     {
         viewpointZ = node.real();
@@ -112,10 +112,10 @@ bool Viewer::parseViewerParamFile(cv::FileStorage &fSettings)
         std::cerr << "*Viewer.ViewpointZ parameter doesn't exist or is not a "
                      "real number*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["Viewer.ViewpointF"];
+    node = settings_in["Viewer.ViewpointF"];
     if (!node.empty())
     {
         viewpointF = node.real();
@@ -125,10 +125,10 @@ bool Viewer::parseViewerParamFile(cv::FileStorage &fSettings)
         std::cerr << "*Viewer.ViewpointF parameter doesn't exist or is not a "
                      "real number*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    return !b_miss_params;
+    return !isParameterMissing;
 }
 
 } // namespace core

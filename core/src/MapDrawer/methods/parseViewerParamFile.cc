@@ -14,11 +14,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
+bool MapDrawer::parseViewerParamFile(cv::FileStorage &settings_in)
 {
-    bool b_miss_params = false;
+    bool isParameterMissing = false;
 
-    cv::FileNode node = fSettings["Viewer.KeyFrameSize"];
+    cv::FileNode node = settings_in["Viewer.KeyFrameSize"];
     if (!node.empty())
     {
         keyFrameSize = node.real();
@@ -28,10 +28,10 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
         std::cerr << "*Viewer.KeyFrameSize parameter doesn't exist or is not a "
                      "real number*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["Viewer.KeyFrameLineWidth"];
+    node = settings_in["Viewer.KeyFrameLineWidth"];
     if (!node.empty())
     {
         keyFrameLineWidth = node.real();
@@ -42,10 +42,10 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
             << "*Viewer.KeyFrameLineWidth parameter doesn't exist or is not "
                "a real number*"
             << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["Viewer.GraphLineWidth"];
+    node = settings_in["Viewer.GraphLineWidth"];
     if (!node.empty())
     {
         graphLineWidth = node.real();
@@ -55,10 +55,10 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
         std::cerr << "*Viewer.GraphLineWidth parameter doesn't exist or is not "
                      "a real number*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["Viewer.PointSize"];
+    node = settings_in["Viewer.PointSize"];
     if (!node.empty())
     {
         pointSize = node.real();
@@ -68,10 +68,10 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
         std::cerr << "*Viewer.PointSize parameter doesn't exist or is not a "
                      "real number*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["Viewer.CameraSize"];
+    node = settings_in["Viewer.CameraSize"];
     if (!node.empty())
     {
         cameraSize = node.real();
@@ -81,10 +81,10 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
         std::cerr << "*Viewer.CameraSize parameter doesn't exist or is not a "
                      "real number*"
                   << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    node = fSettings["Viewer.CameraLineWidth"];
+    node = settings_in["Viewer.CameraLineWidth"];
     if (!node.empty())
     {
         cameraLineWidth = node.real();
@@ -95,10 +95,10 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &fSettings)
             << "*Viewer.CameraLineWidth parameter doesn't exist or is not "
                "a real number*"
             << std::endl;
-        b_miss_params = true;
+        isParameterMissing = true;
     }
 
-    return !b_miss_params;
+    return !isParameterMissing;
 }
 
 } // namespace core

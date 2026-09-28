@@ -34,7 +34,7 @@ SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
     core::Map                  *p_survivingMap_in,
     core::Map                  *p_absorbedMap_in,
     const g2o::Sim3            &transform_absorbedToSurviving_in,
-    const SemanticVerifyConfig &config_in)
+    const SemanticVerifyConfig &configuration_in)
 {
     SemanticMergeGateResult result;
     if (p_survivingMap_in == nullptr || p_absorbedMap_in == nullptr ||
@@ -65,7 +65,8 @@ SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
         if (p_room != nullptr && !p_room->isBad() &&
             p_room->getRoomVariant() == Room::RoomVariant::ROOM)
         {
-            survivingRooms.push_back(copyMergeRoomEvidence(p_room, config_in));
+            survivingRooms.push_back(
+                copyMergeRoomEvidence(p_room, configuration_in));
         }
     }
     std::vector<SemanticMergeRoomEvidence> absorbedRooms;
@@ -74,13 +75,14 @@ SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
         if (p_room != nullptr && !p_room->isBad() &&
             p_room->getRoomVariant() == Room::RoomVariant::ROOM)
         {
-            absorbedRooms.push_back(copyMergeRoomEvidence(p_room, config_in));
+            absorbedRooms.push_back(
+                copyMergeRoomEvidence(p_room, configuration_in));
         }
     }
     result               = evaluateMergeAlignment(survivingRooms,
                                     absorbedRooms,
                                     transform_absorbedToSurviving_in,
-                                    config_in);
+                                    configuration_in);
     result.floorDecision = "ACCEPTED";
     return result;
 }

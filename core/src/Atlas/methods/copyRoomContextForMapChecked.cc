@@ -32,10 +32,10 @@ namespace core
 
 Atlas::SnapshotCopyResult
     Atlas::copyRoomContextForMapChecked(Map       *p_map_in,
-                                        const bool callerOwnsSemanticLock)
+                                        const bool callerOwnsSemanticLock_in)
 {
     SnapshotCopyResult result;
-    if (!callerOwnsSemanticLock)
+    if (!callerOwnsSemanticLock_in)
         return result;
 
     result.snapshots = copyRoomContextForMap(p_map_in);

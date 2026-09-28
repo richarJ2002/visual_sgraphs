@@ -32,7 +32,7 @@ namespace core
 
 std::vector<semantic::Room *> Atlas::getAllRooms()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> lock(atlasMutex);
     return p_activeMap->getAllRooms();
 }
 

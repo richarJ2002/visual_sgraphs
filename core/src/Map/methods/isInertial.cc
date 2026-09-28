@@ -36,7 +36,7 @@ namespace core
 
 bool Map::isInertial()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return isInertialMode;
 }
 

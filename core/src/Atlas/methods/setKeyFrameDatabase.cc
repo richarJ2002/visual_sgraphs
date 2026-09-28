@@ -30,9 +30,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setKeyFrameDatabase(KeyFrameDatabase *pKFDB)
+void Atlas::setKeyFrameDatabase(KeyFrameDatabase *p_keyFrameDatabase_in)
 {
-    p_keyFrameDatabase = pKFDB;
+    p_keyFrameDatabase = p_keyFrameDatabase_in;
 }
 
 } // namespace core

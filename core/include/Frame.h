@@ -78,111 +78,111 @@ class Frame
     Frame();
 
     // Copy constructor.
-    Frame(const Frame &frame);
+    Frame(const Frame &frame_in);
 
     /*! Preserve the legacy member-wise assignment semantics explicitly. */
-    Frame &operator=(const Frame &frame) = default;
+    Frame &operator=(const Frame &frame_in) = default;
 
     // Constructor for stereo cameras (with or without IMU) #1
-    Frame(const cv::Mat                                   &imColor,
-          const cv::Mat                                   &imLeft,
-          const cv::Mat                                   &imRight,
-          const double                                    &timeStamp,
-          ORBextractor                                    *extractorLeft,
-          ORBextractor                                    *extractorRight,
-          ORBVocabulary                                   *voc,
-          cv::Mat                                         &K,
-          cv::Mat                                         &distCoef,
-          const float                                     &bf,
-          const float                                     &thDepth,
-          camera_models::geometriccamera::GeometricCamera *pCamera,
-          Frame            *pPrevF   = static_cast<Frame *>(nullptr),
-          const IMU::Calib &ImuCalib = IMU::Calib(),
-          const std::vector<semantic::Marker *> markers =
+    Frame(const cv::Mat &imageColor_in,
+          const cv::Mat &imageLeft_in,
+          const cv::Mat &imageRight_in,
+          const double  &timeStamp_in,
+          ORBextractor  *p_extractorLeft_in,
+          ORBextractor  *p_extractorRight_in,
+          ORBVocabulary *p_vocabulary_in,
+          cv::Mat       &K_in,
+          cv::Mat       &distanceCoefficients_in,
+          const float   &bf_in,
+          const float   &thresholdDepth_in,
+          camera_models::geometriccamera::GeometricCamera *p_camera_in,
+          Frame            *p_previousF_in    = static_cast<Frame *>(nullptr),
+          const IMU::Calib &imuCalibration_in = IMU::Calib(),
+          const std::vector<semantic::Marker *> markers_in =
               std::vector<semantic::Marker *>{});
 
     // Constructor for stereo cameras (with or without IMU) #2
-    Frame(const cv::Mat                                   &imColor,
-          const cv::Mat                                   &imLeft,
-          const cv::Mat                                   &imRight,
-          const double                                    &timeStamp,
-          ORBextractor                                    *extractorLeft,
-          ORBextractor                                    *extractorRight,
-          ORBVocabulary                                   *voc,
-          cv::Mat                                         &K,
-          cv::Mat                                         &distCoef,
-          const float                                     &bf,
-          const float                                     &thDepth,
-          camera_models::geometriccamera::GeometricCamera *pCamera,
-          camera_models::geometriccamera::GeometricCamera *pCamera2,
-          Sophus::SE3f                                    &Tlr,
-          Frame            *pPrevF   = static_cast<Frame *>(nullptr),
-          const IMU::Calib &ImuCalib = IMU::Calib(),
-          const std::vector<semantic::Marker *> markers =
+    Frame(const cv::Mat &imageColor_in,
+          const cv::Mat &imageLeft_in,
+          const cv::Mat &imageRight_in,
+          const double  &timeStamp_in,
+          ORBextractor  *p_extractorLeft_in,
+          ORBextractor  *p_extractorRight_in,
+          ORBVocabulary *p_vocabulary_in,
+          cv::Mat       &K_in,
+          cv::Mat       &distanceCoefficients_in,
+          const float   &bf_in,
+          const float   &thresholdDepth_in,
+          camera_models::geometriccamera::GeometricCamera *p_camera_in,
+          camera_models::geometriccamera::GeometricCamera *p_camera2_in,
+          Sophus::SE3f                                    &Tlr_in,
+          Frame            *p_previousF_in    = static_cast<Frame *>(nullptr),
+          const IMU::Calib &imuCalibration_in = IMU::Calib(),
+          const std::vector<semantic::Marker *> markers_in =
               std::vector<semantic::Marker *>{});
 
     // Constructor for RGB-D cameras (with or without IMU)
-    Frame(const cv::Mat                                   &imColor,
-          const cv::Mat                                   &imGray,
-          const cv::Mat                                   &imDepth,
-          const pcl::PointCloud<pcl::PointXYZRGB>::Ptr    &pointcloud,
-          const double                                    &timeStamp,
-          ORBextractor                                    *extractor,
-          ORBVocabulary                                   *voc,
-          cv::Mat                                         &K,
-          cv::Mat                                         &distCoef,
-          const float                                     &bf,
-          const float                                     &thDepth,
-          camera_models::geometriccamera::GeometricCamera *pCamera,
-          Frame            *pPrevF   = static_cast<Frame *>(nullptr),
-          const IMU::Calib &ImuCalib = IMU::Calib(),
-          const std::vector<semantic::Marker *> markers =
+    Frame(const cv::Mat                                &imageColor_in,
+          const cv::Mat                                &imageGray_in,
+          const cv::Mat                                &imageDepth_in,
+          const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_pointcloud_in,
+          const double                                 &timeStamp_in,
+          ORBextractor                                 *p_extractor_in,
+          ORBVocabulary                                *p_vocabulary_in,
+          cv::Mat                                      &K_in,
+          cv::Mat                                      &distanceCoefficients_in,
+          const float                                  &bf_in,
+          const float                                  &thresholdDepth_in,
+          camera_models::geometriccamera::GeometricCamera *p_camera_in,
+          Frame            *p_previousF_in    = static_cast<Frame *>(nullptr),
+          const IMU::Calib &imuCalibration_in = IMU::Calib(),
+          const std::vector<semantic::Marker *> markers_in =
               std::vector<semantic::Marker *>{});
 
     // Constructor for Monocular cameras (with or without IMU)
-    Frame(const cv::Mat                                   &imColor,
-          const cv::Mat                                   &imGray,
-          const double                                    &timeStamp,
-          ORBextractor                                    *extractor,
-          ORBVocabulary                                   *voc,
-          camera_models::geometriccamera::GeometricCamera *pCamera,
-          cv::Mat                                         &distCoef,
-          const float                                     &bf,
-          const float                                     &thDepth,
-          Frame            *pPrevF   = static_cast<Frame *>(nullptr),
-          const IMU::Calib &ImuCalib = IMU::Calib(),
-          const std::vector<semantic::Marker *> markers =
+    Frame(const cv::Mat                                   &imageColor_in,
+          const cv::Mat                                   &imageGray_in,
+          const double                                    &timeStamp_in,
+          ORBextractor                                    *p_extractor_in,
+          ORBVocabulary                                   *p_vocabulary_in,
+          camera_models::geometriccamera::GeometricCamera *p_camera_inout,
+          cv::Mat          &distanceCoefficients_in,
+          const float      &bf_in,
+          const float      &thresholdDepth_in,
+          Frame            *p_previousF_in    = static_cast<Frame *>(nullptr),
+          const IMU::Calib &imuCalibration_in = IMU::Calib(),
+          const std::vector<semantic::Marker *> markers_in =
               std::vector<semantic::Marker *>{});
 
     /*!
      * @brief Extract ORB features from the given grayscale image
      *
-     * @param flag The flag to indicate which image to extract features from (0
-     * for left, 1 for right)
-     * @param imageGray The grayscale image to extract features from
-     * @param x0 The x-coordinate of the top-left corner of the ROI
-     * @param x1 The x-coordinate of the bottom-right corner of the ROI
+     * @param flag_in The flag to indicate which image to extract features from
+     * (0 for left, 1 for right)
+     * @param imageGray_in The grayscale image to extract features from
+     * @param x0_in The x-coordinate of the top-left corner of the ROI
+     * @param x1_in The x-coordinate of the bottom-right corner of the ROI
      */
-    void extractOrbFeatures(int            flag,
-                            const cv::Mat &imageGray,
-                            const int      x0,
-                            const int      x1);
+    void extractOrbFeatures(int            flag_in,
+                            const cv::Mat &imageGray_in,
+                            const int      x0_in,
+                            const int      x1_in);
 
     // Compute Bag of Words representation.
     void computeBagOfWords();
 
     // Set the camera pose. (Imu pose is not modified!)
-    void setPose(const Sophus::SE3<float> &Tcw);
+    void setPose(const Sophus::SE3<float> &Tcw_in);
 
     // Set IMU velocity
-    void setVelocity(Eigen::Vector3f Vw);
+    void setVelocity(Eigen::Vector3f Vw_in);
 
     Eigen::Vector3f getVelocity() const;
 
     // Set IMU pose and velocity (implicitly changes camera pose)
-    void setImuPoseVelocity(const Eigen::Matrix3f &Rwb,
-                            const Eigen::Vector3f &twb,
-                            const Eigen::Vector3f &Vwb);
+    void setImuPoseVelocity(const Eigen::Matrix3f &Rwb_in,
+                            const Eigen::Vector3f &twb_in,
+                            const Eigen::Vector3f &Vwb_in);
 
     Eigen::Matrix<float, 3, 1> getImuPosition() const;
     Eigen::Matrix<float, 3, 3> getImuRotation();
@@ -193,26 +193,30 @@ class Frame
     Eigen::Matrix3f getRelativePoseTlrRotation();
     Eigen::Vector3f getRelativePoseTlrTranslation();
 
-    void setNewBias(const IMU::Bias &b);
+    void setNewBias(const IMU::Bias &b_in);
 
     // Check if a MapPoint is in the frustum of the camera
     // and fill variables of the MapPoint to be used by the tracking
-    bool isInFrustum(MapPoint *pMP, float viewingCosLimit);
+    bool isInFrustum(MapPoint *p_mapPoint_inout, float viewingCosLimit_in);
 
-    bool
-        projectPointDistort(MapPoint *pMP, cv::Point2f &kp, float &u, float &v);
+    bool projectPointDistort(MapPoint    *p_mapPoint_in,
+                             cv::Point2f &keyPoint_out,
+                             float       &u_out,
+                             float       &v_out);
 
-    Eigen::Vector3f inReferenceCoordinates(Eigen::Vector3f pCw);
+    Eigen::Vector3f inReferenceCoordinates(Eigen::Vector3f pCw_in);
 
     // Compute the cell of a keypoint (return false if outside the grid)
-    bool isPositionInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
+    bool isPositionInGrid(const cv::KeyPoint &keyPoint_in,
+                          int                &positionX_out,
+                          int                &positionY_out);
 
-    vector<size_t> getFeaturesInArea(const float &x,
-                                     const float &y,
-                                     const float &r,
-                                     const int    minLevel = -1,
-                                     const int    maxLevel = -1,
-                                     const bool   bRight   = false) const;
+    vector<size_t> getFeaturesInArea(const float &x_in,
+                                     const float &y_in,
+                                     const float &r_in,
+                                     const int    minimumLevel_in = -1,
+                                     const int    maximumLevel_in = -1,
+                                     const bool isRightCamera_in = false) const;
 
     // Search a match for each keypoint in the left image to a keypoint in the
     // right image. If there is a match, depth is computed and the right
@@ -221,11 +225,11 @@ class Frame
 
     // Associate a "right" coordinate to a keypoint if there is valid depth in
     // the depthmap.
-    void computeStereoFromRGBD(const cv::Mat &imDepth);
+    void computeStereoFromRGBD(const cv::Mat &imageDepth_in);
 
     // Backprojects a keypoint (if stereo/depth info available) into 3D world
     // coordinates.
-    bool unprojectStereo(const int &i, Eigen::Vector3f &x3D);
+    bool unprojectStereo(const int &index_in, Eigen::Vector3f &x3D_out);
 
     ConstraintPoseImu *p_poseImuConstraint;
 
@@ -269,12 +273,12 @@ class Frame
 
     inline bool hasPose() const
     {
-        return poseAvailable;
+        return isPoseAvailable;
     }
 
     inline bool hasVelocity() const
     {
-        return velocityAvailable;
+        return isVelocityAvailable;
     }
 
   private:
@@ -284,7 +288,7 @@ class Frame
     Eigen::Matrix<float, 3, 1> centerOw;
     Eigen::Matrix<float, 3, 3> rotationRcw;
     Eigen::Matrix<float, 3, 1> translationTcw;
-    bool                       poseAvailable;
+    bool                       isPoseAvailable;
 
     // Rcw_ not necessary as Sophus has a method for extracting the rotation
     // matrix: Tcw_.rotationMatrix() tcw_ not necessary as Sophus has a method
@@ -298,7 +302,7 @@ class Frame
 
     // IMU linear velocity
     Eigen::Vector3f velocityVw;
-    bool            velocityAvailable;
+    bool            isVelocityAvailable;
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -334,7 +338,7 @@ class Frame
     float depthThreshold;
 
     // Number of KeyPoints.
-    int N;
+    int keyPointCount;
 
     // Vector of keypoints (original for visualization) and undistorted
     // (actually used by the system). In the stereo case, keyPointsUndistorted
@@ -391,8 +395,8 @@ class Frame
     std::shared_ptr<IMU::Preintegrated> p_imuPreintegratedFrame;
 
     // Current and Next Frame id.
-    static long unsigned int nNextId;
-    long unsigned int        mnId;
+    static long unsigned int nextId;
+    long unsigned int        id;
 
     // Reference Keyframe.
     KeyFrame *p_referenceKeyFrame;
@@ -412,7 +416,7 @@ class Frame
     static float gridMinY;
     static float gridMaxY;
 
-    static bool initialComputationsDone;
+    static bool areInitialComputationsDone;
 
     map<long unsigned int, cv::Point2f> projectedPoints;
     map<long unsigned int, cv::Point2f> matchedPoints;
@@ -434,7 +438,7 @@ class Frame
 
     // Computes image bounds for the undistorted image (called in the
     // constructor).
-    void computeImageBounds(const cv::Mat &imLeft);
+    void computeImageBounds(const cv::Mat &imageLeft_in);
 
     // Assign keypoints to the grid for speed up feature matching (called in the
     // constructor).
@@ -442,7 +446,7 @@ class Frame
 
     bool isFrameSet;
 
-    bool imuPreintegrated;
+    bool hasImuPreintegration;
 
     /*!
      * @brief Synchronizes access to this frame's IMU preintegration state.
@@ -457,7 +461,7 @@ class Frame
     camera_models::geometriccamera::GeometricCamera *p_camera, *p_camera2;
 
     // Number of KeyPoints extracted in the left and right images
-    int Nleft = -1, Nright = -1;
+    int leftKeyPointCount = -1, rightKeyPointCount = -1;
     // Number of Non Lapping Keypoints
     int monoLeft = -1, monoRight = -1;
 
@@ -477,11 +481,11 @@ class Frame
     // Stereo fisheye
     void computeStereoFishEyeMatches();
 
-    bool isInFrustumChecks(MapPoint *pMP,
-                           float     viewingCosLimit,
-                           bool      bRight = false);
+    bool isInFrustumChecks(MapPoint *p_mapPoint_inout,
+                           float     viewingCosLimit_in,
+                           bool      isRightCamera_in = false);
 
-    Eigen::Vector3f unprojectStereoFishEye(const int &i);
+    Eigen::Vector3f unprojectStereoFishEye(const int &index_in);
 
     cv::Mat colorImg; // To get the color image for sending to the Semantic
                       // Segmentation
@@ -490,12 +494,14 @@ class Frame
     void printPointDistribution()
     {
         int left = 0, right = 0;
-        int Nlim = (Nleft != -1) ? Nleft : N;
-        for (int i = 0; i < N; i++)
+        int limCount =
+            (leftKeyPointCount != -1) ? leftKeyPointCount : keyPointCount;
+        for (int keyPointIndex = 0; keyPointIndex < keyPointCount;
+             keyPointIndex++)
         {
-            if (mapPoints[i] && !outlierFlags[i])
+            if (mapPoints[keyPointIndex] && !outlierFlags[keyPointIndex])
             {
-                if (i < Nlim)
+                if (keyPointIndex < limCount)
                     left++;
                 else
                     right++;

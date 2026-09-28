@@ -23,28 +23,29 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix4f
-    SemanticsManager::computePlaneToHorizontal(const geometric::Plane *plane)
+Eigen::Matrix4f SemanticsManager::computePlaneToHorizontal(
+    const geometric::Plane *p_plane_in)
 {
     // initialize the transformation with translation set to a zero vector
     Eigen::Isometry3d planePose;
     planePose.translation() = Eigen::Vector3d(0, 0, 0);
 
     // normalize the normal vector
-    Eigen::Vector3d normal = plane->getGlobalEquation().coeffs().head<3>();
+    Eigen::Vector3d planeNormal =
+        p_plane_in->getGlobalEquation().coeffs().head<3>();
 
     // get the rotation from the ground plane to the plane with y-facing
     // vertical downwards
     Eigen::Vector3d    verticalAxis = Eigen::Vector3d(0, -1, 0);
-    Eigen::Quaterniond q;
-    q.setFromTwoVectors(normal, verticalAxis);
-    planePose.linear() = q.toRotationMatrix();
+    Eigen::Quaterniond rotationQuaternion;
+    rotationQuaternion.setFromTwoVectors(planeNormal, verticalAxis);
+    planePose.linear() = rotationQuaternion.toRotationMatrix();
 
     // form homogenous transformation matrix
-    Eigen::Matrix4f planePoseMat = planePose.matrix().cast<float>();
-    planePoseMat(3, 3)           = 1.0;
+    Eigen::Matrix4f planePoseMatrix = planePose.matrix().cast<float>();
+    planePoseMatrix(3, 3)           = 1.0;
 
-    return planePoseMat;
+    return planePoseMatrix;
 }
 
 } // namespace core

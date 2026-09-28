@@ -36,7 +36,7 @@ namespace core
 
 bool Map::isInUse()
 {
-    return inUse;
+    return isMapInUse;
 }
 
 } // namespace core

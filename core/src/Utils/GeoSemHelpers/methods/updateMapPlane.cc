@@ -28,57 +28,59 @@ namespace core
 
 void GeoSemHelpers::updateMapPlane(
     Atlas                                          *p_atlas_in,
-    vs_graphs::core::KeyFrame                      *pKF,
-    const g2o::Plane3D                              estimatedPlane,
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr         planeCloud,
-    int                                             planeId,
-    vs_graphs::core::geometric::Plane::PlaneVariant semanticType,
-    double                                          confidence)
+    vs_graphs::core::KeyFrame                      *p_keyFrame_inout,
+    const g2o::Plane3D                              estimatedPlane_in,
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr         p_planeCloud_in,
+    int                                             planeId_in,
+    vs_graphs::core::geometric::Plane::PlaneVariant semanticType_in,
+    double                                          confidence_in)
 {
     // Find the matched plane among all planes of the map
-    vs_graphs::core::geometric::Plane *currentPlane =
-        p_atlas_in->getPlaneById(planeId);
+    vs_graphs::core::geometric::Plane *p_currentPlane =
+        p_atlas_in->getPlaneById(planeId_in);
 
     // the observation of the plane
-    vs_graphs::core::geometric::Plane::Observation obs;
+    vs_graphs::core::geometric::Plane::Observation observation;
 
     // the observation of the plane equation
-    obs.localPlane = estimatedPlane;
+    observation.localPlane = estimatedPlane_in;
 
     // the observation of the plane point cloud (measurement)
     Eigen::Matrix4d pointPlaneConstraintMatrix;
     pointPlaneConstraintMatrix.setZero();
     if (types::SystemParams::getParams()->optimization.planePoint.enabled)
     {
-        for (auto &point : planeCloud->points)
+        for (auto &point : p_planeCloud_in->points)
         {
-            Eigen::Vector4d pointVec;
-            pointVec << point.x, point.y, point.z, 1;
-            pointPlaneConstraintMatrix += pointVec * pointVec.transpose() *
+            Eigen::Vector4d pointVector;
+            pointVector << point.x, point.y, point.z, 1;
+            pointPlaneConstraintMatrix += pointVector *
+                                          pointVector.transpose() *
                                           (static_cast<int>(point.a) / 255.0);
         }
     }
-    obs.pointPlaneConstraintMatrix = pointPlaneConstraintMatrix;
+    observation.pointPlaneConstraintMatrix = pointPlaneConstraintMatrix;
 
     // the semantic class of the observation
-    obs.semanticType = semanticType;
+    observation.semanticType = semanticType_in;
 
     // the aggregated confidence of the plane
-    obs.confidence = confidence;
-    currentPlane->addObservation(pKF, obs);
+    observation.confidence = confidence_in;
+    p_currentPlane->addObservation(p_keyFrame_inout, observation);
 
     // Add the plane to the list of planes in the current KeyFrame
-    pKF->addMapPlane(currentPlane);
+    p_keyFrame_inout->addMapPlane(p_currentPlane);
 
     // transform the plane cloud to the global frame
-    pcl::transformPointCloud(*planeCloud,
-                             *planeCloud,
-                             pKF->getPoseInverse().matrix().cast<float>());
+    pcl::transformPointCloud(
+        *p_planeCloud_in,
+        *p_planeCloud_in,
+        p_keyFrame_inout->getPoseInverse().matrix().cast<float>());
 
     /* Update the point cloud of the mapped plane */
-    if (!planeCloud->empty())
+    if (!p_planeCloud_in->empty())
     {
-        currentPlane->setMapClouds(planeCloud);
+        p_currentPlane->setMapClouds(p_planeCloud_in);
 
         /*!
          * Refit the mapped global equation from the complete accumulated point
@@ -87,15 +89,15 @@ void GeoSemHelpers::updateMapPlane(
          * @note        Without refitting, the point cloud and centroid change
          *              but the original plane equation becomes stale.
          */
-        refitMappedPlaneFromCloud(currentPlane);
+        refitMappedPlaneFromCloud(p_currentPlane);
     }
 
     if (types::SystemParams::getParams()->optimization.planeMapPoint.enabled)
     {
-        for (const auto &mapPoint : pKF->getMapPoints())
-            if (currentPlane->isPointinPlaneCloud(
+        for (const auto &mapPoint : p_keyFrame_inout->getMapPoints())
+            if (p_currentPlane->isPointinPlaneCloud(
                     mapPoint->getWorldPos().cast<double>()))
-                currentPlane->setMapPoints(mapPoint);
+                p_currentPlane->setMapPoints(mapPoint);
     }
 }
 

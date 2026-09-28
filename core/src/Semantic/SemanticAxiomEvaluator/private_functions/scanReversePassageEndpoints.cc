@@ -115,9 +115,9 @@ ReversePassageEndpointScan
              * individually flagged via its own dedicated anomaly bucket
              * regardless of count. */
             std::size_t cleanMatchCountThisRoom = 0U;
-            for (const EntityRef &passageRef : room.passageRefs)
+            for (const EntityRef &passageReference : room.passageRefs)
             {
-                if (!passageRef.key.has_value())
+                if (!passageReference.key.has_value())
                 {
                     /* An unkeyed local-id-only reference can never be
                      * safely attributed to this specific passage merely
@@ -129,18 +129,18 @@ ReversePassageEndpointScan
                      * of any specific passage. */
                     continue;
                 }
-                if (passageRef.key->mapId == passage_in.key.mapId &&
-                    passageRef.key->entityId == passage_in.key.entityId &&
-                    passageRef.key->kind != EntityKind::PASSAGE)
+                if (passageReference.key->mapId == passage_in.key.mapId &&
+                    passageReference.key->entityId == passage_in.key.entityId &&
+                    passageReference.key->kind != EntityKind::PASSAGE)
                 {
                     scan.wrongKindReverseRoomKeys.push_back(room.key);
                     continue;
                 }
-                if (*passageRef.key != passage_in.key)
+                if (*passageReference.key != passage_in.key)
                 {
                     continue;
                 }
-                if (passageRef.reason != UnavailableReason::NONE)
+                if (passageReference.reason != UnavailableReason::NONE)
                 {
                     /* EntityRef documents
                      * key.has_value() <=> reason == NONE as an invariant; a
@@ -159,13 +159,14 @@ ReversePassageEndpointScan
                     scan.duplicateIdentityRoomKeys.push_back(room.key);
                     continue;
                 }
-                if (passageRef.isLive.has_value() && !(*passageRef.isLive))
+                if (passageReference.isLive.has_value() &&
+                    !(*passageReference.isLive))
                 {
                     scan.badReverseRoomKeys.push_back(room.key);
                     continue;
                 }
                 ++cleanMatchCountThisRoom;
-                if (!passageRef.isLive.has_value())
+                if (!passageReference.isLive.has_value())
                 {
                     /* "Missing liveness is unavailable, not live": never
                      * silently counted as a confirmed (or prospective)

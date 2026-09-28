@@ -27,7 +27,7 @@ namespace semantic
 
 Sophus::SE3f Marker::getGlobalPose() const
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
     return globalPose;
 }
 

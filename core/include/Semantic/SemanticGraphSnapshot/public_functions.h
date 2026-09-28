@@ -89,7 +89,7 @@ namespace semantic
  *                captured centroid is best-effort/point-in-time, not
  *                jointly atomic with the topology fields above.
  *              - Atlas::matchRoomsToContext() calls Room::setWalls() while
- *                holding only Atlas::mRoomContextMutex, a different mutex
+ *                holding only Atlas::roomContextMutex, a different mutex
  *                from the semantic-update lock. It currently has **no
  *                production caller** (verified by full-tree grep; its only
  *                caller is test_atlas_lock_order.cpp, invoked directly and
@@ -114,7 +114,7 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in);
  *  remains independently absent unless the plane is genuinely WALL-typed
  *  and mapped). Public (not private_functions.h) because SemanticsManager
  *  also needs it to convert its own manager-private Plane* evidence
- *  (openPassageEvidence_/undefendedWalls_) into pointer-free value
+ *  (openPassageEvidence/undefendedWalls) into pointer-free value
  *  records at the semantic transaction boundary. */
 RawPlaneRef rawPlaneRef(geometric::Plane *p_plane_in);
 

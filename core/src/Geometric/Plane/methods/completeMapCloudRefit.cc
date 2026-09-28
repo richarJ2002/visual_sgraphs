@@ -37,7 +37,7 @@ bool Plane::completeMapCloudRefit(const std::uint64_t sourceCloudGeneration_in,
                                   const g2o::Plane3D    &equation_World_in,
                                   const std::size_t      finitePointCount_in)
 {
-    std::scoped_lock lock(mMutexPos, mMutexType, mMutexFeatures);
+    std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
 
     if (sourceCloudGeneration_in != cloudGeneration)
     {

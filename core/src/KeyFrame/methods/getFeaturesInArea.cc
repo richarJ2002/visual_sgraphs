@@ -35,61 +35,67 @@ namespace vs_graphs
 namespace core
 {
 
-vector<size_t> KeyFrame::getFeaturesInArea(const float &x,
-                                           const float &y,
-                                           const float &r,
-                                           const bool   bRight) const
+vector<size_t> KeyFrame::getFeaturesInArea(const float &x_in,
+                                           const float &y_in,
+                                           const float &r_in,
+                                           const bool   isRightCamera_in) const
 {
-    vector<size_t> vIndices;
-    vIndices.reserve(N);
+    vector<size_t> indices;
+    indices.reserve(keyPointCount);
 
-    float factorX = r;
-    float factorY = r;
+    float factorX = r_in;
+    float factorY = r_in;
 
-    const int nMinCellX =
-        max(0, (int)floor((x - gridMinX - factorX) * gridElementWidthInverse));
-    if (nMinCellX >= gridCols)
-        return vIndices;
+    const int minimumCellXCount =
+        max(0,
+            (int)floor((x_in - gridMinX - factorX) * gridElementWidthInverse));
+    if (minimumCellXCount >= gridCols)
+        return indices;
 
-    const int nMaxCellX =
+    const int maximumCellXCount =
         min((int)gridCols - 1,
-            (int)ceil((x - gridMinX + factorX) * gridElementWidthInverse));
-    if (nMaxCellX < 0)
-        return vIndices;
+            (int)ceil((x_in - gridMinX + factorX) * gridElementWidthInverse));
+    if (maximumCellXCount < 0)
+        return indices;
 
-    const int nMinCellY =
-        max(0, (int)floor((y - gridMinY - factorY) * gridElementHeightInverse));
-    if (nMinCellY >= gridRows)
-        return vIndices;
+    const int minimumCellYCount =
+        max(0,
+            (int)floor((y_in - gridMinY - factorY) * gridElementHeightInverse));
+    if (minimumCellYCount >= gridRows)
+        return indices;
 
-    const int nMaxCellY =
+    const int maximumCellYCount =
         min((int)gridRows - 1,
-            (int)ceil((y - gridMinY + factorY) * gridElementHeightInverse));
-    if (nMaxCellY < 0)
-        return vIndices;
+            (int)ceil((y_in - gridMinY + factorY) * gridElementHeightInverse));
+    if (maximumCellYCount < 0)
+        return indices;
 
-    for (int ix = nMinCellX; ix <= nMaxCellX; ix++)
+    for (int ix = minimumCellXCount; ix <= maximumCellXCount; ix++)
     {
-        for (int iy = nMinCellY; iy <= nMaxCellY; iy++)
+        for (int iy = minimumCellYCount; iy <= maximumCellYCount; iy++)
         {
-            const vector<size_t> vCell =
-                (!bRight) ? grid[ix][iy] : gridRight[ix][iy];
-            for (size_t j = 0, jend = vCell.size(); j < jend; j++)
+            const vector<size_t> cells =
+                (!isRightCamera_in) ? grid[ix][iy] : gridRight[ix][iy];
+            for (size_t cellFeatureIndex = 0, jend = cells.size();
+                 cellFeatureIndex < jend;
+                 cellFeatureIndex++)
             {
-                const cv::KeyPoint &kpUn =
-                    (Nleft == -1) ? keyPointsUndistorted[vCell[j]]
-                    : (!bRight)   ? keyPoints[vCell[j]]
-                                  : keyPointsRight[vCell[j]];
-                const float distx = kpUn.pt.x - x;
-                const float disty = kpUn.pt.y - y;
+                const cv::KeyPoint &keyPointUn =
+                    (leftKeyPointCount == -1)
+                        ? keyPointsUndistorted[cells[cellFeatureIndex]]
+                    : (!isRightCamera_in)
+                        ? keyPoints[cells[cellFeatureIndex]]
+                        : keyPointsRight[cells[cellFeatureIndex]];
+                const float distx = keyPointUn.pt.x - x_in;
+                const float disty = keyPointUn.pt.y - y_in;
 
-                if (fabs(distx) < r && fabs(disty) < r)
-                    vIndices.push_back(vCell[j]);
+                if (fabs(distx) < r_in && fabs(disty) < r_in)
+                    indices.push_back(cells[cellFeatureIndex]);
             }
         }
     }
 
-    return vIndices;
+    return indices;
 }
 
 } // namespace core

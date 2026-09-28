@@ -28,14 +28,15 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
+void SemanticsManager::updateTraversalEvidence(
+    vs_graphs::core::Atlas *p_atlas_in)
 {
-    if (pAtlas == nullptr)
+    if (p_atlas_in == nullptr)
     {
         return;
     }
 
-    Map *p_activeMap = pAtlas->getCurrentMap();
+    Map *p_activeMap = p_atlas_in->getCurrentMap();
 
     if (p_activeMap == nullptr)
     {
@@ -62,7 +63,7 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
                   {
                       return p_first->frameId < p_second->frameId;
                   }
-                  return p_first->mnId < p_second->mnId;
+                  return p_first->id < p_second->id;
               });
 
     if (orderedKeyFrames.empty())
@@ -72,17 +73,17 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
 
     /* Prepare the ground normal: aperture height/width tests need the vertical
      * axis. Without it there is no reliable opening bounds test. */
-    vs_graphs::core::geometric::Plane *groundPlane =
-        pAtlas->getBiggestGroundPlane();
+    vs_graphs::core::geometric::Plane *p_groundPlane =
+        p_atlas_in->getBiggestGroundPlane();
 
     Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
 
     bool hasValidGroundNormal = false;
 
-    if (groundPlane != nullptr && !groundPlane->isBad())
+    if (p_groundPlane != nullptr && !p_groundPlane->isBad())
     {
         Eigen::Vector4d groundEquation =
-            groundPlane->getGlobalEquation().coeffs();
+            p_groundPlane->getGlobalEquation().coeffs();
         const double groundNormalNorm = groundEquation.head<3>().norm();
 
         if (groundEquation.allFinite() && std::isfinite(groundNormalNorm) &&
@@ -122,8 +123,8 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
     {
         return;
     }
-    hasCameraCenter_  = true;
-    pCameraCenterMap_ = p_activeMap;
+    hasCameraCenter   = true;
+    p_cameraCenterMap = p_activeMap;
 
     for (std::size_t keyFrameIndex = historyStartIndex + 1U;
          keyFrameIndex < orderedKeyFrames.size();
@@ -134,8 +135,8 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
         const Eigen::Vector3d nextCameraCenter_World_m =
             p_keyFrame->getCameraCenter().cast<double>();
 
-        lastTraversalFrameId_    = p_keyFrame->frameId;
-        lastTraversalKeyFrameId_ = p_keyFrame->mnId;
+        lastTraversalFrameId    = p_keyFrame->frameId;
+        lastTraversalKeyFrameId = p_keyFrame->id;
 
         if (!nextCameraCenter_World_m.allFinite())
         {
@@ -216,7 +217,7 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
                 else if (traversalDirection ==
                          semantic::Passage::TraversalDirection::FAR_TO_KNOWN)
                 {
-                    p_reachedRoom = knownSide.pRoom;
+                    p_reachedRoom = knownSide.p_room;
                 }
                 const std::vector<semantic::Room *> activeRooms =
                     p_activeMap->getAllRooms();
@@ -239,7 +240,7 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
                             std::to_string(p_reachedRoom->getId()));
                         p_reachedRoom->setBoundaryStatus(
                             semantic::Room::BoundaryStatus::UNOBSERVED);
-                        prospectiveRoomCycles_.erase(p_reachedRoom->getId());
+                        prospectiveRoomCycles.erase(p_reachedRoom->getId());
 
                         semantic::Floor *p_floor =
                             semantic::Floor::selectBestObservedFloor(
@@ -256,13 +257,13 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
                             << ",\"passage_id\":" << p_passage->getId()
                             << ",\"reason\":\"PASSAGE_TRAVERSAL\","
                                "\"semantic_cycle\":"
-                            << pipelineSemanticCycle_ << "}" << std::endl;
+                            << pipelineSemanticCycle << "}" << std::endl;
                     }
                     const int reachedRoomId = p_reachedRoom->getId();
                     {
                         std::lock_guard<std::mutex> currentRoomLock(
-                            mMutexCurrentRoom);
-                        currentRoomId_ = reachedRoomId;
+                            currentRoomMutex);
+                        currentRoomId = reachedRoomId;
                     }
                     p_atlas->setCurrentSemanticRoomIdentity(reachedRoomId);
                     /* Completed passage traversal into this room: entry
@@ -273,7 +274,7 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
                 const bool addedTraversal =
                     p_passage->addTraversalObservation(traversalDirection,
                                                        p_keyFrame->frameId,
-                                                       p_keyFrame->mnId);
+                                                       p_keyFrame->id);
 
                 /* Only newly accepted segment evidence is a new tracker event.
                  * The passage owns segment deduplication, so replayed history
@@ -281,14 +282,14 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
                 if (addedTraversal)
                 {
                     std::lock_guard<std::mutex> currentRoomLock(
-                        mMutexCurrentRoom);
-                    crossingEventPending_ = true;
-                    crossingBothSidesPending_ =
-                        crossingBothSidesPending_ ||
+                        currentRoomMutex);
+                    isCrossingEventPending = true;
+                    isCrossingBothSidesPending =
+                        isCrossingBothSidesPending ||
                         p_passage->hasBidirectionalTraversalEvidence();
                     /* Test seam: empty outside tests (SemanticsManager.h). */
                     std::function<void()> publishHook =
-                        std::move(roomTrackerPendingPublishHook_);
+                        std::move(roomTrackerPendingPublishHook);
                     if (publishHook)
                     {
                         publishHook();
@@ -306,10 +307,10 @@ void SemanticsManager::updateTraversalEvidence(vs_graphs::core::Atlas *pAtlas)
         }
     }
 
-    KeyFrame *p_latestKeyFrame  = orderedKeyFrames.back();
-    lastTraversalFrameId_       = p_latestKeyFrame->frameId;
-    lastTraversalKeyFrameId_    = p_latestKeyFrame->mnId;
-    hasTraversalKeyFrameCursor_ = true;
+    KeyFrame *p_latestKeyFrame = orderedKeyFrames.back();
+    lastTraversalFrameId       = p_latestKeyFrame->frameId;
+    lastTraversalKeyFrameId    = p_latestKeyFrame->id;
+    hasTraversalKeyFrameCursor = true;
 }
 
 } // namespace core

@@ -86,24 +86,26 @@ bool roomListsPassageBack(const SemanticGraphSnapshot &snapshot_in,
             return false;
         }
         std::size_t cleanMatchCount = 0U;
-        for (const EntityRef &passageRef : p_room->passageRefs)
+        for (const EntityRef &passageReference : p_room->passageRefs)
         {
-            if (!passageRef.key.has_value() || *passageRef.key != passageKey_in)
+            if (!passageReference.key.has_value() ||
+                *passageReference.key != passageKey_in)
             {
                 continue;
             }
-            if (passageRef.reason != UnavailableReason::NONE)
+            if (passageReference.reason != UnavailableReason::NONE)
             {
                 /* A keyed match whose own reason is not NONE is an
                  * invariant violation: a known contradiction, dominating
                  * even an otherwise-clean match elsewhere in this room. */
                 return false;
             }
-            if (passageRef.isLive.has_value() && !(*passageRef.isLive))
+            if (passageReference.isLive.has_value() &&
+                !(*passageReference.isLive))
             {
                 return false;
             }
-            if (!passageRef.isLive.has_value())
+            if (!passageReference.isLive.has_value())
             {
                 /* Missing liveness is unavailable, not live: excluded from
                  * positive proof without being a hard contradiction. */

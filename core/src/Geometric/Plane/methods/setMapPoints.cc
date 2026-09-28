@@ -32,10 +32,10 @@ namespace core
 namespace geometric
 {
 
-void Plane::setMapPoints(core::MapPoint *value)
+void Plane::setMapPoints(core::MapPoint *p_mapPoint_in)
 {
-    unique_lock<mutex> lock(mMutexFeatures);
-    mapPoints.insert(value);
+    unique_lock<mutex> lock(featuresMutex);
+    mapPoints.insert(p_mapPoint_in);
 }
 
 } // namespace geometric

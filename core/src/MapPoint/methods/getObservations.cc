@@ -36,7 +36,7 @@ namespace core
 
 std::map<KeyFrame *, std::tuple<int, int>> MapPoint::getObservations()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return observations;
 }
 

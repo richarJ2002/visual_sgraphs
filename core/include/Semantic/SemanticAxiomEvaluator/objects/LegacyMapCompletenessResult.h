@@ -87,10 +87,10 @@ struct LegacyMapCompletenessResult
      *  passage not counted in fullyLinkedPassageCount. */
     std::vector<int> danglingPassageIds;
 
-    /*! @brief Legacy mapFullyModeled: confirmedRoomCount > 0 &&
+    /*! @brief Legacy isMapFullyModeled: confirmedRoomCount > 0 &&
      *  completeRoomCount == confirmedRoomCount &&
      *  fullyLinkedPassageCount == passageCount. */
-    bool mapFullyModeled{false};
+    bool isMapFullyModeled{false};
 };
 
 } // namespace semantic

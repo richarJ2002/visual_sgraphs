@@ -32,7 +32,7 @@ namespace core
 
 void Atlas::clearMap()
 {
-    unique_lock<mutex> lock(mMutexAtlas);
+    unique_lock<mutex> atlasLock(atlasMutex);
     /* Same-map reset (Tracking::ResetActiveMap) wipes rooms/floors/passages
      * from the live Map object without creating a new Map. Snapshot first so
      * the bootstrap recovery path can recreate the same stable identities

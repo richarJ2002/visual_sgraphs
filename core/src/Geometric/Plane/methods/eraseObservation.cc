@@ -42,18 +42,18 @@ void Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
 
     {
         /* Lock observations and semantics for one consistent vote rebuild. */
-        std::scoped_lock lock(mMutexFeatures, mMutexType);
+        std::scoped_lock lock(featuresMutex, typeMutex);
 
-        const auto observationIterator = observations.find(p_keyFrame_in);
+        const auto observationIt = observations.find(p_keyFrame_in);
 
         /* Return when the keyframe has no observation */
-        if (observationIterator == observations.end())
+        if (observationIt == observations.end())
         {
             return;
         }
 
         /* Remove the observation */
-        observations.erase(observationIterator);
+        observations.erase(observationIt);
 
         /* Decrement the observation count safely */
         if (observationCount > 0)
@@ -76,7 +76,7 @@ void Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
                 }
 
                 if (p_refKeyFrame == nullptr ||
-                    p_candidateKeyFrame->mnId < p_refKeyFrame->mnId)
+                    p_candidateKeyFrame->id < p_refKeyFrame->id)
                 {
                     p_refKeyFrame = p_candidateKeyFrame;
                 }

@@ -30,9 +30,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::informOnlyTracking(const bool &flag)
+void Tracking::informOnlyTracking(const bool &flag_in)
 {
-    onlyTracking = flag;
+    isTrackingOnlyMode = flag_in;
 }
 
 } // namespace core

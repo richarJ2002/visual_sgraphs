@@ -30,8 +30,8 @@ namespace semantic
 
 void Passage::setProspectiveRoom(vs_graphs::core::semantic::Room *p_room_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
-    prospectiveRoom = p_room_in;
+    std::lock_guard<std::mutex> lock(geometryMutex);
+    p_prospectiveRoom = p_room_in;
 }
 
 } // namespace semantic

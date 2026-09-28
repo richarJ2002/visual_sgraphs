@@ -36,7 +36,7 @@ namespace core
 
 void Map::setStoredMap()
 {
-    inUse = false;
+    isMapInUse = false;
 }
 
 } // namespace core

@@ -1302,7 +1302,7 @@ TEST(
 /* "ordering of maps and every record/relationship collection":
  * extends coverage beyond rooms (above) to walls, passages, floors, and the
  * top-level maps vector, each for permuted insertion order. A genuine map-
- * id collision is not exercised: Atlas::Map::nNextId is a monotonically
+ * id collision is not exercised: Atlas::Map::nextId is a monotonically
  * increasing static counter (confirmed by direct source read of Map.h), so
  * two distinct Map objects sharing one Atlas can never collide -- there is
  * no reachable state to construct here, unlike the room/wall/passage/floor
@@ -1562,7 +1562,7 @@ TEST(
 }
 
 /* Minimum-proof item 9: capture requires the caller-held semantic lock and
- * does not try to reacquire it. Atlas::mMutexSemanticUpdate is a plain,
+ * does not try to reacquire it. Atlas::semanticUpdateMutex is a plain,
  * non-recursive std::mutex, so if captureSemanticGraphSnapshot() ever tried
  * to acquire it again on this thread, this test would deadlock rather than
  * fail cleanly -- reaching the final assertion is itself the proof. */

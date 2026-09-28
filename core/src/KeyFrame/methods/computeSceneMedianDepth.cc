@@ -35,40 +35,40 @@ namespace vs_graphs
 namespace core
 {
 
-float KeyFrame::computeSceneMedianDepth(const int q)
+float KeyFrame::computeSceneMedianDepth(const int q_in)
 {
-    if (N == 0)
+    if (keyPointCount == 0)
         return -1.0;
 
-    vector<MapPoint *> vpMapPoints;
+    vector<MapPoint *> keyFrameMapPoints;
     Eigen::Matrix3f    Rcw;
     Eigen::Vector3f    tcw;
     {
-        unique_lock<mutex> lock(mMutexFeatures);
-        unique_lock<mutex> lock2(mMutexPose);
-        vpMapPoints = mapPoints;
-        tcw         = poseTcw.translation();
-        Rcw         = rotationRcw;
+        unique_lock<mutex> lock(featuresMutex);
+        unique_lock<mutex> lock2(poseMutex);
+        keyFrameMapPoints = mapPoints;
+        tcw               = poseTcw.translation();
+        Rcw               = rotationRcw;
     }
 
-    vector<float> vDepths;
-    vDepths.reserve(N);
+    vector<float> mapPointDepths;
+    mapPointDepths.reserve(keyPointCount);
     Eigen::Matrix<float, 1, 3> Rcw2 = Rcw.row(2);
     float                      zcw  = tcw(2);
-    for (int i = 0; i < N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < keyPointCount; keyPointIndex++)
     {
-        if (mapPoints[i])
+        if (mapPoints[keyPointIndex])
         {
-            MapPoint       *pMP  = mapPoints[i];
-            Eigen::Vector3f x3Dw = pMP->getWorldPos();
-            float           z    = Rcw2.dot(x3Dw) + zcw;
-            vDepths.push_back(z);
+            MapPoint       *p_mapPoint = mapPoints[keyPointIndex];
+            Eigen::Vector3f x3Dw       = p_mapPoint->getWorldPos();
+            float           z          = Rcw2.dot(x3Dw) + zcw;
+            mapPointDepths.push_back(z);
         }
     }
 
-    sort(vDepths.begin(), vDepths.end());
+    sort(mapPointDepths.begin(), mapPointDepths.end());
 
-    return vDepths[(vDepths.size() - 1) / q];
+    return mapPointDepths[(mapPointDepths.size() - 1) / q_in];
 }
 
 } // namespace core

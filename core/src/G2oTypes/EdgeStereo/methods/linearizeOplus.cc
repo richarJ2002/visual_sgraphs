@@ -34,36 +34,39 @@ namespace core
 
 void EdgeStereo::linearizeOplus()
 {
-    const VertexPose *VPose = static_cast<const VertexPose *>(_vertices[1]);
-    const g2o::VertexSBAPointXYZ *VPoint =
+    const VertexPose *p_poseVertex =
+        static_cast<const VertexPose *>(_vertices[1]);
+    const g2o::VertexSBAPointXYZ *p_mapPointVertex =
         static_cast<const g2o::VertexSBAPointXYZ *>(_vertices[0]);
 
-    const Eigen::Matrix3d &Rcw = VPose->estimate().Rcw[cam_idx];
-    const Eigen::Vector3d &tcw = VPose->estimate().tcw[cam_idx];
-    const Eigen::Vector3d  Xc  = Rcw * VPoint->estimate() + tcw;
-    const Eigen::Vector3d  Xb =
-        VPose->estimate().Rbc[cam_idx] * Xc + VPose->estimate().tbc[cam_idx];
-    const Eigen::Matrix3d &Rcb    = VPose->estimate().Rcb[cam_idx];
-    const double           bf     = VPose->estimate().bf;
-    const double           inv_z2 = 1.0 / (Xc(2) * Xc(2));
+    const Eigen::Matrix3d &Rcw = p_poseVertex->estimate().Rcw[cam_idx];
+    const Eigen::Vector3d &tcw = p_poseVertex->estimate().tcw[cam_idx];
+    const Eigen::Vector3d  Xc  = Rcw * p_mapPointVertex->estimate() + tcw;
+    const Eigen::Vector3d  Xb  = p_poseVertex->estimate().Rbc[cam_idx] * Xc +
+                               p_poseVertex->estimate().tbc[cam_idx];
+    const Eigen::Matrix3d &Rcb = p_poseVertex->estimate().Rcb[cam_idx];
+    const double           baselineFocalProduct = p_poseVertex->estimate().bf;
+    const double           inverseDepthSquared  = 1.0 / (Xc(2) * Xc(2));
 
-    Eigen::Matrix<double, 3, 3> proj_jac;
-    proj_jac.block<2, 3>(0, 0) =
-        VPose->estimate().pCamera[cam_idx]->computeProjectionJacobian(Xc);
-    proj_jac.block<1, 3>(2, 0) = proj_jac.block<1, 3>(0, 0);
-    proj_jac(2, 2) += bf * inv_z2;
+    Eigen::Matrix<double, 3, 3> projectionJacobian;
+    projectionJacobian.block<2, 3>(0, 0) =
+        p_poseVertex->estimate().pCamera[cam_idx]->computeProjectionJacobian(
+            Xc);
+    projectionJacobian.block<1, 3>(2, 0) = projectionJacobian.block<1, 3>(0, 0);
+    projectionJacobian(2, 2) += baselineFocalProduct * inverseDepthSquared;
 
-    _jacobianOplusXi = -proj_jac * Rcw;
+    _jacobianOplusXi = -projectionJacobian * Rcw;
 
-    Eigen::Matrix<double, 3, 6> SE3deriv;
-    double                      x = Xb(0);
-    double                      y = Xb(1);
-    double                      z = Xb(2);
+    Eigen::Matrix<double, 3, 6> se3Derivative;
+    double                      bodyPointX = Xb(0);
+    double                      bodyPointY = Xb(1);
+    double                      bodyPointZ = Xb(2);
 
-    SE3deriv << 0.0, z, -y, 1.0, 0.0, 0.0, -z, 0.0, x, 0.0, 1.0, 0.0, y, -x,
-        0.0, 0.0, 0.0, 1.0;
+    se3Derivative << 0.0, bodyPointZ, -bodyPointY, 1.0, 0.0, 0.0, -bodyPointZ,
+        0.0, bodyPointX, 0.0, 1.0, 0.0, bodyPointY, -bodyPointX, 0.0, 0.0, 0.0,
+        1.0;
 
-    _jacobianOplusXj = proj_jac * Rcb * SE3deriv;
+    _jacobianOplusXj = projectionJacobian * Rcb * se3Derivative;
 }
 
 } // namespace core

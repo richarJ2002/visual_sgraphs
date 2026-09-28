@@ -47,22 +47,24 @@ std::vector<std::pair<vs_graphs::core::geometric::Plane *,
     std::vector<std::pair<vs_graphs::core::geometric::Plane *,
                           vs_graphs::core::geometric::Plane *>>
            facingPlanes;
-    double minValidSpace = p_sysParams->roomSeg.minWallDistanceThresh;
+    double minimumValidSpace = p_sysParams->roomSeg.minWallDistanceThresh;
 
     // Loop through all the planes_in
-    for (size_t idx1 = 0; idx1 < planes_in.size(); ++idx1)
+    for (size_t index1 = 0; index1 < planes_in.size(); ++index1)
     {
-        vs_graphs::core::geometric::Plane *plane1 = planes_in[idx1];
-        for (size_t idx2 = idx1 + 1; idx2 < planes_in.size(); ++idx2)
+        vs_graphs::core::geometric::Plane *p_plane1 = planes_in[index1];
+        for (size_t index2 = index1 + 1; index2 < planes_in.size(); ++index2)
         {
             // Variables
-            vs_graphs::core::geometric::Plane *plane2 = planes_in[idx2];
+            vs_graphs::core::geometric::Plane *p_plane2 = planes_in[index2];
             // Check if the planes_in are facing each other
-            bool isFacing = Utils::arePlanesFacingEachOther(plane1, plane2);
+            bool isFacing = Utils::arePlanesFacingEachOther(p_plane1, p_plane2);
             if (isFacing)
             {
-                if (Utils::arePlanesApartEnough(plane1, plane2, minValidSpace))
-                    facingPlanes.push_back(std::make_pair(plane1, plane2));
+                if (Utils::arePlanesApartEnough(p_plane1,
+                                                p_plane2,
+                                                minimumValidSpace))
+                    facingPlanes.push_back(std::make_pair(p_plane1, p_plane2));
             }
         }
     }

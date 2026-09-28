@@ -28,7 +28,7 @@ namespace semantic
 
 RoomTrackingState RoomTracker::getState() const
 {
-    return state_;
+    return trackingState;
 }
 
 } // namespace semantic

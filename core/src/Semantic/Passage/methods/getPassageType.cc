@@ -30,7 +30,7 @@ namespace semantic
 
 Passage::PassageVariant Passage::getPassageType()
 {
-    unique_lock<mutex> lock(mMutexType);
+    unique_lock<mutex> lock(typeMutex);
     return passageType;
 }
 

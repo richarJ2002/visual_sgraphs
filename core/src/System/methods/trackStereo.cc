@@ -32,12 +32,13 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f System::trackStereo(const cv::Mat            &imLeft,
-                                 const cv::Mat            &imRight,
-                                 const double             &timestamp,
-                                 const vector<IMU::Point> &vImuMeas,
-                                 string                    filename,
-                                 const std::vector<semantic::Marker *> markers)
+Sophus::SE3f
+    System::trackStereo(const cv::Mat                        &imageLeft_in,
+                        const cv::Mat                        &imageRight_in,
+                        const double                         &timestamp_in,
+                        const vector<IMU::Point>             &imuMeas_in,
+                        string                                filename_in,
+                        const std::vector<semantic::Marker *> markers_in)
 {
     if (sensor != STEREO && sensor != IMU_STEREO)
     {
@@ -48,31 +49,31 @@ Sophus::SE3f System::trackStereo(const cv::Mat            &imLeft,
     }
 
     cv::Mat imLeftToFeed, imRightToFeed;
-    if (settings_ && settings_->needToRectify())
+    if (p_settings && p_settings->needToRectify())
     {
-        cv::Mat M1l = settings_->M1l();
-        cv::Mat M2l = settings_->M2l();
-        cv::Mat M1r = settings_->M1r();
-        cv::Mat M2r = settings_->M2r();
+        cv::Mat M1l = p_settings->M1l();
+        cv::Mat M2l = p_settings->M2l();
+        cv::Mat M1r = p_settings->M1r();
+        cv::Mat M2r = p_settings->M2r();
 
-        cv::remap(imLeft, imLeftToFeed, M1l, M2l, cv::INTER_LINEAR);
-        cv::remap(imRight, imRightToFeed, M1r, M2r, cv::INTER_LINEAR);
+        cv::remap(imageLeft_in, imLeftToFeed, M1l, M2l, cv::INTER_LINEAR);
+        cv::remap(imageRight_in, imRightToFeed, M1r, M2r, cv::INTER_LINEAR);
     }
-    else if (settings_ && settings_->needToResize())
+    else if (p_settings && p_settings->needToResize())
     {
-        cv::resize(imLeft, imLeftToFeed, settings_->newImSize());
-        cv::resize(imRight, imRightToFeed, settings_->newImSize());
+        cv::resize(imageLeft_in, imLeftToFeed, p_settings->newImSize());
+        cv::resize(imageRight_in, imRightToFeed, p_settings->newImSize());
     }
     else
     {
-        imLeftToFeed  = imLeft.clone();
-        imRightToFeed = imRight.clone();
+        imLeftToFeed  = imageLeft_in.clone();
+        imRightToFeed = imageRight_in.clone();
     }
 
     // Check mode change
     {
-        unique_lock<mutex> lock(mMutexMode);
-        if (activateLocalizationModeRequested)
+        unique_lock<mutex> lock(modeMutex);
+        if (isLocalizationModeActivationRequested)
         {
             p_localMapper->requestStop();
 
@@ -83,55 +84,57 @@ Sophus::SE3f System::trackStereo(const cv::Mat            &imLeft,
             }
 
             p_tracker->informOnlyTracking(true);
-            activateLocalizationModeRequested = false;
+            isLocalizationModeActivationRequested = false;
         }
-        if (deactivateLocalizationModeRequested)
+        if (isLocalizationModeDeactivationRequested)
         {
             p_tracker->informOnlyTracking(false);
             p_localMapper->release();
-            deactivateLocalizationModeRequested = false;
+            isLocalizationModeDeactivationRequested = false;
         }
     }
 
     {
-        unique_lock<mutex> lock(mMutexReset);
-        if (resetRequested)
+        unique_lock<mutex> lock(resetMutex);
+        if (isResetRequested)
         {
             (void)consumeResetCause(this);
             p_tracker->reset();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
-            resetRequested          = false;
-            resetActiveMapRequested = false;
+            isResetRequested          = false;
+            isResetActiveMapRequested = false;
         }
-        else if (resetActiveMapRequested)
+        else if (isResetActiveMapRequested)
         {
             reportResetAttribution(consumeResetCause(this),
                                    ResetAction::RESET_ACTIVE_MAP_EXECUTION);
             p_tracker->resetActiveMap();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
-            resetActiveMapRequested = false;
+            isResetActiveMapRequested = false;
         }
     }
 
     if (sensor == System::IMU_STEREO)
-        for (size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
-            p_tracker->grabImuData(vImuMeas[i_imu]);
+        for (size_t imuMeasurementIndex = 0;
+             imuMeasurementIndex < imuMeas_in.size();
+             imuMeasurementIndex++)
+            p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]);
 
     Sophus::SE3f Tcw = p_tracker->grabImageStereo(imLeftToFeed,
                                                   imRightToFeed,
-                                                  timestamp,
-                                                  filename,
-                                                  markers,
+                                                  timestamp_in,
+                                                  filename_in,
+                                                  markers_in,
                                                   envRooms);
 
-    unique_lock<mutex> lock2(mMutexState);
+    unique_lock<mutex> lock2(stateMutex);
     trackingState           = p_tracker->state;
     trackingInliers         = p_tracker->getMatchesInliers();
-    lastFrameTimestamp      = timestamp;
+    lastFrameTimestamp      = timestamp_in;
     trackedMapPoints        = p_tracker->currentFrame.mapPoints;
     trackedKeyPointsUn      = p_tracker->currentFrame.keyPointsUndistorted;
     currentCameraPose_World = Tcw.inverse();
-    currentCameraPoseValid =
+    isCurrentCameraPoseValid =
         trackingState == Tracking::OK &&
         currentCameraPose_World.translation().allFinite() &&
         currentCameraPose_World.rotationMatrix().allFinite();

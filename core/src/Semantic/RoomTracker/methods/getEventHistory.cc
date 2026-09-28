@@ -28,7 +28,7 @@ namespace semantic
 
 const std::vector<TransitionEvent> &RoomTracker::getEventHistory() const
 {
-    return eventHistory_;
+    return eventHistory;
 }
 
 } // namespace semantic

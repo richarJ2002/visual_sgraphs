@@ -32,8 +32,8 @@ namespace core
 
 cv::BFMatcher Frame::bfMatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
-long unsigned int Frame::nNextId                 = 0;
-bool              Frame::initialComputationsDone = true;
+long unsigned int Frame::nextId                     = 0;
+bool              Frame::areInitialComputationsDone = true;
 float Frame::cx, Frame::cy, Frame::fx, Frame::fy, Frame::invfx, Frame::invfy;
 float Frame::gridMinX, Frame::gridMinY, Frame::gridMaxX, Frame::gridMaxY;
 float Frame::gridElementWidthInverse, Frame::gridElementHeightInverse;

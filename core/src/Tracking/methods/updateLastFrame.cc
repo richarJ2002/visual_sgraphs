@@ -33,77 +33,83 @@ namespace core
 void Tracking::updateLastFrame()
 {
     // Update pose according to reference keyframe
-    KeyFrame    *pRef = lastFrame.p_referenceKeyFrame;
+    KeyFrame    *p_reference = lastFrame.p_referenceKeyFrame;
     Sophus::SE3f Tlr =
         relativeFramePoses.empty() ? Sophus::SE3f() : relativeFramePoses.back();
-    lastFrame.setPose(Tlr * pRef->getPose());
+    lastFrame.setPose(Tlr * p_reference->getPose());
 
-    if (lastKeyFrameId == lastFrame.mnId || sensor == System::MONOCULAR ||
-        sensor == System::IMU_MONOCULAR || !onlyTracking)
+    if (lastKeyFrameId == lastFrame.id || sensor == System::MONOCULAR ||
+        sensor == System::IMU_MONOCULAR || !isTrackingOnlyMode)
         return;
 
     // Create "visual odometry" MapPoints
     // We sort points according to their measured depth by the stereo/RGB-D
     // sensor
-    vector<pair<float, int>> vDepthIdx;
-    const int Nfeat = lastFrame.Nleft == -1 ? lastFrame.N : lastFrame.Nleft;
-    vDepthIdx.reserve(Nfeat);
-    for (int i = 0; i < Nfeat; i++)
+    vector<pair<float, int>> depthIndices;
+    const int                featureCount = lastFrame.leftKeyPointCount == -1
+                                                ? lastFrame.keyPointCount
+                                                : lastFrame.leftKeyPointCount;
+    depthIndices.reserve(featureCount);
+    for (int featureIndex = 0; featureIndex < featureCount; featureIndex++)
     {
-        float z = lastFrame.depths[i];
+        float z = lastFrame.depths[featureIndex];
         if (z > 0)
         {
-            vDepthIdx.push_back(make_pair(z, i));
+            depthIndices.push_back(make_pair(z, featureIndex));
         }
     }
 
-    if (vDepthIdx.empty())
+    if (depthIndices.empty())
         return;
 
-    sort(vDepthIdx.begin(), vDepthIdx.end());
+    sort(depthIndices.begin(), depthIndices.end());
 
     // We insert all close points (depth<mThDepth)
     // If less than 100 close points, we insert the 100 closest ones.
-    int nPoints = 0;
-    for (size_t j = 0; j < vDepthIdx.size(); j++)
+    int pointCount = 0;
+    for (size_t depthIndexIndex = 0; depthIndexIndex < depthIndices.size();
+         depthIndexIndex++)
     {
-        int i = vDepthIdx[j].second;
+        int featureIndex = depthIndices[depthIndexIndex].second;
 
-        bool bCreateNew = false;
+        bool shouldCreateNewPoint = false;
 
-        MapPoint *pMP = lastFrame.mapPoints[i];
+        MapPoint *p_mapPoint = lastFrame.mapPoints[featureIndex];
 
-        if (!pMP)
-            bCreateNew = true;
-        else if (pMP->getObservationCount() < 1)
-            bCreateNew = true;
+        if (!p_mapPoint)
+            shouldCreateNewPoint = true;
+        else if (p_mapPoint->getObservationCount() < 1)
+            shouldCreateNewPoint = true;
 
-        if (bCreateNew)
+        if (shouldCreateNewPoint)
         {
             Eigen::Vector3f x3D;
 
-            if (lastFrame.Nleft == -1)
+            if (lastFrame.leftKeyPointCount == -1)
             {
-                lastFrame.unprojectStereo(i, x3D);
+                lastFrame.unprojectStereo(featureIndex, x3D);
             }
             else
             {
-                x3D = lastFrame.unprojectStereoFishEye(i);
+                x3D = lastFrame.unprojectStereoFishEye(featureIndex);
             }
 
-            MapPoint *pNewMP =
-                new MapPoint(x3D, p_atlas->getCurrentMap(), &lastFrame, i);
-            lastFrame.mapPoints[i] = pNewMP;
+            MapPoint *p_newMapPoint           = new MapPoint(x3D,
+                                                   p_atlas->getCurrentMap(),
+                                                   &lastFrame,
+                                                   featureIndex);
+            lastFrame.mapPoints[featureIndex] = p_newMapPoint;
 
-            mlpTemporalPoints.push_back(pNewMP);
-            nPoints++;
+            temporalMapPoints.push_back(p_newMapPoint);
+            pointCount++;
         }
         else
         {
-            nPoints++;
+            pointCount++;
         }
 
-        if (vDepthIdx[j].first > depthThreshold && nPoints > 100)
+        if (depthIndices[depthIndexIndex].first > depthThreshold &&
+            pointCount > 100)
             break;
     }
 }

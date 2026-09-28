@@ -50,101 +50,103 @@ namespace settings
 
 using namespace std;
 
-void Settings::readCamera2(cv::FileStorage &storage_in)
+void Settings::readCamera2(cv::FileStorage &storage_inout)
 {
     bool          found;
-    vector<float> vCalibration;
+    vector<float> calibrations;
     if (cameraModel == CameraType::PINHOLE)
     {
-        rectifyNeeded = true;
+        isRectificationNeeded = true;
 
         // Read intrinsic parameters
-        float fx = readParameter<float>(storage_in, "Camera2.fx", found);
-        float fy = readParameter<float>(storage_in, "Camera2.fy", found);
-        float cx = readParameter<float>(storage_in, "Camera2.cx", found);
-        float cy = readParameter<float>(storage_in, "Camera2.cy", found);
+        float fx = readParameter<float>(storage_inout, "Camera2.fx", found);
+        float fy = readParameter<float>(storage_inout, "Camera2.fy", found);
+        float cx = readParameter<float>(storage_inout, "Camera2.cx", found);
+        float cy = readParameter<float>(storage_inout, "Camera2.cy", found);
 
-        vCalibration = {fx, fy, cx, cy};
+        calibrations = {fx, fy, cx, cy};
 
-        calibration2 = new camera_models::pinhole::Pinhole(vCalibration);
-        originalCalibration2 =
-            new camera_models::pinhole::Pinhole(vCalibration);
+        p_calibration2 = new camera_models::pinhole::Pinhole(calibrations);
+        p_originalCalibration2 =
+            new camera_models::pinhole::Pinhole(calibrations);
 
         // Check if it is a distorted Pinhole
-        readParameter<float>(storage_in, "Camera2.k1", found, false);
+        readParameter<float>(storage_inout, "Camera2.k1", found, false);
         if (found)
         {
-            readParameter<float>(storage_in, "Camera2.k3", found, false);
+            readParameter<float>(storage_inout, "Camera2.k3", found, false);
             if (found)
             {
                 pinholeDistortion2.resize(5);
                 pinholeDistortion2[4] =
-                    readParameter<float>(storage_in, "Camera2.k3", found);
+                    readParameter<float>(storage_inout, "Camera2.k3", found);
             }
             else
             {
                 pinholeDistortion2.resize(4);
             }
             pinholeDistortion2[0] =
-                readParameter<float>(storage_in, "Camera2.k1", found);
+                readParameter<float>(storage_inout, "Camera2.k1", found);
             pinholeDistortion2[1] =
-                readParameter<float>(storage_in, "Camera2.k2", found);
+                readParameter<float>(storage_inout, "Camera2.k2", found);
             pinholeDistortion2[2] =
-                readParameter<float>(storage_in, "Camera2.p1", found);
+                readParameter<float>(storage_inout, "Camera2.p1", found);
             pinholeDistortion2[3] =
-                readParameter<float>(storage_in, "Camera2.p2", found);
+                readParameter<float>(storage_inout, "Camera2.p2", found);
         }
     }
     else if (cameraModel == CameraType::KANNALA_BRANDT)
     {
         // Read intrinsic parameters
-        float fx = readParameter<float>(storage_in, "Camera2.fx", found);
-        float fy = readParameter<float>(storage_in, "Camera2.fy", found);
-        float cx = readParameter<float>(storage_in, "Camera2.cx", found);
-        float cy = readParameter<float>(storage_in, "Camera2.cy", found);
+        float fx = readParameter<float>(storage_inout, "Camera2.fx", found);
+        float fy = readParameter<float>(storage_inout, "Camera2.fy", found);
+        float cx = readParameter<float>(storage_inout, "Camera2.cx", found);
+        float cy = readParameter<float>(storage_inout, "Camera2.cy", found);
 
-        float k0 = readParameter<float>(storage_in, "Camera2.k1", found);
-        float k1 = readParameter<float>(storage_in, "Camera2.k2", found);
-        float k2 = readParameter<float>(storage_in, "Camera2.k3", found);
-        float k3 = readParameter<float>(storage_in, "Camera2.k4", found);
+        float k0 = readParameter<float>(storage_inout, "Camera2.k1", found);
+        float k1 = readParameter<float>(storage_inout, "Camera2.k2", found);
+        float k2 = readParameter<float>(storage_inout, "Camera2.k3", found);
+        float k3 = readParameter<float>(storage_inout, "Camera2.k4", found);
 
-        vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
+        calibrations = {fx, fy, cx, cy, k0, k1, k2, k3};
 
-        calibration2 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(vCalibration);
-        originalCalibration2 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(vCalibration);
+        p_calibration2 =
+            new camera_models::kannalabrandt8::KannalaBrandt8(calibrations);
+        p_originalCalibration2 =
+            new camera_models::kannalabrandt8::KannalaBrandt8(calibrations);
 
-        int colBegin =
-            readParameter<int>(storage_in, "Camera2.overlappingBegin", found);
+        int colBegin = readParameter<int>(storage_inout,
+                                          "Camera2.overlappingBegin",
+                                          found);
         int colEnd =
-            readParameter<int>(storage_in, "Camera2.overlappingEnd", found);
-        vector<int> vOverlapping = {colBegin, colEnd};
+            readParameter<int>(storage_inout, "Camera2.overlappingEnd", found);
+        vector<int> overlappings = {colBegin, colEnd};
 
         static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
-            calibration2)
-            ->lappingArea = vOverlapping;
+            p_calibration2)
+            ->lappingArea = overlappings;
     }
 
     // Load stereo extrinsic calibration
     if (cameraModel == CameraType::RECTIFIED)
     {
-        stereoBaseline = readParameter<float>(storage_in, "Stereo.b", found);
-        baselineFocal  = stereoBaseline * calibration1->getParameter(0);
+        stereoBaseline = readParameter<float>(storage_inout, "Stereo.b", found);
+        baselineFocal  = stereoBaseline * p_calibration1->getParameter(0);
     }
     else
     {
         cv::Mat cvTlr =
-            readParameter<cv::Mat>(storage_in, "Stereo.T_c1_c2", found);
+            readParameter<cv::Mat>(storage_inout, "Stereo.T_c1_c2", found);
         stereoTransform = converter::Converter::toSophus(cvTlr);
 
         // TODO: also search for Trl and invert if necessary
 
         stereoBaseline = stereoTransform.translation().norm();
-        baselineFocal  = stereoBaseline * calibration1->getParameter(0);
+        baselineFocal  = stereoBaseline * p_calibration1->getParameter(0);
     }
 
-    depthThreshold = readParameter<float>(storage_in, "Stereo.ThDepth", found);
+    depthThreshold =
+        readParameter<float>(storage_inout, "Stereo.ThDepth", found);
 }
 
 } // namespace settings

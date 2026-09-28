@@ -28,11 +28,15 @@ namespace IMU
 
 void Preintegrated::reintegrate()
 {
-    std::unique_lock<std::mutex>  lock(mMutex);
-    const std::vector<Integrable> aux = mvMeasurements;
+    std::unique_lock<std::mutex>  lock(preintegrationMutex);
+    const std::vector<Integrable> storedMeasurements = measurements;
     initialize(bu);
-    for (size_t i = 0; i < aux.size(); i++)
-        integrateNewMeasurement(aux[i].a, aux[i].w, aux[i].t);
+    for (size_t measurementIndex = 0;
+         measurementIndex < storedMeasurements.size();
+         measurementIndex++)
+        integrateNewMeasurement(storedMeasurements[measurementIndex].a,
+                                storedMeasurements[measurementIndex].w,
+                                storedMeasurements[measurementIndex].t);
 }
 
 } // namespace IMU

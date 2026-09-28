@@ -40,13 +40,13 @@ namespace core
 {
 namespace types
 {
-void SystemParams::setParams(const std::string &configFilePath_in)
+void SystemParams::setParams(const std::string &configurationFilePath_in)
 {
     VSLAM_LOG_INFO("[SysParams] Loading system parameters from %s",
-                   configFilePath_in.c_str());
+                   configurationFilePath_in.c_str());
     try
     {
-        config = YAML::LoadFile(configFilePath_in);
+        config = YAML::LoadFile(configurationFilePath_in);
         VSLAM_LOG_INFO("[SysParams] System parameters loaded!");
     }
     catch (YAML::BadFile &e)
@@ -126,7 +126,7 @@ void SystemParams::setParams(const std::string &configFilePath_in)
             config["seg"]["ransac"]["max_iterations"].as<unsigned int>();
 
         // Optimization Parameters
-        optimization.marginalizePlanes =
+        optimization.shouldMarginalizePlanes =
             config["optimization"]["marginalize_planes"].as<bool>();
         optimization.planeKf.enabled =
             config["optimization"]["plane_kf"]["enabled"].as<bool>();
@@ -378,7 +378,7 @@ void SystemParams::setParams(const std::string &configFilePath_in)
         roomSeg.passagePartition.minimumSideDistance_m =
             config["room_seg"]["passage_partition"]["minimum_side_distance"]
                 .as<float>();
-        roomSeg.passagePartition.detachWallsBeyondPassages =
+        roomSeg.passagePartition.shouldDetachWallsBeyondPassages =
             config["room_seg"]["passage_partition"]
                   ["detach_walls_beyond_passages"]
                       .as<bool>();

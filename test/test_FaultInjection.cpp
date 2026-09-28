@@ -49,7 +49,7 @@ TEST(FaultInjection, InjectedFailureTakesStatusPath)
 
 TEST(FaultInjection, DisabledPathSucceeds)
 {
-    ::vs_graphs::testing::ClearFaults();
+    ::vs_graphs::testing::clearFaults();
     EXPECT_EQ(DoFallibleWork(), ProbeStatus::PROBE_STATUS_SUCCESS);
     EXPECT_TRUE(DoBoolWork());
 }

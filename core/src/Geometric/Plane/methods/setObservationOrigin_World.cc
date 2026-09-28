@@ -32,10 +32,10 @@ namespace core
 namespace geometric
 {
 
-void Plane::setObservationOrigin_World(const Eigen::Vector3d &value)
+void Plane::setObservationOrigin_World(const Eigen::Vector3d &origin_World_m_in)
 {
-    unique_lock<mutex> lock(mMutexPos);
-    observationOrigin_World_m = value;
+    unique_lock<mutex> lock(positionMutex);
+    observationOrigin_World_m = origin_World_m_in;
 }
 
 } // namespace geometric

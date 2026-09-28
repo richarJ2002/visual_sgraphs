@@ -46,7 +46,7 @@ namespace core
 void Frame::setIntegrated()
 {
     unique_lock<std::mutex> lock(*p_imuMutex);
-    imuPreintegrated = true;
+    hasImuPreintegration = true;
 }
 
 } // namespace core

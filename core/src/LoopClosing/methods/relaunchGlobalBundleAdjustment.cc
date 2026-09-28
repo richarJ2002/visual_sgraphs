@@ -33,21 +33,22 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::relaunchGlobalBundleAdjustment(Map *p_activeMap_in)
+void LoopClosing::relaunchGlobalBundleAdjustment(Map *p_activeMap_inout)
 {
-    if (p_activeMap_in == nullptr || p_currentKF == nullptr)
+    if (p_activeMap_inout == nullptr || p_currentKF == nullptr)
     {
         return;
     }
 
-    std::unique_lock<std::mutex> globalBundleAdjustmentLock(mMutexGBA);
-    runningGBA  = true;
-    finishedGBA = false;
-    globalBundleAdjustmentStopRequested.store(false, std::memory_order_release);
+    std::unique_lock<std::mutex> globalBundleAdjustmentLock(gbaMutex);
+    isGbaRunning   = true;
+    hasGbaFinished = false;
+    isGlobalBundleAdjustmentStopRequested.store(false,
+                                                std::memory_order_release);
     p_threadGBA = new std::thread(&LoopClosing::runGlobalBundleAdjustment,
                                   this,
-                                  p_activeMap_in,
-                                  p_currentKF->mnId,
+                                  p_activeMap_inout,
+                                  p_currentKF->id,
                                   fullBundleAdjustmentIndex);
 }
 

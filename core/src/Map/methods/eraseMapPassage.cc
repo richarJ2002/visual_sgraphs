@@ -34,15 +34,15 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseMapPassage(vs_graphs::core::semantic::Passage *pPassage)
+void Map::eraseMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    passages.erase(pPassage);
+    unique_lock<mutex> lock(mapMutex);
+    passages.erase(p_passage_in);
 
     for (auto passageIterator = passageIndex.begin();
          passageIterator != passageIndex.end();)
     {
-        passageIterator = passageIterator->second == pPassage
+        passageIterator = passageIterator->second == p_passage_in
                               ? passageIndex.erase(passageIterator)
                               : std::next(passageIterator);
     }

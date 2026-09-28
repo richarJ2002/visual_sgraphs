@@ -38,8 +38,8 @@ namespace core
 
 void Viewer::run()
 {
-    finished = false;
-    stopped  = false;
+    hasFinished = false;
+    hasStopped  = false;
 
     pangolin::CreateWindowAndBind("ORB-SLAM3: Map Viewer", 1024, 768);
 
@@ -55,7 +55,7 @@ void Viewer::run()
                                             0.0,
                                             pangolin::Attach::Pix(175));
     pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", false, true);
-    pangolin::Var<bool> menuCamView("menu.Camera View", false, false);
+    pangolin::Var<bool> menuCameraView("menu.Camera View", false, false);
     pangolin::Var<bool> menuTopView("menu.Top View", false, false);
     // pangolin::Var<bool> menuSideView("menu.Side View",false,false);
     pangolin::Var<bool> menuShowPoints("menu.Show Points", true, true);
@@ -76,32 +76,33 @@ void Viewer::run()
 
     pangolin::Var<bool> menuShowOptLba("menu.Show LBA opt", false, true);
     // Define Camera Render Object (for view / scene browsing)
-    pangolin::OpenGlRenderState s_cam(pangolin::ProjectionMatrix(1024,
-                                                                 768,
-                                                                 viewpointF,
-                                                                 viewpointF,
-                                                                 512,
-                                                                 389,
-                                                                 0.1,
-                                                                 1000),
-                                      pangolin::ModelViewLookAt(viewpointX,
-                                                                viewpointY,
-                                                                viewpointZ,
-                                                                0,
-                                                                0,
-                                                                0,
-                                                                0.0,
-                                                                -1.0,
-                                                                0.0));
+    pangolin::OpenGlRenderState camera(pangolin::ProjectionMatrix(1024,
+                                                                  768,
+                                                                  viewpointF,
+                                                                  viewpointF,
+                                                                  512,
+                                                                  389,
+                                                                  0.1,
+                                                                  1000),
+                                       pangolin::ModelViewLookAt(viewpointX,
+                                                                 viewpointY,
+                                                                 viewpointZ,
+                                                                 0,
+                                                                 0,
+                                                                 0,
+                                                                 0.0,
+                                                                 -1.0,
+                                                                 0.0));
 
     // Add named OpenGL viewport to window and provide 3D Handler
-    pangolin::View &d_cam = pangolin::CreateDisplay()
-                                .SetBounds(0.0,
-                                           1.0,
-                                           pangolin::Attach::Pix(175),
-                                           1.0,
-                                           -1024.0f / 768.0f)
-                                .SetHandler(new pangolin::Handler3D(s_cam));
+    pangolin::View &cameraView =
+        pangolin::CreateDisplay()
+            .SetBounds(0.0,
+                       1.0,
+                       pangolin::Attach::Pix(175),
+                       1.0,
+                       -1024.0f / 768.0f)
+            .SetHandler(new pangolin::Handler3D(camera));
 
     pangolin::OpenGlMatrix Twc, Twr;
     Twc.SetIdentity();
@@ -109,10 +110,10 @@ void Viewer::run()
     Ow.SetIdentity();
     cv::namedWindow("ORB-SLAM3: Current Frame");
 
-    bool bFollow           = true;
-    bool bLocalizationMode = false;
-    bool stepByStep        = false;
-    bool bCameraView       = true;
+    bool isFollowing        = true;
+    bool isLocalizationMode = false;
+    bool stepByStep         = false;
+    bool isCameraView       = true;
 
     if (p_tracker->sensor == p_system->MONOCULAR ||
         p_tracker->sensor == p_system->STEREO ||
@@ -130,120 +131,121 @@ void Viewer::run()
 
         p_mapDrawer->getCurrentOpenGLCameraMatrix(Twc, Ow);
 
-        if (stopTrack)
+        if (isTrackingStopRequested)
         {
-            menuStepByStep = true;
-            stopTrack      = false;
+            menuStepByStep          = true;
+            isTrackingStopRequested = false;
         }
 
-        if (menuFollowCamera && bFollow)
+        if (menuFollowCamera && isFollowing)
         {
-            if (bCameraView)
-                s_cam.Follow(Twc);
+            if (isCameraView)
+                camera.Follow(Twc);
             else
-                s_cam.Follow(Ow);
+                camera.Follow(Ow);
         }
-        else if (menuFollowCamera && !bFollow)
+        else if (menuFollowCamera && !isFollowing)
         {
-            if (bCameraView)
+            if (isCameraView)
             {
-                s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024,
-                                                                     768,
-                                                                     viewpointF,
-                                                                     viewpointF,
-                                                                     512,
-                                                                     389,
-                                                                     0.1,
-                                                                     1000));
-                s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(viewpointX,
-                                                                   viewpointY,
-                                                                   viewpointZ,
-                                                                   0,
-                                                                   0,
-                                                                   0,
-                                                                   0.0,
-                                                                   -1.0,
-                                                                   0.0));
-                s_cam.Follow(Twc);
+                camera.SetProjectionMatrix(
+                    pangolin::ProjectionMatrix(1024,
+                                               768,
+                                               viewpointF,
+                                               viewpointF,
+                                               512,
+                                               389,
+                                               0.1,
+                                               1000));
+                camera.SetModelViewMatrix(pangolin::ModelViewLookAt(viewpointX,
+                                                                    viewpointY,
+                                                                    viewpointZ,
+                                                                    0,
+                                                                    0,
+                                                                    0,
+                                                                    0.0,
+                                                                    -1.0,
+                                                                    0.0));
+                camera.Follow(Twc);
             }
             else
             {
-                s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024,
-                                                                     768,
-                                                                     3000,
-                                                                     3000,
-                                                                     512,
-                                                                     389,
-                                                                     0.1,
-                                                                     1000));
-                s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(0,
-                                                                   0.01,
-                                                                   10,
-                                                                   0,
-                                                                   0,
-                                                                   0,
-                                                                   0.0,
-                                                                   0.0,
-                                                                   1.0));
-                s_cam.Follow(Ow);
+                camera.SetProjectionMatrix(pangolin::ProjectionMatrix(1024,
+                                                                      768,
+                                                                      3000,
+                                                                      3000,
+                                                                      512,
+                                                                      389,
+                                                                      0.1,
+                                                                      1000));
+                camera.SetModelViewMatrix(pangolin::ModelViewLookAt(0,
+                                                                    0.01,
+                                                                    10,
+                                                                    0,
+                                                                    0,
+                                                                    0,
+                                                                    0.0,
+                                                                    0.0,
+                                                                    1.0));
+                camera.Follow(Ow);
             }
-            bFollow = true;
+            isFollowing = true;
         }
-        else if (!menuFollowCamera && bFollow)
+        else if (!menuFollowCamera && isFollowing)
         {
-            bFollow = false;
+            isFollowing = false;
         }
 
-        if (menuCamView)
+        if (menuCameraView)
         {
-            menuCamView = false;
-            bCameraView = true;
-            s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024,
-                                                                 768,
-                                                                 viewpointF,
-                                                                 viewpointF,
-                                                                 512,
-                                                                 389,
-                                                                 0.1,
-                                                                 10000));
-            s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(viewpointX,
-                                                               viewpointY,
-                                                               viewpointZ,
-                                                               0,
-                                                               0,
-                                                               0,
-                                                               0.0,
-                                                               -1.0,
-                                                               0.0));
-            s_cam.Follow(Twc);
+            menuCameraView = false;
+            isCameraView   = true;
+            camera.SetProjectionMatrix(pangolin::ProjectionMatrix(1024,
+                                                                  768,
+                                                                  viewpointF,
+                                                                  viewpointF,
+                                                                  512,
+                                                                  389,
+                                                                  0.1,
+                                                                  10000));
+            camera.SetModelViewMatrix(pangolin::ModelViewLookAt(viewpointX,
+                                                                viewpointY,
+                                                                viewpointZ,
+                                                                0,
+                                                                0,
+                                                                0,
+                                                                0.0,
+                                                                -1.0,
+                                                                0.0));
+            camera.Follow(Twc);
         }
 
         if (menuTopView && p_mapDrawer->p_atlas->isImuInitialized())
         {
-            menuTopView = false;
-            bCameraView = false;
-            s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024,
-                                                                 768,
-                                                                 3000,
-                                                                 3000,
-                                                                 512,
-                                                                 389,
-                                                                 0.1,
-                                                                 10000));
-            s_cam.SetModelViewMatrix(
+            menuTopView  = false;
+            isCameraView = false;
+            camera.SetProjectionMatrix(pangolin::ProjectionMatrix(1024,
+                                                                  768,
+                                                                  3000,
+                                                                  3000,
+                                                                  512,
+                                                                  389,
+                                                                  0.1,
+                                                                  10000));
+            camera.SetModelViewMatrix(
                 pangolin::ModelViewLookAt(0, 0.01, 50, 0, 0, 0, 0.0, 0.0, 1.0));
-            s_cam.Follow(Ow);
+            camera.Follow(Ow);
         }
 
-        if (menuLocalizationMode && !bLocalizationMode)
+        if (menuLocalizationMode && !isLocalizationMode)
         {
             p_system->activateLocalizationMode();
-            bLocalizationMode = true;
+            isLocalizationMode = true;
         }
-        else if (!menuLocalizationMode && bLocalizationMode)
+        else if (!menuLocalizationMode && isLocalizationMode)
         {
             p_system->deactivateLocalizationMode();
-            bLocalizationMode = false;
+            isLocalizationMode = false;
         }
 
         if (menuStepByStep && !stepByStep)
@@ -260,11 +262,11 @@ void Viewer::run()
 
         if (menuStep)
         {
-            p_tracker->step = true;
-            menuStep        = false;
+            p_tracker->isStepRequested = true;
+            menuStep                   = false;
         }
 
-        d_cam.Activate(s_cam);
+        cameraView.Activate(camera);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         p_mapDrawer->drawCurrentCamera(Twc);
         if (menuShowKeyFrames || menuShowGraph || menuShowInertialGraph ||
@@ -282,16 +284,17 @@ void Viewer::run()
         pangolin::FinishFrame();
 
         cv::Mat toShow;
-        cv::Mat im = p_frameDrawer->drawFrame(trackedImageScale);
+        cv::Mat image = p_frameDrawer->drawFrame(trackedImageScale);
 
-        if (both)
+        if (shouldDrawBothImages)
         {
-            cv::Mat imRight = p_frameDrawer->drawRightFrame(trackedImageScale);
-            cv::hconcat(im, imRight, toShow);
+            cv::Mat imageRight =
+                p_frameDrawer->drawRightFrame(trackedImageScale);
+            cv::hconcat(image, imageRight, toShow);
         }
         else
         {
-            toShow = im;
+            toShow = image;
         }
 
         if (imageViewerScale != 1.f)
@@ -311,11 +314,11 @@ void Viewer::run()
             menuShowKeyFrames     = true;
             menuShowPoints        = true;
             menuLocalizationMode  = false;
-            if (bLocalizationMode)
+            if (isLocalizationMode)
                 p_system->deactivateLocalizationMode();
-            bLocalizationMode = false;
-            bFollow           = true;
-            menuFollowCamera  = true;
+            isLocalizationMode = false;
+            isFollowing        = true;
+            menuFollowCamera   = true;
             p_system->requestResetActiveMapWithCause(
                 ResetCause::VIEWER_REQUEST);
             menuReset = false;
@@ -323,7 +326,7 @@ void Viewer::run()
 
         if (menuStop)
         {
-            if (bLocalizationMode)
+            if (isLocalizationMode)
                 p_system->deactivateLocalizationMode();
 
             // Stop all threads

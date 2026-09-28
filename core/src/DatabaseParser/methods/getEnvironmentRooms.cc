@@ -26,7 +26,7 @@ namespace core
 {
 
 std::vector<semantic::Room *>
-    DBParser::getEnvironmentRooms(json environmentData_in)
+    DBParser::getEnvironmentRooms(Json environmentData_in)
 {
     environmentRooms.clear();
 

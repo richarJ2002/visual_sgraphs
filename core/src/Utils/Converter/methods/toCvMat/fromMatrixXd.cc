@@ -44,13 +44,13 @@ namespace converter
 
 cv::Mat Converter::toCvMat(const Eigen::MatrixXd &matrix_in)
 {
-    cv::Mat cvMat(matrix_in.rows(), matrix_in.cols(), CV_32F);
+    cv::Mat cvMatrix(matrix_in.rows(), matrix_in.cols(), CV_32F);
     for (int rowIndex = 0; rowIndex < matrix_in.rows(); rowIndex++)
         for (int columnIndex = 0; columnIndex < matrix_in.cols(); columnIndex++)
-            cvMat.at<float>(rowIndex, columnIndex) =
+            cvMatrix.at<float>(rowIndex, columnIndex) =
                 matrix_in(rowIndex, columnIndex);
 
-    return cvMat.clone();
+    return cvMatrix.clone();
 }
 
 } // namespace converter

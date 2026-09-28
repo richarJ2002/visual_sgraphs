@@ -106,19 +106,20 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
         }
         for (Room *p_room : roomsInMap)
         {
-            EntityRef ownerRef;
-            ownerRef.key    = makeKey(EntityKind::ROOM, mapId, p_room->getId());
-            ownerRef.reason = UnavailableReason::NONE;
-            ownerRef.localId                   = p_room->getId();
-            ownerRef.isLive                    = !p_room->isBad();
-            ownerRef.livenessUnavailableReason = UnavailableReason::NONE;
+            EntityRef ownerReference;
+            ownerReference.key =
+                makeKey(EntityKind::ROOM, mapId, p_room->getId());
+            ownerReference.reason                    = UnavailableReason::NONE;
+            ownerReference.localId                   = p_room->getId();
+            ownerReference.isLive                    = !p_room->isBad();
+            ownerReference.livenessUnavailableReason = UnavailableReason::NONE;
             for (geometric::Plane *p_wall : p_room->getWalls())
             {
                 if (p_wall == nullptr)
                 {
                     continue;
                 }
-                wallOwnersByPointer[p_wall].push_back(ownerRef);
+                wallOwnersByPointer[p_wall].push_back(ownerReference);
             }
         }
     }

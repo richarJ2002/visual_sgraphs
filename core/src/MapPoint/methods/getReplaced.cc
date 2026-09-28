@@ -36,8 +36,8 @@ namespace core
 
 MapPoint *MapPoint::getReplaced()
 {
-    unique_lock<mutex> lock1(mMutexFeatures);
-    unique_lock<mutex> lock2(mMutexPos);
+    unique_lock<mutex> lock1(featuresMutex);
+    unique_lock<mutex> lock2(positionMutex);
     return p_replaced;
 }
 

@@ -27,51 +27,51 @@ void SemanticsManager::resetTemporalStateForMap(Map *p_activeMap_in)
 {
     const std::uint64_t worldFrameEpoch =
         p_activeMap_in != nullptr ? p_activeMap_in->getWorldFrameEpoch() : 0U;
-    const bool mapChanged   = pTemporalStateMap_ != p_activeMap_in;
+    const bool mapChanged   = p_temporalStateMap != p_activeMap_in;
     const bool frameChanged = !mapChanged && p_activeMap_in != nullptr &&
-                              temporalStateWorldFrameEpoch_ != worldFrameEpoch;
+                              temporalStateWorldFrameEpoch != worldFrameEpoch;
 
     if (!mapChanged && !frameChanged)
     {
         return;
     }
 
-    openPassageEvidence_.clear();
-    lastSkeletonFingerprint_ = 0U;
-    hasSkeletonFingerprint_  = false;
+    openPassageEvidence.clear();
+    lastSkeletonFingerprint = 0U;
+    hasSkeletonFingerprint  = false;
 
     if (mapChanged)
     {
         {
-            std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-            currentRoomId_ = -1;
+            std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+            currentRoomId = -1;
         }
         currentCameraCenter_World_m  = Eigen::Vector3d::Zero();
         previousCameraCenter_World_m = Eigen::Vector3d::Zero();
-        hasCameraCenter_             = false;
-        pCameraCenterMap_            = p_activeMap_in;
-        lastTraversalFrameId_        = 0U;
-        lastTraversalKeyFrameId_     = 0U;
-        hasTraversalKeyFrameCursor_  = false;
+        hasCameraCenter              = false;
+        p_cameraCenterMap            = p_activeMap_in;
+        lastTraversalFrameId         = 0U;
+        lastTraversalKeyFrameId      = 0U;
+        hasTraversalKeyFrameCursor   = false;
 
-        disconnectedRoomIds_.clear();
-        prospectiveRoomCycles_.clear();
-        undefendedWalls_.clear();
-        loggedOrphanWallIds_.clear();
-        loggedWallRejectionReasons_.clear();
-        loggedRetiredWallIds_.clear();
-        loggedRoomCleanupIds_.clear();
+        disconnectedRoomIds.clear();
+        prospectiveRoomCycles.clear();
+        undefendedWalls.clear();
+        loggedOrphanWallIds.clear();
+        loggedWallRejectionReasons.clear();
+        loggedRetiredWallIds.clear();
+        loggedRoomCleanupIds.clear();
     }
-    else if (frameChanged && hasTraversalKeyFrameCursor_)
+    else if (frameChanged && hasTraversalKeyFrameCursor)
     {
         /* Re-read the cursor keyframe in the rebased frame. Keeping its IDs
          * preserves every later, not-yet-processed trajectory segment. */
-        hasCameraCenter_ = false;
+        hasCameraCenter = false;
         for (KeyFrame *p_keyFrame : p_activeMap_in->getAllKeyFrames())
         {
             if (p_keyFrame == nullptr || p_keyFrame->isBad() ||
-                p_keyFrame->frameId != lastTraversalFrameId_ ||
-                p_keyFrame->mnId != lastTraversalKeyFrameId_)
+                p_keyFrame->frameId != lastTraversalFrameId ||
+                p_keyFrame->id != lastTraversalKeyFrameId)
             {
                 continue;
             }
@@ -82,15 +82,15 @@ void SemanticsManager::resetTemporalStateForMap(Map *p_activeMap_in)
             {
                 currentCameraCenter_World_m  = correctedCenter_World_m;
                 previousCameraCenter_World_m = correctedCenter_World_m;
-                hasCameraCenter_             = true;
-                pCameraCenterMap_            = p_activeMap_in;
+                hasCameraCenter              = true;
+                p_cameraCenterMap            = p_activeMap_in;
             }
             break;
         }
     }
 
-    pTemporalStateMap_            = p_activeMap_in;
-    temporalStateWorldFrameEpoch_ = worldFrameEpoch;
+    p_temporalStateMap           = p_activeMap_in;
+    temporalStateWorldFrameEpoch = worldFrameEpoch;
 }
 
 } // namespace core

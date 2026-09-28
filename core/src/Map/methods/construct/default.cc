@@ -39,21 +39,21 @@ namespace core
 
 Map::Map() :
     p_firstRegionKeyFrame(static_cast<KeyFrame *>(nullptr)),
-    fail(false),
+    hasFailed(false),
     hasImuInitialization(false),
     mapChange(0),
     mapChangeNotified(0),
     worldFrameEpoch(0U),
     maxKeyFrameId(0),
     bigChangeIndex(0),
-    inUse(false),
+    isMapInUse(false),
     hasThumbnail(false),
-    mbBad(false),
+    isFlaggedBad(false),
     isInertialMode(false),
     hasInertialBA1(false),
     hasInertialBA2(false)
 {
-    mnId        = nNextId++;
+    id          = nextId++;
     p_thumbnail = nullptr;
 }
 

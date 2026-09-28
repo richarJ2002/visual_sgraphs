@@ -39,7 +39,7 @@ bool Room::replacePassageAssociation(
 
     std::lock_guard<std::mutex> lock(mapMutex);
 
-    bool replacedAssociation = false;
+    bool wasAssociationReplaced = false;
     std::vector<vs_graphs::core::semantic::Passage *> rebuiltPassages;
     rebuiltPassages.reserve(doorways.size());
 
@@ -50,8 +50,8 @@ bool Room::replacePassageAssociation(
 
         if (p_existingPassage == p_retiredPassage_in)
         {
-            p_candidatePassage  = p_retainedPassage_in;
-            replacedAssociation = true;
+            p_candidatePassage     = p_retainedPassage_in;
+            wasAssociationReplaced = true;
         }
 
         if (p_candidatePassage == nullptr ||
@@ -65,12 +65,12 @@ bool Room::replacePassageAssociation(
         rebuiltPassages.push_back(p_candidatePassage);
     }
 
-    if (replacedAssociation)
+    if (wasAssociationReplaced)
     {
         doorways.swap(rebuiltPassages);
     }
 
-    return replacedAssociation;
+    return wasAssociationReplaced;
 }
 
 } // namespace semantic

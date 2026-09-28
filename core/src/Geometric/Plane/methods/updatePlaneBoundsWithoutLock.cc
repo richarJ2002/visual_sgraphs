@@ -57,14 +57,14 @@ void Plane::updatePlaneBoundsWithoutLock(void)
     /* Normalize the norm vector */
     Eigen::Vector3d normalVector = wallEquation.head<3>() / normalMagnitude;
 
-    for (Eigen::Index component = 0; component < normalVector.size();
-         ++component)
+    for (Eigen::Index componentIndex = 0; componentIndex < normalVector.size();
+         ++componentIndex)
     {
-        if (std::abs(normalVector(component)) <= 1e-12)
+        if (std::abs(normalVector(componentIndex)) <= 1e-12)
         {
             continue;
         }
-        if (normalVector(component) < 0.0)
+        if (normalVector(componentIndex) < 0.0)
         {
             normalVector = -normalVector;
         }
@@ -135,7 +135,7 @@ void Plane::updatePlaneBoundsWithoutLock(void)
     /* Reset to zero when no valid supporting points exist */
     if (!foundValidPoint)
     {
-        mbBad = true;
+        isFlaggedBad = true;
         return;
     }
 
@@ -147,9 +147,9 @@ void Plane::updatePlaneBoundsWithoutLock(void)
         [](std::vector<double> &samples_inout, double percentile_in)
     {
         std::sort(samples_inout.begin(), samples_inout.end());
-        const double position =
+        const double sampleIndex =
             percentile_in * static_cast<double>(samples_inout.size() - 1U);
-        return samples_inout[static_cast<std::size_t>(position)];
+        return samples_inout[static_cast<std::size_t>(sampleIndex)];
     };
 
     if (projectionsU.size() < minimumRobustPoints)

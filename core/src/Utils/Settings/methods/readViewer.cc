@@ -43,32 +43,34 @@ namespace utils
 namespace settings
 {
 
-void Settings::readViewer(cv::FileStorage &storage_in)
+void Settings::readViewer(cv::FileStorage &storage_inout)
 {
     bool found;
 
     viewerKeyFrameSize =
-        readParameter<float>(storage_in, "Viewer.KeyFrameSize", found);
+        readParameter<float>(storage_inout, "Viewer.KeyFrameSize", found);
     viewerKeyFrameLineWidth =
-        readParameter<float>(storage_in, "Viewer.KeyFrameLineWidth", found);
+        readParameter<float>(storage_inout, "Viewer.KeyFrameLineWidth", found);
     viewerGraphLineWidth =
-        readParameter<float>(storage_in, "Viewer.GraphLineWidth", found);
+        readParameter<float>(storage_inout, "Viewer.GraphLineWidth", found);
     viewerPointSize =
-        readParameter<float>(storage_in, "Viewer.PointSize", found);
+        readParameter<float>(storage_inout, "Viewer.PointSize", found);
     viewerCameraSize =
-        readParameter<float>(storage_in, "Viewer.CameraSize", found);
+        readParameter<float>(storage_inout, "Viewer.CameraSize", found);
     viewerCameraLineWidth =
-        readParameter<float>(storage_in, "Viewer.CameraLineWidth", found);
+        readParameter<float>(storage_inout, "Viewer.CameraLineWidth", found);
     viewerViewPointX =
-        readParameter<float>(storage_in, "Viewer.ViewpointX", found);
+        readParameter<float>(storage_inout, "Viewer.ViewpointX", found);
     viewerViewPointY =
-        readParameter<float>(storage_in, "Viewer.ViewpointY", found);
+        readParameter<float>(storage_inout, "Viewer.ViewpointY", found);
     viewerViewPointZ =
-        readParameter<float>(storage_in, "Viewer.ViewpointZ", found);
+        readParameter<float>(storage_inout, "Viewer.ViewpointZ", found);
     viewerViewPointF =
-        readParameter<float>(storage_in, "Viewer.ViewpointF", found);
-    viewerImageScale =
-        readParameter<float>(storage_in, "Viewer.imageViewScale", found, false);
+        readParameter<float>(storage_inout, "Viewer.ViewpointF", found);
+    viewerImageScale = readParameter<float>(storage_inout,
+                                            "Viewer.imageViewScale",
+                                            found,
+                                            false);
 
     if (!found)
         viewerImageScale = 1.0f;

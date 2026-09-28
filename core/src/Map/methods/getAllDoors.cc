@@ -36,7 +36,7 @@ namespace core
 
 vector<Door *> Map::getAllDoors()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return vector<Door *>(doors.begin(), doors.end());
 }
 

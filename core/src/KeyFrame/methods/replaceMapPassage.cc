@@ -45,7 +45,7 @@ bool vs_graphs::core::KeyFrame::replaceMapPassage(
         return false;
     }
 
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
 
     bool replacedAssociation = false;
     std::vector<vs_graphs::core::semantic::Passage *> rebuiltPassages;

@@ -30,22 +30,25 @@ namespace vs_graphs
 namespace core
 {
 
-bool TwoViewReconstruction::reconstructF(vector<bool>        &vbMatchesInliers,
-                                         Eigen::Matrix3f     &F21,
-                                         Eigen::Matrix3f     &K,
-                                         Sophus::SE3f        &T21,
-                                         vector<cv::Point3f> &vP3D,
-                                         vector<bool>        &vbTriangulated,
-                                         float                minParallax,
-                                         int                  minTriangulated)
+bool TwoViewReconstruction::reconstructF(
+    vector<bool>        &matchesInliersFlags_inout,
+    Eigen::Matrix3f     &F21_in,
+    Eigen::Matrix3f     &K_in,
+    Sophus::SE3f        &T21_out,
+    vector<cv::Point3f> &vP3D_out,
+    vector<bool>        &triangulatedFlags_out,
+    float                minimumParallax_in,
+    int                  minimumTriangulated_in)
 {
     int N = 0;
-    for (size_t i = 0, iend = vbMatchesInliers.size(); i < iend; i++)
-        if (vbMatchesInliers[i])
+    for (size_t matchIndex = 0, iend = matchesInliersFlags_inout.size();
+         matchIndex < iend;
+         matchIndex++)
+        if (matchesInliersFlags_inout[matchIndex])
             N++;
 
     // Compute Essential Matrix from Fundamental Matrix
-    Eigen::Matrix3f E21 = K.transpose() * F21 * K;
+    Eigen::Matrix3f E21 = K_in.transpose() * F21_in * K_in;
 
     Eigen::Matrix3f R1, R2;
     Eigen::Vector3f t;
@@ -58,118 +61,120 @@ bool TwoViewReconstruction::reconstructF(vector<bool>        &vbMatchesInliers,
 
     // Reconstruct with the 4 hyphoteses and check
     vector<cv::Point3f> vP3D1, vP3D2, vP3D3, vP3D4;
-    vector<bool>        vbTriangulated1, vbTriangulated2, vbTriangulated3,
-        vbTriangulated4;
+    vector<bool> triangulated1Flags, triangulated2Flags, triangulated3Flags,
+        triangulated4Flags;
     float parallax1, parallax2, parallax3, parallax4;
 
-    int nGood1 = checkRT(R1,
-                         t1,
-                         keys1,
-                         keys2,
-                         matches12,
-                         vbMatchesInliers,
-                         K,
-                         vP3D1,
-                         4.0 * sigmaSquared,
-                         vbTriangulated1,
-                         parallax1);
-    int nGood2 = checkRT(R2,
-                         t1,
-                         keys1,
-                         keys2,
-                         matches12,
-                         vbMatchesInliers,
-                         K,
-                         vP3D2,
-                         4.0 * sigmaSquared,
-                         vbTriangulated2,
-                         parallax2);
-    int nGood3 = checkRT(R1,
-                         t2,
-                         keys1,
-                         keys2,
-                         matches12,
-                         vbMatchesInliers,
-                         K,
-                         vP3D3,
-                         4.0 * sigmaSquared,
-                         vbTriangulated3,
-                         parallax3);
-    int nGood4 = checkRT(R2,
-                         t2,
-                         keys1,
-                         keys2,
-                         matches12,
-                         vbMatchesInliers,
-                         K,
-                         vP3D4,
-                         4.0 * sigmaSquared,
-                         vbTriangulated4,
-                         parallax4);
+    int good1Count = checkRT(R1,
+                             t1,
+                             keys1,
+                             keys2,
+                             matches12,
+                             matchesInliersFlags_inout,
+                             K_in,
+                             vP3D1,
+                             4.0 * sigmaSquared,
+                             triangulated1Flags,
+                             parallax1);
+    int good2Count = checkRT(R2,
+                             t1,
+                             keys1,
+                             keys2,
+                             matches12,
+                             matchesInliersFlags_inout,
+                             K_in,
+                             vP3D2,
+                             4.0 * sigmaSquared,
+                             triangulated2Flags,
+                             parallax2);
+    int good3Count = checkRT(R1,
+                             t2,
+                             keys1,
+                             keys2,
+                             matches12,
+                             matchesInliersFlags_inout,
+                             K_in,
+                             vP3D3,
+                             4.0 * sigmaSquared,
+                             triangulated3Flags,
+                             parallax3);
+    int good4Count = checkRT(R2,
+                             t2,
+                             keys1,
+                             keys2,
+                             matches12,
+                             matchesInliersFlags_inout,
+                             K_in,
+                             vP3D4,
+                             4.0 * sigmaSquared,
+                             triangulated4Flags,
+                             parallax4);
 
-    int maxGood = max(nGood1, max(nGood2, max(nGood3, nGood4)));
+    int maximumGood =
+        max(good1Count, max(good2Count, max(good3Count, good4Count)));
 
-    int nMinGood = max(static_cast<int>(0.9 * N), minTriangulated);
+    int minimumGoodCount =
+        max(static_cast<int>(0.9 * N), minimumTriangulated_in);
 
     int nsimilar = 0;
-    if (nGood1 > 0.7 * maxGood)
+    if (good1Count > 0.7 * maximumGood)
         nsimilar++;
-    if (nGood2 > 0.7 * maxGood)
+    if (good2Count > 0.7 * maximumGood)
         nsimilar++;
-    if (nGood3 > 0.7 * maxGood)
+    if (good3Count > 0.7 * maximumGood)
         nsimilar++;
-    if (nGood4 > 0.7 * maxGood)
+    if (good4Count > 0.7 * maximumGood)
         nsimilar++;
 
     // If there is not a clear winner or not enough triangulated points reject
     // initialization
-    if (maxGood < nMinGood || nsimilar > 1)
+    if (maximumGood < minimumGoodCount || nsimilar > 1)
     {
         return false;
     }
 
     // If best reconstruction has enough parallax initialize
-    if (maxGood == nGood1)
+    if (maximumGood == good1Count)
     {
-        if (parallax1 > minParallax)
+        if (parallax1 > minimumParallax_in)
         {
-            vP3D           = vP3D1;
-            vbTriangulated = vbTriangulated1;
+            vP3D_out              = vP3D1;
+            triangulatedFlags_out = triangulated1Flags;
 
-            T21 = Sophus::SE3f(R1, t1);
+            T21_out = Sophus::SE3f(R1, t1);
             return true;
         }
     }
-    else if (maxGood == nGood2)
+    else if (maximumGood == good2Count)
     {
-        if (parallax2 > minParallax)
+        if (parallax2 > minimumParallax_in)
         {
-            vP3D           = vP3D2;
-            vbTriangulated = vbTriangulated2;
+            vP3D_out              = vP3D2;
+            triangulatedFlags_out = triangulated2Flags;
 
-            T21 = Sophus::SE3f(R2, t1);
+            T21_out = Sophus::SE3f(R2, t1);
             return true;
         }
     }
-    else if (maxGood == nGood3)
+    else if (maximumGood == good3Count)
     {
-        if (parallax3 > minParallax)
+        if (parallax3 > minimumParallax_in)
         {
-            vP3D           = vP3D3;
-            vbTriangulated = vbTriangulated3;
+            vP3D_out              = vP3D3;
+            triangulatedFlags_out = triangulated3Flags;
 
-            T21 = Sophus::SE3f(R1, t2);
+            T21_out = Sophus::SE3f(R1, t2);
             return true;
         }
     }
-    else if (maxGood == nGood4)
+    else if (maximumGood == good4Count)
     {
-        if (parallax4 > minParallax)
+        if (parallax4 > minimumParallax_in)
         {
-            vP3D           = vP3D4;
-            vbTriangulated = vbTriangulated4;
+            vP3D_out              = vP3D4;
+            triangulatedFlags_out = triangulated4Flags;
 
-            T21 = Sophus::SE3f(R2, t2);
+            T21_out = Sophus::SE3f(R2, t2);
             return true;
         }
     }

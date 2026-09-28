@@ -26,21 +26,23 @@ namespace core
 std::vector<std::vector<
     std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
     SemanticSegmentation::getPlanesFromClassClouds(
-        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &clsCloudPtrs)
+        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_clsCloudPtrs_in)
 {
     std::vector<std::vector<
         std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
-        clsPlanes;
+        p_clsPlanes;
 
     /* Downsample/filter the pointcloud and extract planes */
-    for (size_t i = 0; i < clsCloudPtrs.size(); i++)
+    for (size_t clsCloudPtrIndex = 0;
+         clsCloudPtrIndex < p_clsCloudPtrs_in.size();
+         clsCloudPtrIndex++)
     {
         // [TODO?] - Perhaps consider points in order of confidence instead of
         // downsampling Downsample the given pointcloud after filtering based on
         // distance
 
         /* Init variable for the filtered point cloud */
-        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr filteredCloud;
+        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_filteredCloud;
 
         /*!
          * Filter points based on depth from sensor.
@@ -49,21 +51,21 @@ std::vector<std::vector<
          *              default values in:
          *              `visual_sgraphs/core/include/Types/SystemParams.h`
          */
-        filteredCloud =
+        p_filteredCloud =
             utils::utils::Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(
-                clsCloudPtrs[i]);
+                p_clsCloudPtrs_in[clsCloudPtrIndex]);
 
         /* Downsample points into grid based on points within voxel grid */
-        filteredCloud =
+        p_filteredCloud =
             utils::utils::Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
-                filteredCloud,
+                p_filteredCloud,
                 p_sysParams->semSeg.pointcloud.downsample.leafSize,
                 p_sysParams->semSeg.pointcloud.downsample.minPointsPerVoxel);
 
         /* Remove points that are statically isolated from neighbors */
-        filteredCloud =
+        p_filteredCloud =
             utils::utils::Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(
-                filteredCloud,
+                p_filteredCloud,
                 p_sysParams->semSeg.pointcloud.outlierRemoval.stdThreshold,
                 p_sysParams->semSeg.pointcloud.outlierRemoval.meanThreshold);
 
@@ -73,38 +75,39 @@ std::vector<std::vector<
          * retaining the input image width makes PCL infer an invalid height
          * and emits a warning on every semantic update.
          */
-        filteredCloud->width  = filteredCloud->size();
-        filteredCloud->height = 1;
+        p_filteredCloud->width  = p_filteredCloud->size();
+        p_filteredCloud->height = 1;
 
         /* Skip point clouds which are empty or have incalid width/height */
-        if (filteredCloud->width == 0 || filteredCloud->height == 0 ||
-            filteredCloud->empty())
+        if (p_filteredCloud->width == 0 || p_filteredCloud->height == 0 ||
+            p_filteredCloud->empty())
         {
             continue;
         }
 
         /* Copy the filtered cloud for later storage into the keyframe */
-        pcl::copyPointCloud(*filteredCloud, *clsCloudPtrs[i]);
+        pcl::copyPointCloud(*p_filteredCloud,
+                            *p_clsCloudPtrs_in[clsCloudPtrIndex]);
 
         /* Initialize object to contain extracted point clouds */
         std::vector<
             std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>
-            extractedPlanes;
+            p_extractedPlanes;
 
         /*!
          * Extract planes from filtered point cloud if the number of points is
          * greater than a threshold. This parameter is set in
          * `system_params.yaml`
          */
-        if (filteredCloud->points.size() > p_sysParams->seg.pointcloudsThresh)
+        if (p_filteredCloud->points.size() > p_sysParams->seg.pointcloudsThresh)
         {
-            extractedPlanes = utils::utils::Utils::ransacPlaneFitting<
+            p_extractedPlanes = utils::utils::Utils::ransacPlaneFitting<
                 pcl::PointXYZRGBA,
-                pcl::WeightedSACSegmentation>(filteredCloud);
+                pcl::WeightedSACSegmentation>(p_filteredCloud);
         }
-        clsPlanes.push_back(extractedPlanes);
+        p_clsPlanes.push_back(p_extractedPlanes);
     }
-    return clsPlanes;
+    return p_clsPlanes;
 }
 
 } // namespace core

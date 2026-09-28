@@ -32,33 +32,34 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveKeyFrameTrajectoryTUM(const string &filename)
+void System::saveKeyFrameTrajectoryTUM(const string &filename_in)
 {
     cout << endl
-         << "Saving keyframe trajectory to " << filename << " ..." << endl;
+         << "Saving keyframe trajectory to " << filename_in << " ..." << endl;
 
-    vector<KeyFrame *> vpKFs = p_atlas->getAllKeyFrames();
-    sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
+    vector<KeyFrame *> keyFrames = p_atlas->getAllKeyFrames();
+    sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
     ofstream f;
-    f.open(filename.c_str());
+    f.open(filename_in.c_str());
     f << fixed;
 
-    for (size_t i = 0; i < vpKFs.size(); i++)
+    for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
+         keyFrameIndex++)
     {
-        KeyFrame *pKF = vpKFs[i];
+        KeyFrame *p_keyFrame = keyFrames[keyFrameIndex];
 
-        if (pKF->isBad())
+        if (p_keyFrame->isBad())
             continue;
 
-        Sophus::SE3f       Twc = pKF->getPoseInverse();
+        Sophus::SE3f       Twc = p_keyFrame->getPoseInverse();
         Eigen::Quaternionf q   = Twc.unit_quaternion();
         Eigen::Vector3f    t   = Twc.translation();
-        f << setprecision(6) << pKF->timeStamp << setprecision(7) << " " << t(0)
-          << " " << t(1) << " " << t(2) << " " << q.x() << " " << q.y() << " "
-          << q.z() << " " << q.w() << endl;
+        f << setprecision(6) << p_keyFrame->timeStamp << setprecision(7) << " "
+          << t(0) << " " << t(1) << " " << t(2) << " " << q.x() << " " << q.y()
+          << " " << q.z() << " " << q.w() << endl;
     }
 
     f.close();

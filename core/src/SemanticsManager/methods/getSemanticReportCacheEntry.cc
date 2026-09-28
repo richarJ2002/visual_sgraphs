@@ -26,7 +26,7 @@ namespace core
 semantic::SemanticReportCacheEntry
     SemanticsManager::getSemanticReportCacheEntry(void) const
 {
-    return mSemanticReportCache.getLatest();
+    return semanticReportCache.getLatest();
 }
 
 } // namespace core

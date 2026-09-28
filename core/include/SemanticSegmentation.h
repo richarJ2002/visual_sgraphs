@@ -79,11 +79,11 @@ class SemanticSegmentation
 
     static constexpr std::size_t MAX_BUFFERED_WORK_ITEMS = 32U;
 
-    bool geoRuns;
+    bool isGeometricSegmentationRunning;
 
     Atlas *p_atlas;
 
-    std::mutex mMutexNewKFs;
+    std::mutex newKeyFramesMutex;
 
     // Four bytes per class probability - refer to scene_segment_ros
     const uint8_t bytesPerClassProb = 4;
@@ -103,27 +103,27 @@ class SemanticSegmentation
     std::atomic<std::uint64_t> lastTerminalKeyFrameId{0U};
     std::atomic<std::uint32_t> queueHighWatermark{0U};
 
-    void recordTerminalOutcome(std::uint64_t   keyFrameId,
-                               TerminalOutcome outcome);
+    void recordTerminalOutcome(std::uint64_t   keyFrameId_in,
+                               TerminalOutcome outcome_in);
 
     // System parameters
     types::SystemParams *p_sysParams;
 
     // Shutdown control (LocalMapping-style handshake)
-    std::mutex mMutexFinish;
-    bool       finishRequested = false;
-    bool       finished        = false;
+    std::mutex finishMutex;
+    bool       isFinishRequested = false;
+    bool       hasFinished       = false;
     bool       checkFinish();
     void       setFinish();
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    SemanticSegmentation(Atlas *pAtlas);
+    SemanticSegmentation(Atlas *p_atlas_in);
 
     // Semantic segmentation frame buffer processing
     void addSegmentedFrameToBuffer(
-        std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *tuple);
+        std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in);
 
     /*!
      * @brief       Returns processing counters used by mission health and
@@ -135,14 +135,14 @@ class SemanticSegmentation
      * @brief       Segments the point cloud into class specific point clouds
      *              and enriches them with the current keyframe point cloud.
      *
-     * @param[in]   pclPc2SegPrb
+     * @param[in]   p_pclPc2SegPrb_in
      *              Contains semantic class probablilities for every pixel
      *              or point in the segmented point cloud.
      *
-     * @param[in]   segImgUncertainity
+     * @param[in]   segImageUncertainity_in
      *              An image containing the uncertainty of each pixel.
      *
-     * @param[out]  clsCloudPtrs
+     * @param[out]  p_clsCloudPtrs_out
      *              Output vector where each index contains a point cloud for
      *              each class.
      *
@@ -152,14 +152,16 @@ class SemanticSegmentation
      *
      *              (Index indicates the semantic type of the cloud)
      *
-     * @param       thisKFPointCloud
+     * @param       p_thisKeyFramePointCloud_in
      *              the current keyframe point cloud
      */
     void threshSeparatePointCloud(
-        pcl::PCLPointCloud2::Ptr pclPc2SegPrb,
-        cv::Mat                 &segImgUncertainity,
-        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &clsCloudPtrs,
-        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr         &thisKFPointCloud);
+        pcl::PCLPointCloud2::Ptr p_pclPc2SegPrb_in,
+        cv::Mat                 &segImageUncertainity_in,
+        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
+            &p_clsCloudPtrs_out,
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr
+            &p_thisKeyFramePointCloud_in);
 
     /*!
      * @brief       Gets all planes for each class specific point cloud using
@@ -167,7 +169,7 @@ class SemanticSegmentation
      *              extract the planes using RANSAC. Important to note that the
      *              plane semantics are not set in this method.
      *
-     * @param[in]   clsCloudPtrs
+     * @param[in]   p_clsCloudPtrs_in
      *              the class specific point clouds
      *
      * @param[in]   minCloudSize
@@ -178,36 +180,39 @@ class SemanticSegmentation
     std::vector<std::vector<
         std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
         getPlanesFromClassClouds(
-            std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &clsCloudPtrs);
+            std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
+                &p_clsCloudPtrs_in);
 
     /*!
      * @brief       Adds the planes to the Atlas
      *
-     * @param       clsPlanes
+     * @param       p_clsPlanes_in
      *              the planes to be added
      *
      * @param       clsConfs
      *              the confidence of the class predictions
      */
     void updatePlaneData(
-        KeyFrame *pKF,
+        KeyFrame *p_keyFrame_in,
         std::vector<
             std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
-                                  Eigen::Vector4d>>> &clsPlanes);
+                                  Eigen::Vector4d>>> &p_clsPlanes_in);
 
     /*!
      * @brief       Updates the map plane
      *
-     * @param       planeId
+     * @param       planeId_in
      *              the plane id
      *
-     * @param       clsId
+     * @param       clsId_in
      *              the class id
      *
-     * @param       confidence
+     * @param       confidence_in
      *              the confidence of the class predictions
      */
-    void updatePlaneSemantics(int planeId, int clsId, double confidence);
+    void updatePlaneSemantics(int    planeId_in,
+                              int    clsId_in,
+                              double confidence_in);
 
     // Shutdown control
     void requestFinish();

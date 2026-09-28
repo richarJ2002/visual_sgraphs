@@ -36,10 +36,10 @@ namespace pinhole
 {
 Eigen::Matrix3f Pinhole::toK_()
 {
-    Eigen::Matrix3f K;
-    K << parameters[0], 0.f, parameters[2], 0.f, parameters[1], parameters[3],
-        0.f, 0.f, 1.f;
-    return K;
+    Eigen::Matrix3f cameraMatrix;
+    cameraMatrix << parameters[0], 0.f, parameters[2], 0.f, parameters[1],
+        parameters[3], 0.f, 0.f, 1.f;
+    return cameraMatrix;
 }
 } // namespace pinhole
 } // namespace camera_models

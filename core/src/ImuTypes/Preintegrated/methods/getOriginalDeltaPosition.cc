@@ -28,7 +28,7 @@ namespace IMU
 
 Eigen::Vector3f Preintegrated::getOriginalDeltaPosition()
 {
-    std::unique_lock<std::mutex> lock(mMutex);
+    std::unique_lock<std::mutex> lock(preintegrationMutex);
     return dP;
 }
 

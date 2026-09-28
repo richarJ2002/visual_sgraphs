@@ -34,7 +34,7 @@ namespace geometric
 
 std::optional<Plane::GeometrySnapshot> Plane::beginMapCloudRefit(void)
 {
-    std::scoped_lock lock(mMutexPos, mMutexFeatures);
+    std::scoped_lock lock(positionMutex, featuresMutex);
 
     if (planeCloud == nullptr || planeCloud->empty() ||
         cloudGeneration <= lastRefitAttemptGeneration)
@@ -44,9 +44,9 @@ std::optional<Plane::GeometrySnapshot> Plane::beginMapCloudRefit(void)
 
     lastRefitAttemptGeneration = cloudGeneration;
     GeometrySnapshot                        snapshot;
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloudCopy(
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_cloudCopy(
         new pcl::PointCloud<pcl::PointXYZRGBA>(*planeCloud));
-    snapshot.supportCloud              = cloudCopy;
+    snapshot.supportCloud              = p_cloudCopy;
     snapshot.equation_World            = globalEquation.coeffs();
     snapshot.centroid_World_m          = centroid;
     snapshot.minPlaneU_m               = minPlaneU;

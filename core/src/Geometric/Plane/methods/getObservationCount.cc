@@ -34,7 +34,7 @@ namespace geometric
 
 std::size_t Plane::getObservationCount(void) const
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return observationCount;
 }
 

@@ -32,10 +32,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::grabImuData(const IMU::Point &imuMeasurement)
+void Tracking::grabImuData(const IMU::Point &imuMeasurement_in)
 {
-    unique_lock<mutex> lock(mMutexImuQueue);
-    queueImuData.push_back(imuMeasurement);
+    unique_lock<mutex> lock(imuQueueMutex);
+    queueImuData.push_back(imuMeasurement_in);
 }
 
 } // namespace core

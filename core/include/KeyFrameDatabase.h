@@ -64,42 +64,44 @@ class KeyFrameDatabase
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     KeyFrameDatabase() {}
-    KeyFrameDatabase(const ORBVocabulary &voc) :
-        p_vocabulary(&voc)
+    KeyFrameDatabase(const ORBVocabulary &vocabulary_in) :
+        p_vocabulary(&vocabulary_in)
     {
-        invertedFile.resize(voc.size());
+        invertedFile.resize(vocabulary_in.size());
     }
 
-    void add(KeyFrame *pKF);
+    void add(KeyFrame *p_keyFrame_in);
 
-    void erase(KeyFrame *pKF);
+    void erase(KeyFrame *p_keyFrame_in);
 
     void clear();
-    void clearMap(Map *pMap);
+    void clearMap(Map *p_map_in);
 
     // Loop Detection(DEPRECATED)
-    std::vector<KeyFrame *> detectLoopCandidates(KeyFrame *pKF, float minScore);
+    std::vector<KeyFrame *> detectLoopCandidates(KeyFrame *p_currentKeyFrame_in,
+                                                 float     minScore_in);
 
     // Loop and Merge Detection
-    void detectCandidates(KeyFrame           *pKF,
-                          float               minScore,
-                          vector<KeyFrame *> &vpLoopCand,
-                          vector<KeyFrame *> &vpMergeCand);
-    void detectBestCandidates(KeyFrame           *pKF,
-                              vector<KeyFrame *> &vpLoopCand,
-                              vector<KeyFrame *> &vpMergeCand,
-                              int                 nMinWords);
-    void detectNBestCandidates(KeyFrame           *pKF,
-                               vector<KeyFrame *> &vpLoopCand,
-                               vector<KeyFrame *> &vpMergeCand,
-                               int                 nNumCandidates);
+    void detectCandidates(KeyFrame           *p_currentKeyFrame_in,
+                          float               minScore_in,
+                          vector<KeyFrame *> &loopCandidateKeyFrames_out,
+                          vector<KeyFrame *> &mergeCandidateKeyFrames_out);
+    void detectBestCandidates(KeyFrame           *p_currentKeyFrame_in,
+                              vector<KeyFrame *> &loopCandidateKeyFrames_out,
+                              vector<KeyFrame *> &mergeCandidateKeyFrames_out,
+                              int                 minWordCount_in);
+    void detectNBestCandidates(KeyFrame           *p_currentKeyFrame_in,
+                               vector<KeyFrame *> &loopCandidateKeyFrames_out,
+                               vector<KeyFrame *> &mergeCandidateKeyFrames_out,
+                               int                 candidateCount_in);
 
     // Relocalization
-    std::vector<KeyFrame *> detectRelocalizationCandidates(Frame *F, Map *pMap);
+    std::vector<KeyFrame *> detectRelocalizationCandidates(Frame *p_frame_in,
+                                                           Map   *p_map_in);
 
-    void PreSave();
-    void PostLoad(map<long unsigned int, KeyFrame *> mpKFid);
-    void setORBVocabulary(ORBVocabulary *pORBVoc);
+    void preSave();
+    void postLoad(map<long unsigned int, KeyFrame *> keyFrameId_in);
+    void setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
 
   protected:
     // Associated vocabulary
@@ -113,7 +115,7 @@ class KeyFrameDatabase
     std::vector<list<long unsigned int>> backupInvertedFileIds;
 
     // Mutex
-    std::mutex mMutex;
+    std::mutex databaseMutex;
 };
 
 } // namespace core

@@ -48,9 +48,9 @@ nlohmann::json serializeFloorRecord(const FloorRecord &value_in,
     std::vector<EntityRef> roomRefs = value_in.roomRefs;
     std::sort(roomRefs.begin(), roomRefs.end(), &isEntityRefLess);
     nlohmann::json roomRefsJson = nlohmann::json::array();
-    for (const EntityRef &roomRef : roomRefs)
+    for (const EntityRef &roomReference : roomRefs)
     {
-        roomRefsJson.push_back(serializeEntityRef(roomRef));
+        roomRefsJson.push_back(serializeEntityRef(roomReference));
     }
     json["roomRefs"] = std::move(roomRefsJson);
 

@@ -30,38 +30,38 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::checkObservations(set<KeyFrame *> &spKFsMap1,
-                                    set<KeyFrame *> &spKFsMap2)
+void LoopClosing::checkObservations(set<KeyFrame *> &keyFramesMap1_in,
+                                    set<KeyFrame *> &keyFramesMap2_in)
 {
     cout << "----------------------" << endl;
-    for (KeyFrame *pKFi1 : spKFsMap1)
+    for (KeyFrame *p_keyFrameInMap1 : keyFramesMap1_in)
     {
         map<KeyFrame *, int> matchedMapPointCounts;
-        set<MapPoint *>      spMPs = pKFi1->getMapPoints();
+        set<MapPoint *>      mapPoints = p_keyFrameInMap1->getMapPoints();
 
-        for (MapPoint *pMPij : spMPs)
+        for (MapPoint *p_sharedMapPoint : mapPoints)
         {
-            if (!pMPij || pMPij->isBad())
+            if (!p_sharedMapPoint || p_sharedMapPoint->isBad())
             {
                 continue;
             }
 
             map<KeyFrame *, tuple<int, int>> mapPointObservations =
-                pMPij->getObservations();
-            for (KeyFrame *pKFi2 : spKFsMap2)
+                p_sharedMapPoint->getObservations();
+            for (KeyFrame *p_keyFrameInMap2 : keyFramesMap2_in)
             {
-                if (mapPointObservations.find(pKFi2) !=
+                if (mapPointObservations.find(p_keyFrameInMap2) !=
                     mapPointObservations.end())
                 {
-                    if (matchedMapPointCounts.find(pKFi2) !=
+                    if (matchedMapPointCounts.find(p_keyFrameInMap2) !=
                         matchedMapPointCounts.end())
                     {
-                        matchedMapPointCounts[pKFi2] =
-                            matchedMapPointCounts[pKFi2] + 1;
+                        matchedMapPointCounts[p_keyFrameInMap2] =
+                            matchedMapPointCounts[p_keyFrameInMap2] + 1;
                     }
                     else
                     {
-                        matchedMapPointCounts[pKFi2] = 1;
+                        matchedMapPointCounts[p_keyFrameInMap2] = 1;
                     }
                 }
             }
@@ -69,18 +69,19 @@ void LoopClosing::checkObservations(set<KeyFrame *> &spKFsMap1,
 
         if (matchedMapPointCounts.size() == 0)
         {
-            cout << "CHECK-OBS: KF " << pKFi1->mnId
+            cout << "CHECK-OBS: KF " << p_keyFrameInMap1->id
                  << " has not any matched MP with the other map" << endl;
         }
         else
         {
-            cout << "CHECK-OBS: KF " << pKFi1->mnId << " has matched MP with "
-                 << matchedMapPointCounts.size() << " KF from the other map"
-                 << endl;
-            for (pair<KeyFrame *, int> matchedKF : matchedMapPointCounts)
+            cout << "CHECK-OBS: KF " << p_keyFrameInMap1->id
+                 << " has matched MP with " << matchedMapPointCounts.size()
+                 << " KF from the other map" << endl;
+            for (pair<KeyFrame *, int> matchedKeyFrame : matchedMapPointCounts)
             {
-                cout << "   -KF: " << matchedKF.first->mnId
-                     << ", Number of matches: " << matchedKF.second << endl;
+                cout << "   -KF: " << matchedKeyFrame.first->id
+                     << ", Number of matches: " << matchedKeyFrame.second
+                     << endl;
             }
         }
     }

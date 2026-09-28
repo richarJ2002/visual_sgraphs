@@ -30,7 +30,7 @@ namespace semantic
 
 Eigen::Vector3d Passage::getCentroid() const
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
     return centroid;
 }
 

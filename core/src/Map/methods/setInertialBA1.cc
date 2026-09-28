@@ -36,7 +36,7 @@ namespace core
 
 void Map::setInertialBA1()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     hasInertialBA1 = true;
 }
 

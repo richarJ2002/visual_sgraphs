@@ -78,9 +78,9 @@ void GeoSemHelpers::createMapPassage(
      * that have no evidence.
      */
     bool         wallHasConfirmedRoom = false;
-    const size_t minObs =
+    const size_t minimumObservation =
         types::SystemParams::getParams()->roomSeg.minimumWallObservationCount;
-    if (p_wallPlane_in->getObservationCount() >= minObs)
+    if (p_wallPlane_in->getObservationCount() >= minimumObservation)
     {
         wallHasConfirmedRoom = true;
     }
@@ -90,8 +90,8 @@ void GeoSemHelpers::createMapPassage(
         std::cerr << "[GeoSemHelper] Cannot create passage: wall plane "
                   << p_wallPlane_in->getId()
                   << " has insufficient observations ("
-                  << p_wallPlane_in->getObservationCount() << " < " << minObs
-                  << ")." << std::endl;
+                  << p_wallPlane_in->getObservationCount() << " < "
+                  << minimumObservation << ")." << std::endl;
         return;
     }
 
@@ -126,15 +126,15 @@ void GeoSemHelpers::createMapPassage(
         passageEquation = p_doorPlane_in->getGlobalEquation();
 
         /* Extract point cloud of door */
-        const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr doorCloud =
+        const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_doorCloud =
             p_doorPlane_in->getGeometrySnapshot().supportCloud;
 
         /* Use measured door dimensions when a valid point cloud if available */
-        if (doorCloud != nullptr && !doorCloud->empty())
+        if (p_doorCloud != nullptr && !p_doorCloud->empty())
         {
             /* Compute the dimensions of the door */
             const std::pair<double, double> measuredDimensions =
-                utils::utils::Utils::computePlaneWidthHeight(doorCloud);
+                utils::utils::Utils::computePlaneWidthHeight(p_doorCloud);
 
             /* Extract the dimensions of the door from the tuple */
             const double measuredWidth  = measuredDimensions.first;
@@ -409,10 +409,11 @@ void GeoSemHelpers::createMapPassage(
      * Insert into the Atlas
      * -------------------------------------------------------------- */
 
-    std::ostringstream infoStream;
+    std::ostringstream informationStream;
 
-    infoStream << (isOpenPassage_in ? "open" : "blocked") << ", " << std::fixed
-               << std::setprecision(2) << width << "x" << height << "m";
+    informationStream << (isOpenPassage_in ? "open" : "blocked") << ", "
+                      << std::fixed << std::setprecision(2) << width << "x"
+                      << height << "m";
 
     std::cout << "[GeoSemHelper] Creating semantic::Passage#" << passageId
               << " associated with wall " << p_wallPlane_in->getId();
@@ -422,7 +423,7 @@ void GeoSemHelpers::createMapPassage(
         std::cout << " and door plane " << p_doorPlane_in->getId();
     }
 
-    std::cout << " (" << infoStream.str()
+    std::cout << " (" << informationStream.str()
               << "), centroid=" << centroid.transpose() << "." << std::endl;
 
     p_atlas_inout->addMapPassage(p_newMapPassage);

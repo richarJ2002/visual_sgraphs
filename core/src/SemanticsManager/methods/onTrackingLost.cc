@@ -25,18 +25,18 @@ namespace core
 
 void SemanticsManager::onTrackingLost(void)
 {
-    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-    if (!trackingLossEpisodeActive_)
+    std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+    if (!isTrackingLossEpisodeActive)
     {
-        lastKnownRoomId_ = currentRoomId_ >= 0 || p_atlas == nullptr
-                               ? currentRoomId_
-                               : p_atlas->getCurrentSemanticRoomIdentity();
-        if (p_atlas != nullptr && lastKnownRoomId_ >= 0)
+        lastKnownRoomId = currentRoomId >= 0 || p_atlas == nullptr
+                              ? currentRoomId
+                              : p_atlas->getCurrentSemanticRoomIdentity();
+        if (p_atlas != nullptr && lastKnownRoomId >= 0)
         {
-            p_atlas->setCurrentSemanticRoomIdentity(lastKnownRoomId_);
+            p_atlas->setCurrentSemanticRoomIdentity(lastKnownRoomId);
         }
-        trackingLostPending_       = true;
-        trackingLossEpisodeActive_ = true;
+        isTrackingLostPending       = true;
+        isTrackingLossEpisodeActive = true;
     }
 }
 

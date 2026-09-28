@@ -53,7 +53,7 @@ namespace utils
 struct ObservationSideEvidence
 {
     std::optional<double> medianSignedDistance_m;
-    bool                  ambiguous{false};
+    bool                  isAmbiguous{false};
 };
 
 /*!
@@ -89,7 +89,7 @@ struct ProjectedPlaneBounds
     double maximumU_m = std::numeric_limits<double>::lowest();
     double minimumV_m = std::numeric_limits<double>::max();
     double maximumV_m = std::numeric_limits<double>::lowest();
-    bool   valid      = false;
+    bool   isValid    = false;
 };
 
 /*!

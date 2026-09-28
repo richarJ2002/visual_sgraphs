@@ -76,12 +76,12 @@ void evaluateOnePassageFloorIdentity(const PassageRecord         &passage_in,
         return;
     }
 
-    if ((knownSide.referencePresent && knownSide.isCrossMap) ||
-        (prospective.referencePresent && prospective.isCrossMap))
+    if ((knownSide.isReferencePresent && knownSide.isCrossMap) ||
+        (prospective.isReferencePresent && prospective.isCrossMap))
     {
         /* Mirrors
          * evaluateOnePassageMapAndFloor.cc's own unconditional-on-
-         * referencePresent cross-map check (not gated on
+         * isReferencePresent cross-map check (not gated on
          * isRealPassageEndpoint) -- a reference resolving in a different map
          * than this passage's own declared/containing map must fail this
          * leaf too, not only AX-PASS-02/04's. */

@@ -36,12 +36,11 @@ bool Room::removeWall(geometric::Plane *p_wall_in)
 
     std::lock_guard<std::mutex> lock(wallsMutex);
 
-    const auto wallIterator =
-        std::remove(walls.begin(), walls.end(), p_wall_in);
-    const bool removedWall = wallIterator != walls.end();
-    walls.erase(wallIterator, walls.end());
+    const auto wallIt = std::remove(walls.begin(), walls.end(), p_wall_in);
+    const bool wasWallRemoved = wallIt != walls.end();
+    walls.erase(wallIt, walls.end());
 
-    return removedWall;
+    return wasWallRemoved;
 }
 
 } // namespace semantic

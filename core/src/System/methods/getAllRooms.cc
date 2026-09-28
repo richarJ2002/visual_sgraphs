@@ -32,8 +32,8 @@ namespace core
 
 vector<semantic::Room *> System::getAllRooms()
 {
-    Map *pActiveMap = p_atlas->getCurrentMap();
-    return pActiveMap->getAllRooms();
+    Map *p_activeMap = p_atlas->getCurrentMap();
+    return p_activeMap->getAllRooms();
 }
 
 } // namespace core

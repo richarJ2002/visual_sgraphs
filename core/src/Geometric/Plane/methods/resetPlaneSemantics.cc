@@ -34,7 +34,7 @@ namespace geometric
 
 void Plane::resetPlaneSemantics(void)
 {
-    unique_lock<mutex> lock(mMutexType);
+    unique_lock<mutex> lock(typeMutex);
 
     semanticVotes.clear();
     planeType = PlaneVariant::UNDEFINED;

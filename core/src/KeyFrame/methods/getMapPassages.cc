@@ -38,7 +38,7 @@ namespace core
 std::vector<vs_graphs::core::semantic::Passage *>
     vs_graphs::core::KeyFrame::getMapPassages()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return mapPassages;
 }
 

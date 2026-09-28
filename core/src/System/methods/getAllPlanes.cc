@@ -32,8 +32,8 @@ namespace core
 
 vector<geometric::Plane *> System::getAllPlanes()
 {
-    Map *pActiveMap = p_atlas->getCurrentMap();
-    return pActiveMap->getAllPlanes();
+    Map *p_activeMap = p_atlas->getCurrentMap();
+    return p_activeMap->getAllPlanes();
 }
 
 } // namespace core

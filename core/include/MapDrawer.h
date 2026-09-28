@@ -44,21 +44,23 @@ class MapDrawer
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    MapDrawer(Atlas                     *pAtlas,
-              const string              &strSettingPath,
-              utils::settings::Settings *settings) :
-        p_atlas(pAtlas)
+    MapDrawer(Atlas                     *p_atlas_in,
+              const string              &settingsFilePath_in,
+              utils::settings::Settings *p_settings_in) :
+        p_atlas(p_atlas_in)
     {
-        if (settings)
+        if (p_settings_in)
         {
-            newParameterLoader(settings);
+            newParameterLoader(p_settings_in);
         }
         else
         {
-            cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
-            bool            is_correct = parseViewerParamFile(fSettings);
+            cv::FileStorage settingsFileStorage(settingsFilePath_in,
+                                                cv::FileStorage::READ);
+            bool            isViewerConfigValid =
+                parseViewerParamFile(settingsFileStorage);
 
-            if (!is_correct)
+            if (!isViewerConfigValid)
             {
                 std::cerr
                     << "**ERROR in the config file, the format is not correct**"
@@ -67,29 +69,29 @@ class MapDrawer
                 {
                     throw -1;
                 }
-                catch (exception &e)
+                catch (exception &caughtException)
                 {}
             }
         }
     }
 
-    void newParameterLoader(utils::settings::Settings *settings);
+    void newParameterLoader(utils::settings::Settings *p_settings_inout);
 
     Atlas *p_atlas;
 
     void drawMapPoints();
-    void drawKeyFrames(const bool bDrawKF,
-                       const bool bDrawGraph,
-                       const bool bDrawInertialGraph,
-                       const bool bDrawOptLba);
-    void drawCurrentCamera(pangolin::OpenGlMatrix &Twc);
-    void setCurrentCameraPose(const Sophus::SE3f &Tcw);
-    void setReferenceKeyFrame(KeyFrame *pKF);
-    void getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M,
-                                      pangolin::OpenGlMatrix &MOw);
+    void drawKeyFrames(const bool shouldDrawKeyFrames_in,
+                       const bool shouldDrawGraph_in,
+                       const bool shouldDrawInertialGraph_in,
+                       const bool shouldDrawOptimizedLba_in);
+    void drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in);
+    void setCurrentCameraPose(const Sophus::SE3f &Tcw_in);
+    void setReferenceKeyFrame(KeyFrame *p_keyFrame_in);
+    void getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M_in,
+                                      pangolin::OpenGlMatrix &MOw_inout);
 
   private:
-    bool parseViewerParamFile(cv::FileStorage &fSettings);
+    bool parseViewerParamFile(cv::FileStorage &settings_in);
 
     float keyFrameSize;
     float keyFrameLineWidth;
@@ -100,14 +102,14 @@ class MapDrawer
 
     Sophus::SE3f cameraPose;
 
-    std::mutex mMutexCamera;
+    std::mutex cameraMutex;
 
-    float mfFrameColors[6][3] = {{0.0f, 0.0f, 1.0f},
-                                 {0.8f, 0.4f, 1.0f},
-                                 {1.0f, 0.2f, 0.4f},
-                                 {0.6f, 0.0f, 1.0f},
-                                 {1.0f, 1.0f, 0.0f},
-                                 {0.0f, 1.0f, 1.0f}};
+    float frameColors[6][3] = {{0.0f, 0.0f, 1.0f},
+                               {0.8f, 0.4f, 1.0f},
+                               {1.0f, 0.2f, 0.4f},
+                               {0.6f, 0.0f, 1.0f},
+                               {1.0f, 1.0f, 0.0f},
+                               {0.0f, 1.0f, 1.0f}};
 };
 
 } // namespace core

@@ -23,19 +23,19 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticSegmentation::updatePlaneSemantics(int    planeId,
-                                                int    clsId,
-                                                double confidence)
+void SemanticSegmentation::updatePlaneSemantics(int    planeId_in,
+                                                int    clsId_in,
+                                                double confidence_in)
 {
     // retrieve the plane from the map
-    geometric::Plane *matchedPlane = p_atlas->getPlaneById(planeId);
+    geometric::Plane *p_matchedPlane = p_atlas->getPlaneById(planeId_in);
 
     // plane type compatible with the Plane class
     vs_graphs::core::geometric::Plane::PlaneVariant planeType =
-        utils::utils::Utils::getPlaneTypeFromClassId(clsId);
+        utils::utils::Utils::getPlaneTypeFromClassId(clsId_in);
 
     // cast a vote for the plane semantics
-    matchedPlane->castWeightedVote(planeType, confidence);
+    p_matchedPlane->castWeightedVote(planeType, confidence_in);
 }
 
 } // namespace core

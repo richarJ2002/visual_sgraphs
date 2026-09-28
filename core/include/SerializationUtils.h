@@ -39,23 +39,29 @@ void serializeSophusSE3(Archive                            &ar,
                         Sophus::SE3f                       &T,
                         [[maybe_unused]] const unsigned int version)
 {
-    Eigen::Vector4f quat;
-    Eigen::Vector3f transl;
+    Eigen::Vector4f quaternionCoefficients;
+    Eigen::Vector3f translation;
 
     if (Archive::is_saving::value)
     {
-        Eigen::Quaternionf q = T.unit_quaternion();
-        quat << q.w(), q.x(), q.y(), q.z();
-        transl = T.translation();
+        Eigen::Quaternionf quaternion = T.unit_quaternion();
+        quaternionCoefficients << quaternion.w(), quaternion.x(),
+            quaternion.y(), quaternion.z();
+        translation = T.translation();
     }
 
-    ar &boost::serialization::make_array(quat.data(), quat.size());
-    ar &boost::serialization::make_array(transl.data(), transl.size());
+    ar &boost::serialization::make_array(quaternionCoefficients.data(),
+                                         quaternionCoefficients.size());
+    ar &boost::serialization::make_array(translation.data(),
+                                         translation.size());
 
     if (Archive::is_loading::value)
     {
-        Eigen::Quaternionf q(quat[0], quat[1], quat[2], quat[3]);
-        T = Sophus::SE3f(q, transl);
+        Eigen::Quaternionf quaternion(quaternionCoefficients[0],
+                                      quaternionCoefficients[1],
+                                      quaternionCoefficients[2],
+                                      quaternionCoefficients[3]);
+        T = Sophus::SE3f(quaternion, translation);
     }
 }
 
@@ -82,33 +88,35 @@ void serializeMatrix(Archive                            &ar,
                      cv::Mat                            &mat,
                      [[maybe_unused]] const unsigned int version)
 {
-    int  cols, rows, type;
-    bool continuous;
+    int  columnCount, rowCount, matType;
+    bool isContinuous;
 
     if (Archive::is_saving::value)
     {
-        cols       = mat.cols;
-        rows       = mat.rows;
-        type       = mat.type();
-        continuous = mat.isContinuous();
+        columnCount  = mat.cols;
+        rowCount     = mat.rows;
+        matType      = mat.type();
+        isContinuous = mat.isContinuous();
     }
 
-    ar & cols & rows & type & continuous;
+    ar & columnCount & rowCount & matType & isContinuous;
 
     if (Archive::is_loading::value)
-        mat.create(rows, cols, type);
+        mat.create(rowCount, columnCount, matType);
 
-    if (continuous)
+    if (isContinuous)
     {
-        const unsigned int data_size = rows * cols * mat.elemSize();
-        ar &boost::serialization::make_array(mat.ptr(), data_size);
+        const unsigned int dataByteCount =
+            rowCount * columnCount * mat.elemSize();
+        ar &boost::serialization::make_array(mat.ptr(), dataByteCount);
     }
     else
     {
-        const unsigned int row_size = cols * mat.elemSize();
-        for (int i = 0; i < rows; i++)
+        const unsigned int rowByteCount = columnCount * mat.elemSize();
+        for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
         {
-            ar &boost::serialization::make_array(mat.ptr(i), row_size);
+            ar &boost::serialization::make_array(mat.ptr(rowIndex),
+                                                 rowByteCount);
         }
     }
 }
@@ -118,15 +126,15 @@ void serializeMatrix(Archive           &ar,
                      const cv::Mat     &mat,
                      const unsigned int version)
 {
-    cv::Mat matAux = mat;
+    cv::Mat mutableMatrixCopy = mat;
 
-    serializeMatrix(ar, matAux, version);
+    serializeMatrix(ar, mutableMatrixCopy, version);
 
     if (Archive::is_loading::value)
     {
-        cv::Mat *ptr;
-        ptr  = (cv::Mat *)(&mat);
-        *ptr = matAux;
+        cv::Mat *p_matrixWriteback;
+        p_matrixWriteback  = (cv::Mat *)(&mat);
+        *p_matrixWriteback = mutableMatrixCopy;
     }
 }
 
@@ -135,46 +143,46 @@ void serializeVectorKeyPoints(Archive                            &ar,
                               const std::vector<cv::KeyPoint>    &vKP,
                               [[maybe_unused]] const unsigned int version)
 {
-    int NumEl;
+    int keyPointCount;
 
     if (Archive::is_saving::value)
     {
-        NumEl = vKP.size();
+        keyPointCount = vKP.size();
     }
 
-    ar & NumEl;
+    ar & keyPointCount;
 
-    std::vector<cv::KeyPoint> vKPaux = vKP;
+    std::vector<cv::KeyPoint> keyPointsCopy = vKP;
     if (Archive::is_loading::value)
-        vKPaux.reserve(NumEl);
+        keyPointsCopy.reserve(keyPointCount);
 
-    for (int i = 0; i < NumEl; ++i)
+    for (int keyPointIndex = 0; keyPointIndex < keyPointCount; ++keyPointIndex)
     {
-        cv::KeyPoint KPi;
+        cv::KeyPoint keyPoint;
 
         if (Archive::is_loading::value)
-            KPi = cv::KeyPoint();
+            keyPoint = cv::KeyPoint();
 
         if (Archive::is_saving::value)
-            KPi = vKPaux[i];
+            keyPoint = keyPointsCopy[keyPointIndex];
 
-        ar & KPi.angle;
-        ar & KPi.response;
-        ar & KPi.size;
-        ar & KPi.pt.x;
-        ar & KPi.pt.y;
-        ar & KPi.class_id;
-        ar & KPi.octave;
+        ar & keyPoint.angle;
+        ar & keyPoint.response;
+        ar & keyPoint.size;
+        ar & keyPoint.pt.x;
+        ar & keyPoint.pt.y;
+        ar & keyPoint.class_id;
+        ar & keyPoint.octave;
 
         if (Archive::is_loading::value)
-            vKPaux.push_back(KPi);
+            keyPointsCopy.push_back(keyPoint);
     }
 
     if (Archive::is_loading::value)
     {
-        std::vector<cv::KeyPoint> *ptr;
-        ptr  = (std::vector<cv::KeyPoint> *)(&vKP);
-        *ptr = vKPaux;
+        std::vector<cv::KeyPoint> *p_keyPointsWriteback;
+        p_keyPointsWriteback  = (std::vector<cv::KeyPoint> *)(&vKP);
+        *p_keyPointsWriteback = keyPointsCopy;
     }
 }
 

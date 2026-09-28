@@ -59,7 +59,7 @@ std::vector<std::string>
         const PassageContext &passage = snapshot_in.passageContexts[index];
         const std::size_t     node    = index + 1U;
         graph[node].label =
-            std::string("passage:") + (passage.passable ? "1" : "0") + ":" +
+            std::string("passage:") + (passage.isPassable ? "1" : "0") + ":" +
             (passage.hasKnownSideDirection ? "1" : "0") + ":" +
             std::to_string(std::min(passage.traversalKnownToFarCount,
                                     passage.traversalFarToKnownCount)) +

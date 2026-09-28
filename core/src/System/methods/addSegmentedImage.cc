@@ -31,7 +31,7 @@ namespace core
 {
 
 void System::addSegmentedImage(
-    std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *tuple)
+    std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in)
 {
     // Adding the segmented image to the buffer of the SemanticSegmentation
     if (types::SystemParams::getParams()->general.modeOfOperation ==
@@ -41,21 +41,21 @@ void System::addSegmentedImage(
         // segmentation is not running. Still counts as "returned" -- the
         // keyframe's round trip through the pipeline is over either way, and
         // the lockstep backlog signal must not stall forever in GEO mode.
-        vs_graphs::core::KeyFrame *pKF =
-            p_atlas->getKeyFrameById(std::get<0>(*tuple));
-        if (pKF)
+        vs_graphs::core::KeyFrame *p_keyFrame =
+            p_atlas->getKeyFrameById(std::get<0>(*p_tuple_in));
+        if (p_keyFrame)
         {
-            pKF->clearPointCloud();
+            p_keyFrame->clearPointCloud();
         }
         segmentationReturnedCount.fetch_add(1U, std::memory_order_relaxed);
-        lastReturnedKeyFrameId.store(std::get<0>(*tuple),
+        lastReturnedKeyFrameId.store(std::get<0>(*p_tuple_in),
                                      std::memory_order_relaxed);
         return;
     }
 
-    p_semanticSegmentation->addSegmentedFrameToBuffer(tuple);
+    p_semanticSegmentation->addSegmentedFrameToBuffer(p_tuple_in);
     segmentationReturnedCount.fetch_add(1U, std::memory_order_relaxed);
-    lastReturnedKeyFrameId.store(std::get<0>(*tuple),
+    lastReturnedKeyFrameId.store(std::get<0>(*p_tuple_in),
                                  std::memory_order_relaxed);
 }
 

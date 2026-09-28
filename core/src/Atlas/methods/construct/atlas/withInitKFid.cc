@@ -30,8 +30,8 @@ namespace vs_graphs
 namespace core
 {
 
-Atlas::Atlas(int initKFid) :
-    lastInitKeyFrameId(initKFid),
+Atlas::Atlas(int initialKeyFrameId_in) :
+    lastInitKeyFrameId(initialKeyFrameId_in),
     hasViewer(false)
 {
     p_activeMap = static_cast<Map *>(nullptr);

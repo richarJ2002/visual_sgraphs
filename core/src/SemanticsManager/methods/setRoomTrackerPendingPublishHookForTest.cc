@@ -26,8 +26,8 @@ namespace core
 void SemanticsManager::setRoomTrackerPendingPublishHookForTest(
     std::function<void()> hook_in)
 {
-    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-    roomTrackerPendingPublishHook_ = std::move(hook_in);
+    std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+    roomTrackerPendingPublishHook = std::move(hook_in);
 }
 
 } // namespace core

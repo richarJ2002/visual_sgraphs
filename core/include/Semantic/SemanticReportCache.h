@@ -113,9 +113,9 @@ class SemanticReportCache
     bool isAvailable() const;
 
   private:
-    mutable std::mutex       mMutex;
-    SemanticReportCacheEntry mLatest;
-    bool                     mIsAvailable{false};
+    mutable std::mutex       cacheMutex;
+    SemanticReportCacheEntry latestEntry;
+    bool                     hasCachedReport{false};
 };
 
 } // namespace semantic

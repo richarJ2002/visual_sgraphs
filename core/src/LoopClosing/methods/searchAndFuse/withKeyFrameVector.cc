@@ -34,47 +34,48 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::searchAndFuse(const vector<KeyFrame *> &vConectedKFs,
-                                vector<MapPoint *>       &vpMapPoints)
+void LoopClosing::searchAndFuse(const vector<KeyFrame *> &conectedKeyFrames_in,
+                                vector<MapPoint *>       &mapPoints_in)
 {
     ORBmatcher matcher(0.8);
 
-    int total_replaces = 0;
+    int totalReplaces = 0;
 
     // cout << "FUSE-POSE: Initially there are " << vpMapPoints.size() << " MPs"
     // << endl; cout << "FUSE-POSE: Intially there are " << vConectedKFs.size()
     // << " KFs" << endl;
-    for (auto mit = vConectedKFs.begin(), mend = vConectedKFs.end();
+    for (auto mit  = conectedKeyFrames_in.begin(),
+              mend = conectedKeyFrames_in.end();
          mit != mend;
          mit++)
     {
-        int           num_replaces = 0;
-        KeyFrame     *pKF          = (*mit);
-        Map          *pMap         = pKF->getMap();
-        Sophus::SE3f  Tcw          = pKF->getPose();
+        int           replaceCount = 0;
+        KeyFrame     *p_keyFrame   = (*mit);
+        Map          *p_map        = p_keyFrame->getMap();
+        Sophus::SE3f  Tcw          = p_keyFrame->getPose();
         Sophus::Sim3f Scw(Tcw.unit_quaternion(), Tcw.translation());
         Scw.setScale(1.f);
         /*std::cout << "These should be zeros: " <<
             Scw.rotationMatrix() - Tcw.rotationMatrix() << std::endl <<
             Scw.translation() - Tcw.translation() << std::endl <<
             Scw.scale() - 1.f << std::endl;*/
-        vector<MapPoint *> vpReplacePoints(vpMapPoints.size(),
-                                           static_cast<MapPoint *>(nullptr));
-        matcher.fuse(pKF, Scw, vpMapPoints, 4, vpReplacePoints);
+        vector<MapPoint *> replacePoints(mapPoints_in.size(),
+                                         static_cast<MapPoint *>(nullptr));
+        matcher.fuse(p_keyFrame, Scw, mapPoints_in, 4, replacePoints);
 
         // Get Map Mutex
-        unique_lock<mutex> lock(pMap->mMutexMapUpdate);
-        const int          nLP = vpMapPoints.size();
-        for (int i = 0; i < nLP; i++)
+        unique_lock<mutex> lock(p_map->mapUpdateMutex);
+        const int          lpCount = mapPoints_in.size();
+        for (int lpIndex = 0; lpIndex < lpCount; lpIndex++)
         {
-            MapPoint *pRep = vpReplacePoints[i];
-            if (pRep)
+            MapPoint *p_rep = replacePoints[lpIndex];
+            if (p_rep)
             {
-                num_replaces += 1;
-                pRep->replace(vpMapPoints[i]);
+                replaceCount += 1;
+                p_rep->replace(mapPoints_in[lpIndex]);
             }
         }
-        /*cout << "FUSE-POSE: KF " << pKF->mnId << " ->" << num_replaces << "
+        /*cout << "FUSE-POSE: KF " << pKF->id << " ->" << num_replaces << "
         MPs fused" << endl; total_replaces += num_replaces;*/
     }
     // cout << "FUSE-POSE: " << total_replaces << " MPs had been fused" << endl;

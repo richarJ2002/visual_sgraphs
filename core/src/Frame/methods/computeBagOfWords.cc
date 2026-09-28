@@ -47,9 +47,12 @@ void Frame::computeBagOfWords()
 {
     if (bowVector.empty())
     {
-        vector<cv::Mat> vCurrentDesc =
+        vector<cv::Mat> currentDescriptors =
             utils::converter::Converter::toDescriptorVector(descriptors);
-        p_orbVocabulary->transform(vCurrentDesc, bowVector, featureVector, 4);
+        p_orbVocabulary->transform(currentDescriptors,
+                                   bowVector,
+                                   featureVector,
+                                   4);
     }
 }
 

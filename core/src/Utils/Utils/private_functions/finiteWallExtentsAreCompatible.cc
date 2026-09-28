@@ -64,7 +64,7 @@ bool finiteWallExtentsAreCompatible(
     const ProjectedPlaneBounds secondBounds =
         projectPlaneBounds(p_secondCloud_in, tangentU_World, tangentV_World);
 
-    if (!firstBounds.valid || !secondBounds.valid)
+    if (!firstBounds.isValid || !secondBounds.isValid)
     {
         return false;
     }

@@ -43,7 +43,7 @@ void LoopClosing::run(void)
      *
      * This flag is observed by other threads through isFinished().
      */
-    finished = false;
+    hasFinished = false;
 
     /*!
      * Keep the LoopClosing worker alive until another thread requests shutdown.
@@ -87,7 +87,7 @@ void LoopClosing::run(void)
             }
 
 #ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point time_StartPR =
+            std::chrono::steady_clock::time_point timeStartPr =
                 std::chrono::steady_clock::now();
 #endif
 
@@ -97,24 +97,24 @@ void LoopClosing::run(void)
              * queries the database, validates Sim3 geometry, and updates
              * mbLoopDetected / mbMergeDetected plus their matched-KF state.
              */
-            bool bFindedRegion = newDetectCommonRegions();
+            bool isFindedRegion = newDetectCommonRegions();
 
 #ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point time_EndPR =
+            std::chrono::steady_clock::time_point timeEndPr =
                 std::chrono::steady_clock::now();
 
-            double timePRTotal = std::chrono::duration_cast<
+            double timePrTotal = std::chrono::duration_cast<
                                      std::chrono::duration<double, std::milli>>(
-                                     time_EndPR - time_StartPR)
+                                     timeEndPr - timeStartPr)
                                      .count();
-            vdPRTotal_ms.push_back(timePRTotal);
+            placeRecognitionTotalTimes_ms.push_back(timePrTotal);
 #endif
 
             /* If a detected region is found, perform loop closure */
-            if (bFindedRegion)
+            if (isFindedRegion)
             {
                 /* Merge if NewDetectCommonRegions() indicates so */
-                if (mergeDetected)
+                if (isMergeDetected)
                 {
                     semantic::SemanticMergeDecision mergeDecision =
                         semantic::SemanticMergeDecision::REJECT;
@@ -193,7 +193,7 @@ void LoopClosing::run(void)
                                 mergeMatchedMPs.clear();
                                 mergeMPs.clear();
                                 mergeNumNotFound = 0;
-                                mergeDetected    = false;
+                                isMergeDetected  = false;
                                 Verbose::printMess(
                                     "scale bad estimated. Abort merging",
                                     Verbose::VERBOSITY_NORMAL);
@@ -206,12 +206,12 @@ void LoopClosing::run(void)
                                 p_currentKF->getMap()->getInertialBA1())
                             {
                                 Eigen::Vector3d phi =
-                                    LogSO3(oldCorrectedPose.rotation()
+                                    logSO3(oldCorrectedPose.rotation()
                                                .toRotationMatrix());
                                 phi(0) = 0;
                                 phi(1) = 0;
                                 oldCorrectedPose =
-                                    g2o::Sim3(ExpSO3(phi),
+                                    g2o::Sim3(expSO3(phi),
                                               oldCorrectedPose.translation(),
                                               1.0);
                             }
@@ -246,7 +246,7 @@ void LoopClosing::run(void)
                         mg2oMergeSw1w2 = (gSw2c * gScw1).inverse();
 
 #ifdef REGISTER_TIMES
-                        std::chrono::steady_clock::time_point time_StartMerge =
+                        std::chrono::steady_clock::time_point timeStartMerge =
                             std::chrono::steady_clock::now();
 #endif
 
@@ -274,17 +274,16 @@ void LoopClosing::run(void)
                         if (mergeDecision ==
                             semantic::SemanticMergeDecision::ACCEPT)
                         {
-                            std::chrono::steady_clock::time_point
-                                time_EndMerge =
-                                    std::chrono::steady_clock::now();
+                            std::chrono::steady_clock::time_point timeEndMerge =
+                                std::chrono::steady_clock::now();
 
                             double timeMergeTotal =
                                 std::chrono::duration_cast<
                                     std::chrono::duration<double, std::milli>>(
-                                    time_EndMerge - time_StartMerge)
+                                    timeEndMerge - timeStartMerge)
                                     .count();
-                            vdMergeTotal_ms.push_back(timeMergeTotal);
-                            nMerges += 1;
+                            mergeTotalTimes_ms.push_back(timeMergeTotal);
+                            mergeCount += 1;
                         }
 #endif
                     }
@@ -297,9 +296,11 @@ void LoopClosing::run(void)
                             << std::endl;
 
                         /* Record only a merge that actually committed. */
-                        vdPR_CurrentTime.push_back(p_currentKF->timeStamp);
-                        vdPR_MatchedTime.push_back(p_mergeMatchedKF->timeStamp);
-                        vnPR_TypeRecogn.push_back(1);
+                        placeRecognitionCurrentTimes.push_back(
+                            p_currentKF->timeStamp);
+                        placeRecognitionMatchedTimes.push_back(
+                            p_mergeMatchedKF->timeStamp);
+                        placeRecognitionTypes.push_back(1);
 
                         p_mergeLastCurrentKF->setErase();
                         p_mergeMatchedKF->setErase();
@@ -307,11 +308,11 @@ void LoopClosing::run(void)
                         mergeMatchedMPs.clear();
                         mergeMPs.clear();
                         mergeNumNotFound = 0;
-                        mergeDetected    = false;
+                        isMergeDetected  = false;
 
                         /* A committed merge invalidates any same-map loop
                          * candidate collected against the old topology. */
-                        if (loopDetected)
+                        if (isLoopDetected)
                         {
                             recordLoopCorrectionEvent(
                                 false,
@@ -322,7 +323,7 @@ void LoopClosing::run(void)
                             loopMatchedMPs.clear();
                             loopMPs.clear();
                             loopNumNotFound = 0;
-                            loopDetected    = false;
+                            isLoopDetected  = false;
                         }
                     }
                     else if (mergeDecision ==
@@ -346,7 +347,7 @@ void LoopClosing::run(void)
                         mergeMatchedMPs.clear();
                         mergeMPs.clear();
                         mergeNumNotFound = 0;
-                        mergeDetected    = false;
+                        isMergeDetected  = false;
                     }
                 }
 
@@ -357,14 +358,14 @@ void LoopClosing::run(void)
                  * transformation can be used to correct accumulated drift in
                  * the map.
                  */
-                if (loopDetected)
+                if (isLoopDetected)
                 {
                     std::cout
                         << "[LoopClosing] Loop detected! Correcting the map ..."
                         << std::endl;
 
                     /* Init a variable to track of a good loop closure occurs */
-                    bool bGoodLoop = true;
+                    bool isGoodLoop = true;
 
                     /*!
                      * Record the place recognition event for evaluation and
@@ -377,13 +378,15 @@ void LoopClosing::run(void)
                      *      - Matched keyframe: the previously observed keyframe
                      *        that was recognised.
                      *
-                     * vnPR_TypeRecogn identifies the recognition type:
+                     * placeRecognitionTypes identifies the recognition type:
                      *   0 -> loop closure
                      *   1 -> map merge
                      */
-                    vdPR_CurrentTime.push_back(p_currentKF->timeStamp);
-                    vdPR_MatchedTime.push_back(p_loopMatchedKF->timeStamp);
-                    vnPR_TypeRecogn.push_back(0);
+                    placeRecognitionCurrentTimes.push_back(
+                        p_currentKF->timeStamp);
+                    placeRecognitionMatchedTimes.push_back(
+                        p_loopMatchedKF->timeStamp);
+                    placeRecognitionTypes.push_back(0);
 
                     /*!
                      * The Sim3 transformation estimated during loop detection
@@ -433,7 +436,7 @@ void LoopClosing::run(void)
                          * observations and the correction is rejected.
                          */
                         Eigen::Vector3d phi =
-                            LogSO3(g2oSww_new.rotation().toRotationMatrix());
+                            logSO3(g2oSww_new.rotation().toRotationMatrix());
 
                         if (fabs(phi(0)) < 0.008f && fabs(phi(1)) < 0.008f &&
                             fabs(phi(2)) < 0.349f)
@@ -451,7 +454,7 @@ void LoopClosing::run(void)
                             {
                                 phi(0)     = 0;
                                 phi(1)     = 0;
-                                g2oSww_new = g2o::Sim3(ExpSO3(phi),
+                                g2oSww_new = g2o::Sim3(expSO3(phi),
                                                        g2oSww_new.translation(),
                                                        1.0);
 
@@ -474,7 +477,7 @@ void LoopClosing::run(void)
                                 << "[LoopClosing] The loop lacks sufficient "
                                    "overlap! Skipping correction ..."
                                 << std::endl;
-                            bGoodLoop = false;
+                            isGoodLoop = false;
                             recordLoopCorrectionEvent(false,
                                                       "inertial_overlap");
                         }
@@ -486,15 +489,15 @@ void LoopClosing::run(void)
                      * optimisation and updates keyframe/map point poses to
                      * remove accumulated drift.
                      */
-                    if (bGoodLoop)
+                    if (isGoodLoop)
                     {
                         loopMapPoints = loopMPs;
 
 #ifdef REGISTER_TIMES
-                        std::chrono::steady_clock::time_point time_StartLoop =
+                        std::chrono::steady_clock::time_point timeStartLoop =
                             std::chrono::steady_clock::now();
 
-                        nLoop += 1;
+                        loopCount += 1;
 
 #endif
                         /*!
@@ -516,15 +519,15 @@ void LoopClosing::run(void)
                          */
                         correctLoop();
 #ifdef REGISTER_TIMES
-                        std::chrono::steady_clock::time_point time_EndLoop =
+                        std::chrono::steady_clock::time_point timeEndLoop =
                             std::chrono::steady_clock::now();
 
                         double timeLoopTotal =
                             std::chrono::duration_cast<
                                 std::chrono::duration<double, std::milli>>(
-                                time_EndLoop - time_StartLoop)
+                                timeEndLoop - timeStartLoop)
                                 .count();
-                        vdLoopTotal_ms.push_back(timeLoopTotal);
+                        loopTotalTimes_ms.push_back(timeLoopTotal);
 #endif
 
                         /*!
@@ -553,7 +556,7 @@ void LoopClosing::run(void)
                     loopMatchedMPs.clear();
                     loopMPs.clear();
                     loopNumNotFound = 0;
-                    loopDetected    = false;
+                    isLoopDetected  = false;
                 }
             }
             p_lastCurrentKF = p_currentKF;

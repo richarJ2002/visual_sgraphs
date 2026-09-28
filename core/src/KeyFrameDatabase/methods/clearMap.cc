@@ -29,32 +29,34 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::clearMap(Map *pMap)
+void KeyFrameDatabase::clearMap(Map *p_map_in)
 {
-    unique_lock<mutex> lock(mMutex);
+    unique_lock<mutex> lock(databaseMutex);
 
     // Erase elements in the Inverse File for the entry
-    for (std::vector<list<KeyFrame *>>::iterator vit  = invertedFile.begin(),
-                                                 vend = invertedFile.end();
-         vit != vend;
-         vit++)
+    for (std::vector<list<KeyFrame *>>::iterator
+             invertedFileRowIt  = invertedFile.begin(),
+             invertedFileRowEnd = invertedFile.end();
+         invertedFileRowIt != invertedFileRowEnd;
+         invertedFileRowIt++)
     {
         // List of keyframes that share the word
-        list<KeyFrame *> &lKFs = *vit;
+        list<KeyFrame *> &keyFramesForWord = *invertedFileRowIt;
 
-        for (list<KeyFrame *>::iterator lit = lKFs.begin(), lend = lKFs.end();
-             lit != lend;)
+        for (list<KeyFrame *>::iterator keyFrameIt  = keyFramesForWord.begin(),
+                                        keyFrameEnd = keyFramesForWord.end();
+             keyFrameIt != keyFrameEnd;)
         {
-            KeyFrame *pKFi = *lit;
-            if (pMap == pKFi->getMap())
+            KeyFrame *p_candidateKeyFrame = *keyFrameIt;
+            if (p_map_in == p_candidateKeyFrame->getMap())
             {
-                lit = lKFs.erase(lit);
+                keyFrameIt = keyFramesForWord.erase(keyFrameIt);
                 // Dont delete the KF because the class Map clean all the KF
                 // when it is destroyed
             }
             else
             {
-                ++lit;
+                ++keyFrameIt;
             }
         }
     }

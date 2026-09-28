@@ -35,31 +35,32 @@ namespace vs_graphs
 namespace core
 {
 
-int KeyFrame::getTrackedMapPointCount(const int &minObs)
+int KeyFrame::getTrackedMapPointCount(const int &minimumObservation_in)
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
 
-    int        nPoints   = 0;
-    const bool bCheckObs = minObs > 0;
-    for (int i = 0; i < N; i++)
+    int        pointCount              = 0;
+    const bool shouldCheckObservations = minimumObservation_in > 0;
+    for (int keyPointIndex = 0; keyPointIndex < keyPointCount; keyPointIndex++)
     {
-        MapPoint *pMP = mapPoints[i];
-        if (pMP)
+        MapPoint *p_mapPoint = mapPoints[keyPointIndex];
+        if (p_mapPoint)
         {
-            if (!pMP->isBad())
+            if (!p_mapPoint->isBad())
             {
-                if (bCheckObs)
+                if (shouldCheckObservations)
                 {
-                    if (mapPoints[i]->getObservationCount() >= minObs)
-                        nPoints++;
+                    if (mapPoints[keyPointIndex]->getObservationCount() >=
+                        minimumObservation_in)
+                        pointCount++;
                 }
                 else
-                    nPoints++;
+                    pointCount++;
             }
         }
     }
 
-    return nPoints;
+    return pointCount;
 }
 
 } // namespace core

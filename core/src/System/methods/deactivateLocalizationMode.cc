@@ -32,8 +32,8 @@ namespace core
 
 void System::deactivateLocalizationMode()
 {
-    unique_lock<mutex> lock(mMutexMode);
-    deactivateLocalizationModeRequested = true;
+    unique_lock<mutex> lock(modeMutex);
+    isLocalizationModeDeactivationRequested = true;
 }
 
 } // namespace core

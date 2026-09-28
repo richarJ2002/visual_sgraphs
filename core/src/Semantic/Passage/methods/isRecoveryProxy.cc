@@ -30,8 +30,8 @@ namespace semantic
 
 bool Passage::isRecoveryProxy() const
 {
-    std::lock_guard<std::mutex> lock(mMutexType);
-    return recoveryProxy;
+    std::lock_guard<std::mutex> lock(typeMutex);
+    return isMarkedRecoveryProxy;
 }
 
 } // namespace semantic

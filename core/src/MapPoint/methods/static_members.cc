@@ -34,8 +34,8 @@ namespace vs_graphs
 namespace core
 {
 
-long unsigned int MapPoint::nNextId = 0;
-mutex             MapPoint::mGlobalMutex;
+long unsigned int MapPoint::nextId = 0;
+mutex             MapPoint::globalMutex;
 
 } // namespace core
 } // namespace vs_graphs

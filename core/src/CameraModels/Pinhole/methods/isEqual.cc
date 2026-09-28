@@ -40,21 +40,22 @@ bool Pinhole::isEqual(geometriccamera::GeometricCamera *p_camera_in)
     if (p_camera_in->getType() != geometriccamera::GeometricCamera::CAM_PINHOLE)
         return false;
 
-    Pinhole *p_pinhole_in = (Pinhole *)p_camera_in;
+    Pinhole *p_otherPinhole = (Pinhole *)p_camera_in;
 
-    if (size() != p_pinhole_in->size())
+    if (size() != p_otherPinhole->size())
         return false;
 
-    bool is_same_camera = true;
-    for (size_t i = 0; i < size(); ++i)
+    bool isSameCamera = true;
+    for (size_t parameterIndex = 0; parameterIndex < size(); ++parameterIndex)
     {
-        if (abs(parameters[i] - p_pinhole_in->getParameter(i)) > 1e-6)
+        if (abs(parameters[parameterIndex] -
+                p_otherPinhole->getParameter(parameterIndex)) > 1e-6)
         {
-            is_same_camera = false;
+            isSameCamera = false;
             break;
         }
     }
-    return is_same_camera;
+    return isSameCamera;
 }
 } // namespace pinhole
 } // namespace camera_models

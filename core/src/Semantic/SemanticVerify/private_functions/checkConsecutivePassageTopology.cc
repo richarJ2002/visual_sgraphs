@@ -107,7 +107,8 @@ AlignmentCheck checkConsecutivePassageTopology(
                     /* Dormant pair: no constraint either way. */
                     continue;
                 }
-                if (lineageMatch->second->passable != absorbedPassage.passable)
+                if (lineageMatch->second->isPassable !=
+                    absorbedPassage.isPassable)
                 {
                     contradictionReason_out =
                         SemanticMergeReason::PASSAGE_IDENTITY_CONTRADICTION;
@@ -157,7 +158,7 @@ AlignmentCheck checkConsecutivePassageTopology(
                     absorbedFarKey == survivingFarKey)
                 {
                     paired = true;
-                    if (p_surviving->passable != absorbedPassage.passable)
+                    if (p_surviving->isPassable != absorbedPassage.isPassable)
                     {
                         contradictionReason_out =
                             SemanticMergeReason::PASSAGE_IDENTITY_CONTRADICTION;

@@ -32,14 +32,14 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::newParameterLoader(utils::settings::Settings *settings)
+void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
 {
-    p_camera = settings->camera1();
+    p_camera = p_settings_inout->camera1();
     p_camera = p_atlas->addCamera(p_camera);
 
-    if (settings->needToUndistort())
+    if (p_settings_inout->needToUndistort())
     {
-        distortionCoefficients = settings->camera1DistortionCoef();
+        distortionCoefficients = p_settings_inout->camera1DistortionCoef();
     }
     else
     {
@@ -63,87 +63,87 @@ void Tracking::newParameterLoader(utils::settings::Settings *settings)
 
     if ((sensor == System::STEREO || sensor == System::IMU_STEREO ||
          sensor == System::IMU_RGBD) &&
-        settings->cameraType() ==
+        p_settings_inout->cameraType() ==
             utils::settings::Settings::CameraType::KANNALA_BRANDT)
     {
-        p_camera2 = settings->camera2();
+        p_camera2 = p_settings_inout->camera2();
         p_camera2 = p_atlas->addCamera(p_camera2);
 
-        poseTlr = settings->getLeftToRightTransform();
+        poseTlr = p_settings_inout->getLeftToRightTransform();
 
-        p_frameDrawer->both = true;
+        p_frameDrawer->shouldDrawBothImages = true;
     }
 
     if (sensor == System::STEREO || sensor == System::RGBD ||
         sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
     {
-        mbf            = settings->getBaselineFocal();
-        depthThreshold = settings->b() * settings->thDepth();
+        mbf            = p_settings_inout->getBaselineFocal();
+        depthThreshold = p_settings_inout->b() * p_settings_inout->thDepth();
     }
 
     if (sensor == System::RGBD || sensor == System::IMU_RGBD)
     {
-        depthMapFactor = settings->depthMapFactor();
+        depthMapFactor = p_settings_inout->depthMapFactor();
         if (fabs(depthMapFactor) < 1e-5)
             depthMapFactor = 1;
         else
             depthMapFactor = 1.0f / depthMapFactor;
     }
 
-    minFrames  = 0;
-    maxFrames  = settings->getFramesPerSecond();
-    rgbEnabled = settings->isRgbEnabled();
+    minFrames    = 0;
+    maxFrames    = p_settings_inout->getFramesPerSecond();
+    isRgbEnabled = p_settings_inout->isRgbEnabled();
 
     // ORB parameters
-    int   nFeatures    = settings->nFeatures();
-    int   nLevels      = settings->nLevels();
-    int   fIniThFAST   = settings->initThFAST();
-    int   fMinThFAST   = settings->getMinimumFastThreshold();
-    float fScaleFactor = settings->scaleFactor();
+    int   featureCount         = p_settings_inout->nFeatures();
+    int   levelCount           = p_settings_inout->nLevels();
+    int   initialThresholdFast = p_settings_inout->initThFAST();
+    int   minimumThresholdFast = p_settings_inout->getMinimumFastThreshold();
+    float scaleFactor          = p_settings_inout->scaleFactor();
 
-    p_orbExtractorLeft = new ORBextractor(nFeatures,
-                                          fScaleFactor,
-                                          nLevels,
-                                          fIniThFAST,
-                                          fMinThFAST);
+    p_orbExtractorLeft = new ORBextractor(featureCount,
+                                          scaleFactor,
+                                          levelCount,
+                                          initialThresholdFast,
+                                          minimumThresholdFast);
 
     if (sensor == System::STEREO || sensor == System::IMU_STEREO)
-        p_orbExtractorRight = new ORBextractor(nFeatures,
-                                               fScaleFactor,
-                                               nLevels,
-                                               fIniThFAST,
-                                               fMinThFAST);
+        p_orbExtractorRight = new ORBextractor(featureCount,
+                                               scaleFactor,
+                                               levelCount,
+                                               initialThresholdFast,
+                                               minimumThresholdFast);
 
     if (sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR)
-        p_iniOrbExtractor = new ORBextractor(5 * nFeatures,
-                                             fScaleFactor,
-                                             nLevels,
-                                             fIniThFAST,
-                                             fMinThFAST);
+        p_iniOrbExtractor = new ORBextractor(5 * featureCount,
+                                             scaleFactor,
+                                             levelCount,
+                                             initialThresholdFast,
+                                             minimumThresholdFast);
 
     // Adaptive FAST threshold initialization
     lastFrameFeatures        = 0;
     consecutiveLowFeatures   = 0;
-    baseInitialFastThreshold = fIniThFAST;
-    baseMinimumFastThreshold = fMinThFAST;
+    baseInitialFastThreshold = initialThresholdFast;
+    baseMinimumFastThreshold = minimumThresholdFast;
 
     if (sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
         sensor == System::IMU_RGBD)
     {
-        Sophus::SE3f Tbc = settings->Tbc();
-        imuFrequency     = settings->imuFrequency();
-        imuThresh        = settings->imuThreshold();
-        insertKFsLost    = settings->insertKFsWhenLost();
-        fastInit         = settings->fastInit();
-        imuPeriod        = 1.0 / static_cast<double>(imuFrequency);
-        float Ng         = settings->noiseGyro();
-        float Na         = settings->noiseAcc();
-        float Ngw        = settings->gyroWalk();
-        float Naw        = settings->accWalk();
+        Sophus::SE3f Tbc              = p_settings_inout->Tbc();
+        imuFrequency                  = p_settings_inout->imuFrequency();
+        imuThresh                     = p_settings_inout->imuThreshold();
+        shouldInsertKeyFramesWhenLost = p_settings_inout->insertKFsWhenLost();
+        isFastInitEnabled             = p_settings_inout->fastInit();
+        imuPeriod                     = 1.0 / static_cast<double>(imuFrequency);
+        float Ng                      = p_settings_inout->noiseGyro();
+        float Na                      = p_settings_inout->noiseAcc();
+        float gwCount                 = p_settings_inout->gyroWalk();
+        float awCount                 = p_settings_inout->accWalk();
 
         const float sf = sqrt(imuFrequency);
         p_imuCalibration =
-            new IMU::Calib(Tbc, Ng * sf, Na * sf, Ngw / sf, Naw / sf);
+            new IMU::Calib(Tbc, Ng * sf, Na * sf, gwCount / sf, awCount / sf);
 
         p_imuPreintegratedFromLastKF =
             new IMU::Preintegrated(IMU::Bias(), *p_imuCalibration);

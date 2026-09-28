@@ -90,7 +90,7 @@ struct WallAdmissionEvidence
      * @frame       N/A
      * @unit        N/A
      */
-    bool admissible = false;
+    bool isAdmissible = false;
 
     /*!
      * @brief       TODO
@@ -98,7 +98,7 @@ struct WallAdmissionEvidence
      * @frame       N/A
      * @unit        N/A
      */
-    bool adequateFiniteFit = false;
+    bool hasAdequateFiniteFit = false;
 
     /*!
      * @brief       TODO
@@ -152,7 +152,7 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
                               const Eigen::Vector3d &groundAxisV_World_in,
                               const double           endpointTrimRatio_in,
                               const double           minimumWallLength_m_in,
-                              FiniteWallSegment2d   &segment_out);
+                              FiniteWallSegment2d   &segment_inout);
 
 bool intersectSupportingLines(const FiniteWallSegment2d &firstSegment_in,
                               const FiniteWallSegment2d &secondSegment_in,
@@ -165,13 +165,13 @@ double pointToSegmentDistance_m(const Eigen::Vector2d     &point_World_m_in,
 
 WallLoopClosure
     tryCloseWallLoop(std::vector<FiniteWallSegment2d> wallSegments_in,
-                     const Eigen::Vector2d           &roomCentroid_Ground_m_in,
+                     const Eigen::Vector2d           &roomCentroidGround_m_in,
                      const types::SystemParams::RoomSeg::BoundaryTopology
                          &topologyParameters_in);
 
 std::vector<semantic::Room::ObservationGap> computeRoomObservationGaps(
     const std::vector<FiniteWallSegment2d> &wallSegments_in,
-    const Eigen::Vector2d                  &roomCentroid_Ground_m_in,
+    const Eigen::Vector2d                  &roomCentroidGround_m_in,
     /* An axis-aligned (or any) rectangle's four wall midpoints sit exactly
      * on its principal axes as seen from the centroid -- always exactly 90
      * deg apart by construction, regardless of aspect ratio. The threshold
@@ -228,10 +228,10 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in);
 bool projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
                                          const Eigen::Vector3d &axisU_World_in,
                                          const Eigen::Vector3d &axisV_World_in,
-                                         double                &minU_m_out,
-                                         double                &maxU_m_out,
-                                         double                &minV_m_out,
-                                         double                &maxV_m_out);
+                                         double                &minimumU_m_out,
+                                         double                &maximumU_m_out,
+                                         double                &minimumV_m_out,
+                                         double                &maximumV_m_out);
 
 bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
                                geometric::Plane      *p_second_in,

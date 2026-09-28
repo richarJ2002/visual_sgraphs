@@ -36,7 +36,7 @@ namespace core
 
 long unsigned int Map::getId()
 {
-    return mnId;
+    return id;
 }
 
 } // namespace core

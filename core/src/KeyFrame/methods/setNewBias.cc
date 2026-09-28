@@ -35,12 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::setNewBias(const IMU::Bias &b)
+void KeyFrame::setNewBias(const IMU::Bias &b_in)
 {
-    unique_lock<mutex> lock(mMutexPose);
-    imuBias = b;
+    unique_lock<mutex> lock(poseMutex);
+    imuBias = b_in;
     if (p_imuPreintegrated)
-        p_imuPreintegrated->setNewBias(b);
+        p_imuPreintegrated->setNewBias(b_in);
 }
 
 } // namespace core

@@ -45,11 +45,12 @@ bool Tracking::trackLocalMap()
 
     // TOO check outliers before PO
     int aux1 = 0, aux2 = 0;
-    for (int i = 0; i < currentFrame.N; i++)
-        if (currentFrame.mapPoints[i])
+    for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
+         keyPointIndex++)
+        if (currentFrame.mapPoints[keyPointIndex])
         {
             aux1++;
-            if (currentFrame.outlierFlags[i])
+            if (currentFrame.outlierFlags[keyPointIndex])
                 aux2++;
         }
 
@@ -57,7 +58,7 @@ bool Tracking::trackLocalMap()
         Optimizer::poseOptimization(&currentFrame);
     else
     {
-        if (currentFrame.mnId <= lastRelocFrameId + framesToResetIMU)
+        if (currentFrame.id <= lastRelocFrameId + framesToResetIMU)
         {
             Verbose::printMess("TLM: PoseOptimization ",
                                Verbose::VERBOSITY_DEBUG);
@@ -66,7 +67,7 @@ bool Tracking::trackLocalMap()
         else
         {
             // if(!mbMapUpdated && mState == OK) //  && (mnMatchesInliers>30))
-            if (!mapUpdated) //  && (mnMatchesInliers>30))
+            if (!isMapUpdated) //  && (mnMatchesInliers>30))
             {
                 Verbose::printMess("TLM: PoseInertialOptimizationLastFrame ",
                                    Verbose::VERBOSITY_DEBUG);
@@ -86,29 +87,32 @@ bool Tracking::trackLocalMap()
     }
 
     aux1 = 0, aux2 = 0;
-    for (int i = 0; i < currentFrame.N; i++)
-        if (currentFrame.mapPoints[i])
+    for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
+         keyPointIndex++)
+        if (currentFrame.mapPoints[keyPointIndex])
         {
             aux1++;
-            if (currentFrame.outlierFlags[i])
+            if (currentFrame.outlierFlags[keyPointIndex])
                 aux2++;
         }
 
     matchesInliers = 0;
 
     // Update MapPoints Statistics
-    int nCloseInliers = 0;
-    int nFarInliers   = 0;
-    for (int i = 0; i < currentFrame.N; i++)
+    int closeInlierCount = 0;
+    int farInlierCount   = 0;
+    for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
+         keyPointIndex++)
     {
-        if (currentFrame.mapPoints[i])
+        if (currentFrame.mapPoints[keyPointIndex])
         {
-            if (!currentFrame.outlierFlags[i])
+            if (!currentFrame.outlierFlags[keyPointIndex])
             {
-                currentFrame.mapPoints[i]->increaseFound();
-                if (!onlyTracking)
+                currentFrame.mapPoints[keyPointIndex]->increaseFound();
+                if (!isTrackingOnlyMode)
                 {
-                    if (currentFrame.mapPoints[i]->getObservationCount() > 0)
+                    if (currentFrame.mapPoints[keyPointIndex]
+                            ->getObservationCount() > 0)
                         matchesInliers++;
                 }
                 else
@@ -118,24 +122,25 @@ bool Tracking::trackLocalMap()
                 if ((sensor == System::RGBD || sensor == System::IMU_RGBD ||
                      sensor == System::STEREO ||
                      sensor == System::IMU_STEREO) &&
-                    i < (int)currentFrame.depths.size() &&
-                    currentFrame.depths[i] > 0)
+                    keyPointIndex < (int)currentFrame.depths.size() &&
+                    currentFrame.depths[keyPointIndex] > 0)
                 {
-                    if (currentFrame.depths[i] < depthThreshold)
-                        nCloseInliers++;
+                    if (currentFrame.depths[keyPointIndex] < depthThreshold)
+                        closeInlierCount++;
                     else
-                        nFarInliers++;
+                        farInlierCount++;
                 }
             }
             else if (sensor == System::STEREO)
-                currentFrame.mapPoints[i] = static_cast<MapPoint *>(nullptr);
+                currentFrame.mapPoints[keyPointIndex] =
+                    static_cast<MapPoint *>(nullptr);
         }
     }
 
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
     p_localMapper->matchesInliers = matchesInliers;
-    if (currentFrame.mnId < lastRelocFrameId + maxFrames && matchesInliers < 25)
+    if (currentFrame.id < lastRelocFrameId + maxFrames && matchesInliers < 25)
         return false;
 
     if ((matchesInliers > 10) && (state == RECENTLY_LOST))
@@ -161,7 +166,7 @@ bool Tracking::trackLocalMap()
         // For IMU stereo/RGBD: require only 5 close inliers (AGGRESSIVE)
         // In corridors, close points (walls) provide strong geometric
         // constraints
-        if (nCloseInliers >= 5 && matchesInliers >= 5)
+        if (closeInlierCount >= 5 && matchesInliers >= 5)
             return true;
         else if (matchesInliers >= 10) // fallback with more total inliers
             return true;
@@ -173,9 +178,9 @@ bool Tracking::trackLocalMap()
         // For visual-only stereo/RGBD: require only 5 close inliers
         // (AGGRESSIVE) Close points are more reliable in corridors (wall/floor
         // planes)
-        if (nCloseInliers >= 5)
+        if (closeInlierCount >= 5)
             return true;
-        else if (nCloseInliers >= 3 && matchesInliers >= 10)
+        else if (closeInlierCount >= 3 && matchesInliers >= 10)
             return true;
         else if (matchesInliers >= 15)
             return true;

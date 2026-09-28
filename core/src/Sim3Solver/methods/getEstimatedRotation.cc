@@ -33,7 +33,7 @@ namespace core
 
 Eigen::Matrix3f Sim3Solver::getEstimatedRotation()
 {
-    return mBestRotation;
+    return bestRotation;
 }
 
 } // namespace core

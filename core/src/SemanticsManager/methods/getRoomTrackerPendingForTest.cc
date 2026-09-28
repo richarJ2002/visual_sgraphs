@@ -25,8 +25,8 @@ namespace core
 
 std::pair<bool, bool> SemanticsManager::getRoomTrackerPendingForTest() const
 {
-    std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-    return {crossingEventPending_, crossingBothSidesPending_};
+    std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+    return {isCrossingEventPending, isCrossingBothSidesPending};
 }
 
 } // namespace core

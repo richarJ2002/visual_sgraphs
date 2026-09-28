@@ -37,7 +37,7 @@ namespace core
 
 Eigen::Vector3f KeyFrame::getRightTranslation()
 {
-    unique_lock<mutex> lock(mMutexPose);
+    unique_lock<mutex> lock(poseMutex);
     return (poseTrl * poseTcw).translation();
 }
 

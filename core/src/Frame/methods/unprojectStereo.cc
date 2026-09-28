@@ -43,17 +43,17 @@ namespace vs_graphs
 namespace core
 {
 
-bool Frame::unprojectStereo(const int &i, Eigen::Vector3f &x3D)
+bool Frame::unprojectStereo(const int &index_in, Eigen::Vector3f &x3D_out)
 {
-    const float z = depths[i];
+    const float z = depths[index_in];
     if (z > 0)
     {
-        const float     u = keyPointsUndistorted[i].pt.x;
-        const float     v = keyPointsUndistorted[i].pt.y;
+        const float     u = keyPointsUndistorted[index_in].pt.x;
+        const float     v = keyPointsUndistorted[index_in].pt.y;
         const float     x = (u - cx) * z * invfx;
         const float     y = (v - cy) * z * invfy;
         Eigen::Vector3f x3Dc(x, y, z);
-        x3D = rotationRwc * x3Dc + centerOw;
+        x3D_out = rotationRwc * x3Dc + centerOw;
         return true;
     }
     else

@@ -45,22 +45,22 @@ namespace pinhole
 bool Pinhole::reconstructWithTwoViews(const std::vector<cv::KeyPoint> &keys1_in,
                                       const std::vector<cv::KeyPoint> &keys2_in,
                                       const std::vector<int>   &matches12_in,
-                                      Sophus::SE3f             &pose21_out,
-                                      std::vector<cv::Point3f> &points3D_out,
-                                      std::vector<bool> &triangulated_out)
+                                      Sophus::SE3f             &pose21_inout,
+                                      std::vector<cv::Point3f> &points3d_inout,
+                                      std::vector<bool> &triangulated_inout)
 {
     if (!p_twoViewReconstruction)
     {
-        Eigen::Matrix3f K       = this->toK_();
-        p_twoViewReconstruction = new TwoViewReconstruction(K);
+        Eigen::Matrix3f cameraMatrix = this->toK_();
+        p_twoViewReconstruction      = new TwoViewReconstruction(cameraMatrix);
     }
 
-    return p_twoViewReconstruction->Reconstruct(keys1_in,
+    return p_twoViewReconstruction->reconstruct(keys1_in,
                                                 keys2_in,
                                                 matches12_in,
-                                                pose21_out,
-                                                points3D_out,
-                                                triangulated_out);
+                                                pose21_inout,
+                                                points3d_inout,
+                                                triangulated_inout);
 }
 } // namespace pinhole
 } // namespace camera_models

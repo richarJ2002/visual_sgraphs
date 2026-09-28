@@ -55,54 +55,56 @@ namespace core
 {
 
 void MLPnPsolver::mlpnp_residuals_and_jacs(
-    const Eigen::VectorXd              &x,
-    const points_t                     &pts,
-    const std::vector<Eigen::MatrixXd> &nullspaces,
-    Eigen::VectorXd                    &r,
-    Eigen::MatrixXd                    &fjac,
-    bool                                getJacs)
+    const Eigen::VectorXd              &x_in,
+    const Points3                      &points_in,
+    const std::vector<Eigen::MatrixXd> &nullspaces_in,
+    Eigen::VectorXd                    &r_inout,
+    Eigen::MatrixXd                    &fjac_in,
+    bool                                getJacs_in)
 {
-    rodrigues_t   w(x[0], x[1], x[2]);
-    translation_t T(x[3], x[4], x[5]);
+    RodriguesVector   w(x_in[0], x_in[1], x_in[2]);
+    TranslationVector T(x_in[3], x_in[4], x_in[5]);
 
-    rotation_t R  = rodrigues2rot(w);
-    int        ii = 0;
+    RotationMatrix R  = rodrigues2rot(w);
+    int            ii = 0;
 
     Eigen::MatrixXd jacs(2, 6);
 
-    for (size_t i = 0; i < pts.size(); ++i)
+    for (size_t pointIndex = 0; pointIndex < points_in.size(); ++pointIndex)
     {
-        Eigen::Vector3d ptCam = R * pts[i] + T;
-        ptCam /= ptCam.norm();
+        Eigen::Vector3d pointCamera = R * points_in[pointIndex] + T;
+        pointCamera /= pointCamera.norm();
 
-        r[ii]     = nullspaces[i].col(0).transpose() * ptCam;
-        r[ii + 1] = nullspaces[i].col(1).transpose() * ptCam;
-        if (getJacs)
+        r_inout[ii] =
+            nullspaces_in[pointIndex].col(0).transpose() * pointCamera;
+        r_inout[ii + 1] =
+            nullspaces_in[pointIndex].col(1).transpose() * pointCamera;
+        if (getJacs_in)
         {
             // jacs
-            mlpnpJacs(pts[i],
-                      nullspaces[i].col(0),
-                      nullspaces[i].col(1),
+            mlpnpJacs(points_in[pointIndex],
+                      nullspaces_in[pointIndex].col(0),
+                      nullspaces_in[pointIndex].col(1),
                       w,
                       T,
                       jacs);
 
             // r
-            fjac(ii, 0) = jacs(0, 0);
-            fjac(ii, 1) = jacs(0, 1);
-            fjac(ii, 2) = jacs(0, 2);
+            fjac_in(ii, 0) = jacs(0, 0);
+            fjac_in(ii, 1) = jacs(0, 1);
+            fjac_in(ii, 2) = jacs(0, 2);
 
-            fjac(ii, 3) = jacs(0, 3);
-            fjac(ii, 4) = jacs(0, 4);
-            fjac(ii, 5) = jacs(0, 5);
+            fjac_in(ii, 3) = jacs(0, 3);
+            fjac_in(ii, 4) = jacs(0, 4);
+            fjac_in(ii, 5) = jacs(0, 5);
             // s
-            fjac(ii + 1, 0) = jacs(1, 0);
-            fjac(ii + 1, 1) = jacs(1, 1);
-            fjac(ii + 1, 2) = jacs(1, 2);
+            fjac_in(ii + 1, 0) = jacs(1, 0);
+            fjac_in(ii + 1, 1) = jacs(1, 1);
+            fjac_in(ii + 1, 2) = jacs(1, 2);
 
-            fjac(ii + 1, 3) = jacs(1, 3);
-            fjac(ii + 1, 4) = jacs(1, 4);
-            fjac(ii + 1, 5) = jacs(1, 5);
+            fjac_in(ii + 1, 3) = jacs(1, 3);
+            fjac_in(ii + 1, 4) = jacs(1, 4);
+            fjac_in(ii + 1, 5) = jacs(1, 5);
         }
         ii += 2;
     }

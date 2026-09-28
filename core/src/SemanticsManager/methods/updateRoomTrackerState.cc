@@ -25,29 +25,29 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::updateRoomTrackerState(double now_s)
+void SemanticsManager::updateRoomTrackerState(double now_s_in)
 {
-    /* Consume the per-cycle signals. trackingLostPending_ is set on another
+    /* Consume the per-cycle signals. isTrackingLostPending is set on another
      * thread (System::TrackRGBD's real per-frame tracking state, and also
      * reachable via the on-demand System::GetMissionHealthSnapshot RPC), so
-     * it is read and cleared under mMutexCurrentRoom. */
+     * it is read and cleared under currentRoomMutex. */
     bool                          crossingPending     = false;
     bool                          bothSidesPending    = false;
     bool                          trackingLostPending = false;
     semantic::VerificationVerdict verification;
     {
-        std::lock_guard<std::mutex> currentRoomLock(mMutexCurrentRoom);
-        crossingPending           = crossingEventPending_;
-        bothSidesPending          = crossingBothSidesPending_;
-        trackingLostPending       = trackingLostPending_;
-        crossingEventPending_     = false;
-        crossingBothSidesPending_ = false;
-        trackingLostPending_      = false;
-        if (verificationVerdictPending_)
+        std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
+        crossingPending            = isCrossingEventPending;
+        bothSidesPending           = isCrossingBothSidesPending;
+        trackingLostPending        = isTrackingLostPending;
+        isCrossingEventPending     = false;
+        isCrossingBothSidesPending = false;
+        isTrackingLostPending      = false;
+        if (isVerificationVerdictPending)
         {
-            verification                = verificationVerdict_;
-            verificationVerdict_        = semantic::VerificationVerdict();
-            verificationVerdictPending_ = false;
+            verification                 = verificationVerdict;
+            verificationVerdict          = semantic::VerificationVerdict();
+            isVerificationVerdictPending = false;
         }
     }
 
@@ -56,37 +56,37 @@ void SemanticsManager::updateRoomTrackerState(double now_s)
      * geometric evidence and carries full traversal confidence until the
      * geometric verifier supplies a calibrated value. */
     semantic::TraversalGuardValues crossing;
-    crossing.passageDetected   = crossingPending;
-    crossing.passable          = crossingPending;
-    crossing.confidence        = crossingPending ? 1.0 : 0.0;
-    crossing.bothSidesObserved = bothSidesPending;
+    crossing.isPassageDetected    = crossingPending;
+    crossing.isPassable           = crossingPending;
+    crossing.confidence           = crossingPending ? 1.0 : 0.0;
+    crossing.areBothSidesObserved = bothSidesPending;
 
     semantic::TrackingStatusInput tracking;
-    tracking.lost = trackingLostPending;
-    pendingNewMapCreated_ =
-        pendingNewMapCreated_ || p_atlas->consumeNewMapCreatedEvent();
-    tracking.newMapCreated = pendingNewMapCreated_;
-    if (tracking.lost && tracking.newMapCreated)
+    tracking.isLost = trackingLostPending;
+    isNewMapCreatedPending =
+        isNewMapCreatedPending || p_atlas->consumeNewMapCreatedEvent();
+    tracking.isNewMapCreated = isNewMapCreatedPending;
+    if (tracking.isLost && tracking.isNewMapCreated)
     {
         /* RoomTracker commits at most one row per cycle. Preserve the map event
          * for the following cycle instead of losing it behind TRACKING_LOST. */
-        newMapCreatedDeferred_ = true;
-        tracking.newMapCreated = false;
+        isNewMapCreatedDeferred  = true;
+        tracking.isNewMapCreated = false;
     }
     else
     {
-        newMapCreatedDeferred_ = false;
+        isNewMapCreatedDeferred = false;
     }
 
-    roomTracker_.step(now_s, crossing, verification, tracking);
-    const semantic::TransitionEvent &lastEvent = roomTracker_.getLastEvent();
-    if (lastEvent.accepted &&
+    roomTracker.step(now_s_in, crossing, verification, tracking);
+    const semantic::TransitionEvent &lastEvent = roomTracker.getLastEvent();
+    if (lastEvent.isAccepted &&
         (lastEvent.event ==
              semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH ||
          lastEvent.event == semantic::RoomTrackingEvent::LOST_TIMEOUT ||
          lastEvent.event == semantic::RoomTrackingEvent::REACQUIRE_TIMEOUT))
     {
-        pendingNewMapCreated_ = false;
+        isNewMapCreatedPending = false;
     }
 }
 

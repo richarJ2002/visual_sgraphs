@@ -36,33 +36,37 @@ namespace core
 void LocalMapping::createNewMapPoints()
 {
     // Retrieve neighbor keyframes in covisibility graph
-    int nn = 10;
+    int neighborKeyFrameCount = 10;
     // For stereo inertial case
-    if (monocular)
-        nn = 30;
-    vector<KeyFrame *> vpNeighKFs =
-        p_currentKeyFrame->getBestCovisibilityKeyFrames(nn);
+    if (isMonocular)
+        neighborKeyFrameCount = 30;
+    vector<KeyFrame *> neighborKeyFrames =
+        p_currentKeyFrame->getBestCovisibilityKeyFrames(neighborKeyFrameCount);
 
-    if (inertial)
+    if (isInertial)
     {
-        KeyFrame *pKF   = p_currentKeyFrame;
-        int       count = 0;
+        KeyFrame *p_walkKeyFrame         = p_currentKeyFrame;
+        int       temporalChainStepCount = 0;
         // nn is the fixed covisibility budget set above (10, or 30 when
         // monocular), so it is always positive here.
-        while ((vpNeighKFs.size() <= static_cast<std::size_t>(nn)) &&
-               (pKF->p_prevKF) && (count++ < nn))
+        while ((neighborKeyFrames.size() <=
+                static_cast<std::size_t>(neighborKeyFrameCount)) &&
+               (p_walkKeyFrame->p_prevKF) &&
+               (temporalChainStepCount++ < neighborKeyFrameCount))
         {
-            vector<KeyFrame *>::iterator it =
-                std::find(vpNeighKFs.begin(), vpNeighKFs.end(), pKF->p_prevKF);
-            if (it == vpNeighKFs.end())
-                vpNeighKFs.push_back(pKF->p_prevKF);
-            pKF = pKF->p_prevKF;
+            vector<KeyFrame *>::iterator neighborKeyFrameIt =
+                std::find(neighborKeyFrames.begin(),
+                          neighborKeyFrames.end(),
+                          p_walkKeyFrame->p_prevKF);
+            if (neighborKeyFrameIt == neighborKeyFrames.end())
+                neighborKeyFrames.push_back(p_walkKeyFrame->p_prevKF);
+            p_walkKeyFrame = p_walkKeyFrame->p_prevKF;
         }
     }
 
-    float th = 0.6f;
+    float matchNnRatio = 0.6f;
 
-    ORBmatcher matcher(th, false);
+    ORBmatcher matcher(matchNnRatio, false);
 
     Sophus::SE3<float>         sophTcw1 = p_currentKeyFrame->getPose();
     Eigen::Matrix<float, 3, 4> eigTcw1  = sophTcw1.matrix3x4();
@@ -71,147 +75,166 @@ void LocalMapping::createNewMapPoints()
     Eigen::Vector3f            tcw1     = sophTcw1.translation();
     Eigen::Vector3f            Ow1      = p_currentKeyFrame->getCameraCenter();
 
-    const float &fx1 = p_currentKeyFrame->fx;
-    const float &fy1 = p_currentKeyFrame->fy;
-    const float &cx1 = p_currentKeyFrame->cx;
-    const float &cy1 = p_currentKeyFrame->cy;
+    const float &focalLengthX1    = p_currentKeyFrame->fx;
+    const float &focalLengthY1    = p_currentKeyFrame->fy;
+    const float &principalPointX1 = p_currentKeyFrame->cx;
+    const float &principalPointY1 = p_currentKeyFrame->cy;
 
-    const float ratioFactor         = 1.5f * p_currentKeyFrame->scaleFactor;
-    int         countStereo         = 0;
-    int         countStereoGoodProj = 0;
-    int         countStereoAttempt  = 0;
-    int         totalStereoPts      = 0;
+    const float ratioFactor      = 1.5f * p_currentKeyFrame->scaleFactor;
+    int         stereoPointCount = 0;
+    int         stereoGoodProjectionCount = 0;
+    int         stereoAttemptCount        = 0;
+    int         totalStereoPointCount     = 0;
     // Search matches with epipolar restriction and triangulate
-    for (size_t i = 0; i < vpNeighKFs.size(); i++)
+    for (size_t neighborKeyFrameIndex = 0;
+         neighborKeyFrameIndex < neighborKeyFrames.size();
+         neighborKeyFrameIndex++)
     {
-        if (i > 0 && checkNewKeyFrames())
+        if (neighborKeyFrameIndex > 0 && checkNewKeyFrames())
             return;
 
-        KeyFrame *pKF2 = vpNeighKFs[i];
+        KeyFrame *p_neighborKeyFrame = neighborKeyFrames[neighborKeyFrameIndex];
 
         camera_models::geometriccamera::GeometricCamera
-            *pCamera1 = p_currentKeyFrame->p_camera,
-            *pCamera2 = pKF2->p_camera;
+            *p_camera1 = p_currentKeyFrame->p_camera,
+            *p_camera2 = p_neighborKeyFrame->p_camera;
 
         // Check first that baseline is not too short
-        Eigen::Vector3f Ow2       = pKF2->getCameraCenter();
-        Eigen::Vector3f vBaseline = Ow2 - Ow1;
-        const float     baseline  = vBaseline.norm();
+        Eigen::Vector3f Ow2            = p_neighborKeyFrame->getCameraCenter();
+        Eigen::Vector3f baselineVector = Ow2 - Ow1;
+        const float     baseline       = baselineVector.norm();
 
-        if (!monocular)
+        if (!isMonocular)
         {
-            if (baseline < pKF2->mb)
+            if (baseline < p_neighborKeyFrame->mb)
                 continue;
         }
         else
         {
-            const float medianDepthKF2     = pKF2->computeSceneMedianDepth(2);
-            const float ratioBaselineDepth = baseline / medianDepthKF2;
+            const float medianDepthKeyFrame2 =
+                p_neighborKeyFrame->computeSceneMedianDepth(2);
+            const float ratioBaselineDepth = baseline / medianDepthKeyFrame2;
 
             if (ratioBaselineDepth < 0.01)
                 continue;
         }
 
         // Search matches that fullfil epipolar constraint
-        vector<pair<size_t, size_t>> vMatchedIndices;
-        bool                         bCoarse = inertial &&
-                       p_tracker->state == Tracking::RECENTLY_LOST &&
-                       p_currentKeyFrame->getMap()->getInertialBA2();
+        vector<pair<size_t, size_t>> matchedKeyPointIndices;
+        bool                         isCoarseSearch = isInertial &&
+                              p_tracker->state == Tracking::RECENTLY_LOST &&
+                              p_currentKeyFrame->getMap()->getInertialBA2();
 
         matcher.searchForTriangulation(p_currentKeyFrame,
-                                       pKF2,
-                                       vMatchedIndices,
+                                       p_neighborKeyFrame,
+                                       matchedKeyPointIndices,
                                        false,
-                                       bCoarse);
+                                       isCoarseSearch);
 
-        Sophus::SE3<float>         sophTcw2 = pKF2->getPose();
+        Sophus::SE3<float>         sophTcw2 = p_neighborKeyFrame->getPose();
         Eigen::Matrix<float, 3, 4> eigTcw2  = sophTcw2.matrix3x4();
         Eigen::Matrix<float, 3, 3> Rcw2     = eigTcw2.block<3, 3>(0, 0);
         Eigen::Matrix<float, 3, 3> Rwc2     = Rcw2.transpose();
         Eigen::Vector3f            tcw2     = sophTcw2.translation();
 
-        const float &fx2 = pKF2->fx;
-        const float &fy2 = pKF2->fy;
-        const float &cx2 = pKF2->cx;
-        const float &cy2 = pKF2->cy;
+        const float &focalLengthX2    = p_neighborKeyFrame->fx;
+        const float &focalLengthY2    = p_neighborKeyFrame->fy;
+        const float &principalPointX2 = p_neighborKeyFrame->cx;
+        const float &principalPointY2 = p_neighborKeyFrame->cy;
 
         // Triangulate each match
-        const int nmatches = vMatchedIndices.size();
-        for (int ikp = 0; ikp < nmatches; ikp++)
+        const int matchCount = matchedKeyPointIndices.size();
+        for (int matchIndex = 0; matchIndex < matchCount; matchIndex++)
         {
-            const int &idx1 = vMatchedIndices[ikp].first;
-            const int &idx2 = vMatchedIndices[ikp].second;
+            const int &keyPointIndex1 =
+                matchedKeyPointIndices[matchIndex].first;
+            const int &keyPointIndex2 =
+                matchedKeyPointIndices[matchIndex].second;
 
-            const cv::KeyPoint &kp1 =
-                (p_currentKeyFrame->Nleft == -1)
-                    ? p_currentKeyFrame->keyPointsUndistorted[idx1]
-                : (idx1 < p_currentKeyFrame->Nleft)
-                    ? p_currentKeyFrame->keyPoints[idx1]
-                    : p_currentKeyFrame
-                          ->keyPointsRight[idx1 - p_currentKeyFrame->Nleft];
-            const float kp1_ur = p_currentKeyFrame->uRight[idx1];
-            bool bStereo1      = (!p_currentKeyFrame->p_camera2 && kp1_ur >= 0);
-            const bool bRight1 = (p_currentKeyFrame->Nleft == -1 ||
-                                  idx1 < p_currentKeyFrame->Nleft)
-                                     ? false
-                                     : true;
+            const cv::KeyPoint &keyPoint1 =
+                (p_currentKeyFrame->leftKeyPointCount == -1)
+                    ? p_currentKeyFrame->keyPointsUndistorted[keyPointIndex1]
+                : (keyPointIndex1 < p_currentKeyFrame->leftKeyPointCount)
+                    ? p_currentKeyFrame->keyPoints[keyPointIndex1]
+                    : p_currentKeyFrame->keyPointsRight
+                          [keyPointIndex1 -
+                           p_currentKeyFrame->leftKeyPointCount];
+            const float keyPointRightU1 =
+                p_currentKeyFrame->uRight[keyPointIndex1];
+            bool hasStereoMatch1 =
+                (!p_currentKeyFrame->p_camera2 && keyPointRightU1 >= 0);
+            const bool isKeyPoint1FromRightCamera =
+                (p_currentKeyFrame->leftKeyPointCount == -1 ||
+                 keyPointIndex1 < p_currentKeyFrame->leftKeyPointCount)
+                    ? false
+                    : true;
 
-            const cv::KeyPoint &kp2 =
-                (pKF2->Nleft == -1) ? pKF2->keyPointsUndistorted[idx2]
-                : (idx2 < pKF2->Nleft)
-                    ? pKF2->keyPoints[idx2]
-                    : pKF2->keyPointsRight[idx2 - pKF2->Nleft];
+            const cv::KeyPoint &keyPoint2 =
+                (p_neighborKeyFrame->leftKeyPointCount == -1)
+                    ? p_neighborKeyFrame->keyPointsUndistorted[keyPointIndex2]
+                : (keyPointIndex2 < p_neighborKeyFrame->leftKeyPointCount)
+                    ? p_neighborKeyFrame->keyPoints[keyPointIndex2]
+                    : p_neighborKeyFrame->keyPointsRight
+                          [keyPointIndex2 -
+                           p_neighborKeyFrame->leftKeyPointCount];
 
-            const float kp2_ur   = pKF2->uRight[idx2];
-            bool        bStereo2 = (!pKF2->p_camera2 && kp2_ur >= 0);
-            const bool  bRight2 =
-                (pKF2->Nleft == -1 || idx2 < pKF2->Nleft) ? false : true;
+            const float keyPointRightU2 =
+                p_neighborKeyFrame->uRight[keyPointIndex2];
+            bool hasStereoMatch2 =
+                (!p_neighborKeyFrame->p_camera2 && keyPointRightU2 >= 0);
+            const bool isKeyPoint2FromRightCamera =
+                (p_neighborKeyFrame->leftKeyPointCount == -1 ||
+                 keyPointIndex2 < p_neighborKeyFrame->leftKeyPointCount)
+                    ? false
+                    : true;
 
-            if (p_currentKeyFrame->p_camera2 && pKF2->p_camera2)
+            if (p_currentKeyFrame->p_camera2 && p_neighborKeyFrame->p_camera2)
             {
-                if (bRight1 && bRight2)
+                if (isKeyPoint1FromRightCamera && isKeyPoint2FromRightCamera)
                 {
                     sophTcw1 = p_currentKeyFrame->getRightPose();
                     Ow1      = p_currentKeyFrame->getRightCameraCenter();
 
-                    sophTcw2 = pKF2->getRightPose();
-                    Ow2      = pKF2->getRightCameraCenter();
+                    sophTcw2 = p_neighborKeyFrame->getRightPose();
+                    Ow2      = p_neighborKeyFrame->getRightCameraCenter();
 
-                    pCamera1 = p_currentKeyFrame->p_camera2;
-                    pCamera2 = pKF2->p_camera2;
+                    p_camera1 = p_currentKeyFrame->p_camera2;
+                    p_camera2 = p_neighborKeyFrame->p_camera2;
                 }
-                else if (bRight1 && !bRight2)
+                else if (isKeyPoint1FromRightCamera &&
+                         !isKeyPoint2FromRightCamera)
                 {
                     sophTcw1 = p_currentKeyFrame->getRightPose();
                     Ow1      = p_currentKeyFrame->getRightCameraCenter();
 
-                    sophTcw2 = pKF2->getPose();
-                    Ow2      = pKF2->getCameraCenter();
+                    sophTcw2 = p_neighborKeyFrame->getPose();
+                    Ow2      = p_neighborKeyFrame->getCameraCenter();
 
-                    pCamera1 = p_currentKeyFrame->p_camera2;
-                    pCamera2 = pKF2->p_camera;
+                    p_camera1 = p_currentKeyFrame->p_camera2;
+                    p_camera2 = p_neighborKeyFrame->p_camera;
                 }
-                else if (!bRight1 && bRight2)
+                else if (!isKeyPoint1FromRightCamera &&
+                         isKeyPoint2FromRightCamera)
                 {
                     sophTcw1 = p_currentKeyFrame->getPose();
                     Ow1      = p_currentKeyFrame->getCameraCenter();
 
-                    sophTcw2 = pKF2->getRightPose();
-                    Ow2      = pKF2->getRightCameraCenter();
+                    sophTcw2 = p_neighborKeyFrame->getRightPose();
+                    Ow2      = p_neighborKeyFrame->getRightCameraCenter();
 
-                    pCamera1 = p_currentKeyFrame->p_camera;
-                    pCamera2 = pKF2->p_camera2;
+                    p_camera1 = p_currentKeyFrame->p_camera;
+                    p_camera2 = p_neighborKeyFrame->p_camera2;
                 }
                 else
                 {
                     sophTcw1 = p_currentKeyFrame->getPose();
                     Ow1      = p_currentKeyFrame->getCameraCenter();
 
-                    sophTcw2 = pKF2->getPose();
-                    Ow2      = pKF2->getCameraCenter();
+                    sophTcw2 = p_neighborKeyFrame->getPose();
+                    Ow2      = p_neighborKeyFrame->getCameraCenter();
 
-                    pCamera1 = p_currentKeyFrame->p_camera;
-                    pCamera2 = pKF2->p_camera;
+                    p_camera1 = p_currentKeyFrame->p_camera;
+                    p_camera2 = p_neighborKeyFrame->p_camera;
                 }
                 eigTcw1 = sophTcw1.matrix3x4();
                 Rcw1    = eigTcw1.block<3, 3>(0, 0);
@@ -225,176 +248,208 @@ void LocalMapping::createNewMapPoints()
             }
 
             // Check parallax between rays
-            Eigen::Vector3f xn1 = pCamera1->unprojectEig(kp1.pt);
-            Eigen::Vector3f xn2 = pCamera2->unprojectEig(kp2.pt);
+            Eigen::Vector3f unprojectedRay1 =
+                p_camera1->unprojectEig(keyPoint1.pt);
+            Eigen::Vector3f unprojectedRay2 =
+                p_camera2->unprojectEig(keyPoint2.pt);
 
-            Eigen::Vector3f ray1 = Rwc1 * xn1;
-            Eigen::Vector3f ray2 = Rwc2 * xn2;
+            Eigen::Vector3f worldViewingRay1 = Rwc1 * unprojectedRay1;
+            Eigen::Vector3f worldViewingRay2 = Rwc2 * unprojectedRay2;
             const float     cosParallaxRays =
-                ray1.dot(ray2) / (ray1.norm() * ray2.norm());
+                worldViewingRay1.dot(worldViewingRay2) /
+                (worldViewingRay1.norm() * worldViewingRay2.norm());
 
             float cosParallaxStereo  = cosParallaxRays + 1;
             float cosParallaxStereo1 = cosParallaxStereo;
             float cosParallaxStereo2 = cosParallaxStereo;
 
-            if (bStereo1)
+            if (hasStereoMatch1)
                 cosParallaxStereo1 =
                     cos(2 * atan2(p_currentKeyFrame->mb / 2,
-                                  p_currentKeyFrame->depths[idx1]));
-            else if (bStereo2)
+                                  p_currentKeyFrame->depths[keyPointIndex1]));
+            else if (hasStereoMatch2)
                 cosParallaxStereo2 =
-                    cos(2 * atan2(pKF2->mb / 2, pKF2->depths[idx2]));
+                    cos(2 * atan2(p_neighborKeyFrame->mb / 2,
+                                  p_neighborKeyFrame->depths[keyPointIndex2]));
 
-            if (bStereo1 || bStereo2)
-                totalStereoPts++;
+            if (hasStereoMatch1 || hasStereoMatch2)
+                totalStereoPointCount++;
 
             cosParallaxStereo = min(cosParallaxStereo1, cosParallaxStereo2);
 
-            Eigen::Vector3f x3D;
+            Eigen::Vector3f triangulatedPoint;
 
-            bool goodProj     = false;
-            bool bPointStereo = false;
+            bool wasTriangulationSuccessful = false;
+            bool isStereoTriangulatedPoint  = false;
             if (cosParallaxRays < cosParallaxStereo && cosParallaxRays > 0 &&
-                (bStereo1 || bStereo2 ||
-                 (cosParallaxRays < 0.9996 && inertial) ||
-                 (cosParallaxRays < 0.9998 && !inertial)))
+                (hasStereoMatch1 || hasStereoMatch2 ||
+                 (cosParallaxRays < 0.9996 && isInertial) ||
+                 (cosParallaxRays < 0.9998 && !isInertial)))
             {
-                goodProj = GeometricTools::triangulate(xn1,
-                                                       xn2,
-                                                       eigTcw1,
-                                                       eigTcw2,
-                                                       x3D);
-                if (!goodProj)
+                wasTriangulationSuccessful =
+                    GeometricTools::triangulate(unprojectedRay1,
+                                                unprojectedRay2,
+                                                eigTcw1,
+                                                eigTcw2,
+                                                triangulatedPoint);
+                if (!wasTriangulationSuccessful)
                     continue;
             }
-            else if (bStereo1 && cosParallaxStereo1 < cosParallaxStereo2)
+            else if (hasStereoMatch1 && cosParallaxStereo1 < cosParallaxStereo2)
             {
-                countStereoAttempt++;
-                bPointStereo = true;
-                goodProj     = p_currentKeyFrame->unprojectStereo(idx1, x3D);
+                stereoAttemptCount++;
+                isStereoTriangulatedPoint = true;
+                wasTriangulationSuccessful =
+                    p_currentKeyFrame->unprojectStereo(keyPointIndex1,
+                                                       triangulatedPoint);
             }
-            else if (bStereo2 && cosParallaxStereo2 < cosParallaxStereo1)
+            else if (hasStereoMatch2 && cosParallaxStereo2 < cosParallaxStereo1)
             {
-                countStereoAttempt++;
-                bPointStereo = true;
-                goodProj     = pKF2->unprojectStereo(idx2, x3D);
+                stereoAttemptCount++;
+                isStereoTriangulatedPoint = true;
+                wasTriangulationSuccessful =
+                    p_neighborKeyFrame->unprojectStereo(keyPointIndex2,
+                                                        triangulatedPoint);
             }
             else
             {
                 continue; // No stereo and very low parallax
             }
 
-            if (goodProj && bPointStereo)
-                countStereoGoodProj++;
+            if (wasTriangulationSuccessful && isStereoTriangulatedPoint)
+                stereoGoodProjectionCount++;
 
-            if (!goodProj)
+            if (!wasTriangulationSuccessful)
                 continue;
 
             // Check triangulation in front of cameras
-            float z1 = Rcw1.row(2).dot(x3D) + tcw1(2);
-            if (z1 <= 0)
+            float cameraFrameZ1 = Rcw1.row(2).dot(triangulatedPoint) + tcw1(2);
+            if (cameraFrameZ1 <= 0)
                 continue;
 
-            float z2 = Rcw2.row(2).dot(x3D) + tcw2(2);
-            if (z2 <= 0)
+            float cameraFrameZ2 = Rcw2.row(2).dot(triangulatedPoint) + tcw2(2);
+            if (cameraFrameZ2 <= 0)
                 continue;
 
             // Check reprojection error in first keyframe
-            const float &sigmaSquare1 =
-                p_currentKeyFrame->levelSigmaSquared[kp1.octave];
-            const float x1    = Rcw1.row(0).dot(x3D) + tcw1(0);
-            const float y1    = Rcw1.row(1).dot(x3D) + tcw1(1);
-            const float invz1 = 1.0 / z1;
+            const float &levelSigmaSquared1 =
+                p_currentKeyFrame->levelSigmaSquared[keyPoint1.octave];
+            const float cameraFrameX1 =
+                Rcw1.row(0).dot(triangulatedPoint) + tcw1(0);
+            const float cameraFrameY1 =
+                Rcw1.row(1).dot(triangulatedPoint) + tcw1(1);
+            const float inverseDepth1 = 1.0 / cameraFrameZ1;
 
-            if (!bStereo1)
+            if (!hasStereoMatch1)
             {
-                cv::Point2f uv1   = pCamera1->project(cv::Point3f(x1, y1, z1));
-                float       errX1 = uv1.x - kp1.pt.x;
-                float       errY1 = uv1.y - kp1.pt.y;
+                cv::Point2f projectedPixel1 = p_camera1->project(
+                    cv::Point3f(cameraFrameX1, cameraFrameY1, cameraFrameZ1));
+                float reprojectionErrorX1 = projectedPixel1.x - keyPoint1.pt.x;
+                float reprojectionErrorY1 = projectedPixel1.y - keyPoint1.pt.y;
 
-                if ((errX1 * errX1 + errY1 * errY1) > 5.991 * sigmaSquare1)
+                if ((reprojectionErrorX1 * reprojectionErrorX1 +
+                     reprojectionErrorY1 * reprojectionErrorY1) >
+                    5.991 * levelSigmaSquared1)
                     continue;
             }
             else
             {
-                float u1      = fx1 * x1 * invz1 + cx1;
-                float u1_r    = u1 - p_currentKeyFrame->mbf * invz1;
-                float v1      = fy1 * y1 * invz1 + cy1;
-                float errX1   = u1 - kp1.pt.x;
-                float errY1   = v1 - kp1.pt.y;
-                float errX1_r = u1_r - kp1_ur;
-                if ((errX1 * errX1 + errY1 * errY1 + errX1_r * errX1_r) >
-                    7.8 * sigmaSquare1)
+                float pixelU1 = focalLengthX1 * cameraFrameX1 * inverseDepth1 +
+                                principalPointX1;
+                float pixelU1_r =
+                    pixelU1 - p_currentKeyFrame->mbf * inverseDepth1;
+                float pixelV1 = focalLengthY1 * cameraFrameY1 * inverseDepth1 +
+                                principalPointY1;
+                float reprojectionErrorX1   = pixelU1 - keyPoint1.pt.x;
+                float reprojectionErrorY1   = pixelV1 - keyPoint1.pt.y;
+                float reprojectionErrorX1_r = pixelU1_r - keyPointRightU1;
+                if ((reprojectionErrorX1 * reprojectionErrorX1 +
+                     reprojectionErrorY1 * reprojectionErrorY1 +
+                     reprojectionErrorX1_r * reprojectionErrorX1_r) >
+                    7.8 * levelSigmaSquared1)
                     continue;
             }
 
             // Check reprojection error in second keyframe
-            const float sigmaSquare2 = pKF2->levelSigmaSquared[kp2.octave];
-            const float x2           = Rcw2.row(0).dot(x3D) + tcw2(0);
-            const float y2           = Rcw2.row(1).dot(x3D) + tcw2(1);
-            const float invz2        = 1.0 / z2;
-            if (!bStereo2)
+            const float levelSigmaSquared2 =
+                p_neighborKeyFrame->levelSigmaSquared[keyPoint2.octave];
+            const float cameraFrameX2 =
+                Rcw2.row(0).dot(triangulatedPoint) + tcw2(0);
+            const float cameraFrameY2 =
+                Rcw2.row(1).dot(triangulatedPoint) + tcw2(1);
+            const float inverseDepth2 = 1.0 / cameraFrameZ2;
+            if (!hasStereoMatch2)
             {
-                cv::Point2f uv2   = pCamera2->project(cv::Point3f(x2, y2, z2));
-                float       errX2 = uv2.x - kp2.pt.x;
-                float       errY2 = uv2.y - kp2.pt.y;
-                if ((errX2 * errX2 + errY2 * errY2) > 5.991 * sigmaSquare2)
+                cv::Point2f projectedPixel2 = p_camera2->project(
+                    cv::Point3f(cameraFrameX2, cameraFrameY2, cameraFrameZ2));
+                float reprojectionErrorX2 = projectedPixel2.x - keyPoint2.pt.x;
+                float reprojectionErrorY2 = projectedPixel2.y - keyPoint2.pt.y;
+                if ((reprojectionErrorX2 * reprojectionErrorX2 +
+                     reprojectionErrorY2 * reprojectionErrorY2) >
+                    5.991 * levelSigmaSquared2)
                     continue;
             }
             else
             {
-                float u2      = fx2 * x2 * invz2 + cx2;
-                float u2_r    = u2 - p_currentKeyFrame->mbf * invz2;
-                float v2      = fy2 * y2 * invz2 + cy2;
-                float errX2   = u2 - kp2.pt.x;
-                float errY2   = v2 - kp2.pt.y;
-                float errX2_r = u2_r - kp2_ur;
-                if ((errX2 * errX2 + errY2 * errY2 + errX2_r * errX2_r) >
-                    7.8 * sigmaSquare2)
+                float pixelU2 = focalLengthX2 * cameraFrameX2 * inverseDepth2 +
+                                principalPointX2;
+                float pixelU2_r =
+                    pixelU2 - p_currentKeyFrame->mbf * inverseDepth2;
+                float pixelV2 = focalLengthY2 * cameraFrameY2 * inverseDepth2 +
+                                principalPointY2;
+                float reprojectionErrorX2   = pixelU2 - keyPoint2.pt.x;
+                float reprojectionErrorY2   = pixelV2 - keyPoint2.pt.y;
+                float reprojectionErrorX2_r = pixelU2_r - keyPointRightU2;
+                if ((reprojectionErrorX2 * reprojectionErrorX2 +
+                     reprojectionErrorY2 * reprojectionErrorY2 +
+                     reprojectionErrorX2_r * reprojectionErrorX2_r) >
+                    7.8 * levelSigmaSquared2)
                     continue;
             }
 
             // Check scale consistency
-            Eigen::Vector3f normal1 = x3D - Ow1;
-            float           dist1   = normal1.norm();
+            Eigen::Vector3f pointViewVector1 = triangulatedPoint - Ow1;
+            float           pointDistance1   = pointViewVector1.norm();
 
-            Eigen::Vector3f normal2 = x3D - Ow2;
-            float           dist2   = normal2.norm();
+            Eigen::Vector3f pointViewVector2 = triangulatedPoint - Ow2;
+            float           pointDistance2   = pointViewVector2.norm();
 
-            if (dist1 == 0 || dist2 == 0)
+            if (pointDistance1 == 0 || pointDistance2 == 0)
                 continue;
 
-            if (farPoints && (dist1 >= farPointsThreshold ||
-                              dist2 >= farPointsThreshold)) // MODIFICATION
+            if (shouldSkipFarPoints &&
+                (pointDistance1 >= farPointsThreshold ||
+                 pointDistance2 >= farPointsThreshold)) // MODIFICATION
                 continue;
 
-            const float ratioDist = dist2 / dist1;
+            const float ratioDistance = pointDistance2 / pointDistance1;
             const float ratioOctave =
-                p_currentKeyFrame->scaleFactors[kp1.octave] /
-                pKF2->scaleFactors[kp2.octave];
+                p_currentKeyFrame->scaleFactors[keyPoint1.octave] /
+                p_neighborKeyFrame->scaleFactors[keyPoint2.octave];
 
-            if (ratioDist * ratioFactor < ratioOctave ||
-                ratioDist > ratioOctave * ratioFactor)
+            if (ratioDistance * ratioFactor < ratioOctave ||
+                ratioDistance > ratioOctave * ratioFactor)
                 continue;
 
             // Triangulation is succesfull
-            MapPoint *pMP =
-                new MapPoint(x3D, p_currentKeyFrame, p_atlas->getCurrentMap());
-            if (bPointStereo)
-                countStereo++;
+            MapPoint *p_mapPoint = new MapPoint(triangulatedPoint,
+                                                p_currentKeyFrame,
+                                                p_atlas->getCurrentMap());
+            if (isStereoTriangulatedPoint)
+                stereoPointCount++;
 
-            pMP->addObservation(p_currentKeyFrame, idx1);
-            pMP->addObservation(pKF2, idx2);
+            p_mapPoint->addObservation(p_currentKeyFrame, keyPointIndex1);
+            p_mapPoint->addObservation(p_neighborKeyFrame, keyPointIndex2);
 
-            p_currentKeyFrame->addMapPoint(pMP, idx1);
-            pKF2->addMapPoint(pMP, idx2);
+            p_currentKeyFrame->addMapPoint(p_mapPoint, keyPointIndex1);
+            p_neighborKeyFrame->addMapPoint(p_mapPoint, keyPointIndex2);
 
-            pMP->computeDistinctiveDescriptors();
+            p_mapPoint->computeDistinctiveDescriptors();
 
-            pMP->updateNormalAndDepth();
+            p_mapPoint->updateNormalAndDepth();
 
-            p_atlas->addMapPoint(pMP);
-            mlpRecentAddedMapPoints.push_back(pMP);
+            p_atlas->addMapPoint(p_mapPoint);
+            recentAddedMapPoints.push_back(p_mapPoint);
         }
     }
 }

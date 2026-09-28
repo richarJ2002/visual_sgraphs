@@ -36,7 +36,7 @@ namespace core
 
 void Map::setCurrentMap()
 {
-    inUse = true;
+    isMapInUse = true;
 }
 
 } // namespace core

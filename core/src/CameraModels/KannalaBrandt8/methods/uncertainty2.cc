@@ -29,7 +29,7 @@
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
 float KannalaBrandt8::uncertainty2(
-    [[maybe_unused]] const Eigen::Matrix<double, 2, 1> &point2D_in)
+    [[maybe_unused]] const Eigen::Matrix<double, 2, 1> &point2d_in)
 {
     /*Eigen::Matrix<double,2,1> c;
     c << parameters[2], parameters[3];

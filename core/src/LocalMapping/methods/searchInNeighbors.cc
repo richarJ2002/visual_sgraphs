@@ -35,129 +35,142 @@ namespace core
 void LocalMapping::searchInNeighbors()
 {
     // Retrieve neighbor keyframes
-    int nn = 10;
-    if (monocular)
-        nn = 30;
-    const vector<KeyFrame *> vpNeighKFs =
-        p_currentKeyFrame->getBestCovisibilityKeyFrames(nn);
-    vector<KeyFrame *> vpTargetKFs;
-    for (vector<KeyFrame *>::const_iterator vit  = vpNeighKFs.begin(),
-                                            vend = vpNeighKFs.end();
-         vit != vend;
-         vit++)
+    int neighborKeyFrameCount = 10;
+    if (isMonocular)
+        neighborKeyFrameCount = 30;
+    const vector<KeyFrame *> neighborKeyFrames =
+        p_currentKeyFrame->getBestCovisibilityKeyFrames(neighborKeyFrameCount);
+    vector<KeyFrame *> targetKeyFrames;
+    for (vector<KeyFrame *>::const_iterator
+             targetKeyFrameIt  = neighborKeyFrames.begin(),
+             targetKeyFrameEnd = neighborKeyFrames.end();
+         targetKeyFrameIt != targetKeyFrameEnd;
+         targetKeyFrameIt++)
     {
-        KeyFrame *pKFi = *vit;
-        if (pKFi->isBad() ||
-            pKFi->fuseTargetKeyFrameId == p_currentKeyFrame->mnId)
+        KeyFrame *p_targetKeyFrame = *targetKeyFrameIt;
+        if (p_targetKeyFrame->isBad() ||
+            p_targetKeyFrame->fuseTargetKeyFrameId == p_currentKeyFrame->id)
             continue;
-        vpTargetKFs.push_back(pKFi);
-        pKFi->fuseTargetKeyFrameId = p_currentKeyFrame->mnId;
+        targetKeyFrames.push_back(p_targetKeyFrame);
+        p_targetKeyFrame->fuseTargetKeyFrameId = p_currentKeyFrame->id;
     }
 
     // Add some covisible of covisible
     // Extend to some second neighbors if abort is not requested
-    for (int i = 0, imax = vpTargetKFs.size(); i < imax; i++)
+    for (int elementIndex = 0, targetKeyFrameCount = targetKeyFrames.size();
+         elementIndex < targetKeyFrameCount;
+         elementIndex++)
     {
-        const vector<KeyFrame *> vpSecondNeighKFs =
-            vpTargetKFs[i]->getBestCovisibilityKeyFrames(20);
-        for (vector<KeyFrame *>::const_iterator vit2 = vpSecondNeighKFs.begin(),
-                                                vend2 = vpSecondNeighKFs.end();
-             vit2 != vend2;
-             vit2++)
+        const vector<KeyFrame *> secondNeighborKeyFrames =
+            targetKeyFrames[elementIndex]->getBestCovisibilityKeyFrames(20);
+        for (vector<KeyFrame *>::const_iterator
+                 secondNeighborKeyFrameIt  = secondNeighborKeyFrames.begin(),
+                 secondNeighborKeyFrameEnd = secondNeighborKeyFrames.end();
+             secondNeighborKeyFrameIt != secondNeighborKeyFrameEnd;
+             secondNeighborKeyFrameIt++)
         {
-            KeyFrame *pKFi2 = *vit2;
-            if (pKFi2->isBad() ||
-                pKFi2->fuseTargetKeyFrameId == p_currentKeyFrame->mnId ||
-                pKFi2->mnId == p_currentKeyFrame->mnId)
+            KeyFrame *p_secondNeighborKeyFrame = *secondNeighborKeyFrameIt;
+            if (p_secondNeighborKeyFrame->isBad() ||
+                p_secondNeighborKeyFrame->fuseTargetKeyFrameId ==
+                    p_currentKeyFrame->id ||
+                p_secondNeighborKeyFrame->id == p_currentKeyFrame->id)
                 continue;
-            vpTargetKFs.push_back(pKFi2);
-            pKFi2->fuseTargetKeyFrameId = p_currentKeyFrame->mnId;
+            targetKeyFrames.push_back(p_secondNeighborKeyFrame);
+            p_secondNeighborKeyFrame->fuseTargetKeyFrameId =
+                p_currentKeyFrame->id;
         }
-        if (abortBA)
+        if (shouldAbortBa)
             break;
     }
 
     // Extend to temporal neighbors
-    if (inertial)
+    if (isInertial)
     {
-        KeyFrame *pKFi = p_currentKeyFrame->p_prevKF;
-        while (vpTargetKFs.size() < 20 && pKFi)
+        KeyFrame *p_targetKeyFrame = p_currentKeyFrame->p_prevKF;
+        while (targetKeyFrames.size() < 20 && p_targetKeyFrame)
         {
-            if (pKFi->isBad() ||
-                pKFi->fuseTargetKeyFrameId == p_currentKeyFrame->mnId)
+            if (p_targetKeyFrame->isBad() ||
+                p_targetKeyFrame->fuseTargetKeyFrameId == p_currentKeyFrame->id)
             {
-                pKFi = pKFi->p_prevKF;
+                p_targetKeyFrame = p_targetKeyFrame->p_prevKF;
                 continue;
             }
-            vpTargetKFs.push_back(pKFi);
-            pKFi->fuseTargetKeyFrameId = p_currentKeyFrame->mnId;
-            pKFi                       = pKFi->p_prevKF;
+            targetKeyFrames.push_back(p_targetKeyFrame);
+            p_targetKeyFrame->fuseTargetKeyFrameId = p_currentKeyFrame->id;
+            p_targetKeyFrame                       = p_targetKeyFrame->p_prevKF;
         }
     }
 
     // Search matches by projection from current KF in target KFs
     ORBmatcher         matcher;
-    vector<MapPoint *> vpMapPointMatches =
+    vector<MapPoint *> currentMapPointMatches =
         p_currentKeyFrame->getMapPointMatches();
-    for (vector<KeyFrame *>::iterator vit  = vpTargetKFs.begin(),
-                                      vend = vpTargetKFs.end();
-         vit != vend;
-         vit++)
+    for (vector<KeyFrame *>::iterator
+             targetKeyFrameIt  = targetKeyFrames.begin(),
+             targetKeyFrameEnd = targetKeyFrames.end();
+         targetKeyFrameIt != targetKeyFrameEnd;
+         targetKeyFrameIt++)
     {
-        KeyFrame *pKFi = *vit;
+        KeyFrame *p_targetKeyFrame = *targetKeyFrameIt;
 
-        matcher.fuse(pKFi, vpMapPointMatches);
-        if (pKFi->Nleft != -1)
-            matcher.fuse(pKFi, vpMapPointMatches, true);
+        matcher.fuse(p_targetKeyFrame, currentMapPointMatches);
+        if (p_targetKeyFrame->leftKeyPointCount != -1)
+            matcher.fuse(p_targetKeyFrame, currentMapPointMatches, true);
     }
 
-    if (abortBA)
+    if (shouldAbortBa)
         return;
 
     // Search matches by projection from target KFs in current KF
-    vector<MapPoint *> vpFuseCandidates;
-    vpFuseCandidates.reserve(vpTargetKFs.size() * vpMapPointMatches.size());
+    vector<MapPoint *> fuseCandidateMapPoints;
+    fuseCandidateMapPoints.reserve(targetKeyFrames.size() *
+                                   currentMapPointMatches.size());
 
-    for (vector<KeyFrame *>::iterator vitKF  = vpTargetKFs.begin(),
-                                      vendKF = vpTargetKFs.end();
-         vitKF != vendKF;
-         vitKF++)
+    for (vector<KeyFrame *>::iterator
+             targetKeyFrameIt2  = targetKeyFrames.begin(),
+             targetKeyFrameEnd2 = targetKeyFrames.end();
+         targetKeyFrameIt2 != targetKeyFrameEnd2;
+         targetKeyFrameIt2++)
     {
-        KeyFrame *pKFi = *vitKF;
+        KeyFrame *p_targetKeyFrame = *targetKeyFrameIt2;
 
-        vector<MapPoint *> vpMapPointsKFi = pKFi->getMapPointMatches();
+        vector<MapPoint *> targetMapPoints =
+            p_targetKeyFrame->getMapPointMatches();
 
-        for (vector<MapPoint *>::iterator vitMP  = vpMapPointsKFi.begin(),
-                                          vendMP = vpMapPointsKFi.end();
-             vitMP != vendMP;
-             vitMP++)
+        for (vector<MapPoint *>::iterator
+                 targetMapPointIt  = targetMapPoints.begin(),
+                 targetMapPointEnd = targetMapPoints.end();
+             targetMapPointIt != targetMapPointEnd;
+             targetMapPointIt++)
         {
-            MapPoint *pMP = *vitMP;
-            if (!pMP)
+            MapPoint *p_mapPoint = *targetMapPointIt;
+            if (!p_mapPoint)
                 continue;
-            if (pMP->isBad() ||
-                pMP->fuseCandidateKeyFrameId == p_currentKeyFrame->mnId)
+            if (p_mapPoint->isBad() ||
+                p_mapPoint->fuseCandidateKeyFrameId == p_currentKeyFrame->id)
                 continue;
-            pMP->fuseCandidateKeyFrameId = p_currentKeyFrame->mnId;
-            vpFuseCandidates.push_back(pMP);
+            p_mapPoint->fuseCandidateKeyFrameId = p_currentKeyFrame->id;
+            fuseCandidateMapPoints.push_back(p_mapPoint);
         }
     }
 
-    matcher.fuse(p_currentKeyFrame, vpFuseCandidates);
-    if (p_currentKeyFrame->Nleft != -1)
-        matcher.fuse(p_currentKeyFrame, vpFuseCandidates, true);
+    matcher.fuse(p_currentKeyFrame, fuseCandidateMapPoints);
+    if (p_currentKeyFrame->leftKeyPointCount != -1)
+        matcher.fuse(p_currentKeyFrame, fuseCandidateMapPoints, true);
 
     // Update points
-    vpMapPointMatches = p_currentKeyFrame->getMapPointMatches();
-    for (size_t i = 0, iend = vpMapPointMatches.size(); i < iend; i++)
+    currentMapPointMatches = p_currentKeyFrame->getMapPointMatches();
+    for (size_t elementIndex = 0, mapPointCount = currentMapPointMatches.size();
+         elementIndex < mapPointCount;
+         elementIndex++)
     {
-        MapPoint *pMP = vpMapPointMatches[i];
-        if (pMP)
+        MapPoint *p_mapPoint = currentMapPointMatches[elementIndex];
+        if (p_mapPoint)
         {
-            if (!pMP->isBad())
+            if (!p_mapPoint->isBad())
             {
-                pMP->computeDistinctiveDescriptors();
-                pMP->updateNormalAndDepth();
+                p_mapPoint->computeDistinctiveDescriptors();
+                p_mapPoint->updateNormalAndDepth();
             }
         }
     }

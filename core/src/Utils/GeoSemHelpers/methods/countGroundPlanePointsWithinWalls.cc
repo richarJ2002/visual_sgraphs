@@ -24,14 +24,14 @@ namespace core
 {
 
 size_t GeoSemHelpers::countGroundPlanePointsWithinWalls(
-    std::vector<vs_graphs::core::geometric::Plane *> &roomWalls,
-    vs_graphs::core::geometric::Plane                *groundPlane)
+    std::vector<vs_graphs::core::geometric::Plane *> &roomWalls_in,
+    vs_graphs::core::geometric::Plane                *p_groundPlane_in)
 {
     // [TODO] - verify the correctness of this function
     // the point cloud of the ground plane
     const geometric::Plane::GeometrySnapshot groundGeometry =
-        groundPlane->getGeometrySnapshot();
-    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr groundCloud =
+        p_groundPlane_in->getGeometrySnapshot();
+    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_groundCloud =
         groundGeometry.supportCloud;
 
     // the number of points within the walls
@@ -39,23 +39,23 @@ size_t GeoSemHelpers::countGroundPlanePointsWithinWalls(
 
     // store the wall equations
     std::vector<Eigen::Vector4d> wallEquations;
-    for (const auto &wall : roomWalls)
+    for (const auto &wall : roomWalls_in)
         wallEquations.push_back(wall->getGlobalEquation().coeffs());
 
     // for each point in the ground plane, check if it is within the walls
-    for (const auto &point : groundCloud->points)
+    for (const auto &point : p_groundCloud->points)
     {
         bool isWithinWalls = true;
         for (const auto &wallEquation : wallEquations)
         {
             // convert the point to Eigen vector
-            Eigen::Vector3d pointVec =
+            Eigen::Vector3d pointVector =
                 Eigen::Vector3d(point.x, point.y, point.z);
 
             // substitute the point into the wall equation to get the signed
             // distance
             float signedDistance =
-                wallEquation.head<3>().dot(pointVec) + wallEquation(3);
+                wallEquation.head<3>().dot(pointVector) + wallEquation(3);
 
             // if the point is outside the wall, break the loop
             if (signedDistance < 0)

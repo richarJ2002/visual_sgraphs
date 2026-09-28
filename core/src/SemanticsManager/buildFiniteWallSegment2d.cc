@@ -61,7 +61,7 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
                               const Eigen::Vector3d &groundAxisV_World_in,
                               const double           endpointTrimRatio_in,
                               const double           minimumWallLength_m_in,
-                              FiniteWallSegment2d   &segment_out)
+                              FiniteWallSegment2d   &segment_inout)
 {
     if (p_wall_in == nullptr || p_wall_in->isBad())
     {
@@ -98,18 +98,18 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
     const Eigen::Vector3d wallTangent_World =
         groundNormal_World_in.cross(horizontalWallNormal_World).normalized();
 
-    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallCloud =
+    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallSupportCloud =
         wallGeometry.supportCloud;
 
-    if (p_wallCloud == nullptr || p_wallCloud->empty())
+    if (p_wallSupportCloud == nullptr || p_wallSupportCloud->empty())
     {
         return false;
     }
 
     std::vector<double> wallPointCoordinates_m;
-    wallPointCoordinates_m.reserve(p_wallCloud->size());
+    wallPointCoordinates_m.reserve(p_wallSupportCloud->size());
 
-    for (const pcl::PointXYZRGBA &wallPoint : p_wallCloud->points)
+    for (const pcl::PointXYZRGBA &wallPoint : p_wallSupportCloud->points)
     {
         if (!pcl::isFinite(wallPoint))
         {
@@ -161,24 +161,24 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
         wallCentroid_World_m +
         (maximumWallCoordinate_m - centroidCoordinate_m) * wallTangent_World;
 
-    segment_out.p_wall        = p_wall_in;
-    segment_out.start_World_m = {
+    segment_inout.p_wall        = p_wall_in;
+    segment_inout.start_World_m = {
         segmentStart_World_m.dot(groundAxisU_World_in),
         segmentStart_World_m.dot(groundAxisV_World_in)};
-    segment_out.end_World_m = {segmentEnd_World_m.dot(groundAxisU_World_in),
-                               segmentEnd_World_m.dot(groundAxisV_World_in)};
-    segment_out.length_m =
-        (segment_out.end_World_m - segment_out.start_World_m).norm();
-    segment_out.supportScore =
+    segment_inout.end_World_m = {segmentEnd_World_m.dot(groundAxisU_World_in),
+                                 segmentEnd_World_m.dot(groundAxisV_World_in)};
+    segment_inout.length_m =
+        (segment_inout.end_World_m - segment_inout.start_World_m).norm();
+    segment_inout.supportScore =
         static_cast<double>(std::max<std::size_t>(
             static_cast<std::size_t>(p_wall_in->getObservationCount()),
             1U)) *
-        std::sqrt(std::max(segment_out.length_m, 0.0));
+        std::sqrt(std::max(segment_inout.length_m, 0.0));
 
-    return segment_out.start_World_m.allFinite() &&
-           segment_out.end_World_m.allFinite() &&
-           std::isfinite(segment_out.length_m) &&
-           segment_out.length_m >= minimumWallLength_m_in;
+    return segment_inout.start_World_m.allFinite() &&
+           segment_inout.end_World_m.allFinite() &&
+           std::isfinite(segment_inout.length_m) &&
+           segment_inout.length_m >= minimumWallLength_m_in;
 }
 
 } // namespace core

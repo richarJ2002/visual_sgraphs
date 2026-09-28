@@ -51,48 +51,50 @@ void Frame::computeStereoFishEyeMatches()
     vector<cv::KeyPoint> stereoRight(keyPointsRight.begin() + monoRight,
                                      keyPointsRight.end());
 
-    cv::Mat stereoDescLeft = descriptors.rowRange(monoLeft, descriptors.rows);
-    cv::Mat stereoDescRight =
+    cv::Mat stereoDescriptorLeft =
+        descriptors.rowRange(monoLeft, descriptors.rows);
+    cv::Mat stereoDescriptorRight =
         descriptorsRight.rowRange(monoRight, descriptorsRight.rows);
 
-    leftToRightMatches = vector<int>(Nleft, -1);
-    rightToLeftMatches = vector<int>(Nright, -1);
-    depths             = vector<float>(Nleft, -1.0f);
-    uRight             = vector<float>(Nleft, -1);
-    stereoPoints3D     = vector<Eigen::Vector3f>(Nleft);
+    leftToRightMatches = vector<int>(leftKeyPointCount, -1);
+    rightToLeftMatches = vector<int>(rightKeyPointCount, -1);
+    depths             = vector<float>(leftKeyPointCount, -1.0f);
+    uRight             = vector<float>(leftKeyPointCount, -1);
+    stereoPoints3D     = vector<Eigen::Vector3f>(leftKeyPointCount);
     closeMapPointCount = 0;
 
     // Perform a brute force between Keypoint in the left and right image
     vector<vector<cv::DMatch>> matches;
 
-    bfMatcher.knnMatch(stereoDescLeft, stereoDescRight, matches, 2);
+    bfMatcher.knnMatch(stereoDescriptorLeft, stereoDescriptorRight, matches, 2);
 
-    int nMatches    = 0;
-    int descMatches = 0;
+    int matchCount        = 0;
+    int descriptorMatches = 0;
 
     // Check matches using Lowe's ratio
-    for (vector<vector<cv::DMatch>>::iterator it = matches.begin();
-         it != matches.end();
-         ++it)
+    for (vector<vector<cv::DMatch>>::iterator matchIt = matches.begin();
+         matchIt != matches.end();
+         ++matchIt)
     {
-        if ((*it).size() >= 2 && (*it)[0].distance < (*it)[1].distance * 0.7)
+        if ((*matchIt).size() >= 2 &&
+            (*matchIt)[0].distance < (*matchIt)[1].distance * 0.7)
         {
             // For every good match, check parallax and reprojection error to
             // discard spurious matches
             Eigen::Vector3f p3D;
-            descMatches++;
-            float sigma1 =
-                      levelSigmaSquared[keyPoints[(*it)[0].queryIdx + monoLeft]
-                                            .octave],
-                  sigma2 = levelSigmaSquared
-                      [keyPointsRight[(*it)[0].trainIdx + monoRight].octave];
+            descriptorMatches++;
+            float
+                sigma1 = levelSigmaSquared
+                    [keyPoints[(*matchIt)[0].queryIdx + monoLeft].octave],
+                sigma2 = levelSigmaSquared
+                    [keyPointsRight[(*matchIt)[0].trainIdx + monoRight].octave];
             float depth =
                 static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
                     p_camera)
                     ->triangulateMatches(
                         p_camera2,
-                        keyPoints[(*it)[0].queryIdx + monoLeft],
-                        keyPointsRight[(*it)[0].trainIdx + monoRight],
+                        keyPoints[(*matchIt)[0].queryIdx + monoLeft],
+                        keyPointsRight[(*matchIt)[0].trainIdx + monoRight],
                         rotationRlr,
                         translationTlr,
                         sigma1,
@@ -100,13 +102,13 @@ void Frame::computeStereoFishEyeMatches()
                         p3D);
             if (depth > 0.0001f)
             {
-                leftToRightMatches[(*it)[0].queryIdx + monoLeft] =
-                    (*it)[0].trainIdx + monoRight;
-                rightToLeftMatches[(*it)[0].trainIdx + monoRight] =
-                    (*it)[0].queryIdx + monoLeft;
-                stereoPoints3D[(*it)[0].queryIdx + monoLeft] = p3D;
-                depths[(*it)[0].queryIdx + monoLeft]         = depth;
-                nMatches++;
+                leftToRightMatches[(*matchIt)[0].queryIdx + monoLeft] =
+                    (*matchIt)[0].trainIdx + monoRight;
+                rightToLeftMatches[(*matchIt)[0].trainIdx + monoRight] =
+                    (*matchIt)[0].queryIdx + monoLeft;
+                stereoPoints3D[(*matchIt)[0].queryIdx + monoLeft] = p3D;
+                depths[(*matchIt)[0].queryIdx + monoLeft]         = depth;
+                matchCount++;
             }
         }
     }

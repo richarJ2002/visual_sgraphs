@@ -28,10 +28,10 @@ namespace core
 namespace semantic
 {
 
-void Passage::setHeight(double value)
+void Passage::setHeight(double value_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
-    height = value;
+    std::lock_guard<std::mutex> lock(geometryMutex);
+    height = value_in;
 }
 
 } // namespace semantic

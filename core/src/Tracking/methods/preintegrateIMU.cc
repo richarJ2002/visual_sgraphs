@@ -54,9 +54,9 @@ void Tracking::preintegrateIMU()
 
     while (true)
     {
-        bool bSleep = false;
+        bool shouldSleep = false;
         {
-            unique_lock<mutex> lock(mMutexImuQueue);
+            unique_lock<mutex> lock(imuQueueMutex);
             if (!queueImuData.empty())
             {
                 IMU::Point *m = &queueImuData.front();
@@ -77,10 +77,10 @@ void Tracking::preintegrateIMU()
             else
             {
                 break;
-                bSleep = true;
+                shouldSleep = true;
             }
         }
-        if (bSleep)
+        if (shouldSleep)
             usleep(500);
     }
 
@@ -95,61 +95,78 @@ void Tracking::preintegrateIMU()
         std::make_shared<IMU::Preintegrated>(lastFrame.imuBias,
                                              currentFrame.imuCalibration);
 
-    for (int i = 0; i < n; i++)
+    for (int measurementIndex = 0; measurementIndex < n; measurementIndex++)
     {
         float           tstep;
-        Eigen::Vector3f acc, angVel;
-        if ((i == 0) && (i < (n - 1)))
+        Eigen::Vector3f acceleration, angleVelocity;
+        if ((measurementIndex == 0) && (measurementIndex < (n - 1)))
         {
-            float tab = imuFromLastFrame[i + 1].t - imuFromLastFrame[i].t;
-            float tini =
-                imuFromLastFrame[i].t - currentFrame.p_previousFrame->timeStamp;
-            acc = (imuFromLastFrame[i].a + imuFromLastFrame[i + 1].a -
-                   (imuFromLastFrame[i + 1].a - imuFromLastFrame[i].a) *
-                       (tini / tab)) *
-                  0.5f;
-            angVel = (imuFromLastFrame[i].w + imuFromLastFrame[i + 1].w -
-                      (imuFromLastFrame[i + 1].w - imuFromLastFrame[i].w) *
-                          (tini / tab)) *
-                     0.5f;
-            tstep = imuFromLastFrame[i + 1].t -
+            float tab = imuFromLastFrame[measurementIndex + 1].t -
+                        imuFromLastFrame[measurementIndex].t;
+            float tini = imuFromLastFrame[measurementIndex].t -
+                         currentFrame.p_previousFrame->timeStamp;
+            acceleration = (imuFromLastFrame[measurementIndex].a +
+                            imuFromLastFrame[measurementIndex + 1].a -
+                            (imuFromLastFrame[measurementIndex + 1].a -
+                             imuFromLastFrame[measurementIndex].a) *
+                                (tini / tab)) *
+                           0.5f;
+            angleVelocity = (imuFromLastFrame[measurementIndex].w +
+                             imuFromLastFrame[measurementIndex + 1].w -
+                             (imuFromLastFrame[measurementIndex + 1].w -
+                              imuFromLastFrame[measurementIndex].w) *
+                                 (tini / tab)) *
+                            0.5f;
+            tstep = imuFromLastFrame[measurementIndex + 1].t -
                     currentFrame.p_previousFrame->timeStamp;
         }
-        else if (i < (n - 1))
+        else if (measurementIndex < (n - 1))
         {
-            acc    = (imuFromLastFrame[i].a + imuFromLastFrame[i + 1].a) * 0.5f;
-            angVel = (imuFromLastFrame[i].w + imuFromLastFrame[i + 1].w) * 0.5f;
-            tstep  = imuFromLastFrame[i + 1].t - imuFromLastFrame[i].t;
+            acceleration = (imuFromLastFrame[measurementIndex].a +
+                            imuFromLastFrame[measurementIndex + 1].a) *
+                           0.5f;
+            angleVelocity = (imuFromLastFrame[measurementIndex].w +
+                             imuFromLastFrame[measurementIndex + 1].w) *
+                            0.5f;
+            tstep = imuFromLastFrame[measurementIndex + 1].t -
+                    imuFromLastFrame[measurementIndex].t;
         }
-        else if ((i > 0) && (i == (n - 1)))
+        else if ((measurementIndex > 0) && (measurementIndex == (n - 1)))
         {
-            float tab  = imuFromLastFrame[i + 1].t - imuFromLastFrame[i].t;
-            float tend = imuFromLastFrame[i + 1].t - currentFrame.timeStamp;
-            acc        = (imuFromLastFrame[i].a + imuFromLastFrame[i + 1].a -
-                   (imuFromLastFrame[i + 1].a - imuFromLastFrame[i].a) *
-                       (tend / tab)) *
-                  0.5f;
-            angVel = (imuFromLastFrame[i].w + imuFromLastFrame[i + 1].w -
-                      (imuFromLastFrame[i + 1].w - imuFromLastFrame[i].w) *
-                          (tend / tab)) *
-                     0.5f;
-            tstep = currentFrame.timeStamp - imuFromLastFrame[i].t;
+            float tab = imuFromLastFrame[measurementIndex + 1].t -
+                        imuFromLastFrame[measurementIndex].t;
+            float tend = imuFromLastFrame[measurementIndex + 1].t -
+                         currentFrame.timeStamp;
+            acceleration = (imuFromLastFrame[measurementIndex].a +
+                            imuFromLastFrame[measurementIndex + 1].a -
+                            (imuFromLastFrame[measurementIndex + 1].a -
+                             imuFromLastFrame[measurementIndex].a) *
+                                (tend / tab)) *
+                           0.5f;
+            angleVelocity = (imuFromLastFrame[measurementIndex].w +
+                             imuFromLastFrame[measurementIndex + 1].w -
+                             (imuFromLastFrame[measurementIndex + 1].w -
+                              imuFromLastFrame[measurementIndex].w) *
+                                 (tend / tab)) *
+                            0.5f;
+            tstep =
+                currentFrame.timeStamp - imuFromLastFrame[measurementIndex].t;
         }
-        else if ((i == 0) && (i == (n - 1)))
+        else if ((measurementIndex == 0) && (measurementIndex == (n - 1)))
         {
-            acc    = imuFromLastFrame[i].a;
-            angVel = imuFromLastFrame[i].w;
-            tstep  = currentFrame.timeStamp -
+            acceleration  = imuFromLastFrame[measurementIndex].a;
+            angleVelocity = imuFromLastFrame[measurementIndex].w;
+            tstep         = currentFrame.timeStamp -
                     currentFrame.p_previousFrame->timeStamp;
         }
 
         if (!p_imuPreintegratedFromLastKF)
             cout << "mpImuPreintegratedFromLastKF does not exist" << endl;
-        p_imuPreintegratedFromLastKF->integrateNewMeasurement(acc,
-                                                              angVel,
+        p_imuPreintegratedFromLastKF->integrateNewMeasurement(acceleration,
+                                                              angleVelocity,
                                                               tstep);
-        pImuPreintegratedFromLastFrame->integrateNewMeasurement(acc,
-                                                                angVel,
+        pImuPreintegratedFromLastFrame->integrateNewMeasurement(acceleration,
+                                                                angleVelocity,
                                                                 tstep);
     }
 

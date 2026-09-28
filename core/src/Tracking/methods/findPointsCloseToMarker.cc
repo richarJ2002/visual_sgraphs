@@ -31,16 +31,16 @@ namespace core
 {
 
 // Semantic Entities
-std::vector<MapPoint *>
-    Tracking::findPointsCloseToMarker(const semantic::Marker *currentMarker)
+std::vector<MapPoint *> Tracking::findPointsCloseToMarker(
+    const semantic::Marker *p_currentMarker_in)
 {
     // Get all map points
     std::vector<MapPoint *> allmapPoints = p_atlas->getAllMapPoints();
     // Get all map points close to the marker
-    std::vector<MapPoint *> closePoints =
-        findPointsCloseToLocation(allmapPoints,
-                                  currentMarker->getGlobalPose().translation(),
-                                  0.1);
+    std::vector<MapPoint *> closePoints = findPointsCloseToLocation(
+        allmapPoints,
+        p_currentMarker_in->getGlobalPose().translation(),
+        0.1);
     // Return the close points
     return closePoints;
 }

@@ -35,10 +35,10 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::eraseChild(KeyFrame *pKF)
+void KeyFrame::eraseChild(KeyFrame *p_keyFrame_in)
 {
-    unique_lock<mutex> lockCon(mMutexConnections);
-    childrens.erase(pKF);
+    unique_lock<mutex> lockCon(connectionsMutex);
+    childrens.erase(p_keyFrame_in);
 }
 
 } // namespace core

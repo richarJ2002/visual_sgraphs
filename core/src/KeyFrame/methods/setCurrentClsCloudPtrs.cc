@@ -36,9 +36,9 @@ namespace core
 {
 
 void KeyFrame::setCurrentClsCloudPtrs(
-    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &clsCloudPtrs)
+    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_clsCloudPtrs_in)
 {
-    currentClsCloudPtrs = clsCloudPtrs;
+    currentClsCloudPtrs = p_clsCloudPtrs_in;
 }
 
 } // namespace core

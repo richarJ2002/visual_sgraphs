@@ -32,18 +32,19 @@ namespace core
 
 void EdgeSE3ProjectXYZDepth::linearizeOplus()
 {
-    g2o::VertexSE3Expmap *vi =
+    g2o::VertexSE3Expmap *p_poseVertex =
         static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
-    Eigen::Vector3d xyz_trans = vi->estimate().map(Xw);
+    Eigen::Vector3d transformedPointPosition = p_poseVertex->estimate().map(Xw);
 
-    double x = xyz_trans[0];
-    double y = xyz_trans[1];
+    double transformedX = transformedPointPosition[0];
+    double transformedY = transformedPointPosition[1];
 
     // Derivative of depth (z-coordinate in camera frame) w.r.t SE3 pose
-    Eigen::Matrix<double, 1, 6> SE3deriv_z;
-    SE3deriv_z << y, -x, 0, 0, 0, 1; // d(z)/d(xi) where xi = [rot, trans]
+    Eigen::Matrix<double, 1, 6> se3DepthDerivative;
+    se3DepthDerivative << transformedY, -transformedX, 0, 0, 0,
+        1; // d(z)/d(xi) where xi = [rot, trans]
 
-    _jacobianOplusXi = -SE3deriv_z;
+    _jacobianOplusXi = -se3DepthDerivative;
 }
 
 } // namespace core

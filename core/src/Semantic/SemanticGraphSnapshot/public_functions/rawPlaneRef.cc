@@ -39,26 +39,26 @@ namespace semantic
 
 RawPlaneRef rawPlaneRef(geometric::Plane *p_plane_in)
 {
-    RawPlaneRef ref;
+    RawPlaneRef reference;
     if (p_plane_in == nullptr)
     {
-        return ref;
+        return reference;
     }
-    ref.reason       = UnavailableReason::NONE;
-    ref.planeId      = p_plane_in->getId();
-    ref.isLive       = !p_plane_in->isBad();
-    ref.planeType    = p_plane_in->getPlaneType();
-    core::Map *p_map = p_plane_in->getMap();
+    reference.reason    = UnavailableReason::NONE;
+    reference.planeId   = p_plane_in->getId();
+    reference.isLive    = !p_plane_in->isBad();
+    reference.planeType = p_plane_in->getPlaneType();
+    core::Map *p_map    = p_plane_in->getMap();
     if (p_map != nullptr)
     {
-        ref.mapId = p_map->getId();
-        if (ref.planeType == geometric::Plane::PlaneVariant::WALL)
+        reference.mapId = p_map->getId();
+        if (reference.planeType == geometric::Plane::PlaneVariant::WALL)
         {
-            ref.wallKey =
+            reference.wallKey =
                 makeKey(EntityKind::WALL, p_map->getId(), p_plane_in->getId());
         }
     }
-    return ref;
+    return reference;
 }
 
 } // namespace semantic

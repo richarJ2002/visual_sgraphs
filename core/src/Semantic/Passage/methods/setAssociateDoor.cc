@@ -28,10 +28,10 @@ namespace core
 namespace semantic
 {
 
-void Passage::setAssociateDoor(vs_graphs::core::geometric::Plane *value)
+void Passage::setAssociateDoor(vs_graphs::core::geometric::Plane *p_value_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
-    associateDoor = value;
+    std::lock_guard<std::mutex> lock(geometryMutex);
+    p_associatedDoor = p_value_in;
 }
 
 } // namespace semantic

@@ -32,21 +32,23 @@ namespace vs_graphs
 namespace core
 {
 
-void ImuCamPose::update(const double *pu)
+void ImuCamPose::update(const double *p_updateVector_in)
 {
-    Eigen::Vector3d ur, ut;
-    ur << pu[0], pu[1], pu[2];
-    ut << pu[3], pu[4], pu[5];
+    Eigen::Vector3d rotationUpdate, translationUpdate;
+    rotationUpdate << p_updateVector_in[0], p_updateVector_in[1],
+        p_updateVector_in[2];
+    translationUpdate << p_updateVector_in[3], p_updateVector_in[4],
+        p_updateVector_in[5];
 
     // Update body pose
-    twb += Rwb * ut;
-    Rwb = Rwb * ExpSO3(ur);
+    twb += Rwb * translationUpdate;
+    Rwb = Rwb * expSO3(rotationUpdate);
 
     // Normalize rotation after 5 updates
     its++;
     if (its >= 3)
     {
-        NormalizeRotation(Rwb);
+        normalizeRotation(Rwb);
         its = 0;
     }
 
@@ -54,10 +56,11 @@ void ImuCamPose::update(const double *pu)
     const Eigen::Matrix3d Rbw = Rwb.transpose();
     const Eigen::Vector3d tbw = -Rbw * twb;
 
-    for (std::size_t i = 0; i < pCamera.size(); i++)
+    for (std::size_t cameraIndex = 0; cameraIndex < pCamera.size();
+         cameraIndex++)
     {
-        Rcw[i] = Rcb[i] * Rbw;
-        tcw[i] = Rcb[i] * tbw + tcb[i];
+        Rcw[cameraIndex] = Rcb[cameraIndex] * Rbw;
+        tcw[cameraIndex] = Rcb[cameraIndex] * tbw + tcb[cameraIndex];
     }
 }
 

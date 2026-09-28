@@ -30,9 +30,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::setLoopClosing(LoopClosing *pLoopClosing)
+void Tracking::setLoopClosing(LoopClosing *p_loopClosing_in)
 {
-    p_loopClosing = pLoopClosing;
+    p_loopClosing = p_loopClosing_in;
 }
 
 } // namespace core

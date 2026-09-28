@@ -33,25 +33,25 @@ namespace vs_graphs
 namespace core
 {
 
-bool System::saveAtlas(int type)
+bool System::saveAtlas(int type_in)
 {
     try
     {
         if (!saveAtlasFile.empty())
         {
             // Save the current session
-            p_atlas->PreSave();
+            p_atlas->preSave();
 
             string pathSaveFileName = "./";
             pathSaveFileName        = pathSaveFileName.append(saveAtlasFile);
             pathSaveFileName        = pathSaveFileName.append(".osa");
 
-            string strVocabularyChecksum =
+            string vocabularyChecksum =
                 calculateCheckSum(vocabularyFilePath, TEXT_FILE);
-            std::size_t found        = vocabularyFilePath.find_last_of("/\\");
-            string strVocabularyName = vocabularyFilePath.substr(found + 1);
+            std::size_t found          = vocabularyFilePath.find_last_of("/\\");
+            string      vocabularyName = vocabularyFilePath.substr(found + 1);
 
-            if (type == TEXT_FILE) // File text
+            if (type_in == TEXT_FILE) // File text
             {
                 cout << "Starting to write the save text file to "
                      << pathSaveFileName.c_str() << endl;
@@ -59,20 +59,20 @@ bool System::saveAtlas(int type)
                 std::ofstream ofs(pathSaveFileName, std::ios::binary);
                 boost::archive::text_oarchive oa(ofs);
 
-                oa << strVocabularyName;
-                oa << strVocabularyChecksum;
+                oa << vocabularyName;
+                oa << vocabularyChecksum;
                 oa << p_atlas;
                 cout << "End to write the save text file" << endl;
             }
-            else if (type == BINARY_FILE) // File binary
+            else if (type_in == BINARY_FILE) // File binary
             {
                 cout << "Starting to write the save binary file to "
                      << pathSaveFileName.c_str() << endl;
                 std::remove(pathSaveFileName.c_str());
                 std::ofstream ofs(pathSaveFileName, std::ios::binary);
                 boost::archive::binary_oarchive oa(ofs);
-                oa << strVocabularyName;
-                oa << strVocabularyChecksum;
+                oa << vocabularyName;
+                oa << vocabularyChecksum;
                 oa << p_atlas;
                 cout << "End to write save binary file" << endl;
             }

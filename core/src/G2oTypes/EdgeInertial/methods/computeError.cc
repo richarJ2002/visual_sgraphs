@@ -36,40 +36,48 @@ void EdgeInertial::computeError()
 {
     // TODO Maybe Reintegrate inertial measurments when difference between
     // linearization point and current estimate is too big
-    const VertexPose     *VP1 = static_cast<const VertexPose *>(_vertices[0]);
-    const VertexVelocity *VV1 =
+    const VertexPose *p_previousPoseVertex =
+        static_cast<const VertexPose *>(_vertices[0]);
+    const VertexVelocity *p_previousVelocityVertex =
         static_cast<const VertexVelocity *>(_vertices[1]);
-    const VertexGyroBias *VG1 =
+    const VertexGyroBias *p_previousGyroBiasVertex =
         static_cast<const VertexGyroBias *>(_vertices[2]);
-    const VertexAccBias *VA1 = static_cast<const VertexAccBias *>(_vertices[3]);
-    const VertexPose    *VP2 = static_cast<const VertexPose *>(_vertices[4]);
-    const VertexVelocity *VV2 =
+    const VertexAccBias *p_previousAccBiasVertex =
+        static_cast<const VertexAccBias *>(_vertices[3]);
+    const VertexPose *p_currentPoseVertex =
+        static_cast<const VertexPose *>(_vertices[4]);
+    const VertexVelocity *p_currentVelocityVertex =
         static_cast<const VertexVelocity *>(_vertices[5]);
-    const IMU::Bias       b1(VA1->estimate()[0],
-                       VA1->estimate()[1],
-                       VA1->estimate()[2],
-                       VG1->estimate()[0],
-                       VG1->estimate()[1],
-                       VG1->estimate()[2]);
-    const Eigen::Matrix3d dR =
-        p_preintegrated->getDeltaRotation(b1).cast<double>();
-    const Eigen::Vector3d dV =
-        p_preintegrated->getDeltaVelocity(b1).cast<double>();
-    const Eigen::Vector3d dP =
-        p_preintegrated->getDeltaPosition(b1).cast<double>();
+    const IMU::Bias       biasEstimate(p_previousAccBiasVertex->estimate()[0],
+                                 p_previousAccBiasVertex->estimate()[1],
+                                 p_previousAccBiasVertex->estimate()[2],
+                                 p_previousGyroBiasVertex->estimate()[0],
+                                 p_previousGyroBiasVertex->estimate()[1],
+                                 p_previousGyroBiasVertex->estimate()[2]);
+    const Eigen::Matrix3d deltaRotation =
+        p_preintegrated->getDeltaRotation(biasEstimate).cast<double>();
+    const Eigen::Vector3d deltaVelocity =
+        p_preintegrated->getDeltaVelocity(biasEstimate).cast<double>();
+    const Eigen::Vector3d deltaPosition =
+        p_preintegrated->getDeltaPosition(biasEstimate).cast<double>();
 
-    const Eigen::Vector3d er = LogSO3(
-        dR.transpose() * VP1->estimate().Rwb.transpose() * VP2->estimate().Rwb);
-    const Eigen::Vector3d ev =
-        VP1->estimate().Rwb.transpose() *
-            (VV2->estimate() - VV1->estimate() - g * dt) -
-        dV;
-    const Eigen::Vector3d ep = VP1->estimate().Rwb.transpose() *
-                                   (VP2->estimate().twb - VP1->estimate().twb -
-                                    VV1->estimate() * dt - g * dt * dt / 2) -
-                               dP;
+    const Eigen::Vector3d rotationError =
+        logSO3(deltaRotation.transpose() *
+               p_previousPoseVertex->estimate().Rwb.transpose() *
+               p_currentPoseVertex->estimate().Rwb);
+    const Eigen::Vector3d velocityError =
+        p_previousPoseVertex->estimate().Rwb.transpose() *
+            (p_currentVelocityVertex->estimate() -
+             p_previousVelocityVertex->estimate() - g * dt) -
+        deltaVelocity;
+    const Eigen::Vector3d positionError =
+        p_previousPoseVertex->estimate().Rwb.transpose() *
+            (p_currentPoseVertex->estimate().twb -
+             p_previousPoseVertex->estimate().twb -
+             p_previousVelocityVertex->estimate() * dt - g * dt * dt / 2) -
+        deltaPosition;
 
-    _error << er, ev, ep;
+    _error << rotationError, velocityError, positionError;
 }
 
 } // namespace core

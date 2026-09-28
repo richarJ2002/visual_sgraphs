@@ -30,42 +30,42 @@ namespace vs_graphs
 namespace core
 {
 
-LocalMapping::LocalMapping(System                        *pSys,
-                           Atlas                         *pAtlas,
-                           const float                    bMonocular,
-                           bool                           bInertial,
-                           [[maybe_unused]] const string &_strSeqName) :
+LocalMapping::LocalMapping(System                        *p_system_in,
+                           Atlas                         *p_atlas_in,
+                           const float                    monocular_in,
+                           bool                           inertial_in,
+                           [[maybe_unused]] const string &sequenceName_in) :
     scale(1.0),
     initSection(0),
     initIndex(0),
     iterationIndex(0),
-    notBA1(true),
-    notBA2(true),
-    p_system(pSys),
-    monocular(bMonocular),
-    inertial(bInertial),
-    resetRequested(false),
-    resetActiveMapRequested(false),
-    finishRequested(false),
-    finished(true),
-    p_atlas(pAtlas),
-    abortBA(false),
-    stopped(false),
-    stopRequestedFlag(false),
-    notStop(false),
-    acceptKeyFrames(true),
-    bInitializing(false),
+    isFirstImuBaPending(true),
+    isSecondImuBaPending(true),
+    p_system(p_system_in),
+    isMonocular(monocular_in),
+    isInertial(inertial_in),
+    isResetRequested(false),
+    isResetActiveMapRequested(false),
+    isFinishRequested(false),
+    hasFinished(true),
+    p_atlas(p_atlas_in),
+    shouldAbortBa(false),
+    hasStopped(false),
+    isStopRequested(false),
+    isStopBlocked(false),
+    shouldAcceptKeyFrames(true),
+    isInitializationInProgress(false),
     infoInertial(Eigen::MatrixXd::Zero(9, 9))
 {
     localMappingCount       = 0;
     initializationStartTime = 0.f;
-    badImu                  = false;
+    isImuBad                = false;
     keyFrameCullingCount    = 0;
     matchesInliers          = 0;
 
 #ifdef REGISTER_TIMES
-    nLBA_exec  = 0;
-    nLBA_abort = 0;
+    localBaExecutionCount = 0;
+    localBaAbortCount     = 0;
 #endif
 }
 

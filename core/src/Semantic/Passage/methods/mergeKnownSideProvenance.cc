@@ -30,14 +30,14 @@ namespace semantic
 
 void Passage::mergeKnownSideProvenance(const KnownSideProvenance &provenance_in)
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
+    std::lock_guard<std::mutex> lock(geometryMutex);
     if (!knownSideProvenance.hasDirection() && provenance_in.hasDirection())
     {
         knownSideProvenance.direction_World = provenance_in.direction_World;
     }
-    if (knownSideProvenance.pRoom == nullptr)
+    if (knownSideProvenance.p_room == nullptr)
     {
-        knownSideProvenance.pRoom = provenance_in.pRoom;
+        knownSideProvenance.p_room = provenance_in.p_room;
     }
 }
 

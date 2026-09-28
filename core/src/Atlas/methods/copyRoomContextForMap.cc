@@ -106,20 +106,20 @@ std::vector<semantic::RoomContextSnapshot>
             }
             snapshot.passageCentroids.push_back(p_passage->getCentroid());
             semantic::PassageContext context;
-            context.id       = p_passage->getId();
-            context.passable = p_passage->isPassable();
+            context.id         = p_passage->getId();
+            context.isPassable = p_passage->isPassable();
             const std::optional<int> roomIdOfPassageObservationConnection =
                 p_passage->getProspectiveRoomId();
             context.hasFarSideRoom =
                 roomIdOfPassageObservationConnection.has_value();
             if (context.hasFarSideRoom)
                 context.secondaryRoomId = *roomIdOfPassageObservationConnection;
-            context.width_m       = p_passage->getWidth();
-            context.height_m      = p_passage->getHeight();
-            context.apertureValid = std::isfinite(context.width_m) &&
-                                    std::isfinite(context.height_m) &&
-                                    context.width_m > 0.0 &&
-                                    context.height_m > 0.0;
+            context.width_m         = p_passage->getWidth();
+            context.height_m        = p_passage->getHeight();
+            context.isApertureValid = std::isfinite(context.width_m) &&
+                                      std::isfinite(context.height_m) &&
+                                      context.width_m > 0.0 &&
+                                      context.height_m > 0.0;
             const semantic::Passage::KnownSideProvenance knownSide =
                 p_passage->getKnownSideProvenance();
             context.hasKnownSideDirection = knownSide.hasDirection();
@@ -127,10 +127,10 @@ std::vector<semantic::RoomContextSnapshot>
             {
                 context.knownSideDirection_World = knownSide.direction_World;
             }
-            context.hasKnownSideRoom = knownSide.pRoom != nullptr;
+            context.hasKnownSideRoom = knownSide.p_room != nullptr;
             if (context.hasKnownSideRoom)
             {
-                context.knownSideRoomId = knownSide.pRoom->getId();
+                context.knownSideRoomId = knownSide.p_room->getId();
             }
             context.traversalKnownToFarCount =
                 p_passage->getTraversalKnownToFarCount();

@@ -33,10 +33,10 @@ semantic::RoomContextSnapshot
     semantic::RoomContextSnapshot snapshot = makeRoom(roomId, 1.0);
     semantic::PassageContext      passage;
     passage.id                                = passageId;
-    passage.passable                          = true;
+    passage.isPassable                        = true;
     passage.hasFarSideRoom                    = hasFarSide;
     passage.secondaryRoomId                   = farRoomId;
-    passage.apertureValid                     = true;
+    passage.isApertureValid                   = true;
     passage.width_m                           = 1.0;
     passage.height_m                          = 2.0;
     passage.traversalKnownToFarCount          = 3U;
@@ -57,8 +57,9 @@ std::string
                << candidate.mapBId << ':' << candidate.roomBId << ':'
                << candidate.distance << ':' << candidate.cues.angleDistance
                << ':' << candidate.cues.extentDistance << ':'
-               << candidate.cues.topologyDistance << ':' << candidate.ambiguous
-               << ':' << candidate.lowConfidence << '\n';
+               << candidate.cues.topologyDistance << ':'
+               << candidate.isAmbiguous << ':' << candidate.hasLowConfidence
+               << '\n';
     }
     return stream.str();
 }
@@ -97,10 +98,10 @@ semantic::RoomContextSnapshot degenerateMedianRoom(int roomId, int passageId)
     snapshot.wallNormals = {Eigen::Vector3d::UnitX()};
     snapshot.wallBounds  = {{false, 0.0, 0.0, 0.0, 0.0}};
     semantic::PassageContext passage;
-    passage.id            = passageId;
-    passage.apertureValid = true;
-    passage.width_m       = 1.0;
-    passage.height_m      = 2.0;
+    passage.id              = passageId;
+    passage.isApertureValid = true;
+    passage.width_m         = 1.0;
+    passage.height_m        = 2.0;
     snapshot.passageContexts.push_back(passage);
     snapshot.passageCentroids.push_back(Eigen::Vector3d::Zero());
     return snapshot;
@@ -115,10 +116,10 @@ semantic::RoomContextSnapshot
     snapshot.wallNormals = {Eigen::Vector3d::UnitX()};
     snapshot.wallBounds  = {{true, 0.0, 2.0, 0.0, 1.0}};
     semantic::PassageContext passage;
-    passage.id            = 1;
-    passage.apertureValid = true;
-    passage.width_m       = width_m;
-    passage.height_m      = height_m;
+    passage.id              = 1;
+    passage.isApertureValid = true;
+    passage.width_m         = width_m;
+    passage.height_m        = height_m;
     snapshot.passageContexts.push_back(passage);
     snapshot.passageCentroids.push_back(Eigen::Vector3d::Zero());
     return snapshot;
@@ -212,7 +213,7 @@ TEST(CandidateGen, CanonicalizesLocalTopologyWithoutComparingRawIds)
     const std::vector<semantic::SemanticCandidate> same =
         semantic::SemanticCandidates::generate(history, config);
     ASSERT_EQ(same.size(), 1U);
-    EXPECT_TRUE(same.front().cues.topologyAvailable);
+    EXPECT_TRUE(same.front().cues.isTopologyAvailable);
     EXPECT_DOUBLE_EQ(same.front().cues.topologyDistance, 0.0);
 
     history[2U][0].passageContexts[0].hasFarSideRoom = false;
@@ -292,7 +293,7 @@ TEST(CandidateGen, OmitsTopologyWhenNodeCapWouldBeExceeded)
     const std::vector<semantic::SemanticCandidate> candidates =
         semantic::SemanticCandidates::generate(history, config);
     ASSERT_EQ(candidates.size(), 1U);
-    EXPECT_FALSE(candidates.front().cues.topologyAvailable);
+    EXPECT_FALSE(candidates.front().cues.isTopologyAvailable);
 }
 
 TEST(CandidateGen, SeededTransformInvarianceIs100Of100)
@@ -421,7 +422,7 @@ TEST(CandidateGen, RuntimeBudgetNeverChangesDeterministicBytes)
         semantic::SemanticCandidates::generate(history, profiled);
     EXPECT_EQ(candidateBytes(left), candidateBytes(right));
     ASSERT_FALSE(right.empty());
-    EXPECT_FALSE(right.front().cues.runtimeBudgetExceeded);
+    EXPECT_FALSE(right.front().cues.isRuntimeBudgetExceeded);
 }
 
 /* Required test (a): rooms with no passages still score wall
@@ -435,8 +436,8 @@ TEST(CandidateGen, WallOnlyRoomsScoreWallCuesWithTopologyAndApertureAbsent)
     const std::vector<semantic::SemanticCandidate> candidates =
         semantic::SemanticCandidates::generate(history);
     ASSERT_EQ(candidates.size(), 1U);
-    EXPECT_TRUE(candidates.front().minimumEvidenceSatisfied);
-    EXPECT_FALSE(candidates.front().cues.topologyAvailable);
+    EXPECT_TRUE(candidates.front().isMinimumEvidenceSatisfied);
+    EXPECT_FALSE(candidates.front().cues.isTopologyAvailable);
     /* Only angle + extent contribute (default weight 1.0 each); aperture and
      * topology are excluded from the denominator entirely. */
     EXPECT_DOUBLE_EQ(candidates.front().cues.weightDenominator, 2.0);
@@ -569,11 +570,11 @@ TEST(CandidateGen, AmbiguityMarginMarksOnlyCandidatesWithinMargin)
         semantic::SemanticCandidates::generate(history, config);
     ASSERT_EQ(candidates.size(), 3U);
     EXPECT_EQ(candidates[0].roomBId, 11);
-    EXPECT_TRUE(candidates[0].ambiguous);
+    EXPECT_TRUE(candidates[0].isAmbiguous);
     EXPECT_EQ(candidates[1].roomBId, 12);
-    EXPECT_TRUE(candidates[1].ambiguous);
+    EXPECT_TRUE(candidates[1].isAmbiguous);
     EXPECT_EQ(candidates[2].roomBId, 13);
-    EXPECT_FALSE(candidates[2].ambiguous);
+    EXPECT_FALSE(candidates[2].isAmbiguous);
 }
 
 /* Required test (j): a bounded global fallback finds the true

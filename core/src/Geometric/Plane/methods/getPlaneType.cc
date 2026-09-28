@@ -34,7 +34,7 @@ namespace geometric
 
 Plane::PlaneVariant Plane::getPlaneType(void)
 {
-    unique_lock<mutex> lock(mMutexType);
+    unique_lock<mutex> lock(typeMutex);
     return planeType;
 }
 

@@ -40,7 +40,7 @@ bool Tracking::predictStateIMU()
         return false;
     }
 
-    if (mapUpdated && p_lastKeyFrame)
+    if (isMapUpdated && p_lastKeyFrame)
     {
         const Eigen::Vector3f twb1 = p_lastKeyFrame->getImuPosition();
         const Eigen::Matrix3f Rwb1 = p_lastKeyFrame->getImuRotation();
@@ -49,7 +49,7 @@ bool Tracking::predictStateIMU()
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
         const float           t12 = p_imuPreintegratedFromLastKF->dT;
 
-        Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(
+        Eigen::Matrix3f Rwb2 = IMU::normalizeRotation(
             Rwb1 * p_imuPreintegratedFromLastKF->getDeltaRotation(
                        p_lastKeyFrame->getImuBias()));
         Eigen::Vector3f twb2 =
@@ -66,7 +66,7 @@ bool Tracking::predictStateIMU()
         currentFrame.predictedBias = currentFrame.imuBias;
         return true;
     }
-    else if (!mapUpdated)
+    else if (!isMapUpdated)
     {
         const Eigen::Vector3f twb1 = lastFrame.getImuPosition();
         const Eigen::Matrix3f Rwb1 = lastFrame.getImuRotation();
@@ -74,7 +74,7 @@ bool Tracking::predictStateIMU()
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
         const float           t12 = currentFrame.p_imuPreintegratedFrame->dT;
 
-        Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(
+        Eigen::Matrix3f Rwb2 = IMU::normalizeRotation(
             Rwb1 * currentFrame.p_imuPreintegratedFrame->getDeltaRotation(
                        lastFrame.imuBias));
         Eigen::Vector3f twb2 =

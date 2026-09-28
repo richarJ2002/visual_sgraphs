@@ -36,24 +36,25 @@ namespace semantic
 
 EntityRef entityRefForRoom(Room *p_room_in)
 {
-    EntityRef ref;
+    EntityRef reference;
     if (p_room_in == nullptr)
     {
-        return ref;
+        return reference;
     }
-    ref.localId                   = p_room_in->getId();
-    ref.isLive                    = !p_room_in->isBad();
-    ref.livenessUnavailableReason = UnavailableReason::NONE;
+    reference.localId                   = p_room_in->getId();
+    reference.isLive                    = !p_room_in->isBad();
+    reference.livenessUnavailableReason = UnavailableReason::NONE;
 
     core::Map *p_map = p_room_in->getMap();
     if (p_map == nullptr)
     {
-        ref.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
-        return ref;
+        reference.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
+        return reference;
     }
-    ref.key    = makeKey(EntityKind::ROOM, p_map->getId(), p_room_in->getId());
-    ref.reason = UnavailableReason::NONE;
-    return ref;
+    reference.key =
+        makeKey(EntityKind::ROOM, p_map->getId(), p_room_in->getId());
+    reference.reason = UnavailableReason::NONE;
+    return reference;
 }
 
 } // namespace semantic

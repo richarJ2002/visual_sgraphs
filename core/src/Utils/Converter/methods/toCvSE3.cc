@@ -44,21 +44,21 @@ namespace converter
 cv::Mat Converter::toCvSE3(const Eigen::Matrix<double, 3, 3> &rotation_in,
                            const Eigen::Matrix<double, 3, 1> &translation_in)
 {
-    cv::Mat cvMat = cv::Mat::eye(4, 4, CV_32F);
+    cv::Mat cvMatrix = cv::Mat::eye(4, 4, CV_32F);
     for (int rowIndex = 0; rowIndex < 3; rowIndex++)
     {
         for (int columnIndex = 0; columnIndex < 3; columnIndex++)
         {
-            cvMat.at<float>(rowIndex, columnIndex) =
+            cvMatrix.at<float>(rowIndex, columnIndex) =
                 rotation_in(rowIndex, columnIndex);
         }
     }
     for (int rowIndex = 0; rowIndex < 3; rowIndex++)
     {
-        cvMat.at<float>(rowIndex, 3) = translation_in(rowIndex);
+        cvMatrix.at<float>(rowIndex, 3) = translation_in(rowIndex);
     }
 
-    return cvMat.clone();
+    return cvMatrix.clone();
 }
 
 } // namespace converter

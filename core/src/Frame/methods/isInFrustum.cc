@@ -43,16 +43,16 @@ namespace vs_graphs
 namespace core
 {
 
-bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
+bool Frame::isInFrustum(MapPoint *p_mapPoint_inout, float viewingCosLimit_in)
 {
-    if (Nleft == -1)
+    if (leftKeyPointCount == -1)
     {
-        pMP->trackInView = false;
-        pMP->trackProjX  = -1;
-        pMP->trackProjY  = -1;
+        p_mapPoint_inout->isTrackedInView = false;
+        p_mapPoint_inout->trackProjX      = -1;
+        p_mapPoint_inout->trackProjY      = -1;
 
         // 3D in absolute coordinates
-        Eigen::Matrix<float, 3, 1> P = pMP->getWorldPos();
+        Eigen::Matrix<float, 3, 1> P = p_mapPoint_inout->getWorldPos();
 
         // 3D in camera coordinates
         const Eigen::Matrix<float, 3, 1> Pc = rotationRcw * P + translationTcw;
@@ -71,53 +71,59 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
         if (uv(1) < gridMinY || uv(1) > gridMaxY)
             return false;
 
-        pMP->trackProjX = uv(0);
-        pMP->trackProjY = uv(1);
+        p_mapPoint_inout->trackProjX = uv(0);
+        p_mapPoint_inout->trackProjY = uv(1);
 
         // Check distance is in the scale invariance region of the MapPoint
-        const float           maxDistance = pMP->getMaxDistanceInvariance();
-        const float           minDistance = pMP->getMinDistanceInvariance();
-        const Eigen::Vector3f PO          = P - centerOw;
-        const float           dist        = PO.norm();
+        const float maximumDistance =
+            p_mapPoint_inout->getMaxDistanceInvariance();
+        const float minimumDistance =
+            p_mapPoint_inout->getMinDistanceInvariance();
+        const Eigen::Vector3f PO       = P - centerOw;
+        const float           distance = PO.norm();
 
-        if (dist < minDistance || dist > maxDistance)
+        if (distance < minimumDistance || distance > maximumDistance)
             return false;
 
         // Check viewing angle
-        Eigen::Vector3f Pn = pMP->getNormal();
+        Eigen::Vector3f Pn = p_mapPoint_inout->getNormal();
 
-        const float viewCos = PO.dot(Pn) / dist;
+        const float viewCos = PO.dot(Pn) / distance;
 
-        if (viewCos < viewingCosLimit)
+        if (viewCos < viewingCosLimit_in)
             return false;
 
         // Predict scale in the image
-        const int nPredictedLevel = pMP->predictScale(dist, this);
+        const int predictedLevelCount =
+            p_mapPoint_inout->predictScale(distance, this);
 
         // Data used by the tracking
-        pMP->trackInView = true;
-        pMP->trackProjX  = uv(0);
-        pMP->trackProjXR = uv(0) - mbf * invz;
+        p_mapPoint_inout->isTrackedInView = true;
+        p_mapPoint_inout->trackProjX      = uv(0);
+        p_mapPoint_inout->trackProjXR     = uv(0) - mbf * invz;
 
-        pMP->trackDepth = Pc_dist;
+        p_mapPoint_inout->trackDepth = Pc_dist;
 
-        pMP->trackProjY      = uv(1);
-        pMP->trackScaleLevel = nPredictedLevel;
-        pMP->trackViewCos    = viewCos;
+        p_mapPoint_inout->trackProjY      = uv(1);
+        p_mapPoint_inout->trackScaleLevel = predictedLevelCount;
+        p_mapPoint_inout->trackViewCos    = viewCos;
 
         return true;
     }
     else
     {
-        pMP->trackInView      = false;
-        pMP->trackInViewR     = false;
-        pMP->trackScaleLevel  = -1;
-        pMP->trackScaleLevelR = -1;
+        p_mapPoint_inout->isTrackedInView      = false;
+        p_mapPoint_inout->isTrackedInRightView = false;
+        p_mapPoint_inout->trackScaleLevel      = -1;
+        p_mapPoint_inout->trackScaleLevelR     = -1;
 
-        pMP->trackInView  = isInFrustumChecks(pMP, viewingCosLimit);
-        pMP->trackInViewR = isInFrustumChecks(pMP, viewingCosLimit, true);
+        p_mapPoint_inout->isTrackedInView =
+            isInFrustumChecks(p_mapPoint_inout, viewingCosLimit_in);
+        p_mapPoint_inout->isTrackedInRightView =
+            isInFrustumChecks(p_mapPoint_inout, viewingCosLimit_in, true);
 
-        return pMP->trackInView || pMP->trackInViewR;
+        return p_mapPoint_inout->isTrackedInView ||
+               p_mapPoint_inout->isTrackedInRightView;
     }
 }
 

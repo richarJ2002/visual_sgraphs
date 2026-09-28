@@ -33,7 +33,7 @@ namespace core
 
 Eigen::Vector3f Sim3Solver::getEstimatedTranslation()
 {
-    return mBestTranslation;
+    return bestTranslation;
 }
 
 } // namespace core

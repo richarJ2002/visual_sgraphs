@@ -36,7 +36,7 @@ namespace core
 
 std::vector<vs_graphs::core::semantic::Passage *> Map::getAllPassages()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return std::vector<vs_graphs::core::semantic::Passage *>(passages.begin(),
                                                              passages.end());
 }

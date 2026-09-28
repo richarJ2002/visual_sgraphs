@@ -33,7 +33,7 @@ namespace semantic
 SemanticVerifyResult
     SemanticVerify::verify(const std::vector<VerifyWallObservation> &wallsA_in,
                            const std::vector<VerifyWallObservation> &wallsB_in,
-                           const SemanticVerifyConfig               &config_in)
+                           const SemanticVerifyConfig &configuration_in)
 {
     SemanticVerifyResult result;
     result.candidateWallPairCount = wallsA_in.size() * wallsB_in.size();
@@ -71,8 +71,8 @@ SemanticVerifyResult
         std::vector<WallInlierPair> inliers;
     };
 
-    const double maxNormalAngle_rad =
-        config_in.maxNormalAngle_deg * M_PI / 180.0;
+    const double maximumNormalAngle_rad =
+        configuration_in.maxNormalAngle_deg * M_PI / 180.0;
 
     /* All hypotheses passing the rank/condition-number gates. Deduplicated
      * by inlier-set signature after enumeration: distinct minimal (3-wall)
@@ -83,21 +83,24 @@ SemanticVerifyResult
     std::size_t             hypothesesEvaluated = 0U;
     const std::size_t       pairCount           = candidatePairs.size();
 
-    for (std::size_t i = 0U;
-         i < pairCount && hypothesesEvaluated < config_in.maxHypotheses;
-         ++i)
+    for (std::size_t firstIndex = 0U;
+         firstIndex < pairCount &&
+         hypothesesEvaluated < configuration_in.maxHypotheses;
+         ++firstIndex)
     {
-        for (std::size_t j = i + 1U;
-             j < pairCount && hypothesesEvaluated < config_in.maxHypotheses;
-             ++j)
+        for (std::size_t secondIndex = firstIndex + 1U;
+             secondIndex < pairCount &&
+             hypothesesEvaluated < configuration_in.maxHypotheses;
+             ++secondIndex)
         {
-            for (std::size_t k = j + 1U;
-                 k < pairCount && hypothesesEvaluated < config_in.maxHypotheses;
-                 ++k)
+            for (std::size_t thirdIndex = secondIndex + 1U;
+                 thirdIndex < pairCount &&
+                 hypothesesEvaluated < configuration_in.maxHypotheses;
+                 ++thirdIndex)
             {
-                const CandidatePair &pair0 = candidatePairs[i];
-                const CandidatePair &pair1 = candidatePairs[j];
-                const CandidatePair &pair2 = candidatePairs[k];
+                const CandidatePair &pair0 = candidatePairs[firstIndex];
+                const CandidatePair &pair1 = candidatePairs[secondIndex];
+                const CandidatePair &pair2 = candidatePairs[thirdIndex];
 
                 /* One-to-one constraint: 3 distinct A-walls, 3 distinct
                  * B-walls (an injective partial matching of size 3). */
@@ -159,7 +162,7 @@ SemanticVerifyResult
                 }
                 if (!std::isfinite(translationFit.conditionNumber) ||
                     translationFit.conditionNumber >
-                        config_in.maxConditionNumber)
+                        configuration_in.maxConditionNumber)
                 {
                     continue;
                 }
@@ -191,27 +194,27 @@ SemanticVerifyResult
                     const double offsetResidual_m =
                         std::abs(predictedOffset - wallB.d);
 
-                    if (normalAngle_rad > maxNormalAngle_rad)
+                    if (normalAngle_rad > maximumNormalAngle_rad)
                     {
                         continue;
                     }
-                    if (offsetResidual_m > config_in.maxOffset_m)
+                    if (offsetResidual_m > configuration_in.maxOffset_m)
                     {
                         continue;
                     }
                     /* Explicit |cos(theta)| gate, distinct
                      * from the angle gate above. */
                     if (std::abs(std::cos(normalAngle_rad)) <=
-                        config_in.minAbsCosNormalAngle)
+                        configuration_in.minAbsCosNormalAngle)
                     {
                         continue;
                     }
-                    const double supportDist_m =
+                    const double supportDistance_m =
                         symmetricSupportDistance(wallA,
                                                  wallB,
                                                  rotationFit.rotation,
                                                  translationFit.translation);
-                    if (supportDist_m > config_in.maxSupportDist_m)
+                    if (supportDistance_m > configuration_in.maxSupportDist_m)
                     {
                         continue;
                     }
@@ -220,7 +223,7 @@ SemanticVerifyResult
                                        candidate.indexB,
                                        normalAngle_rad,
                                        offsetResidual_m,
-                                       supportDist_m,
+                                       supportDistance_m,
                                        normalAngle_rad + offsetResidual_m});
                 }
 
@@ -333,7 +336,7 @@ SemanticVerifyResult
     result.runnerUpInlierCount = runnerUpInliers;
     result.inlierRatio         = inlierRatio;
 
-    if (topInliers < runnerUpInliers + config_in.ambiguityMarginInliers)
+    if (topInliers < runnerUpInliers + configuration_in.ambiguityMarginInliers)
     {
         /* Insufficient discrimination between the top two DISTINCT
          * hypotheses. */
@@ -342,7 +345,7 @@ SemanticVerifyResult
         return result;
     }
 
-    if (inlierRatio < config_in.minInlierRatio)
+    if (inlierRatio < configuration_in.minInlierRatio)
     {
         result.status       = VerificationStatus::REJECTED;
         result.rejectReason = VerifyRejectReason::BELOW_MIN_INLIER_RATIO;
@@ -354,24 +357,24 @@ SemanticVerifyResult
     /* Nonlinear refinement: one EdgePlaneTransformSE3 unary
      * factor per accepted inlier wall pair, Huber-robustified. */
     g2o::SparseOptimizer                 optimizer;
-    g2o::BlockSolverX::LinearSolverType *linearSolver =
+    g2o::BlockSolverX::LinearSolverType *p_linearSolver =
         new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
-    g2o::BlockSolverX *solverPtr = new g2o::BlockSolverX(linearSolver);
-    g2o::OptimizationAlgorithmLevenberg *algorithm =
-        new g2o::OptimizationAlgorithmLevenberg(solverPtr);
-    optimizer.setAlgorithm(algorithm);
+    g2o::BlockSolverX *p_solver = new g2o::BlockSolverX(p_linearSolver);
+    g2o::OptimizationAlgorithmLevenberg *p_algorithm =
+        new g2o::OptimizationAlgorithmLevenberg(p_solver);
+    optimizer.setAlgorithm(p_algorithm);
     optimizer.setVerbose(false);
 
-    g2o::VertexSE3Expmap *vertex = new g2o::VertexSE3Expmap();
-    vertex->setEstimate(g2o::SE3Quat(seed.rotation, seed.translation));
-    vertex->setId(0);
-    vertex->setFixed(false);
-    optimizer.addVertex(vertex);
+    g2o::VertexSE3Expmap *p_vertex = new g2o::VertexSE3Expmap();
+    p_vertex->setEstimate(g2o::SE3Quat(seed.rotation, seed.translation));
+    p_vertex->setId(0);
+    p_vertex->setFixed(false);
+    optimizer.addVertex(p_vertex);
 
-    const double omegaTheta =
-        1.0 / (config_in.sigmaTheta_rad * config_in.sigmaTheta_rad);
+    const double omegaTheta = 1.0 / (configuration_in.sigmaTheta_rad *
+                                     configuration_in.sigmaTheta_rad);
     const double omegaOffset =
-        1.0 / (config_in.sigmaOffset_m * config_in.sigmaOffset_m);
+        1.0 / (configuration_in.sigmaOffset_m * configuration_in.sigmaOffset_m);
     Eigen::Matrix3d information = Eigen::Matrix3d::Zero();
     information(0, 0)           = omegaTheta;
     information(1, 1)           = omegaTheta;
@@ -379,36 +382,36 @@ SemanticVerifyResult
 
     for (const WallInlierPair &inlier : seed.inliers)
     {
-        const VerifyWallObservation *observationA =
+        const VerifyWallObservation *p_observationA =
             findByWallId(wallsA_in, inlier.wallIdA);
-        const VerifyWallObservation *observationB =
+        const VerifyWallObservation *p_observationB =
             findByWallId(wallsB_in, inlier.wallIdB);
-        if (observationA == nullptr || observationB == nullptr)
+        if (p_observationA == nullptr || p_observationB == nullptr)
         {
             continue;
         }
 
         PlanePairMeasurement measurement;
-        measurement.n_A   = observationA->normal_World;
-        measurement.d_A   = observationA->d;
-        measurement.n_B   = observationB->normal_World;
-        measurement.d_B   = observationB->d;
+        measurement.n_A   = p_observationA->normal_World;
+        measurement.d_A   = p_observationA->d;
+        measurement.n_B   = p_observationB->normal_World;
+        measurement.d_B   = p_observationB->d;
         measurement.sigma = 1;
 
-        EdgePlaneTransformSE3 *edge = new EdgePlaneTransformSE3();
-        edge->setVertex(0, vertex);
-        edge->setMeasurement(measurement);
-        edge->setInformation(information);
-        g2o::RobustKernelHuber *kernel = new g2o::RobustKernelHuber();
-        kernel->setDelta(config_in.huberDelta);
-        edge->setRobustKernel(kernel);
-        optimizer.addEdge(edge);
+        EdgePlaneTransformSE3 *p_edge = new EdgePlaneTransformSE3();
+        p_edge->setVertex(0, p_vertex);
+        p_edge->setMeasurement(measurement);
+        p_edge->setInformation(information);
+        g2o::RobustKernelHuber *p_kernel = new g2o::RobustKernelHuber();
+        p_kernel->setDelta(configuration_in.huberDelta);
+        p_edge->setRobustKernel(p_kernel);
+        optimizer.addEdge(p_edge);
     }
 
     optimizer.initializeOptimization();
-    optimizer.optimize(static_cast<int>(config_in.optimizerIterations));
+    optimizer.optimize(static_cast<int>(configuration_in.optimizerIterations));
 
-    const g2o::SE3Quat    refinedEstimate = vertex->estimate();
+    const g2o::SE3Quat    refinedEstimate = p_vertex->estimate();
     const Eigen::Matrix3d refinedRotation =
         refinedEstimate.rotation().toRotationMatrix();
     const Eigen::Vector3d refinedTranslation = refinedEstimate.translation();
@@ -428,19 +431,19 @@ SemanticVerifyResult
     std::vector<double>          angularResiduals;
     for (const WallInlierPair &inlier : seed.inliers)
     {
-        const VerifyWallObservation *observationA =
+        const VerifyWallObservation *p_observationA =
             findByWallId(wallsA_in, inlier.wallIdA);
-        const VerifyWallObservation *observationB =
+        const VerifyWallObservation *p_observationB =
             findByWallId(wallsB_in, inlier.wallIdB);
-        if (observationA == nullptr || observationB == nullptr)
+        if (p_observationA == nullptr || p_observationB == nullptr)
         {
             continue;
         }
         inlierRotatedNormalsA.push_back(refinedRotation *
-                                        observationA->normal_World);
-        inlierOffsetsA.push_back(observationA->d);
-        inlierNormalsB.push_back(observationB->normal_World);
-        inlierOffsetsB.push_back(observationB->d);
+                                        p_observationA->normal_World);
+        inlierOffsetsA.push_back(p_observationA->d);
+        inlierNormalsB.push_back(p_observationB->normal_World);
+        inlierOffsetsB.push_back(p_observationB->d);
         angularResiduals.push_back(inlier.normalAngleResidual_rad);
         angularResidualSum += inlier.normalAngleResidual_rad;
     }
@@ -485,7 +488,7 @@ SemanticVerifyResult
     static_cast<void>(angularResidualSum);
 
     result.status                       = VerificationStatus::PASS;
-    result.pass                         = true;
+    result.hasPassed                    = true;
     result.transform_AToB               = Eigen::Isometry3d::Identity();
     result.transform_AToB.linear()      = refinedRotation;
     result.transform_AToB.translation() = refinedTranslation;
@@ -496,7 +499,7 @@ SemanticVerifyResult
         std::isfinite(refinedFit.conditionNumber)
             ? std::min(1.0,
                        refinedFit.conditionNumber /
-                           config_in.maxConditionNumber)
+                           configuration_in.maxConditionNumber)
             : 1.0;
     result.inlierRatio         = inlierRatio;
     result.angularResidual_rad = medianAngularResidual_rad;

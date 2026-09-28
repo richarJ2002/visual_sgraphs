@@ -23,42 +23,42 @@ namespace vs_graphs
 namespace core
 {
 
-std::optional<float>
-    SemanticsManager::computeGroundPlaneHeight(geometric::Plane *groundPlane)
+std::optional<float> SemanticsManager::computeGroundPlaneHeight(
+    geometric::Plane *p_groundPlane_in)
 {
     /* Transform the planeCloud according to the planePose */
-    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr planeCloud =
-        groundPlane->getGeometrySnapshot().supportCloud;
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr transformedCloud(
+    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_planeCloud =
+        p_groundPlane_in->getGeometrySnapshot().supportCloud;
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_transformedCloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
-    pcl::transformPointCloud(*planeCloud, *transformedCloud, planePoseMat);
+    pcl::transformPointCloud(*p_planeCloud, *p_transformedCloud, planePoseMat);
 
     /* Not a median: partial_sort with std::greater keeps the lower half in
        descending order, so [numPoint-1] is the upper edge of that half. */
-    std::vector<float> yVals;
-    for (const auto &point : transformedCloud->points)
+    std::vector<float> yValues;
+    for (const auto &point : p_transformedCloud->points)
     {
-        yVals.push_back(point.y);
+        yValues.push_back(point.y);
     }
 
-    size_t numPoint = yVals.size() / 2;
+    size_t lowerHalfPointCount = yValues.size() / 2;
 
     /* An empty (or single-point) support cloud -- plane created before its
        first refit, or cleared during replaceMapClouds -- makes numPoint == 0,
        leaving nothing for [numPoint - 1] to address. Report "unknown" rather
        than substituting 0.0, which is a valid real height and would silently
        corrupt filterGroundPlanes' threshold. */
-    if (numPoint == 0)
+    if (lowerHalfPointCount == 0)
     {
         return std::nullopt;
     }
 
-    std::partial_sort(yVals.begin(),
-                      yVals.begin() + numPoint,
-                      yVals.end(),
+    std::partial_sort(yValues.begin(),
+                      yValues.begin() + lowerHalfPointCount,
+                      yValues.end(),
                       std::greater<float>());
 
-    return yVals[numPoint - 1];
+    return yValues[lowerHalfPointCount - 1];
 }
 
 } // namespace core

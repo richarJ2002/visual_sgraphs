@@ -29,154 +29,169 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::detectBestCandidates(KeyFrame           *pKF,
-                                            vector<KeyFrame *> &vpLoopCand,
-                                            vector<KeyFrame *> &vpMergeCand,
-                                            int                 nMinWords)
+void KeyFrameDatabase::detectBestCandidates(
+    KeyFrame           *p_currentKeyFrame_in,
+    vector<KeyFrame *> &loopCandidateKeyFrames_out,
+    vector<KeyFrame *> &mergeCandidateKeyFrames_out,
+    int                 minWordCount_in)
 {
-    list<KeyFrame *> lKFsSharingWords;
-    set<KeyFrame *>  spConnectedKF;
+    list<KeyFrame *> keyFramesSharingWords;
+    set<KeyFrame *>  connectedKeyFrames;
 
     // Search all keyframes that share a word with current frame
     {
-        unique_lock<mutex> lock(mMutex);
+        unique_lock<mutex> lock(databaseMutex);
 
-        spConnectedKF = pKF->getConnectedKeyFrames();
+        connectedKeyFrames = p_currentKeyFrame_in->getConnectedKeyFrames();
 
-        for (DBoW2::BowVector::const_iterator vit  = pKF->bowVector.begin(),
-                                              vend = pKF->bowVector.end();
-             vit != vend;
-             vit++)
+        for (DBoW2::BowVector::const_iterator
+                 wordIt  = p_currentKeyFrame_in->bowVector.begin(),
+                 wordEnd = p_currentKeyFrame_in->bowVector.end();
+             wordIt != wordEnd;
+             wordIt++)
         {
-            list<KeyFrame *> &lKFs = invertedFile[vit->first];
+            list<KeyFrame *> &keyFramesForWord = invertedFile[wordIt->first];
 
-            for (list<KeyFrame *>::iterator lit  = lKFs.begin(),
-                                            lend = lKFs.end();
-                 lit != lend;
-                 lit++)
+            for (list<KeyFrame *>::iterator
+                     keyFrameIt  = keyFramesForWord.begin(),
+                     keyFrameEnd = keyFramesForWord.end();
+                 keyFrameIt != keyFrameEnd;
+                 keyFrameIt++)
             {
-                KeyFrame *pKFi = *lit;
-                if (spConnectedKF.find(pKFi) != spConnectedKF.end())
+                KeyFrame *p_candidateKeyFrame = *keyFrameIt;
+                if (connectedKeyFrames.find(p_candidateKeyFrame) !=
+                    connectedKeyFrames.end())
                 {
                     continue;
                 }
-                if (pKFi->placeRecognitionQuery != pKF->mnId)
+                if (p_candidateKeyFrame->placeRecognitionQuery !=
+                    p_currentKeyFrame_in->id)
                 {
-                    pKFi->placeRecognitionWords = 0;
-                    pKFi->placeRecognitionQuery = pKF->mnId;
-                    lKFsSharingWords.push_back(pKFi);
+                    p_candidateKeyFrame->placeRecognitionWords = 0;
+                    p_candidateKeyFrame->placeRecognitionQuery =
+                        p_currentKeyFrame_in->id;
+                    keyFramesSharingWords.push_back(p_candidateKeyFrame);
                 }
-                pKFi->placeRecognitionWords++;
+                p_candidateKeyFrame->placeRecognitionWords++;
             }
         }
     }
-    if (lKFsSharingWords.empty())
+    if (keyFramesSharingWords.empty())
         return;
 
     // Only compare against those keyframes that share enough words
-    int maxCommonWords = 0;
-    for (list<KeyFrame *>::iterator lit  = lKFsSharingWords.begin(),
-                                    lend = lKFsSharingWords.end();
-         lit != lend;
-         lit++)
+    int maxCommonWordCount = 0;
+    for (list<KeyFrame *>::iterator keyFrameIt  = keyFramesSharingWords.begin(),
+                                    keyFrameEnd = keyFramesSharingWords.end();
+         keyFrameIt != keyFrameEnd;
+         keyFrameIt++)
     {
-        if ((*lit)->placeRecognitionWords > maxCommonWords)
-            maxCommonWords = (*lit)->placeRecognitionWords;
+        if ((*keyFrameIt)->placeRecognitionWords > maxCommonWordCount)
+            maxCommonWordCount = (*keyFrameIt)->placeRecognitionWords;
     }
 
-    int minCommonWords = maxCommonWords * 0.8f;
+    int minCommonWordCount = maxCommonWordCount * 0.8f;
 
-    if (minCommonWords < nMinWords)
+    if (minCommonWordCount < minWordCount_in)
     {
-        minCommonWords = nMinWords;
+        minCommonWordCount = minWordCount_in;
     }
 
-    list<pair<float, KeyFrame *>> lScoreAndMatch;
+    list<pair<float, KeyFrame *>> scoredCandidates;
 
-    int nscores = 0;
+    int scoredCandidateCount = 0;
 
     // Compute similarity score.
-    for (list<KeyFrame *>::iterator lit  = lKFsSharingWords.begin(),
-                                    lend = lKFsSharingWords.end();
-         lit != lend;
-         lit++)
+    for (list<KeyFrame *>::iterator keyFrameIt  = keyFramesSharingWords.begin(),
+                                    keyFrameEnd = keyFramesSharingWords.end();
+         keyFrameIt != keyFrameEnd;
+         keyFrameIt++)
     {
-        KeyFrame *pKFi = *lit;
+        KeyFrame *p_candidateKeyFrame = *keyFrameIt;
 
-        if (pKFi->placeRecognitionWords > minCommonWords)
+        if (p_candidateKeyFrame->placeRecognitionWords > minCommonWordCount)
         {
-            nscores++;
-            float si = p_vocabulary->score(pKF->bowVector, pKFi->bowVector);
-            pKFi->placeRecognitionScore = si;
-            lScoreAndMatch.push_back(make_pair(si, pKFi));
+            scoredCandidateCount++;
+            float candidateScore =
+                p_vocabulary->score(p_currentKeyFrame_in->bowVector,
+                                    p_candidateKeyFrame->bowVector);
+            p_candidateKeyFrame->placeRecognitionScore = candidateScore;
+            scoredCandidates.push_back(
+                make_pair(candidateScore, p_candidateKeyFrame));
         }
     }
 
-    if (lScoreAndMatch.empty())
+    if (scoredCandidates.empty())
         return;
 
-    list<pair<float, KeyFrame *>> lAccScoreAndMatch;
-    float                         bestAccScore = 0;
+    list<pair<float, KeyFrame *>> accumulatedScoredCandidates;
+    float                         bestAccumulatedScore = 0;
 
     // Lets now accumulate score by covisibility
-    for (list<pair<float, KeyFrame *>>::iterator it    = lScoreAndMatch.begin(),
-                                                 itend = lScoreAndMatch.end();
-         it != itend;
-         it++)
+    for (list<pair<float, KeyFrame *>>::iterator
+             scoredCandidateIt  = scoredCandidates.begin(),
+             scoredCandidateEnd = scoredCandidates.end();
+         scoredCandidateIt != scoredCandidateEnd;
+         scoredCandidateIt++)
     {
-        KeyFrame          *pKFi     = it->second;
-        vector<KeyFrame *> vpNeighs = pKFi->getBestCovisibilityKeyFrames(10);
+        KeyFrame          *p_candidateKeyFrame = scoredCandidateIt->second;
+        vector<KeyFrame *> covisibilityNeighborKeyFrames =
+            p_candidateKeyFrame->getBestCovisibilityKeyFrames(10);
 
-        float     bestScore = it->first;
-        float     accScore  = bestScore;
-        KeyFrame *pBestKF   = pKFi;
-        for (vector<KeyFrame *>::iterator vit  = vpNeighs.begin(),
-                                          vend = vpNeighs.end();
-             vit != vend;
-             vit++)
+        float     bestGroupScore        = scoredCandidateIt->first;
+        float     accumulatedScore      = bestGroupScore;
+        KeyFrame *p_bestScoringKeyFrame = p_candidateKeyFrame;
+        for (vector<KeyFrame *>::iterator
+                 wordIt  = covisibilityNeighborKeyFrames.begin(),
+                 wordEnd = covisibilityNeighborKeyFrames.end();
+             wordIt != wordEnd;
+             wordIt++)
         {
-            KeyFrame *pKF2 = *vit;
-            if (pKF2->placeRecognitionQuery != pKF->mnId)
+            KeyFrame *p_neighborKeyFrame = *wordIt;
+            if (p_neighborKeyFrame->placeRecognitionQuery !=
+                p_currentKeyFrame_in->id)
                 continue;
 
-            accScore += pKF2->placeRecognitionScore;
-            if (pKF2->placeRecognitionScore > bestScore)
+            accumulatedScore += p_neighborKeyFrame->placeRecognitionScore;
+            if (p_neighborKeyFrame->placeRecognitionScore > bestGroupScore)
             {
-                pBestKF   = pKF2;
-                bestScore = pKF2->placeRecognitionScore;
+                p_bestScoringKeyFrame = p_neighborKeyFrame;
+                bestGroupScore = p_neighborKeyFrame->placeRecognitionScore;
             }
         }
-        lAccScoreAndMatch.push_back(make_pair(accScore, pBestKF));
-        if (accScore > bestAccScore)
-            bestAccScore = accScore;
+        accumulatedScoredCandidates.push_back(
+            make_pair(accumulatedScore, p_bestScoringKeyFrame));
+        if (accumulatedScore > bestAccumulatedScore)
+            bestAccumulatedScore = accumulatedScore;
     }
 
     // Return all those keyframes with a score higher than 0.75*bestScore
-    float           minScoreToRetain = 0.75f * bestAccScore;
-    set<KeyFrame *> spAlreadyAddedKF;
-    vpLoopCand.reserve(lAccScoreAndMatch.size());
-    vpMergeCand.reserve(lAccScoreAndMatch.size());
+    float           minScoreToRetain = 0.75f * bestAccumulatedScore;
+    set<KeyFrame *> alreadyAddedKeyFrames;
+    loopCandidateKeyFrames_out.reserve(accumulatedScoredCandidates.size());
+    mergeCandidateKeyFrames_out.reserve(accumulatedScoredCandidates.size());
     for (list<pair<float, KeyFrame *>>::iterator
-             it    = lAccScoreAndMatch.begin(),
-             itend = lAccScoreAndMatch.end();
-         it != itend;
-         it++)
+             scoredCandidateIt  = accumulatedScoredCandidates.begin(),
+             scoredCandidateEnd = accumulatedScoredCandidates.end();
+         scoredCandidateIt != scoredCandidateEnd;
+         scoredCandidateIt++)
     {
-        const float &si = it->first;
-        if (si > minScoreToRetain)
+        const float &candidateScore = scoredCandidateIt->first;
+        if (candidateScore > minScoreToRetain)
         {
-            KeyFrame *pKFi = it->second;
-            if (!spAlreadyAddedKF.count(pKFi))
+            KeyFrame *p_candidateKeyFrame = scoredCandidateIt->second;
+            if (!alreadyAddedKeyFrames.count(p_candidateKeyFrame))
             {
-                if (pKF->getMap() == pKFi->getMap())
+                if (p_currentKeyFrame_in->getMap() ==
+                    p_candidateKeyFrame->getMap())
                 {
-                    vpLoopCand.push_back(pKFi);
+                    loopCandidateKeyFrames_out.push_back(p_candidateKeyFrame);
                 }
                 else
                 {
-                    vpMergeCand.push_back(pKFi);
+                    mergeCandidateKeyFrames_out.push_back(p_candidateKeyFrame);
                 }
-                spAlreadyAddedKF.insert(pKFi);
+                alreadyAddedKeyFrames.insert(p_candidateKeyFrame);
             }
         }
     }

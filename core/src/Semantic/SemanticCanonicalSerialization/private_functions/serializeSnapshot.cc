@@ -47,7 +47,7 @@ nlohmann::json serializeSnapshot(const SemanticGraphSnapshot &snapshot_in,
         static_cast<unsigned int>(snapshot_in.currentMapStatus);
 
     /* isMapSnapshotLessTotalOrder() compares every field the requested
-     * projection emits, not only mapId: even though Map::nNextId being a
+     * projection emits, not only mapId: even though Map::nextId being a
      * monotonically increasing static counter makes a true mapId collision
      * within one live Atlas capture very unlikely in practice, this
      * serializer does not rely on that source-model invariant to guarantee

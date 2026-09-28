@@ -36,7 +36,7 @@ namespace core
 
 vector<semantic::Room *> Map::getAllRooms()
 {
-    unique_lock<mutex>       lock(mMutexMap);
+    unique_lock<mutex>       lock(mapMutex);
     vector<semantic::Room *> allRooms;
     allRooms.insert(allRooms.end(), detectedRooms.begin(), detectedRooms.end());
     allRooms.insert(allRooms.end(),

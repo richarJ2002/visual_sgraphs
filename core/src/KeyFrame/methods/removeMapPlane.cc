@@ -35,18 +35,18 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::removeMapPlane(geometric::Plane *plane)
+void KeyFrame::removeMapPlane(geometric::Plane *p_plane_in)
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
 
-    if (!plane)
+    if (!p_plane_in)
     {
         std::cerr << "ERROR: KeyFrame::RemoveMapPlane: plane is NULL"
                   << std::endl;
         return;
     }
 
-    mapPlanes.erase(std::remove(mapPlanes.begin(), mapPlanes.end(), plane),
+    mapPlanes.erase(std::remove(mapPlanes.begin(), mapPlanes.end(), p_plane_in),
                     mapPlanes.end());
 }
 

@@ -43,85 +43,92 @@ namespace vs_graphs
 namespace core
 {
 
-vector<size_t> Frame::getFeaturesInArea(const float &x,
-                                        const float &y,
-                                        const float &r,
-                                        const int    minLevel,
-                                        const int    maxLevel,
-                                        const bool   bRight) const
+vector<size_t> Frame::getFeaturesInArea(const float &x_in,
+                                        const float &y_in,
+                                        const float &r_in,
+                                        const int    minimumLevel_in,
+                                        const int    maximumLevel_in,
+                                        const bool   isRightCamera_in) const
 {
-    vector<size_t> vIndices;
-    vIndices.reserve(N);
+    vector<size_t> indices;
+    indices.reserve(keyPointCount);
 
-    float factorX = r;
-    float factorY = r;
+    float factorX = r_in;
+    float factorY = r_in;
 
-    const int nMinCellX =
-        max(0, (int)floor((x - gridMinX - factorX) * gridElementWidthInverse));
-    if (nMinCellX >= FRAME_GRID_COLS)
+    const int minimumCellXCount =
+        max(0,
+            (int)floor((x_in - gridMinX - factorX) * gridElementWidthInverse));
+    if (minimumCellXCount >= FRAME_GRID_COLS)
     {
-        return vIndices;
+        return indices;
     }
 
-    const int nMaxCellX =
+    const int maximumCellXCount =
         min((int)FRAME_GRID_COLS - 1,
-            (int)ceil((x - gridMinX + factorX) * gridElementWidthInverse));
-    if (nMaxCellX < 0)
+            (int)ceil((x_in - gridMinX + factorX) * gridElementWidthInverse));
+    if (maximumCellXCount < 0)
     {
-        return vIndices;
+        return indices;
     }
 
-    const int nMinCellY =
-        max(0, (int)floor((y - gridMinY - factorY) * gridElementHeightInverse));
-    if (nMinCellY >= FRAME_GRID_ROWS)
+    const int minimumCellYCount =
+        max(0,
+            (int)floor((y_in - gridMinY - factorY) * gridElementHeightInverse));
+    if (minimumCellYCount >= FRAME_GRID_ROWS)
     {
-        return vIndices;
+        return indices;
     }
 
-    const int nMaxCellY =
+    const int maximumCellYCount =
         min((int)FRAME_GRID_ROWS - 1,
-            (int)ceil((y - gridMinY + factorY) * gridElementHeightInverse));
-    if (nMaxCellY < 0)
+            (int)ceil((y_in - gridMinY + factorY) * gridElementHeightInverse));
+    if (maximumCellYCount < 0)
     {
-        return vIndices;
+        return indices;
     }
 
-    const bool bCheckLevels = (minLevel > 0) || (maxLevel >= 0);
+    const bool shouldCheckLevels =
+        (minimumLevel_in > 0) || (maximumLevel_in >= 0);
 
-    for (int ix = nMinCellX; ix <= nMaxCellX; ix++)
+    for (int ix = minimumCellXCount; ix <= maximumCellXCount; ix++)
     {
-        for (int iy = nMinCellY; iy <= nMaxCellY; iy++)
+        for (int iy = minimumCellYCount; iy <= maximumCellYCount; iy++)
         {
-            const vector<size_t> vCell =
-                (!bRight) ? grid[ix][iy] : gridRight[ix][iy];
-            if (vCell.empty())
+            const vector<size_t> cells =
+                (!isRightCamera_in) ? grid[ix][iy] : gridRight[ix][iy];
+            if (cells.empty())
                 continue;
 
-            for (size_t j = 0, jend = vCell.size(); j < jend; j++)
+            for (size_t cellFeatureIndex = 0, jend = cells.size();
+                 cellFeatureIndex < jend;
+                 cellFeatureIndex++)
             {
-                const cv::KeyPoint &kpUn =
-                    (Nleft == -1) ? keyPointsUndistorted[vCell[j]]
-                    : (!bRight)   ? keyPoints[vCell[j]]
-                                  : keyPointsRight[vCell[j]];
-                if (bCheckLevels)
+                const cv::KeyPoint &keyPointUn =
+                    (leftKeyPointCount == -1)
+                        ? keyPointsUndistorted[cells[cellFeatureIndex]]
+                    : (!isRightCamera_in)
+                        ? keyPoints[cells[cellFeatureIndex]]
+                        : keyPointsRight[cells[cellFeatureIndex]];
+                if (shouldCheckLevels)
                 {
-                    if (kpUn.octave < minLevel)
+                    if (keyPointUn.octave < minimumLevel_in)
                         continue;
-                    if (maxLevel >= 0)
-                        if (kpUn.octave > maxLevel)
+                    if (maximumLevel_in >= 0)
+                        if (keyPointUn.octave > maximumLevel_in)
                             continue;
                 }
 
-                const float distx = kpUn.pt.x - x;
-                const float disty = kpUn.pt.y - y;
+                const float distx = keyPointUn.pt.x - x_in;
+                const float disty = keyPointUn.pt.y - y_in;
 
                 if (fabs(distx) < factorX && fabs(disty) < factorY)
-                    vIndices.push_back(vCell[j]);
+                    indices.push_back(cells[cellFeatureIndex]);
             }
         }
     }
 
-    return vIndices;
+    return indices;
 }
 
 } // namespace core

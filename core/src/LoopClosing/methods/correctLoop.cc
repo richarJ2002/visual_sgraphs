@@ -72,47 +72,47 @@ void LoopClosing::correctLoop()
                               mg2oLoopScw.translation() / mg2oLoopScw.scale());
     p_currentKF->setPose(correctedTcw.cast<float>());
 
-    Map *pLoopMap = p_currentKF->getMap();
+    Map *p_loopMap = p_currentKF->getMap();
 
 #ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartFusion =
+    std::chrono::steady_clock::time_point timeStartFusion =
         std::chrono::steady_clock::now();
 #endif
 
     {
         // Get Map Mutex
-        unique_lock<mutex> lock(pLoopMap->mMutexMapUpdate);
+        unique_lock<mutex> lock(p_loopMap->mapUpdateMutex);
 
-        const bool bImuInit = pLoopMap->isImuInitialized();
+        const bool isImuInitialized = p_loopMap->isImuInitialized();
 
         for (vector<KeyFrame *>::iterator vit  = currentConnectedKFs.begin(),
                                           vend = currentConnectedKFs.end();
              vit != vend;
              vit++)
         {
-            KeyFrame *pKFi = *vit;
+            KeyFrame *p_keyFrame = *vit;
 
-            if (pKFi != p_currentKF)
+            if (p_keyFrame != p_currentKF)
             {
-                Sophus::SE3f Tiw = pKFi->getPose();
+                Sophus::SE3f Tiw = p_keyFrame->getPose();
                 Sophus::SE3d Tic = (Tiw * Twc).cast<double>();
                 g2o::Sim3 g2oSic(Tic.unit_quaternion(), Tic.translation(), 1.0);
                 g2o::Sim3 g2oCorrectedSiw = g2oSic * mg2oLoopScw;
                 // Pose corrected with the Sim3 of the loop closure
-                CorrectedSim3[pKFi] = g2oCorrectedSiw;
+                CorrectedSim3[p_keyFrame] = g2oCorrectedSiw;
 
                 // Update keyframe pose with corrected Sim3. First transform
                 // Sim3 to SE3 (scale translation)
                 Sophus::SE3d correctedTiw(g2oCorrectedSiw.rotation(),
                                           g2oCorrectedSiw.translation() /
                                               g2oCorrectedSiw.scale());
-                pKFi->setPose(correctedTiw.cast<float>());
+                p_keyFrame->setPose(correctedTiw.cast<float>());
 
                 // Pose without correction
                 g2o::Sim3 g2oSiw(Tiw.unit_quaternion().cast<double>(),
                                  Tiw.translation().cast<double>(),
                                  1.0);
-                NonCorrectedSim3[pKFi] = g2oSiw;
+                NonCorrectedSim3[p_keyFrame] = g2oSiw;
             }
         }
 
@@ -123,11 +123,11 @@ void LoopClosing::correctLoop()
              mit != mend;
              mit++)
         {
-            KeyFrame *pKFi            = mit->first;
+            KeyFrame *p_keyFrame      = mit->first;
             g2o::Sim3 g2oCorrectedSiw = mit->second;
             g2o::Sim3 g2oCorrectedSwi = g2oCorrectedSiw.inverse();
 
-            g2o::Sim3 g2oSiw = NonCorrectedSim3[pKFi];
+            g2o::Sim3 g2oSiw = NonCorrectedSim3[p_keyFrame];
 
             // Update keyframe pose with corrected Sim3. First transform Sim3 to
             // SE3 (scale translation)
@@ -136,59 +136,67 @@ void LoopClosing::correctLoop()
             / g2oCorrectedSiw.scale());
             pKFi->setPose(correctedTiw.cast<float>());*/
 
-            vector<MapPoint *> vpMPsi = pKFi->getMapPointMatches();
-            for (size_t iMP = 0, endMPi = vpMPsi.size(); iMP < endMPi; iMP++)
+            vector<MapPoint *> mapPoints = p_keyFrame->getMapPointMatches();
+            for (size_t mapPointIndex = 0, endMapPoint = mapPoints.size();
+                 mapPointIndex < endMapPoint;
+                 mapPointIndex++)
             {
-                MapPoint *pMPi = vpMPsi[iMP];
-                if (!pMPi)
+                MapPoint *p_mapPoint = mapPoints[mapPointIndex];
+                if (!p_mapPoint)
                     continue;
-                if (pMPi->isBad())
+                if (p_mapPoint->isBad())
                     continue;
-                if (pMPi->correctedByKeyFrameId == p_currentKF->mnId)
+                if (p_mapPoint->correctedByKeyFrameId == p_currentKF->id)
                     continue;
 
                 // Project with non-corrected pose and project back with
                 // corrected pose
-                Eigen::Vector3d P3Dw = pMPi->getWorldPos().cast<double>();
+                Eigen::Vector3d P3Dw = p_mapPoint->getWorldPos().cast<double>();
                 Eigen::Vector3d eigCorrectedP3Dw =
                     g2oCorrectedSwi.map(g2oSiw.map(P3Dw));
 
-                pMPi->setWorldPos(eigCorrectedP3Dw.cast<float>());
-                pMPi->correctedByKeyFrameId        = p_currentKF->mnId;
-                pMPi->correctedReferenceKeyFrameId = pKFi->mnId;
-                pMPi->updateNormalAndDepth();
+                p_mapPoint->setWorldPos(eigCorrectedP3Dw.cast<float>());
+                p_mapPoint->correctedByKeyFrameId        = p_currentKF->id;
+                p_mapPoint->correctedReferenceKeyFrameId = p_keyFrame->id;
+                p_mapPoint->updateNormalAndDepth();
             }
 
             // Correct velocity according to orientation correction
-            if (bImuInit)
+            if (isImuInitialized)
             {
                 Eigen::Quaternionf Rcor =
                     (g2oCorrectedSiw.rotation().inverse() * g2oSiw.rotation())
                         .cast<float>();
-                pKFi->setVelocity(Rcor * pKFi->getVelocity());
+                p_keyFrame->setVelocity(Rcor * p_keyFrame->getVelocity());
             }
 
             // Make sure connections are updated
-            pKFi->updateConnections();
+            p_keyFrame->updateConnections();
         }
         // TODO Check this index increasement
         p_atlas->getCurrentMap()->increaseChangeIndex();
 
         // Start Loop Fusion
         // Update matched map points and replace if duplicated
-        for (size_t i = 0; i < loopMatchedMPs.size(); i++)
+        for (size_t loopMatchedMapPointIndex = 0;
+             loopMatchedMapPointIndex < loopMatchedMPs.size();
+             loopMatchedMapPointIndex++)
         {
-            if (loopMatchedMPs[i])
+            if (loopMatchedMPs[loopMatchedMapPointIndex])
             {
-                MapPoint *pLoopMP = loopMatchedMPs[i];
-                MapPoint *pCurMP  = p_currentKF->getMapPoint(i);
-                if (pCurMP)
-                    pCurMP->replace(pLoopMP);
+                MapPoint *p_loopMapPoint =
+                    loopMatchedMPs[loopMatchedMapPointIndex];
+                MapPoint *p_currentMapPoint =
+                    p_currentKF->getMapPoint(loopMatchedMapPointIndex);
+                if (p_currentMapPoint)
+                    p_currentMapPoint->replace(p_loopMapPoint);
                 else
                 {
-                    p_currentKF->addMapPoint(pLoopMP, i);
-                    pLoopMP->addObservation(p_currentKF, i);
-                    pLoopMP->computeDistinctiveDescriptors();
+                    p_currentKF->addMapPoint(p_loopMapPoint,
+                                             loopMatchedMapPointIndex);
+                    p_loopMapPoint->addObservation(p_currentKF,
+                                                   loopMatchedMapPointIndex);
+                    p_loopMapPoint->computeDistinctiveDescriptors();
                 }
             }
         }
@@ -202,84 +210,84 @@ void LoopClosing::correctLoop()
 
     // After the MapPoint fusion, new links in the covisibility graph will
     // appear attaching both sides of the loop
-    map<KeyFrame *, set<KeyFrame *>> LoopConnections;
+    map<KeyFrame *, set<KeyFrame *>> loopConnections;
 
     for (vector<KeyFrame *>::iterator vit  = currentConnectedKFs.begin(),
                                       vend = currentConnectedKFs.end();
          vit != vend;
          vit++)
     {
-        KeyFrame          *pKFi = *vit;
-        vector<KeyFrame *> vpPreviousNeighbors =
-            pKFi->getVectorCovisibleKeyFrames();
+        KeyFrame          *p_keyFrame = *vit;
+        vector<KeyFrame *> previousNeighbors =
+            p_keyFrame->getVectorCovisibleKeyFrames();
 
         // Update connections. Detect new links.
-        pKFi->updateConnections();
-        LoopConnections[pKFi] = pKFi->getConnectedKeyFrames();
+        p_keyFrame->updateConnections();
+        loopConnections[p_keyFrame] = p_keyFrame->getConnectedKeyFrames();
         for (vector<KeyFrame *>::iterator
-                 vit_prev  = vpPreviousNeighbors.begin(),
-                 vend_prev = vpPreviousNeighbors.end();
-             vit_prev != vend_prev;
-             vit_prev++)
+                 vitPrevious  = previousNeighbors.begin(),
+                 vendPrevious = previousNeighbors.end();
+             vitPrevious != vendPrevious;
+             vitPrevious++)
         {
-            LoopConnections[pKFi].erase(*vit_prev);
+            loopConnections[p_keyFrame].erase(*vitPrevious);
         }
         for (vector<KeyFrame *>::iterator vit2  = currentConnectedKFs.begin(),
                                           vend2 = currentConnectedKFs.end();
              vit2 != vend2;
              vit2++)
         {
-            LoopConnections[pKFi].erase(*vit2);
+            loopConnections[p_keyFrame].erase(*vit2);
         }
     }
 
     // Optimize graph
-    bool bFixedScale = fixScale;
+    bool isFixedScale = isScaleFixed;
     // TODO CHECK; Solo para el monocular inertial
     if (p_tracker->sensor == System::IMU_MONOCULAR &&
         !p_currentKF->getMap()->getInertialBA2())
-        bFixedScale = false;
+        isFixedScale = false;
 
 #ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndFusion =
+    std::chrono::steady_clock::time_point timeEndFusion =
         std::chrono::steady_clock::now();
 
     double timeFusion =
         std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            time_EndFusion - time_StartFusion)
+            timeEndFusion - timeStartFusion)
             .count();
-    vdLoopFusion_ms.push_back(timeFusion);
+    loopFusionTimes_ms.push_back(timeFusion);
 #endif
     // cout << "Optimize essential graph" << endl;
-    if (pLoopMap->isInertial() && pLoopMap->isImuInitialized())
+    if (p_loopMap->isInertial() && p_loopMap->isImuInitialized())
     {
-        Optimizer::optimizeEssentialGraph4DoF(pLoopMap,
+        Optimizer::optimizeEssentialGraph4DoF(p_loopMap,
                                               p_loopMatchedKF,
                                               p_currentKF,
                                               NonCorrectedSim3,
                                               CorrectedSim3,
-                                              LoopConnections);
+                                              loopConnections);
     }
     else
     {
         // cout << "Loop -> Scale correction: " << mg2oLoopScw.scale() << endl;
-        Optimizer::optimizeEssentialGraph(pLoopMap,
+        Optimizer::optimizeEssentialGraph(p_loopMap,
                                           p_loopMatchedKF,
                                           p_currentKF,
                                           NonCorrectedSim3,
                                           CorrectedSim3,
-                                          LoopConnections,
-                                          bFixedScale);
+                                          loopConnections,
+                                          isFixedScale);
     }
 #ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndOpt =
+    std::chrono::steady_clock::time_point timeEndOpt =
         std::chrono::steady_clock::now();
 
     double timeOptEss =
         std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            time_EndOpt - time_EndFusion)
+            timeEndOpt - timeEndFusion)
             .count();
-    vdLoopOptEss_ms.push_back(timeOptEss);
+    loopEssentialGraphTimes_ms.push_back(timeOptEss);
 #endif
 
     p_atlas->informNewBigChange();
@@ -290,20 +298,20 @@ void LoopClosing::correctLoop()
 
     // Launch a new thread to perform Global Bundle Adjustment (Only if few
     // keyframes, if not it would take too much time)
-    if (!pLoopMap->isImuInitialized() ||
-        (pLoopMap->getKeyFrameCount() < 200 && p_atlas->countMaps() == 1))
+    if (!p_loopMap->isImuInitialized() ||
+        (p_loopMap->getKeyFrameCount() < 200 && p_atlas->countMaps() == 1))
     {
-        std::unique_lock<std::mutex> globalBundleAdjustmentLock(mMutexGBA);
-        runningGBA    = true;
-        finishedGBA   = false;
-        correctionGBA = numCorrection;
-        globalBundleAdjustmentStopRequested.store(false,
-                                                  std::memory_order_release);
+        std::unique_lock<std::mutex> globalBundleAdjustmentLock(gbaMutex);
+        isGbaRunning   = true;
+        hasGbaFinished = false;
+        correctionGBA  = numCorrection;
+        isGlobalBundleAdjustmentStopRequested.store(false,
+                                                    std::memory_order_release);
 
         p_threadGBA = new thread(&LoopClosing::runGlobalBundleAdjustment,
                                  this,
-                                 pLoopMap,
-                                 p_currentKF->mnId,
+                                 p_loopMap,
+                                 p_currentKF->id,
                                  fullBundleAdjustmentIndex);
     }
 
@@ -311,8 +319,7 @@ void LoopClosing::correctLoop()
     p_localMapper->release();
 
     lastLoopKeyFrameId =
-        p_currentKF
-            ->mnId; // TODO old varible, it is not use in the new algorithm
+        p_currentKF->id; // TODO old varible, it is not use in the new algorithm
 }
 
 } // namespace core

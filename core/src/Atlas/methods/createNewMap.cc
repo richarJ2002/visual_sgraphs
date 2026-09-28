@@ -32,7 +32,7 @@ namespace core
 
 void Atlas::createNewMap()
 {
-    std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
+    std::unique_lock<std::mutex> atlasLock(atlasMutex);
     createNewMapWhileAtlasLocked();
 }
 

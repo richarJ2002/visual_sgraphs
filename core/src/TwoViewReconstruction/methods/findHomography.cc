@@ -30,54 +30,58 @@ namespace vs_graphs
 namespace core
 {
 
-void TwoViewReconstruction::findHomography(vector<bool>    &vbMatchesInliers,
-                                           float           &score,
-                                           Eigen::Matrix3f &H21)
+void TwoViewReconstruction::findHomography(
+    vector<bool>    &matchesInliersFlags_out,
+    float           &score_inout,
+    Eigen::Matrix3f &H21_out)
 {
     // Number of putative matches
     const int N = matches12.size();
 
     // Normalize coordinates
-    vector<cv::Point2f> vPn1, vPn2;
+    vector<cv::Point2f> normalizedPoints1, normalizedPoints2;
     Eigen::Matrix3f     T1, T2;
-    normalize(keys1, vPn1, T1);
-    normalize(keys2, vPn2, T2);
+    normalize(keys1, normalizedPoints1, T1);
+    normalize(keys2, normalizedPoints2, T2);
     Eigen::Matrix3f T2inv = T2.inverse();
 
     // Best Results variables
-    score            = 0.0;
-    vbMatchesInliers = vector<bool>(N, false);
+    score_inout             = 0.0;
+    matchesInliersFlags_out = vector<bool>(N, false);
 
     // Iteration variables
-    vector<cv::Point2f> vPn1i(8);
-    vector<cv::Point2f> vPn2i(8);
+    vector<cv::Point2f> sampledPoints1(8);
+    vector<cv::Point2f> sampledPoints2(8);
     Eigen::Matrix3f     H21i, H12i;
-    vector<bool>        vbCurrentInliers(N, false);
+    vector<bool>        currentInliersFlags(N, false);
     float               currentScore;
 
     // Perform all RANSAC iterations and save the solution with highest score
-    for (int it = 0; it < maxIterations; it++)
+    for (int iterationIndex = 0; iterationIndex < maxIterations;
+         iterationIndex++)
     {
         // Select a minimum set
-        for (size_t j = 0; j < 8; j++)
+        for (size_t setPointIndex = 0; setPointIndex < 8; setPointIndex++)
         {
-            int idx = sets[it][j];
+            int matchIndex = sets[iterationIndex][setPointIndex];
 
-            vPn1i[j] = vPn1[matches12[idx].first];
-            vPn2i[j] = vPn2[matches12[idx].second];
+            sampledPoints1[setPointIndex] =
+                normalizedPoints1[matches12[matchIndex].first];
+            sampledPoints2[setPointIndex] =
+                normalizedPoints2[matches12[matchIndex].second];
         }
 
-        Eigen::Matrix3f Hn = computeH21(vPn1i, vPn2i);
+        Eigen::Matrix3f Hn = computeH21(sampledPoints1, sampledPoints2);
         H21i               = T2inv * Hn * T1;
         H12i               = H21i.inverse();
 
-        currentScore = checkHomography(H21i, H12i, vbCurrentInliers, sigma);
+        currentScore = checkHomography(H21i, H12i, currentInliersFlags, sigma);
 
-        if (currentScore > score)
+        if (currentScore > score_inout)
         {
-            H21              = H21i;
-            vbMatchesInliers = vbCurrentInliers;
-            score            = currentScore;
+            H21_out                 = H21i;
+            matchesInliersFlags_out = currentInliersFlags;
+            score_inout             = currentScore;
         }
     }
 }

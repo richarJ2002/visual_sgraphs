@@ -30,14 +30,15 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::searchByProjection(KeyFrame                      *pKF,
-                                   Sophus::Sim3<float>           &Scw,
-                                   const std::vector<MapPoint *> &vpPoints,
-                                   const std::vector<KeyFrame *> &vpPointsKFs,
-                                   std::vector<MapPoint *>       &vpMatched,
-                                   std::vector<KeyFrame *>       &vpMatchedKF,
-                                   int                            th,
-                                   float                          ratioHamming)
+int ORBmatcher::searchByProjection(
+    KeyFrame                      *pKF,
+    Sophus::Sim3<float>           &Scw,
+    const std::vector<MapPoint *> &vpPoints,
+    const std::vector<KeyFrame *> &vpPointsKFs,
+    std::vector<MapPoint *>       &matched_inout,
+    std::vector<KeyFrame *>       &matchedKeyframes_inout,
+    int                            th,
+    float                          ratioHamming)
 {
     // Get Calibration Parameters for later projection
     const float &fx = pKF->fx;
@@ -50,23 +51,25 @@ int ORBmatcher::searchByProjection(KeyFrame                      *pKF,
     Eigen::Vector3f Ow = Tcw.inverse().translation();
 
     // Set of MapPoints already found in the KeyFrame
-    set<MapPoint *> spAlreadyFound(vpMatched.begin(), vpMatched.end());
-    spAlreadyFound.erase(static_cast<MapPoint *>(nullptr));
+    set<MapPoint *> alreadyFounds(matched_inout.begin(), matched_inout.end());
+    alreadyFounds.erase(static_cast<MapPoint *>(nullptr));
 
     int nmatches = 0;
 
     // For each Candidate MapPoint Project and Match
-    for (int iMP = 0, iendMP = vpPoints.size(); iMP < iendMP; iMP++)
+    for (int mapPointIndex = 0, iendMapPoint = vpPoints.size();
+         mapPointIndex < iendMapPoint;
+         mapPointIndex++)
     {
-        MapPoint *pMP  = vpPoints[iMP];
-        KeyFrame *pKFi = vpPointsKFs[iMP];
+        MapPoint *p_mapPoint = vpPoints[mapPointIndex];
+        KeyFrame *p_keyFrame = vpPointsKFs[mapPointIndex];
 
         // Discard Bad MapPoints and already found
-        if (pMP->isBad() || spAlreadyFound.count(pMP))
+        if (p_mapPoint->isBad() || alreadyFounds.count(p_mapPoint))
             continue;
 
         // Get 3D Coords.
-        Eigen::Vector3f p3Dw = pMP->getWorldPos();
+        Eigen::Vector3f p3Dw = p_mapPoint->getWorldPos();
 
         // Transform into Camera Coords.
         Eigen::Vector3f p3Dc = Tcw * p3Dw;
@@ -88,64 +91,68 @@ int ORBmatcher::searchByProjection(KeyFrame                      *pKF,
             continue;
 
         // Depth must be inside the scale invariance region of the point
-        const float     maxDistance = pMP->getMaxDistanceInvariance();
-        const float     minDistance = pMP->getMinDistanceInvariance();
+        const float maximumDistance = p_mapPoint->getMaxDistanceInvariance();
+        const float minimumDistance = p_mapPoint->getMinDistanceInvariance();
         Eigen::Vector3f PO          = p3Dw - Ow;
-        const float     dist        = PO.norm();
+        const float     distance    = PO.norm();
 
-        if (dist < minDistance || dist > maxDistance)
+        if (distance < minimumDistance || distance > maximumDistance)
             continue;
 
         // Viewing angle must be less than 60 deg
-        Eigen::Vector3f Pn = pMP->getNormal();
+        Eigen::Vector3f Pn = p_mapPoint->getNormal();
 
-        if (PO.dot(Pn) < 0.5 * dist)
+        if (PO.dot(Pn) < 0.5 * distance)
             continue;
 
-        int nPredictedLevel = pMP->predictScale(dist, pKF);
+        int predictedLevelCount = p_mapPoint->predictScale(distance, pKF);
 
         // Search in a radius
-        const float radius = th * pKF->scaleFactors[nPredictedLevel];
+        const float radius = th * pKF->scaleFactors[predictedLevelCount];
 
-        const vector<size_t> vIndices = pKF->getFeaturesInArea(u, v, radius);
+        const vector<size_t> indices = pKF->getFeaturesInArea(u, v, radius);
 
-        if (vIndices.empty())
+        if (indices.empty())
             continue;
 
         // Match to the most similar keypoint in the radius
-        const cv::Mat dMP = pMP->getDescriptor();
+        const cv::Mat mapPointDescriptor = p_mapPoint->getDescriptor();
 
-        int bestDist = 256;
-        int bestIdx  = -1;
-        for (vector<size_t>::const_iterator vit  = vIndices.begin(),
-                                            vend = vIndices.end();
+        int bestDistance = 256;
+        int bestIndex    = -1;
+        for (vector<size_t>::const_iterator vit  = indices.begin(),
+                                            vend = indices.end();
              vit != vend;
              vit++)
         {
-            const size_t idx = *vit;
-            if (vpMatched[idx])
+            const size_t featureIndex = *vit;
+            if (matched_inout[featureIndex])
                 continue;
 
-            const int &kpLevel = pKF->keyPointsUndistorted[idx].octave;
+            const int &keyPointLevel =
+                pKF->keyPointsUndistorted[featureIndex].octave;
 
-            if (kpLevel < nPredictedLevel - 1 || kpLevel > nPredictedLevel)
+            if (keyPointLevel < predictedLevelCount - 1 ||
+                keyPointLevel > predictedLevelCount)
                 continue;
 
-            const cv::Mat &dKF = pKF->descriptors.row(idx);
+            const cv::Mat &keyFrameDescriptor =
+                pKF->descriptors.row(featureIndex);
 
-            const int dist = computeDescriptorDistance(dMP, dKF);
+            const int distance = computeDescriptorDistance(mapPointDescriptor,
+                                                           keyFrameDescriptor);
 
-            if (dist < bestDist)
+            if (distance < bestDistance)
             {
-                bestDist = dist;
-                bestIdx  = idx;
+                bestDistance = distance;
+                bestIndex    = featureIndex;
             }
         }
 
-        if (bestDist <= TH_LOW * ratioHamming)
+        if (bestDistance <= TH_LOW * ratioHamming)
         {
-            vpMatched[bestIdx]   = pMP;
-            vpMatchedKF[bestIdx] = pKFi;
+            matched_inout[bestIndex]          = p_mapPoint;
+            matchedKeyframes_inout[bestIndex] = p_keyFrame;
             nmatches++;
         }
     }

@@ -34,10 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-vs_graphs::core::semantic::Passage *Map::getPassageById(int passageId)
+vs_graphs::core::semantic::Passage *Map::getPassageById(int passageId_in)
 {
-    unique_lock<mutex> lock(mMutexMap);
-    const auto         passageIterator = passageIndex.find(passageId);
+    unique_lock<mutex> lock(mapMutex);
+    const auto         passageIterator = passageIndex.find(passageId_in);
     return passageIterator != passageIndex.end() ? passageIterator->second
                                                  : nullptr;
 }

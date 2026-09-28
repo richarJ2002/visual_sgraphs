@@ -47,20 +47,21 @@ bool Tracking::relocalization()
     // topological priors
     vector<Eigen::Vector3f>  roomCentroids;
     vector<semantic::Room *> currentRooms;
-    Map                     *pCurrentMap = p_atlas->getCurrentMap();
-    if (pCurrentMap)
+    Map                     *p_currentMap = p_atlas->getCurrentMap();
+    if (p_currentMap)
     {
-        const auto &rooms = pCurrentMap->getAllDetectedMapRooms();
-        for (semantic::Room *pRoom : rooms)
+        const auto &rooms = p_currentMap->getAllDetectedMapRooms();
+        for (semantic::Room *p_room : rooms)
         {
-            if (!pRoom->isBad() && pRoom->getBoundaryStatus() ==
-                                       semantic::Room::BoundaryStatus::COMPLETE)
+            if (!p_room->isBad() &&
+                p_room->getBoundaryStatus() ==
+                    semantic::Room::BoundaryStatus::COMPLETE)
             {
-                Eigen::Vector3d centroid_d = pRoom->getCentroid();
-                roomCentroids.push_back(Eigen::Vector3f(centroid_d.x(),
-                                                        centroid_d.y(),
-                                                        centroid_d.z()));
-                currentRooms.push_back(pRoom);
+                Eigen::Vector3d roomCentroid = p_room->getCentroid();
+                roomCentroids.push_back(Eigen::Vector3f(roomCentroid.x(),
+                                                        roomCentroid.y(),
+                                                        roomCentroid.z()));
+                currentRooms.push_back(p_room);
             }
         }
     }
@@ -68,152 +69,167 @@ bool Tracking::relocalization()
     // Relocalization is performed when tracking is lost
     // Track Lost: Query KeyFrame Database for keyframe candidates for
     // relocalisation
-    vector<KeyFrame *> vpCandidateKFs =
+    vector<KeyFrame *> candidateKeyFrames =
         p_keyFrameDatabase->detectRelocalizationCandidates(
             &currentFrame,
             p_atlas->getCurrentMap());
 
-    if (vpCandidateKFs.empty())
+    if (candidateKeyFrames.empty())
     {
         Verbose::printMess("There are not candidates",
                            Verbose::VERBOSITY_NORMAL);
         return false;
     }
 
-    const int nKFs = vpCandidateKFs.size();
+    const int keyFrameCount = candidateKeyFrames.size();
 
     // We perform first an ORB matching with each candidate
     // If enough matches are found we setup a PnP solver
     ORBmatcher matcher(0.75, true);
 
-    vector<MLPnPsolver *> vpMLPnPsolvers;
-    vpMLPnPsolvers.resize(nKFs);
+    vector<MLPnPsolver *> pnpSolvers;
+    pnpSolvers.resize(keyFrameCount);
 
     vector<vector<MapPoint *>> vvpMapPointMatches;
-    vvpMapPointMatches.resize(nKFs);
+    vvpMapPointMatches.resize(keyFrameCount);
 
-    vector<bool> vbDiscarded;
-    vbDiscarded.resize(nKFs);
+    vector<bool> discardedFlags;
+    discardedFlags.resize(keyFrameCount);
 
-    int nCandidates = 0;
+    int candidateCount = 0;
 
-    for (int i = 0; i < nKFs; i++)
+    for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount; keyFrameIndex++)
     {
-        KeyFrame *pKF = vpCandidateKFs[i];
-        if (pKF->isBad())
-            vbDiscarded[i] = true;
+        KeyFrame *p_keyFrame = candidateKeyFrames[keyFrameIndex];
+        if (p_keyFrame->isBad())
+            discardedFlags[keyFrameIndex] = true;
         else
         {
             int nmatches =
-                matcher.searchByBoW(pKF, currentFrame, vvpMapPointMatches[i]);
+                matcher.searchByBoW(p_keyFrame,
+                                    currentFrame,
+                                    vvpMapPointMatches[keyFrameIndex]);
             if (nmatches < 15)
             {
-                vbDiscarded[i] = true;
+                discardedFlags[keyFrameIndex] = true;
                 continue;
             }
             else
             {
-                MLPnPsolver *pSolver =
-                    new MLPnPsolver(currentFrame, vvpMapPointMatches[i]);
-                pSolver->setRansacParameters(
+                MLPnPsolver *p_solver =
+                    new MLPnPsolver(currentFrame,
+                                    vvpMapPointMatches[keyFrameIndex]);
+                p_solver->setRansacParameters(
                     0.99,
                     10,
                     300,
                     6,
                     0.5,
                     5.991); // This solver needs at least 6 points
-                vpMLPnPsolvers[i] = pSolver;
-                nCandidates++;
+                pnpSolvers[keyFrameIndex] = p_solver;
+                candidateCount++;
             }
         }
     }
 
     // STRUCTURAL PRIOR: Re-rank candidates by proximity to room centroids
     // This helps in repetitive corridors where visual appearance is similar
-    if (!roomCentroids.empty() && !vpCandidateKFs.empty())
+    if (!roomCentroids.empty() && !candidateKeyFrames.empty())
     {
         // Get current frame's estimated position from IMU prediction or motion
         // model
-        Eigen::Vector3f currentPos =
+        Eigen::Vector3f currentPosition =
             currentFrame.getPose().translation().head<3>();
 
         // Score candidates by: visual matches + proximity to known room
         // centroids
-        vector<float> candidateScores(nKFs, 0.0f);
-        for (int i = 0; i < nKFs; i++)
+        vector<float> candidateScores(keyFrameCount, 0.0f);
+        for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount;
+             keyFrameIndex++)
         {
-            if (vbDiscarded[i])
+            if (discardedFlags[keyFrameIndex])
                 continue;
 
-            KeyFrame       *pKF   = vpCandidateKFs[i];
-            Eigen::Vector3f kfPos = pKF->getPose().translation().head<3>();
+            KeyFrame       *p_keyFrame = candidateKeyFrames[keyFrameIndex];
+            Eigen::Vector3f keyFramePosition =
+                p_keyFrame->getPose().translation().head<3>();
 
             // Visual match score (normalized)
-            int nmatches       = vvpMapPointMatches[i].size();
-            candidateScores[i] = nmatches * 1.0f;
+            int nmatches = vvpMapPointMatches[keyFrameIndex].size();
+            candidateScores[keyFrameIndex] = nmatches * 1.0f;
 
             // Structural prior: proximity to room centroids
             for (size_t r = 0; r < roomCentroids.size(); r++)
             {
-                float dist = (kfPos - roomCentroids[r]).norm();
+                float distance = (keyFramePosition - roomCentroids[r]).norm();
                 // Boost score if KF is near a known room centroid (within 3m)
-                if (dist < 3.0f)
-                    candidateScores[i] +=
-                        (3.0f - dist) * 2.0f; // Max boost of 6
+                if (distance < 3.0f)
+                    candidateScores[keyFrameIndex] +=
+                        (3.0f - distance) * 2.0f; // Max boost of 6
             }
         }
 
         // Re-sort candidates by combined score (highest first)
-        vector<int> sortedIndices(nKFs);
-        for (int i = 0; i < nKFs; i++)
-            sortedIndices[i] = i;
+        vector<int> sortedIndices(keyFrameCount);
+        for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount;
+             keyFrameIndex++)
+            sortedIndices[keyFrameIndex] = keyFrameIndex;
         std::sort(sortedIndices.begin(),
                   sortedIndices.end(),
                   [&](int a, int b)
                   { return candidateScores[a] > candidateScores[b]; });
 
         // Reorder vectors for processing
-        vector<KeyFrame *>         reorderedKFs       = vpCandidateKFs;
+        vector<KeyFrame *>         reorderedKeyFrames = candidateKeyFrames;
         vector<vector<MapPoint *>> reorderedMatches   = vvpMapPointMatches;
-        vector<MLPnPsolver *>      reorderedSolvers   = vpMLPnPsolvers;
-        vector<bool>               reorderedDiscarded = vbDiscarded;
+        vector<MLPnPsolver *>      reorderedSolvers   = pnpSolvers;
+        vector<bool>               reorderedDiscarded = discardedFlags;
 
-        for (int i = 0; i < nKFs; i++)
+        for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount;
+             keyFrameIndex++)
         {
-            vpCandidateKFs[i]     = reorderedKFs[sortedIndices[i]];
-            vvpMapPointMatches[i] = reorderedMatches[sortedIndices[i]];
-            vpMLPnPsolvers[i]     = reorderedSolvers[sortedIndices[i]];
-            vbDiscarded[i]        = reorderedDiscarded[sortedIndices[i]];
+            candidateKeyFrames[keyFrameIndex] =
+                reorderedKeyFrames[sortedIndices[keyFrameIndex]];
+            vvpMapPointMatches[keyFrameIndex] =
+                reorderedMatches[sortedIndices[keyFrameIndex]];
+            pnpSolvers[keyFrameIndex] =
+                reorderedSolvers[sortedIndices[keyFrameIndex]];
+            discardedFlags[keyFrameIndex] =
+                reorderedDiscarded[sortedIndices[keyFrameIndex]];
         }
     }
 
     // Alternatively perform some iterations of P4P RANSAC
     // Until we found a camera pose supported by enough inliers
-    bool       bMatch = false;
+    bool       isMatched = false;
     ORBmatcher matcher2(0.9, true);
 
-    while (nCandidates > 0 && !bMatch)
+    while (candidateCount > 0 && !isMatched)
     {
-        for (int i = 0; i < nKFs; i++)
+        for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount;
+             keyFrameIndex++)
         {
-            if (vbDiscarded[i])
+            if (discardedFlags[keyFrameIndex])
                 continue;
 
             // Perform 5 Ransac Iterations
-            vector<bool> vbInliers;
-            int          nInliers;
-            bool         bNoMore;
+            vector<bool> inliersFlags;
+            int          inlierCount;
+            bool         areIterationsExhausted;
 
-            MLPnPsolver    *pSolver = vpMLPnPsolvers[i];
+            MLPnPsolver    *p_solver = pnpSolvers[keyFrameIndex];
             Eigen::Matrix4f eigTcw;
-            bool            bTcw =
-                pSolver->iterate(5, bNoMore, vbInliers, nInliers, eigTcw);
+            bool            bTcw = p_solver->iterate(5,
+                                          areIterationsExhausted,
+                                          inliersFlags,
+                                          inlierCount,
+                                          eigTcw);
 
             // If Ransac reachs max. iterations discard keyframe
-            if (bNoMore)
+            if (areIterationsExhausted)
             {
-                vbDiscarded[i] = true;
-                nCandidates--;
+                discardedFlags[keyFrameIndex] = true;
+                candidateCount--;
             }
 
             // If a Camera Pose is computed, optimize
@@ -223,69 +239,73 @@ bool Tracking::relocalization()
                 currentFrame.setPose(Tcw);
                 // Tcw.copyTo(mCurrentFrame.poseTcw);
 
-                set<MapPoint *> sFound;
+                set<MapPoint *> founds;
 
-                const int np = vbInliers.size();
+                const int np = inliersFlags.size();
 
                 for (int j = 0; j < np; j++)
                 {
-                    if (vbInliers[j])
+                    if (inliersFlags[j])
                     {
-                        currentFrame.mapPoints[j] = vvpMapPointMatches[i][j];
-                        sFound.insert(vvpMapPointMatches[i][j]);
+                        currentFrame.mapPoints[j] =
+                            vvpMapPointMatches[keyFrameIndex][j];
+                        founds.insert(vvpMapPointMatches[keyFrameIndex][j]);
                     }
                     else
                         currentFrame.mapPoints[j] = nullptr;
                 }
 
-                int nGood = Optimizer::poseOptimization(&currentFrame);
+                int goodCount = Optimizer::poseOptimization(&currentFrame);
 
-                if (nGood < 10)
+                if (goodCount < 10)
                     continue;
 
-                for (int io = 0; io < currentFrame.N; io++)
+                for (int io = 0; io < currentFrame.keyPointCount; io++)
                     if (currentFrame.outlierFlags[io])
                         currentFrame.mapPoints[io] =
                             static_cast<MapPoint *>(nullptr);
 
                 // If few inliers, search by projection in a coarse window and
                 // optimize again
-                if (nGood < 50)
+                if (goodCount < 50)
                 {
-                    int nadditional =
-                        matcher2.searchByProjection(currentFrame,
-                                                    vpCandidateKFs[i],
-                                                    sFound,
-                                                    10,
-                                                    100);
+                    int nadditional = matcher2.searchByProjection(
+                        currentFrame,
+                        candidateKeyFrames[keyFrameIndex],
+                        founds,
+                        10,
+                        100);
 
-                    if (nadditional + nGood >= 50)
+                    if (nadditional + goodCount >= 50)
                     {
-                        nGood = Optimizer::poseOptimization(&currentFrame);
+                        goodCount = Optimizer::poseOptimization(&currentFrame);
 
                         // If many inliers but still not enough, search by
                         // projection again in a narrower window the camera has
                         // been already optimized with many points
-                        if (nGood > 30 && nGood < 50)
+                        if (goodCount > 30 && goodCount < 50)
                         {
-                            sFound.clear();
-                            for (int ip = 0; ip < currentFrame.N; ip++)
+                            founds.clear();
+                            for (int ip = 0; ip < currentFrame.keyPointCount;
+                                 ip++)
                                 if (currentFrame.mapPoints[ip])
-                                    sFound.insert(currentFrame.mapPoints[ip]);
-                            nadditional =
-                                matcher2.searchByProjection(currentFrame,
-                                                            vpCandidateKFs[i],
-                                                            sFound,
-                                                            3,
-                                                            64);
+                                    founds.insert(currentFrame.mapPoints[ip]);
+                            nadditional = matcher2.searchByProjection(
+                                currentFrame,
+                                candidateKeyFrames[keyFrameIndex],
+                                founds,
+                                3,
+                                64);
 
                             // Final optimization
-                            if (nGood + nadditional >= 50)
+                            if (goodCount + nadditional >= 50)
                             {
-                                nGood =
+                                goodCount =
                                     Optimizer::poseOptimization(&currentFrame);
 
-                                for (int io = 0; io < currentFrame.N; io++)
+                                for (int io = 0;
+                                     io < currentFrame.keyPointCount;
+                                     io++)
                                     if (currentFrame.outlierFlags[io])
                                         currentFrame.mapPoints[io] = nullptr;
                             }
@@ -297,22 +317,22 @@ bool Tracking::relocalization()
                 // continue
                 // LOWERED: 25 -> 10 inliers for relocalization in textureless
                 // corridors Use configurable threshold
-                if (nGood >= relocalizationMinInliers)
+                if (goodCount >= relocalizationMinInliers)
                 {
-                    bMatch = true;
+                    isMatched = true;
                     break;
                 }
             }
         }
     }
 
-    if (!bMatch)
+    if (!isMatched)
     {
         return false;
     }
     else
     {
-        lastRelocFrameId = currentFrame.mnId;
+        lastRelocFrameId = currentFrame.id;
         std::cout << "[Tracking] Relocalized!" << std::endl;
         return true;
     }

@@ -35,7 +35,7 @@ namespace geometric
 void Plane::alignGeometryToEquation(
     const g2o::Plane3D &targetEquation_NewWorld_in)
 {
-    std::scoped_lock lock(mMutexPos, mMutexType, mMutexFeatures);
+    std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
 
     Eigen::Vector4d currentCoefficients = globalEquation.coeffs();
     Eigen::Vector4d targetCoefficients  = targetEquation_NewWorld_in.coeffs();
@@ -140,9 +140,9 @@ void Plane::alignGeometryToEquation(
 
     globalEquation = g2o::Plane3D(targetCoefficients);
 
-    octree->deleteTree();
-    octree->setInputCloud(planeCloud);
-    octree->addPointsFromInputCloud();
+    p_octree->deleteTree();
+    p_octree->setInputCloud(planeCloud);
+    p_octree->addPointsFromInputCloud();
     updatePlaneBoundsWithoutLock();
     ++cloudGeneration;
     successfulRefitGeneration = cloudGeneration;

@@ -31,28 +31,28 @@ namespace core
 {
 
 void Optimizer::globalBundleAdjustment(
-    Map                    *pMap,
-    int                     nIterations,
-    bool                   *pbStopFlag,
-    const unsigned long     nLoopKF,
-    const bool              bRobust,
-    double                  markerImpact,
-    const std::atomic_bool *pStopRequested_in)
+    Map                    *p_map_in,
+    int                     iterationCount_in,
+    bool                   *p_stopFlag_inout,
+    const unsigned long     loopKeyFrameId_in,
+    const bool              useRobustKernel_in,
+    double                  markerImpact_in,
+    const std::atomic_bool *p_stopRequested_in)
 {
     std::vector<vs_graphs::core::semantic::Room *> allRooms =
-        pMap->getAllRooms();
+        p_map_in->getAllRooms();
     std::vector<vs_graphs::core::semantic::Floor *> allFloors =
-        pMap->getAllFloors();
+        p_map_in->getAllFloors();
     std::vector<vs_graphs::core::geometric::Plane *> allPlanes =
-        pMap->getAllPlanes();
+        p_map_in->getAllPlanes();
     std::vector<vs_graphs::core::semantic::Marker *> allMarkers =
-        pMap->getAllMarkers();
+        p_map_in->getAllMarkers();
     std::vector<vs_graphs::core::semantic::Passage *> allPassages =
-        pMap->getAllPassages();
+        p_map_in->getAllPassages();
     std::vector<vs_graphs::core::MapPoint *> allMapPoints =
-        pMap->getAllMapPoints();
+        p_map_in->getAllMapPoints();
     std::vector<vs_graphs::core::KeyFrame *> allKeyFrames =
-        pMap->getAllKeyFrames();
+        p_map_in->getAllKeyFrames();
 
     bundleAdjustment(allKeyFrames,
                      allMapPoints,
@@ -61,12 +61,12 @@ void Optimizer::globalBundleAdjustment(
                      allPassages,
                      allRooms,
                      allFloors,
-                     nIterations,
-                     pbStopFlag,
-                     nLoopKF,
-                     bRobust,
-                     markerImpact,
-                     pStopRequested_in);
+                     iterationCount_in,
+                     p_stopFlag_inout,
+                     loopKeyFrameId_in,
+                     useRobustKernel_in,
+                     markerImpact_in,
+                     p_stopRequested_in);
 }
 
 } // namespace core

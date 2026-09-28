@@ -73,189 +73,204 @@ namespace core
 {
 
 void ORBextractor::computeKeyPointsOld(
-    std::vector<std::vector<KeyPoint>> &keypointsPerLevel_out)
+    std::vector<std::vector<KeyPoint>> &keypointsPerLevel_inout)
 {
-    keypointsPerLevel_out.resize(levelCount);
+    keypointsPerLevel_inout.resize(levelCount);
 
     float imageRatio = (float)imagePyramid[0].cols / imagePyramid[0].rows;
 
     for (int level = 0; level < levelCount; ++level)
     {
-        const int nDesiredFeatures = featuresPerLevel[level];
+        const int desiredFeatureCount = featuresPerLevel[level];
 
-        const int levelCols = sqrt((float)nDesiredFeatures / (5 * imageRatio));
+        const int levelCols =
+            sqrt((float)desiredFeatureCount / (5 * imageRatio));
         const int levelRows = imageRatio * levelCols;
 
-        const int minBorderX = EDGE_THRESHOLD;
-        const int minBorderY = minBorderX;
-        const int maxBorderX = imagePyramid[level].cols - EDGE_THRESHOLD;
-        const int maxBorderY = imagePyramid[level].rows - EDGE_THRESHOLD;
+        const int minimumBorderX = EDGE_THRESHOLD;
+        const int minimumBorderY = minimumBorderX;
+        const int maximumBorderX = imagePyramid[level].cols - EDGE_THRESHOLD;
+        const int maximumBorderY = imagePyramid[level].rows - EDGE_THRESHOLD;
 
-        const int W     = maxBorderX - minBorderX;
-        const int H     = maxBorderY - minBorderY;
+        const int W     = maximumBorderX - minimumBorderX;
+        const int H     = maximumBorderY - minimumBorderY;
         const int cellW = ceil((float)W / levelCols);
         const int cellH = ceil((float)H / levelRows);
 
-        const int nCells        = levelRows * levelCols;
-        const int nfeaturesCell = ceil((float)nDesiredFeatures / nCells);
+        const int cellCount     = levelRows * levelCols;
+        const int nfeaturesCell = ceil((float)desiredFeatureCount / cellCount);
 
         vector<vector<vector<KeyPoint>>> cellKeyPoints(
             levelRows,
             vector<vector<KeyPoint>>(levelCols));
 
-        vector<vector<int>>  nToRetain(levelRows, vector<int>(levelCols, 0));
-        vector<vector<int>>  nTotal(levelRows, vector<int>(levelCols, 0));
+        vector<vector<int>> toRetainCount(levelRows, vector<int>(levelCols, 0));
+        vector<vector<int>> totalCount(levelRows, vector<int>(levelCols, 0));
         vector<vector<bool>> isExhausted(levelRows,
                                          vector<bool>(levelCols, false));
-        vector<int>          iniXCol(levelCols);
-        vector<int>          iniYRow(levelRows);
-        int                  nNoMore       = 0;
-        int                  nToDistribute = 0;
+        vector<int>          initialXCol(levelCols);
+        vector<int>          initialYRow(levelRows);
+        int                  noMoreCount       = 0;
+        int                  toDistributeCount = 0;
 
         float hY = cellH + 6;
 
-        for (int i = 0; i < levelRows; i++)
+        for (int rowIndex = 0; rowIndex < levelRows; rowIndex++)
         {
-            const float iniY = minBorderY + i * cellH - 3;
-            iniYRow[i]       = iniY;
+            const float initialY  = minimumBorderY + rowIndex * cellH - 3;
+            initialYRow[rowIndex] = initialY;
 
-            if (i == levelRows - 1)
+            if (rowIndex == levelRows - 1)
             {
-                hY = maxBorderY + 3 - iniY;
+                hY = maximumBorderY + 3 - initialY;
                 if (hY <= 0)
                     continue;
             }
 
             float hX = cellW + 6;
 
-            for (int j = 0; j < levelCols; j++)
+            for (int columnIndex = 0; columnIndex < levelCols; columnIndex++)
             {
-                float iniX;
+                float initialX;
 
-                if (i == 0)
+                if (rowIndex == 0)
                 {
-                    iniX       = minBorderX + j * cellW - 3;
-                    iniXCol[j] = iniX;
+                    initialX = minimumBorderX + columnIndex * cellW - 3;
+                    initialXCol[columnIndex] = initialX;
                 }
                 else
                 {
-                    iniX = iniXCol[j];
+                    initialX = initialXCol[columnIndex];
                 }
 
-                if (j == levelCols - 1)
+                if (columnIndex == levelCols - 1)
                 {
-                    hX = maxBorderX + 3 - iniX;
+                    hX = maximumBorderX + 3 - initialX;
                     if (hX <= 0)
                         continue;
                 }
 
                 Mat cellImage = imagePyramid[level]
-                                    .rowRange(iniY, iniY + hY)
-                                    .colRange(iniX, iniX + hX);
+                                    .rowRange(initialY, initialY + hY)
+                                    .colRange(initialX, initialX + hX);
 
-                cellKeyPoints[i][j].reserve(nfeaturesCell * 5);
+                cellKeyPoints[rowIndex][columnIndex].reserve(nfeaturesCell * 5);
 
                 FAST(cellImage,
-                     cellKeyPoints[i][j],
+                     cellKeyPoints[rowIndex][columnIndex],
                      initialFastThreshold,
                      true);
 
-                if (cellKeyPoints[i][j].size() <= 3)
+                if (cellKeyPoints[rowIndex][columnIndex].size() <= 3)
                 {
-                    cellKeyPoints[i][j].clear();
+                    cellKeyPoints[rowIndex][columnIndex].clear();
 
                     FAST(cellImage,
-                         cellKeyPoints[i][j],
+                         cellKeyPoints[rowIndex][columnIndex],
                          minimumFastThreshold,
                          true);
                 }
 
-                const int nKeys = cellKeyPoints[i][j].size();
-                nTotal[i][j]    = nKeys;
+                const int keyCount =
+                    cellKeyPoints[rowIndex][columnIndex].size();
+                totalCount[rowIndex][columnIndex] = keyCount;
 
-                if (nKeys > nfeaturesCell)
+                if (keyCount > nfeaturesCell)
                 {
-                    nToRetain[i][j]   = nfeaturesCell;
-                    isExhausted[i][j] = false;
+                    toRetainCount[rowIndex][columnIndex] = nfeaturesCell;
+                    isExhausted[rowIndex][columnIndex]   = false;
                 }
                 else
                 {
-                    nToRetain[i][j] = nKeys;
-                    nToDistribute += nfeaturesCell - nKeys;
-                    isExhausted[i][j] = true;
-                    nNoMore++;
+                    toRetainCount[rowIndex][columnIndex] = keyCount;
+                    toDistributeCount += nfeaturesCell - keyCount;
+                    isExhausted[rowIndex][columnIndex] = true;
+                    noMoreCount++;
                 }
             }
         }
 
         // Retain by score
 
-        while (nToDistribute > 0 && nNoMore < nCells)
+        while (toDistributeCount > 0 && noMoreCount < cellCount)
         {
-            int nNewFeaturesCell =
-                nfeaturesCell + ceil((float)nToDistribute / (nCells - nNoMore));
-            nToDistribute = 0;
+            int newFeaturesCellCount =
+                nfeaturesCell +
+                ceil((float)toDistributeCount / (cellCount - noMoreCount));
+            toDistributeCount = 0;
 
-            for (int i = 0; i < levelRows; i++)
+            for (int rowIndex = 0; rowIndex < levelRows; rowIndex++)
             {
-                for (int j = 0; j < levelCols; j++)
+                for (int columnIndex = 0; columnIndex < levelCols;
+                     columnIndex++)
                 {
-                    if (!isExhausted[i][j])
+                    if (!isExhausted[rowIndex][columnIndex])
                     {
-                        if (nTotal[i][j] > nNewFeaturesCell)
+                        if (totalCount[rowIndex][columnIndex] >
+                            newFeaturesCellCount)
                         {
-                            nToRetain[i][j]   = nNewFeaturesCell;
-                            isExhausted[i][j] = false;
+                            toRetainCount[rowIndex][columnIndex] =
+                                newFeaturesCellCount;
+                            isExhausted[rowIndex][columnIndex] = false;
                         }
                         else
                         {
-                            nToRetain[i][j] = nTotal[i][j];
-                            nToDistribute += nNewFeaturesCell - nTotal[i][j];
-                            isExhausted[i][j] = true;
-                            nNoMore++;
+                            toRetainCount[rowIndex][columnIndex] =
+                                totalCount[rowIndex][columnIndex];
+                            toDistributeCount +=
+                                newFeaturesCellCount -
+                                totalCount[rowIndex][columnIndex];
+                            isExhausted[rowIndex][columnIndex] = true;
+                            noMoreCount++;
                         }
                     }
                 }
             }
         }
 
-        vector<KeyPoint> &keypoints = keypointsPerLevel_out[level];
-        keypoints.reserve(nDesiredFeatures * 2);
+        vector<KeyPoint> &keypoints = keypointsPerLevel_inout[level];
+        keypoints.reserve(desiredFeatureCount * 2);
 
         const int scaledPatchSize = PATCH_SIZE * scaleFactors[level];
 
         // Retain by score and transform coordinates
-        for (int i = 0; i < levelRows; i++)
+        for (int rowIndex = 0; rowIndex < levelRows; rowIndex++)
         {
-            for (int j = 0; j < levelCols; j++)
+            for (int columnIndex = 0; columnIndex < levelCols; columnIndex++)
             {
-                vector<KeyPoint> &keysCell = cellKeyPoints[i][j];
-                KeyPointsFilter::retainBest(keysCell, nToRetain[i][j]);
-                if ((int)keysCell.size() > nToRetain[i][j])
-                    keysCell.resize(nToRetain[i][j]);
+                vector<KeyPoint> &keysCell =
+                    cellKeyPoints[rowIndex][columnIndex];
+                KeyPointsFilter::retainBest(
+                    keysCell,
+                    toRetainCount[rowIndex][columnIndex]);
+                if ((int)keysCell.size() > toRetainCount[rowIndex][columnIndex])
+                    keysCell.resize(toRetainCount[rowIndex][columnIndex]);
 
-                for (size_t k = 0, kend = keysCell.size(); k < kend; k++)
+                for (size_t cellKeyPointIndex = 0, kend = keysCell.size();
+                     cellKeyPointIndex < kend;
+                     cellKeyPointIndex++)
                 {
-                    keysCell[k].pt.x += iniXCol[j];
-                    keysCell[k].pt.y += iniYRow[i];
-                    keysCell[k].octave = level;
-                    keysCell[k].size   = scaledPatchSize;
-                    keypoints.push_back(keysCell[k]);
+                    keysCell[cellKeyPointIndex].pt.x +=
+                        initialXCol[columnIndex];
+                    keysCell[cellKeyPointIndex].pt.y += initialYRow[rowIndex];
+                    keysCell[cellKeyPointIndex].octave = level;
+                    keysCell[cellKeyPointIndex].size   = scaledPatchSize;
+                    keypoints.push_back(keysCell[cellKeyPointIndex]);
                 }
             }
         }
 
-        if ((int)keypoints.size() > nDesiredFeatures)
+        if ((int)keypoints.size() > desiredFeatureCount)
         {
-            KeyPointsFilter::retainBest(keypoints, nDesiredFeatures);
-            keypoints.resize(nDesiredFeatures);
+            KeyPointsFilter::retainBest(keypoints, desiredFeatureCount);
+            keypoints.resize(desiredFeatureCount);
         }
     }
 
     // and compute orientations
     for (int level = 0; level < levelCount; ++level)
         computeOrientation(imagePyramid[level],
-                           keypointsPerLevel_out[level],
+                           keypointsPerLevel_inout[level],
                            orientationMaxOffset);
 }
 

@@ -23,7 +23,7 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::filterGroundPlanes(geometric::Plane *groundPlane)
+void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
 {
     /*!
      * Discard gound planes that have a height above a threshold from the
@@ -35,17 +35,18 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *groundPlane)
 
     /* Get the median height of the plane to compute the threshold */
     std::optional<float> groundPlaneHeight =
-        computeGroundPlaneHeight(groundPlane);
+        computeGroundPlaneHeight(p_groundPlane_in);
     if (!groundPlaneHeight.has_value())
     {
         /* Nothing to filter against yet -- the main ground plane's support
            cloud is momentarily empty (e.g. right after creation/reset). */
         return;
     }
-    float threshY = *groundPlaneHeight - p_sysParams->semSeg.maxStepElevation;
+    float thresholdY =
+        *groundPlaneHeight - p_sysParams->semSeg.maxStepElevation;
 
     /* Extract the main associated ground plane */
-    int groundPlaneId = groundPlane->getId();
+    int groundPlaneId = p_groundPlane_in->getId();
 
     /* Go through all ground planes to check validity */
     for (const auto &plane : p_atlas->getAllPlanes())
@@ -66,7 +67,7 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *groundPlane)
         {
             continue;
         }
-        if (*planeHeight < threshY)
+        if (*planeHeight < thresholdY)
         {
             plane->resetPlaneSemantics();
             continue;

@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::PreSave()
+void Atlas::preSave()
 {
     if (p_activeMap)
     {
@@ -43,29 +43,29 @@ void Atlas::PreSave()
 
     struct CompFunctor
     {
-        inline bool operator()(Map *elem1, Map *elem2)
+        inline bool operator()(Map *p_firstMap_in, Map *p_secondMap_in)
         {
-            return elem1->getId() < elem2->getId();
+            return p_firstMap_in->getId() < p_secondMap_in->getId();
         }
     };
     std::copy(maps.begin(), maps.end(), std::back_inserter(backupMaps));
     sort(backupMaps.begin(), backupMaps.end(), CompFunctor());
 
-    std::set<camera_models::geometriccamera::GeometricCamera *> spCams(
+    std::set<camera_models::geometriccamera::GeometricCamera *> cameraSet(
         cameras.begin(),
         cameras.end());
-    for (Map *pMi : backupMaps)
+    for (Map *p_map : backupMaps)
     {
-        if (!pMi || pMi->isBad())
+        if (!p_map || p_map->isBad())
             continue;
 
-        if (pMi->getAllKeyFrames().size() == 0)
+        if (p_map->getAllKeyFrames().size() == 0)
         {
             // Empty map, erase before of save it.
-            setMapBad(pMi);
+            setMapBad(p_map);
             continue;
         }
-        pMi->PreSave(spCams);
+        p_map->preSave(cameraSet);
     }
     removeBadMaps();
 }

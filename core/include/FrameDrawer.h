@@ -48,26 +48,28 @@ class FrameDrawer
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    FrameDrawer(Atlas *pAtlas);
+    FrameDrawer(Atlas *p_atlas_in);
 
     // Update info from the last processed frame.
-    void update(Tracking *pTracker);
+    void update(Tracking *p_tracker_in);
 
     // Draw last processed frame.
-    cv::Mat drawFrame(float imageScale = 1.f);
-    cv::Mat drawRightFrame(float imageScale = 1.f);
+    cv::Mat drawFrame(float imageScale_in = 1.f);
+    cv::Mat drawRightFrame(float imageScale_in = 1.f);
 
-    bool both;
+    bool shouldDrawBothImages;
 
   protected:
-    void drawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);
+    void drawTextInfo(cv::Mat &sourceImage_in,
+                      int      trackingState_in,
+                      cv::Mat &annotatedImage_out);
 
     // Info of the frame to be drawn
     cv::Mat              image, imageRight;
-    int                  N;
+    int                  keyPointCount;
     vector<cv::KeyPoint> currentKeys, currentKeysRight;
-    vector<bool>         mvbMap, mvbVO;
-    bool                 onlyTracking;
+    vector<bool>         isTrackedMapPoint, isVisualOdometryPoint;
+    bool                 isTrackingOnlyMode;
     int                  trackedCount, trackedVOCount;
     vector<cv::KeyPoint> iniKeys;
     vector<int>          iniMatches;
@@ -77,7 +79,7 @@ class FrameDrawer
 
     Atlas *p_atlas;
 
-    std::mutex                             mMutex;
+    std::mutex                             frameStateMutex;
     vector<pair<cv::Point2f, cv::Point2f>> tracks;
 
     Frame                currentFrame;

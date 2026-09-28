@@ -30,16 +30,16 @@ namespace vs_graphs
 namespace core
 {
 
-bool EdgeSE3ProjectSE3::read(std::istream &is)
+bool EdgeSE3ProjectSE3::read(std::istream &inputStream_inout)
 {
-    g2o::Vector7D meas;
-    g2o::internal::readVector(is, meas);
-    g2o::Vector4D::MapType(meas.data() + 3).normalize();
-    setMeasurement(g2o::internal::fromVectorQT(meas));
-    if (is.bad())
+    g2o::Vector7D measurementVector;
+    g2o::internal::readVector(inputStream_inout, measurementVector);
+    g2o::Vector4D::MapType(measurementVector.data() + 3).normalize();
+    setMeasurement(g2o::internal::fromVectorQT(measurementVector));
+    if (inputStream_inout.bad())
         return false;
-    readInformationMatrix(is);
-    return is.good() || is.eof();
+    readInformationMatrix(inputStream_inout);
+    return inputStream_inout.good() || inputStream_inout.eof();
 }
 
 } // namespace core

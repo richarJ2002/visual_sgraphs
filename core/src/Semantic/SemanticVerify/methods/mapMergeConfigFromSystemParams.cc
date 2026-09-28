@@ -30,18 +30,18 @@ namespace semantic
 
 SemanticVerify::MapMergeConfig SemanticVerify::mapMergeConfigFromSystemParams()
 {
-    MapMergeConfig config;
-    config.passage_match_tolerance_m = static_cast<double>(
+    MapMergeConfig configuration;
+    configuration.passage_match_tolerance_m = static_cast<double>(
         types::SystemParams::getParams()->mapMerge.passageMatchTolerance_m);
-    config.wall_coplanar_angle_deg = static_cast<double>(
+    configuration.wall_coplanar_angle_deg = static_cast<double>(
         types::SystemParams::getParams()->mapMerge.wallCoplanarAngle_deg);
-    config.wall_edge_overlap_m = static_cast<double>(
+    configuration.wall_edge_overlap_m = static_cast<double>(
         types::SystemParams::getParams()->mapMerge.wallEdgeOverlap_m);
-    config.floor_match_tolerance_m = static_cast<double>(
+    configuration.floor_match_tolerance_m = static_cast<double>(
         types::SystemParams::getParams()->mapMerge.floorMatchTolerance_m);
-    config.room_centroid_tolerance_m = static_cast<double>(
+    configuration.room_centroid_tolerance_m = static_cast<double>(
         types::SystemParams::getParams()->mapMerge.roomCentroidTolerance_m);
-    return config;
+    return configuration;
 }
 
 } // namespace semantic

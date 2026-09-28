@@ -82,7 +82,8 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         involvedKeys.push_back(*prospective.key);
     }
 
-    if (knownSide.referenceUnresolvable || prospective.referenceUnresolvable)
+    if (knownSide.isReferenceUnresolvable ||
+        prospective.isReferenceUnresolvable)
     {
         findings_inout.push_back(
             makeFinding(AxiomCode::AX_PASS_02,
@@ -135,9 +136,9 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
      * ResolvedRoomEndpoint::isLive defaults to false; see
      * resolveRoomEndpoint.cc's Doxygen and the dedicated
      * liveness-unavailable check below. */
-    const bool knownSideBad = knownSide.referencePresent &&
+    const bool knownSideBad = knownSide.isReferencePresent &&
                               knownSide.isLiveAvailable && !knownSide.isLive;
-    const bool prospectiveBad = prospective.referencePresent &&
+    const bool prospectiveBad = prospective.isReferencePresent &&
                                 prospective.isLiveAvailable &&
                                 !prospective.isLive;
     if (knownSideBad || prospectiveBad)
@@ -163,8 +164,8 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         return;
     }
 
-    if ((knownSide.referencePresent && knownSide.isCrossMap) ||
-        (prospective.referencePresent && prospective.isCrossMap))
+    if ((knownSide.isReferencePresent && knownSide.isCrossMap) ||
+        (prospective.isReferencePresent && prospective.isCrossMap))
     {
         findings_inout.push_back(
             makeFinding(AxiomCode::AX_PASS_02,
@@ -174,7 +175,7 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         return;
     }
 
-    if (knownSide.referencePresent && prospective.referencePresent &&
+    if (knownSide.isReferencePresent && prospective.isReferencePresent &&
         knownSide.key.has_value() && prospective.key.has_value() &&
         (*knownSide.key == *prospective.key))
     {
@@ -264,8 +265,8 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         return;
     }
 
-    if ((knownSide.referencePresent && !knownSide.isLiveAvailable) ||
-        (prospective.referencePresent && !prospective.isLiveAvailable))
+    if ((knownSide.isReferencePresent && !knownSide.isLiveAvailable) ||
+        (prospective.isReferencePresent && !prospective.isLiveAvailable))
     {
         /* A forward endpoint reference is present with no other known
          * contradiction, but its own liveness is genuinely unproven: this

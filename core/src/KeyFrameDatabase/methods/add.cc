@@ -29,15 +29,16 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::add(KeyFrame *pKF)
+void KeyFrameDatabase::add(KeyFrame *p_keyFrame_in)
 {
-    unique_lock<mutex> lock(mMutex);
+    unique_lock<mutex> lock(databaseMutex);
 
-    for (DBoW2::BowVector::const_iterator vit  = pKF->bowVector.begin(),
-                                          vend = pKF->bowVector.end();
-         vit != vend;
-         vit++)
-        invertedFile[vit->first].push_back(pKF);
+    for (DBoW2::BowVector::const_iterator
+             wordIt  = p_keyFrame_in->bowVector.begin(),
+             wordEnd = p_keyFrame_in->bowVector.end();
+         wordIt != wordEnd;
+         wordIt++)
+        invertedFile[wordIt->first].push_back(p_keyFrame_in);
 }
 
 } // namespace core

@@ -32,181 +32,231 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::inertialOptimization(Map             *pMap,
-                                     Eigen::Vector3d &bg,
-                                     Eigen::Vector3d &ba,
-                                     float            priorG,
-                                     float            priorA)
+void Optimizer::inertialOptimization(Map             *p_map_in,
+                                     Eigen::Vector3d &gyroBias_out,
+                                     Eigen::Vector3d &accelBias_out,
+                                     float            gyroBiasPriorWeight_in,
+                                     float            accelBiasPriorWeight_in)
 {
-    int                      its     = 200; // Check number of iterations
-    long unsigned int        maxKFid = pMap->getMaxKeyFrameId();
-    const vector<KeyFrame *> vpKFs   = pMap->getAllKeyFrames();
+    int                      iterationCount = 200; // Check number of iterations
+    long unsigned int        maxKeyFrameId  = p_map_in->getMaxKeyFrameId();
+    const vector<KeyFrame *> keyFrames      = p_map_in->getAllKeyFrames();
 
     // Setup optimizer
     g2o::SparseOptimizer                 optimizer;
-    g2o::BlockSolverX::LinearSolverType *linearSolver;
+    g2o::BlockSolverX::LinearSolverType *p_linearSolver;
 
-    linearSolver =
+    p_linearSolver =
         new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
 
-    g2o::BlockSolverX *solver_ptr = new g2o::BlockSolverX(linearSolver);
+    g2o::BlockSolverX *p_blockSolver = new g2o::BlockSolverX(p_linearSolver);
 
-    g2o::OptimizationAlgorithmLevenberg *solver =
-        new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
-    solver->setUserLambdaInit(1e3);
+    g2o::OptimizationAlgorithmLevenberg *p_solver =
+        new g2o::OptimizationAlgorithmLevenberg(p_blockSolver);
+    p_solver->setUserLambdaInit(1e3);
 
-    optimizer.setAlgorithm(solver);
+    optimizer.setAlgorithm(p_solver);
 
     // Set KeyFrame vertices (fixed poses and optimizable velocities)
-    for (size_t i = 0; i < vpKFs.size(); i++)
+    for (size_t elementIndex = 0; elementIndex < keyFrames.size();
+         elementIndex++)
     {
-        KeyFrame *pKFi = vpKFs[i];
-        if (pKFi->mnId > maxKFid)
+        KeyFrame *p_keyFrame = keyFrames[elementIndex];
+        if (p_keyFrame->id > maxKeyFrameId)
             continue;
-        VertexPose *VP = new VertexPose(pKFi);
-        VP->setId(pKFi->mnId);
-        VP->setFixed(true);
-        optimizer.addVertex(VP);
+        VertexPose *p_poseVertex = new VertexPose(p_keyFrame);
+        p_poseVertex->setId(p_keyFrame->id);
+        p_poseVertex->setFixed(true);
+        optimizer.addVertex(p_poseVertex);
 
-        VertexVelocity *VV = new VertexVelocity(pKFi);
-        VV->setId(maxKFid + (pKFi->mnId) + 1);
-        VV->setFixed(false);
+        VertexVelocity *p_velocityVertex = new VertexVelocity(p_keyFrame);
+        p_velocityVertex->setId(maxKeyFrameId + (p_keyFrame->id) + 1);
+        p_velocityVertex->setFixed(false);
 
-        optimizer.addVertex(VV);
+        optimizer.addVertex(p_velocityVertex);
     }
 
     // Biases
-    VertexGyroBias *VG = new VertexGyroBias(vpKFs.front());
-    VG->setId(maxKFid * 2 + 2);
-    VG->setFixed(false);
-    optimizer.addVertex(VG);
+    VertexGyroBias *p_gyroBiasVertex = new VertexGyroBias(keyFrames.front());
+    p_gyroBiasVertex->setId(maxKeyFrameId * 2 + 2);
+    p_gyroBiasVertex->setFixed(false);
+    optimizer.addVertex(p_gyroBiasVertex);
 
-    VertexAccBias *VA = new VertexAccBias(vpKFs.front());
-    VA->setId(maxKFid * 2 + 3);
-    VA->setFixed(false);
+    VertexAccBias *p_accelBiasVertex = new VertexAccBias(keyFrames.front());
+    p_accelBiasVertex->setId(maxKeyFrameId * 2 + 3);
+    p_accelBiasVertex->setFixed(false);
 
-    optimizer.addVertex(VA);
+    optimizer.addVertex(p_accelBiasVertex);
     // prior acc bias
-    Eigen::Vector3f bprior;
-    bprior.setZero();
+    Eigen::Vector3f biasPrior;
+    biasPrior.setZero();
 
-    EdgePriorAcc *epa = new EdgePriorAcc(bprior);
-    epa->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex *>(VA));
-    double infoPriorA = priorA;
-    epa->setInformation(infoPriorA * Eigen::Matrix3d::Identity());
-    optimizer.addEdge(epa);
-    EdgePriorGyro *epg = new EdgePriorGyro(bprior);
-    epg->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex *>(VG));
-    double infoPriorG = priorG;
-    epg->setInformation(infoPriorG * Eigen::Matrix3d::Identity());
-    optimizer.addEdge(epg);
+    EdgePriorAcc *p_accelBiasPriorEdge = new EdgePriorAcc(biasPrior);
+    p_accelBiasPriorEdge->setVertex(
+        0,
+        dynamic_cast<g2o::OptimizableGraph::Vertex *>(p_accelBiasVertex));
+    double accelBiasPriorInformation = accelBiasPriorWeight_in;
+    p_accelBiasPriorEdge->setInformation(accelBiasPriorInformation *
+                                         Eigen::Matrix3d::Identity());
+    optimizer.addEdge(p_accelBiasPriorEdge);
+    EdgePriorGyro *p_gyroBiasPriorEdge = new EdgePriorGyro(biasPrior);
+    p_gyroBiasPriorEdge->setVertex(
+        0,
+        dynamic_cast<g2o::OptimizableGraph::Vertex *>(p_gyroBiasVertex));
+    double gyroBiasPriorInformation = gyroBiasPriorWeight_in;
+    p_gyroBiasPriorEdge->setInformation(gyroBiasPriorInformation *
+                                        Eigen::Matrix3d::Identity());
+    optimizer.addEdge(p_gyroBiasPriorEdge);
 
     // Gravity and scale
-    VertexGDir *VGDir = new VertexGDir(Eigen::Matrix3d::Identity());
-    VGDir->setId(maxKFid * 2 + 4);
-    VGDir->setFixed(true);
-    optimizer.addVertex(VGDir);
-    VertexScale *VS = new VertexScale(1.0);
-    VS->setId(maxKFid * 2 + 5);
-    VS->setFixed(true); // Fixed since scale is obtained from already well
-                        // initialized map
-    optimizer.addVertex(VS);
+    VertexGDir *p_gravityDirectionVertex =
+        new VertexGDir(Eigen::Matrix3d::Identity());
+    p_gravityDirectionVertex->setId(maxKeyFrameId * 2 + 4);
+    p_gravityDirectionVertex->setFixed(true);
+    optimizer.addVertex(p_gravityDirectionVertex);
+    VertexScale *p_scaleVertex = new VertexScale(1.0);
+    p_scaleVertex->setId(maxKeyFrameId * 2 + 5);
+    p_scaleVertex->setFixed(true); // Fixed since scale is obtained from already
+                                   // well initialized map
+    optimizer.addVertex(p_scaleVertex);
 
     // Graph edges
     // IMU links with gravity and scale
-    vector<EdgeInertialGS *> vpei;
-    vpei.reserve(vpKFs.size());
-    vector<pair<KeyFrame *, KeyFrame *>> vppUsedKF;
-    vppUsedKF.reserve(vpKFs.size());
+    vector<EdgeInertialGS *> inertialEdges;
+    inertialEdges.reserve(keyFrames.size());
+    vector<pair<KeyFrame *, KeyFrame *>> usedKeyFramePairs;
+    usedKeyFramePairs.reserve(keyFrames.size());
 
-    for (size_t i = 0; i < vpKFs.size(); i++)
+    for (size_t elementIndex = 0; elementIndex < keyFrames.size();
+         elementIndex++)
     {
-        KeyFrame *pKFi = vpKFs[i];
+        KeyFrame *p_keyFrame = keyFrames[elementIndex];
 
-        if (pKFi->p_prevKF && pKFi->mnId <= maxKFid)
+        if (p_keyFrame->p_prevKF && p_keyFrame->id <= maxKeyFrameId)
         {
-            if (pKFi->isBad() || pKFi->p_prevKF->mnId > maxKFid)
+            if (p_keyFrame->isBad() || p_keyFrame->p_prevKF->id > maxKeyFrameId)
                 continue;
 
-            pKFi->p_imuPreintegrated->setNewBias(pKFi->p_prevKF->getImuBias());
-            g2o::HyperGraph::Vertex *VP1 =
-                optimizer.vertex(pKFi->p_prevKF->mnId);
-            g2o::HyperGraph::Vertex *VV1 =
-                optimizer.vertex(maxKFid + (pKFi->p_prevKF->mnId) + 1);
-            g2o::HyperGraph::Vertex *VP2 = optimizer.vertex(pKFi->mnId);
-            g2o::HyperGraph::Vertex *VV2 =
-                optimizer.vertex(maxKFid + (pKFi->mnId) + 1);
-            g2o::HyperGraph::Vertex *VG    = optimizer.vertex(maxKFid * 2 + 2);
-            g2o::HyperGraph::Vertex *VA    = optimizer.vertex(maxKFid * 2 + 3);
-            g2o::HyperGraph::Vertex *VGDir = optimizer.vertex(maxKFid * 2 + 4);
-            g2o::HyperGraph::Vertex *VS    = optimizer.vertex(maxKFid * 2 + 5);
-            if (!VP1 || !VV1 || !VG || !VA || !VP2 || !VV2 || !VGDir || !VS)
+            p_keyFrame->p_imuPreintegrated->setNewBias(
+                p_keyFrame->p_prevKF->getImuBias());
+            g2o::HyperGraph::Vertex *p_previousPoseVertex =
+                optimizer.vertex(p_keyFrame->p_prevKF->id);
+            g2o::HyperGraph::Vertex *p_previousVelocityVertex =
+                optimizer.vertex(maxKeyFrameId + (p_keyFrame->p_prevKF->id) +
+                                 1);
+            g2o::HyperGraph::Vertex *p_currentPoseVertex =
+                optimizer.vertex(p_keyFrame->id);
+            g2o::HyperGraph::Vertex *p_currentVelocityVertex =
+                optimizer.vertex(maxKeyFrameId + (p_keyFrame->id) + 1);
+            g2o::HyperGraph::Vertex *p_gyroBiasVertex =
+                optimizer.vertex(maxKeyFrameId * 2 + 2);
+            g2o::HyperGraph::Vertex *p_accelBiasVertex =
+                optimizer.vertex(maxKeyFrameId * 2 + 3);
+            g2o::HyperGraph::Vertex *p_gravityDirectionVertex =
+                optimizer.vertex(maxKeyFrameId * 2 + 4);
+            g2o::HyperGraph::Vertex *p_scaleVertex =
+                optimizer.vertex(maxKeyFrameId * 2 + 5);
+            if (!p_previousPoseVertex || !p_previousVelocityVertex ||
+                !p_gyroBiasVertex || !p_accelBiasVertex ||
+                !p_currentPoseVertex || !p_currentVelocityVertex ||
+                !p_gravityDirectionVertex || !p_scaleVertex)
             {
-                cout << "Error" << VP1 << ", " << VV1 << ", " << VG << ", "
-                     << VA << ", " << VP2 << ", " << VV2 << ", " << VGDir
-                     << ", " << VS << endl;
+                cout << "Error" << p_previousPoseVertex << ", "
+                     << p_previousVelocityVertex << ", " << p_gyroBiasVertex
+                     << ", " << p_accelBiasVertex << ", " << p_currentPoseVertex
+                     << ", " << p_currentVelocityVertex << ", "
+                     << p_gravityDirectionVertex << ", " << p_scaleVertex
+                     << endl;
 
                 continue;
             }
-            EdgeInertialGS *ei = new EdgeInertialGS(pKFi->p_imuPreintegrated);
-            ei->setVertex(0,
-                          dynamic_cast<g2o::OptimizableGraph::Vertex *>(VP1));
-            ei->setVertex(1,
-                          dynamic_cast<g2o::OptimizableGraph::Vertex *>(VV1));
-            ei->setVertex(2, dynamic_cast<g2o::OptimizableGraph::Vertex *>(VG));
-            ei->setVertex(3, dynamic_cast<g2o::OptimizableGraph::Vertex *>(VA));
-            ei->setVertex(4,
-                          dynamic_cast<g2o::OptimizableGraph::Vertex *>(VP2));
-            ei->setVertex(5,
-                          dynamic_cast<g2o::OptimizableGraph::Vertex *>(VV2));
-            ei->setVertex(6,
-                          dynamic_cast<g2o::OptimizableGraph::Vertex *>(VGDir));
-            ei->setVertex(7, dynamic_cast<g2o::OptimizableGraph::Vertex *>(VS));
+            EdgeInertialGS *p_inertialEdge =
+                new EdgeInertialGS(p_keyFrame->p_imuPreintegrated);
+            p_inertialEdge->setVertex(
+                0,
+                dynamic_cast<g2o::OptimizableGraph::Vertex *>(
+                    p_previousPoseVertex));
+            p_inertialEdge->setVertex(
+                1,
+                dynamic_cast<g2o::OptimizableGraph::Vertex *>(
+                    p_previousVelocityVertex));
+            p_inertialEdge->setVertex(
+                2,
+                dynamic_cast<g2o::OptimizableGraph::Vertex *>(
+                    p_gyroBiasVertex));
+            p_inertialEdge->setVertex(
+                3,
+                dynamic_cast<g2o::OptimizableGraph::Vertex *>(
+                    p_accelBiasVertex));
+            p_inertialEdge->setVertex(
+                4,
+                dynamic_cast<g2o::OptimizableGraph::Vertex *>(
+                    p_currentPoseVertex));
+            p_inertialEdge->setVertex(
+                5,
+                dynamic_cast<g2o::OptimizableGraph::Vertex *>(
+                    p_currentVelocityVertex));
+            p_inertialEdge->setVertex(
+                6,
+                dynamic_cast<g2o::OptimizableGraph::Vertex *>(
+                    p_gravityDirectionVertex));
+            p_inertialEdge->setVertex(
+                7,
+                dynamic_cast<g2o::OptimizableGraph::Vertex *>(p_scaleVertex));
 
-            vpei.push_back(ei);
+            inertialEdges.push_back(p_inertialEdge);
 
-            vppUsedKF.push_back(make_pair(pKFi->p_prevKF, pKFi));
-            optimizer.addEdge(ei);
+            usedKeyFramePairs.push_back(
+                make_pair(p_keyFrame->p_prevKF, p_keyFrame));
+            optimizer.addEdge(p_inertialEdge);
         }
     }
 
     // Compute error for different scales
     optimizer.setVerbose(false);
     optimizer.initializeOptimization();
-    optimizer.optimize(its);
+    optimizer.optimize(iterationCount);
 
     // Recover optimized data
     // Biases
-    VG = static_cast<VertexGyroBias *>(optimizer.vertex(maxKFid * 2 + 2));
-    VA = static_cast<VertexAccBias *>(optimizer.vertex(maxKFid * 2 + 3));
-    Vector6d vb;
-    vb << VG->estimate(), VA->estimate();
-    bg << VG->estimate();
-    ba << VA->estimate();
+    p_gyroBiasVertex =
+        static_cast<VertexGyroBias *>(optimizer.vertex(maxKeyFrameId * 2 + 2));
+    p_accelBiasVertex =
+        static_cast<VertexAccBias *>(optimizer.vertex(maxKeyFrameId * 2 + 3));
+    Vector6d biasVector;
+    biasVector << p_gyroBiasVertex->estimate(), p_accelBiasVertex->estimate();
+    gyroBias_out << p_gyroBiasVertex->estimate();
+    accelBias_out << p_accelBiasVertex->estimate();
 
-    IMU::Bias b(vb[3], vb[4], vb[5], vb[0], vb[1], vb[2]);
+    IMU::Bias imuBias(biasVector[3],
+                      biasVector[4],
+                      biasVector[5],
+                      biasVector[0],
+                      biasVector[1],
+                      biasVector[2]);
 
     // Keyframes velocities and biases
-    const size_t N = vpKFs.size();
-    for (size_t i = 0; i < N; i++)
+    const size_t keyFrameCount = keyFrames.size();
+    for (size_t elementIndex = 0; elementIndex < keyFrameCount; elementIndex++)
     {
-        KeyFrame *pKFi = vpKFs[i];
-        if (pKFi->mnId > maxKFid)
+        KeyFrame *p_keyFrame = keyFrames[elementIndex];
+        if (p_keyFrame->id > maxKeyFrameId)
             continue;
 
-        VertexVelocity *VV = static_cast<VertexVelocity *>(
-            optimizer.vertex(maxKFid + (pKFi->mnId) + 1));
-        Eigen::Vector3d Vw = VV->estimate();
-        pKFi->setVelocity(Vw.cast<float>());
+        VertexVelocity *p_velocityVertex = static_cast<VertexVelocity *>(
+            optimizer.vertex(maxKeyFrameId + (p_keyFrame->id) + 1));
+        Eigen::Vector3d keyFrameVelocity = p_velocityVertex->estimate();
+        p_keyFrame->setVelocity(keyFrameVelocity.cast<float>());
 
-        if ((pKFi->getGyroBias() - bg.cast<float>()).norm() > 0.01)
+        if ((p_keyFrame->getGyroBias() - gyroBias_out.cast<float>()).norm() >
+            0.01)
         {
-            pKFi->setNewBias(b);
-            if (pKFi->p_imuPreintegrated)
-                pKFi->p_imuPreintegrated->reintegrate();
+            p_keyFrame->setNewBias(imuBias);
+            if (p_keyFrame->p_imuPreintegrated)
+                p_keyFrame->p_imuPreintegrated->reintegrate();
         }
         else
-            pKFi->setNewBias(b);
+            p_keyFrame->setNewBias(imuBias);
     }
 }
 

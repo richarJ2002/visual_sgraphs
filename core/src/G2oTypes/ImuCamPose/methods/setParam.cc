@@ -32,29 +32,29 @@ namespace vs_graphs
 namespace core
 {
 
-void ImuCamPose::setParam(const std::vector<Eigen::Matrix3d> &_Rcw,
-                          const std::vector<Eigen::Vector3d> &_tcw,
-                          const std::vector<Eigen::Matrix3d> &_Rbc,
-                          const std::vector<Eigen::Vector3d> &_tbc,
-                          const double                       &_bf)
+void ImuCamPose::setParam(const std::vector<Eigen::Matrix3d> &Rcw_in,
+                          const std::vector<Eigen::Vector3d> &tcw_in,
+                          const std::vector<Eigen::Matrix3d> &Rbc_in,
+                          const std::vector<Eigen::Vector3d> &tbc_in,
+                          const double &baselineFocalProduct_in)
 {
-    Rbc                = _Rbc;
-    tbc                = _tbc;
-    Rcw                = _Rcw;
-    tcw                = _tcw;
-    const int num_cams = Rbc.size();
-    Rcb.resize(num_cams);
-    tcb.resize(num_cams);
+    Rbc                   = Rbc_in;
+    tbc                   = tbc_in;
+    Rcw                   = Rcw_in;
+    tcw                   = tcw_in;
+    const int cameraCount = Rbc.size();
+    Rcb.resize(cameraCount);
+    tcb.resize(cameraCount);
 
-    for (std::size_t i = 0; i < tcb.size(); i++)
+    for (std::size_t cameraIndex = 0; cameraIndex < tcb.size(); cameraIndex++)
     {
-        Rcb[i] = Rbc[i].transpose();
-        tcb[i] = -Rcb[i] * tbc[i];
+        Rcb[cameraIndex] = Rbc[cameraIndex].transpose();
+        tcb[cameraIndex] = -Rcb[cameraIndex] * tbc[cameraIndex];
     }
     Rwb = Rcw[0].transpose() * Rcb[0];
     twb = Rcw[0].transpose() * (tcb[0] - tcw[0]);
 
-    bf = _bf;
+    bf = baselineFocalProduct_in;
 }
 
 } // namespace core

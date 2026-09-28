@@ -32,29 +32,30 @@ namespace core
 
 void EdgeSE3ProjectXYZToBody::linearizeOplus()
 {
-    g2o::VertexSE3Expmap *vj =
+    g2o::VertexSE3Expmap *p_poseVertex =
         static_cast<g2o::VertexSE3Expmap *>(_vertices[1]);
-    g2o::SE3Quat            T_lw(vj->estimate());
+    g2o::SE3Quat            T_lw(p_poseVertex->estimate());
     g2o::SE3Quat            T_rw = mTrl * T_lw;
-    g2o::VertexSBAPointXYZ *vi =
+    g2o::VertexSBAPointXYZ *p_pointVertex =
         static_cast<g2o::VertexSBAPointXYZ *>(_vertices[0]);
-    Eigen::Vector3d X_w = vi->estimate();
-    Eigen::Vector3d X_l = T_lw.map(X_w);
-    Eigen::Vector3d X_r = mTrl.map(T_lw.map(X_w));
+    Eigen::Vector3d pointPosition_w = p_pointVertex->estimate();
+    Eigen::Vector3d pointPosition_l = T_lw.map(pointPosition_w);
+    Eigen::Vector3d pointPosition_r = mTrl.map(T_lw.map(pointPosition_w));
 
-    _jacobianOplusXi = -pCamera->computeProjectionJacobian(X_r) *
+    _jacobianOplusXi = -p_camera->computeProjectionJacobian(pointPosition_r) *
                        T_rw.rotation().toRotationMatrix();
 
-    double x = X_l[0];
-    double y = X_l[1];
-    double z = X_l[2];
+    double transformedX = pointPosition_l[0];
+    double transformedY = pointPosition_l[1];
+    double transformedZ = pointPosition_l[2];
 
-    Eigen::Matrix<double, 3, 6> SE3deriv;
-    SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f, -z, 0.f, x, 0.f, 1.f, 0.f, y, -x,
-        0.f, 0.f, 0.f, 1.f;
+    Eigen::Matrix<double, 3, 6> se3Derivative;
+    se3Derivative << 0.f, transformedZ, -transformedY, 1.f, 0.f, 0.f,
+        -transformedZ, 0.f, transformedX, 0.f, 1.f, 0.f, transformedY,
+        -transformedX, 0.f, 0.f, 0.f, 1.f;
 
-    _jacobianOplusXj = -pCamera->computeProjectionJacobian(X_r) *
-                       mTrl.rotation().toRotationMatrix() * SE3deriv;
+    _jacobianOplusXj = -p_camera->computeProjectionJacobian(pointPosition_r) *
+                       mTrl.rotation().toRotationMatrix() * se3Derivative;
 }
 
 } // namespace core

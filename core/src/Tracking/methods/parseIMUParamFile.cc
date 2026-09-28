@@ -33,16 +33,16 @@ namespace vs_graphs
 namespace core
 {
 
-bool Tracking::parseIMUParamFile(cv::FileStorage &fSettings)
+bool Tracking::parseIMUParamFile(cv::FileStorage &settings_in)
 {
     bool  boolMissingParam = false;
     float Ng               = 0.0F;
     float Na               = 0.0F;
-    float Ngw              = 0.0F;
-    float Naw              = 0.0F;
+    float gwCount          = 0.0F;
+    float awCount          = 0.0F;
 
     cv::Mat      cvTbc;
-    cv::FileNode node = fSettings["Tbc"];
+    cv::FileNode node = settings_in["Tbc"];
     if (!node.empty())
     {
         cvTbc = node.mat();
@@ -63,17 +63,17 @@ bool Tracking::parseIMUParamFile(cv::FileStorage &fSettings)
     Eigen::Matrix<float, 4, 4, Eigen::RowMajor> eigTbc(cvTbc.ptr<float>(0));
     Sophus::SE3f                                Tbc(eigTbc);
 
-    node          = fSettings["InsertKFsWhenLost"];
-    insertKFsLost = true;
+    node                          = settings_in["InsertKFsWhenLost"];
+    shouldInsertKeyFramesWhenLost = true;
     if (!node.empty() && node.isInt())
     {
-        insertKFsLost = (bool)node.operator int();
+        shouldInsertKeyFramesWhenLost = (bool)node.operator int();
     }
 
-    if (!insertKFsLost)
+    if (!shouldInsertKeyFramesWhenLost)
         cout << "Do not insert keyframes when lost visual tracking " << endl;
 
-    node = fSettings["IMU.Frequency"];
+    node = settings_in["IMU.Frequency"];
     if (!node.empty() && node.isInt())
     {
         imuFrequency = node.operator int();
@@ -87,7 +87,7 @@ bool Tracking::parseIMUParamFile(cv::FileStorage &fSettings)
         boolMissingParam = true;
     }
 
-    node = fSettings["IMU.NoiseGyro"];
+    node = settings_in["IMU.NoiseGyro"];
     if (!node.empty() && node.isReal())
     {
         Ng = node.real();
@@ -100,7 +100,7 @@ bool Tracking::parseIMUParamFile(cv::FileStorage &fSettings)
         boolMissingParam = true;
     }
 
-    node = fSettings["IMU.Threshold"];
+    node = settings_in["IMU.Threshold"];
     if (!node.empty() && node.isReal())
         imuThresh = node.real();
     else
@@ -111,7 +111,7 @@ bool Tracking::parseIMUParamFile(cv::FileStorage &fSettings)
         boolMissingParam = true;
     }
 
-    node = fSettings["IMU.NoiseAcc"];
+    node = settings_in["IMU.NoiseAcc"];
     if (!node.empty() && node.isReal())
     {
         Na = node.real();
@@ -124,10 +124,10 @@ bool Tracking::parseIMUParamFile(cv::FileStorage &fSettings)
         boolMissingParam = true;
     }
 
-    node = fSettings["IMU.GyroWalk"];
+    node = settings_in["IMU.GyroWalk"];
     if (!node.empty() && node.isReal())
     {
-        Ngw = node.real();
+        gwCount = node.real();
     }
     else
     {
@@ -137,10 +137,10 @@ bool Tracking::parseIMUParamFile(cv::FileStorage &fSettings)
         boolMissingParam = true;
     }
 
-    node = fSettings["IMU.AccWalk"];
+    node = settings_in["IMU.AccWalk"];
     if (!node.empty() && node.isReal())
     {
-        Naw = node.real();
+        awCount = node.real();
     }
     else
     {
@@ -150,12 +150,12 @@ bool Tracking::parseIMUParamFile(cv::FileStorage &fSettings)
         boolMissingParam = true;
     }
 
-    node     = fSettings["IMU.FastInit"];
-    fastInit = false;
+    node              = settings_in["IMU.FastInit"];
+    isFastInitEnabled = false;
     if (!node.empty())
-        fastInit = static_cast<int>(fSettings["IMU.FastInit"]) != 0;
+        isFastInitEnabled = static_cast<int>(settings_in["IMU.FastInit"]) != 0;
 
-    if (fastInit)
+    if (isFastInitEnabled)
         std::cout << "\t- Fast IMU initialization triggered! Acceleration is "
                      "not checked!"
                   << std::endl;
@@ -167,12 +167,12 @@ bool Tracking::parseIMUParamFile(cv::FileStorage &fSettings)
     cout << endl;
     cout << "IMU frequency: " << imuFrequency << " Hz" << endl;
     cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << endl;
-    cout << "IMU gyro walk: " << Ngw << " rad/s^2/sqrt(Hz)" << endl;
+    cout << "IMU gyro walk: " << gwCount << " rad/s^2/sqrt(Hz)" << endl;
     cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)" << endl;
-    cout << "IMU accelerometer walk: " << Naw << " m/s^3/sqrt(Hz)" << endl;
+    cout << "IMU accelerometer walk: " << awCount << " m/s^3/sqrt(Hz)" << endl;
 
     p_imuCalibration =
-        new IMU::Calib(Tbc, Ng * sf, Na * sf, Ngw / sf, Naw / sf);
+        new IMU::Calib(Tbc, Ng * sf, Na * sf, gwCount / sf, awCount / sf);
 
     p_imuPreintegratedFromLastKF =
         new IMU::Preintegrated(IMU::Bias(), *p_imuCalibration);

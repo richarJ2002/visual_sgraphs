@@ -30,8 +30,8 @@ namespace semantic
 
 vs_graphs::core::geometric::Plane *Passage::getAssociateDoor() const
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
-    return associateDoor;
+    std::lock_guard<std::mutex> lock(geometryMutex);
+    return p_associatedDoor;
 }
 
 } // namespace semantic

@@ -25,11 +25,11 @@ namespace core
 namespace semantic
 {
 
-std::string formatDouble(double value);
+std::string formatDouble(double numericValue_in);
 
-const char *stateLiteral(RoomTrackingState state);
+const char *stateLiteral(RoomTrackingState state_in);
 
-const char *eventLiteral(RoomTrackingEvent event);
+const char *eventLiteral(RoomTrackingEvent event_in);
 
 } // namespace semantic
 } // namespace core

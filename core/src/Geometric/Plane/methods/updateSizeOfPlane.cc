@@ -34,7 +34,7 @@ namespace geometric
 
 void Plane::updateSizeOfPlane(void)
 {
-    std::scoped_lock lock(mMutexPos, mMutexType, mMutexFeatures);
+    std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
     updatePlaneBoundsWithoutLock();
 }
 

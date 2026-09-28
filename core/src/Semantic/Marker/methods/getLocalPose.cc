@@ -27,7 +27,7 @@ namespace semantic
 
 Sophus::SE3f Marker::getLocalPose() const
 {
-    std::lock_guard<std::mutex> lock(mMutexState);
+    std::lock_guard<std::mutex> lock(stateMutex);
     return localPose;
 }
 

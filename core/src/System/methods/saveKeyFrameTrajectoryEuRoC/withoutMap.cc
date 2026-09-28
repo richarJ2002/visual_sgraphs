@@ -32,20 +32,20 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveKeyFrameTrajectoryEuRoC(const string &filename)
+void System::saveKeyFrameTrajectoryEuRoC(const string &filename_in)
 {
     cout << endl
-         << "Saving keyframe trajectory to " << filename << " ..." << endl;
+         << "Saving keyframe trajectory to " << filename_in << " ..." << endl;
 
-    vector<Map *> vpMaps      = p_atlas->getAllMaps();
-    Map          *p_biggerMap = nullptr;
-    std::size_t   numMaxKFs   = 0;
-    for (Map *pMap : vpMaps)
+    vector<Map *> maps                 = p_atlas->getAllMaps();
+    Map          *p_biggerMap          = nullptr;
+    std::size_t   maximumKeyFrameCount = 0;
+    for (Map *p_map : maps)
     {
-        if (pMap && pMap->getAllKeyFrames().size() > numMaxKFs)
+        if (p_map && p_map->getAllKeyFrames().size() > maximumKeyFrameCount)
         {
-            numMaxKFs   = pMap->getAllKeyFrames().size();
-            p_biggerMap = pMap;
+            maximumKeyFrameCount = p_map->getAllKeyFrames().size();
+            p_biggerMap          = p_map;
         }
     }
 
@@ -55,38 +55,39 @@ void System::saveKeyFrameTrajectoryEuRoC(const string &filename)
         return;
     }
 
-    vector<KeyFrame *> vpKFs = p_biggerMap->getAllKeyFrames();
-    sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
+    vector<KeyFrame *> keyFrames = p_biggerMap->getAllKeyFrames();
+    sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
     ofstream f;
-    f.open(filename.c_str());
+    f.open(filename_in.c_str());
     f << fixed;
 
-    for (size_t i = 0; i < vpKFs.size(); i++)
+    for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
+         keyFrameIndex++)
     {
-        KeyFrame *pKF = vpKFs[i];
+        KeyFrame *p_keyFrame = keyFrames[keyFrameIndex];
 
-        if (!pKF || pKF->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
             continue;
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD)
         {
-            Sophus::SE3f       Twb = pKF->getImuPose();
+            Sophus::SE3f       Twb = p_keyFrame->getImuPose();
             Eigen::Quaternionf q   = Twb.unit_quaternion();
             Eigen::Vector3f    twb = Twb.translation();
-            f << setprecision(6) << 1e9 * pKF->timeStamp << " "
+            f << setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
               << setprecision(9) << twb(0) << " " << twb(1) << " " << twb(2)
               << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()
               << endl;
         }
         else
         {
-            Sophus::SE3f       Twc = pKF->getPoseInverse();
+            Sophus::SE3f       Twc = p_keyFrame->getPoseInverse();
             Eigen::Quaternionf q   = Twc.unit_quaternion();
             Eigen::Vector3f    t   = Twc.translation();
-            f << setprecision(6) << 1e9 * pKF->timeStamp << " "
+            f << setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
               << setprecision(9) << t(0) << " " << t(1) << " " << t(2) << " "
               << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
         }

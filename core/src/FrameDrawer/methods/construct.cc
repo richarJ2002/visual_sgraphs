@@ -17,9 +17,9 @@ namespace vs_graphs
 namespace core
 {
 
-FrameDrawer::FrameDrawer(Atlas *pAtlas) :
-    both(false),
-    p_atlas(pAtlas)
+FrameDrawer::FrameDrawer(Atlas *p_atlas_in) :
+    shouldDrawBothImages(false),
+    p_atlas(p_atlas_in)
 {
     state      = Tracking::SYSTEM_NOT_READY;
     image      = cv::Mat(480, 640, CV_8UC3, cv::Scalar(0, 0, 0));

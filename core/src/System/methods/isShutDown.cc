@@ -32,8 +32,8 @@ namespace core
 
 bool System::isShutDown()
 {
-    unique_lock<mutex> lock(mMutexReset);
-    return shutdownRequested;
+    unique_lock<mutex> lock(resetMutex);
+    return isShutdownRequested;
 }
 
 } // namespace core

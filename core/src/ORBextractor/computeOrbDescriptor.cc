@@ -69,50 +69,55 @@ namespace vs_graphs
 namespace core
 {
 
-void computeOrbDescriptor(const KeyPoint &kpt,
-                          const Mat      &img,
-                          const Point    *briefPattern,
-                          uchar          *desc)
+void computeOrbDescriptor(const KeyPoint &kpt_in,
+                          const Mat      &image_in,
+                          const Point    *p_briefPattern_in,
+                          uchar          *p_descriptor_inout)
 {
-    float angle = (float)kpt.angle * factorPI;
+    float angle = (float)kpt_in.angle * factorPI;
     float a = (float)cos(angle), b = (float)sin(angle);
 
-    const uchar *center = &img.at<uchar>(cvRound(kpt.pt.y), cvRound(kpt.pt.x));
-    const int    step   = (int)img.step;
+    const uchar *p_center =
+        &image_in.at<uchar>(cvRound(kpt_in.pt.y), cvRound(kpt_in.pt.x));
+    const int step = (int)image_in.step;
 
 #define GET_VALUE(idx)                                                         \
-    center[cvRound(briefPattern[idx].x * b + briefPattern[idx].y * a) * step + \
-           cvRound(briefPattern[idx].x * a - briefPattern[idx].y * b)]
+    p_center[cvRound(p_briefPattern_in[idx].x * b +                            \
+                     p_briefPattern_in[idx].y * a) *                           \
+                 step +                                                        \
+             cvRound(p_briefPattern_in[idx].x * a -                            \
+                     p_briefPattern_in[idx].y * b)]
 
-    for (int i = 0; i < 32; ++i, briefPattern += 16)
+    for (int descriptorByteIndex = 0; descriptorByteIndex < 32;
+         ++descriptorByteIndex, p_briefPattern_in += 16)
     {
-        int t0, t1, val;
-        t0  = GET_VALUE(0);
-        t1  = GET_VALUE(1);
-        val = t0 < t1;
-        t0  = GET_VALUE(2);
-        t1  = GET_VALUE(3);
-        val |= (t0 < t1) << 1;
+        int t0, t1, value;
+        t0    = GET_VALUE(0);
+        t1    = GET_VALUE(1);
+        value = t0 < t1;
+        t0    = GET_VALUE(2);
+        t1    = GET_VALUE(3);
+        value |= (t0 < t1) << 1;
         t0 = GET_VALUE(4);
         t1 = GET_VALUE(5);
-        val |= (t0 < t1) << 2;
+        value |= (t0 < t1) << 2;
         t0 = GET_VALUE(6);
         t1 = GET_VALUE(7);
-        val |= (t0 < t1) << 3;
+        value |= (t0 < t1) << 3;
         t0 = GET_VALUE(8);
         t1 = GET_VALUE(9);
-        val |= (t0 < t1) << 4;
+        value |= (t0 < t1) << 4;
         t0 = GET_VALUE(10);
         t1 = GET_VALUE(11);
-        val |= (t0 < t1) << 5;
+        value |= (t0 < t1) << 5;
         t0 = GET_VALUE(12);
         t1 = GET_VALUE(13);
-        val |= (t0 < t1) << 6;
+        value |= (t0 < t1) << 6;
         t0 = GET_VALUE(14);
         t1 = GET_VALUE(15);
-        val |= (t0 < t1) << 7;
+        value |= (t0 < t1) << 7;
 
-        desc[i] = (uchar)val;
+        p_descriptor_inout[descriptorByteIndex] = (uchar)value;
     }
 
 #undef GET_VALUE

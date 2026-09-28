@@ -37,8 +37,8 @@ namespace core
 
 bool KeyFrame::isVelocitySet()
 {
-    unique_lock<mutex> lock(mMutexPose);
-    return velocityAvailable;
+    unique_lock<mutex> lock(poseMutex);
+    return isVelocityAvailable;
 }
 
 } // namespace core

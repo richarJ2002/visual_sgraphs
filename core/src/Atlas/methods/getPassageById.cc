@@ -30,10 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-vs_graphs::core::semantic::Passage *Atlas::getPassageById(int passageId)
+vs_graphs::core::semantic::Passage *Atlas::getPassageById(int passageId_in)
 {
-    unique_lock<mutex> lock(mMutexAtlas);
-    return p_activeMap != nullptr ? p_activeMap->getPassageById(passageId)
+    unique_lock<mutex> lock(atlasMutex);
+    return p_activeMap != nullptr ? p_activeMap->getPassageById(passageId_in)
                                   : nullptr;
 }
 

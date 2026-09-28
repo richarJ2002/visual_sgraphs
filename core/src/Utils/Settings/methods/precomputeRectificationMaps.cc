@@ -53,10 +53,10 @@ void Settings::precomputeRectificationMaps()
 {
     // Precompute rectification maps, new calibrations, ...
     cv::Mat K1 =
-        static_cast<camera_models::pinhole::Pinhole *>(calibration1)->toK();
+        static_cast<camera_models::pinhole::Pinhole *>(p_calibration1)->toK();
     K1.convertTo(K1, CV_64F);
     cv::Mat K2 =
-        static_cast<camera_models::pinhole::Pinhole *>(calibration2)->toK();
+        static_cast<camera_models::pinhole::Pinhole *>(p_calibration2)->toK();
     K2.convertTo(K2, CV_64F);
 
     cv::Mat cvTlr;
@@ -102,15 +102,15 @@ void Settings::precomputeRectificationMaps()
                                 rectifyMap2Right);
 
     // Update calibration
-    calibration1->setParameter(P1.at<double>(0, 0), 0);
-    calibration1->setParameter(P1.at<double>(1, 1), 1);
-    calibration1->setParameter(P1.at<double>(0, 2), 2);
-    calibration1->setParameter(P1.at<double>(1, 2), 3);
+    p_calibration1->setParameter(P1.at<double>(0, 0), 0);
+    p_calibration1->setParameter(P1.at<double>(1, 1), 1);
+    p_calibration1->setParameter(P1.at<double>(0, 2), 2);
+    p_calibration1->setParameter(P1.at<double>(1, 2), 3);
 
-    calibration2->setParameter(P2.at<double>(0, 0), 0);
-    calibration2->setParameter(P2.at<double>(1, 1), 1);
-    calibration2->setParameter(P2.at<double>(0, 2), 2);
-    calibration2->setParameter(P2.at<double>(1, 2), 3);
+    p_calibration2->setParameter(P2.at<double>(0, 0), 0);
+    p_calibration2->setParameter(P2.at<double>(1, 1), 1);
+    p_calibration2->setParameter(P2.at<double>(0, 2), 2);
+    p_calibration2->setParameter(P2.at<double>(1, 2), 3);
 
     // Update bf
     baselineFocal = stereoBaseline * P1.at<double>(0, 0);

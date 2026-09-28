@@ -36,7 +36,7 @@ namespace core
 
 int Map::reservePlaneId(void)
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
 
     while (planeIndex.count(nextAvailablePlaneId) > 0)
     {

@@ -87,7 +87,7 @@ inline constexpr std::size_t kMaxViolationDetailsPerCycle = 50U;
  *              an emission or repeats prior violation details.
  *
  * @param[in]       entry_in        This cycle's copied cache entry.
- * @param[in,out]   state_in_out    Caller-owned state from the previous
+ * @param[out]      state_in_out    Caller-owned state from the previous
  *                  call; updated in place exactly when the returned
  *                  update's \c emit is true.
  *

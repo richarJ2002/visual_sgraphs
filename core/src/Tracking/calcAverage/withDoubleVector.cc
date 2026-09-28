@@ -33,15 +33,15 @@ namespace core
 {
 
 #ifdef REGISTER_TIMES
-double calcAverage(vector<double> v_times)
+double calcAverage(vector<double> times_in)
 {
     double accum = 0;
-    for (double value : v_times)
+    for (double value : times_in)
     {
         accum += value;
     }
 
-    return accum / v_times.size();
+    return accum / times_in.size();
 }
 #endif
 

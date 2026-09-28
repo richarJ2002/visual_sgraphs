@@ -31,10 +31,10 @@ namespace vs_graphs
 namespace core
 {
 
-bool compFirst(const pair<float, KeyFrame *> &a,
-               const pair<float, KeyFrame *> &b)
+bool compFirst(const pair<float, KeyFrame *> &firstScoredCandidate_in,
+               const pair<float, KeyFrame *> &secondScoredCandidate_in)
 {
-    return a.first > b.first;
+    return firstScoredCandidate_in.first > secondScoredCandidate_in.first;
 }
 
 } // namespace core

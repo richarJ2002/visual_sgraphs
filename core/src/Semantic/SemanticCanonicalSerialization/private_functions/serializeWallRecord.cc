@@ -55,9 +55,9 @@ nlohmann::json serializeWallRecord(const WallRecord &value_in,
     std::vector<EntityRef> ownerRoomRefs = value_in.ownerRoomRefs;
     std::sort(ownerRoomRefs.begin(), ownerRoomRefs.end(), &isEntityRefLess);
     nlohmann::json ownerRoomRefsJson = nlohmann::json::array();
-    for (const EntityRef &ownerRoomRef : ownerRoomRefs)
+    for (const EntityRef &ownerRoomReference : ownerRoomRefs)
     {
-        ownerRoomRefsJson.push_back(serializeEntityRef(ownerRoomRef));
+        ownerRoomRefsJson.push_back(serializeEntityRef(ownerRoomReference));
     }
     json["ownerRoomRefs"] = std::move(ownerRoomRefsJson);
 

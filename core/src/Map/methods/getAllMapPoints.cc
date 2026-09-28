@@ -36,7 +36,7 @@ namespace core
 
 vector<MapPoint *> Map::getAllMapPoints()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return vector<MapPoint *>(mapPoints.begin(), mapPoints.end());
 }
 

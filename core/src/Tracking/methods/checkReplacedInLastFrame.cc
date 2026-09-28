@@ -32,16 +32,17 @@ namespace core
 
 void Tracking::checkReplacedInLastFrame()
 {
-    for (int i = 0; i < lastFrame.N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < lastFrame.keyPointCount;
+         keyPointIndex++)
     {
-        MapPoint *pMP = lastFrame.mapPoints[i];
+        MapPoint *p_mapPoint = lastFrame.mapPoints[keyPointIndex];
 
-        if (pMP)
+        if (p_mapPoint)
         {
-            MapPoint *pRep = pMP->getReplaced();
-            if (pRep)
+            MapPoint *p_rep = p_mapPoint->getReplaced();
+            if (p_rep)
             {
-                lastFrame.mapPoints[i] = pRep;
+                lastFrame.mapPoints[keyPointIndex] = p_rep;
             }
         }
     }

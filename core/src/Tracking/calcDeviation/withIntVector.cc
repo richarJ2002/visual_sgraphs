@@ -33,15 +33,15 @@ namespace core
 {
 
 #ifdef REGISTER_TIMES
-double calcDeviation(vector<int> v_values, double average)
+double calcDeviation(vector<int> values_in, double average_in)
 {
     double accum = 0;
     int    total = 0;
-    for (double value : v_values)
+    for (double value : values_in)
     {
         if (value == 0)
             continue;
-        accum += pow(value - average, 2);
+        accum += pow(value - average_in, 2);
         total++;
     }
     return sqrt(accum / total);

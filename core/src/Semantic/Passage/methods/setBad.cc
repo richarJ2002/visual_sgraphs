@@ -30,8 +30,8 @@ namespace semantic
 
 void Passage::setBad()
 {
-    std::lock_guard<std::mutex> lock(mMutexMap);
-    mbBad = true;
+    std::lock_guard<std::mutex> lock(mapMutex);
+    isFlaggedBad = true;
 }
 
 } // namespace semantic

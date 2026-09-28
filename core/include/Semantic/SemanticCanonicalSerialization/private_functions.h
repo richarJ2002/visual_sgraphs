@@ -186,7 +186,7 @@ bool isAggregateAxiomResultLessTotalOrder(const AggregateAxiomResult &lhs_in,
  *  lexicographically from a sorted copy, confirmedRoomCount,
  *  completeRoomCount, prospectiveRoomCount, livePassageCount,
  *  fullyValidPassageCount, legacy fields in serialized order,
- *  legacyAndConservativeDiverge), used by serializeMapCompletenessResults()
+ *  doLegacyAndConservativeDiverge), used by serializeMapCompletenessResults()
  *  so two results sharing mapId (a genuine collision) still serialize in
  *  one fixed order. */
 bool isMapCompletenessResultLessTotalOrder(const MapCompletenessResult &lhs_in,

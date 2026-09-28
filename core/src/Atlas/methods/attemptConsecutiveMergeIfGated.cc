@@ -40,9 +40,9 @@ namespace core
 
 void Atlas::attemptConsecutiveMergeIfGated(void)
 {
-    /* LOCK ORDER: the caller holds mMutexSemanticUpdate for the whole call.
-     * This method briefly takes mMutexAtlas for attempt-state bookkeeping,
-     * and MergeMapPair takes both maps' mMutexMapUpdate. No path in the
+    /* LOCK ORDER: the caller holds semanticUpdateMutex for the whole call.
+     * This method briefly takes atlasMutex for attempt-state bookkeeping,
+     * and MergeMapPair takes both maps' mapUpdateMutex. No path in the
      * codebase acquires these in reverse, so the order
      * semantic-update -> atlas -> map-update is deadlock-free. */
     Map *p_currentMap = getCurrentMap();
@@ -60,7 +60,7 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         p_params != nullptr ? p_params->mapMerge.minRoomsPerMap : 1U;
     const unsigned int minimumWalls =
         p_params != nullptr ? p_params->mapMerge.minWallsPerMap : 3U;
-    const semantic::SemanticVerify::MapMergeConfig mergeConfig =
+    const semantic::SemanticVerify::MapMergeConfig mergeConfiguration =
         semantic::SemanticVerify::mapMergeConfigFromSystemParams();
 
     for (Map *p_oldMap : getAllMaps())
@@ -91,7 +91,7 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             std::chrono::steady_clock::now();
         MergeAttemptState attemptState;
         {
-            std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
+            std::unique_lock<std::mutex> atlasLock(atlasMutex);
             const auto storedState = consecutiveMergeState.find(oldMapId);
             if (storedState != consecutiveMergeState.end())
             {
@@ -119,17 +119,17 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             attemptState.lastAttemptTime          = now;
             attemptState.contentHashAtLastAttempt = contentHash;
             attemptState.hasEverAttempted         = true;
-            std::unique_lock<std::mutex> atlasLock(mMutexAtlas);
+            std::unique_lock<std::mutex> atlasLock(atlasMutex);
             consecutiveMergeState[oldMapId] = attemptState;
         };
         /* The seed room itself must be anchored: matching side rooms while
          * the prior-link room takes part nowhere would fuse on a
          * coincidental resemblance. Same DEFER as too few anchors. */
         semantic::Room *p_oldFinalRoom = p_oldMap->getFinalRoom();
-        const bool      seedAnchored =
+        const bool      isSeedAnchored =
             p_oldFinalRoom != nullptr && p_oldFinalRoom->hasRoomTag() &&
             anchorTags.count(p_oldFinalRoom->getRoomTag()) > 0U;
-        if (anchorCount < minimumAnchors || !seedAnchored)
+        if (anchorCount < minimumAnchors || !isSeedAnchored)
         {
             recordAttempt();
             std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_"
@@ -186,7 +186,7 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
                 p_currentMap,
                 p_oldMap,
                 transformSim3,
-                mergeConfig);
+                mergeConfiguration);
         recordAttempt();
         std::cout
             << "SG_PIPELINE {\"event\":\"consecutive_merge_attempt\","

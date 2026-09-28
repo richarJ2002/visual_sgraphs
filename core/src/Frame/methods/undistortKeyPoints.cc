@@ -53,33 +53,33 @@ void Frame::undistortKeyPoints()
     }
 
     // Fill matrix with points
-    cv::Mat mat(N, 2, CV_32F);
+    cv::Mat matrix(keyPointCount, 2, CV_32F);
 
-    for (int i = 0; i < N; i++)
+    for (int keyPointIndex = 0; keyPointIndex < keyPointCount; keyPointIndex++)
     {
-        mat.at<float>(i, 0) = keyPoints[i].pt.x;
-        mat.at<float>(i, 1) = keyPoints[i].pt.y;
+        matrix.at<float>(keyPointIndex, 0) = keyPoints[keyPointIndex].pt.x;
+        matrix.at<float>(keyPointIndex, 1) = keyPoints[keyPointIndex].pt.y;
     }
 
     // Undistort points
-    mat = mat.reshape(2);
+    matrix = matrix.reshape(2);
     cv::undistortPoints(
-        mat,
-        mat,
+        matrix,
+        matrix,
         static_cast<camera_models::pinhole::Pinhole *>(p_camera)->toK(),
         distortionCoefficients,
         cv::Mat(),
         calibrationMatrix);
-    mat = mat.reshape(1);
+    matrix = matrix.reshape(1);
 
     // Fill undistorted keypoint vector
-    keyPointsUndistorted.resize(N);
-    for (int i = 0; i < N; i++)
+    keyPointsUndistorted.resize(keyPointCount);
+    for (int keyPointIndex = 0; keyPointIndex < keyPointCount; keyPointIndex++)
     {
-        cv::KeyPoint kp         = keyPoints[i];
-        kp.pt.x                 = mat.at<float>(i, 0);
-        kp.pt.y                 = mat.at<float>(i, 1);
-        keyPointsUndistorted[i] = kp;
+        cv::KeyPoint keyPoint = keyPoints[keyPointIndex];
+        keyPoint.pt.x         = matrix.at<float>(keyPointIndex, 0);
+        keyPoint.pt.y         = matrix.at<float>(keyPointIndex, 1);
+        keyPointsUndistorted[keyPointIndex] = keyPoint;
     }
 }
 

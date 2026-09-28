@@ -30,12 +30,12 @@ namespace semantic
 
 std::optional<int> Passage::getProspectiveRoomId() const
 {
-    std::lock_guard<std::mutex> lock(mMutexGeometry);
-    if (prospectiveRoom == nullptr)
+    std::lock_guard<std::mutex> lock(geometryMutex);
+    if (p_prospectiveRoom == nullptr)
     {
         return std::nullopt;
     }
-    return prospectiveRoom->getId();
+    return p_prospectiveRoom->getId();
 }
 
 } // namespace semantic

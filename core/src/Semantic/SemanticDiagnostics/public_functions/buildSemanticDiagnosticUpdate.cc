@@ -131,8 +131,8 @@ SemanticDiagnosticUpdate
                                    kDiagnosticHeartbeatCycles;
 
     SemanticDiagnosticUpdate update;
-    update.emit = discreteStateChanged || emitHeartbeat;
-    if (!update.emit)
+    update.shouldEmit = discreteStateChanged || emitHeartbeat;
+    if (!update.shouldEmit)
     {
         return update;
     }

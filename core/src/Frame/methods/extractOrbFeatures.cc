@@ -43,25 +43,25 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::extractOrbFeatures(int            flag,
-                               const cv::Mat &imageGray,
-                               const int      x0,
-                               const int      x1)
+void Frame::extractOrbFeatures(int            flag_in,
+                               const cv::Mat &imageGray_in,
+                               const int      x0_in,
+                               const int      x1_in)
 {
-    vector<int> vLapping = {x0, x1};
+    vector<int> lappings = {x0_in, x1_in};
     // Compute ORB based on the flag (0: left, 1: right)
-    if (flag == 0)
-        monoLeft = (*p_orbExtractorLeft)(imageGray,
+    if (flag_in == 0)
+        monoLeft = (*p_orbExtractorLeft)(imageGray_in,
                                          cv::Mat(),
                                          keyPoints,
                                          descriptors,
-                                         vLapping);
+                                         lappings);
     else
-        monoRight = (*p_orbExtractorRight)(imageGray,
+        monoRight = (*p_orbExtractorRight)(imageGray_in,
                                            cv::Mat(),
                                            keyPointsRight,
                                            descriptorsRight,
-                                           vLapping);
+                                           lappings);
 }
 
 } // namespace core

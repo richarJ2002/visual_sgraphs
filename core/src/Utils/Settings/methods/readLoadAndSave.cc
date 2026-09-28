@@ -47,15 +47,15 @@ namespace settings
 
 using namespace std;
 
-void Settings::readLoadAndSave(cv::FileStorage &storage_in)
+void Settings::readLoadAndSave(cv::FileStorage &storage_inout)
 {
     bool found;
 
-    atlasLoadPath = readParameter<string>(storage_in,
+    atlasLoadPath = readParameter<string>(storage_inout,
                                           "System.LoadAtlasFromFile",
                                           found,
                                           false);
-    atlasSavePath = readParameter<string>(storage_in,
+    atlasSavePath = readParameter<string>(storage_inout,
                                           "System.SaveAtlasToFile",
                                           found,
                                           false);

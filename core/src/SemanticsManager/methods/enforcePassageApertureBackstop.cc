@@ -38,7 +38,7 @@ SemanticsManager::PassageSideEnforcementOutcome
     if (p_room_inout == nullptr || p_room_inout->isBad() ||
         p_wall_in == nullptr || p_wall_in->isBad())
     {
-        return PassageSideEnforcementOutcome::NoViolation;
+        return PassageSideEnforcementOutcome::NO_VIOLATION;
     }
 
     for (semantic::Passage *p_passage : allPassages_in)
@@ -129,7 +129,7 @@ SemanticsManager::PassageSideEnforcementOutcome
             /* A distinct confirmed room already owns this wall. Leave it on
              * that owner rather than re-binding it to the near room. */
             p_room_inout->removeWall(p_wall_in);
-            return PassageSideEnforcementOutcome::RemovedUnbound;
+            return PassageSideEnforcementOutcome::REMOVED_UNBOUND;
         }
 
         vs_graphs::core::semantic::Room *p_prospective =
@@ -143,7 +143,7 @@ SemanticsManager::PassageSideEnforcementOutcome
          * kept getting evicted from it every single cycle this sweep re-ran
          * (enforcePassageSideInvariant runs every Run() cycle), leaving it
          * permanently homeless even though Passage#0's own SemMgrSummary
-         * line showed a perfectly live prospectiveRoom the whole time. */
+         * line showed a perfectly live p_prospectiveRoom the whole time. */
         if (p_prospective == p_room_inout)
         {
             continue;
@@ -156,7 +156,7 @@ SemanticsManager::PassageSideEnforcementOutcome
                       << " at semantic::Passage#" << p_passage->getId()
                       << " has no opposite stable room; left unbound."
                       << std::endl;
-            return PassageSideEnforcementOutcome::RemovedUnbound;
+            return PassageSideEnforcementOutcome::REMOVED_UNBOUND;
         }
 
         p_room_inout->removeWall(p_wall_in);
@@ -168,7 +168,7 @@ SemanticsManager::PassageSideEnforcementOutcome
         std::cout << "[SemMgr] Redirected far-side Wall#" << p_wall_in->getId()
                   << " to prospective semantic::Room#" << p_prospective->getId()
                   << "." << std::endl;
-        return PassageSideEnforcementOutcome::Rerouted;
+        return PassageSideEnforcementOutcome::REROUTED;
     }
 
     /* No CONFIRMED passage caught this wall -- but confirmation lags real
@@ -178,7 +178,7 @@ SemanticsManager::PassageSideEnforcementOutcome
      * re-check sweep (enforcePassageSideInvariant) catches a wall that slips
      * in during that window just as reliably as it catches one that slips in
      * against an already-confirmed passage. */
-    for (const OpenPassageEvidence &evidence : openPassageEvidence_)
+    for (const OpenPassageEvidence &evidence : openPassageEvidence)
     {
         if (!segmentCrossesOpenPassageEvidence(
                 p_room_inout->getCentroid(),
@@ -229,10 +229,10 @@ SemanticsManager::PassageSideEnforcementOutcome
                           : -1)
                   << "); removed from semantic::Room#" << p_room_inout->getId()
                   << " pending confirmation." << std::endl;
-        return PassageSideEnforcementOutcome::RemovedUnbound;
+        return PassageSideEnforcementOutcome::REMOVED_UNBOUND;
     }
 
-    return PassageSideEnforcementOutcome::NoViolation;
+    return PassageSideEnforcementOutcome::NO_VIOLATION;
 }
 
 } // namespace core

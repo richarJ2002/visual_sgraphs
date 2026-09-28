@@ -36,74 +36,77 @@ namespace core
 {
 
 bool LoopClosing::detectCommonRegionsFromBoW(
-    std::vector<KeyFrame *> &vpBowCand,
-    KeyFrame               *&pMatchedKF2,
-    KeyFrame               *&pLastCurrentKF,
-    g2o::Sim3               &g2oScw,
-    int                     &nNumCoincidences,
-    std::vector<MapPoint *> &vpMPs,
-    std::vector<MapPoint *> &vpMatchedMPs)
+    std::vector<KeyFrame *> &bowCandidates_in,
+    KeyFrame               *&matchedKeyFrame_out,
+    KeyFrame               *&lastCurrentKeyFrame_out,
+    g2o::Sim3               &g2oScw_out,
+    int                     &countCoincidenceCount_out,
+    std::vector<MapPoint *> &mapPoints_out,
+    std::vector<MapPoint *> &matchedMapPoints_out)
 {
-    int nBoWMatches     = 20;
-    int nBoWInliers     = 15;
-    int nSim3Inliers    = 20;
-    int nProjMatches    = 50;
-    int nProjOptMatches = 80;
+    int bowMatchCount           = 20;
+    int bowInlierCount          = 15;
+    int nSim3Inliers            = 20;
+    int projectionMatchCount    = 50;
+    int projectionOptMatchCount = 80;
 
-    set<KeyFrame *> spConnectedKeyFrames = p_currentKF->getConnectedKeyFrames();
+    set<KeyFrame *> connectedKeyFrames = p_currentKF->getConnectedKeyFrames();
 
-    int nNumCovisibles = 10;
+    int countCovisibleCount = 10;
 
-    ORBmatcher matcherBoW(0.9, true);
+    ORBmatcher matcherBow(0.9, true);
     ORBmatcher matcher(0.75, true);
 
     // Varibles to select the best numbe
-    KeyFrame               *pBestMatchedKF;
-    int                     nBestMatchesReproj   = 0;
-    int                     nBestNumCoindicendes = 0;
+    KeyFrame               *p_bestMatchedKeyFrame;
+    int                     bestMatchesReprojCount    = 0;
+    int                     bestCountCoindicendeCount = 0;
     g2o::Sim3               g2oBestScw;
-    std::vector<MapPoint *> vpBestMapPoints;
-    std::vector<MapPoint *> vpBestMatchedMapPoints;
+    std::vector<MapPoint *> bestMapPoints;
+    std::vector<MapPoint *> bestMatchedMapPoints;
 
-    int         numCandidates = vpBowCand.size();
-    vector<int> vnStage(numCandidates, 0);
-    vector<int> vnMatchesStage(numCandidates, 0);
+    int         candidateCount = bowCandidates_in.size();
+    vector<int> stageCounts(candidateCount, 0);
+    vector<int> matchStageCounts(candidateCount, 0);
 
     int index = 0;
     // Verbose::PrintMess("BoW candidates: There are " +
     // to_string(vpBowCand.size()) + " possible candidates ",
     // Verbose::VERBOSITY_DEBUG);
-    for (KeyFrame *pKFi : vpBowCand)
+    for (KeyFrame *p_keyFrame : bowCandidates_in)
     {
-        if (!pKFi || pKFi->isBad())
+        if (!p_keyFrame || p_keyFrame->isBad())
             continue;
 
-        // std::cout << "KF candidate: " << pKFi->mnId << std::endl;
+        // std::cout << "KF candidate: " << pKFi->id << std::endl;
         // Current KF against KF with covisibles version
-        std::vector<KeyFrame *> vpCovKFi =
-            pKFi->getBestCovisibilityKeyFrames(nNumCovisibles);
-        if (vpCovKFi.empty())
+        std::vector<KeyFrame *> covisibleKeyFrames =
+            p_keyFrame->getBestCovisibilityKeyFrames(countCovisibleCount);
+        if (covisibleKeyFrames.empty())
         {
             // std::cout << "Covisible list empty" << std::endl;
-            vpCovKFi.push_back(pKFi);
+            covisibleKeyFrames.push_back(p_keyFrame);
         }
         else
         {
-            vpCovKFi.push_back(vpCovKFi[0]);
-            vpCovKFi[0] = pKFi;
+            covisibleKeyFrames.push_back(covisibleKeyFrames[0]);
+            covisibleKeyFrames[0] = p_keyFrame;
         }
 
-        bool bAbortByNearKF = false;
-        for (int j = 0; j < vpCovKFi.size(); ++j)
+        bool isAbortedByNearKeyFrame = false;
+        for (int covisibleKeyFrameIndex = 0;
+             covisibleKeyFrameIndex < covisibleKeyFrames.size();
+             ++covisibleKeyFrameIndex)
         {
-            if (spConnectedKeyFrames.find(vpCovKFi[j]) !=
-                spConnectedKeyFrames.end())
+            if (connectedKeyFrames.find(
+                    covisibleKeyFrames[covisibleKeyFrameIndex]) !=
+                connectedKeyFrames.end())
             {
-                bAbortByNearKF = true;
+                isAbortedByNearKeyFrame = true;
                 break;
             }
         }
-        if (bAbortByNearKF)
+        if (isAbortedByNearKeyFrame)
         {
             // std::cout << "Check BoW aborted because is close to the matched
             // one " << std::endl;
@@ -112,91 +115,106 @@ bool LoopClosing::detectCommonRegionsFromBoW(
         // std::cout << "Check BoW continue because is far to the matched one "
         // << std::endl;
 
-        std::vector<std::vector<MapPoint *>> vvpMatchedMPs;
-        vvpMatchedMPs.resize(vpCovKFi.size());
-        std::set<MapPoint *> spMatchedMPi;
+        std::vector<std::vector<MapPoint *>> vvpMatchedMapPoints;
+        vvpMatchedMapPoints.resize(covisibleKeyFrames.size());
+        std::set<MapPoint *> matchedMapPoints;
         int                  numBoWMatches = 0;
 
-        KeyFrame *pMostBoWMatchesKF  = pKFi;
-        int       nMostBoWNumMatches = 0;
+        KeyFrame *p_mostBowMatchesKeyFrame = p_keyFrame;
+        int       mostBowCountMatchCount   = 0;
 
-        std::vector<MapPoint *> vpMatchedPoints =
+        std::vector<MapPoint *> matchedPoints =
             std::vector<MapPoint *>(p_currentKF->getMapPointMatches().size(),
                                     static_cast<MapPoint *>(nullptr));
-        std::vector<KeyFrame *> vpKeyFrameMatchedMP =
+        std::vector<KeyFrame *> keyFrameMatchedMapPoints =
             std::vector<KeyFrame *>(p_currentKF->getMapPointMatches().size(),
                                     static_cast<KeyFrame *>(nullptr));
 
-        int nIndexMostBoWMatchesKF = 0;
-        for (int j = 0; j < vpCovKFi.size(); ++j)
+        int indexMostBowMatchesKeyFrameCount = 0;
+        for (int covisibleKeyFrameIndex = 0;
+             covisibleKeyFrameIndex < covisibleKeyFrames.size();
+             ++covisibleKeyFrameIndex)
         {
-            if (!vpCovKFi[j] || vpCovKFi[j]->isBad())
+            if (!covisibleKeyFrames[covisibleKeyFrameIndex] ||
+                covisibleKeyFrames[covisibleKeyFrameIndex]->isBad())
                 continue;
 
-            int num = matcherBoW.searchByBoW(p_currentKF,
-                                             vpCovKFi[j],
-                                             vvpMatchedMPs[j]);
-            if (num > nMostBoWNumMatches)
+            int count = matcherBow.searchByBoW(
+                p_currentKF,
+                covisibleKeyFrames[covisibleKeyFrameIndex],
+                vvpMatchedMapPoints[covisibleKeyFrameIndex]);
+            if (count > mostBowCountMatchCount)
             {
-                nMostBoWNumMatches     = num;
-                nIndexMostBoWMatchesKF = j;
+                mostBowCountMatchCount           = count;
+                indexMostBowMatchesKeyFrameCount = covisibleKeyFrameIndex;
             }
         }
 
-        for (int j = 0; j < vpCovKFi.size(); ++j)
+        for (int covisibleKeyFrameIndex = 0;
+             covisibleKeyFrameIndex < covisibleKeyFrames.size();
+             ++covisibleKeyFrameIndex)
         {
-            for (int k = 0; k < vvpMatchedMPs[j].size(); ++k)
+            for (int matchIndex = 0;
+                 matchIndex <
+                 vvpMatchedMapPoints[covisibleKeyFrameIndex].size();
+                 ++matchIndex)
             {
-                MapPoint *pMPi_j = vvpMatchedMPs[j][k];
-                if (!pMPi_j || pMPi_j->isBad())
+                MapPoint *p_matchedMapPoint =
+                    vvpMatchedMapPoints[covisibleKeyFrameIndex][matchIndex];
+                if (!p_matchedMapPoint || p_matchedMapPoint->isBad())
                     continue;
 
-                if (spMatchedMPi.find(pMPi_j) == spMatchedMPi.end())
+                if (matchedMapPoints.find(p_matchedMapPoint) ==
+                    matchedMapPoints.end())
                 {
-                    spMatchedMPi.insert(pMPi_j);
+                    matchedMapPoints.insert(p_matchedMapPoint);
                     numBoWMatches++;
 
-                    vpMatchedPoints[k]     = pMPi_j;
-                    vpKeyFrameMatchedMP[k] = vpCovKFi[j];
+                    matchedPoints[matchIndex] = p_matchedMapPoint;
+                    keyFrameMatchedMapPoints[matchIndex] =
+                        covisibleKeyFrames[covisibleKeyFrameIndex];
                 }
             }
         }
 
         // pMostBoWMatchesKF = vpCovKFi[pMostBoWMatchesKF];
 
-        if (numBoWMatches >= nBoWMatches) // TODO pick a good threshold
+        if (numBoWMatches >= bowMatchCount) // TODO pick a good threshold
         {
             // Geometric validation
-            bool bFixedScale = fixScale;
+            bool isFixedScale = isScaleFixed;
             if (p_tracker->sensor == System::IMU_MONOCULAR &&
                 !p_currentKF->getMap()->getInertialBA2())
-                bFixedScale = false;
+                isFixedScale = false;
 
             Sim3Solver solver = Sim3Solver(p_currentKF,
-                                           pMostBoWMatchesKF,
-                                           vpMatchedPoints,
-                                           bFixedScale,
-                                           vpKeyFrameMatchedMP);
+                                           p_mostBowMatchesKeyFrame,
+                                           matchedPoints,
+                                           isFixedScale,
+                                           keyFrameMatchedMapPoints);
             solver.setRansacParameters(0.99,
-                                       nBoWInliers,
+                                       bowInlierCount,
                                        300); // at least 15 inliers
 
-            bool            bNoMore = false;
-            vector<bool>    vbInliers;
-            int             nInliers;
-            bool            bConverge = false;
+            bool            areIterationsExhausted = false;
+            vector<bool>    inliersFlags;
+            int             inlierCount;
+            bool            hasConverged = false;
             Eigen::Matrix4f mTcm;
-            while (!bConverge && !bNoMore)
+            while (!hasConverged && !areIterationsExhausted)
             {
-                mTcm =
-                    solver.iterate(20, bNoMore, vbInliers, nInliers, bConverge);
+                mTcm = solver.iterate(20,
+                                      areIterationsExhausted,
+                                      inliersFlags,
+                                      inlierCount,
+                                      hasConverged);
                 // Verbose::PrintMess("BoW guess: Solver achieve " +
                 // to_string(nInliers) + " geometrical inliers among " +
                 // to_string(nBoWInliers) + " BoW matches",
                 // Verbose::VERBOSITY_DEBUG);
             }
 
-            if (bConverge)
+            if (hasConverged)
             {
                 // std::cout << "Check BoW: SolverSim3 converged" << std::endl;
 
@@ -205,30 +223,35 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                 // to_string(nBoWInliers) + " BoW matches",
                 // Verbose::VERBOSITY_DEBUG);
                 //  Match by reprojection
-                vpCovKFi.clear();
-                vpCovKFi = pMostBoWMatchesKF->getBestCovisibilityKeyFrames(
-                    nNumCovisibles);
-                vpCovKFi.push_back(pMostBoWMatchesKF);
-                set<KeyFrame *> spCheckKFs(vpCovKFi.begin(), vpCovKFi.end());
+                covisibleKeyFrames.clear();
+                covisibleKeyFrames =
+                    p_mostBowMatchesKeyFrame->getBestCovisibilityKeyFrames(
+                        countCovisibleCount);
+                covisibleKeyFrames.push_back(p_mostBowMatchesKeyFrame);
+                set<KeyFrame *> checkKeyFrames(covisibleKeyFrames.begin(),
+                                               covisibleKeyFrames.end());
 
                 // std::cout << "There are " << vpCovKFi.size() <<" near KFs" <<
                 // std::endl;
 
-                set<MapPoint *>    spMapPoints;
-                vector<MapPoint *> vpMapPoints;
-                vector<KeyFrame *> vpKeyFrames;
-                for (KeyFrame *pCovKFi : vpCovKFi)
+                set<MapPoint *>    mapPoints;
+                vector<MapPoint *> candidateMapPoints;
+                vector<KeyFrame *> keyFrames;
+                for (KeyFrame *p_covisibleKeyFrame : covisibleKeyFrames)
                 {
-                    for (MapPoint *pCovMPij : pCovKFi->getMapPointMatches())
+                    for (MapPoint *p_covisibleMapPoint :
+                         p_covisibleKeyFrame->getMapPointMatches())
                     {
-                        if (!pCovMPij || pCovMPij->isBad())
+                        if (!p_covisibleMapPoint ||
+                            p_covisibleMapPoint->isBad())
                             continue;
 
-                        if (spMapPoints.find(pCovMPij) == spMapPoints.end())
+                        if (mapPoints.find(p_covisibleMapPoint) ==
+                            mapPoints.end())
                         {
-                            spMapPoints.insert(pCovMPij);
-                            vpMapPoints.push_back(pCovMPij);
-                            vpKeyFrames.push_back(pCovKFi);
+                            mapPoints.insert(p_covisibleMapPoint);
+                            candidateMapPoints.push_back(p_covisibleMapPoint);
+                            keyFrames.push_back(p_covisibleKeyFrame);
                         }
                     }
                 }
@@ -240,55 +263,61 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                                solver.getEstimatedTranslation().cast<double>(),
                                (double)solver.getEstimatedScale());
                 g2o::Sim3 gSmw(
-                    pMostBoWMatchesKF->getRotation().cast<double>(),
-                    pMostBoWMatchesKF->getTranslation().cast<double>(),
+                    p_mostBowMatchesKeyFrame->getRotation().cast<double>(),
+                    p_mostBowMatchesKeyFrame->getTranslation().cast<double>(),
                     1.0);
                 g2o::Sim3 gScw = gScm * gSmw; // Similarity matrix of current
                                               // from the world position
                 Sophus::Sim3f correctedPose =
                     utils::converter::Converter::toSophus(gScw);
 
-                vector<MapPoint *> vpMatchedMP;
-                vpMatchedMP.resize(p_currentKF->getMapPointMatches().size(),
-                                   static_cast<MapPoint *>(nullptr));
-                vector<KeyFrame *> vpMatchedKF;
-                vpMatchedKF.resize(p_currentKF->getMapPointMatches().size(),
-                                   static_cast<KeyFrame *>(nullptr));
-                int numProjMatches = matcher.searchByProjection(p_currentKF,
-                                                                correctedPose,
-                                                                vpMapPoints,
-                                                                vpKeyFrames,
-                                                                vpMatchedMP,
-                                                                vpMatchedKF,
-                                                                8,
-                                                                1.5);
+                vector<MapPoint *> bowMatchedMapPoints;
+                bowMatchedMapPoints.resize(
+                    p_currentKF->getMapPointMatches().size(),
+                    static_cast<MapPoint *>(nullptr));
+                vector<KeyFrame *> matchedKeyFrames;
+                matchedKeyFrames.resize(
+                    p_currentKF->getMapPointMatches().size(),
+                    static_cast<KeyFrame *>(nullptr));
+                int numProjMatches =
+                    matcher.searchByProjection(p_currentKF,
+                                               correctedPose,
+                                               candidateMapPoints,
+                                               keyFrames,
+                                               bowMatchedMapPoints,
+                                               matchedKeyFrames,
+                                               8,
+                                               1.5);
                 // cout <<"BoW: " << numProjMatches << " matches between " <<
                 // vpMapPoints.size() << " points with coarse Sim3" << endl;
 
-                if (numProjMatches >= nProjMatches)
+                if (numProjMatches >= projectionMatchCount)
                 {
                     // Optimize Sim3 transformation with every matches
-                    Eigen::Matrix<double, 7, 7> mHessian7x7;
+                    Eigen::Matrix<double, 7, 7> hessian7x7;
 
-                    bool bFixedScale = fixScale;
+                    bool isFixedScale = isScaleFixed;
                     if (p_tracker->sensor == System::IMU_MONOCULAR &&
                         !p_currentKF->getMap()->getInertialBA2())
-                        bFixedScale = false;
+                        isFixedScale = false;
 
-                    int numOptMatches = Optimizer::optimizeSim3(p_currentKF,
-                                                                pKFi,
-                                                                vpMatchedMP,
-                                                                gScm,
-                                                                10,
-                                                                fixScale,
-                                                                mHessian7x7,
-                                                                true);
+                    int optMatchCount =
+                        Optimizer::optimizeSim3(p_currentKF,
+                                                p_keyFrame,
+                                                bowMatchedMapPoints,
+                                                gScm,
+                                                10,
+                                                isScaleFixed,
+                                                hessian7x7,
+                                                true);
 
-                    if (numOptMatches >= nSim3Inliers)
+                    if (optMatchCount >= nSim3Inliers)
                     {
                         g2o::Sim3 gSmw(
-                            pMostBoWMatchesKF->getRotation().cast<double>(),
-                            pMostBoWMatchesKF->getTranslation().cast<double>(),
+                            p_mostBowMatchesKeyFrame->getRotation()
+                                .cast<double>(),
+                            p_mostBowMatchesKeyFrame->getTranslation()
+                                .cast<double>(),
                             1.0);
                         g2o::Sim3 gScw =
                             gScm * gSmw; // Similarity matrix of current from
@@ -296,114 +325,126 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                         Sophus::Sim3f correctedPose =
                             utils::converter::Converter::toSophus(gScw);
 
-                        vector<MapPoint *> vpMatchedMP;
-                        vpMatchedMP.resize(
+                        vector<MapPoint *> bowMatchedMapPoints;
+                        bowMatchedMapPoints.resize(
                             p_currentKF->getMapPointMatches().size(),
                             static_cast<MapPoint *>(nullptr));
-                        int numProjOptMatches =
+                        int optimizedProjectionMatchCount =
                             matcher.searchByProjection(p_currentKF,
                                                        correctedPose,
-                                                       vpMapPoints,
-                                                       vpMatchedMP,
+                                                       candidateMapPoints,
+                                                       bowMatchedMapPoints,
                                                        5,
                                                        1.0);
 
-                        if (numProjOptMatches >= nProjOptMatches)
+                        if (optimizedProjectionMatchCount >=
+                            projectionOptMatchCount)
                         {
-                            int max_x = -1, min_x = 1000000;
-                            int max_y = -1, min_y = 1000000;
-                            for (MapPoint *pMPi : vpMatchedMP)
+                            int maximumX = -1, minimumX = 1000000;
+                            int maximumY = -1, minimumY = 1000000;
+                            for (MapPoint *p_mapPoint : bowMatchedMapPoints)
                             {
-                                if (!pMPi || pMPi->isBad())
+                                if (!p_mapPoint || p_mapPoint->isBad())
                                 {
                                     continue;
                                 }
 
                                 tuple<size_t, size_t> indexes =
-                                    pMPi->getIndexInKeyFrame(pKFi);
+                                    p_mapPoint->getIndexInKeyFrame(p_keyFrame);
                                 int index = get<0>(indexes);
                                 if (index >= 0)
                                 {
-                                    int coord_x =
-                                        pKFi->keyPointsUndistorted[index].pt.x;
-                                    if (coord_x < min_x)
+                                    int coordinateX =
+                                        p_keyFrame->keyPointsUndistorted[index]
+                                            .pt.x;
+                                    if (coordinateX < minimumX)
                                     {
-                                        min_x = coord_x;
+                                        minimumX = coordinateX;
                                     }
-                                    if (coord_x > max_x)
+                                    if (coordinateX > maximumX)
                                     {
-                                        max_x = coord_x;
+                                        maximumX = coordinateX;
                                     }
-                                    int coord_y =
-                                        pKFi->keyPointsUndistorted[index].pt.y;
-                                    if (coord_y < min_y)
+                                    int coordinateY =
+                                        p_keyFrame->keyPointsUndistorted[index]
+                                            .pt.y;
+                                    if (coordinateY < minimumY)
                                     {
-                                        min_y = coord_y;
+                                        minimumY = coordinateY;
                                     }
-                                    if (coord_y > max_y)
+                                    if (coordinateY > maximumY)
                                     {
-                                        max_y = coord_y;
+                                        maximumY = coordinateY;
                                     }
                                 }
                             }
 
-                            int                nNumKFs = 0;
+                            int                countKeyFrameCount = 0;
                             // vpMatchedMPs = vpMatchedMP;
                             // vpMPs = vpMapPoints;
                             //  Check the Sim3 transformation with the current
                             //  KeyFrame covisibles
-                            vector<KeyFrame *> vpCurrentCovKFs =
+                            vector<KeyFrame *> currentCovisibleKeyFrames =
                                 p_currentKF->getBestCovisibilityKeyFrames(
-                                    nNumCovisibles);
+                                    countCovisibleCount);
 
-                            int j = 0;
-                            while (nNumKFs < 3 && j < vpCurrentCovKFs.size())
+                            int covisibleKeyFrameIndex = 0;
+                            while (countKeyFrameCount < 3 &&
+                                   covisibleKeyFrameIndex <
+                                       currentCovisibleKeyFrames.size())
                             {
-                                KeyFrame    *pKFj = vpCurrentCovKFs[j];
+                                KeyFrame *p_currentCovisibleKeyFrame =
+                                    currentCovisibleKeyFrames
+                                        [covisibleKeyFrameIndex];
                                 Sophus::SE3d mTjc =
-                                    (pKFj->getPose() *
+                                    (p_currentCovisibleKeyFrame->getPose() *
                                      p_currentKF->getPoseInverse())
                                         .cast<double>();
-                                g2o::Sim3          gSjc(mTjc.unit_quaternion(),
+                                g2o::Sim3 gSjc(mTjc.unit_quaternion(),
                                                mTjc.translation(),
                                                1.0);
-                                g2o::Sim3          gSjw = gSjc * gScw;
-                                int                numProjMatches_j = 0;
-                                vector<MapPoint *> vpMatchedMPs_j;
-                                bool bValid = detectCommonRegionsFromLastKF(
-                                    pKFj,
-                                    pMostBoWMatchesKF,
+                                g2o::Sim3 gSjw = gSjc * gScw;
+                                int       covisibleProjectionMatchCount = 0;
+                                vector<MapPoint *> covisibleMatchedMapPoints;
+                                bool isValid = detectCommonRegionsFromLastKF(
+                                    p_currentCovisibleKeyFrame,
+                                    p_mostBowMatchesKeyFrame,
                                     gSjw,
-                                    numProjMatches_j,
-                                    vpMapPoints,
-                                    vpMatchedMPs_j);
+                                    covisibleProjectionMatchCount,
+                                    candidateMapPoints,
+                                    covisibleMatchedMapPoints);
 
-                                if (bValid)
+                                if (isValid)
                                 {
-                                    Sophus::SE3f Tc_w  = p_currentKF->getPose();
-                                    Sophus::SE3f Tw_cj = pKFj->getPoseInverse();
-                                    Sophus::SE3f Tc_cj = Tc_w * Tw_cj;
-                                    Eigen::Vector3f vector_dist =
+                                    Sophus::SE3f Tc_w = p_currentKF->getPose();
+                                    Sophus::SE3f Tw_cj =
+                                        p_currentCovisibleKeyFrame
+                                            ->getPoseInverse();
+                                    Sophus::SE3f    Tc_cj = Tc_w * Tw_cj;
+                                    Eigen::Vector3f vectorDistance =
                                         Tc_cj.translation();
-                                    nNumKFs++;
+                                    countKeyFrameCount++;
                                 }
-                                j++;
+                                covisibleKeyFrameIndex++;
                             }
 
-                            if (nNumKFs < 3)
+                            if (countKeyFrameCount < 3)
                             {
-                                vnStage[index]        = 8;
-                                vnMatchesStage[index] = nNumKFs;
+                                stageCounts[index]      = 8;
+                                matchStageCounts[index] = countKeyFrameCount;
                             }
 
-                            if (nBestMatchesReproj < numProjOptMatches)
+                            if (bestMatchesReprojCount <
+                                optimizedProjectionMatchCount)
                             {
-                                nBestMatchesReproj     = numProjOptMatches;
-                                nBestNumCoindicendes   = nNumKFs;
-                                pBestMatchedKF         = pMostBoWMatchesKF;
-                                g2oBestScw             = gScw;
-                                vpBestMapPoints        = vpMapPoints;
-                                vpBestMatchedMapPoints = vpMatchedMP;
+                                bestMatchesReprojCount =
+                                    optimizedProjectionMatchCount;
+                                bestCountCoindicendeCount = countKeyFrameCount;
+                                p_bestMatchedKeyFrame =
+                                    p_mostBowMatchesKeyFrame;
+                                g2oBestScw           = gScw;
+                                bestMapPoints        = candidateMapPoints;
+                                bestMatchedMapPoints = bowMatchedMapPoints;
                             }
                         }
                     }
@@ -413,28 +454,29 @@ bool LoopClosing::detectCommonRegionsFromBoW(
         index++;
     }
 
-    if (nBestMatchesReproj > 0)
+    if (bestMatchesReprojCount > 0)
     {
-        pLastCurrentKF   = p_currentKF;
-        nNumCoincidences = nBestNumCoindicendes;
-        pMatchedKF2      = pBestMatchedKF;
-        pMatchedKF2->setNotErase();
-        g2oScw       = g2oBestScw;
-        vpMPs        = vpBestMapPoints;
-        vpMatchedMPs = vpBestMatchedMapPoints;
+        lastCurrentKeyFrame_out   = p_currentKF;
+        countCoincidenceCount_out = bestCountCoindicendeCount;
+        matchedKeyFrame_out       = p_bestMatchedKeyFrame;
+        matchedKeyFrame_out->setNotErase();
+        g2oScw_out           = g2oBestScw;
+        mapPoints_out        = bestMapPoints;
+        matchedMapPoints_out = bestMatchedMapPoints;
 
-        return nNumCoincidences >= 3;
+        return countCoincidenceCount_out >= 3;
     }
     else
     {
-        int maxStage = -1;
-        int maxMatched;
-        for (int i = 0; i < vnStage.size(); ++i)
+        int maximumStage = -1;
+        int maximumMatched;
+        for (int stageCountIndex = 0; stageCountIndex < stageCounts.size();
+             ++stageCountIndex)
         {
-            if (vnStage[i] > maxStage)
+            if (stageCounts[stageCountIndex] > maximumStage)
             {
-                maxStage   = vnStage[i];
-                maxMatched = vnMatchesStage[i];
+                maximumStage   = stageCounts[stageCountIndex];
+                maximumMatched = matchStageCounts[stageCountIndex];
             }
         }
     }

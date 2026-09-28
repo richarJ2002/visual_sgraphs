@@ -76,7 +76,7 @@ class Map
     template <class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-        ar & mnId;
+        ar & id;
         ar & initKeyFrameId;
         ar & maxKeyFrameId;
         ar & bigChangeIndex;
@@ -102,21 +102,21 @@ class Map
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     Map();
-    Map(int initKFid);
+    Map(int initialKeyFrameId_in);
     ~Map();
 
-    void addKeyFrame(KeyFrame *pKF);
-    void addMapPoint(MapPoint *pMP);
-    void addMapPlane(geometric::Plane *pPlane);
-    void addMapMarker(semantic::Marker *pMarker);
-    void addDetectedMapRoom(semantic::Room *room);
-    void addCandidateMapRoom(semantic::Room *room);
+    void addKeyFrame(KeyFrame *p_keyFrame_inout);
+    void addMapPoint(MapPoint *p_mapPoint_in);
+    void addMapPlane(geometric::Plane *p_plane_inout);
+    void addMapMarker(semantic::Marker *p_marker_in);
+    void addDetectedMapRoom(semantic::Room *p_room_in);
+    void addCandidateMapRoom(semantic::Room *p_room_in);
     /*! Atomically moves a room from candidate to detected storage. */
-    void promoteCandidateMapRoom(semantic::Room *room);
-    void addMapFloor(vs_graphs::core::semantic::Floor *pFloor);
-    void addMapDoor(vs_graphs::core::Door *pDoor);
-    void addRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane);
-    void addMapPassage(vs_graphs::core::semantic::Passage *pPassage);
+    void promoteCandidateMapRoom(semantic::Room *p_room_in);
+    void addMapFloor(vs_graphs::core::semantic::Floor *p_floor_inout);
+    void addMapDoor(vs_graphs::core::Door *p_door_in);
+    void addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in);
+    void addMapPassage(vs_graphs::core::semantic::Passage *p_passage_inout);
 
     /*!
      * @brief Reserves a plane identifier that will not be reused by this map.
@@ -132,13 +132,13 @@ class Map
      */
     int reserveFloorId(void);
 
-    void eraseMapPoint(MapPoint *pMP);
-    void eraseKeyFrame(KeyFrame *pKF);
-    void eraseMapPlane(geometric::Plane *pPlane);
-    void eraseMapMarker(semantic::Marker *pMarker);
-    void eraseDetectedMapRoom(semantic::Room *pRoom);
-    void eraseMarkerBasedMapRoom(semantic::Room *pRoom);
-    void eraseRoomWallPlane(vs_graphs::core::geometric::Plane *pPlane);
+    void eraseMapPoint(MapPoint *p_mapPoint_in);
+    void eraseKeyFrame(KeyFrame *p_keyFrame_inout);
+    void eraseMapPlane(geometric::Plane *p_plane_in);
+    void eraseMapMarker(semantic::Marker *p_marker_in);
+    void eraseDetectedMapRoom(semantic::Room *p_room_in);
+    void eraseMarkerBasedMapRoom(semantic::Room *p_room_in);
+    void eraseRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in);
 
     /*!
      * @brief Records the room this map started with (bootstrap entry room).
@@ -168,7 +168,7 @@ class Map
     /*! Returns the next map in the mission chain, if any. */
     Map *getFollowingMap();
 
-    void eraseMapPassage(vs_graphs::core::semantic::Passage *pPassage);
+    void eraseMapPassage(vs_graphs::core::semantic::Passage *p_passage_in);
     void eraseMapFloor(vs_graphs::core::semantic::Floor *p_floor_in);
 
     /*! Clears lookup-only state after every indexed entity was transferred. */
@@ -176,7 +176,7 @@ class Map
 
     void informNewBigChange();
     int  getLastBigChangeIndex();
-    void setReferenceMapPoints(const std::vector<MapPoint *> &vpMPs);
+    void setReferenceMapPoints(const std::vector<MapPoint *> &mapPoints_in);
 
     std::vector<semantic::Room *>                   getAllRooms();
     std::vector<geometric::Plane *>                 getAllPlanes();
@@ -199,11 +199,11 @@ class Map
     /*!
      * @brief       Set the cluster points of the map set by `voxblox_skeleton`
      *
-     * @param[in]   newClusterPoints
+     * @param[in]   newClusterPoints_in
      *              The new cluster points to set
      */
     void setSkeletonClusterPoints(
-        const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints);
+        const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints_in);
 
     /*!
      * @brief       Gets the latest connected Voxblox skeleton edges.
@@ -216,7 +216,7 @@ class Map
      */
     void setSkeletonEdges(
         const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-            &newSkeletonEdges);
+            &newSkeletonEdges_in);
 
     long unsigned     getKeyFrameCount();
     long unsigned int getMarkerCount();
@@ -225,16 +225,16 @@ class Map
     long unsigned int getId();
     long unsigned int getMaxKeyFrameId();
     long unsigned int getInitKeyFrameId();
-    void              setInitKeyFrameId(long unsigned int initKFif);
+    void              setInitKeyFrameId(long unsigned int initialKFif_in);
 
-    KeyFrame                           *getOriginKeyFrame();
-    semantic::Floor                    *getFloorById(int floorId);
-    Door                               *getDoorById(int doorId);
-    geometric::Plane                   *getPlaneById(int planeId);
-    semantic::Marker                   *getMarkerById(int markerId);
-    KeyFrame                           *getKeyFrameById(long unsigned int mnId);
-    vs_graphs::core::semantic::Passage *getPassageById(int passageId);
-    vs_graphs::core::geometric::Plane  *getRoomWallPlaneById(int planeId);
+    KeyFrame         *getOriginKeyFrame();
+    semantic::Floor  *getFloorById(int floorId_in);
+    Door             *getDoorById(int doorId_in);
+    geometric::Plane *getPlaneById(int planeId_in);
+    semantic::Marker *getMarkerById(int markerId_in);
+    KeyFrame         *getKeyFrameById(long unsigned int idCount_in);
+    vs_graphs::core::semantic::Passage *getPassageById(int passageId_in);
+    vs_graphs::core::geometric::Plane  *getRoomWallPlaneById(int planeId_in);
 
     geometric::Plane *getBiggestGroundPlane();
 
@@ -253,14 +253,14 @@ class Map
     /*! Returns the epoch of the coordinate frame containing this map. */
     std::uint64_t getWorldFrameEpoch();
     void          increaseChangeIndex();
-    void          setLastMapChange(int currentChangeId);
+    void          setLastMapChange(int currentChangeId_in);
 
     bool isImuInitialized();
     void setImuInitialized();
 
-    void applyScaledRotation(const Sophus::SE3f &T,
-                             const float         s,
-                             const bool          bScaledVel = false);
+    void applyScaledRotation(const Sophus::SE3f &T_in,
+                             const float         s_in,
+                             const bool          isScaledVelocity_in = false);
 
     bool isInertial();
     void setInertialBA1();
@@ -269,40 +269,40 @@ class Map
     bool getInertialBA2();
     void setInertialSensor();
 
-    void changeId(long unsigned int nId);
+    void changeId(long unsigned int idCount_in);
 
     unsigned int getLowerKeyFrameId();
 
-    void PreSave(
-        std::set<camera_models::geometriccamera::GeometricCamera *> &spCams);
-    void PostLoad(
-        KeyFrameDatabase *pKFDB,
-        ORBVocabulary    *pORBVoc,
+    void preSave(std::set<camera_models::geometriccamera::GeometricCamera *>
+                     &cams_inout);
+    void postLoad(
+        KeyFrameDatabase *p_keyFrameDatabase_inout,
+        ORBVocabulary    *p_orbVocabulary_in,
         map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
-            &mpCams);
+            &cams_inout);
 
     KeyFrame                 *p_firstRegionKeyFrame;
-    std::mutex                mMutexMapUpdate;
+    std::mutex                mapUpdateMutex;
     vector<KeyFrame *>        keyFrameOrigins;
     vector<unsigned long int> backupKeyFrameOriginIds;
 
     // This avoid that two points are created simultaneously in separate threads
     // (id conflict)
-    std::mutex mMutexPointCreation;
+    std::mutex pointCreationMutex;
 
-    bool fail;
+    bool hasFailed;
 
     // Size of the thumbnail (always in power of 2)
     static const int THUMB_WIDTH  = 512;
     static const int THUMB_HEIGHT = 512;
 
-    static long unsigned int nNextId;
+    static long unsigned int nextId;
 
     std::set<long unsigned int> optKeyFrameIds;
     std::set<long unsigned int> fixedKeyFrameIds;
 
   protected:
-    long unsigned int mnId;
+    long unsigned int id;
 
     std::set<semantic::Floor *>                    floors;
     std::set<Door *>                               doors;
@@ -361,7 +361,7 @@ class Map
     int mapChangeNotified;
 
     /*!
-     * Monotonic coordinate-frame epoch. Unlike mnMapChange, ordinary local BA
+     * Monotonic coordinate-frame epoch. Unlike mapChange, ordinary local BA
      * and content updates do not increment it; whole-map rebases do.
      */
     std::uint64_t worldFrameEpoch;
@@ -375,16 +375,16 @@ class Map
     // View of the map in aerial sight (for the AtlasViewer)
     unsigned char *p_thumbnail;
 
-    bool             inUse;
+    bool             isMapInUse;
     bool             hasThumbnail;
-    std::atomic_bool mbBad{false};
+    std::atomic_bool isFlaggedBad{false};
 
     bool isInertialMode;
     bool hasInertialBA1;
     bool hasInertialBA2;
 
     // Mutex
-    std::mutex mMutexMap;
+    std::mutex mapMutex;
 };
 
 } // namespace core

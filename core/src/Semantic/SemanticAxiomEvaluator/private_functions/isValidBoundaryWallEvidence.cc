@@ -65,11 +65,11 @@ namespace semantic
 {
 
 RoomBoundaryWallEvidenceStatus
-    isValidBoundaryWallEvidence(const RawPlaneRef           &wallRef_in,
+    isValidBoundaryWallEvidence(const RawPlaneRef           &wallReference_in,
                                 const RoomRecord            &room_in,
                                 const SemanticGraphSnapshot &snapshot_in)
 {
-    if (wallRef_in.reason != UnavailableReason::NONE)
+    if (wallReference_in.reason != UnavailableReason::NONE)
     {
         /* RawPlaneRef documents
          * reason == NONE exactly when the underlying plane pointer was
@@ -77,40 +77,42 @@ RoomBoundaryWallEvidenceStatus
          * populated data (mapId/wallKey/a real planeType) is an invariant
          * violation and a known contradiction, not the ordinary "nothing
          * there" case. */
-        if (wallRef_in.mapId.has_value() || wallRef_in.wallKey.has_value() ||
-            wallRef_in.planeType != geometric::Plane::PlaneVariant::UNDEFINED)
+        if (wallReference_in.mapId.has_value() ||
+            wallReference_in.wallKey.has_value() ||
+            wallReference_in.planeType !=
+                geometric::Plane::PlaneVariant::UNDEFINED)
         {
             return RoomBoundaryWallEvidenceStatus::INVALID;
         }
         return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
     }
-    if (wallRef_in.planeType != geometric::Plane::PlaneVariant::WALL)
+    if (wallReference_in.planeType != geometric::Plane::PlaneVariant::WALL)
     {
         /* A real, mapped, live plane pointer exists but is the wrong type:
          * a known contradiction, not merely missing evidence. */
         return RoomBoundaryWallEvidenceStatus::INVALID;
     }
-    if (!wallRef_in.isLive)
+    if (!wallReference_in.isLive)
     {
         return RoomBoundaryWallEvidenceStatus::INVALID;
     }
-    if (!wallRef_in.mapId.has_value())
+    if (!wallReference_in.mapId.has_value())
     {
         /* The plane exists and is live/WALL-typed but has no map of its
          * own: same-map/reciprocity cannot be verified either way. */
         return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
     }
-    if (*wallRef_in.mapId != room_in.key.mapId)
+    if (*wallReference_in.mapId != room_in.key.mapId)
     {
         return RoomBoundaryWallEvidenceStatus::INVALID;
     }
-    if (!wallRef_in.wallKey.has_value())
+    if (!wallReference_in.wallKey.has_value())
     {
         return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
     }
-    if (wallRef_in.wallKey->kind != EntityKind::WALL ||
-        wallRef_in.wallKey->mapId != *wallRef_in.mapId ||
-        wallRef_in.wallKey->entityId != wallRef_in.planeId)
+    if (wallReference_in.wallKey->kind != EntityKind::WALL ||
+        wallReference_in.wallKey->mapId != *wallReference_in.mapId ||
+        wallReference_in.wallKey->entityId != wallReference_in.planeId)
     {
         /* The wallKey field itself is internally inconsistent with this
          * same reference's own mapId/planeId/kind: a known contradiction in
@@ -118,11 +120,12 @@ RoomBoundaryWallEvidenceStatus
         return RoomBoundaryWallEvidenceStatus::INVALID;
     }
 
-    if (countWallRecordsWithKey(snapshot_in, *wallRef_in.wallKey) > 1U)
+    if (countWallRecordsWithKey(snapshot_in, *wallReference_in.wallKey) > 1U)
     {
         return RoomBoundaryWallEvidenceStatus::INVALID;
     }
-    if (countMapSnapshotsWithId(snapshot_in, wallRef_in.wallKey->mapId) > 1U)
+    if (countMapSnapshotsWithId(snapshot_in, wallReference_in.wallKey->mapId) >
+        1U)
     {
         /* Which MapSnapshot actually holds
          * this wall is itself ambiguous when its own containing map id is
@@ -134,11 +137,11 @@ RoomBoundaryWallEvidenceStatus
     const WallRecord *p_wall = nullptr;
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
     {
-        if (mapSnapshot.mapId != wallRef_in.wallKey->mapId)
+        if (mapSnapshot.mapId != wallReference_in.wallKey->mapId)
         {
             continue;
         }
-        p_wall = findRecordByKey(mapSnapshot.walls, *wallRef_in.wallKey);
+        p_wall = findRecordByKey(mapSnapshot.walls, *wallReference_in.wallKey);
         break;
     }
     if (p_wall == nullptr)

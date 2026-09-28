@@ -33,7 +33,7 @@ namespace core
 std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
     Atlas::copyRoomContextHistory() const
 {
-    std::lock_guard<std::mutex> contextLock(mRoomContextMutex);
+    std::lock_guard<std::mutex> contextLock(roomContextMutex);
     return roomContextHistory;
 }
 

@@ -24,14 +24,14 @@ namespace core
 namespace IMU
 {
 
-void Bias::copyFrom(Bias &b)
+void Bias::copyFrom(Bias &b_in)
 {
-    bax = b.bax;
-    bay = b.bay;
-    baz = b.baz;
-    bwx = b.bwx;
-    bwy = b.bwy;
-    bwz = b.bwz;
+    bax = b_in.bax;
+    bay = b_in.bay;
+    baz = b_in.baz;
+    bwx = b_in.bwx;
+    bwy = b_in.bwy;
+    bwz = b_in.bwz;
 }
 
 } // namespace IMU

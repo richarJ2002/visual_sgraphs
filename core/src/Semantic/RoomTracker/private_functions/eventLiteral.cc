@@ -28,9 +28,9 @@ namespace core
 namespace semantic
 {
 
-const char *eventLiteral(RoomTrackingEvent event)
+const char *eventLiteral(RoomTrackingEvent event_in)
 {
-    switch (event)
+    switch (event_in)
     {
     case RoomTrackingEvent::FIRST_ROOM_CONFIRMED:
         return "FIRST_ROOM_CONFIRMED";

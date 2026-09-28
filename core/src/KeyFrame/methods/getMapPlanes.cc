@@ -37,7 +37,7 @@ namespace core
 
 vector<geometric::Plane *> KeyFrame::getMapPlanes()
 {
-    unique_lock<mutex> lock(mMutexFeatures);
+    unique_lock<mutex> lock(featuresMutex);
     return mapPlanes;
 }
 

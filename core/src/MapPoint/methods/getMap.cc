@@ -36,7 +36,7 @@ namespace core
 
 Map *MapPoint::getMap()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return p_map;
 }
 

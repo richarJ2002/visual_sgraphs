@@ -33,73 +33,82 @@ namespace vs_graphs
 namespace core
 {
 
-int LoopClosing::findMatchesByProjection(KeyFrame        *pCurrentKF,
-                                         KeyFrame        *pMatchedKFw,
-                                         g2o::Sim3       &g2oScw,
-                                         set<MapPoint *> &spMatchedMPinOrigin,
-                                         vector<MapPoint *> &vpMapPoints,
-                                         vector<MapPoint *> &vpMatchedMapPoints)
+int LoopClosing::findMatchesByProjection(
+    KeyFrame           *p_currentKeyFrame_in,
+    KeyFrame           *p_matchedKFw_in,
+    g2o::Sim3          &g2oScw_in,
+    set<MapPoint *>    &matchedMPinOrigins_in,
+    vector<MapPoint *> &mapPoints_out,
+    vector<MapPoint *> &matchedMapPoints_out)
 {
-    int                nNumCovisibles = 10;
-    vector<KeyFrame *> vpCovKFm =
-        pMatchedKFw->getBestCovisibilityKeyFrames(nNumCovisibles);
-    int nInitialCov = vpCovKFm.size();
-    vpCovKFm.push_back(pMatchedKFw);
-    set<KeyFrame *> spCheckKFs(vpCovKFm.begin(), vpCovKFm.end());
-    set<KeyFrame *> spCurrentCovisbles = pCurrentKF->getConnectedKeyFrames();
-    if (nInitialCov < nNumCovisibles)
+    int                countCovisibleCount = 10;
+    vector<KeyFrame *> covisibleKeyFrames =
+        p_matchedKFw_in->getBestCovisibilityKeyFrames(countCovisibleCount);
+    int initialCovisibleCount = covisibleKeyFrames.size();
+    covisibleKeyFrames.push_back(p_matchedKFw_in);
+    set<KeyFrame *> checkKeyFrames(covisibleKeyFrames.begin(),
+                                   covisibleKeyFrames.end());
+    set<KeyFrame *> currentCovisbles =
+        p_currentKeyFrame_in->getConnectedKeyFrames();
+    if (initialCovisibleCount < countCovisibleCount)
     {
-        for (int i = 0; i < nInitialCov; ++i)
+        for (int covisibleIndex = 0; covisibleIndex < initialCovisibleCount;
+             ++covisibleIndex)
         {
-            vector<KeyFrame *> vpKFs =
-                vpCovKFm[i]->getBestCovisibilityKeyFrames(nNumCovisibles);
-            int nInserted = 0;
-            int j         = 0;
-            while (j < vpKFs.size() && nInserted < nNumCovisibles)
+            vector<KeyFrame *> keyFrames =
+                covisibleKeyFrames[covisibleIndex]
+                    ->getBestCovisibilityKeyFrames(countCovisibleCount);
+            int insertedCount = 0;
+            int j             = 0;
+            while (j < keyFrames.size() && insertedCount < countCovisibleCount)
             {
-                if (spCheckKFs.find(vpKFs[j]) == spCheckKFs.end() &&
-                    spCurrentCovisbles.find(vpKFs[j]) ==
-                        spCurrentCovisbles.end())
+                if (checkKeyFrames.find(keyFrames[j]) == checkKeyFrames.end() &&
+                    currentCovisbles.find(keyFrames[j]) ==
+                        currentCovisbles.end())
                 {
-                    spCheckKFs.insert(vpKFs[j]);
-                    ++nInserted;
+                    checkKeyFrames.insert(keyFrames[j]);
+                    ++insertedCount;
                 }
                 ++j;
             }
-            vpCovKFm.insert(vpCovKFm.end(), vpKFs.begin(), vpKFs.end());
+            covisibleKeyFrames.insert(covisibleKeyFrames.end(),
+                                      keyFrames.begin(),
+                                      keyFrames.end());
         }
     }
-    set<MapPoint *> spMapPoints;
-    vpMapPoints.clear();
-    vpMatchedMapPoints.clear();
-    for (KeyFrame *pKFi : vpCovKFm)
+    set<MapPoint *> mapPoints;
+    mapPoints_out.clear();
+    matchedMapPoints_out.clear();
+    for (KeyFrame *p_keyFrame : covisibleKeyFrames)
     {
-        for (MapPoint *pMPij : pKFi->getMapPointMatches())
+        for (MapPoint *p_candidateMapPoint : p_keyFrame->getMapPointMatches())
         {
-            if (!pMPij || pMPij->isBad())
+            if (!p_candidateMapPoint || p_candidateMapPoint->isBad())
                 continue;
 
-            if (spMapPoints.find(pMPij) == spMapPoints.end())
+            if (mapPoints.find(p_candidateMapPoint) == mapPoints.end())
             {
-                spMapPoints.insert(pMPij);
-                vpMapPoints.push_back(pMPij);
+                mapPoints.insert(p_candidateMapPoint);
+                mapPoints_out.push_back(p_candidateMapPoint);
             }
         }
     }
 
-    Sophus::Sim3f correctedPose = utils::converter::Converter::toSophus(g2oScw);
-    ORBmatcher    matcher(0.9, true);
+    Sophus::Sim3f correctedPose =
+        utils::converter::Converter::toSophus(g2oScw_in);
+    ORBmatcher matcher(0.9, true);
 
-    vpMatchedMapPoints.resize(pCurrentKF->getMapPointMatches().size(),
-                              static_cast<MapPoint *>(nullptr));
-    int num_matches = matcher.searchByProjection(pCurrentKF,
-                                                 correctedPose,
-                                                 vpMapPoints,
-                                                 vpMatchedMapPoints,
-                                                 3,
-                                                 1.5);
+    matchedMapPoints_out.resize(
+        p_currentKeyFrame_in->getMapPointMatches().size(),
+        static_cast<MapPoint *>(nullptr));
+    int matchCount = matcher.searchByProjection(p_currentKeyFrame_in,
+                                                correctedPose,
+                                                mapPoints_out,
+                                                matchedMapPoints_out,
+                                                3,
+                                                1.5);
 
-    return num_matches;
+    return matchCount;
 }
 
 } // namespace core

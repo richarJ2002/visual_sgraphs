@@ -37,16 +37,17 @@ namespace camera_models
 {
 namespace pinhole
 {
-std::istream &operator>>(std::istream &is, Pinhole &pinhole_inout)
+std::istream &operator>>(std::istream &inputStream_inout,
+                         Pinhole      &pinhole_inout)
 {
-    float nextParam;
-    for (size_t i = 0; i < 4; i++)
+    float nextParameter;
+    for (size_t parameterIndex = 0; parameterIndex < 4; parameterIndex++)
     {
-        assert(is.good()); // Make sure the input stream is good
-        is >> nextParam;
-        pinhole_inout.parameters[i] = nextParam;
+        assert(inputStream_inout.good()); // Make sure the input stream is good
+        inputStream_inout >> nextParameter;
+        pinhole_inout.parameters[parameterIndex] = nextParameter;
     }
-    return is;
+    return inputStream_inout;
 }
 } // namespace pinhole
 } // namespace camera_models

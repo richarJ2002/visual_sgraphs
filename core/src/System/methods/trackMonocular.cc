@@ -33,16 +33,16 @@ namespace core
 {
 
 Sophus::SE3f
-    System::trackMonocular(const cv::Mat                        &im,
-                           const double                         &timestamp,
-                           const vector<IMU::Point>             &vImuMeas,
-                           string                                filename,
-                           const std::vector<semantic::Marker *> markers)
+    System::trackMonocular(const cv::Mat                        &image_in,
+                           const double                         &timestamp_in,
+                           const vector<IMU::Point>             &imuMeas_in,
+                           string                                filename_in,
+                           const std::vector<semantic::Marker *> markers_in)
 {
     // Multi-thread to prevent race conditions
     {
-        unique_lock<mutex> lock(mMutexReset);
-        if (shutdownRequested)
+        unique_lock<mutex> lock(resetMutex);
+        if (isShutdownRequested)
             return Sophus::SE3f();
     }
 
@@ -56,18 +56,18 @@ Sophus::SE3f
     }
 
     // Obtain the images
-    cv::Mat imToFeed = im.clone();
-    if (settings_ && settings_->needToResize())
+    cv::Mat imToFeed = image_in.clone();
+    if (p_settings && p_settings->needToResize())
     {
         cv::Mat resizedImage;
-        cv::resize(im, resizedImage, settings_->newImSize());
+        cv::resize(image_in, resizedImage, p_settings->newImSize());
         imToFeed = resizedImage;
     }
 
     // Check mode change
     {
-        unique_lock<mutex> lock(mMutexMode);
-        if (activateLocalizationModeRequested)
+        unique_lock<mutex> lock(modeMutex);
+        if (isLocalizationModeActivationRequested)
         {
             p_localMapper->requestStop();
 
@@ -78,48 +78,50 @@ Sophus::SE3f
             }
 
             p_tracker->informOnlyTracking(true);
-            activateLocalizationModeRequested = false;
+            isLocalizationModeActivationRequested = false;
         }
-        if (deactivateLocalizationModeRequested)
+        if (isLocalizationModeDeactivationRequested)
         {
             p_tracker->informOnlyTracking(false);
             p_localMapper->release();
-            deactivateLocalizationModeRequested = false;
+            isLocalizationModeDeactivationRequested = false;
         }
     }
 
     // Check reset
     {
-        unique_lock<mutex> lock(mMutexReset);
-        if (resetRequested)
+        unique_lock<mutex> lock(resetMutex);
+        if (isResetRequested)
         {
             (void)consumeResetCause(this);
             p_tracker->reset();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
-            resetRequested          = false;
-            resetActiveMapRequested = false;
+            isResetRequested          = false;
+            isResetActiveMapRequested = false;
         }
-        else if (resetActiveMapRequested)
+        else if (isResetActiveMapRequested)
         {
             reportResetAttribution(consumeResetCause(this),
                                    ResetAction::RESET_ACTIVE_MAP_EXECUTION);
             p_tracker->resetActiveMap();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
-            resetActiveMapRequested = false;
+            isResetActiveMapRequested = false;
         }
     }
 
     if (sensor == System::IMU_MONOCULAR)
-        for (size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
-            p_tracker->grabImuData(vImuMeas[i_imu]);
+        for (size_t imuMeasurementIndex = 0;
+             imuMeasurementIndex < imuMeas_in.size();
+             imuMeasurementIndex++)
+            p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]);
 
     Sophus::SE3f Tcw = p_tracker->grabImageMonocular(imToFeed,
-                                                     timestamp,
-                                                     filename,
-                                                     markers,
+                                                     timestamp_in,
+                                                     filename_in,
+                                                     markers_in,
                                                      envRooms);
 
-    unique_lock<mutex> lock2(mMutexState);
+    unique_lock<mutex> lock2(stateMutex);
     trackingState      = p_tracker->state;
     trackedMapPoints   = p_tracker->currentFrame.mapPoints;
     trackedKeyPointsUn = p_tracker->currentFrame.keyPointsUndistorted;

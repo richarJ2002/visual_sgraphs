@@ -253,7 +253,7 @@ void loadSceneCorrespondences(const PlanarTwoViewScene &scene_in,
     std::vector<cv::Point3f> unusedPoints;
     std::vector<bool>        unusedFlags;
 
-    reconstruction_inout.Reconstruct(scene_in.keypointsView1,
+    reconstruction_inout.reconstruct(scene_in.keypointsView1,
                                      scene_in.keypointsView2,
                                      scene_in.matchesView1ToView2,
                                      unusedPose,

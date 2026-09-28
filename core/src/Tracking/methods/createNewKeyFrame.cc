@@ -38,21 +38,21 @@ void Tracking::createNewKeyFrame()
     if (!p_localMapper->setNotStop(true))
         return;
 
-    KeyFrame *pKF = new KeyFrame(currentFrame,
-                                 p_atlas->getCurrentMap(),
-                                 p_keyFrameDatabase);
+    KeyFrame *p_keyFrame = new KeyFrame(currentFrame,
+                                        p_atlas->getCurrentMap(),
+                                        p_keyFrameDatabase);
 
     if (p_atlas->isImuInitialized()) //  || mpLocalMapper->IsInitializing())
-        pKF->isImu = true;
+        p_keyFrame->isImu = true;
 
-    pKF->setNewBias(currentFrame.imuBias);
-    p_referenceKF                    = pKF;
-    currentFrame.p_referenceKeyFrame = pKF;
+    p_keyFrame->setNewBias(currentFrame.imuBias);
+    p_referenceKF                    = p_keyFrame;
+    currentFrame.p_referenceKeyFrame = p_keyFrame;
 
     if (p_lastKeyFrame)
     {
-        pKF->p_prevKF            = p_lastKeyFrame;
-        p_lastKeyFrame->p_nextKF = pKF;
+        p_keyFrame->p_prevKF     = p_lastKeyFrame;
+        p_lastKeyFrame->p_nextKF = p_keyFrame;
     }
     else
         Verbose::printMess("No last KF in KF creation!!",
@@ -63,7 +63,8 @@ void Tracking::createNewKeyFrame()
         sensor == System::IMU_RGBD)
     {
         p_imuPreintegratedFromLastKF =
-            new IMU::Preintegrated(pKF->getImuBias(), pKF->imuCalibration);
+            new IMU::Preintegrated(p_keyFrame->getImuBias(),
+                                   p_keyFrame->imuCalibration);
     }
 
     if (sensor != System::MONOCULAR && sensor != System::IMU_MONOCULAR)
@@ -73,85 +74,90 @@ void Tracking::createNewKeyFrame()
         // We create all those MapPoints whose depth < mThDepth.
         // If there are less than 100 close points we create the 100 closest.
         // Both sensor branches intentionally use the same cap of 100.
-        int maxPoint = 100;
+        int maximumPoint = 100;
         if (sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
-            maxPoint = 100;
+            maximumPoint = 100;
 
-        vector<pair<float, int>> vDepthIdx;
-        int                      N =
-            (currentFrame.Nleft != -1) ? currentFrame.Nleft : currentFrame.N;
-        vDepthIdx.reserve(currentFrame.N);
-        for (int i = 0; i < N; i++)
+        vector<pair<float, int>> depthIndices;
+        int                      N = (currentFrame.leftKeyPointCount != -1)
+                                         ? currentFrame.leftKeyPointCount
+                                         : currentFrame.keyPointCount;
+        depthIndices.reserve(currentFrame.keyPointCount);
+        for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
         {
-            float z = currentFrame.depths[i];
+            float z = currentFrame.depths[keyPointIndex];
             if (z > 0)
-                vDepthIdx.push_back(make_pair(z, i));
+                depthIndices.push_back(make_pair(z, keyPointIndex));
         }
 
-        if (!vDepthIdx.empty())
+        if (!depthIndices.empty())
         {
-            sort(vDepthIdx.begin(), vDepthIdx.end());
+            sort(depthIndices.begin(), depthIndices.end());
 
-            int nPoints = 0;
-            for (size_t j = 0; j < vDepthIdx.size(); j++)
+            int pointCount = 0;
+            for (size_t depthIndexIndex = 0;
+                 depthIndexIndex < depthIndices.size();
+                 depthIndexIndex++)
             {
-                bool bCreateNew = false;
-                int  i          = vDepthIdx[j].second;
+                bool shouldCreateNewPoint = false;
+                int  keyPointIndex = depthIndices[depthIndexIndex].second;
 
-                MapPoint *pMP = currentFrame.mapPoints[i];
-                if (!pMP)
-                    bCreateNew = true;
-                else if (pMP->getObservationCount() < 1)
+                MapPoint *p_mapPoint = currentFrame.mapPoints[keyPointIndex];
+                if (!p_mapPoint)
+                    shouldCreateNewPoint = true;
+                else if (p_mapPoint->getObservationCount() < 1)
                 {
-                    bCreateNew = true;
-                    currentFrame.mapPoints[i] =
+                    shouldCreateNewPoint = true;
+                    currentFrame.mapPoints[keyPointIndex] =
                         static_cast<MapPoint *>(nullptr);
                 }
 
-                if (bCreateNew)
+                if (shouldCreateNewPoint)
                 {
                     Eigen::Vector3f x3D;
 
-                    if (currentFrame.Nleft == -1)
-                        currentFrame.unprojectStereo(i, x3D);
+                    if (currentFrame.leftKeyPointCount == -1)
+                        currentFrame.unprojectStereo(keyPointIndex, x3D);
                     else
-                        x3D = currentFrame.unprojectStereoFishEye(i);
+                        x3D =
+                            currentFrame.unprojectStereoFishEye(keyPointIndex);
 
-                    MapPoint *pNewMP =
-                        new MapPoint(x3D, pKF, p_atlas->getCurrentMap());
-                    pNewMP->addObservation(pKF, i);
+                    MapPoint *p_newMapPoint =
+                        new MapPoint(x3D, p_keyFrame, p_atlas->getCurrentMap());
+                    p_newMapPoint->addObservation(p_keyFrame, keyPointIndex);
 
                     // Check if it is a stereo observation in order to not
                     // duplicate mappoints
-                    if (currentFrame.Nleft != -1 &&
-                        currentFrame.leftToRightMatches[i] >= 0)
+                    if (currentFrame.leftKeyPointCount != -1 &&
+                        currentFrame.leftToRightMatches[keyPointIndex] >= 0)
                     {
-                        currentFrame
-                            .mapPoints[currentFrame.Nleft +
-                                       currentFrame.leftToRightMatches[i]] =
-                            pNewMP;
-                        pNewMP->addObservation(
-                            pKF,
-                            currentFrame.Nleft +
-                                currentFrame.leftToRightMatches[i]);
-                        pKF->addMapPoint(
-                            pNewMP,
-                            currentFrame.Nleft +
-                                currentFrame.leftToRightMatches[i]);
+                        currentFrame.mapPoints
+                            [currentFrame.leftKeyPointCount +
+                             currentFrame.leftToRightMatches[keyPointIndex]] =
+                            p_newMapPoint;
+                        p_newMapPoint->addObservation(
+                            p_keyFrame,
+                            currentFrame.leftKeyPointCount +
+                                currentFrame.leftToRightMatches[keyPointIndex]);
+                        p_keyFrame->addMapPoint(
+                            p_newMapPoint,
+                            currentFrame.leftKeyPointCount +
+                                currentFrame.leftToRightMatches[keyPointIndex]);
                     }
 
-                    pKF->addMapPoint(pNewMP, i);
-                    pNewMP->computeDistinctiveDescriptors();
-                    pNewMP->updateNormalAndDepth();
-                    p_atlas->addMapPoint(pNewMP);
+                    p_keyFrame->addMapPoint(p_newMapPoint, keyPointIndex);
+                    p_newMapPoint->computeDistinctiveDescriptors();
+                    p_newMapPoint->updateNormalAndDepth();
+                    p_atlas->addMapPoint(p_newMapPoint);
 
-                    currentFrame.mapPoints[i] = pNewMP;
-                    nPoints++;
+                    currentFrame.mapPoints[keyPointIndex] = p_newMapPoint;
+                    pointCount++;
                 }
                 else
-                    nPoints++;
+                    pointCount++;
 
-                if (vDepthIdx[j].first > depthThreshold && nPoints > maxPoint)
+                if (depthIndices[depthIndexIndex].first > depthThreshold &&
+                    pointCount > maximumPoint)
                 {
                     break;
                 }
@@ -161,20 +167,20 @@ void Tracking::createNewKeyFrame()
 
     // Check if the marker ids fromt he current frame exist in all the previous
     // keyframes first get the mapped marker from the keyframes
-    for (const auto currentMapMarker : p_atlas->getAllMarkers())
+    for (const auto p_currentMapMarker : p_atlas->getAllMarkers())
     {
         // Check if the marker is already in the Global map
-        for (auto currentFrameMaker : currentFrame.mapMarkers)
-            if (currentFrameMaker->getId() == currentMapMarker->getId())
-                currentFrameMaker->setMarkerInGMap(true);
+        for (auto p_currentFrameMaker : currentFrame.mapMarkers)
+            if (p_currentFrameMaker->getId() == p_currentMapMarker->getId())
+                p_currentFrameMaker->setMarkerInGMap(true);
     }
 
-    p_localMapper->insertKeyFrame(pKF);
+    p_localMapper->insertKeyFrame(p_keyFrame);
 
     p_localMapper->setNotStop(false);
 
-    lastKeyFrameId = currentFrame.mnId;
-    p_lastKeyFrame = pKF;
+    lastKeyFrameId = currentFrame.id;
+    p_lastKeyFrame = p_keyFrame;
 }
 
 } // namespace core

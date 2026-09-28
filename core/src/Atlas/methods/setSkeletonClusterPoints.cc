@@ -31,10 +31,10 @@ namespace core
 {
 
 void Atlas::setSkeletonClusterPoints(
-    const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints)
+    const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints_in)
 {
-    unique_lock<mutex> lock(mMutexAtlas);
-    p_activeMap->setSkeletonClusterPoints(newClusterPoints);
+    unique_lock<mutex> lock(atlasMutex);
+    p_activeMap->setSkeletonClusterPoints(newClusterPoints_in);
 }
 
 } // namespace core

@@ -50,7 +50,7 @@ using FaultAction = std::function<bool()>;
  *                  not cross-trigger. Test-only; production code never
  *                  calls this.
  */
-std::unordered_map<std::string, FaultAction> &FaultRegistry();
+std::unordered_map<std::string, FaultAction> &getFaultRegistry();
 
 /*!
  * @brief           Arms one named probe for the calling thread.
@@ -60,12 +60,12 @@ std::unordered_map<std::string, FaultAction> &FaultRegistry();
  * @param[in]       action_in
  *                  Action evaluated when the probe fires.
  */
-void RegisterFault(const std::string &name_in, FaultAction action_in);
+void registerFault(const std::string &name_in, FaultAction action_in);
 
 /*!
  * @brief           Disarms all probes for the calling thread.
  */
-void ClearFaults();
+void clearFaults();
 
 /*!
  * @brief           Fires the named probe when armed.
@@ -75,7 +75,7 @@ void ClearFaults();
  *
  * @return          True when a registered action fired; false otherwise.
  */
-bool CheckFault(const std::string &name_in);
+bool checkFault(const std::string &name_in);
 
 /*!
  * @brief           RAII guard arming one probe for a scope.
@@ -97,7 +97,7 @@ class ScopedFault
     ScopedFault(const std::string &name_in, FaultAction action_in) :
         name(name_in)
     {
-        RegisterFault(name_in, action_in);
+        registerFault(name_in, action_in);
     }
 
     /*!
@@ -105,13 +105,13 @@ class ScopedFault
      */
     ~ScopedFault()
     {
-        ClearFaults();
+        clearFaults();
     }
 
     ScopedFault(const ScopedFault &other_in)            = delete;
     ScopedFault &operator=(const ScopedFault &other_in) = delete;
-    ScopedFault(ScopedFault &&other_in)                 = default;
-    ScopedFault &operator=(ScopedFault &&other_in)      = default;
+    ScopedFault(ScopedFault &&other_inout)              = default;
+    ScopedFault &operator=(ScopedFault &&other_inout)   = default;
 
   private:
     /*!
@@ -128,14 +128,14 @@ class ScopedFault
 #define VS_GRAPHS_FAULT_INJECT(name_in)                                        \
     do                                                                         \
     {                                                                          \
-        if (::vs_graphs::testing::CheckFault(name_in))                         \
+        if (::vs_graphs::testing::checkFault(name_in))                         \
         {                                                                      \
             return false;                                                      \
         }                                                                      \
     }                                                                          \
     while (0)
 #define VS_GRAPHS_FAULT_CHECK(name_in)                                         \
-    (::vs_graphs::testing::CheckFault(name_in))
+    (::vs_graphs::testing::checkFault(name_in))
 #else
 #define VS_GRAPHS_FAULT_INJECT(name_in) ((void)0)
 #define VS_GRAPHS_FAULT_CHECK(name_in)  (false)

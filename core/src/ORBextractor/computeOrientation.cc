@@ -69,16 +69,19 @@ namespace vs_graphs
 namespace core
 {
 
-void computeOrientation(const Mat         &image,
-                        vector<KeyPoint>  &keypoints,
-                        const vector<int> &orientationMaxOffset)
+void computeOrientation(const Mat         &image_in,
+                        vector<KeyPoint>  &keypoints_in,
+                        const vector<int> &orientationMaximumOffset_in)
 {
-    for (vector<KeyPoint>::iterator keypoint    = keypoints.begin(),
-                                    keypointEnd = keypoints.end();
+    for (vector<KeyPoint>::iterator keypoint    = keypoints_in.begin(),
+                                    keypointEnd = keypoints_in.end();
          keypoint != keypointEnd;
          ++keypoint)
     {
-        keypoint->angle = IC_Angle(image, keypoint->pt, orientationMaxOffset);
+        keypoint->angle =
+            computeIntensityCentroidAngle(image_in,
+                                          keypoint->pt,
+                                          orientationMaximumOffset_in);
     }
 }
 

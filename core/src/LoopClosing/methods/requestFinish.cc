@@ -34,9 +34,9 @@ namespace core
 
 void LoopClosing::requestFinish()
 {
-    unique_lock<mutex> lock(mMutexFinish);
+    unique_lock<mutex> lock(finishMutex);
     // cout << "LC: Finish requested" << endl;
-    finishRequested = true;
+    isFinishRequested = true;
 }
 
 } // namespace core

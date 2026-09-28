@@ -34,16 +34,16 @@ void KannalaBrandt8::triangulate(const cv::Point2f                &point1_in,
                                  const cv::Point2f                &point2_in,
                                  const Eigen::Matrix<float, 3, 4> &pose1_in,
                                  const Eigen::Matrix<float, 3, 4> &pose2_in,
-                                 Eigen::Vector3f                  &point3D_out)
+                                 Eigen::Vector3f                  &point3d_out)
 {
-    Eigen::Matrix<float, 4, 4> A;
-    A.row(0) = point1_in.x * pose1_in.row(2) - pose1_in.row(0);
-    A.row(1) = point1_in.y * pose1_in.row(2) - pose1_in.row(1);
-    A.row(2) = point2_in.x * pose2_in.row(2) - pose2_in.row(0);
-    A.row(3) = point2_in.y * pose2_in.row(2) - pose2_in.row(1);
+    Eigen::Matrix<float, 4, 4> designMatrix;
+    designMatrix.row(0) = point1_in.x * pose1_in.row(2) - pose1_in.row(0);
+    designMatrix.row(1) = point1_in.y * pose1_in.row(2) - pose1_in.row(1);
+    designMatrix.row(2) = point2_in.x * pose2_in.row(2) - pose2_in.row(0);
+    designMatrix.row(3) = point2_in.y * pose2_in.row(2) - pose2_in.row(1);
 
-    Eigen::JacobiSVD<Eigen::Matrix4f> svd(A, Eigen::ComputeFullV);
-    Eigen::Vector4f                   x3Dh = svd.matrixV().col(3);
-    point3D_out                            = x3Dh.head(3) / x3Dh(3);
+    Eigen::JacobiSVD<Eigen::Matrix4f> svd(designMatrix, Eigen::ComputeFullV);
+    Eigen::Vector4f                   homogeneousPoint3D = svd.matrixV().col(3);
+    point3d_out = homogeneousPoint3D.head(3) / homogeneousPoint3D(3);
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

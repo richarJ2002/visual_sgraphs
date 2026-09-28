@@ -36,7 +36,7 @@ namespace core
 
 long unsigned int Map::getMarkerCount()
 {
-    unique_lock<mutex> lock(mMutexMap);
+    unique_lock<mutex> lock(mapMutex);
     return markers.size();
 }
 

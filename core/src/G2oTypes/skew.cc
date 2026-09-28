@@ -32,11 +32,13 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3d Skew(const Eigen::Vector3d &w)
+Eigen::Matrix3d computeSkewMatrix(const Eigen::Vector3d &angularVelocity_in)
 {
-    Eigen::Matrix3d W;
-    W << 0.0, -w[2], w[1], w[2], 0.0, -w[0], -w[1], w[0], 0.0;
-    return W;
+    Eigen::Matrix3d skewMatrix;
+    skewMatrix << 0.0, -angularVelocity_in[2], angularVelocity_in[1],
+        angularVelocity_in[2], 0.0, -angularVelocity_in[0],
+        -angularVelocity_in[1], angularVelocity_in[0], 0.0;
+    return skewMatrix;
 }
 
 } // namespace core

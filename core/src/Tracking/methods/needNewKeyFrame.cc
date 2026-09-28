@@ -48,7 +48,7 @@ bool Tracking::needNewKeyFrame()
             return false;
     }
 
-    if (onlyTracking)
+    if (isTrackingOnlyMode)
         return false;
 
     // If Local Mapping is freezed by a Loop Closure do not insert keyframes
@@ -61,92 +61,99 @@ bool Tracking::needNewKeyFrame()
         return false;
     }
 
-    const int nKFs = p_atlas->getKeyFrameCount();
+    const int keyFrameCount = p_atlas->getKeyFrameCount();
 
     // Do not insert keyframes if not enough frames have passed from last
     // relocalisation
-    if (currentFrame.mnId < lastRelocFrameId + maxFrames && nKFs > maxFrames)
+    if (currentFrame.id < lastRelocFrameId + maxFrames &&
+        keyFrameCount > maxFrames)
     {
         return false;
     }
 
     // Tracked MapPoints in the reference keyframe
-    int nMinObs = 3;
-    if (nKFs <= 2)
-        nMinObs = 2;
-    int nRefMatches = p_referenceKF->getTrackedMapPointCount(nMinObs);
+    int minimumObservationCount = 3;
+    if (keyFrameCount <= 2)
+        minimumObservationCount = 2;
+    int referenceMatchCount =
+        p_referenceKF->getTrackedMapPointCount(minimumObservationCount);
 
     // Check how many "close" points are being tracked and how many could be
     // potentially created.
-    int nNonTrackedClose = 0;
-    int nTrackedClose    = 0;
+    int nonTrackedCloseCount = 0;
+    int trackedCloseCount    = 0;
 
     if (sensor != System::MONOCULAR && sensor != System::IMU_MONOCULAR)
     {
-        int N =
-            (currentFrame.Nleft == -1) ? currentFrame.N : currentFrame.Nleft;
-        for (int i = 0; i < N; i++)
+        int N = (currentFrame.leftKeyPointCount == -1)
+                    ? currentFrame.keyPointCount
+                    : currentFrame.leftKeyPointCount;
+        for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
         {
-            if (currentFrame.depths[i] > 0 &&
-                currentFrame.depths[i] < depthThreshold)
+            if (currentFrame.depths[keyPointIndex] > 0 &&
+                currentFrame.depths[keyPointIndex] < depthThreshold)
             {
-                if (currentFrame.mapPoints[i] && !currentFrame.outlierFlags[i])
-                    nTrackedClose++;
+                if (currentFrame.mapPoints[keyPointIndex] &&
+                    !currentFrame.outlierFlags[keyPointIndex])
+                    trackedCloseCount++;
                 else
-                    nNonTrackedClose++;
+                    nonTrackedCloseCount++;
             }
         }
     }
 
     bool bNeedToInsertClose;
-    bNeedToInsertClose = (nTrackedClose < 100) && (nNonTrackedClose > 70);
+    bNeedToInsertClose =
+        (trackedCloseCount < 100) && (nonTrackedCloseCount > 70);
 
     // AGGRESSIVE CORRIDOR TRACKING: Stricter KF insertion criteria
     // Require minimum 30 total inliers, 15 close inliers, 1.0s temporal spacing
-    const bool bEnoughTotalInliers = (matchesInliers >= minInliersForKF);
-    const bool bEnoughCloseInliers = (nTrackedClose >= minCloseInliersForKF);
-    const bool bEnoughTimeSinceLastKF =
+    const bool hasEnoughTotalInliers = (matchesInliers >= minInliersForKF);
+    const bool hasEnoughCloseInliers =
+        (trackedCloseCount >= minCloseInliersForKF);
+    const bool hasEnoughTimeSinceLastKeyFrame =
         p_lastKeyFrame && (currentFrame.timeStamp - p_lastKeyFrame->timeStamp >=
-                           mdMinTemporalSpacingKF);
+                           minKeyFrameTemporalSpacing);
 
     // Thresholds
-    float thRefRatio = 0.75f;
-    if (nKFs < 2)
-        thRefRatio = 0.4f;
+    float thresholdReferenceRatio = 0.75f;
+    if (keyFrameCount < 2)
+        thresholdReferenceRatio = 0.4f;
 
     if (sensor == System::MONOCULAR)
-        thRefRatio = 0.9f;
+        thresholdReferenceRatio = 0.9f;
 
     if (p_camera2)
-        thRefRatio = 0.75f;
+        thresholdReferenceRatio = 0.75f;
 
     if (sensor == System::IMU_MONOCULAR)
     {
         if (matchesInliers > 350)
-            thRefRatio = 0.75f;
+            thresholdReferenceRatio = 0.75f;
         else
-            thRefRatio = 0.90f;
+            thresholdReferenceRatio = 0.90f;
     }
 
     // Local Mapping accept keyframes?
-    bool bLocalMappingIdle = p_localMapper->isAcceptingKeyFrames();
+    bool isLocalMappingIdle = p_localMapper->isAcceptingKeyFrames();
 
     // Condition 1a: More than "MaxFrames" have passed from last keyframe
     // insertion
-    const bool c1a = currentFrame.mnId >= lastKeyFrameId + maxFrames;
+    const bool c1a = currentFrame.id >= lastKeyFrameId + maxFrames;
     // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
     const bool c1b =
-        ((currentFrame.mnId >= lastKeyFrameId + minFrames) &&
-         bLocalMappingIdle && p_localMapper->keyframesInQueue() < 5);
+        ((currentFrame.id >= lastKeyFrameId + minFrames) &&
+         isLocalMappingIdle && p_localMapper->keyframesInQueue() < 5);
     // Condition 1c: tracking is weak
     const bool c1c =
         sensor != System::MONOCULAR && sensor != System::IMU_MONOCULAR &&
         sensor != System::IMU_STEREO && sensor != System::IMU_RGBD &&
-        (matchesInliers < nRefMatches * 0.25 || bNeedToInsertClose) &&
+        (matchesInliers < referenceMatchCount * 0.25 || bNeedToInsertClose) &&
         matchesInliers > 20;
     // Condition 2: Few tracked points compared to reference keyframe.
     const bool c2 =
-        (((matchesInliers < nRefMatches * thRefRatio || bNeedToInsertClose)) &&
+        (((matchesInliers < referenceMatchCount * thresholdReferenceRatio ||
+           bNeedToInsertClose)) &&
          matchesInliers > minInliersForKF);
 
     // AGGRESSIVE: Additional corridor-specific conditions
@@ -157,7 +164,7 @@ bool Tracking::needNewKeyFrame()
         if ((sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
              sensor == System::IMU_RGBD) &&
             (currentFrame.timeStamp - p_lastKeyFrame->timeStamp) >=
-                mdMinTemporalSpacingKF)
+                minKeyFrameTemporalSpacing)
         {
             c3 = true;
         }
@@ -165,7 +172,8 @@ bool Tracking::needNewKeyFrame()
 
     // Condition 4: Enough inliers but temporal spacing met
     bool c4 = false;
-    if (bEnoughTotalInliers && bEnoughCloseInliers && bEnoughTimeSinceLastKF)
+    if (hasEnoughTotalInliers && hasEnoughCloseInliers &&
+        hasEnoughTimeSinceLastKeyFrame)
     {
         c4 = true;
     }
@@ -180,7 +188,7 @@ bool Tracking::needNewKeyFrame()
     {
         // If the mapping accepts keyframes, insert keyframe.
         // Otherwise send a signal to interrupt BA
-        if (bLocalMappingIdle || p_localMapper->isInitializing())
+        if (isLocalMappingIdle || p_localMapper->isInitializing())
         {
             return true;
         }

@@ -319,7 +319,7 @@ void evaluateOneWall(const WallRecord            &wall_in,
      * itself ambiguous (WALL_OWNERSHIP_RECIPROCAL_DUPLICATE). */
     std::size_t wellFormedReciprocalCount  = 0U;
     bool        anyContradictoryReciprocal = false;
-    for (const RawPlaneRef &ownedWallRef : p_owner->wallRefs)
+    for (const RawPlaneRef &ownedWallReference : p_owner->wallRefs)
     {
         /* Relevance is no longer keyed on raw
          * mapId/planeId alone -- an entry whose own wallKey already names
@@ -331,16 +331,17 @@ void evaluateOneWall(const WallRecord            &wall_in,
          * populated (e.g. reason != NONE); either signal alone is enough to
          * pull the entry into this loop's scope. */
         const bool aboutThisWallByRaw =
-            ownedWallRef.mapId.has_value() &&
-            (*ownedWallRef.mapId == wall_in.key.mapId) &&
-            (ownedWallRef.planeId == wall_in.key.entityId);
-        const bool aboutThisWallByKey = ownedWallRef.wallKey.has_value() &&
-                                        (*ownedWallRef.wallKey == wall_in.key);
+            ownedWallReference.mapId.has_value() &&
+            (*ownedWallReference.mapId == wall_in.key.mapId) &&
+            (ownedWallReference.planeId == wall_in.key.entityId);
+        const bool aboutThisWallByKey =
+            ownedWallReference.wallKey.has_value() &&
+            (*ownedWallReference.wallKey == wall_in.key);
         if (!aboutThisWallByRaw && !aboutThisWallByKey)
         {
             continue;
         }
-        if (ownedWallRef.reason != UnavailableReason::NONE)
+        if (ownedWallReference.reason != UnavailableReason::NONE)
         {
             /* This entry's own
              * mapId/planeId match this wall, but its own reason claims
@@ -360,10 +361,11 @@ void evaluateOneWall(const WallRecord            &wall_in,
             anyContradictoryReciprocal = true;
             continue;
         }
-        const bool wellFormed =
-            (ownedWallRef.planeType == geometric::Plane::PlaneVariant::WALL) &&
-            ownedWallRef.isLive && ownedWallRef.wallKey.has_value() &&
-            (*ownedWallRef.wallKey == wall_in.key);
+        const bool wellFormed = (ownedWallReference.planeType ==
+                                 geometric::Plane::PlaneVariant::WALL) &&
+                                ownedWallReference.isLive &&
+                                ownedWallReference.wallKey.has_value() &&
+                                (*ownedWallReference.wallKey == wall_in.key);
         if (wellFormed)
         {
             ++wellFormedReciprocalCount;

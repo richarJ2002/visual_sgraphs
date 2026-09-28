@@ -36,21 +36,21 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::runGlobalBundleAdjustment(Map          *pActiveMap,
-                                            unsigned long nLoopKF,
+void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
+                                            unsigned long loopKeyFrameCount_in,
                                             unsigned int  generation_in)
 {
     Verbose::printMess("Starting Global Bundle Adjustment",
                        Verbose::VERBOSITY_NORMAL);
 
 #ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartFGBA =
+    std::chrono::steady_clock::time_point timeStartFGba =
         std::chrono::steady_clock::now();
 
-    nFGBA_exec += 1;
+    fullGbaExecutionCount += 1;
 
-    vnGBAKFs.push_back(pActiveMap->getAllKeyFrames().size());
-    vnGBAMPs.push_back(pActiveMap->getAllMapPoints().size());
+    gbaKeyFrameCounts.push_back(p_activeMap_inout->getAllKeyFrames().size());
+    gbaMapPointCounts.push_back(p_activeMap_inout->getAllMapPoints().size());
 #endif
 
     /*
@@ -60,42 +60,43 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *pActiveMap,
      */
     bool optimizerStopRequested = false;
 
-    const bool bImuInit = pActiveMap->isImuInitialized();
+    const bool isImuInitialized = p_activeMap_inout->isImuInitialized();
 
-    if (!bImuInit)
-        Optimizer::globalBundleAdjustment(pActiveMap,
-                                          10,
-                                          &optimizerStopRequested,
-                                          nLoopKF,
-                                          false,
-                                          p_tracker->getMarkerImpact(),
-                                          &globalBundleAdjustmentStopRequested);
+    if (!isImuInitialized)
+        Optimizer::globalBundleAdjustment(
+            p_activeMap_inout,
+            10,
+            &optimizerStopRequested,
+            loopKeyFrameCount_in,
+            false,
+            p_tracker->getMarkerImpact(),
+            &isGlobalBundleAdjustmentStopRequested);
     else
-        Optimizer::fullInertialBA(pActiveMap,
+        Optimizer::fullInertialBA(p_activeMap_inout,
                                   7,
                                   false,
-                                  nLoopKF,
+                                  loopKeyFrameCount_in,
                                   &optimizerStopRequested,
                                   false,
                                   1e2F,
                                   1e6F,
                                   nullptr,
                                   nullptr,
-                                  &globalBundleAdjustmentStopRequested);
+                                  &isGlobalBundleAdjustmentStopRequested);
 
 #ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndGBA =
+    std::chrono::steady_clock::time_point timeEndGba =
         std::chrono::steady_clock::now();
 
-    double timeGBA =
+    double timeGba =
         std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            time_EndGBA - time_StartFGBA)
+            timeEndGba - timeStartFGba)
             .count();
-    vdGBA_ms.push_back(timeGBA);
+    gbaTimes_ms.push_back(timeGba);
 
     if (optimizerStopRequested)
     {
-        nFGBA_abort += 1;
+        fullGbaAbortCount += 1;
     }
 #endif
 
@@ -105,18 +106,18 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *pActiveMap,
     // the updated map. We need to propagate the correction through the spanning
     // tree
     {
-        unique_lock<mutex> lock(mMutexGBA);
+        unique_lock<mutex> lock(gbaMutex);
         if (generation_in != fullBundleAdjustmentIndex)
         {
-            finishedGBA = true;
-            runningGBA  = false;
+            hasGbaFinished = true;
+            isGbaRunning   = false;
             return;
         }
 
-        if (!bImuInit && pActiveMap->isImuInitialized())
+        if (!isImuInitialized && p_activeMap_inout->isImuInitialized())
         {
-            finishedGBA = true;
-            runningGBA  = false;
+            hasGbaFinished = true;
+            isGbaRunning   = false;
             return;
         }
 
@@ -138,115 +139,121 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *pActiveMap,
                 p_atlas->acquireSemanticUpdateLock();
 
             // Get Map Mutex
-            unique_lock<mutex> lock(pActiveMap->mMutexMapUpdate);
+            unique_lock<mutex> lock(p_activeMap_inout->mapUpdateMutex);
 
             KeyFrameAndPose keyFramePosesBefore_WorldToCamera;
             KeyFrameAndPose keyFramePosesAfter_WorldToCamera;
 
             //  Correct keyframes starting at map first keyframe
-            list<KeyFrame *> lpKFtoCheck(pActiveMap->keyFrameOrigins.begin(),
-                                         pActiveMap->keyFrameOrigins.end());
+            list<KeyFrame *> keyFramesToCheck(
+                p_activeMap_inout->keyFrameOrigins.begin(),
+                p_activeMap_inout->keyFrameOrigins.end());
 
-            while (!lpKFtoCheck.empty())
+            while (!keyFramesToCheck.empty())
             {
-                KeyFrame             *pKF     = lpKFtoCheck.front();
-                const set<KeyFrame *> sChilds = pKF->getChilds();
-                Sophus::SE3f          Twc     = pKF->getPoseInverse();
-                for (set<KeyFrame *>::const_iterator sit = sChilds.begin();
-                     sit != sChilds.end();
+                KeyFrame             *p_keyFrame = keyFramesToCheck.front();
+                const set<KeyFrame *> childs     = p_keyFrame->getChilds();
+                Sophus::SE3f          Twc        = p_keyFrame->getPoseInverse();
+                for (set<KeyFrame *>::const_iterator sit = childs.begin();
+                     sit != childs.end();
                      sit++)
                 {
-                    KeyFrame *pChild = *sit;
-                    if (!pChild || pChild->isBad())
+                    KeyFrame *p_child = *sit;
+                    if (!p_child || p_child->isBad())
                         continue;
 
-                    if (pChild->baGlobalKeyFrameId != nLoopKF)
+                    if (p_child->baGlobalKeyFrameId != loopKeyFrameCount_in)
                     {
-                        Sophus::SE3f Tchildc = pChild->getPose() * Twc;
-                        pChild->tcwGBA =
-                            Tchildc * pKF->tcwGBA; //*Tcorc*pKF->mTcwGBA;
+                        Sophus::SE3f tchildc = p_child->getPose() * Twc;
+                        p_child->tcwGBA =
+                            tchildc * p_keyFrame->tcwGBA; //*Tcorc*pKF->mTcwGBA;
 
-                        Sophus::SO3f Rcor = pChild->tcwGBA.so3().inverse() *
-                                            pChild->getPose().so3();
-                        if (pChild->isVelocitySet())
+                        Sophus::SO3f Rcor = p_child->tcwGBA.so3().inverse() *
+                                            p_child->getPose().so3();
+                        if (p_child->isVelocitySet())
                         {
-                            pChild->vwbGBA = Rcor * pChild->getVelocity();
+                            p_child->vwbGBA = Rcor * p_child->getVelocity();
                         }
                         else
                             Verbose::printMess("Child velocity empty!! ",
                                                Verbose::VERBOSITY_NORMAL);
 
-                        pChild->biasGBA = pChild->getImuBias();
+                        p_child->biasGBA = p_child->getImuBias();
 
-                        pChild->baGlobalKeyFrameId = nLoopKF;
+                        p_child->baGlobalKeyFrameId = loopKeyFrameCount_in;
                     }
-                    lpKFtoCheck.push_back(pChild);
+                    keyFramesToCheck.push_back(p_child);
                 }
 
-                pKF->tcwBefGBA = pKF->getPose();
+                p_keyFrame->tcwBefGBA = p_keyFrame->getPose();
 
                 const Sophus::SE3d poseBefore_WorldToCamera =
-                    pKF->tcwBefGBA.cast<double>();
+                    p_keyFrame->tcwBefGBA.cast<double>();
 
                 keyFramePosesBefore_WorldToCamera.insert_or_assign(
-                    pKF,
+                    p_keyFrame,
                     g2o::Sim3(poseBefore_WorldToCamera.unit_quaternion(),
                               poseBefore_WorldToCamera.translation(),
                               1.0));
 
-                pKF->setPose(pKF->tcwGBA);
+                p_keyFrame->setPose(p_keyFrame->tcwGBA);
 
                 const Sophus::SE3d poseAfter_WorldToCamera =
-                    pKF->getPose().cast<double>();
+                    p_keyFrame->getPose().cast<double>();
 
                 keyFramePosesAfter_WorldToCamera.insert_or_assign(
-                    pKF,
+                    p_keyFrame,
                     g2o::Sim3(poseAfter_WorldToCamera.unit_quaternion(),
                               poseAfter_WorldToCamera.translation(),
                               1.0));
 
-                if (pKF->isImu)
+                if (p_keyFrame->isImu)
                 {
-                    pKF->vwbBefGBA = pKF->getVelocity();
+                    p_keyFrame->vwbBefGBA = p_keyFrame->getVelocity();
 
-                    pKF->setVelocity(pKF->vwbGBA);
-                    pKF->setNewBias(pKF->biasGBA);
+                    p_keyFrame->setVelocity(p_keyFrame->vwbGBA);
+                    p_keyFrame->setNewBias(p_keyFrame->biasGBA);
                 }
 
-                lpKFtoCheck.pop_front();
+                keyFramesToCheck.pop_front();
             }
 
             // Correct MapPoints
-            const vector<MapPoint *> vpMPs = pActiveMap->getAllMapPoints();
+            const vector<MapPoint *> mapPoints =
+                p_activeMap_inout->getAllMapPoints();
 
-            for (size_t i = 0; i < vpMPs.size(); i++)
+            for (size_t mapPointIndex = 0; mapPointIndex < mapPoints.size();
+                 mapPointIndex++)
             {
-                MapPoint *pMP = vpMPs[i];
+                MapPoint *p_mapPoint = mapPoints[mapPointIndex];
 
-                if (pMP == nullptr || pMP->isBad())
+                if (p_mapPoint == nullptr || p_mapPoint->isBad())
                     continue;
 
                 bool mapPointWasCorrected = false;
 
-                if (pMP->baGlobalKeyFrameId == nLoopKF)
+                if (p_mapPoint->baGlobalKeyFrameId == loopKeyFrameCount_in)
                 {
                     // If optimized by Global BA, just update
-                    pMP->setWorldPos(pMP->posGBA);
+                    p_mapPoint->setWorldPos(p_mapPoint->posGBA);
                     mapPointWasCorrected = true;
                 }
                 else
                 {
                     // Update according to the correction of its reference
                     // keyframe
-                    KeyFrame *pRefKF = pMP->getReferenceKeyFrame();
+                    KeyFrame *p_referenceKeyFrame =
+                        p_mapPoint->getReferenceKeyFrame();
 
-                    if (pRefKF == nullptr || pRefKF->isBad() ||
-                        pRefKF->getMap() != pActiveMap ||
-                        pRefKF->baGlobalKeyFrameId != nLoopKF)
+                    if (p_referenceKeyFrame == nullptr ||
+                        p_referenceKeyFrame->isBad() ||
+                        p_referenceKeyFrame->getMap() != p_activeMap_inout ||
+                        p_referenceKeyFrame->baGlobalKeyFrameId !=
+                            loopKeyFrameCount_in)
                     {
-                        pRefKF = nullptr;
+                        p_referenceKeyFrame = nullptr;
 
-                        const auto observations = pMP->getObservations();
+                        const auto observations = p_mapPoint->getObservations();
 
                         for (const auto &[p_observingKeyFrame, featureIndexes] :
                              observations)
@@ -255,22 +262,24 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *pActiveMap,
 
                             if (p_observingKeyFrame == nullptr ||
                                 p_observingKeyFrame->isBad() ||
-                                p_observingKeyFrame->getMap() != pActiveMap ||
+                                p_observingKeyFrame->getMap() !=
+                                    p_activeMap_inout ||
                                 p_observingKeyFrame->baGlobalKeyFrameId !=
-                                    nLoopKF)
+                                    loopKeyFrameCount_in)
                             {
                                 continue;
                             }
 
-                            if (pRefKF == nullptr ||
-                                p_observingKeyFrame->mnId < pRefKF->mnId)
+                            if (p_referenceKeyFrame == nullptr ||
+                                p_observingKeyFrame->id <
+                                    p_referenceKeyFrame->id)
                             {
-                                pRefKF = p_observingKeyFrame;
+                                p_referenceKeyFrame = p_observingKeyFrame;
                             }
                         }
                     }
 
-                    if (pRefKF == nullptr)
+                    if (p_referenceKeyFrame == nullptr)
                     {
                         continue;
                     }
@@ -282,16 +291,18 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *pActiveMap,
                     // cv::Mat Rcw =
                     // pRefKF->mTcwBefGBA.rowRange(0,3).colRange(0,3); cv::Mat
                     // tcw = pRefKF->mTcwBefGBA.rowRange(0,3).col(3);
-                    Eigen::Vector3f Xc = pRefKF->tcwBefGBA * pMP->getWorldPos();
+                    Eigen::Vector3f Xc = p_referenceKeyFrame->tcwBefGBA *
+                                         p_mapPoint->getWorldPos();
 
                     // Backproject using corrected camera
-                    pMP->setWorldPos(pRefKF->getPoseInverse() * Xc);
+                    p_mapPoint->setWorldPos(
+                        p_referenceKeyFrame->getPoseInverse() * Xc);
                     mapPointWasCorrected = true;
                 }
 
                 if (mapPointWasCorrected)
                 {
-                    pMP->updateNormalAndDepth();
+                    p_mapPoint->updateNormalAndDepth();
                 }
             }
 
@@ -302,16 +313,16 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *pActiveMap,
 
             /* Keep every semantic entity aligned with the corrected cameras. */
             utils::utils::Utils::propagateSemanticPoseCorrections(
-                pActiveMap,
+                p_activeMap_inout,
                 keyFramePosesBefore_WorldToCamera,
                 keyFramePosesAfter_WorldToCamera,
                 identityTransform_WorldToWorld);
 
             /* Preserve plane variables which were optimized directly by GBA. */
-            for (geometric::Plane *p_plane : pActiveMap->getAllPlanes())
+            for (geometric::Plane *p_plane : p_activeMap_inout->getAllPlanes())
             {
                 if (p_plane == nullptr || p_plane->isBad() ||
-                    p_plane->baGlobalKeyFrameId != nLoopKF)
+                    p_plane->baGlobalKeyFrameId != loopKeyFrameCount_in)
                 {
                     continue;
                 }
@@ -319,8 +330,8 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *pActiveMap,
                 p_plane->alignGeometryToEquation(p_plane->planeGBA);
             }
 
-            pActiveMap->informNewBigChange();
-            pActiveMap->increaseChangeIndex();
+            p_activeMap_inout->informNewBigChange();
+            p_activeMap_inout->increaseChangeIndex();
 
             // TODO Check this update
             // mpTracker->UpdateFrameIMU(1.0f,
@@ -336,21 +347,21 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *pActiveMap,
             double timeUpdateMap =
                 std::chrono::duration_cast<
                     std::chrono::duration<double, std::milli>>(
-                    time_EndUpdateMap - time_EndGBA)
+                    time_EndUpdateMap - timeEndGba)
                     .count();
-            vdUpdateMap_ms.push_back(timeUpdateMap);
+            updateMapTimes_ms.push_back(timeUpdateMap);
 
-            double timeFGBA = std::chrono::duration_cast<
+            double timeFGba = std::chrono::duration_cast<
                                   std::chrono::duration<double, std::milli>>(
-                                  time_EndUpdateMap - time_StartFGBA)
+                                  time_EndUpdateMap - timeStartFGba)
                                   .count();
-            vdFGBATotal_ms.push_back(timeFGBA);
+            fullGbaTotalTimes_ms.push_back(timeFGba);
 #endif
             Verbose::printMess("Map updated!", Verbose::VERBOSITY_NORMAL);
         }
 
-        finishedGBA = true;
-        runningGBA  = false;
+        hasGbaFinished = true;
+        isGbaRunning   = false;
     }
 }
 
