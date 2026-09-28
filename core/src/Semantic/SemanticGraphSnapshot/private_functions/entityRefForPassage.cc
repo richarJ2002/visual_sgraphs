@@ -34,12 +34,15 @@ namespace core
 namespace semantic
 {
 
-EntityRef entityRefForPassage(Passage *p_passage_in)
+SemanticGraphSnapshotStatus entityRefForPassage(Passage   *p_passage_in,
+                                                EntityRef &entityRef_out)
 {
     EntityRef reference;
     if (p_passage_in == nullptr)
     {
-        return reference;
+        entityRef_out = reference;
+        return SemanticGraphSnapshotStatus::
+            SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
     }
     int passage_inId{};
     if (p_passage_in->getId(passage_inId) !=
@@ -65,7 +68,9 @@ EntityRef entityRefForPassage(Passage *p_passage_in)
     if (p_map == nullptr)
     {
         reference.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
-        return reference;
+        entityRef_out    = reference;
+        return SemanticGraphSnapshotStatus::
+            SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
     }
     int passage_inId2{};
     if (p_passage_in->getId(passage_inId2) !=
@@ -73,9 +78,16 @@ EntityRef entityRefForPassage(Passage *p_passage_in)
     {
         // getId cannot fail; continue as before.
     }
-    reference.key = makeKey(EntityKind::PASSAGE, p_map->getId(), passage_inId2);
+    EntityKey key2{};
+    if (makeKey(EntityKind::PASSAGE, p_map->getId(), passage_inId2, key2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // makeKey cannot fail; continue as before.
+    }
+    reference.key    = key2;
     reference.reason = UnavailableReason::NONE;
-    return reference;
+    entityRef_out    = reference;
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

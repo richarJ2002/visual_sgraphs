@@ -36,8 +36,9 @@ namespace core
 namespace semantic
 {
 
-nlohmann::json violationDetailToJson(const Finding &finding_in,
-                                     const char    *p_transition_in)
+SemanticDiagnosticsStatus violationDetailToJson(const Finding  &finding_in,
+                                                const char     *p_transition_in,
+                                                nlohmann::json &json_out)
 {
     /* WARN for a newly appeared hard failure (the operator-relevant case);
      * INFO for a resolution or any other transition. This never emits DEBUG
@@ -48,16 +49,53 @@ nlohmann::json violationDetailToJson(const Finding &finding_in,
         finding_in.classification == AxiomClass::HARD;
 
     nlohmann::json json;
-    json["level"]        = isNewlyAppearedHardFailure ? "WARN" : "INFO";
-    json["findingId"]    = finding_in.id;
-    json["transition"]   = p_transition_in;
-    json["axiomCode"]    = axiomCodeName(finding_in.axiomCode);
-    json["result"]       = axiomResultName(finding_in.result);
-    json["severity"]     = axiomClassName(finding_in.classification);
-    json["reasonCode"]   = reasonCodeName(finding_in.reasonCode);
-    json["involvedKeys"] = entityKeysToJson(finding_in.involvedKeys);
-    json["evidence"]     = findingEvidenceToJson(finding_in.evidence);
-    return json;
+    json["level"]      = isNewlyAppearedHardFailure ? "WARN" : "INFO";
+    json["findingId"]  = finding_in.id;
+    json["transition"] = p_transition_in;
+    std::string axiomCodeName2{};
+    if (axiomCodeName(finding_in.axiomCode, axiomCodeName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // axiomCodeName cannot fail; continue as before.
+    }
+    json["axiomCode"] = axiomCodeName2;
+    std::string axiomResultName2{};
+    if (axiomResultName(finding_in.result, axiomResultName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // axiomResultName cannot fail; continue as before.
+    }
+    json["result"] = axiomResultName2;
+    std::string axiomClassName2{};
+    if (axiomClassName(finding_in.classification, axiomClassName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // axiomClassName cannot fail; continue as before.
+    }
+    json["severity"] = axiomClassName2;
+    std::string reasonCodeName2{};
+    if (reasonCodeName(finding_in.reasonCode, reasonCodeName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // reasonCodeName cannot fail; continue as before.
+    }
+    json["reasonCode"] = reasonCodeName2;
+    nlohmann::json json2{};
+    if (entityKeysToJson(finding_in.involvedKeys, json2) !=
+        SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS)
+    {
+        // entityKeysToJson cannot fail; continue as before.
+    }
+    json["involvedKeys"] = json2;
+    nlohmann::json json3{};
+    if (findingEvidenceToJson(finding_in.evidence, json3) !=
+        SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS)
+    {
+        // findingEvidenceToJson cannot fail; continue as before.
+    }
+    json["evidence"] = json3;
+    json_out         = json;
+    return SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS;
 }
 
 } // namespace semantic

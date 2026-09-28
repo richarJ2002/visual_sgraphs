@@ -21,7 +21,9 @@ namespace semantic
 
 /*! Counts walls whose SAME index has both a valid finite unit-able normal and
  * valid bounds ("walls with valid normals and bounds"). */
-std::size_t validWallEvidenceCount(const RoomContextSnapshot &snapshot_in)
+SemanticCandidatesStatus
+    validWallEvidenceCount(const RoomContextSnapshot &snapshot_in,
+                           std::size_t &validWallEvidenceCount_out)
 {
     const std::size_t pairedCount =
         std::min(snapshot_in.wallNormals.size(), snapshot_in.wallBounds.size());
@@ -29,13 +31,21 @@ std::size_t validWallEvidenceCount(const RoomContextSnapshot &snapshot_in)
     for (std::size_t index = 0U; index < pairedCount; ++index)
     {
         const Eigen::Vector3d &normal = snapshot_in.wallNormals[index];
-        if (normal.allFinite() && normal.norm() > 1e-12 &&
-            isValidWallBounds(snapshot_in.wallBounds[index]))
+        bool                   isValidWallBounds2{};
+        if ((normal.allFinite() && normal.norm() > 1e-12) &&
+            isValidWallBounds(snapshot_in.wallBounds[index],
+                              isValidWallBounds2) !=
+                SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // isValidWallBounds cannot fail; continue as before.
+        }
+        if (normal.allFinite() && normal.norm() > 1e-12 && isValidWallBounds2)
         {
             ++count;
         }
     }
-    return count;
+    validWallEvidenceCount_out = count;
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

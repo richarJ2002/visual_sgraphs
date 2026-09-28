@@ -30,19 +30,21 @@ namespace core
 namespace semantic
 {
 
-AlignmentCheck
+SemanticVerifyStatus
     checkPassageTopology(const RoomContextSnapshot  &survivingContext_in,
                          const RoomContextSnapshot  &absorbedContext_in,
                          const g2o::Sim3            &transform_in,
                          const SemanticVerifyConfig &configuration_in,
                          std::size_t                &matchedCount_out,
-                         SemanticMergeReason        &contradictionReason_out)
+                         SemanticMergeReason        &contradictionReason_out,
+                         AlignmentCheck             &alignmentCheck_out)
 {
     matchedCount_out = 0U;
     if (survivingContext_in.passageContexts.empty() ||
         absorbedContext_in.passageContexts.empty())
     {
-        return AlignmentCheck::MISSING;
+        alignmentCheck_out = AlignmentCheck::MISSING;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     std::map<int, const PassageContext *> survivingPassages;
@@ -77,7 +79,8 @@ AlignmentCheck
         {
             contradictionReason_out =
                 SemanticMergeReason::PASSAGE_IDENTITY_CONTRADICTION;
-            return AlignmentCheck::CONTRADICTION;
+            alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+            return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
         }
         if (absorbedPassage.hasKnownSideRoom !=
                 survivingPassage.hasKnownSideRoom ||
@@ -97,14 +100,16 @@ AlignmentCheck
         {
             contradictionReason_out =
                 SemanticMergeReason::PASSAGE_ENDPOINT_CONTRADICTION;
-            return AlignmentCheck::CONTRADICTION;
+            alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+            return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
         }
         if (absorbedPassage.hasFarSideRoom && survivingPassage.hasFarSideRoom &&
             absorbedPassage.secondaryRoomId != survivingPassage.secondaryRoomId)
         {
             contradictionReason_out =
                 SemanticMergeReason::PASSAGE_ENDPOINT_CONTRADICTION;
-            return AlignmentCheck::CONTRADICTION;
+            alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+            return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
         }
         if (absorbedPassage.hasKnownSideDirection !=
             survivingPassage.hasKnownSideDirection)
@@ -129,7 +134,8 @@ AlignmentCheck
             {
                 contradictionReason_out =
                     SemanticMergeReason::PASSAGE_DIRECTION_CONTRADICTION;
-                return AlignmentCheck::CONTRADICTION;
+                alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+                return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
             }
         }
     }
@@ -138,10 +144,12 @@ AlignmentCheck
     {
         contradictionReason_out =
             SemanticMergeReason::PASSAGE_IDENTITY_CONTRADICTION;
-        return AlignmentCheck::CONTRADICTION;
+        alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
-    return hasIncompletePassage ? AlignmentCheck::MISSING
-                                : AlignmentCheck::ALIGNED;
+    alignmentCheck_out = hasIncompletePassage ? AlignmentCheck::MISSING
+                                              : AlignmentCheck::ALIGNED;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

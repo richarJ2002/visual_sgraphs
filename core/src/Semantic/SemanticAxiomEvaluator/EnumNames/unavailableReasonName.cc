@@ -32,24 +32,52 @@ namespace core
 namespace semantic
 {
 
-std::string unavailableReasonName(UnavailableReason reason_in)
+SemanticAxiomEvaluatorStatus
+    unavailableReasonName(UnavailableReason reason_in,
+                          std::string      &unavailableReasonName_out)
 {
     switch (reason_in)
     {
     case UnavailableReason::NONE:
-        return "NONE";
-    case UnavailableReason::NULL_REFERENCE:
-        return "NULL_REFERENCE";
-    case UnavailableReason::ENTITY_HAS_NO_MAP:
-        return "ENTITY_HAS_NO_MAP";
-    case UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA:
-        return "NOT_TRACKED_BY_CURRENT_SCHEMA";
-    case UnavailableReason::NOT_EXPOSED_BY_CURRENT_API:
-        return "NOT_EXPOSED_BY_CURRENT_API";
-    case UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE:
-        return "NOT_CAPTURED_IN_FOUNDATION_SLICE";
+    {
+        unavailableReasonName_out = "NONE";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return "UNKNOWN_UNAVAILABLE_REASON";
+    case UnavailableReason::NULL_REFERENCE:
+    {
+        unavailableReasonName_out = "NULL_REFERENCE";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case UnavailableReason::ENTITY_HAS_NO_MAP:
+    {
+        unavailableReasonName_out = "ENTITY_HAS_NO_MAP";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA:
+    {
+        unavailableReasonName_out = "NOT_TRACKED_BY_CURRENT_SCHEMA";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case UnavailableReason::NOT_EXPOSED_BY_CURRENT_API:
+    {
+        unavailableReasonName_out = "NOT_EXPOSED_BY_CURRENT_API";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE:
+    {
+        unavailableReasonName_out = "NOT_CAPTURED_IN_FOUNDATION_SLICE";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    }
+    unavailableReasonName_out = "UNKNOWN_UNAVAILABLE_REASON";
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

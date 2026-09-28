@@ -34,7 +34,7 @@ namespace core
 namespace semantic
 {
 
-void sortFindings(std::vector<Finding> &findings_inout)
+SemanticAxiomEvaluatorStatus sortFindings(std::vector<Finding> &findings_inout)
 {
     std::sort(
         findings_inout.begin(),
@@ -89,6 +89,9 @@ void sortFindings(std::vector<Finding> &findings_inout)
                                     *rhsEvidence.numericValue);
             return false;
         });
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

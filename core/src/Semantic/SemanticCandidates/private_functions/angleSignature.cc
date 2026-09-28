@@ -19,9 +19,10 @@ namespace core
 namespace semantic
 {
 
-std::vector<double> angleSignature(const RoomContextSnapshot &snapshot_in,
-                                   const double               tolerance_in,
-                                   const std::size_t          cap_in)
+SemanticCandidatesStatus angleSignature(const RoomContextSnapshot &snapshot_in,
+                                        const double               tolerance_in,
+                                        const std::size_t          cap_in,
+                                        std::vector<double> &angleSignature_out)
 {
     std::vector<Eigen::Vector3d> normals;
     normals.reserve(std::min(snapshot_in.wallNormals.size(), cap_in));
@@ -61,7 +62,8 @@ std::vector<double> angleSignature(const RoomContextSnapshot &snapshot_in,
         }
     }
     std::sort(signature.begin(), signature.end());
-    return signature;
+    angleSignature_out = signature;
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -23,6 +23,7 @@
  *                  private_functions.h.
  */
 
+#include "Semantic/SemanticAxiomEvaluator/SemanticAxiomEvaluatorStatus.h"
 #include <algorithm>
 
 namespace vs_graphs
@@ -33,8 +34,10 @@ namespace semantic
 {
 
 template <typename RecordT>
-const RecordT *findRecordByKey(const std::vector<RecordT> &records_in,
-                               const EntityKey            &key_in)
+SemanticAxiomEvaluatorStatus
+    findRecordByKey(const std::vector<RecordT> &records_in,
+                    const EntityKey            &key_in,
+                    const RecordT             *&p_record_out)
 {
     /* records_in is sorted ascending by RecordT::key (MapSnapshot's own
      * documented invariant), so std::lower_bound with a key-only comparator
@@ -51,9 +54,13 @@ const RecordT *findRecordByKey(const std::vector<RecordT> &records_in,
                          { return record_in.key < key_in; });
     if (foundIt == records_in.end() || foundIt->key != key_in)
     {
-        return nullptr;
+        p_record_out = nullptr;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return &(*foundIt);
+    p_record_out = &(*foundIt);
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

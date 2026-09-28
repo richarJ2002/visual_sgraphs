@@ -35,6 +35,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "Semantic/SemanticDiagnostics/SemanticDiagnosticsStatus.h"
 #include "Semantic/SemanticDiagnostics/objects.h"
 #include "Semantic/SemanticReportCache/objects/SemanticReportCacheEntry.h"
 
@@ -91,14 +92,15 @@ inline constexpr std::size_t kMaxViolationDetailsPerCycle = 50U;
  *                  call; updated in place exactly when the returned
  *                  update's \c emit is true.
  *
- * @return      The bounded update to print (SG_AXIOM/SG_VIOLATION
- *              prefixes are the caller's responsibility), or \c emit ==
- *              false when neither a discrete change nor a due heartbeat
- *              exists this call.
+ * @param[out] semanticDiagnosticUpdate_out The bounded update to print
+ * (SG_AXIOM/SG_VIOLATION prefixes are the caller's responsibility), or \c emit
+ * == false when neither a discrete change nor a due heartbeat exists this call.
+ * @return SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS.
  */
-SemanticDiagnosticUpdate
-    buildSemanticDiagnosticUpdate(const SemanticReportCacheEntry &entry_in,
-                                  SemanticDiagnosticState        &state_in_out);
+[[nodiscard]] SemanticDiagnosticsStatus buildSemanticDiagnosticUpdate(
+    const SemanticReportCacheEntry &entry_in,
+    SemanticDiagnosticState        &state_in_out,
+    SemanticDiagnosticUpdate       &semanticDiagnosticUpdate_out);
 
 } // namespace semantic
 } // namespace core

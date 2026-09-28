@@ -36,10 +36,11 @@ namespace core
 namespace semantic
 {
 
-AxiomEvaluationReport
+SemanticAxiomEvaluatorStatus
     evaluateTransition(const SemanticGraphSnapshot       &before_in,
                        const SemanticGraphSnapshot       &after_in,
-                       const TransitionEvaluationContext &context_in)
+                       const TransitionEvaluationContext &context_in,
+                       AxiomEvaluationReport             &report_out)
 {
     (void)before_in;
     (void)context_in;
@@ -53,7 +54,12 @@ AxiomEvaluationReport
      * either. AX-MERGE-01 keeps its single reason either way: it is always
      * MERGE_PRESERVATION_NOT_YET_IMPLEMENTED regardless of evaluation
      * mode. */
-    AxiomEvaluationReport afterStateReport = evaluateState(after_in);
+    AxiomEvaluationReport afterStateReport{};
+    if (evaluateState(after_in, afterStateReport) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // evaluateState cannot fail; continue as before.
+    }
 
     std::vector<Finding> findings;
     findings.reserve(afterStateReport.findings.size());
@@ -67,23 +73,47 @@ AxiomEvaluationReport
         findings.push_back(std::move(finding));
     }
 
-    findings.push_back(
-        makeFinding(AxiomCode::AX_FRAME_01,
+    Finding finding2{};
+    if (makeFinding(AxiomCode::AX_FRAME_01,
                     AxiomResult::UNKNOWN,
                     ReasonCode::FRAME_EQUIVARIANCE_NOT_YET_IMPLEMENTED,
-                    {}));
-    findings.push_back(
-        makeFinding(AxiomCode::AX_TXN_01,
+                    {},
+                    finding2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeFinding cannot fail; continue as before.
+    }
+    findings.push_back(finding2);
+    Finding finding3{};
+    if (makeFinding(AxiomCode::AX_TXN_01,
                     AxiomResult::UNKNOWN,
                     ReasonCode::TRANSACTION_POSTCONDITION_NOT_YET_IMPLEMENTED,
-                    {}));
+                    {},
+                    finding3) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeFinding cannot fail; continue as before.
+    }
+    findings.push_back(finding3);
 
-    sortFindings(findings);
+    if (sortFindings(findings) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // sortFindings cannot fail; continue as before.
+    }
 
-    AxiomEvaluationReport report;
-    report.aggregates = aggregateFindings(findings);
+    AxiomEvaluationReport             report;
+    std::vector<AggregateAxiomResult> aggregateResults{};
+    if (aggregateFindings(findings, aggregateResults) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // aggregateFindings cannot fail; continue as before.
+    }
+    report.aggregates = aggregateResults;
     report.findings   = std::move(findings);
-    return report;
+    report_out        = report;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

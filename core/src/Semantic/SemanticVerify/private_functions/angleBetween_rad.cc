@@ -30,14 +30,16 @@ namespace core
 namespace semantic
 {
 
-double angleBetween_rad(const Eigen::Vector3d &first_in,
-                        const Eigen::Vector3d &second_in)
+SemanticVerifyStatus angleBetween_rad(const Eigen::Vector3d &first_in,
+                                      const Eigen::Vector3d &second_in,
+                                      double                &angle_rad_out)
 {
     const double dot =
         std::clamp(first_in.normalized().dot(second_in.normalized()),
                    -1.0,
                    1.0);
-    return std::acos(dot);
+    angle_rad_out = std::acos(dot);
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

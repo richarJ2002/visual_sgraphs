@@ -19,9 +19,11 @@ namespace core
 namespace semantic
 {
 
-bool finiteNonnegative(const double value_in)
+SemanticCandidatesStatus finiteNonnegative(const double value_in,
+                                           bool        &isFiniteNonnegative_out)
 {
-    return std::isfinite(value_in) && value_in >= 0.0;
+    isFiniteNonnegative_out = std::isfinite(value_in) && value_in >= 0.0;
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

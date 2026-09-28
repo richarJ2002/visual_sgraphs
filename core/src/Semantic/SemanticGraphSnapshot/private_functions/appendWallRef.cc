@@ -32,14 +32,23 @@ namespace core
 namespace semantic
 {
 
-void appendWallRef(geometric::Plane         *p_wall_in,
-                   std::vector<RawPlaneRef> &refs_inout)
+SemanticGraphSnapshotStatus appendWallRef(geometric::Plane         *p_wall_in,
+                                          std::vector<RawPlaneRef> &refs_inout)
 {
     if (p_wall_in == nullptr)
     {
-        return;
+        return SemanticGraphSnapshotStatus::
+            SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
     }
-    refs_inout.push_back(rawPlaneRef(p_wall_in));
+    RawPlaneRef rawPlaneRef2{};
+    if (rawPlaneRef(p_wall_in, rawPlaneRef2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // rawPlaneRef cannot fail; continue as before.
+    }
+    refs_inout.push_back(rawPlaneRef2);
+
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

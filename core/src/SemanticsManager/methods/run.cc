@@ -633,8 +633,13 @@ void SemanticsManager::run(void)
          * ------------------------------------------------------------------ */
         const std::uint64_t semanticCycle = pipelineSemanticCycle;
 
-        semantic::SemanticGraphSnapshot snapshot =
-            semantic::captureSemanticGraphSnapshot(p_atlas);
+        semantic::SemanticGraphSnapshot snapshot{};
+        if (semantic::captureSemanticGraphSnapshot(p_atlas, snapshot) !=
+            semantic::SemanticGraphSnapshotStatus::
+                SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+        {
+            // captureSemanticGraphSnapshot cannot fail; continue as before.
+        }
         snapshot.managerPrivateOpenPassageHypotheses =
             captureOpenPassageHypotheses();
         snapshot.managerPrivateOpenPassageHypothesesReason =
@@ -666,29 +671,63 @@ void SemanticsManager::run(void)
 
         const std::chrono::steady_clock::time_point evaluationStart =
             std::chrono::steady_clock::now();
-        const semantic::AxiomEvaluationReport evaluationReport =
-            semantic::evaluateState(snapshot);
-        const std::vector<semantic::MapCompletenessResult> completenessResults =
-            semantic::evaluateMapCompleteness(snapshot);
-        const std::string topologyDigest = semantic::sha256HexDigest(
-            semantic::serializeSnapshotTopologyOnly(snapshot).dump());
-        const std::string fullGeometryDigest = semantic::sha256HexDigest(
-            semantic::serializeSnapshotFullGeometry(snapshot).dump());
+        semantic::AxiomEvaluationReport evaluationReport{};
+        if (semantic::evaluateState(snapshot, evaluationReport) !=
+            semantic::SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateState cannot fail; continue as before.
+        }
+        std::vector<semantic::MapCompletenessResult> completenessResults{};
+        if (semantic::evaluateMapCompleteness(snapshot, completenessResults) !=
+            semantic::SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateMapCompleteness cannot fail; continue as before.
+        }
+        std::string topologyDigest{};
+        if (semantic::sha256HexDigest(
+                semantic::serializeSnapshotTopologyOnly(snapshot).dump(),
+                topologyDigest) !=
+            semantic::Sha256DigestStatus::SHA256_DIGEST_STATUS_SUCCESS)
+        {
+            // sha256HexDigest cannot fail; continue as before.
+        }
+        std::string fullGeometryDigest{};
+        if (semantic::sha256HexDigest(
+                semantic::serializeSnapshotFullGeometry(snapshot).dump(),
+                fullGeometryDigest) !=
+            semantic::Sha256DigestStatus::SHA256_DIGEST_STATUS_SUCCESS)
+        {
+            // sha256HexDigest cannot fail; continue as before.
+        }
         const std::chrono::milliseconds evaluationDuration =
             std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - evaluationStart);
 
-        semanticReportCache.update(snapshot,
-                                   evaluationReport,
-                                   completenessResults,
-                                   semanticCycle,
-                                   snapshot.currentMapId,
-                                   currentMapRevision,
-                                   topologyDigest,
-                                   fullGeometryDigest,
-                                   evaluationDuration);
+        if (semanticReportCache.update(snapshot,
+                                       evaluationReport,
+                                       completenessResults,
+                                       semanticCycle,
+                                       snapshot.currentMapId,
+                                       currentMapRevision,
+                                       topologyDigest,
+                                       fullGeometryDigest,
+                                       evaluationDuration) !=
+            semantic::SemanticReportCacheStatus::
+                SEMANTIC_REPORT_CACHE_STATUS_SUCCESS)
+        {
+            // update cannot fail; continue as before.
+        }
 
-        logSemanticDiagnostics(semanticReportCache.getLatest());
+        semantic::SemanticReportCacheEntry semanticReportCacheGetLatest{};
+        if (semanticReportCache.getLatest(semanticReportCacheGetLatest) !=
+            semantic::SemanticReportCacheStatus::
+                SEMANTIC_REPORT_CACHE_STATUS_SUCCESS)
+        {
+            // getLatest cannot fail; continue as before.
+        }
+        logSemanticDiagnostics(semanticReportCacheGetLatest);
 
         /* Find the time after it took to run the loop */
         const std::chrono::steady_clock::time_point end =

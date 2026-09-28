@@ -21,22 +21,33 @@ namespace semantic
 
 /*! Fraction of wallBounds entries that are invalid; 0.0 when there are no
  * walls to be missing from (">50% missing bounds" guard). */
-double missingBoundsFraction(const RoomContextSnapshot &snapshot_in)
+SemanticCandidatesStatus
+    missingBoundsFraction(const RoomContextSnapshot &snapshot_in,
+                          double                    &missingBoundsFraction_out)
 {
     if (snapshot_in.wallBounds.empty())
     {
-        return 0.0;
+        missingBoundsFraction_out = 0.0;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
     }
     std::size_t validCount = 0U;
     for (const WallBounds &bounds : snapshot_in.wallBounds)
     {
-        if (isValidWallBounds(bounds))
+        bool isValidWallBounds2{};
+        if (isValidWallBounds(bounds, isValidWallBounds2) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // isValidWallBounds cannot fail; continue as before.
+        }
+        if (isValidWallBounds2)
         {
             ++validCount;
         }
     }
-    return 1.0 - static_cast<double>(validCount) /
-                     static_cast<double>(snapshot_in.wallBounds.size());
+    missingBoundsFraction_out =
+        1.0 - static_cast<double>(validCount) /
+                  static_cast<double>(snapshot_in.wallBounds.size());
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

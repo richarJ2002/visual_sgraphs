@@ -82,8 +82,9 @@ TEST(SemanticDiagnostics, FirstCycleEmitsSummaryAndOnlyFailAppeared)
                    makeUnknownFinding("u1")},
                   "digest-1");
 
-    const SemanticDiagnosticUpdate update =
-        buildSemanticDiagnosticUpdate(entry, state);
+    SemanticDiagnosticUpdate update{};
+    ASSERT_EQ((buildSemanticDiagnosticUpdate(entry, state, update)),
+              SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
 
     ASSERT_TRUE(update.shouldEmit);
     EXPECT_EQ(update.summary["eventType"], "summary");
@@ -105,15 +106,21 @@ TEST(SemanticDiagnostics, UnchangedCycles2Through9EmitNothing)
     const std::vector<Finding> findings = {
         makeFailFinding("f1", ReasonCode::WALL_OWNERSHIP_OWNER_BAD)};
 
-    ASSERT_TRUE(
-        buildSemanticDiagnosticUpdate(makeEntry(1U, findings, "d"), state)
-            .shouldEmit);
+    SemanticDiagnosticUpdate semanticDiagnosticUpdate{};
+    ASSERT_EQ((buildSemanticDiagnosticUpdate(makeEntry(1U, findings, "d"),
+                                             state,
+                                             semanticDiagnosticUpdate)),
+              SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
+    ASSERT_TRUE(semanticDiagnosticUpdate.shouldEmit);
 
     for (std::uint64_t cycle = 2U; cycle <= 9U; ++cycle)
     {
-        const SemanticDiagnosticUpdate update =
-            buildSemanticDiagnosticUpdate(makeEntry(cycle, findings, "d"),
-                                          state);
+        SemanticDiagnosticUpdate update{};
+        ASSERT_EQ(
+            (buildSemanticDiagnosticUpdate(makeEntry(cycle, findings, "d"),
+                                           state,
+                                           update)),
+            SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
         EXPECT_FALSE(update.shouldEmit) << "cycle " << cycle;
     }
 }
@@ -124,19 +131,28 @@ TEST(SemanticDiagnostics, HeartbeatEmittedExactlyOnCycle10)
     const std::vector<Finding> findings = {
         makeFailFinding("f1", ReasonCode::WALL_OWNERSHIP_OWNER_BAD)};
 
-    ASSERT_TRUE(
-        buildSemanticDiagnosticUpdate(makeEntry(1U, findings, "d"), state)
-            .shouldEmit);
+    SemanticDiagnosticUpdate semanticDiagnosticUpdate{};
+    ASSERT_EQ((buildSemanticDiagnosticUpdate(makeEntry(1U, findings, "d"),
+                                             state,
+                                             semanticDiagnosticUpdate)),
+              SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
+    ASSERT_TRUE(semanticDiagnosticUpdate.shouldEmit);
     for (std::uint64_t cycle = 2U; cycle <= 9U; ++cycle)
     {
-        ASSERT_FALSE(
-            buildSemanticDiagnosticUpdate(makeEntry(cycle, findings, "d"),
-                                          state)
-                .shouldEmit);
+        SemanticDiagnosticUpdate semanticDiagnosticUpdate2{};
+        ASSERT_EQ(
+            (buildSemanticDiagnosticUpdate(makeEntry(cycle, findings, "d"),
+                                           state,
+                                           semanticDiagnosticUpdate2)),
+            SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
+        ASSERT_FALSE(semanticDiagnosticUpdate2.shouldEmit);
     }
 
-    const SemanticDiagnosticUpdate heartbeat =
-        buildSemanticDiagnosticUpdate(makeEntry(10U, findings, "d"), state);
+    SemanticDiagnosticUpdate heartbeat{};
+    ASSERT_EQ((buildSemanticDiagnosticUpdate(makeEntry(10U, findings, "d"),
+                                             state,
+                                             heartbeat)),
+              SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
     ASSERT_TRUE(heartbeat.shouldEmit);
     EXPECT_EQ(heartbeat.summary["eventType"], "heartbeat");
     EXPECT_TRUE(heartbeat.violationDetails.empty());
@@ -146,37 +162,53 @@ TEST(SemanticDiagnostics, HeartbeatEmittedExactlyOnCycle10)
      * 1). */
     for (std::uint64_t cycle = 11U; cycle <= 18U; ++cycle)
     {
-        ASSERT_FALSE(
-            buildSemanticDiagnosticUpdate(makeEntry(cycle, findings, "d"),
-                                          state)
-                .shouldEmit);
+        SemanticDiagnosticUpdate semanticDiagnosticUpdate3{};
+        ASSERT_EQ(
+            (buildSemanticDiagnosticUpdate(makeEntry(cycle, findings, "d"),
+                                           state,
+                                           semanticDiagnosticUpdate3)),
+            SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
+        ASSERT_FALSE(semanticDiagnosticUpdate3.shouldEmit);
     }
-    EXPECT_TRUE(
-        buildSemanticDiagnosticUpdate(makeEntry(19U, findings, "d"), state)
-            .shouldEmit);
+    SemanticDiagnosticUpdate semanticDiagnosticUpdate4{};
+    ASSERT_EQ((buildSemanticDiagnosticUpdate(makeEntry(19U, findings, "d"),
+                                             state,
+                                             semanticDiagnosticUpdate4)),
+              SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
+    EXPECT_TRUE(semanticDiagnosticUpdate4.shouldEmit);
 }
 
 TEST(SemanticDiagnostics, AppearedChangedAndResolvedFailTransitions)
 {
-    SemanticDiagnosticState state;
-    buildSemanticDiagnosticUpdate(
-        makeEntry(
-            1U,
-            {makeFailFinding("f-stable", ReasonCode::WALL_OWNERSHIP_OWNER_BAD),
-             makeFailFinding("f-resolved",
-                             ReasonCode::WALL_OWNERSHIP_OWNER_UNRESOLVABLE)},
-            "d1"),
-        state);
+    SemanticDiagnosticState  state;
+    SemanticDiagnosticUpdate semanticDiagnosticUpdate{};
+    ASSERT_EQ(
+        (buildSemanticDiagnosticUpdate(
+            makeEntry(1U,
+                      {makeFailFinding("f-stable",
+                                       ReasonCode::WALL_OWNERSHIP_OWNER_BAD),
+                       makeFailFinding(
+                           "f-resolved",
+                           ReasonCode::WALL_OWNERSHIP_OWNER_UNRESOLVABLE)},
+                      "d1"),
+            state,
+            semanticDiagnosticUpdate)),
+        SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
 
     /* f-stable persists unchanged; f-resolved disappears (resolved);
      * f-new appears. Digest changes too, so this is a "summary" event. */
-    const SemanticDiagnosticUpdate update = buildSemanticDiagnosticUpdate(
-        makeEntry(
-            2U,
-            {makeFailFinding("f-stable", ReasonCode::WALL_OWNERSHIP_OWNER_BAD),
-             makeFailFinding("f-new", ReasonCode::WALL_OWNERSHIP_OWNER_BAD)},
-            "d2"),
-        state);
+    SemanticDiagnosticUpdate update{};
+    ASSERT_EQ(
+        (buildSemanticDiagnosticUpdate(
+            makeEntry(2U,
+                      {makeFailFinding("f-stable",
+                                       ReasonCode::WALL_OWNERSHIP_OWNER_BAD),
+                       makeFailFinding("f-new",
+                                       ReasonCode::WALL_OWNERSHIP_OWNER_BAD)},
+                      "d2"),
+            state,
+            update)),
+        SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
 
     ASSERT_TRUE(update.shouldEmit);
     std::map<std::string, std::string> transitionById;
@@ -196,24 +228,33 @@ TEST(SemanticDiagnostics, GeometryOnlyDriftNeverEmitsOrRepeatsDetails)
     const std::vector<Finding> findings = {
         makeFailFinding("f1", ReasonCode::WALL_OWNERSHIP_OWNER_BAD)};
 
-    ASSERT_TRUE(
-        buildSemanticDiagnosticUpdate(makeEntry(1U, findings, "topo-a"), state)
-            .shouldEmit);
+    SemanticDiagnosticUpdate semanticDiagnosticUpdate{};
+    ASSERT_EQ((buildSemanticDiagnosticUpdate(makeEntry(1U, findings, "topo-a"),
+                                             state,
+                                             semanticDiagnosticUpdate)),
+              SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
+    ASSERT_TRUE(semanticDiagnosticUpdate.shouldEmit);
 
     SemanticReportCacheEntry geometryDriftEntry =
         makeEntry(2U, findings, "topo-a");
     geometryDriftEntry.canonicalFullGeometryDigest = "geom-changed";
     geometryDriftEntry.geometryRevision            = 7U;
 
-    const SemanticDiagnosticUpdate update =
-        buildSemanticDiagnosticUpdate(geometryDriftEntry, state);
+    SemanticDiagnosticUpdate update{};
+    ASSERT_EQ(
+        (buildSemanticDiagnosticUpdate(geometryDriftEntry, state, update)),
+        SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
     EXPECT_FALSE(update.shouldEmit);
 }
 
 TEST(SemanticDiagnostics, DetailCapBoundsOutputAndCountsEverything)
 {
-    SemanticDiagnosticState state;
-    buildSemanticDiagnosticUpdate(makeEntry(1U, {}, "d1"), state);
+    SemanticDiagnosticState  state;
+    SemanticDiagnosticUpdate semanticDiagnosticUpdate{};
+    ASSERT_EQ((buildSemanticDiagnosticUpdate(makeEntry(1U, {}, "d1"),
+                                             state,
+                                             semanticDiagnosticUpdate)),
+              SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
 
     std::vector<Finding> manyFailures;
     for (int i = 0; i < 60; ++i)
@@ -222,8 +263,11 @@ TEST(SemanticDiagnostics, DetailCapBoundsOutputAndCountsEverything)
             makeFailFinding("f" + std::to_string(i),
                             ReasonCode::WALL_OWNERSHIP_OWNER_BAD));
     }
-    const SemanticDiagnosticUpdate update =
-        buildSemanticDiagnosticUpdate(makeEntry(2U, manyFailures, "d2"), state);
+    SemanticDiagnosticUpdate update{};
+    ASSERT_EQ((buildSemanticDiagnosticUpdate(makeEntry(2U, manyFailures, "d2"),
+                                             state,
+                                             update)),
+              SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
 
     ASSERT_TRUE(update.shouldEmit);
     EXPECT_EQ(update.violationDetails.size(), kMaxViolationDetailsPerCycle);
@@ -241,13 +285,19 @@ TEST(SemanticDiagnostics, OutputIsDeterministicAndJsonParseable)
         makeFailFinding("f2", ReasonCode::WALL_OWNERSHIP_OWNER_UNRESOLVABLE),
         makeFailFinding("f1", ReasonCode::WALL_OWNERSHIP_OWNER_BAD)};
 
-    const SemanticDiagnosticUpdate updateA =
-        buildSemanticDiagnosticUpdate(makeEntry(1U, findings, "d"), stateA);
+    SemanticDiagnosticUpdate updateA{};
+    ASSERT_EQ((buildSemanticDiagnosticUpdate(makeEntry(1U, findings, "d"),
+                                             stateA,
+                                             updateA)),
+              SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
     std::vector<Finding> reversedFindings = findings;
     std::reverse(reversedFindings.begin(), reversedFindings.end());
-    const SemanticDiagnosticUpdate updateB =
-        buildSemanticDiagnosticUpdate(makeEntry(1U, reversedFindings, "d"),
-                                      stateB);
+    SemanticDiagnosticUpdate updateB{};
+    ASSERT_EQ(
+        (buildSemanticDiagnosticUpdate(makeEntry(1U, reversedFindings, "d"),
+                                       stateB,
+                                       updateB)),
+        SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS);
 
     EXPECT_EQ(updateA.summary.dump(), updateB.summary.dump());
     ASSERT_EQ(updateA.violationDetails.size(), updateB.violationDetails.size());

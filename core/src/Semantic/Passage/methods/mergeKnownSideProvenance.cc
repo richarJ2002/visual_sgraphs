@@ -32,7 +32,20 @@ PassageStatus
     Passage::mergeKnownSideProvenance(const KnownSideProvenance &provenance_in)
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
-    if (!knownSideProvenance.hasDirection() && provenance_in.hasDirection())
+    bool                        knownSideProvenanceHasDirection{};
+    if (knownSideProvenance.hasDirection(knownSideProvenanceHasDirection) !=
+        KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+    {
+        // hasDirection cannot fail; continue as before.
+    }
+    bool provenanceHasDirection{};
+    if ((!knownSideProvenanceHasDirection) &&
+        provenance_in.hasDirection(provenanceHasDirection) !=
+            KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+    {
+        // hasDirection cannot fail; continue as before.
+    }
+    if (!knownSideProvenanceHasDirection && provenanceHasDirection)
     {
         knownSideProvenance.direction_World = provenance_in.direction_World;
     }

@@ -19,7 +19,9 @@ namespace core
 namespace semantic
 {
 
-std::size_t validNormalCount(const RoomContextSnapshot &snapshot_in)
+SemanticCandidatesStatus
+    validNormalCount(const RoomContextSnapshot &snapshot_in,
+                     std::size_t               &validNormalCount_out)
 {
     std::size_t count = 0U;
     for (const Eigen::Vector3d &normal : snapshot_in.wallNormals)
@@ -29,7 +31,8 @@ std::size_t validNormalCount(const RoomContextSnapshot &snapshot_in)
             ++count;
         }
     }
-    return count;
+    validNormalCount_out = count;
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

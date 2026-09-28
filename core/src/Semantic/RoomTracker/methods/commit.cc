@@ -35,12 +35,18 @@ RoomTrackerStatus
                         bool                        accepted_in)
 {
     TransitionEvent transitionRecord;
-    transitionRecord.timestamp_s           = now_s_in;
-    transitionRecord.sourceState           = source_in;
-    transitionRecord.event                 = event_in;
-    transitionRecord.dwell_s               = crossing_in.dwell_s;
-    transitionRecord.confidence            = crossing_in.confidence;
-    transitionRecord.hasVerificationPassed = verification_in.isPass();
+    transitionRecord.timestamp_s = now_s_in;
+    transitionRecord.sourceState = source_in;
+    transitionRecord.event       = event_in;
+    transitionRecord.dwell_s     = crossing_in.dwell_s;
+    transitionRecord.confidence  = crossing_in.confidence;
+    bool verificationIsPass{};
+    if (verification_in.isPass(verificationIsPass) !=
+        VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
+    {
+        // isPass cannot fail; continue as before.
+    }
+    transitionRecord.hasVerificationPassed = verificationIsPass;
     transitionRecord.targetState = accepted_in ? trackingState : source_in;
 
     /* Resolve the target state for accepted transitions. */

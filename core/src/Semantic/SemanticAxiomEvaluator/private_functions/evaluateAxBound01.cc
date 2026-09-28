@@ -34,8 +34,9 @@ namespace core
 namespace semantic
 {
 
-void evaluateAxBound01(const SemanticGraphSnapshot &snapshot_in,
-                       std::vector<Finding>        &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateAxBound01(const SemanticGraphSnapshot &snapshot_in,
+                      std::vector<Finding>        &findings_inout)
 {
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
     {
@@ -45,9 +46,17 @@ void evaluateAxBound01(const SemanticGraphSnapshot &snapshot_in,
             {
                 continue;
             }
-            evaluateOneRoomBoundary(room, snapshot_in, findings_inout);
+            if (evaluateOneRoomBoundary(room, snapshot_in, findings_inout) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // evaluateOneRoomBoundary cannot fail; continue as before.
+            }
         }
     }
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

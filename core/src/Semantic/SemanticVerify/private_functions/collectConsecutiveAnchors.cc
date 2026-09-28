@@ -30,9 +30,10 @@ namespace core
 namespace semantic
 {
 
-std::vector<ConsecutiveAnchorPair> collectConsecutiveAnchors(
+SemanticVerifyStatus collectConsecutiveAnchors(
     const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
-    const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in)
+    const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
+    std::vector<ConsecutiveAnchorPair>           &consecutiveAnchors_out)
 {
     std::map<std::string, const SemanticMergeRoomEvidence *> survivingByTag;
     for (const SemanticMergeRoomEvidence &room : survivingRooms_in)
@@ -58,7 +59,8 @@ std::vector<ConsecutiveAnchorPair> collectConsecutiveAnchors(
             pairs.push_back(pair);
         }
     }
-    return pairs;
+    consecutiveAnchors_out = pairs;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

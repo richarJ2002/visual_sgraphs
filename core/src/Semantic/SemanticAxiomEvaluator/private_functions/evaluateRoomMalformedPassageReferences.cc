@@ -41,9 +41,9 @@ namespace core
 namespace semantic
 {
 
-void evaluateRoomMalformedPassageReferences(
-    const MapSnapshot    &mapSnapshot_in,
-    std::vector<Finding> &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateRoomMalformedPassageReferences(const MapSnapshot    &mapSnapshot_in,
+                                           std::vector<Finding> &findings_inout)
 {
     for (const RoomRecord &room : mapSnapshot_in.rooms)
     {
@@ -63,13 +63,24 @@ void evaluateRoomMalformedPassageReferences(
         }
         if (anyMalformed)
         {
-            findings_inout.push_back(makeFinding(
-                AxiomCode::AX_PASS_02,
-                AxiomResult::FAIL,
-                ReasonCode::PASSAGE_CARDINALITY_ROOM_HAS_MALFORMED_REFERENCE,
-                {room.key}));
+            Finding finding{};
+            if (makeFinding(
+                    AxiomCode::AX_PASS_02,
+                    AxiomResult::FAIL,
+                    ReasonCode::
+                        PASSAGE_CARDINALITY_ROOM_HAS_MALFORMED_REFERENCE,
+                    {room.key},
+                    finding) != SemanticAxiomEvaluatorStatus::
+                                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // makeFinding cannot fail; continue as before.
+            }
+            findings_inout.push_back(finding);
         }
     }
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

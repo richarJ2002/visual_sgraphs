@@ -51,62 +51,125 @@ namespace core
 namespace semantic
 {
 
-void evaluateOneRoomBoundary(const RoomRecord            &room_in,
-                             const SemanticGraphSnapshot &snapshot_in,
-                             std::vector<Finding>        &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateOneRoomBoundary(const RoomRecord            &room_in,
+                            const SemanticGraphSnapshot &snapshot_in,
+                            std::vector<Finding>        &findings_inout)
 {
     const std::vector<EntityKey> involvedKeys{room_in.key};
 
     if (room_in.boundaryStatus == Room::BoundaryStatus::CONFLICTING)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_BOUND_01,
+        Finding finding{};
+        if (makeFinding(AxiomCode::AX_BOUND_01,
                         AxiomResult::FAIL,
                         ReasonCode::ROOM_BOUNDARY_CONFLICTING_STATE,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding) != SemanticAxiomEvaluatorStatus::
+                                        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (room_in.boundaryStatus != Room::BoundaryStatus::COMPLETE)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_BOUND_01,
+        Finding finding2{};
+        if (makeFinding(AxiomCode::AX_BOUND_01,
                         AxiomResult::UNKNOWN,
                         ReasonCode::ROOM_BOUNDARY_NOT_YET_COMPLETE,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding2);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    switch (checkRoomBoundaryGeometry(room_in.boundaryCorners_World_m))
+    RoomBoundaryGeometryStatus geometryStatus{};
+    if (checkRoomBoundaryGeometry(room_in.boundaryCorners_World_m,
+                                  geometryStatus) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // checkRoomBoundaryGeometry cannot fail; continue as before.
+    }
+    switch (geometryStatus)
     {
     case RoomBoundaryGeometryStatus::TOO_FEW_CORNERS:
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_BOUND_01,
+    {
+        Finding finding3{};
+        if (makeFinding(AxiomCode::AX_BOUND_01,
                         AxiomResult::FAIL,
                         ReasonCode::ROOM_BOUNDARY_TOO_FEW_CORNERS,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding3) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding3);
+    }
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     case RoomBoundaryGeometryStatus::NON_FINITE_CORNER:
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_BOUND_01,
+    {
+        Finding finding4{};
+        if (makeFinding(AxiomCode::AX_BOUND_01,
                         AxiomResult::FAIL,
                         ReasonCode::ROOM_BOUNDARY_NON_FINITE_CORNER,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding4) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding4);
+    }
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     case RoomBoundaryGeometryStatus::DEGENERATE_EDGE:
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_BOUND_01,
+    {
+        Finding finding5{};
+        if (makeFinding(AxiomCode::AX_BOUND_01,
                         AxiomResult::FAIL,
                         ReasonCode::ROOM_BOUNDARY_DEGENERATE_EDGE,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding5) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding5);
+    }
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     case RoomBoundaryGeometryStatus::SELF_INTERSECTING:
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_BOUND_01,
+    {
+        Finding finding6{};
+        if (makeFinding(AxiomCode::AX_BOUND_01,
                         AxiomResult::FAIL,
                         ReasonCode::ROOM_BOUNDARY_SELF_INTERSECTING,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding6) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding6);
+    }
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     case RoomBoundaryGeometryStatus::VALID:
         break;
     }
@@ -115,8 +178,17 @@ void evaluateOneRoomBoundary(const RoomRecord            &room_in,
     bool        anyInvalidWallEvidence = false;
     for (const RawPlaneRef &wallReference : room_in.wallRefs)
     {
-        switch (
-            isValidBoundaryWallEvidence(wallReference, room_in, snapshot_in))
+        RoomBoundaryWallEvidenceStatus evidenceStatus{};
+        if (isValidBoundaryWallEvidence(wallReference,
+                                        room_in,
+                                        snapshot_in,
+                                        evidenceStatus) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // isValidBoundaryWallEvidence cannot fail; continue as before.
+        }
+        switch (evidenceStatus)
         {
         case RoomBoundaryWallEvidenceStatus::VALID:
             ++validWallEvidenceCount;
@@ -130,51 +202,92 @@ void evaluateOneRoomBoundary(const RoomRecord            &room_in,
     }
     if (anyInvalidWallEvidence)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_BOUND_01,
+        Finding finding7{};
+        if (makeFinding(AxiomCode::AX_BOUND_01,
                         AxiomResult::FAIL,
                         ReasonCode::ROOM_BOUNDARY_INVALID_WALL_EVIDENCE,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding7) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding7);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (validWallEvidenceCount == 0U)
     {
         if (room_in.wallRefs.empty())
         {
-            findings_inout.push_back(
-                makeFinding(AxiomCode::AX_BOUND_01,
+            Finding finding8{};
+            if (makeFinding(AxiomCode::AX_BOUND_01,
                             AxiomResult::FAIL,
                             ReasonCode::ROOM_BOUNDARY_NO_WALL_EVIDENCE,
-                            involvedKeys));
-            return;
+                            involvedKeys,
+                            finding8) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // makeFinding cannot fail; continue as before.
+            }
+            findings_inout.push_back(finding8);
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
         }
         /* A nonempty wallRefs collection whose every entry is genuinely
          * UNAVAILABLE (no entry independently proven INVALID, already
          * excluded above) is an evidence gap, not the same contradiction as
          * a room with no wall evidence at all. */
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_BOUND_01,
+        Finding finding9{};
+        if (makeFinding(AxiomCode::AX_BOUND_01,
                         AxiomResult::UNKNOWN,
                         ReasonCode::ROOM_BOUNDARY_WALL_EVIDENCE_UNAVAILABLE,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding9) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding9);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (!room_in.observationGaps.empty())
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_BOUND_01,
+        Finding finding10{};
+        if (makeFinding(AxiomCode::AX_BOUND_01,
                         AxiomResult::UNKNOWN,
                         ReasonCode::ROOM_BOUNDARY_GAP_CORRESPONDENCE_UNVERIFIED,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding10) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding10);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    findings_inout.push_back(
-        makeFinding(AxiomCode::AX_BOUND_01,
+    Finding finding11{};
+    if (makeFinding(AxiomCode::AX_BOUND_01,
                     AxiomResult::UNKNOWN,
                     ReasonCode::ROOM_BOUNDARY_EDGE_SUPPORT_UNVERIFIED,
-                    involvedKeys));
+                    involvedKeys,
+                    finding11) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeFinding cannot fail; continue as before.
+    }
+    findings_inout.push_back(finding11);
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

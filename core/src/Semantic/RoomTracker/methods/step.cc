@@ -61,7 +61,15 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
         {
         case RoomTrackingState::LOST_WITH_LAST_ROOM:
         {
-            if (tracking_in.isNewMapCreated && verification_in.isPass())
+            bool verificationIsPass{};
+            if ((tracking_in.isNewMapCreated) &&
+                verification_in.isPass(verificationIsPass) !=
+                    VerificationVerdictStatus::
+                        VERIFICATION_VERDICT_STATUS_SUCCESS)
+            {
+                // isPass cannot fail; continue as before.
+            }
+            if (tracking_in.isNewMapCreated && verificationIsPass)
             {
                 /* Transition-table row 7 (guarded). */
                 RoomTrackingState nextState2{};
@@ -94,7 +102,13 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
         }
         case RoomTrackingState::REACQUIRING_IN_NEW_MAP:
         {
-            if (verification_in.isPass())
+            bool verificationIsPass2{};
+            if (verification_in.isPass(verificationIsPass2) !=
+                VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
+            {
+                // isPass cannot fail; continue as before.
+            }
+            if (verificationIsPass2)
             {
                 /* Transition-table row 9 (guarded). */
                 RoomTrackingState nextState4{};
@@ -150,7 +164,13 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
         case RoomTrackingState::UNKNOWN:
         {
             /* Transition-table row 1 (guarded). */
-            if (verification_in.isPass())
+            bool verificationIsPass3{};
+            if (verification_in.isPass(verificationIsPass3) !=
+                VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
+            {
+                // isPass cannot fail; continue as before.
+            }
+            if (verificationIsPass3)
             {
                 RoomTrackingState nextState7{};
                 if (applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
@@ -208,8 +228,16 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
              * the verification verdict both hold. */
             hasObservedBothSides =
                 hasObservedBothSides || crossing_in.areBothSidesObserved;
+            bool verificationIsPass4{};
+            if ((hasObservedBothSides) &&
+                verification_in.isPass(verificationIsPass4) !=
+                    VerificationVerdictStatus::
+                        VERIFICATION_VERDICT_STATUS_SUCCESS)
+            {
+                // isPass cannot fail; continue as before.
+            }
             const bool guardSatisfied =
-                hasObservedBothSides && verification_in.isPass();
+                hasObservedBothSides && verificationIsPass4;
             TraversalGuardValues updatedGuardValues = crossing_in;
             double               accumulatedDwell2{};
             if (accumulateDwell(trackingState,
@@ -240,7 +268,13 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
         case RoomTrackingState::LOST_WITHOUT_ROOM:
         {
             /* Transition-table row 6 (guarded). */
-            if (verification_in.isPass())
+            bool verificationIsPass5{};
+            if (verification_in.isPass(verificationIsPass5) !=
+                VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
+            {
+                // isPass cannot fail; continue as before.
+            }
+            if (verificationIsPass5)
             {
                 RoomTrackingState nextState10{};
                 if (applyEvent(RoomTrackingEvent::ROOM_REACQUIRED,

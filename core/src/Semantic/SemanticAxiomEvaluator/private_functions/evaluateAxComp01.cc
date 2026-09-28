@@ -39,39 +39,64 @@ namespace core
 namespace semantic
 {
 
-void evaluateAxComp01(const std::vector<MapCompletenessResult> &completeness_in,
-                      std::vector<Finding>                     &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateAxComp01(const std::vector<MapCompletenessResult> &completeness_in,
+                     std::vector<Finding>                     &findings_inout)
 {
     if (completeness_in.empty())
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_COMP_01,
+        Finding finding{};
+        if (makeFinding(AxiomCode::AX_COMP_01,
                         AxiomResult::UNKNOWN,
                         ReasonCode::COMPLETENESS_NO_MAP_PRESENT,
-                        {}));
-        return;
+                        {},
+                        finding) != SemanticAxiomEvaluatorStatus::
+                                        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     for (const MapCompletenessResult &completeness : completeness_in)
     {
         if (completeness.reasons.empty())
         {
-            findings_inout.push_back(
-                makeFinding(AxiomCode::AX_COMP_01,
+            Finding finding2{};
+            if (makeFinding(AxiomCode::AX_COMP_01,
                             completeness.conservativeResult,
                             ReasonCode::COMPLETENESS_ALL_CLEAR,
-                            completeness.relevantEntityKeys));
+                            completeness.relevantEntityKeys,
+                            finding2) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // makeFinding cannot fail; continue as before.
+            }
+            findings_inout.push_back(finding2);
             continue;
         }
         for (const ReasonCode reason : completeness.reasons)
         {
-            findings_inout.push_back(
-                makeFinding(AxiomCode::AX_COMP_01,
+            Finding finding3{};
+            if (makeFinding(AxiomCode::AX_COMP_01,
                             completeness.conservativeResult,
                             reason,
-                            completeness.relevantEntityKeys));
+                            completeness.relevantEntityKeys,
+                            finding3) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // makeFinding cannot fail; continue as before.
+            }
+            findings_inout.push_back(finding3);
         }
     }
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

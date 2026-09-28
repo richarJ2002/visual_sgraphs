@@ -39,9 +39,10 @@ namespace core
 namespace semantic
 {
 
-AxiomResult
+SemanticAxiomEvaluatorStatus
     canonicalRoomFloorResultFor(const ResolvedRoomEndpoint  &endpoint_in,
-                                const SemanticGraphSnapshot &snapshot_in)
+                                const SemanticGraphSnapshot &snapshot_in,
+                                AxiomResult &roomFloorResult_out)
 {
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
     {
@@ -49,28 +50,62 @@ AxiomResult
         {
             continue;
         }
-        const RoomRecord *p_room =
-            findRecordByKey(mapSnapshot.rooms, *endpoint_in.key);
+        const RoomRecord *p_room = nullptr;
+        if (findRecordByKey(mapSnapshot.rooms, *endpoint_in.key, p_room) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // findRecordByKey cannot fail; continue as before.
+        }
         if (p_room == nullptr)
         {
-            return AxiomResult::PASS;
+            roomFloorResult_out = AxiomResult::PASS;
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
         }
         std::vector<Finding> scratch;
-        evaluateOneRoomFloorReciprocity(*p_room,
-                                        snapshot_in,
-                                        mapSnapshot,
-                                        scratch);
-        if (anyFindingIs(scratch, AxiomResult::FAIL))
+        if (evaluateOneRoomFloorReciprocity(*p_room,
+                                            snapshot_in,
+                                            mapSnapshot,
+                                            scratch) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            return AxiomResult::FAIL;
+            // evaluateOneRoomFloorReciprocity cannot fail; continue as before.
         }
-        if (anyFindingIs(scratch, AxiomResult::UNKNOWN))
+        bool hasFinding{};
+        if (anyFindingIs(scratch, AxiomResult::FAIL, hasFinding) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            return AxiomResult::UNKNOWN;
+            // anyFindingIs cannot fail; continue as before.
         }
-        return AxiomResult::PASS;
+        if (hasFinding)
+        {
+            roomFloorResult_out = AxiomResult::FAIL;
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+        }
+        bool hasFinding2{};
+        if (anyFindingIs(scratch, AxiomResult::UNKNOWN, hasFinding2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // anyFindingIs cannot fail; continue as before.
+        }
+        if (hasFinding2)
+        {
+            roomFloorResult_out = AxiomResult::UNKNOWN;
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+        }
+        roomFloorResult_out = AxiomResult::PASS;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return AxiomResult::PASS;
+    roomFloorResult_out = AxiomResult::PASS;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

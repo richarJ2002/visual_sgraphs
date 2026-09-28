@@ -29,6 +29,7 @@
 
 #include <vector>
 
+#include "Semantic/SemanticAxiomEvaluator/SemanticAxiomEvaluatorStatus.h"
 #include "Semantic/SemanticGraphSnapshot/objects/SemanticGraphSnapshot.h"
 
 #include "Semantic/SemanticAxiomEvaluator/objects.h"
@@ -57,10 +58,13 @@ namespace semantic
  * @param[in]    snapshot_in
  *               Snapshot to evaluate.
  *
- * @return       Complete report: every raw Finding, sorted, plus
- *               exactly one aggregate per axiom code.
+ * @param[out] report_out Complete report: every raw Finding, sorted, plus
+ * exactly one aggregate per axiom code.
+ * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
-AxiomEvaluationReport evaluateState(const SemanticGraphSnapshot &snapshot_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateState(const SemanticGraphSnapshot &snapshot_in,
+                  AxiomEvaluationReport       &report_out);
 
 /*!
  * @brief        Pure evaluation of the dynamic, before/after axioms
@@ -89,12 +93,14 @@ AxiomEvaluationReport evaluateState(const SemanticGraphSnapshot &snapshot_in);
  *               Reserved transition-specific facts; carries no
  *               fields yet.
  *
- * @return       Complete report combining the above.
+ * @param[out] report_out Complete report combining the above.
+ * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
-AxiomEvaluationReport
+[[nodiscard]] SemanticAxiomEvaluatorStatus
     evaluateTransition(const SemanticGraphSnapshot       &before_in,
                        const SemanticGraphSnapshot       &after_in,
-                       const TransitionEvaluationContext &context_in);
+                       const TransitionEvaluationContext &context_in,
+                       AxiomEvaluationReport             &report_out);
 
 /*!
  * @brief        Computes the shadow conservative-completeness result
@@ -111,12 +117,14 @@ AxiomEvaluationReport
  * @param[in]    snapshot_in
  *               Snapshot to compute completeness for.
  *
- * @return       One MapCompletenessResult per entry of
- *               \p snapshot_in.maps, sorted by mapId (matching
- *               \p snapshot_in.maps's own already-sorted order).
+ * @param[out] completenessResults_out One MapCompletenessResult per entry of \p
+ * snapshot_in.maps, sorted by mapId (matching \p snapshot_in.maps's own
+ * already-sorted order).
+ * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
-std::vector<MapCompletenessResult>
-    evaluateMapCompleteness(const SemanticGraphSnapshot &snapshot_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus evaluateMapCompleteness(
+    const SemanticGraphSnapshot        &snapshot_in,
+    std::vector<MapCompletenessResult> &completenessResults_out);
 
 /*!
  * @brief        Returns the fixed, snapshot-independent
@@ -128,9 +136,12 @@ std::vector<MapCompletenessResult>
  *               current SemanticGraphSnapshot schema, not any one
  *               evaluated snapshot.
  *
- * @return       Exactly sixteen entries, sorted by AxiomCode.
+ * @param[out] axiomCapabilityTable_out Exactly sixteen entries, sorted by
+ * AxiomCode.
+ * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
-std::vector<AxiomCapabilityEntry> computeAxiomCapabilityTable();
+[[nodiscard]] SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
+    std::vector<AxiomCapabilityEntry> &axiomCapabilityTable_out);
 
 } // namespace semantic
 } // namespace core

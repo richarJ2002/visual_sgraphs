@@ -33,6 +33,7 @@
 #include <mutex>
 
 #include "Semantic/SemanticReportCache/objects/SemanticReportCacheEntry.h"
+#include "Semantic/SemanticReportCacheStatus.h"
 
 namespace vs_graphs
 {
@@ -89,7 +90,7 @@ class SemanticReportCache
      * @param[in]   evaluationDuration_in                Time spent
      *              evaluating this cycle.
      */
-    void
+    [[nodiscard]] SemanticReportCacheStatus
         update(const SemanticGraphSnapshot              &snapshot_in,
                const AxiomEvaluationReport              &evaluationReport_in,
                const std::vector<MapCompletenessResult> &completenessResults_in,
@@ -107,10 +108,12 @@ class SemanticReportCache
      *  than a null/optional value -- callers must check isAvailable()
      *  first to distinguish "no update yet" from a genuinely empty-graph
      *  cycle. */
-    SemanticReportCacheEntry getLatest() const;
+    [[nodiscard]] SemanticReportCacheStatus
+        getLatest(SemanticReportCacheEntry &getLatest_out) const;
 
     /*! @brief True once at least one update() call has completed. */
-    bool isAvailable() const;
+    [[nodiscard]] SemanticReportCacheStatus
+        isAvailable(bool &isAvailable_out) const;
 
   private:
     mutable std::mutex       cacheMutex;

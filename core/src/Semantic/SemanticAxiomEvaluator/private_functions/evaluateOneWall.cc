@@ -85,61 +85,107 @@ namespace core
 namespace semantic
 {
 
-void evaluateOneWall(const WallRecord            &wall_in,
-                     const SemanticGraphSnapshot &snapshot_in,
-                     std::vector<Finding>        &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateOneWall(const WallRecord            &wall_in,
+                    const SemanticGraphSnapshot &snapshot_in,
+                    std::vector<Finding>        &findings_inout)
 {
     if (wall_in.key.kind != EntityKind::WALL)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_WALL_WRONG_KEY_KIND,
-                        {wall_in.key}));
-        return;
+                        {wall_in.key},
+                        finding) != SemanticAxiomEvaluatorStatus::
+                                        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (wall_in.planeType != geometric::Plane::PlaneVariant::WALL)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding2{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_WALL_WRONG_PLANE_TYPE,
-                        {wall_in.key}));
-        return;
+                        {wall_in.key},
+                        finding2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding2);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    if (countWallRecordsWithKey(snapshot_in, wall_in.key) > 1U)
+    std::size_t wallRecords{};
+    if (countWallRecordsWithKey(snapshot_in, wall_in.key, wallRecords) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        // countWallRecordsWithKey cannot fail; continue as before.
+    }
+    if (wallRecords > 1U)
+    {
+        Finding finding3{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_WALL_DUPLICATE_IDENTITY,
-                        {wall_in.key}));
-        return;
+                        {wall_in.key},
+                        finding3) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding3);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (wall_in.declaredMapId.has_value() &&
         *wall_in.declaredMapId != wall_in.key.mapId)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding4{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_WALL_DECLARED_MAP_MISMATCH,
-                        {wall_in.key}));
-        return;
+                        {wall_in.key},
+                        finding4) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding4);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     const std::size_t ownerCount = wall_in.ownerRoomRefs.size();
 
     if (ownerCount == 0U)
     {
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_WALL_01,
-            AxiomResult::UNKNOWN,
-            ReasonCode::WALL_OWNERSHIP_ZERO_OWNERS_COMMITMENT_UNVERIFIABLE,
-            {wall_in.key}));
-        return;
+        Finding finding5{};
+        if (makeFinding(
+                AxiomCode::AX_WALL_01,
+                AxiomResult::UNKNOWN,
+                ReasonCode::WALL_OWNERSHIP_ZERO_OWNERS_COMMITMENT_UNVERIFIABLE,
+                {wall_in.key},
+                finding5) != SemanticAxiomEvaluatorStatus::
+                                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding5);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (ownerCount > 1U)
@@ -154,34 +200,58 @@ void evaluateOneWall(const WallRecord            &wall_in,
         }
         FindingEvidence evidence;
         evidence.observedCount = ownerCount;
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding6{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_MULTIPLE_OWNERS,
                         std::move(involvedKeys),
-                        evidence));
-        return;
+                        finding6,
+                        evidence) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding6);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     const EntityRef &owner = wall_in.ownerRoomRefs.front();
     if (!owner.key.has_value())
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding7{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_OWNER_UNRESOLVABLE,
-                        {wall_in.key}));
-        return;
+                        {wall_in.key},
+                        finding7) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding7);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (owner.key->kind != EntityKind::ROOM)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding8{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_OWNER_WRONG_KEY_KIND,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding8) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding8);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (owner.reason != UnavailableReason::NONE)
@@ -190,56 +260,108 @@ void evaluateOneWall(const WallRecord            &wall_in,
          * key.has_value() <=> reason == NONE as an invariant; a keyed
          * owner reference whose own reason is not NONE is a known
          * contradiction, not an ordinary valid reference. */
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding9{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_OWNER_REASON_INCONSISTENT,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding9) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding9);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (owner.key->mapId != wall_in.key.mapId)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding10{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_OWNER_CROSS_MAP,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding10) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding10);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    if (countRoomRecordsWithKey(snapshot_in, *owner.key) > 1U)
+    std::size_t roomRecords{};
+    if (countRoomRecordsWithKey(snapshot_in, *owner.key, roomRecords) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        // countRoomRecordsWithKey cannot fail; continue as before.
+    }
+    if (roomRecords > 1U)
+    {
+        Finding finding11{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_OWNER_DUPLICATE_IDENTITY,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding11) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding11);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    if (countMapSnapshotsWithId(snapshot_in, owner.key->mapId) > 1U)
+    std::size_t mapSnapshots{};
+    if (countMapSnapshotsWithId(snapshot_in, owner.key->mapId, mapSnapshots) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // countMapSnapshotsWithId cannot fail; continue as before.
+    }
+    if (mapSnapshots > 1U)
     {
         /* Which MapSnapshot actually holds
          * the owner room is itself ambiguous when its own containing map id
          * is duplicated -- no first-match RoomRecord lookup below may
          * supply positive proof. */
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_WALL_01,
-            AxiomResult::FAIL,
-            ReasonCode::WALL_OWNERSHIP_OWNER_CONTAINING_MAP_AMBIGUOUS,
-            {wall_in.key, *owner.key}));
-        return;
+        Finding finding12{};
+        if (makeFinding(
+                AxiomCode::AX_WALL_01,
+                AxiomResult::FAIL,
+                ReasonCode::WALL_OWNERSHIP_OWNER_CONTAINING_MAP_AMBIGUOUS,
+                {wall_in.key, *owner.key},
+                finding12) != SemanticAxiomEvaluatorStatus::
+                                  SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding12);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (owner.isLive.has_value() && !(*owner.isLive))
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding13{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_OWNER_BAD,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding13) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding13);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     const RoomRecord *p_owner = nullptr;
@@ -249,48 +371,87 @@ void evaluateOneWall(const WallRecord            &wall_in,
         {
             continue;
         }
-        p_owner = findRecordByKey(mapSnapshot.rooms, *owner.key);
+        const RoomRecord *p_record = nullptr;
+        if (findRecordByKey(mapSnapshot.rooms, *owner.key, p_record) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // findRecordByKey cannot fail; continue as before.
+        }
+        p_owner = p_record;
         break;
     }
     if (p_owner == nullptr)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding14{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::UNKNOWN,
                         ReasonCode::WALL_OWNERSHIP_OWNER_RECORD_UNAVAILABLE,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding14) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding14);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (!p_owner->isLive)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding15{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_OWNER_RECORD_NOT_LIVE,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding15) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding15);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (p_owner->variant != Room::RoomVariant::ROOM)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding16{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_OWNER_WRONG_VARIANT,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding16) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding16);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (p_owner->declaredMapId.has_value() &&
         *p_owner->declaredMapId != wall_in.key.mapId)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding17{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_OWNER_DECLARED_MAP_MISMATCH,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding17) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding17);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     /* A genuinely absent
      * p_owner->declaredMapId is missing evidence, not a proven mismatch --
@@ -377,47 +538,84 @@ void evaluateOneWall(const WallRecord            &wall_in,
     }
     if (anyContradictoryReciprocal)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding18{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_RECIPROCAL_CONTRADICTORY,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding18) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding18);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (wellFormedReciprocalCount > 1U)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding19{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_RECIPROCAL_DUPLICATE,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding19) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding19);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (wellFormedReciprocalCount == 0U)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding20{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::FAIL,
                         ReasonCode::WALL_OWNERSHIP_OWNER_NOT_RECIPROCAL,
-                        {wall_in.key, *owner.key}));
-        return;
+                        {wall_in.key, *owner.key},
+                        finding20) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding20);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    findings_inout.push_back(
-        makeFinding(AxiomCode::AX_WALL_01,
+    Finding finding21{};
+    if (makeFinding(AxiomCode::AX_WALL_01,
                     AxiomResult::PASS,
                     ReasonCode::WALL_OWNERSHIP_SINGLE_VALID_OWNER,
-                    {wall_in.key, *owner.key}));
+                    {wall_in.key, *owner.key},
+                    finding21) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeFinding cannot fail; continue as before.
+    }
+    findings_inout.push_back(finding21);
     if (!wall_in.declaredMapId.has_value())
     {
         /* Every other clause is affirmatively satisfied, but the wall's own
          * declared map is genuinely absent evidence, not a contradiction:
          * cap positive ownership proof at UNKNOWN rather than PASS. */
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_WALL_01,
-            AxiomResult::UNKNOWN,
-            ReasonCode::WALL_OWNERSHIP_WALL_DECLARED_MAP_UNAVAILABLE,
-            {wall_in.key, *owner.key}));
+        Finding finding22{};
+        if (makeFinding(
+                AxiomCode::AX_WALL_01,
+                AxiomResult::UNKNOWN,
+                ReasonCode::WALL_OWNERSHIP_WALL_DECLARED_MAP_UNAVAILABLE,
+                {wall_in.key, *owner.key},
+                finding22) != SemanticAxiomEvaluatorStatus::
+                                  SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding22);
     }
     if (!p_owner->declaredMapId.has_value())
     {
@@ -425,11 +623,18 @@ void evaluateOneWall(const WallRecord            &wall_in,
          * map is genuinely absent evidence, not a contradiction -- cap
          * positive ownership proof at UNKNOWN rather than PASS, mirroring
          * the wall's own missing-declared-map cap immediately above. */
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_WALL_01,
-            AxiomResult::UNKNOWN,
-            ReasonCode::WALL_OWNERSHIP_OWNER_DECLARED_MAP_UNAVAILABLE,
-            {wall_in.key, *owner.key}));
+        Finding finding23{};
+        if (makeFinding(
+                AxiomCode::AX_WALL_01,
+                AxiomResult::UNKNOWN,
+                ReasonCode::WALL_OWNERSHIP_OWNER_DECLARED_MAP_UNAVAILABLE,
+                {wall_in.key, *owner.key},
+                finding23) != SemanticAxiomEvaluatorStatus::
+                                  SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding23);
     }
     if (!owner.isLive.has_value())
     {
@@ -439,12 +644,22 @@ void evaluateOneWall(const WallRecord            &wall_in,
          * liveness was never itself proven either way: cap positive
          * ownership proof at UNKNOWN rather than PASS, mirroring the
          * wall's/owner's own missing-declared-map caps immediately above. */
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_WALL_01,
+        Finding finding24{};
+        if (makeFinding(AxiomCode::AX_WALL_01,
                         AxiomResult::UNKNOWN,
                         ReasonCode::WALL_OWNERSHIP_OWNER_LIVENESS_UNAVAILABLE,
-                        {wall_in.key, *owner.key}));
+                        {wall_in.key, *owner.key},
+                        finding24) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding24);
     }
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

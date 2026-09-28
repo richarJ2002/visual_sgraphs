@@ -36,23 +36,43 @@ namespace core
 namespace semantic
 {
 
-std::vector<MapCompletenessResult>
-    evaluateMapCompleteness(const SemanticGraphSnapshot &snapshot_in)
+SemanticAxiomEvaluatorStatus evaluateMapCompleteness(
+    const SemanticGraphSnapshot        &snapshot_in,
+    std::vector<MapCompletenessResult> &completenessResults_out)
 {
     std::vector<MapCompletenessResult> results;
     results.reserve(snapshot_in.maps.size());
 
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
     {
-        MapCompletenessResult result =
-            computeConservativeMapCompleteness(snapshot_in, mapSnapshot);
-        result.legacy = computeLegacyMapCompleteness(snapshot_in, mapSnapshot);
+        MapCompletenessResult result{};
+        if (computeConservativeMapCompleteness(snapshot_in,
+                                               mapSnapshot,
+                                               result) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // computeConservativeMapCompleteness cannot fail; continue as
+            // before.
+        }
+        LegacyMapCompletenessResult legacyMapCompleteness{};
+        if (computeLegacyMapCompleteness(snapshot_in,
+                                         mapSnapshot,
+                                         legacyMapCompleteness) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // computeLegacyMapCompleteness cannot fail; continue as before.
+        }
+        result.legacy = legacyMapCompleteness;
         result.doLegacyAndConservativeDiverge =
             (result.legacy.isMapFullyModeled != result.isComplete);
         results.push_back(std::move(result));
     }
 
-    return results;
+    completenessResults_out = results;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

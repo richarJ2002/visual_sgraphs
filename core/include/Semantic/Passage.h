@@ -24,6 +24,7 @@
 #include <optional>
 
 #include "Map.h"
+#include "Semantic/KnownSideProvenanceStatus.h"
 #include "Semantic/PassageStatus.h"
 #include "Thirdparty/g2o/g2o/types/plane3d.h"
 
@@ -64,10 +65,13 @@ class Passage
          */
         Eigen::Vector3d direction_World{Eigen::Vector3d::Zero()};
 
-        bool hasDirection() const
+        [[nodiscard]] KnownSideProvenanceStatus
+            hasDirection(bool &hasDirection_out) const
         {
-            return direction_World.allFinite() &&
-                   direction_World.squaredNorm() > 0.99;
+            hasDirection_out = direction_World.allFinite() &&
+                               direction_World.squaredNorm() > 0.99;
+            return KnownSideProvenanceStatus::
+                KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS;
         }
     };
 

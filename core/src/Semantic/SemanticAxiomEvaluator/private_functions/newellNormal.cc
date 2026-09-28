@@ -34,7 +34,9 @@ namespace core
 namespace semantic
 {
 
-Eigen::Vector3d newellNormal(const std::vector<Eigen::Vector3d> &corners_in)
+SemanticAxiomEvaluatorStatus
+    newellNormal(const std::vector<Eigen::Vector3d> &corners_in,
+                 Eigen::Vector3d                    &normal_out)
 {
     Eigen::Vector3d   normal      = Eigen::Vector3d::Zero();
     const std::size_t cornerCount = corners_in.size();
@@ -47,7 +49,9 @@ Eigen::Vector3d newellNormal(const std::vector<Eigen::Vector3d> &corners_in)
         normal.y() += (current.z() - next.z()) * (current.x() + next.x());
         normal.z() += (current.x() - next.x()) * (current.y() + next.y());
     }
-    return normal;
+    normal_out = normal;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

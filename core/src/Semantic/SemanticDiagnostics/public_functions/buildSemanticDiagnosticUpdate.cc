@@ -38,9 +38,10 @@ namespace core
 namespace semantic
 {
 
-SemanticDiagnosticUpdate
-    buildSemanticDiagnosticUpdate(const SemanticReportCacheEntry &entry_in,
-                                  SemanticDiagnosticState        &state_in_out)
+SemanticDiagnosticsStatus buildSemanticDiagnosticUpdate(
+    const SemanticReportCacheEntry &entry_in,
+    SemanticDiagnosticState        &state_in_out,
+    SemanticDiagnosticUpdate       &semanticDiagnosticUpdate_out)
 {
     /* Only FAIL findings are violations. Filtering both maps to FAIL before
      * computing appeared/changed/resolved means: (1) the very first call,
@@ -82,8 +83,16 @@ SemanticDiagnosticUpdate
             ++totalTransitions;
             if (violationDetails.size() < kMaxViolationDetailsPerCycle)
             {
-                violationDetails.push_back(
-                    violationDetailToJson(*p_currentFinding, "appeared"));
+                nlohmann::json json2{};
+                if (violationDetailToJson(*p_currentFinding,
+                                          "appeared",
+                                          json2) !=
+                    SemanticDiagnosticsStatus::
+                        SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS)
+                {
+                    // violationDetailToJson cannot fail; continue as before.
+                }
+                violationDetails.push_back(json2);
             }
             continue;
         }
@@ -93,8 +102,16 @@ SemanticDiagnosticUpdate
             ++totalTransitions;
             if (violationDetails.size() < kMaxViolationDetailsPerCycle)
             {
-                violationDetails.push_back(
-                    violationDetailToJson(*p_currentFinding, "changed"));
+                nlohmann::json json3{};
+                if (violationDetailToJson(*p_currentFinding,
+                                          "changed",
+                                          json3) !=
+                    SemanticDiagnosticsStatus::
+                        SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS)
+                {
+                    // violationDetailToJson cannot fail; continue as before.
+                }
+                violationDetails.push_back(json3);
             }
         }
     }
@@ -105,8 +122,16 @@ SemanticDiagnosticUpdate
             ++totalTransitions;
             if (violationDetails.size() < kMaxViolationDetailsPerCycle)
             {
-                violationDetails.push_back(
-                    violationDetailToJson(*p_previousFinding, "resolved"));
+                nlohmann::json json4{};
+                if (violationDetailToJson(*p_previousFinding,
+                                          "resolved",
+                                          json4) !=
+                    SemanticDiagnosticsStatus::
+                        SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS)
+                {
+                    // violationDetailToJson cannot fail; continue as before.
+                }
+                violationDetails.push_back(json4);
             }
         }
     }
@@ -134,7 +159,8 @@ SemanticDiagnosticUpdate
     update.shouldEmit = discreteStateChanged || emitHeartbeat;
     if (!update.shouldEmit)
     {
-        return update;
+        semanticDiagnosticUpdate_out = update;
+        return SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS;
     }
     update.violationDetails = std::move(violationDetails);
 
@@ -164,7 +190,14 @@ SemanticDiagnosticUpdate
                 ++unresolvedCount;
             }
         }
-        perCodeCounts[axiomCodeName(aggregate.axiomCode)] =
+        std::string axiomCodeName2{};
+        if (axiomCodeName(aggregate.axiomCode, axiomCodeName2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // axiomCodeName cannot fail; continue as before.
+        }
+        perCodeCounts[axiomCodeName2] =
             static_cast<unsigned int>(aggregate.contributingFindingCount);
     }
 
@@ -172,11 +205,17 @@ SemanticDiagnosticUpdate
     for (const MapCompletenessResult &completeness :
          entry_in.completenessResults)
     {
-        completenessJson.push_back(
-            {{"mapId", completeness.mapId},
-             {"isComplete", completeness.isComplete},
-             {"conservativeResult",
-              axiomResultName(completeness.conservativeResult)}});
+        std::string axiomResultName2{};
+        if (axiomResultName(completeness.conservativeResult,
+                            axiomResultName2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // axiomResultName cannot fail; continue as before.
+        }
+        completenessJson.push_back({{"mapId", completeness.mapId},
+                                    {"isComplete", completeness.isComplete},
+                                    {"conservativeResult", axiomResultName2}});
     }
 
     nlohmann::json summary;
@@ -217,7 +256,8 @@ SemanticDiagnosticUpdate
     state_in_out.lastLoggedFullGeometryDigest =
         entry_in.canonicalFullGeometryDigest;
 
-    return update;
+    semanticDiagnosticUpdate_out = update;
+    return SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS;
 }
 
 } // namespace semantic

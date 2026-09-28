@@ -30,13 +30,16 @@ namespace core
 namespace semantic
 {
 
-std::string stableRoomIdentity(const RoomContextSnapshot &context_in)
+SemanticVerifyStatus stableRoomIdentity(const RoomContextSnapshot &context_in,
+                                        std::string               &identity_out)
 {
     if (!context_in.roomTag.empty())
     {
-        return context_in.roomTag;
+        identity_out = context_in.roomTag;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
-    return std::string("room_") + std::to_string(context_in.roomId);
+    identity_out = std::string("room_") + std::to_string(context_in.roomId);
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

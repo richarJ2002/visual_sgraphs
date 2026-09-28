@@ -39,11 +39,15 @@ namespace core
 namespace semantic
 {
 
-bool isRealPassageEndpoint(const ResolvedRoomEndpoint &endpoint_in)
+SemanticAxiomEvaluatorStatus
+    isRealPassageEndpoint(const ResolvedRoomEndpoint &endpoint_in,
+                          bool                       &isRealPassageEndpoint_out)
 {
-    return endpoint_in.isFoundInSnapshot && endpoint_in.isLive &&
-           endpoint_in.isConfirmedRoomVariant &&
-           !endpoint_in.isDuplicateIdentity;
+    isRealPassageEndpoint_out =
+        endpoint_in.isFoundInSnapshot && endpoint_in.isLive &&
+        endpoint_in.isConfirmedRoomVariant && !endpoint_in.isDuplicateIdentity;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

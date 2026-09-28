@@ -274,13 +274,29 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                 [&knownSide, &retainedCentroid_World_m](semantic::Room *p_room)
             {
                 Eigen::Vector3d roomCentroid{};
-                if ((p_room != nullptr && knownSide.hasDirection()) &&
+                bool            knownSideHasDirection{};
+                if ((p_room != nullptr) &&
+                    knownSide.hasDirection(knownSideHasDirection) !=
+                        semantic::KnownSideProvenanceStatus::
+                            KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+                {
+                    // hasDirection cannot fail; continue as before.
+                }
+                if ((p_room != nullptr && knownSideHasDirection) &&
                     p_room->getCentroid(roomCentroid) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     // getCentroid cannot fail; continue as before.
                 }
-                return p_room != nullptr && knownSide.hasDirection() &&
+                bool knownSideHasDirection2{};
+                if ((p_room != nullptr) &&
+                    knownSide.hasDirection(knownSideHasDirection2) !=
+                        semantic::KnownSideProvenanceStatus::
+                            KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+                {
+                    // hasDirection cannot fail; continue as before.
+                }
+                return p_room != nullptr && knownSideHasDirection2 &&
                        knownSide.direction_World.dot(
                            roomCentroid - retainedCentroid_World_m) < -0.20;
             };

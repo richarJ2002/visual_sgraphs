@@ -36,11 +36,12 @@ namespace core
 namespace semantic
 {
 
-Finding makeFinding(AxiomCode              axiomCode_in,
-                    AxiomResult            result_in,
-                    ReasonCode             reasonCode_in,
-                    std::vector<EntityKey> involvedKeys_in,
-                    FindingEvidence        evidence_in)
+SemanticAxiomEvaluatorStatus makeFinding(AxiomCode              axiomCode_in,
+                                         AxiomResult            result_in,
+                                         ReasonCode             reasonCode_in,
+                                         std::vector<EntityKey> involvedKeys_in,
+                                         Finding               &finding_out,
+                                         FindingEvidence        evidence_in)
 {
     std::sort(involvedKeys_in.begin(), involvedKeys_in.end());
     involvedKeys_in.erase(
@@ -68,14 +69,22 @@ Finding makeFinding(AxiomCode              axiomCode_in,
     }
 
     Finding finding;
-    finding.id             = std::move(id);
-    finding.axiomCode      = axiomCode_in;
-    finding.result         = result_in;
-    finding.classification = axiomClassFor(axiomCode_in);
+    finding.id        = std::move(id);
+    finding.axiomCode = axiomCode_in;
+    finding.result    = result_in;
+    AxiomClass axiomClass{};
+    if (axiomClassFor(axiomCode_in, axiomClass) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // axiomClassFor cannot fail; continue as before.
+    }
+    finding.classification = axiomClass;
     finding.reasonCode     = reasonCode_in;
     finding.involvedKeys   = std::move(involvedKeys_in);
     finding.evidence       = evidence_in;
-    return finding;
+    finding_out            = finding;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

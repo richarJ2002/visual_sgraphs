@@ -30,9 +30,11 @@ namespace core
 namespace semantic
 {
 
-bool isFiniteVector(const Eigen::Vector3d &value_in)
+SemanticVerifyStatus isFiniteVector(const Eigen::Vector3d &value_in,
+                                    bool                  &isFiniteVector_out)
 {
-    return value_in.allFinite();
+    isFiniteVector_out = value_in.allFinite();
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

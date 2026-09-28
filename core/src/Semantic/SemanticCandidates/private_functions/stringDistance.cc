@@ -19,13 +19,16 @@ namespace core
 namespace semantic
 {
 
-double stringDistance(const std::vector<std::string> &left_in,
-                      const std::vector<std::string> &right_in)
+SemanticCandidatesStatus
+    stringDistance(const std::vector<std::string> &left_in,
+                   const std::vector<std::string> &right_in,
+                   double                         &distance_out)
 {
     const std::size_t length = std::max(left_in.size(), right_in.size());
     if (length == 0U)
     {
-        return 0.0;
+        distance_out = 0.0;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
     }
     std::size_t mismatches = 0U;
     for (std::size_t index = 0U; index < length; ++index)
@@ -36,7 +39,9 @@ double stringDistance(const std::vector<std::string> &left_in,
             ++mismatches;
         }
     }
-    return static_cast<double>(mismatches) / static_cast<double>(length);
+    distance_out =
+        static_cast<double>(mismatches) / static_cast<double>(length);
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -32,17 +32,23 @@ namespace core
 namespace semantic
 {
 
-bool anyFindingIs(const std::vector<Finding> &findings_in,
-                  AxiomResult                 result_in)
+SemanticAxiomEvaluatorStatus
+    anyFindingIs(const std::vector<Finding> &findings_in,
+                 AxiomResult                 result_in,
+                 bool                       &hasFinding_out)
 {
     for (const Finding &finding : findings_in)
     {
         if (finding.result == result_in)
         {
-            return true;
+            hasFinding_out = true;
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
         }
     }
-    return false;
+    hasFinding_out = false;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -34,8 +34,10 @@ namespace core
 namespace semantic
 {
 
-std::size_t countMapSnapshotsWithId(const SemanticGraphSnapshot &snapshot_in,
-                                    long unsigned int            mapId_in)
+SemanticAxiomEvaluatorStatus
+    countMapSnapshotsWithId(const SemanticGraphSnapshot &snapshot_in,
+                            long unsigned int            mapId_in,
+                            std::size_t                 &mapSnapshots_out)
 {
     std::size_t matchCount = 0U;
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
@@ -45,7 +47,9 @@ std::size_t countMapSnapshotsWithId(const SemanticGraphSnapshot &snapshot_in,
             ++matchCount;
         }
     }
-    return matchCount;
+    mapSnapshots_out = matchCount;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

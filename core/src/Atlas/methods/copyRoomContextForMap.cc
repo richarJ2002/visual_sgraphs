@@ -231,7 +231,14 @@ std::vector<semantic::RoomContextSnapshot>
             {
                 // getKnownSideProvenance cannot fail; continue as before.
             }
-            context.hasKnownSideDirection = knownSide.hasDirection();
+            bool knownSideHasDirection{};
+            if (knownSide.hasDirection(knownSideHasDirection) !=
+                semantic::KnownSideProvenanceStatus::
+                    KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+            {
+                // hasDirection cannot fail; continue as before.
+            }
+            context.hasKnownSideDirection = knownSideHasDirection;
             if (context.hasKnownSideDirection)
             {
                 context.knownSideDirection_World = knownSide.direction_World;

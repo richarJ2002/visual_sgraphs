@@ -130,8 +130,12 @@ SemanticVerifyStatus
                     wallsB_in[pair1.indexB].normal_World,
                     wallsB_in[pair2.indexB].normal_World};
 
-                const RotationFit rotationFit =
-                    fitRotationFromNormals(normalsA, normalsB);
+                RotationFit rotationFit{};
+                if (fitRotationFromNormals(normalsA, normalsB, rotationFit) !=
+                    SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+                {
+                    // fitRotationFromNormals cannot fail; continue as before.
+                }
                 if (!rotationFit.valid)
                 {
                     continue;
@@ -152,12 +156,17 @@ SemanticVerifyStatus
                     wallsB_in[pair1.indexB].d,
                     wallsB_in[pair2.indexB].d};
 
-                const TranslationFit translationFit =
-                    fitTranslation(rotationFit.rotation,
+                TranslationFit translationFit{};
+                if (fitTranslation(rotationFit.rotation,
                                    rotatedNormalsA,
                                    offsetsA,
                                    normalsB,
-                                   offsetsB);
+                                   offsetsB,
+                                   translationFit) !=
+                    SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+                {
+                    // fitTranslation cannot fail; continue as before.
+                }
                 if (!translationFit.valid || translationFit.rank < 3U)
                 {
                     continue;
@@ -191,8 +200,14 @@ SemanticVerifyStatus
                     const double predictedOffset =
                         wallA.d -
                         predictedNormal.dot(translationFit.translation);
-                    const double normalAngle_rad =
-                        angleBetween_rad(predictedNormal, wallB.normal_World);
+                    double normalAngle_rad{};
+                    if (angleBetween_rad(predictedNormal,
+                                         wallB.normal_World,
+                                         normalAngle_rad) !=
+                        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+                    {
+                        // angleBetween_rad cannot fail; continue as before.
+                    }
                     const double offsetResidual_m =
                         std::abs(predictedOffset - wallB.d);
 
@@ -211,11 +226,17 @@ SemanticVerifyStatus
                     {
                         continue;
                     }
-                    const double supportDistance_m =
-                        symmetricSupportDistance(wallA,
+                    double supportDistance_m{};
+                    if (symmetricSupportDistance(wallA,
                                                  wallB,
                                                  rotationFit.rotation,
-                                                 translationFit.translation);
+                                                 translationFit.translation,
+                                                 supportDistance_m) !=
+                        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+                    {
+                        // symmetricSupportDistance cannot fail; continue as
+                        // before.
+                    }
                     if (supportDistance_m > configuration_in.maxSupportDist_m)
                     {
                         continue;
@@ -387,10 +408,18 @@ SemanticVerifyStatus
 
     for (const WallInlierPair &inlier : seed.inliers)
     {
-        const VerifyWallObservation *p_observationA =
-            findByWallId(wallsA_in, inlier.wallIdA);
-        const VerifyWallObservation *p_observationB =
-            findByWallId(wallsB_in, inlier.wallIdB);
+        const VerifyWallObservation *p_observationA = nullptr;
+        if (findByWallId(wallsA_in, inlier.wallIdA, p_observationA) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // findByWallId cannot fail; continue as before.
+        }
+        const VerifyWallObservation *p_observationB = nullptr;
+        if (findByWallId(wallsB_in, inlier.wallIdB, p_observationB) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // findByWallId cannot fail; continue as before.
+        }
         if (p_observationA == nullptr || p_observationB == nullptr)
         {
             continue;
@@ -436,10 +465,18 @@ SemanticVerifyStatus
     std::vector<double>          angularResiduals;
     for (const WallInlierPair &inlier : seed.inliers)
     {
-        const VerifyWallObservation *p_observationA =
-            findByWallId(wallsA_in, inlier.wallIdA);
-        const VerifyWallObservation *p_observationB =
-            findByWallId(wallsB_in, inlier.wallIdB);
+        const VerifyWallObservation *p_observationA = nullptr;
+        if (findByWallId(wallsA_in, inlier.wallIdA, p_observationA) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // findByWallId cannot fail; continue as before.
+        }
+        const VerifyWallObservation *p_observationB = nullptr;
+        if (findByWallId(wallsB_in, inlier.wallIdB, p_observationB) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // findByWallId cannot fail; continue as before.
+        }
         if (p_observationA == nullptr || p_observationB == nullptr)
         {
             continue;
@@ -453,11 +490,17 @@ SemanticVerifyStatus
         angularResidualSum += inlier.normalAngleResidual_rad;
     }
 
-    const TranslationFit refinedFit = fitTranslation(refinedRotation,
-                                                     inlierRotatedNormalsA,
-                                                     inlierOffsetsA,
-                                                     inlierNormalsB,
-                                                     inlierOffsetsB);
+    TranslationFit refinedFit{};
+    if (fitTranslation(refinedRotation,
+                       inlierRotatedNormalsA,
+                       inlierOffsetsA,
+                       inlierNormalsB,
+                       inlierOffsetsB,
+                       refinedFit) !=
+        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // fitTranslation cannot fail; continue as before.
+    }
 
     bool rotationObservable = false;
     for (std::size_t indexA = 0U;

@@ -43,14 +43,24 @@ namespace core
 namespace semantic
 {
 
-void evaluateOneRoomCreationProvenance(const RoomRecord     &room_in,
-                                       std::vector<Finding> &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateOneRoomCreationProvenance(const RoomRecord     &room_in,
+                                      std::vector<Finding> &findings_inout)
 {
-    findings_inout.push_back(
-        makeFinding(AxiomCode::AX_ROOM_01,
+    Finding finding{};
+    if (makeFinding(AxiomCode::AX_ROOM_01,
                     AxiomResult::UNKNOWN,
                     ReasonCode::ROOM_CREATION_PROVENANCE_UNAVAILABLE,
-                    {room_in.key}));
+                    {room_in.key},
+                    finding) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeFinding cannot fail; continue as before.
+    }
+    findings_inout.push_back(finding);
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

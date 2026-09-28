@@ -105,8 +105,14 @@ const AxiomCapabilityEntry *
 TEST(SemanticAxiomEvaluator, AggregateReportContainsExactlyOneEntryPerAxiomCode)
 {
     Atlas                 atlas(0);
-    AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(report.aggregates.size(), 16U);
 
     std::vector<AxiomCode> codes;
@@ -133,8 +139,10 @@ TEST(SemanticAxiomEvaluator, AggregateReportContainsExactlyOneEntryPerAxiomCode)
 TEST(SemanticAxiomEvaluator,
      AxiomCapabilityTableHasSixteenEntriesSortedByCodeWithKnownAssignments)
 {
-    const std::vector<AxiomCapabilityEntry> table =
-        computeAxiomCapabilityTable();
+    std::vector<AxiomCapabilityEntry> table{};
+    ASSERT_EQ(
+        (computeAxiomCapabilityTable(table)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(table.size(), 16U);
     for (std::size_t index = 1U; index < table.size(); ++index)
     {
@@ -181,8 +189,14 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator, DeferredAxiomsAlwaysReportExactlyOneUnknownFinding)
 {
     Atlas                 atlas(0);
-    AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
 
     /* AX_ROOM_01 is deliberately excluded: it is a genuine per-room leaf
      * (evaluateOneRoomCreationProvenance() via evaluateAxRoom01()), like
@@ -231,8 +245,14 @@ TEST(SemanticAxiomEvaluator,
     test::makeRoom(roomB, 2, p_map, nullptr, Eigen::Vector3d(2.0, 0.0, 1.0));
     p_map->addDetectedMapRoom(&roomB);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const std::vector<const Finding *> findings =
         findingsFor(report, AxiomCode::AX_ROOM_01);
     ASSERT_EQ(findings.size(), 2U);
@@ -301,11 +321,17 @@ TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
     test::makeRoom(ownerB, 2, p_map, &wallMultiOwner);
     p_map->addDetectedMapRoom(&ownerB);
 
-    std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
-    const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
+    SemanticGraphSnapshot        snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     lock.unlock();
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const AggregateAxiomResult *p_wall01 =
         findAggregate(report, AxiomCode::AX_WALL_01);
     ASSERT_NE(p_wall01, nullptr);
@@ -323,23 +349,39 @@ TEST(SemanticAxiomEvaluator, SameEntityPrecedenceFailBeatsUnknownBeatsPass)
     std::vector<EntityKey> involvedKeys{oneWallKey, oneOwnerKey};
 
     std::vector<Finding> findings;
-    findings.push_back(
-        makeFinding(AxiomCode::AX_WALL_01,
-                    AxiomResult::PASS,
-                    ReasonCode::WALL_OWNERSHIP_SINGLE_VALID_OWNER,
-                    involvedKeys));
-    findings.push_back(makeFinding(
-        AxiomCode::AX_WALL_01,
-        AxiomResult::UNKNOWN,
-        ReasonCode::WALL_OWNERSHIP_ZERO_OWNERS_COMMITMENT_UNVERIFIABLE,
-        involvedKeys));
-    findings.push_back(makeFinding(AxiomCode::AX_WALL_01,
-                                   AxiomResult::FAIL,
-                                   ReasonCode::WALL_OWNERSHIP_MULTIPLE_OWNERS,
-                                   involvedKeys));
+    Finding              finding2{};
+    ASSERT_EQ(
+        (makeFinding(AxiomCode::AX_WALL_01,
+                     AxiomResult::PASS,
+                     ReasonCode::WALL_OWNERSHIP_SINGLE_VALID_OWNER,
+                     involvedKeys,
+                     finding2)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    findings.push_back(finding2);
+    Finding finding3{};
+    ASSERT_EQ(
+        (makeFinding(
+            AxiomCode::AX_WALL_01,
+            AxiomResult::UNKNOWN,
+            ReasonCode::WALL_OWNERSHIP_ZERO_OWNERS_COMMITMENT_UNVERIFIABLE,
+            involvedKeys,
+            finding3)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    findings.push_back(finding3);
+    Finding finding4{};
+    ASSERT_EQ(
+        (makeFinding(AxiomCode::AX_WALL_01,
+                     AxiomResult::FAIL,
+                     ReasonCode::WALL_OWNERSHIP_MULTIPLE_OWNERS,
+                     involvedKeys,
+                     finding4)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    findings.push_back(finding4);
 
-    const std::vector<AggregateAxiomResult> aggregates =
-        aggregateFindings(findings);
+    std::vector<AggregateAxiomResult> aggregates{};
+    ASSERT_EQ(
+        (aggregateFindings(findings, aggregates)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const AggregateAxiomResult *p_wall01 = nullptr;
     for (const AggregateAxiomResult &aggregate : aggregates)
     {
@@ -355,8 +397,10 @@ TEST(SemanticAxiomEvaluator, SameEntityPrecedenceFailBeatsUnknownBeatsPass)
     /* Removing the FAIL finding must expose UNKNOWN dominating PASS for the
      * exact same entity/axiom. */
     std::vector<Finding> findingsWithoutFail{findings[0], findings[1]};
-    const std::vector<AggregateAxiomResult> aggregatesWithoutFail =
-        aggregateFindings(findingsWithoutFail);
+    std::vector<AggregateAxiomResult> aggregatesWithoutFail{};
+    ASSERT_EQ(
+        (aggregateFindings(findingsWithoutFail, aggregatesWithoutFail)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const AggregateAxiomResult *p_wall01WithoutFail = nullptr;
     for (const AggregateAxiomResult &aggregate : aggregatesWithoutFail)
     {
@@ -438,8 +482,14 @@ TEST(SemanticAxiomEvaluator,
                    Eigen::Vector3d(10.0, 1.0, 0.0));
     p_map->addDetectedMapRoom(&failOwnerB);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
 
     ASSERT_NE(
         findFindingWithReason(report,
@@ -493,16 +543,25 @@ TEST(SemanticAxiomEvaluator,
     test::makeRoom(room2, 2, p_map, &wall);
     p_map->addDetectedMapRoom(&room2);
 
-    const SemanticGraphSnapshot original = captureSemanticGraphSnapshot(&atlas);
-    SemanticGraphSnapshot       reordered = original;
+    SemanticGraphSnapshot original{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, original)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    SemanticGraphSnapshot reordered = original;
     ASSERT_EQ(reordered.maps.size(), 1U);
     std::reverse(reordered.maps.front().rooms.begin(),
                  reordered.maps.front().rooms.end());
     std::reverse(reordered.maps.front().walls.begin(),
                  reordered.maps.front().walls.end());
 
-    const AxiomEvaluationReport reportOriginal  = evaluateState(original);
-    const AxiomEvaluationReport reportReordered = evaluateState(reordered);
+    AxiomEvaluationReport reportOriginal{};
+    ASSERT_EQ(
+        (evaluateState(original, reportOriginal)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    AxiomEvaluationReport reportReordered{};
+    ASSERT_EQ(
+        (evaluateState(reordered, reportReordered)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
 
     ASSERT_EQ(reportOriginal.findings.size(), reportReordered.findings.size());
     for (std::size_t index = 0U; index < reportOriginal.findings.size();
@@ -533,8 +592,14 @@ TEST(SemanticAxiomEvaluator, FindingsAreSortedById)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     for (std::size_t index = 1U; index < report.findings.size(); ++index)
     {
         EXPECT_LE(report.findings[index - 1U].id, report.findings[index].id);
@@ -559,9 +624,18 @@ TEST(SemanticAxiomEvaluator, EvaluateStateIsIdempotentAndDoesNotMutateInput)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
-    const AxiomEvaluationReport reportFirst  = evaluateState(snapshot);
-    const AxiomEvaluationReport reportSecond = evaluateState(snapshot);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport reportFirst{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, reportFirst)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    AxiomEvaluationReport reportSecond{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, reportSecond)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
 
     ASSERT_EQ(reportFirst.findings.size(), reportSecond.findings.size());
     for (std::size_t index = 0U; index < reportFirst.findings.size(); ++index)
@@ -602,15 +676,24 @@ TEST(SemanticAxiomEvaluator,
                         1.0);
     p_mapAfter->addMapPlane(&wall);
 
-    const SemanticGraphSnapshot before =
-        captureSemanticGraphSnapshot(&atlasBefore);
-    const SemanticGraphSnapshot after =
-        captureSemanticGraphSnapshot(&atlasAfter);
+    SemanticGraphSnapshot before{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlasBefore, before)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    SemanticGraphSnapshot after{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlasAfter, after)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
     const TransitionEvaluationContext context;
-    const AxiomEvaluationReport       transitionReport =
-        evaluateTransition(before, after, context);
-    const AxiomEvaluationReport afterStateReport = evaluateState(after);
+    AxiomEvaluationReport             transitionReport{};
+    ASSERT_EQ(
+        (evaluateTransition(before, after, context, transitionReport)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    AxiomEvaluationReport afterStateReport{};
+    ASSERT_EQ(
+        (evaluateState(after, afterStateReport)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
 
     const std::vector<const Finding *> frameFindings =
         findingsFor(transitionReport, AxiomCode::AX_FRAME_01);
@@ -656,8 +739,14 @@ TEST(SemanticAxiomEvaluator, OwnerlessWallIsUnknown)
                         1.0);
     p_map->addMapPlane(&wall);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
@@ -684,8 +773,14 @@ TEST(SemanticAxiomEvaluator, SingleValidSameMapOwnerIsPass)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
@@ -715,8 +810,14 @@ TEST(SemanticAxiomEvaluator, MultipleOwnersIsFail)
     test::makeRoom(roomB, 2, p_map, &wall);
     p_map->addDetectedMapRoom(&roomB);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
@@ -747,8 +848,14 @@ TEST(SemanticAxiomEvaluator, BadOwnerIsFail)
     ASSERT_EQ((room.setBad()),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
@@ -783,8 +890,14 @@ TEST(SemanticAxiomEvaluator, CrossMapOwnerIsFail)
     test::makeRoom(room, 1, p_mapB, &wall);
     p_mapB->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
@@ -819,8 +932,14 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongVariantIsFail)
                    Room::RoomVariant::UNDEFINED);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
@@ -858,8 +977,14 @@ TEST(SemanticAxiomEvaluator, WallOwnerDeclaredMapMismatchIsFail)
     test::makeRoom(room, 1, p_mapB, &wall);
     p_mapA->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
@@ -894,8 +1019,14 @@ TEST(SemanticAxiomEvaluator, WallOwnerDuplicateIdentityIsFail)
     test::makeRoom(duplicateIdRoom, 1, p_map, nullptr);
     p_map->addDetectedMapRoom(&duplicateIdRoom);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
@@ -930,7 +1061,10 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordUnavailableIsUnknown)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().walls.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().walls.front().ownerRoomRefs.size(), 1U);
@@ -939,8 +1073,11 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordUnavailableIsUnknown)
     snapshot.maps.front().walls.front().ownerRoomRefs.front().key->entityId =
         999;
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
         ReasonCode::WALL_OWNERSHIP_OWNER_RECORD_UNAVAILABLE);
@@ -973,7 +1110,10 @@ TEST(SemanticAxiomEvaluator, WallOwnerNotReciprocalIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     RoomRecord *p_roomRecord = nullptr;
     for (RoomRecord &roomRecord : snapshot.maps.front().rooms)
@@ -987,8 +1127,11 @@ TEST(SemanticAxiomEvaluator, WallOwnerNotReciprocalIsFail)
     ASSERT_FALSE(p_roomRecord->wallRefs.empty());
     p_roomRecord->wallRefs.clear();
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
                               ReasonCode::WALL_OWNERSHIP_OWNER_NOT_RECIPROCAL);
@@ -1018,15 +1161,21 @@ TEST(SemanticAxiomEvaluator, WallDuplicateIdentityIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().walls.size(), 1U);
     WallRecord duplicateWall = snapshot.maps.front().walls.front();
     duplicateWall.ownerRoomRefs.clear();
     snapshot.maps.front().walls.push_back(duplicateWall);
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
         ReasonCode::WALL_OWNERSHIP_WALL_DUPLICATE_IDENTITY);
@@ -1054,14 +1203,20 @@ TEST(SemanticAxiomEvaluator, WallDeclaredMapMismatchIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().walls.size(), 1U);
     snapshot.maps.front().walls.front().declaredMapId =
         snapshot.maps.front().walls.front().key.mapId + 1U;
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
         ReasonCode::WALL_OWNERSHIP_WALL_DECLARED_MAP_MISMATCH);
@@ -1091,13 +1246,19 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordNotLiveIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     snapshot.maps.front().rooms.front().isLive = false;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
                               ReasonCode::WALL_OWNERSHIP_OWNER_RECORD_NOT_LIVE);
@@ -1127,12 +1288,18 @@ TEST(SemanticAxiomEvaluator, WallWrongKeyKindIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().walls.size(), 1U);
     snapshot.maps.front().walls.front().key.kind = EntityKind::ROOM;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
                               ReasonCode::WALL_OWNERSHIP_WALL_WRONG_KEY_KIND);
@@ -1160,13 +1327,19 @@ TEST(SemanticAxiomEvaluator, WallWrongPlaneTypeIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().walls.size(), 1U);
     snapshot.maps.front().walls.front().planeType =
         geometric::Plane::PlaneVariant::DOOR;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
                               ReasonCode::WALL_OWNERSHIP_WALL_WRONG_PLANE_TYPE);
@@ -1195,14 +1368,20 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongKeyKindIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().walls.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().walls.front().ownerRoomRefs.size(), 1U);
     snapshot.maps.front().walls.front().ownerRoomRefs.front().key->kind =
         EntityKind::WALL;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
                               ReasonCode::WALL_OWNERSHIP_OWNER_WRONG_KEY_KIND);
@@ -1232,12 +1411,18 @@ TEST(SemanticAxiomEvaluator, WallDeclaredMapUnavailableCapsAggregateAtUnknown)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().walls.size(), 1U);
     snapshot.maps.front().walls.front().declaredMapId.reset();
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_passFinding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_passFinding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
                               ReasonCode::WALL_OWNERSHIP_SINGLE_VALID_OWNER);
@@ -1277,15 +1462,21 @@ TEST(SemanticAxiomEvaluator, WallReciprocalMalformedOnlyIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     RoomRecord &roomRecord = snapshot.maps.front().rooms.front();
     ASSERT_EQ(roomRecord.wallRefs.size(), 1U);
     roomRecord.wallRefs.front().planeType =
         geometric::Plane::PlaneVariant::DOOR;
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
         ReasonCode::WALL_OWNERSHIP_RECIPROCAL_CONTRADICTORY);
@@ -1315,14 +1506,20 @@ TEST(SemanticAxiomEvaluator, WallReciprocalDuplicateIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     RoomRecord &roomRecord = snapshot.maps.front().rooms.front();
     ASSERT_EQ(roomRecord.wallRefs.size(), 1U);
     roomRecord.wallRefs.push_back(roomRecord.wallRefs.front());
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
                               ReasonCode::WALL_OWNERSHIP_RECIPROCAL_DUPLICATE);
@@ -1351,7 +1548,10 @@ TEST(SemanticAxiomEvaluator, WallReciprocalValidPlusMalformedIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     RoomRecord &roomRecord = snapshot.maps.front().rooms.front();
     ASSERT_EQ(roomRecord.wallRefs.size(), 1U);
@@ -1359,8 +1559,11 @@ TEST(SemanticAxiomEvaluator, WallReciprocalValidPlusMalformedIsFail)
     malformedCopy.isLive      = false;
     roomRecord.wallRefs.push_back(malformedCopy);
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
         ReasonCode::WALL_OWNERSHIP_RECIPROCAL_CONTRADICTORY);
@@ -1387,8 +1590,14 @@ TEST(SemanticAxiomEvaluator, NullTwinIsPass)
                         1.0);
     p_map->addMapPlane(&wall);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_03,
@@ -1413,8 +1622,14 @@ TEST(SemanticAxiomEvaluator, SelfTwinIsFail)
     wall.setTwinFace(&wall);
     p_map->addMapPlane(&wall);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_03,
@@ -1450,8 +1665,14 @@ TEST(SemanticAxiomEvaluator, AsymmetricTwinIsFail)
     p_map->addMapPlane(&wallA);
     p_map->addMapPlane(&wallB);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_03,
@@ -1488,8 +1709,14 @@ TEST(SemanticAxiomEvaluator, BadTwinIsFail)
     p_map->addMapPlane(&wallA);
     p_map->addMapPlane(&wallB);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(report,
                                                      AxiomCode::AX_WALL_03,
                                                      ReasonCode::WALL_TWIN_BAD);
@@ -1527,8 +1754,14 @@ TEST(SemanticAxiomEvaluator, CrossMapTwinIsFail)
     p_mapA->addMapPlane(&wallA);
     p_mapB->addMapPlane(&wallB);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_03,
@@ -1556,8 +1789,14 @@ TEST(SemanticAxiomEvaluator, WrongTypeTwinIsFail)
     p_map->addMapPlane(&wall);
     p_map->addMapPlane(&groundNotWall);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_03,
@@ -1599,8 +1838,14 @@ TEST(SemanticAxiomEvaluator, SharedOwnerTwinIsFail)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&sharedOwner);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_03,
@@ -1643,8 +1888,14 @@ TEST(SemanticAxiomEvaluator, StructurallyValidTwinIsUnknown)
     test::makeRoom(ownerB, 2, p_map, &wallB);
     p_map->addDetectedMapRoom(&ownerB);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_03,
@@ -1681,8 +1932,14 @@ TEST(SemanticAxiomEvaluator, NonPassableLivePassageIsFail)
                       /*passable_in=*/false);
     p_map->addMapPassage(&passage);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_PASS_01,
@@ -1713,8 +1970,14 @@ TEST(SemanticAxiomEvaluator, PassableLivePassageIsUnknownForFullProvenance)
                       Eigen::Vector3d(0.0, -1.0, 0.0));
     p_map->addMapPassage(&passage);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_01,
@@ -1737,8 +2000,14 @@ TEST(SemanticAxiomEvaluator, ZeroConfirmedEndpointsIsFail)
                       Eigen::Vector3d(0.0, -1.0, 0.0));
     p_map->addMapPassage(&passage);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
@@ -1778,8 +2047,14 @@ TEST(SemanticAxiomEvaluator, TwoConfirmedReciprocalEndpointsIsUnknown)
     ASSERT_EQ((far.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
@@ -1836,8 +2111,14 @@ TEST(SemanticAxiomEvaluator, OneConfirmedEndpointOtherEmptyIsUnknown)
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
@@ -1885,8 +2166,14 @@ TEST(SemanticAxiomEvaluator, ThirdReverseOnlyConfirmedEndpointIsFail)
     ASSERT_EQ((thirdRoom.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_PASS_02,
@@ -1932,8 +2219,14 @@ TEST(SemanticAxiomEvaluator, RetiredReverseOnlyRoomDoesNotPoisonLivePassage)
     ASSERT_EQ((retiredRoom.setBad()),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     /* No FAIL anomaly names the retired room at all; the passage settles at
      * its ordinary one-real-endpoint UNKNOWN, exactly as if retiredRoom's
      * passageRefs entry did not exist. */
@@ -1989,7 +2282,10 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceOwnLivenessBadIsFail)
     ASSERT_EQ((reverseOnly.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     RoomRecord *p_reverseOnlyRecord = nullptr;
     for (RoomRecord &roomRecord : snapshot.maps.front().rooms)
@@ -2003,8 +2299,11 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceOwnLivenessBadIsFail)
     ASSERT_EQ(p_reverseOnlyRecord->passageRefs.size(), 1U);
     p_reverseOnlyRecord->passageRefs.front().isLive = false;
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
         ReasonCode::PASSAGE_CARDINALITY_REVERSE_ENDPOINT_BAD);
@@ -2049,8 +2348,14 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveReverseOnlyRoomAnomalyIsExamined)
     ASSERT_EQ((prospectiveReverseOnly.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
@@ -2094,8 +2399,14 @@ TEST(SemanticAxiomEvaluator, ReverseOnlyRoomFillingEmptySlotIsNotThirdEndpoint)
     ASSERT_EQ((farReverseOnly.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_thirdEndpointFinding =
         findFindingWithReason(report,
                               AxiomCode::AX_PASS_02,
@@ -2143,7 +2454,10 @@ TEST(SemanticAxiomEvaluator, ReverseWrongKindKeyIsFail)
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     RoomRecord *p_otherRoomRecord = nullptr;
     for (RoomRecord &roomRecord : snapshot.maps.front().rooms)
@@ -2161,8 +2475,11 @@ TEST(SemanticAxiomEvaluator, ReverseWrongKindKeyIsFail)
     wrongKindRef.livenessUnavailableReason = UnavailableReason::NONE;
     p_otherRoomRecord->passageRefs.push_back(wrongKindRef);
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
         ReasonCode::PASSAGE_CARDINALITY_REVERSE_ENDPOINT_WRONG_KIND);
@@ -2195,7 +2512,10 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceDuplicatedIsFail)
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     RoomRecord *p_knownRecord = nullptr;
     for (RoomRecord &roomRecord : snapshot.maps.front().rooms)
@@ -2209,8 +2529,11 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceDuplicatedIsFail)
     ASSERT_EQ(p_knownRecord->passageRefs.size(), 1U);
     p_knownRecord->passageRefs.push_back(p_knownRecord->passageRefs.front());
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
         ReasonCode::PASSAGE_CARDINALITY_REVERSE_REFERENCE_DUPLICATED);
@@ -2252,8 +2575,14 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDuplicateIdentityIsFail)
      * fire first -- this isolates the FORWARD-endpoint duplicate-identity
      * path in resolveRoomEndpoint()/evaluateOnePassageCardinality(). */
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
@@ -2287,13 +2616,19 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointWrongKindIsFail)
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().passages.size(), 1U);
     snapshot.maps.front().passages.front().knownSideRoomRef.key->kind =
         EntityKind::WALL;
 
-    const AxiomEvaluationReport report               = evaluateState(snapshot);
-    const Finding              *p_cardinalityFinding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_cardinalityFinding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
         ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_WRONG_KIND);
@@ -2345,12 +2680,18 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDeclaredMapMismatchIsFail)
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     snapshot.maps.front().rooms.front().declaredMapId = p_map->getId() + 999U;
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
         ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_DECLARED_MAP_MISMATCH);
@@ -2389,7 +2730,10 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointLivenessUnavailableIsUnknown)
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().passages.size(), 1U);
     EntityRef &knownSideRef =
         snapshot.maps.front().passages.front().knownSideRoomRef;
@@ -2398,8 +2742,11 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointLivenessUnavailableIsUnknown)
     knownSideRef.livenessUnavailableReason =
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA;
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
         ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_LIVENESS_UNAVAILABLE);
@@ -2452,8 +2799,11 @@ TEST(SemanticAxiomEvaluator, ReverseEndpointLivenessUnavailableIsUnknown)
     ASSERT_EQ((otherRoom.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
-    RoomRecord           *p_otherRoomRecord = nullptr;
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    RoomRecord *p_otherRoomRecord = nullptr;
     for (RoomRecord &roomRecord : snapshot.maps.front().rooms)
     {
         if (roomRecord.key.entityId == 2)
@@ -2467,8 +2817,11 @@ TEST(SemanticAxiomEvaluator, ReverseEndpointLivenessUnavailableIsUnknown)
     p_otherRoomRecord->passageRefs.front().livenessUnavailableReason =
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA;
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
         ReasonCode::PASSAGE_CARDINALITY_REVERSE_ENDPOINT_LIVENESS_UNAVAILABLE);
@@ -2517,12 +2870,18 @@ TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
     ASSERT_EQ((prospectiveRoom.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().passages.size(), 1U);
-    const ReversePassageEndpointScan scan =
-        scanReversePassageEndpoints(snapshot.maps.front().passages.front(),
-                                    p_map->getId(),
-                                    snapshot);
+    ReversePassageEndpointScan scan{};
+    ASSERT_EQ(
+        (scanReversePassageEndpoints(snapshot.maps.front().passages.front(),
+                                     p_map->getId(),
+                                     snapshot,
+                                     scan)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     /* The prospective room's own clean reciprocal reference is represented,
      * not discarded. known's own reciprocal reference (the passage's
      * forward known-side room, which also independently lists the passage
@@ -2537,8 +2896,11 @@ TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
     EXPECT_EQ(scan.confirmedReverseRoomKeys.front(),
               (EntityKey{EntityKind::ROOM, p_map->getId(), 1}));
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
         ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_SLOT_UNVERIFIED);
@@ -2581,8 +2943,14 @@ TEST(SemanticAxiomEvaluator, CrossMapReverseOnlyEndpointIsFail)
     ASSERT_EQ((crossMapRoom.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
@@ -2645,8 +3013,14 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((roomWithDanglingRef.setDoorways(&unregisteredPassageWithSameId)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
 
     const Finding *p_malformedFinding = findFindingWithReason(
         report,
@@ -2703,8 +3077,14 @@ TEST(SemanticAxiomEvaluator, PassageCardinalityDuplicateRoomIdentityIsFail)
     ASSERT_EQ((duplicateIdRoom.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
@@ -2734,8 +3114,14 @@ TEST(SemanticAxiomEvaluator, DuplicateEndpointIsFail)
     ASSERT_EQ((onlyRoom.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
@@ -2764,8 +3150,14 @@ TEST(SemanticAxiomEvaluator, NonReciprocalEndpointIsFail)
     /* Deliberately never call known.setDoorways(&passage): the passage
      * names the room, but the room does not name the passage back. */
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_PASS_02,
@@ -2815,8 +3207,14 @@ TEST(SemanticAxiomEvaluator, BadUnenumeratedOtherSideEndpointIsFail)
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot2{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot2)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot2, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_PASS_02,
@@ -2850,8 +3248,14 @@ TEST(SemanticAxiomEvaluator, KnownSideNotConfirmedIsFail)
     ASSERT_EQ((unpromoted.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_03,
@@ -2890,7 +3294,10 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().passages.size(), 1U);
     PassageRecord &passageRecord = snapshot.maps.front().passages.front();
     ASSERT_TRUE(passageRecord.knownSideRoomRef.key.has_value());
@@ -2898,7 +3305,10 @@ TEST(SemanticAxiomEvaluator,
     passageRecord.knownSideRoomRef.reason =
         UnavailableReason::ENTITY_HAS_NO_MAP;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
 
     const Finding *p_cardinalityFinding = findFindingWithReason(
         report,
@@ -2954,8 +3364,14 @@ TEST(SemanticAxiomEvaluator, CrossMapPassageEndpointIsFail)
                       Eigen::Vector3d(0.0, -1.0, 0.0));
     p_mapA->addMapPassage(&passage);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
@@ -3021,8 +3437,14 @@ TEST(SemanticAxiomEvaluator, CrossFloorPassageIsFail)
     ASSERT_EQ((far.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_PASS_04,
@@ -3074,8 +3496,14 @@ TEST(SemanticAxiomEvaluator, SameFloorPassageAgreesButAggregateIsUnknown)
     ASSERT_EQ((far.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_PASS_04,
@@ -3143,8 +3571,14 @@ TEST(SemanticAxiomEvaluator, MissingFloorEvidenceOnPassageIsUnknown)
      * now dominates before the floorKey-missing EVIDENCE_UNAVAILABLE
      * fallback is even reached -- a more specific diagnosis of the same
      * UNKNOWN outcome. */
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_04,
@@ -3169,8 +3603,14 @@ TEST(SemanticAxiomEvaluator, UnobservedBoundaryIsUnknown)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(boundaryStatus, Room::BoundaryStatus::UNOBSERVED);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_BOUND_01,
@@ -3189,8 +3629,14 @@ TEST(SemanticAxiomEvaluator, ConflictingBoundaryIsFail)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_BOUND_01,
@@ -3223,8 +3669,14 @@ TEST(SemanticAxiomEvaluator, CompleteWithTooFewCornersIsFail)
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_BOUND_01,
@@ -3249,8 +3701,14 @@ TEST(SemanticAxiomEvaluator, CompleteWithNoWallEvidenceIsFail)
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_BOUND_01,
@@ -3286,8 +3744,14 @@ TEST(SemanticAxiomEvaluator, CompleteSelfIntersectingIsFail)
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_BOUND_01,
@@ -3324,8 +3788,14 @@ TEST(SemanticAxiomEvaluator, CompleteWithObservationGapsIsUnknown)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_BOUND_01,
@@ -3367,8 +3837,14 @@ TEST(SemanticAxiomEvaluator, CompleteWithVerifiedWallEvidenceIsUnknown)
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_BOUND_01,
@@ -3407,8 +3883,14 @@ TEST(SemanticAxiomEvaluator, NonFiniteCornerIsFail)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_BOUND_01,
@@ -3445,8 +3927,14 @@ TEST(SemanticAxiomEvaluator, InfiniteCornerIsFail)
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_BOUND_01,
@@ -3487,8 +3975,14 @@ TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
     p_map->addDetectedMapRoom(&room);
     wall.setBad();
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
 
     /* The retired wall itself is skipped by AX-WALL-01 -- no Finding at
      * all names it. */
@@ -3551,7 +4045,10 @@ TEST(SemanticAxiomEvaluator,
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     RoomRecord *p_roomRecord = nullptr;
     for (RoomRecord &roomRecord : snapshot.maps.front().rooms)
@@ -3569,8 +4066,11 @@ TEST(SemanticAxiomEvaluator,
     wrongTypeRef.wallKey.reset();
     p_roomRecord->wallRefs.push_back(wrongTypeRef);
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_BOUND_01,
                               ReasonCode::ROOM_BOUNDARY_INVALID_WALL_EVIDENCE);
@@ -3608,7 +4108,10 @@ TEST(SemanticAxiomEvaluator,
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     RoomRecord *p_roomRecord = nullptr;
     for (RoomRecord &roomRecord : snapshot.maps.front().rooms)
@@ -3626,11 +4129,14 @@ TEST(SemanticAxiomEvaluator,
     unmappedRef.planeId = 998;
     p_roomRecord->wallRefs.push_back(unmappedRef);
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     /* No FAIL: the unmapped entry is unavailable, not a proven
      * contradiction, and the genuinely valid wall still leaves the room at
      * the Phase-6 support UNKNOWN. */
-    const Finding              *p_invalidFinding =
+    const Finding *p_invalidFinding =
         findFindingWithReason(report,
                               AxiomCode::AX_BOUND_01,
                               ReasonCode::ROOM_BOUNDARY_INVALID_WALL_EVIDENCE);
@@ -3673,8 +4179,11 @@ TEST(SemanticAxiomEvaluator, NonemptyAllUnavailableWallEvidenceIsUnknownNotFail)
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot     = captureSemanticGraphSnapshot(&atlas);
-    RoomRecord           *p_roomRecord = nullptr;
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    RoomRecord *p_roomRecord = nullptr;
     for (RoomRecord &roomRecord : snapshot.maps.front().rooms)
     {
         if (roomRecord.key.entityId == 1)
@@ -3689,7 +4198,10 @@ TEST(SemanticAxiomEvaluator, NonemptyAllUnavailableWallEvidenceIsUnknownNotFail)
     p_roomRecord->wallRefs.front().mapId.reset();
     p_roomRecord->wallRefs.front().wallKey.reset();
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     EXPECT_EQ(findFindingWithReason(report,
                                     AxiomCode::AX_BOUND_01,
                                     ReasonCode::ROOM_BOUNDARY_NO_WALL_EVIDENCE),
@@ -3714,8 +4226,14 @@ TEST(SemanticAxiomEvaluator, RoomWithNoFloorIsUnknown)
     test::makeRoom(room, 1, p_map, nullptr);
     p_map->addDetectedMapRoom(&room);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_FLOOR_01,
@@ -3735,8 +4253,14 @@ TEST(SemanticAxiomEvaluator, RoomFloorReciprocalIsPass)
     test::makeFloor(floor, 1, p_map, {&room});
     p_map->addMapFloor(&floor);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_FLOOR_01,
@@ -3759,8 +4283,14 @@ TEST(SemanticAxiomEvaluator, RoomFloorNonReciprocalIsFail)
     ASSERT_EQ((room.setFloor(&floor)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_FLOOR_01,
@@ -3786,8 +4316,14 @@ TEST(SemanticAxiomEvaluator, RoomFloorCrossMapIsFail)
     ASSERT_EQ((room.setFloor(&floorInMapB)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_FLOOR_01,
@@ -3812,7 +4348,10 @@ TEST(SemanticAxiomEvaluator, RoomFloorReverseClaimWithoutForwardLinkIsFail)
     test::makeFloor(floor, 1, p_map, {});
     p_map->addMapFloor(&floor);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().floors.size(), 1U);
     ASSERT_TRUE(snapshot.maps.front().floors.front().roomRefs.empty());
@@ -3826,8 +4365,11 @@ TEST(SemanticAxiomEvaluator, RoomFloorReverseClaimWithoutForwardLinkIsFail)
      * mutation. */
     ASSERT_FALSE(snapshot.maps.front().rooms.front().floorRef.key.has_value());
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_FLOOR_01,
         ReasonCode::ROOM_FLOOR_REVERSE_CLAIM_WITHOUT_FORWARD_LINK);
@@ -3849,14 +4391,20 @@ TEST(SemanticAxiomEvaluator, RoomFloorWrongKindIsFail)
     test::makeFloor(floor, 1, p_map, {&room});
     p_map->addMapFloor(&floor);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     ASSERT_TRUE(snapshot.maps.front().rooms.front().floorRef.key.has_value());
     snapshot.maps.front().rooms.front().floorRef.key->kind = EntityKind::ROOM;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_FLOOR_01,
                               ReasonCode::ROOM_FLOOR_WRONG_KIND);
@@ -3877,14 +4425,20 @@ TEST(SemanticAxiomEvaluator, RoomFloorDeclaredMapMismatchIsFail)
     test::makeFloor(floor, 1, p_map, {&room});
     p_map->addMapFloor(&floor);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().floors.size(), 1U);
     snapshot.maps.front().floors.front().declaredMapId =
         snapshot.maps.front().floors.front().key.mapId + 1U;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_FLOOR_01,
                               ReasonCode::ROOM_FLOOR_DECLARED_MAP_MISMATCH);
@@ -3906,12 +4460,18 @@ TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapMismatchIsFail)
     test::makeFloor(floor, 1, p_map, {&room});
     p_map->addMapFloor(&floor);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     snapshot.maps.front().rooms.front().declaredMapId = p_map->getId() + 999U;
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_FLOOR_01,
         ReasonCode::ROOM_FLOOR_ROOM_DECLARED_MAP_MISMATCH);
@@ -3934,12 +4494,18 @@ TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapUnavailableCapsAtUnknown)
     test::makeFloor(floor, 1, p_map, {&room});
     p_map->addMapFloor(&floor);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     snapshot.maps.front().rooms.front().declaredMapId.reset();
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_passFinding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_passFinding =
         findFindingWithReason(report,
                               AxiomCode::AX_FLOOR_01,
                               ReasonCode::ROOM_FLOOR_RECIPROCAL_VALID);
@@ -3967,12 +4533,18 @@ TEST(SemanticAxiomEvaluator, RoomFloorFloorDeclaredMapUnavailableCapsAtUnknown)
     test::makeFloor(floor, 1, p_map, {&room});
     p_map->addMapFloor(&floor);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().floors.size(), 1U);
     snapshot.maps.front().floors.front().declaredMapId.reset();
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_passFinding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_passFinding =
         findFindingWithReason(report,
                               AxiomCode::AX_FLOOR_01,
                               ReasonCode::ROOM_FLOOR_RECIPROCAL_VALID);
@@ -4019,13 +4591,19 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((far.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().floors.size(), 1U);
     FloorRecord duplicateFloor = snapshot.maps.front().floors.front();
     snapshot.maps.front().floors.push_back(duplicateFloor);
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     /* evaluatePassageFloorAgreement()
      * now consults each real endpoint room's own canonical
      * evaluateOneRoomFloorReciprocity() result first; a duplicate floor key
@@ -4033,7 +4611,7 @@ TEST(SemanticAxiomEvaluator,
      * yielding a dominant ENDPOINT_ROOM_FLOOR_INVALID before the
      * floorKey-equality AMBIGUOUS path is ever reached -- the underlying
      * contradiction is now diagnosed one layer earlier and more precisely. */
-    const Finding              *p_finding = findFindingWithReason(
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_04,
         ReasonCode::PASSAGE_FLOOR_ENDPOINT_ROOM_FLOOR_INVALID);
@@ -4081,7 +4659,10 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((far.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().floors.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().floors.front().roomRefs.size(), 2U);
@@ -4089,14 +4670,17 @@ TEST(SemanticAxiomEvaluator,
      * forward floorRef still names this same floor. */
     snapshot.maps.front().floors.front().roomRefs.pop_back();
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     /* The endpoint room missing
      * reverse membership now fails its own canonical
      * evaluateOneRoomFloorReciprocity() check (ROOM_FLOOR_NON_RECIPROCAL)
      * first, which evaluatePassageFloorAgreement() propagates as a
      * dominant ENDPOINT_ROOM_FLOOR_INVALID before the floorKey-equality
      * AMBIGUOUS path is ever reached. */
-    const Finding              *p_finding = findFindingWithReason(
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_04,
         ReasonCode::PASSAGE_FLOOR_ENDPOINT_ROOM_FLOOR_INVALID);
@@ -4123,15 +4707,21 @@ TEST(SemanticAxiomEvaluator, RoomFloorDuplicateIdentityIsFail)
     test::makeFloor(floor, 1, p_map, {&room});
     p_map->addMapFloor(&floor);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().floors.size(), 1U);
     FloorRecord duplicateFloor = snapshot.maps.front().floors.front();
     duplicateFloor.roomRefs.clear();
     snapshot.maps.front().floors.push_back(duplicateFloor);
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_FLOOR_01,
                               ReasonCode::ROOM_FLOOR_DUPLICATE_IDENTITY);
@@ -4157,15 +4747,21 @@ TEST(SemanticAxiomEvaluator, RoomFloorDuplicateReverseMembershipIsFail)
     test::makeFloor(floor, 1, p_map, {&room});
     p_map->addMapFloor(&floor);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().floors.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().floors.front().roomRefs.size(), 1U);
     snapshot.maps.front().floors.front().roomRefs.push_back(
         snapshot.maps.front().floors.front().roomRefs.front());
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_FLOOR_01,
         ReasonCode::ROOM_FLOOR_DUPLICATE_REVERSE_MEMBERSHIP);
@@ -4193,7 +4789,10 @@ TEST(SemanticAxiomEvaluator, RoomClaimedByMultipleFloorsIsFail)
     test::makeFloor(secondFloor, 2, p_map, {});
     p_map->addMapFloor(&secondFloor);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 1U);
     ASSERT_EQ(snapshot.maps.front().floors.size(), 2U);
     FloorRecord *p_firstFloorRecord  = nullptr;
@@ -4215,8 +4814,11 @@ TEST(SemanticAxiomEvaluator, RoomClaimedByMultipleFloorsIsFail)
     p_secondFloorRecord->roomRefs.push_back(
         p_firstFloorRecord->roomRefs.front());
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_FLOOR_01,
         ReasonCode::ROOM_FLOOR_CLAIMED_BY_MULTIPLE_FLOORS);
@@ -4230,9 +4832,15 @@ TEST(SemanticAxiomEvaluator, RoomClaimedByMultipleFloorsIsFail)
 
 TEST(SemanticAxiomEvaluator, ZeroConfirmedRoomsMakesMapIncomplete)
 {
-    Atlas                                    atlas(0);
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    Atlas                 atlas(0);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 1U);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::FAIL);
     EXPECT_FALSE(results.front().isComplete);
@@ -4241,8 +4849,14 @@ TEST(SemanticAxiomEvaluator, ZeroConfirmedRoomsMakesMapIncomplete)
                         ReasonCode::COMPLETENESS_ZERO_CONFIRMED_ROOMS),
               results.front().reasons.end());
 
-    const AxiomEvaluationReport report =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot2{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot2)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot2, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const Finding *p_compFinding =
         findFindingWithReason(report,
                               AxiomCode::AX_COMP_01,
@@ -4264,8 +4878,14 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveRoomMakesMapIncomplete)
                    Room::RoomVariant::UNDEFINED);
     p_map->addDetectedMapRoom(&prospective);
 
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 1U);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::FAIL);
     EXPECT_EQ(results.front().prospectiveRoomCount, 1U);
@@ -4290,8 +4910,14 @@ TEST(SemanticAxiomEvaluator, CompletenessDuplicateIdentityIsFail)
     test::makeRoom(duplicateIdRoom, 1, p_map, nullptr);
     p_map->addDetectedMapRoom(&duplicateIdRoom);
 
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot2{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot2)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot2, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 1U);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::FAIL);
     EXPECT_FALSE(results.front().isComplete);
@@ -4331,8 +4957,14 @@ TEST(SemanticAxiomEvaluator, CompletenessRoomCreationProvenanceUnavailable)
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 1U);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::UNKNOWN);
     EXPECT_NE(
@@ -4370,8 +5002,14 @@ TEST(SemanticAxiomEvaluator, CompletenessPassageSlotStateFailureIsFail)
     ASSERT_EQ((unpromoted.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 1U);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::FAIL);
     EXPECT_NE(std::find(results.front().reasons.begin(),
@@ -4415,8 +5053,14 @@ TEST(SemanticAxiomEvaluator, CompletenessCrossFloorPassageIsFail)
     ASSERT_EQ((far.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 1U);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::FAIL);
     EXPECT_NE(std::find(results.front().reasons.begin(),
@@ -4446,15 +5090,19 @@ TEST(SemanticAxiomEvaluator,
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    const SemanticGraphSnapshot baseSnapshot =
-        captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot baseSnapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, baseSnapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(baseSnapshot.maps.size(), 1U);
     const MapSnapshot duplicateMap = baseSnapshot.maps.front();
 
     SemanticGraphSnapshot appendedSnapshot = baseSnapshot;
     appendedSnapshot.maps.push_back(duplicateMap);
-    const std::vector<MapCompletenessResult> appendedResults =
-        evaluateMapCompleteness(appendedSnapshot);
+    std::vector<MapCompletenessResult> appendedResults{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(appendedSnapshot, appendedResults)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(appendedResults.size(), 2U);
     for (const MapCompletenessResult &result : appendedResults)
     {
@@ -4467,8 +5115,10 @@ TEST(SemanticAxiomEvaluator,
 
     SemanticGraphSnapshot prependedSnapshot = baseSnapshot;
     prependedSnapshot.maps.insert(prependedSnapshot.maps.begin(), duplicateMap);
-    const std::vector<MapCompletenessResult> prependedResults =
-        evaluateMapCompleteness(prependedSnapshot);
+    std::vector<MapCompletenessResult> prependedResults{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(prependedSnapshot, prependedResults)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(prependedResults.size(), 2U);
     for (const MapCompletenessResult &result : prependedResults)
     {
@@ -4500,8 +5150,14 @@ TEST(SemanticAxiomEvaluator, CompletenessRoomHasMalformedPassageReferenceIsFail)
     ASSERT_EQ((room.setDoorways(&unregisteredPassage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 1U);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::FAIL);
     EXPECT_NE(
@@ -4592,9 +5248,14 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((far.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(snapshot);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 1U);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::UNKNOWN);
     EXPECT_FALSE(results.front().isComplete);
@@ -4629,8 +5290,14 @@ TEST(SemanticAxiomEvaluator, LegacyReproducesDoubleRegisteredRoomMultiplicity)
     p_map->addDetectedMapRoom(&bothCollections);
     p_map->addCandidateMapRoom(&bothCollections);
 
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 1U);
     /* Legacy counts the same live Room twice (once per GetAllRooms()
      * collection membership); the conservative calculation counts it
@@ -4688,8 +5355,14 @@ TEST(SemanticAxiomEvaluator,
      * both setDoorways() calls out reproduces a fixture that is legacy-
      * complete but conservatively invalid (non-reciprocal). */
 
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 1U);
     EXPECT_TRUE(results.front().legacy.isMapFullyModeled);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::FAIL);
@@ -4763,8 +5436,14 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((far.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 1U);
     EXPECT_TRUE(results.front().legacy.isMapFullyModeled);
     EXPECT_EQ(results.front().conservativeResult, AxiomResult::UNKNOWN);
@@ -4804,8 +5483,14 @@ TEST(SemanticAxiomEvaluator, HardFailureInOneMapDoesNotContaminateAnotherMap)
     /* mapB has no rooms at all: independently incomplete (zero confirmed
      * rooms), never FAIL for mapA's wall-ownership reason. */
 
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(results.size(), 2U);
 
     const MapCompletenessResult *p_mapAResult = nullptr;
@@ -4859,7 +5544,10 @@ TEST(SemanticAxiomEvaluator,
     test::makeFloor(floor, 1, p_mapB, {});
     p_mapB->addMapFloor(&floor);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 2U);
     MapSnapshot *p_roomMap  = nullptr;
     MapSnapshot *p_floorMap = nullptr;
@@ -4887,9 +5575,16 @@ TEST(SemanticAxiomEvaluator,
     p_roomMap->rooms.front().floorRef.key =
         EntityKey{EntityKind::FLOOR, sharedMapId, 1};
     p_roomMap->rooms.front().floorRef.reason = UnavailableReason::NONE;
-    ASSERT_EQ(countMapSnapshotsWithId(snapshot, sharedMapId), 2U);
+    std::size_t mapSnapshots{};
+    ASSERT_EQ(
+        (countMapSnapshotsWithId(snapshot, sharedMapId, mapSnapshots)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    ASSERT_EQ(mapSnapshots, 2U);
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     for (const Finding *p_finding : findingsFor(report, AxiomCode::AX_FLOOR_01))
     {
         EXPECT_NE(p_finding->result, AxiomResult::PASS);
@@ -4921,7 +5616,10 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().passages.size(), 1U);
     PassageRecord &passageRecord = snapshot.maps.front().passages.front();
     ASSERT_TRUE(passageRecord.knownSideRoomRef.isLive.has_value());
@@ -4929,8 +5627,11 @@ TEST(SemanticAxiomEvaluator,
     passageRecord.knownSideRoomRef.livenessUnavailableReason =
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA;
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
         ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_LIVENESS_UNAVAILABLE);
@@ -4967,7 +5668,10 @@ TEST(SemanticAxiomEvaluator,
     /* Deliberately never call known.setDoorways(): the adversarial
      * passageRefs entry below is hand-mutated instead. */
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     ASSERT_TRUE(snapshot.maps.front().rooms.front().passageRefs.empty());
     EntityRef malformedRef;
@@ -4984,8 +5688,11 @@ TEST(SemanticAxiomEvaluator,
      * the reverse-scan FAIL fires first. Either dominant path proves the
      * required property: a malformed reciprocal reference can never supply
      * reciprocity proof. */
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_PASS_02,
         ReasonCode::PASSAGE_CARDINALITY_REVERSE_ENDPOINT_BAD);
@@ -5024,7 +5731,10 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().passages.size(), 1U);
     /* Map::AddMapPassage() itself rejects a second Passage object reusing
      * local id 1 ("Passage ID collision"), so this ambiguity is
@@ -5034,7 +5744,10 @@ TEST(SemanticAxiomEvaluator,
     snapshot.maps.front().passages.push_back(
         snapshot.maps.front().passages.front());
 
-    const AxiomEvaluationReport        report = evaluateState(snapshot);
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     /* Both PassageRecords share one local id, so countPassageRecordsWithKey()
      * returns 2 for either's own key; roomListsPassageBack() must therefore
      * refuse reciprocity proof for both, yielding a genuine FAIL rather than
@@ -5075,8 +5788,11 @@ TEST(SemanticAxiomEvaluator, OwnerLivenessUnavailableDoesNotMaskCrossMapOwner)
     test::makeRoom(room, 1, p_mapB, &wall);
     p_mapB->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot     = captureSemanticGraphSnapshot(&atlas);
-    WallRecord           *p_wallRecord = nullptr;
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    WallRecord *p_wallRecord = nullptr;
     for (MapSnapshot &mapSnapshot : snapshot.maps)
     {
         if (!mapSnapshot.walls.empty())
@@ -5090,8 +5806,11 @@ TEST(SemanticAxiomEvaluator, OwnerLivenessUnavailableDoesNotMaskCrossMapOwner)
     p_wallRecord->ownerRoomRefs.front().livenessUnavailableReason =
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
                               ReasonCode::WALL_OWNERSHIP_OWNER_CROSS_MAP);
@@ -5121,14 +5840,20 @@ TEST(SemanticAxiomEvaluator,
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot   = captureSemanticGraphSnapshot(&atlas);
-    WallRecord           &wallRecord = snapshot.maps.front().walls.front();
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    WallRecord &wallRecord = snapshot.maps.front().walls.front();
     ASSERT_EQ(wallRecord.ownerRoomRefs.size(), 1U);
     wallRecord.ownerRoomRefs.front().reason =
         UnavailableReason::ENTITY_HAS_NO_MAP;
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
         ReasonCode::WALL_OWNERSHIP_OWNER_REASON_INCONSISTENT);
@@ -5154,16 +5879,22 @@ TEST(SemanticAxiomEvaluator, ContradictoryReciprocalWithNonNoneReasonIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot   = captureSemanticGraphSnapshot(&atlas);
-    RoomRecord           &roomRecord = snapshot.maps.front().rooms.front();
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    RoomRecord &roomRecord = snapshot.maps.front().rooms.front();
     ASSERT_EQ(roomRecord.wallRefs.size(), 1U);
     /* Shares this wall's own mapId/planeId identity but claims "absent". */
     RawPlaneRef contradictory = roomRecord.wallRefs.front();
     contradictory.reason      = UnavailableReason::NULL_REFERENCE;
     roomRecord.wallRefs.push_back(contradictory);
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
         ReasonCode::WALL_OWNERSHIP_RECIPROCAL_CONTRADICTORY);
@@ -5191,12 +5922,18 @@ TEST(SemanticAxiomEvaluator, OwnerDeclaredMapUnavailableCapsAtUnknownNotFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot   = captureSemanticGraphSnapshot(&atlas);
-    RoomRecord           &roomRecord = snapshot.maps.front().rooms.front();
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    RoomRecord &roomRecord = snapshot.maps.front().rooms.front();
     roomRecord.declaredMapId.reset();
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_passFinding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_passFinding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
                               ReasonCode::WALL_OWNERSHIP_SINGLE_VALID_OWNER);
@@ -5235,8 +5972,11 @@ TEST(SemanticAxiomEvaluator,
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot   = captureSemanticGraphSnapshot(&atlas);
-    RoomRecord           &roomRecord = snapshot.maps.front().rooms.front();
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    RoomRecord &roomRecord = snapshot.maps.front().rooms.front();
     ASSERT_TRUE(roomRecord.wallRefs.empty());
     RawPlaneRef contradictory;
     contradictory.reason    = UnavailableReason::NULL_REFERENCE;
@@ -5246,8 +5986,11 @@ TEST(SemanticAxiomEvaluator,
     contradictory.planeType = geometric::Plane::PlaneVariant::GROUND;
     roomRecord.wallRefs.push_back(contradictory);
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_BOUND_01,
                               ReasonCode::ROOM_BOUNDARY_INVALID_WALL_EVIDENCE);
@@ -5285,11 +6028,17 @@ TEST(SemanticAxiomEvaluator,
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     snapshot.maps.front().rooms.front().declaredMapId.reset();
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_BOUND_01,
         ReasonCode::ROOM_BOUNDARY_WALL_EVIDENCE_UNAVAILABLE);
@@ -5315,8 +6064,11 @@ TEST(SemanticAxiomEvaluator, WallTwinReasonInconsistentIsFail)
                         1.0);
     p_map->addMapPlane(&wall);
 
-    SemanticGraphSnapshot snapshot   = captureSemanticGraphSnapshot(&atlas);
-    WallRecord           &wallRecord = snapshot.maps.front().walls.front();
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    WallRecord &wallRecord = snapshot.maps.front().walls.front();
     ASSERT_EQ(wallRecord.twinRef.reason, UnavailableReason::NULL_REFERENCE);
     wallRecord.twinRef.mapId     = wallRecord.key.mapId;
     wallRecord.twinRef.planeId   = wallRecord.key.entityId;
@@ -5324,8 +6076,11 @@ TEST(SemanticAxiomEvaluator, WallTwinReasonInconsistentIsFail)
     wallRecord.twinRef.isLive    = false;
     wallRecord.twinRef.wallKey   = wallRecord.key;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_03,
                               ReasonCode::WALL_TWIN_REASON_INCONSISTENT);
@@ -5346,15 +6101,21 @@ TEST(SemanticAxiomEvaluator, FloorReverseMemberReasonInconsistentAndDeadIsFail)
     test::makeFloor(floor, 1, p_map, {&room});
     p_map->addMapFloor(&floor);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().floors.size(), 1U);
     FloorRecord &floorRecord = snapshot.maps.front().floors.front();
     ASSERT_EQ(floorRecord.roomRefs.size(), 1U);
     floorRecord.roomRefs.front().reason = UnavailableReason::ENTITY_HAS_NO_MAP;
     floorRecord.roomRefs.front().isLive = false;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_FLOOR_01,
                               ReasonCode::ROOM_FLOOR_REVERSE_MEMBER_INVALID);
@@ -5391,7 +6152,10 @@ TEST(SemanticAxiomEvaluator, WallOwnerSplitAcrossDuplicateContainingMapIsFail)
     test::makeRoom(room, 1, p_mapB, nullptr);
     p_mapB->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 2U);
     MapSnapshot *p_wallMap = nullptr;
     MapSnapshot *p_roomMap = nullptr;
@@ -5422,8 +6186,11 @@ TEST(SemanticAxiomEvaluator, WallOwnerSplitAcrossDuplicateContainingMapIsFail)
     ownerRef.livenessUnavailableReason     = UnavailableReason::NONE;
     p_wallMap->walls.front().ownerRoomRefs = {ownerRef};
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
         ReasonCode::WALL_OWNERSHIP_OWNER_CONTAINING_MAP_AMBIGUOUS);
@@ -5464,15 +6231,21 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((room.setBad()),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    SemanticGraphSnapshot snapshot   = captureSemanticGraphSnapshot(&atlas);
-    WallRecord           &wallRecord = snapshot.maps.front().walls.front();
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    WallRecord &wallRecord = snapshot.maps.front().walls.front();
     ASSERT_EQ(wallRecord.ownerRoomRefs.size(), 1U);
     wallRecord.ownerRoomRefs.front().isLive = std::nullopt;
     wallRecord.ownerRoomRefs.front().livenessUnavailableReason =
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
                               ReasonCode::WALL_OWNERSHIP_OWNER_RECORD_NOT_LIVE);
@@ -5507,16 +6280,22 @@ TEST(SemanticAxiomEvaluator, ReciprocalWallKeyRawIdentityMismatchIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot   = captureSemanticGraphSnapshot(&atlas);
-    RoomRecord           &roomRecord = snapshot.maps.front().rooms.front();
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    RoomRecord &roomRecord = snapshot.maps.front().rooms.front();
     ASSERT_EQ(roomRecord.wallRefs.size(), 1U);
     RawPlaneRef mismatched = roomRecord.wallRefs.front();
     ASSERT_TRUE(mismatched.wallKey.has_value());
     mismatched.mapId = 4242UL;
     roomRecord.wallRefs.push_back(mismatched);
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
         ReasonCode::WALL_OWNERSHIP_RECIPROCAL_CONTRADICTORY);
@@ -5544,8 +6323,11 @@ TEST(SemanticAxiomEvaluator,
     test::makeFloor(floor, 1, p_map, {&room});
     p_map->addMapFloor(&floor);
 
-    SemanticGraphSnapshot snapshot    = captureSemanticGraphSnapshot(&atlas);
-    FloorRecord          &floorRecord = snapshot.maps.front().floors.front();
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    FloorRecord &floorRecord = snapshot.maps.front().floors.front();
     ASSERT_EQ(floorRecord.roomRefs.size(), 1U);
     EntityRef unavailableDuplicate = floorRecord.roomRefs.front();
     unavailableDuplicate.isLive    = std::nullopt;
@@ -5553,8 +6335,11 @@ TEST(SemanticAxiomEvaluator,
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA;
     floorRecord.roomRefs.push_back(unavailableDuplicate);
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_FLOOR_01,
         ReasonCode::ROOM_FLOOR_DUPLICATE_REVERSE_MEMBERSHIP);
@@ -5593,7 +6378,10 @@ TEST(SemanticAxiomEvaluator,
     test::makeRoom(room, 1, p_mapA, &wall);
     p_mapA->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.size(), 2U);
     WallRecord *p_wallRecord = nullptr;
     RoomRecord *p_roomRecord = nullptr;
@@ -5619,8 +6407,11 @@ TEST(SemanticAxiomEvaluator,
     p_wallRecord->ownerRoomRefs.front().livenessUnavailableReason =
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA;
 
-    const AxiomEvaluationReport report    = evaluateState(snapshot);
-    const Finding              *p_finding = findFindingWithReason(
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding = findFindingWithReason(
         report,
         AxiomCode::AX_WALL_01,
         ReasonCode::WALL_OWNERSHIP_OWNER_DECLARED_MAP_MISMATCH);
@@ -5656,7 +6447,10 @@ TEST(SemanticAxiomEvaluator,
     test::makeRoom(room, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&room);
 
-    SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().walls.size(), 1U);
     WallRecord &wallRecord = snapshot.maps.front().walls.front();
     ASSERT_EQ(wallRecord.ownerRoomRefs.size(), 1U);
@@ -5673,8 +6467,11 @@ TEST(SemanticAxiomEvaluator,
     wallRecord.ownerRoomRefs.front().livenessUnavailableReason =
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA;
 
-    const AxiomEvaluationReport report = evaluateState(snapshot);
-    const Finding              *p_finding =
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    const Finding *p_finding =
         findFindingWithReason(report,
                               AxiomCode::AX_WALL_01,
                               ReasonCode::WALL_OWNERSHIP_OWNER_NOT_RECIPROCAL);

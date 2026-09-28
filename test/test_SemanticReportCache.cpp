@@ -21,12 +21,17 @@ namespace semantic
 TEST(SemanticReportCache, UnavailableBeforeFirstUpdate)
 {
     SemanticReportCache cache;
-    EXPECT_FALSE(cache.isAvailable());
+    bool                isAvailable2{};
+    ASSERT_EQ((cache.isAvailable(isAvailable2)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    EXPECT_FALSE(isAvailable2);
 
     /* getLatest() before any update() still returns a valid, default
      * value -- never null, never a dangling reference -- but callers must
      * consult isAvailable() to know it is not yet meaningful. */
-    const SemanticReportCacheEntry entry = cache.getLatest();
+    SemanticReportCacheEntry entry{};
+    ASSERT_EQ((cache.getLatest(entry)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
     EXPECT_EQ(entry.semanticCycle, 0U);
     EXPECT_EQ(entry.updateSequence, 0U);
     EXPECT_FALSE(entry.currentMapId.has_value());
@@ -39,18 +44,24 @@ TEST(SemanticReportCache, AvailableAfterOneUpdate)
     SemanticGraphSnapshot snapshot;
     AxiomEvaluationReport report;
 
-    cache.update(snapshot,
-                 report,
-                 {},
-                 /*semanticCycle_in=*/1U,
-                 /*currentMapId_in=*/std::nullopt,
-                 /*mapRevision_in=*/std::nullopt,
-                 "topology-digest-1",
-                 "geometry-digest-1",
-                 std::chrono::milliseconds(5));
+    ASSERT_EQ((cache.update(snapshot,
+                            report,
+                            {},
+                            /*semanticCycle_in=*/1U,
+                            /*currentMapId_in=*/std::nullopt,
+                            /*mapRevision_in=*/std::nullopt,
+                            "topology-digest-1",
+                            "geometry-digest-1",
+                            std::chrono::milliseconds(5))),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
 
-    EXPECT_TRUE(cache.isAvailable());
-    const SemanticReportCacheEntry entry = cache.getLatest();
+    bool isAvailable2{};
+    ASSERT_EQ((cache.isAvailable(isAvailable2)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    EXPECT_TRUE(isAvailable2);
+    SemanticReportCacheEntry entry{};
+    ASSERT_EQ((cache.getLatest(entry)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
     EXPECT_EQ(entry.semanticCycle, 1U);
     EXPECT_EQ(entry.updateSequence, 1U);
 }
@@ -64,31 +75,37 @@ TEST(SemanticReportCache, PreservesMapIdZeroDistinctFromNoMap)
     SemanticGraphSnapshot snapshot;
     AxiomEvaluationReport report;
 
-    cache.update(snapshot,
-                 report,
-                 {},
-                 1U,
-                 /*currentMapId_in=*/0UL,
-                 /*mapRevision_in=*/0,
-                 "t",
-                 "g",
-                 std::chrono::milliseconds(0));
-    SemanticReportCacheEntry withMapZero = cache.getLatest();
+    ASSERT_EQ((cache.update(snapshot,
+                            report,
+                            {},
+                            1U,
+                            /*currentMapId_in=*/0UL,
+                            /*mapRevision_in=*/0,
+                            "t",
+                            "g",
+                            std::chrono::milliseconds(0))),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    SemanticReportCacheEntry withMapZero{};
+    ASSERT_EQ((cache.getLatest(withMapZero)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
     ASSERT_TRUE(withMapZero.currentMapId.has_value());
     EXPECT_EQ(*withMapZero.currentMapId, 0UL);
     ASSERT_TRUE(withMapZero.mapRevision.has_value());
     EXPECT_EQ(*withMapZero.mapRevision, 0);
 
-    cache.update(snapshot,
-                 report,
-                 {},
-                 2U,
-                 /*currentMapId_in=*/std::nullopt,
-                 /*mapRevision_in=*/std::nullopt,
-                 "t",
-                 "g",
-                 std::chrono::milliseconds(0));
-    SemanticReportCacheEntry withNoMap = cache.getLatest();
+    ASSERT_EQ((cache.update(snapshot,
+                            report,
+                            {},
+                            2U,
+                            /*currentMapId_in=*/std::nullopt,
+                            /*mapRevision_in=*/std::nullopt,
+                            "t",
+                            "g",
+                            std::chrono::milliseconds(0))),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    SemanticReportCacheEntry withNoMap{};
+    ASSERT_EQ((cache.getLatest(withNoMap)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
     EXPECT_FALSE(withNoMap.currentMapId.has_value());
     EXPECT_FALSE(withNoMap.mapRevision.has_value());
 }
@@ -105,17 +122,20 @@ TEST(SemanticReportCache, GetLatestReturnsNonAliasingCopy)
     finding.id = "original";
     report.findings.push_back(finding);
 
-    cache.update(snapshot,
-                 report,
-                 {},
-                 1U,
-                 std::nullopt,
-                 std::nullopt,
-                 "t",
-                 "g",
-                 std::chrono::milliseconds(0));
+    ASSERT_EQ((cache.update(snapshot,
+                            report,
+                            {},
+                            1U,
+                            std::nullopt,
+                            std::nullopt,
+                            "t",
+                            "g",
+                            std::chrono::milliseconds(0))),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
 
-    SemanticReportCacheEntry firstCopy = cache.getLatest();
+    SemanticReportCacheEntry firstCopy{};
+    ASSERT_EQ((cache.getLatest(firstCopy)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
     ASSERT_EQ(firstCopy.evaluationReport.findings.size(), 1U);
     firstCopy.evaluationReport.findings[0].id = "mutated-by-caller";
 
@@ -123,7 +143,9 @@ TEST(SemanticReportCache, GetLatestReturnsNonAliasingCopy)
      * retroactively change the cached value. */
     report.findings[0].id = "mutated-input-after-update";
 
-    const SemanticReportCacheEntry secondCopy = cache.getLatest();
+    SemanticReportCacheEntry secondCopy{};
+    ASSERT_EQ((cache.getLatest(secondCopy)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
     ASSERT_EQ(secondCopy.evaluationReport.findings.size(), 1U);
     EXPECT_EQ(secondCopy.evaluationReport.findings[0].id, "original");
 }
@@ -137,27 +159,38 @@ TEST(SemanticReportCache,
 
     /* semanticCycle can skip values (SemanticsManager owns numbering);
      * updateSequence must still increase by exactly one per update() call. */
-    cache.update(snapshot,
-                 report,
-                 {},
-                 5U,
-                 std::nullopt,
-                 std::nullopt,
-                 "t",
-                 "g",
-                 {});
-    EXPECT_EQ(cache.getLatest().updateSequence, 1U);
-    cache.update(snapshot,
-                 report,
-                 {},
-                 9U,
-                 std::nullopt,
-                 std::nullopt,
-                 "t",
-                 "g",
-                 {});
-    EXPECT_EQ(cache.getLatest().updateSequence, 2U);
-    EXPECT_EQ(cache.getLatest().semanticCycle, 9U);
+    ASSERT_EQ((cache.update(snapshot,
+                            report,
+                            {},
+                            5U,
+                            std::nullopt,
+                            std::nullopt,
+                            "t",
+                            "g",
+                            {})),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    SemanticReportCacheEntry getLatest2{};
+    ASSERT_EQ((cache.getLatest(getLatest2)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    EXPECT_EQ(getLatest2.updateSequence, 1U);
+    ASSERT_EQ((cache.update(snapshot,
+                            report,
+                            {},
+                            9U,
+                            std::nullopt,
+                            std::nullopt,
+                            "t",
+                            "g",
+                            {})),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    SemanticReportCacheEntry getLatest3{};
+    ASSERT_EQ((cache.getLatest(getLatest3)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    EXPECT_EQ(getLatest3.updateSequence, 2U);
+    SemanticReportCacheEntry getLatest4{};
+    ASSERT_EQ((cache.getLatest(getLatest4)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    EXPECT_EQ(getLatest4.semanticCycle, 9U);
 }
 
 TEST(SemanticReportCache,
@@ -167,52 +200,68 @@ TEST(SemanticReportCache,
     SemanticGraphSnapshot snapshot;
     AxiomEvaluationReport report;
 
-    cache.update(snapshot,
-                 report,
-                 {},
-                 1U,
-                 std::nullopt,
-                 std::nullopt,
-                 "topology-a",
-                 "geometry-a",
-                 {});
-    EXPECT_EQ(cache.getLatest().geometryRevision, 0U);
+    ASSERT_EQ((cache.update(snapshot,
+                            report,
+                            {},
+                            1U,
+                            std::nullopt,
+                            std::nullopt,
+                            "topology-a",
+                            "geometry-a",
+                            {})),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    SemanticReportCacheEntry getLatest2{};
+    ASSERT_EQ((cache.getLatest(getLatest2)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    EXPECT_EQ(getLatest2.geometryRevision, 0U);
 
     /* Unchanged full-geometry digest (even with a changed topology digest,
      * representing e.g. a genuinely unrelated cycle) must not bump the
      * counter. */
-    cache.update(snapshot,
-                 report,
-                 {},
-                 2U,
-                 std::nullopt,
-                 std::nullopt,
-                 "topology-b",
-                 "geometry-a",
-                 {});
-    EXPECT_EQ(cache.getLatest().geometryRevision, 0U);
+    ASSERT_EQ((cache.update(snapshot,
+                            report,
+                            {},
+                            2U,
+                            std::nullopt,
+                            std::nullopt,
+                            "topology-b",
+                            "geometry-a",
+                            {})),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    SemanticReportCacheEntry getLatest3{};
+    ASSERT_EQ((cache.getLatest(getLatest3)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    EXPECT_EQ(getLatest3.geometryRevision, 0U);
 
-    cache.update(snapshot,
-                 report,
-                 {},
-                 3U,
-                 std::nullopt,
-                 std::nullopt,
-                 "topology-b",
-                 "geometry-b",
-                 {});
-    EXPECT_EQ(cache.getLatest().geometryRevision, 1U);
+    ASSERT_EQ((cache.update(snapshot,
+                            report,
+                            {},
+                            3U,
+                            std::nullopt,
+                            std::nullopt,
+                            "topology-b",
+                            "geometry-b",
+                            {})),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    SemanticReportCacheEntry getLatest4{};
+    ASSERT_EQ((cache.getLatest(getLatest4)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    EXPECT_EQ(getLatest4.geometryRevision, 1U);
 
-    cache.update(snapshot,
-                 report,
-                 {},
-                 4U,
-                 std::nullopt,
-                 std::nullopt,
-                 "topology-b",
-                 "geometry-c",
-                 {});
-    EXPECT_EQ(cache.getLatest().geometryRevision, 2U);
+    ASSERT_EQ((cache.update(snapshot,
+                            report,
+                            {},
+                            4U,
+                            std::nullopt,
+                            std::nullopt,
+                            "topology-b",
+                            "geometry-c",
+                            {})),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    SemanticReportCacheEntry getLatest5{};
+    ASSERT_EQ((cache.getLatest(getLatest5)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    EXPECT_EQ(getLatest5.geometryRevision, 2U);
 }
 
 /* No ROS fixture required: this only proves the mutex actually serializes
@@ -233,22 +282,30 @@ TEST(SemanticReportCache, ConcurrentWriterAndReaderStayConsistent)
                 Finding               finding;
                 finding.id = std::to_string(i);
                 report.findings.push_back(finding);
-                cache.update(snapshot,
-                             report,
-                               {},
-                             static_cast<std::uint64_t>(i),
-                             std::nullopt,
-                             std::nullopt,
-                             "t",
-                             "g",
-                               {});
+                if (cache.update(snapshot,
+                                 report,
+                                   {},
+                                 static_cast<std::uint64_t>(i),
+                                 std::nullopt,
+                                 std::nullopt,
+                                 "t",
+                                 "g",
+                                   {}) !=
+                    SemanticReportCacheStatus::
+                        SEMANTIC_REPORT_CACHE_STATUS_SUCCESS)
+                {
+                    // update cannot fail; continue as before.
+                }
             }
         });
 
     bool sawAnyUpdate = false;
     for (int i = 0; i < kIterations; ++i)
     {
-        const SemanticReportCacheEntry entry = cache.getLatest();
+        SemanticReportCacheEntry entry{};
+        ASSERT_EQ(
+            (cache.getLatest(entry)),
+            SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
         /* A torn read would show a findings vector whose single element's
          * id does not match a value the writer ever wrote atomically; the
          * mutex must prevent that regardless of scheduling. */
@@ -259,7 +316,10 @@ TEST(SemanticReportCache, ConcurrentWriterAndReaderStayConsistent)
         }
     }
     writer.join();
-    EXPECT_TRUE(cache.isAvailable());
+    bool isAvailable2{};
+    ASSERT_EQ((cache.isAvailable(isAvailable2)),
+              SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS);
+    EXPECT_TRUE(isAvailable2);
     /* sawAnyUpdate is not asserted true: on an unlucky schedule the reader
      * loop could finish before the writer thread starts. The absence of a
      * crash/deadlock/inconsistent read across kIterations iterations of

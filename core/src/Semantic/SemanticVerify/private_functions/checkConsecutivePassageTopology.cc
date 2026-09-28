@@ -30,13 +30,14 @@ namespace core
 namespace semantic
 {
 
-AlignmentCheck checkConsecutivePassageTopology(
+SemanticVerifyStatus checkConsecutivePassageTopology(
     const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
     const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
     const g2o::Sim3                              &transform_in,
     double                                        maximumCentroidDistance_m_in,
     std::size_t                                  &matchedCount_out,
-    SemanticMergeReason                          &contradictionReason_out)
+    SemanticMergeReason                          &contradictionReason_out,
+    AlignmentCheck                               &alignmentCheck_out)
 {
     matchedCount_out          = 0U;
     bool hasIncompletePassage = false;
@@ -78,7 +79,13 @@ AlignmentCheck checkConsecutivePassageTopology(
         for (const PassageContext &passage : room.context.passageContexts)
         {
             survivingById.emplace(passage.id, &passage);
-            if (passageGeometryIsUsable(passage))
+            bool isUsable{};
+            if (passageGeometryIsUsable(passage, isUsable) !=
+                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+            {
+                // passageGeometryIsUsable cannot fail; continue as before.
+            }
+            if (isUsable)
             {
                 survivingPassages.push_back(&passage);
             }
@@ -112,13 +119,20 @@ AlignmentCheck checkConsecutivePassageTopology(
                 {
                     contradictionReason_out =
                         SemanticMergeReason::PASSAGE_IDENTITY_CONTRADICTION;
-                    return AlignmentCheck::CONTRADICTION;
+                    alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+                    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
                 }
                 ++matchedCount_out;
                 hasAbsorbedPassageEvidence = true;
                 continue;
             }
-            if (!passageGeometryIsUsable(absorbedPassage))
+            bool isUsable2{};
+            if (passageGeometryIsUsable(absorbedPassage, isUsable2) !=
+                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+            {
+                // passageGeometryIsUsable cannot fail; continue as before.
+            }
+            if (!isUsable2)
             {
                 /* Recovery proxies and geometry-less hypotheses contribute
                  * no constraints. */
@@ -162,7 +176,9 @@ AlignmentCheck checkConsecutivePassageTopology(
                     {
                         contradictionReason_out =
                             SemanticMergeReason::PASSAGE_IDENTITY_CONTRADICTION;
-                        return AlignmentCheck::CONTRADICTION;
+                        alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+                        return SemanticVerifyStatus::
+                            SEMANTIC_VERIFY_STATUS_SUCCESS;
                     }
                     if (absorbedPassage.hasKnownSideDirection &&
                         p_surviving->hasKnownSideDirection)
@@ -182,7 +198,9 @@ AlignmentCheck checkConsecutivePassageTopology(
                         {
                             contradictionReason_out = SemanticMergeReason::
                                 PASSAGE_DIRECTION_CONTRADICTION;
-                            return AlignmentCheck::CONTRADICTION;
+                            alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+                            return SemanticVerifyStatus::
+                                SEMANTIC_VERIFY_STATUS_SUCCESS;
                         }
                     }
                     else
@@ -190,9 +208,10 @@ AlignmentCheck checkConsecutivePassageTopology(
                         hasIncompletePassage = true;
                     }
                     Eigen::Vector3d mappedCentroid = Eigen::Vector3d::Zero();
-                    if (!transformAbsorbedPoint(transform_in,
-                                                absorbedPassage.centroid_World,
-                                                mappedCentroid))
+                    if (!(transformAbsorbedPoint(transform_in,
+                                                 absorbedPassage.centroid_World,
+                                                 mappedCentroid) ==
+                          SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS))
                     {
                         hasIncompletePassage = true;
                     }
@@ -201,7 +220,9 @@ AlignmentCheck checkConsecutivePassageTopology(
                     {
                         contradictionReason_out =
                             SemanticMergeReason::PASSAGE_IDENTITY_CONTRADICTION;
-                        return AlignmentCheck::CONTRADICTION;
+                        alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+                        return SemanticVerifyStatus::
+                            SEMANTIC_VERIFY_STATUS_SUCCESS;
                     }
                 }
                 else
@@ -238,7 +259,8 @@ AlignmentCheck checkConsecutivePassageTopology(
             {
                 contradictionReason_out =
                     SemanticMergeReason::PASSAGE_ENDPOINT_CONTRADICTION;
-                return AlignmentCheck::CONTRADICTION;
+                alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+                return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
             }
             else
             {
@@ -250,16 +272,19 @@ AlignmentCheck checkConsecutivePassageTopology(
     if (!hasAbsorbedPassageEvidence)
     {
         contradictionReason_out = SemanticMergeReason::PASSAGE_EVIDENCE_MISSING;
-        return AlignmentCheck::MISSING;
+        alignmentCheck_out      = AlignmentCheck::MISSING;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
     if (matchedCount_out == 0U)
     {
         contradictionReason_out =
             SemanticMergeReason::PASSAGE_IDENTITY_CONTRADICTION;
-        return AlignmentCheck::CONTRADICTION;
+        alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
-    return hasIncompletePassage ? AlignmentCheck::MISSING
-                                : AlignmentCheck::ALIGNED;
+    alignmentCheck_out = hasIncompletePassage ? AlignmentCheck::MISSING
+                                              : AlignmentCheck::ALIGNED;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

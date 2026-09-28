@@ -32,15 +32,25 @@ namespace core
 namespace semantic
 {
 
-void evaluateAxFrame01(const SemanticGraphSnapshot &snapshot_in,
-                       std::vector<Finding>        &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateAxFrame01(const SemanticGraphSnapshot &snapshot_in,
+                      std::vector<Finding>        &findings_inout)
 {
     (void)snapshot_in;
-    findings_inout.push_back(
-        makeFinding(AxiomCode::AX_FRAME_01,
+    Finding finding{};
+    if (makeFinding(AxiomCode::AX_FRAME_01,
                     AxiomResult::UNKNOWN,
                     ReasonCode::FRAME_TRANSITION_EVALUATION_REQUIRED,
-                    {}));
+                    {},
+                    finding) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeFinding cannot fail; continue as before.
+    }
+    findings_inout.push_back(finding);
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

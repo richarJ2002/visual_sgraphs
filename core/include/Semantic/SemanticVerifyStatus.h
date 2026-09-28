@@ -42,7 +42,15 @@ namespace semantic
 enum class SemanticVerifyStatus : std::uint8_t
 {
     /*! @brief The operation completed and every output was written. */
-    SEMANTIC_VERIFY_STATUS_SUCCESS = 0U
+    SEMANTIC_VERIFY_STATUS_SUCCESS = 0U,
+
+    /*! @brief An input was null, repeated or not finite; the object and the
+     * outputs were left unchanged. */
+    SEMANTIC_VERIFY_STATUS_INVALID_ARGUMENT = 1U,
+
+    /*! @brief A numerical step did not converge or produced a non-finite value.
+     */
+    SEMANTIC_VERIFY_STATUS_NUMERICAL_FAILURE = 2U
 };
 
 } // namespace semantic

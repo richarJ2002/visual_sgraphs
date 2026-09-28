@@ -48,7 +48,13 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
     {
         // getCentroid cannot fail; continue as before.
     }
-    if (!isFiniteVector(roomCentroid_World))
+    bool isFiniteVector2{};
+    if (isFiniteVector(roomCentroid_World, isFiniteVector2) !=
+        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // isFiniteVector cannot fail; continue as before.
+    }
+    if (!isFiniteVector2)
     {
         observations_out = observations;
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
@@ -102,7 +108,13 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
         observation.normal_World   = coeffs.head<3>();
         observation.d              = coeffs(3);
         observation.centroid_World = p_wall->getCentroid();
-        if (!isFiniteVector(observation.centroid_World))
+        bool isFiniteVector3{};
+        if (isFiniteVector(observation.centroid_World, isFiniteVector3) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // isFiniteVector cannot fail; continue as before.
+        }
+        if (!isFiniteVector3)
         {
             continue;
         }

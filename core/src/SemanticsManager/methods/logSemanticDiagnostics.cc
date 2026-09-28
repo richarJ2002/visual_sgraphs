@@ -30,9 +30,15 @@ void SemanticsManager::logSemanticDiagnostics(
      * method's only job is deciding whether/what to print.
      * semanticDiagnosticState is the only mutable state carried across
      * calls. */
-    const semantic::SemanticDiagnosticUpdate update =
-        semantic::buildSemanticDiagnosticUpdate(entry_in,
-                                                semanticDiagnosticState);
+    semantic::SemanticDiagnosticUpdate update{};
+    if (semantic::buildSemanticDiagnosticUpdate(entry_in,
+                                                semanticDiagnosticState,
+                                                update) !=
+        semantic::SemanticDiagnosticsStatus::
+            SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS)
+    {
+        // buildSemanticDiagnosticUpdate cannot fail; continue as before.
+    }
     if (!update.shouldEmit)
     {
         return;

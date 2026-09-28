@@ -38,12 +38,18 @@ RoomTrackerStatus
     if (source_in == RoomTrackingState::UNKNOWN &&
         event_in == RoomTrackingEvent::FIRST_ROOM_CONFIRMED)
     {
+        bool verificationIsPass{};
+        if (verification_in.isPass(verificationIsPass) !=
+            VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
+        {
+            // isPass cannot fail; continue as before.
+        }
         if (commit(source_in,
                    event_in,
                    now_s_in,
                    crossing_in,
                    verification_in,
-                   verification_in.isPass()) !=
+                   verificationIsPass) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
             // commit cannot fail; continue as before.
@@ -73,11 +79,20 @@ RoomTrackerStatus
     else if (source_in == RoomTrackingState::CROSSING_PASSAGE &&
              event_in == RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE)
     {
+        bool verificationIsPass2{};
+        if ((crossing_in.areBothSidesObserved &&
+             std::isfinite(crossing_in.dwell_s) && crossing_in.dwell_s >= 0.0 &&
+             crossing_in.dwell_s >= config.crossing_dwell_s) &&
+            verification_in.isPass(verificationIsPass2) !=
+                VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
+        {
+            // isPass cannot fail; continue as before.
+        }
         const bool guardSatisfied =
             crossing_in.areBothSidesObserved &&
             std::isfinite(crossing_in.dwell_s) && crossing_in.dwell_s >= 0.0 &&
             crossing_in.dwell_s >= config.crossing_dwell_s &&
-            verification_in.isPass();
+            verificationIsPass2;
         if (commit(source_in,
                    event_in,
                    now_s_in,
@@ -92,12 +107,18 @@ RoomTrackerStatus
     else if (source_in == RoomTrackingState::LOST_WITHOUT_ROOM &&
              event_in == RoomTrackingEvent::ROOM_REACQUIRED)
     {
+        bool verificationIsPass3{};
+        if (verification_in.isPass(verificationIsPass3) !=
+            VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
+        {
+            // isPass cannot fail; continue as before.
+        }
         if (commit(source_in,
                    event_in,
                    now_s_in,
                    crossing_in,
                    verification_in,
-                   verification_in.isPass()) !=
+                   verificationIsPass3) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
             // commit cannot fail; continue as before.
@@ -106,12 +127,18 @@ RoomTrackerStatus
     else if (source_in == RoomTrackingState::LOST_WITH_LAST_ROOM &&
              event_in == RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH)
     {
+        bool verificationIsPass4{};
+        if (verification_in.isPass(verificationIsPass4) !=
+            VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
+        {
+            // isPass cannot fail; continue as before.
+        }
         if (commit(source_in,
                    event_in,
                    now_s_in,
                    crossing_in,
                    verification_in,
-                   verification_in.isPass()) !=
+                   verificationIsPass4) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
             // commit cannot fail; continue as before.
@@ -120,12 +147,18 @@ RoomTrackerStatus
     else if (source_in == RoomTrackingState::REACQUIRING_IN_NEW_MAP &&
              event_in == RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM)
     {
+        bool verificationIsPass5{};
+        if (verification_in.isPass(verificationIsPass5) !=
+            VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
+        {
+            // isPass cannot fail; continue as before.
+        }
         if (commit(source_in,
                    event_in,
                    now_s_in,
                    crossing_in,
                    verification_in,
-                   verification_in.isPass()) !=
+                   verificationIsPass5) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
             // commit cannot fail; continue as before.

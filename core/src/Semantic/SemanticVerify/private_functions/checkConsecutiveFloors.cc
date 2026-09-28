@@ -30,11 +30,12 @@ namespace core
 namespace semantic
 {
 
-bool checkConsecutiveFloors(core::Map       *p_survivingMap_in,
-                            core::Map       *p_absorbedMap_in,
-                            const g2o::Sim3 &transform_in,
-                            double           maximumOffset_m_in,
-                            std::string     &decision_out)
+SemanticVerifyStatus checkConsecutiveFloors(core::Map       *p_survivingMap_in,
+                                            core::Map       *p_absorbedMap_in,
+                                            const g2o::Sim3 &transform_in,
+                                            double           maximumOffset_m_in,
+                                            std::string     &decision_out,
+                                            bool            &floorsMatch_out)
 {
     Floor *p_survivingFloor = nullptr;
     if (Floor::selectBestObservedFloor(p_survivingMap_in->getAllFloors(),
@@ -71,8 +72,9 @@ bool checkConsecutiveFloors(core::Map       *p_survivingMap_in,
         p_absorbedFloor != nullptr ? absorbedFloorPlaneIdentity : std::nullopt;
     if (!survivingIdentity.has_value() || !absorbedIdentity.has_value())
     {
-        decision_out = "DEFERRED";
-        return false;
+        decision_out    = "DEFERRED";
+        floorsMatch_out = false;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
     std::optional<Floor::PlaneIdentity> transformedIdentity{};
     if (Floor::transformPlaneIdentity(*absorbedIdentity,
@@ -103,8 +105,9 @@ bool checkConsecutiveFloors(core::Map       *p_survivingMap_in,
               << " (angle=" << normalAngle_deg << " deg, offset=" << offset_m
               << " m; limits=" << Floor::kMergeMaxPlaneNormalAngle_deg
               << " deg/" << maximumOffset_m_in << " m)." << std::endl;
-    decision_out = floorsMatch ? "ACCEPTED" : "REJECTED";
-    return floorsMatch;
+    decision_out    = floorsMatch ? "ACCEPTED" : "REJECTED";
+    floorsMatch_out = floorsMatch;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

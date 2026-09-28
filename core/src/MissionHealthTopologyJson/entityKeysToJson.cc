@@ -26,7 +26,14 @@ MissionHealthTopologyJsonStatus
     nlohmann::json entityKeysJson = nlohmann::json::array();
     for (const semantic::EntityKey &key : keys_in)
     {
-        entityKeysJson.push_back({{"kind", semantic::entityKindName(key.kind)},
+        std::string entityKindName2{};
+        if (semantic::entityKindName(key.kind, entityKindName2) !=
+            semantic::SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // entityKindName cannot fail; continue as before.
+        }
+        entityKeysJson.push_back({{"kind", entityKindName2},
                                   {"mapId", key.mapId},
                                   {"entityId", key.entityId}});
     }

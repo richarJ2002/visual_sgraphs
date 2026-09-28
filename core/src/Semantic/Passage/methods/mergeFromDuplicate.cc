@@ -153,13 +153,24 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
         {
             knownSideProvenance.p_room = duplicateKnownSide.p_room;
         }
+        bool knownSideHasDirection{};
+        if (knownSideProvenance.hasDirection(knownSideHasDirection) !=
+            KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+        {
+            // hasDirection cannot fail; continue as before.
+        }
+        bool duplicateHasDirection{};
+        if (duplicateKnownSide.hasDirection(duplicateHasDirection) !=
+            KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+        {
+            // hasDirection cannot fail; continue as before.
+        }
         if (replacedGeometry)
         {
             knownSideProvenance.direction_World =
                 duplicateKnownSide.direction_World;
         }
-        else if (!knownSideProvenance.hasDirection() &&
-                 duplicateKnownSide.hasDirection())
+        else if (!knownSideHasDirection && duplicateHasDirection)
         {
             knownSideProvenance.direction_World =
                 duplicateKnownSide.direction_World;

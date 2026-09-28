@@ -32,9 +32,10 @@ namespace core
 namespace semantic
 {
 
-const WallRecord *
+SemanticAxiomEvaluatorStatus
     findWallByKeyInSnapshot(const SemanticGraphSnapshot &snapshot_in,
-                            const EntityKey             &key_in)
+                            const EntityKey             &key_in,
+                            const WallRecord           *&p_wall_out)
 {
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
     {
@@ -42,9 +43,20 @@ const WallRecord *
         {
             continue;
         }
-        return findRecordByKey(mapSnapshot.walls, key_in);
+        const WallRecord *p_record = nullptr;
+        if (findRecordByKey(mapSnapshot.walls, key_in, p_record) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // findRecordByKey cannot fail; continue as before.
+        }
+        p_wall_out = p_record;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return nullptr;
+    p_wall_out = nullptr;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

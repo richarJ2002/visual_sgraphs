@@ -13,6 +13,7 @@
 #define VS_GRAPHS_CORE_SEMANTIC_SEMANTICCANDIDATES_PRIVATE_FUNCTIONS_H
 
 #include "Semantic/SemanticCandidates.h"
+#include "Semantic/SemanticCandidatesStatus.h"
 
 #include <algorithm>
 #include <cmath>
@@ -35,48 +36,69 @@ struct TopologyNode
     std::vector<std::size_t> neighbours;
 };
 
-bool finiteNonnegative(const double value_in);
+[[nodiscard]] SemanticCandidatesStatus
+    finiteNonnegative(const double value_in, bool &isFiniteNonnegative_out);
 
-double paddedMeanL1(const std::vector<double> &left_in,
-                    const std::vector<double> &right_in,
-                    const double               penalty_in);
+[[nodiscard]] SemanticCandidatesStatus
+    paddedMeanL1(const std::vector<double> &left_in,
+                 const std::vector<double> &right_in,
+                 const double               penalty_in,
+                 double                    &distance_out);
 
-std::vector<double> angleSignature(const RoomContextSnapshot &snapshot_in,
-                                   const double               tolerance_in,
-                                   const std::size_t          cap_in);
+[[nodiscard]] SemanticCandidatesStatus
+    angleSignature(const RoomContextSnapshot &snapshot_in,
+                   const double               tolerance_in,
+                   const std::size_t          cap_in,
+                   std::vector<double>       &angleSignature_out);
 
-std::size_t validNormalCount(const RoomContextSnapshot &snapshot_in);
+[[nodiscard]] SemanticCandidatesStatus
+    validNormalCount(const RoomContextSnapshot &snapshot_in,
+                     std::size_t               &validNormalCount_out);
 
-bool isValidWallBounds(const WallBounds &bounds_in);
+[[nodiscard]] SemanticCandidatesStatus
+    isValidWallBounds(const WallBounds &bounds_in, bool &isValidWallBounds_out);
 
-std::size_t validWallEvidenceCount(const RoomContextSnapshot &snapshot_in);
+[[nodiscard]] SemanticCandidatesStatus
+    validWallEvidenceCount(const RoomContextSnapshot &snapshot_in,
+                           std::size_t &validWallEvidenceCount_out);
 
-double missingBoundsFraction(const RoomContextSnapshot &snapshot_in);
+[[nodiscard]] SemanticCandidatesStatus
+    missingBoundsFraction(const RoomContextSnapshot &snapshot_in,
+                          double                    &missingBoundsFraction_out);
 
-double medianExtent(const RoomContextSnapshot &snapshot_in,
-                    const std::size_t          cap_in);
+[[nodiscard]] SemanticCandidatesStatus
+    medianExtent(const RoomContextSnapshot &snapshot_in,
+                 const std::size_t          cap_in,
+                 double                    &medianExtent_out);
 
-std::vector<double> extentSignature(const RoomContextSnapshot &snapshot_in,
-                                    const double               median_in,
-                                    const std::size_t          cap_in);
+[[nodiscard]] SemanticCandidatesStatus
+    extentSignature(const RoomContextSnapshot &snapshot_in,
+                    const double               median_in,
+                    const std::size_t          cap_in,
+                    std::vector<double>       &extentSignature_out);
 
-std::vector<std::pair<double, double>>
-    apertureSignature(const RoomContextSnapshot &snapshot_in,
-                      const double               median_in,
-                      const std::size_t          cap_in);
+[[nodiscard]] SemanticCandidatesStatus apertureSignature(
+    const RoomContextSnapshot              &snapshot_in,
+    const double                            median_in,
+    const std::size_t                       cap_in,
+    std::vector<std::pair<double, double>> &apertureSignature_out);
 
-double pairedManhattanDistance(
+[[nodiscard]] SemanticCandidatesStatus pairedManhattanDistance(
     const std::vector<std::pair<double, double>> &left_in,
     const std::vector<std::pair<double, double>> &right_in,
-    const double                                  penalty_in);
+    const double                                  penalty_in,
+    double                                       &distance_out);
 
-std::vector<std::string>
+[[nodiscard]] SemanticCandidatesStatus
     topologySignature(const RoomContextSnapshot &snapshot_in,
                       const std::size_t          cap_in,
-                      const unsigned int         refinementIters_in);
+                      const unsigned int         refinementIters_in,
+                      std::vector<std::string>  &topologySignature_out);
 
-double stringDistance(const std::vector<std::string> &left_in,
-                      const std::vector<std::string> &right_in);
+[[nodiscard]] SemanticCandidatesStatus
+    stringDistance(const std::vector<std::string> &left_in,
+                   const std::vector<std::string> &right_in,
+                   double                         &distance_out);
 
 } // namespace semantic
 } // namespace core

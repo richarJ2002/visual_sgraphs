@@ -32,32 +32,76 @@ namespace core
 namespace semantic
 {
 
-std::string missingProofOwnerName(MissingProofOwner owner_in)
+SemanticAxiomEvaluatorStatus
+    missingProofOwnerName(MissingProofOwner owner_in,
+                          std::string      &missingProofOwnerName_out)
 {
     switch (owner_in)
     {
     case MissingProofOwner::NONE:
-        return "NONE";
-    case MissingProofOwner::PHASE_2:
-        return "PHASE_2";
-    case MissingProofOwner::PHASE_3:
-        return "PHASE_3";
-    case MissingProofOwner::PHASE_4:
-        return "PHASE_4";
-    case MissingProofOwner::PHASE_4_OR_5:
-        return "PHASE_4_OR_5";
-    case MissingProofOwner::PHASE_5:
-        return "PHASE_5";
-    case MissingProofOwner::PHASE_6:
-        return "PHASE_6";
-    case MissingProofOwner::PHASE_7:
-        return "PHASE_7";
-    case MissingProofOwner::PHASE_8:
-        return "PHASE_8";
-    case MissingProofOwner::SCOPE_DECISION_REQUIRED:
-        return "SCOPE_DECISION_REQUIRED";
+    {
+        missingProofOwnerName_out = "NONE";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return "UNKNOWN_MISSING_PROOF_OWNER";
+    case MissingProofOwner::PHASE_2:
+    {
+        missingProofOwnerName_out = "PHASE_2";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case MissingProofOwner::PHASE_3:
+    {
+        missingProofOwnerName_out = "PHASE_3";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case MissingProofOwner::PHASE_4:
+    {
+        missingProofOwnerName_out = "PHASE_4";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case MissingProofOwner::PHASE_4_OR_5:
+    {
+        missingProofOwnerName_out = "PHASE_4_OR_5";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case MissingProofOwner::PHASE_5:
+    {
+        missingProofOwnerName_out = "PHASE_5";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case MissingProofOwner::PHASE_6:
+    {
+        missingProofOwnerName_out = "PHASE_6";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case MissingProofOwner::PHASE_7:
+    {
+        missingProofOwnerName_out = "PHASE_7";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case MissingProofOwner::PHASE_8:
+    {
+        missingProofOwnerName_out = "PHASE_8";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case MissingProofOwner::SCOPE_DECISION_REQUIRED:
+    {
+        missingProofOwnerName_out = "SCOPE_DECISION_REQUIRED";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    }
+    missingProofOwnerName_out = "UNKNOWN_MISSING_PROOF_OWNER";
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

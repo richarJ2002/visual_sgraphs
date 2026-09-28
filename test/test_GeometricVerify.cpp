@@ -856,7 +856,11 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
     /* This is the exact combination that was silently broken: a genuine
      * geometric pass plus a genuine floor-gate accept must yield an
      * accepted combined verdict. */
-    EXPECT_TRUE(result.toVerificationVerdict().hasPassed);
+    semantic::VerificationVerdict verificationVerdict{};
+    ASSERT_EQ((result.toVerificationVerdict(verificationVerdict)),
+              semantic::SemanticVerifyResultStatus::
+                  SEMANTIC_VERIFY_RESULT_STATUS_SUCCESS);
+    EXPECT_TRUE(verificationVerdict.hasPassed);
 
     /* Same genuine geometric pass, but the floor gate rejects -- the
      * combined verdict must follow the floor gate down. */
@@ -882,7 +886,11 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
                   SEMANTIC_VERIFY_STATUS_SUCCESS);
     EXPECT_FALSE(hasPassed3);
     EXPECT_EQ(mismatchedResult.floorGateResult, "REJECTED");
-    EXPECT_FALSE(mismatchedResult.toVerificationVerdict().hasPassed);
+    semantic::VerificationVerdict verificationVerdict2{};
+    ASSERT_EQ((mismatchedResult.toVerificationVerdict(verificationVerdict2)),
+              semantic::SemanticVerifyResultStatus::
+                  SEMANTIC_VERIFY_RESULT_STATUS_SUCCESS);
+    EXPECT_FALSE(verificationVerdict2.hasPassed);
 }
 
 TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)

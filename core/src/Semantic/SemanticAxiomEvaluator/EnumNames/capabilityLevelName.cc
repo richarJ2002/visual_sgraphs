@@ -32,18 +32,34 @@ namespace core
 namespace semantic
 {
 
-std::string capabilityLevelName(CapabilityLevel level_in)
+SemanticAxiomEvaluatorStatus
+    capabilityLevelName(CapabilityLevel level_in,
+                        std::string    &capabilityLevelName_out)
 {
     switch (level_in)
     {
     case CapabilityLevel::FULL:
-        return "FULL";
-    case CapabilityLevel::PARTIAL:
-        return "PARTIAL";
-    case CapabilityLevel::DEFERRED:
-        return "DEFERRED";
+    {
+        capabilityLevelName_out = "FULL";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return "UNKNOWN_CAPABILITY_LEVEL";
+    case CapabilityLevel::PARTIAL:
+    {
+        capabilityLevelName_out = "PARTIAL";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case CapabilityLevel::DEFERRED:
+    {
+        capabilityLevelName_out = "DEFERRED";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    }
+    capabilityLevelName_out = "UNKNOWN_CAPABILITY_LEVEL";
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

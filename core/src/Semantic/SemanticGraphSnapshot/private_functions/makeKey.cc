@@ -31,14 +31,17 @@ namespace core
 namespace semantic
 {
 
-EntityKey
-    makeKey(EntityKind kind_in, long unsigned int mapId_in, int entityId_in)
+SemanticGraphSnapshotStatus makeKey(EntityKind        kind_in,
+                                    long unsigned int mapId_in,
+                                    int               entityId_in,
+                                    EntityKey        &key_out)
 {
     EntityKey key;
     key.kind     = kind_in;
     key.mapId    = mapId_in;
     key.entityId = entityId_in;
-    return key;
+    key_out      = key;
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -39,21 +39,40 @@ namespace core
 namespace semantic
 {
 
-void evaluateAxPass02(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateAxPass02(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout)
 {
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
     {
-        evaluateRoomMalformedPassageReferences(mapSnapshot, findings_inout);
+        if (evaluateRoomMalformedPassageReferences(mapSnapshot,
+                                                   findings_inout) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateRoomMalformedPassageReferences cannot fail; continue as
+            // before.
+        }
         for (const PassageRecord &passage : mapSnapshot.passages)
         {
             if (!passage.isLive)
             {
                 continue;
             }
-            evaluateOnePassageCardinality(passage, snapshot_in, findings_inout);
+            if (evaluateOnePassageCardinality(passage,
+                                              snapshot_in,
+                                              findings_inout) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // evaluateOnePassageCardinality cannot fail; continue as
+                // before.
+            }
         }
     }
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

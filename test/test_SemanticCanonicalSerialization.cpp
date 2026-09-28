@@ -54,17 +54,27 @@ TEST(SemanticCanonicalSerialization,
 
 TEST(SemanticCanonicalSerialization, SchemaVersionFieldsArePresentAndStable)
 {
-    Atlas                       atlas(0);
-    const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    Atlas                 atlas(0);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
     EXPECT_EQ(serializeSnapshotTopologyOnly(snapshot)["schema"],
               SEMANTIC_SNAPSHOT_SCHEMA_VERSION);
     EXPECT_EQ(serializeSnapshotFullGeometry(snapshot)["schema"],
               SEMANTIC_SNAPSHOT_SCHEMA_VERSION);
-    EXPECT_EQ(serializeEvaluationReport(evaluateState(snapshot))["schema"],
+    AxiomEvaluationReport report{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, report)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(serializeEvaluationReport(report)["schema"],
               SEMANTIC_EVALUATION_REPORT_SCHEMA_VERSION);
-    EXPECT_EQ(serializeMapCompletenessResults(
-                  evaluateMapCompleteness(snapshot))["schema"],
+    std::vector<MapCompletenessResult> completenessResults{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, completenessResults)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(serializeMapCompletenessResults(completenessResults)["schema"],
               SEMANTIC_COMPLETENESS_SCHEMA_VERSION);
 }
 
@@ -83,7 +93,10 @@ TEST(SemanticCanonicalSerialization, SnapshotTopologyOnlyOmitsGeometryFields)
                         1.0);
     p_map->addMapPlane(&wall);
 
-    const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     const nlohmann::json topologyJson = serializeSnapshotTopologyOnly(snapshot);
     const nlohmann::json &wallJson    = topologyJson["maps"][0]["walls"][0];
     EXPECT_FALSE(wallJson.contains("equation_World"));
@@ -137,8 +150,11 @@ TEST(SemanticCanonicalSerialization,
     p_map->addDetectedMapRoom(&room1);
     p_map->addDetectedMapRoom(&room2);
 
-    const SemanticGraphSnapshot original = captureSemanticGraphSnapshot(&atlas);
-    SemanticGraphSnapshot       reordered = original;
+    SemanticGraphSnapshot original{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, original)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    SemanticGraphSnapshot reordered = original;
     ASSERT_EQ(reordered.maps.size(), 1U);
     std::reverse(reordered.maps.front().rooms.begin(),
                  reordered.maps.front().rooms.end());
@@ -174,8 +190,11 @@ TEST(SemanticCanonicalSerialization,
      * repair. */
     p_map->addCandidateMapRoom(&roomSecondSameId);
 
-    const nlohmann::json json =
-        serializeSnapshotTopologyOnly(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    const nlohmann::json json = serializeSnapshotTopologyOnly(snapshot);
     EXPECT_EQ(json["maps"][0]["rooms"].size(), 2U);
 }
 
@@ -205,8 +224,14 @@ TEST(SemanticCanonicalSerialization,
     test::makeRoom(room2, 2, p_map, &wall);
     p_map->addDetectedMapRoom(&room2);
 
-    const AxiomEvaluationReport original =
-        evaluateState(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    AxiomEvaluationReport original{};
+    ASSERT_EQ(
+        (evaluateState(snapshot, original)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     AxiomEvaluationReport reordered = original;
     std::reverse(reordered.findings.begin(), reordered.findings.end());
 
@@ -220,8 +245,14 @@ TEST(SemanticCanonicalSerialization,
     Atlas atlas(0);
     atlas.createNewMap();
 
-    const std::vector<MapCompletenessResult> original =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> original{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, original)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     ASSERT_EQ(original.size(), 2U);
 
     /* Serialize the same two results reversed, and confirm the
@@ -243,8 +274,14 @@ TEST(SemanticCanonicalSerialization,
     p_map->addDetectedMapRoom(&bothCollections);
     p_map->addCandidateMapRoom(&bothCollections);
 
-    const std::vector<MapCompletenessResult> results =
-        evaluateMapCompleteness(captureSemanticGraphSnapshot(&atlas));
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    std::vector<MapCompletenessResult> results{};
+    ASSERT_EQ(
+        (evaluateMapCompleteness(snapshot, results)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     const nlohmann::json  json = serializeMapCompletenessResults(results);
     const nlohmann::json &incompleteRoomIdsJson =
         json["results"][0]["legacy"]["incompleteRoomIds"];
@@ -275,7 +312,10 @@ TEST(SemanticCanonicalSerialization,
     test::makeRoom(roomA, 1, p_map, &wall);
     p_map->addDetectedMapRoom(&roomA);
 
-    const SemanticGraphSnapshot snapshot = captureSemanticGraphSnapshot(&atlas);
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     /* snapshot.maps[0].rooms is already sorted ascending by key (roomA
      * before roomB) regardless of the reversed registration order above. */
     ASSERT_EQ(snapshot.maps[0].rooms.size(), 2U);
@@ -452,32 +492,93 @@ TEST(SemanticCanonicalSerialization,
 TEST(SemanticCanonicalSerialization,
      EnumNamesEmitKnownValuesAndStableUnknownSentinel)
 {
-    EXPECT_EQ(axiomCodeName(AxiomCode::AX_FRAME_01), "AX_FRAME_01");
-    EXPECT_EQ(axiomResultName(AxiomResult::PASS), "PASS");
-    EXPECT_EQ(axiomClassName(AxiomClass::HARD), "HARD");
-    EXPECT_EQ(reasonCodeName(ReasonCode::FRAME_TRANSITION_EVALUATION_REQUIRED),
-              "FRAME_TRANSITION_EVALUATION_REQUIRED");
-    EXPECT_EQ(entityKindName(EntityKind::ROOM), "ROOM");
-    EXPECT_EQ(unavailableReasonName(UnavailableReason::NONE), "NONE");
-    EXPECT_EQ(capabilityLevelName(CapabilityLevel::FULL), "FULL");
-    EXPECT_EQ(missingProofOwnerName(MissingProofOwner::NONE), "NONE");
+    std::string axiomCodeName2{};
+    ASSERT_EQ(
+        (axiomCodeName(AxiomCode::AX_FRAME_01, axiomCodeName2)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(axiomCodeName2, "AX_FRAME_01");
+    std::string axiomResultName2{};
+    ASSERT_EQ(
+        (axiomResultName(AxiomResult::PASS, axiomResultName2)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(axiomResultName2, "PASS");
+    std::string axiomClassName2{};
+    ASSERT_EQ(
+        (axiomClassName(AxiomClass::HARD, axiomClassName2)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(axiomClassName2, "HARD");
+    std::string reasonCodeName2{};
+    ASSERT_EQ(
+        (reasonCodeName(ReasonCode::FRAME_TRANSITION_EVALUATION_REQUIRED,
+                        reasonCodeName2)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(reasonCodeName2, "FRAME_TRANSITION_EVALUATION_REQUIRED");
+    std::string entityKindName2{};
+    ASSERT_EQ(
+        (entityKindName(EntityKind::ROOM, entityKindName2)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(entityKindName2, "ROOM");
+    std::string unavailableReasonName2{};
+    ASSERT_EQ(
+        (unavailableReasonName(UnavailableReason::NONE,
+                               unavailableReasonName2)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(unavailableReasonName2, "NONE");
+    std::string capabilityLevelName2{};
+    ASSERT_EQ(
+        (capabilityLevelName(CapabilityLevel::FULL, capabilityLevelName2)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(capabilityLevelName2, "FULL");
+    std::string missingProofOwnerName2{};
+    ASSERT_EQ(
+        (missingProofOwnerName(MissingProofOwner::NONE,
+                               missingProofOwnerName2)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(missingProofOwnerName2, "NONE");
 
-    EXPECT_EQ(axiomCodeName(static_cast<AxiomCode>(0xFF)),
-              "UNKNOWN_AXIOM_CODE");
-    EXPECT_EQ(axiomResultName(static_cast<AxiomResult>(0xFF)),
-              "UNKNOWN_AXIOM_RESULT");
-    EXPECT_EQ(axiomClassName(static_cast<AxiomClass>(0xFF)),
-              "UNKNOWN_AXIOM_CLASS");
-    EXPECT_EQ(reasonCodeName(static_cast<ReasonCode>(0xFFFF)),
-              "UNKNOWN_REASON_CODE");
-    EXPECT_EQ(entityKindName(static_cast<EntityKind>(0xFF)),
-              "UNKNOWN_ENTITY_KIND");
-    EXPECT_EQ(unavailableReasonName(static_cast<UnavailableReason>(0xFF)),
-              "UNKNOWN_UNAVAILABLE_REASON");
-    EXPECT_EQ(capabilityLevelName(static_cast<CapabilityLevel>(0xFF)),
-              "UNKNOWN_CAPABILITY_LEVEL");
-    EXPECT_EQ(missingProofOwnerName(static_cast<MissingProofOwner>(0xFF)),
-              "UNKNOWN_MISSING_PROOF_OWNER");
+    std::string axiomCodeName3{};
+    ASSERT_EQ(
+        (axiomCodeName(static_cast<AxiomCode>(0xFF), axiomCodeName3)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(axiomCodeName3, "UNKNOWN_AXIOM_CODE");
+    std::string axiomResultName3{};
+    ASSERT_EQ(
+        (axiomResultName(static_cast<AxiomResult>(0xFF), axiomResultName3)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(axiomResultName3, "UNKNOWN_AXIOM_RESULT");
+    std::string axiomClassName3{};
+    ASSERT_EQ(
+        (axiomClassName(static_cast<AxiomClass>(0xFF), axiomClassName3)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(axiomClassName3, "UNKNOWN_AXIOM_CLASS");
+    std::string reasonCodeName3{};
+    ASSERT_EQ(
+        (reasonCodeName(static_cast<ReasonCode>(0xFFFF), reasonCodeName3)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(reasonCodeName3, "UNKNOWN_REASON_CODE");
+    std::string entityKindName3{};
+    ASSERT_EQ(
+        (entityKindName(static_cast<EntityKind>(0xFF), entityKindName3)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(entityKindName3, "UNKNOWN_ENTITY_KIND");
+    std::string unavailableReasonName3{};
+    ASSERT_EQ(
+        (unavailableReasonName(static_cast<UnavailableReason>(0xFF),
+                               unavailableReasonName3)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(unavailableReasonName3, "UNKNOWN_UNAVAILABLE_REASON");
+    std::string capabilityLevelName3{};
+    ASSERT_EQ(
+        (capabilityLevelName(static_cast<CapabilityLevel>(0xFF),
+                             capabilityLevelName3)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(capabilityLevelName3, "UNKNOWN_CAPABILITY_LEVEL");
+    std::string missingProofOwnerName3{};
+    ASSERT_EQ(
+        (missingProofOwnerName(static_cast<MissingProofOwner>(0xFF),
+                               missingProofOwnerName3)),
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
+    EXPECT_EQ(missingProofOwnerName3, "UNKNOWN_MISSING_PROOF_OWNER");
 }
 
 /* Readable name fields actually appear in serialized output, not
@@ -618,24 +719,32 @@ TEST(SemanticCanonicalSerialization, VisitedFlagDoesNotChangeDigests)
     test::makeRoom(room, 1, p_map, &wall, Eigen::Vector3d(1.0, 0.0, 1.0));
     p_map->addDetectedMapRoom(&room);
 
+    SemanticGraphSnapshot snapshot{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     const std::string topologyBefore =
-        serializeSnapshotTopologyOnly(captureSemanticGraphSnapshot(&atlas))
-            .dump();
+        serializeSnapshotTopologyOnly(snapshot).dump();
+    SemanticGraphSnapshot snapshot2{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot2)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     const std::string geometryBefore =
-        serializeSnapshotFullGeometry(captureSemanticGraphSnapshot(&atlas))
-            .dump();
+        serializeSnapshotFullGeometry(snapshot2).dump();
 
     ASSERT_EQ((room.setPreviouslyVisited(true)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    EXPECT_EQ(
-        serializeSnapshotTopologyOnly(captureSemanticGraphSnapshot(&atlas))
-            .dump(),
-        topologyBefore);
-    EXPECT_EQ(
-        serializeSnapshotFullGeometry(captureSemanticGraphSnapshot(&atlas))
-            .dump(),
-        geometryBefore);
+    SemanticGraphSnapshot snapshot3{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot3)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    EXPECT_EQ(serializeSnapshotTopologyOnly(snapshot3).dump(), topologyBefore);
+    SemanticGraphSnapshot snapshot4{};
+    ASSERT_EQ(
+        (captureSemanticGraphSnapshot(&atlas, snapshot4)),
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
+    EXPECT_EQ(serializeSnapshotFullGeometry(snapshot4).dump(), geometryBefore);
 }
 
 } // namespace semantic

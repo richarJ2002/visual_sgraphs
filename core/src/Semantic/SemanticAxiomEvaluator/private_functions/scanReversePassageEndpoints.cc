@@ -86,10 +86,11 @@ namespace core
 namespace semantic
 {
 
-ReversePassageEndpointScan
+SemanticAxiomEvaluatorStatus
     scanReversePassageEndpoints(const PassageRecord         &passage_in,
                                 long unsigned int            expectedMapId_in,
-                                const SemanticGraphSnapshot &snapshot_in)
+                                const SemanticGraphSnapshot &snapshot_in,
+                                ReversePassageEndpointScan  &scan_out)
 {
     ReversePassageEndpointScan scan;
 
@@ -154,7 +155,16 @@ ReversePassageEndpointScan
                     scan.crossMapReverseRoomKeys.push_back(room.key);
                     continue;
                 }
-                if (countRoomRecordsWithKey(snapshot_in, room.key) > 1U)
+                std::size_t roomRecords{};
+                if (countRoomRecordsWithKey(snapshot_in,
+                                            room.key,
+                                            roomRecords) !=
+                    SemanticAxiomEvaluatorStatus::
+                        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+                {
+                    // countRoomRecordsWithKey cannot fail; continue as before.
+                }
+                if (roomRecords > 1U)
                 {
                     scan.duplicateIdentityRoomKeys.push_back(room.key);
                     continue;
@@ -208,7 +218,9 @@ ReversePassageEndpointScan
                       p_keys->end());
     }
 
-    return scan;
+    scan_out = scan;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

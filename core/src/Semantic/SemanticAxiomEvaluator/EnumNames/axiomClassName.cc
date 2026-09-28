@@ -31,16 +31,27 @@ namespace core
 namespace semantic
 {
 
-std::string axiomClassName(AxiomClass class_in)
+SemanticAxiomEvaluatorStatus axiomClassName(AxiomClass   class_in,
+                                            std::string &axiomClassName_out)
 {
     switch (class_in)
     {
     case AxiomClass::HARD:
-        return "HARD";
-    case AxiomClass::DERIVED:
-        return "DERIVED";
+    {
+        axiomClassName_out = "HARD";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return "UNKNOWN_AXIOM_CLASS";
+    case AxiomClass::DERIVED:
+    {
+        axiomClassName_out = "DERIVED";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    }
+    axiomClassName_out = "UNKNOWN_AXIOM_CLASS";
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

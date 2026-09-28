@@ -19,14 +19,16 @@ namespace core
 namespace semantic
 {
 
-double paddedMeanL1(const std::vector<double> &left_in,
-                    const std::vector<double> &right_in,
-                    const double               penalty_in)
+SemanticCandidatesStatus paddedMeanL1(const std::vector<double> &left_in,
+                                      const std::vector<double> &right_in,
+                                      const double               penalty_in,
+                                      double                    &distance_out)
 {
     const std::size_t length = std::max(left_in.size(), right_in.size());
     if (length == 0U)
     {
-        return 0.0;
+        distance_out = 0.0;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
     }
     double sum = 0.0;
     for (std::size_t index = 0U; index < length; ++index)
@@ -37,7 +39,8 @@ double paddedMeanL1(const std::vector<double> &left_in,
             index < right_in.size() ? right_in[index] : penalty_in;
         sum += std::abs(left - right);
     }
-    return sum / static_cast<double>(length);
+    distance_out = sum / static_cast<double>(length);
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -36,7 +36,9 @@ namespace core
 namespace semantic
 {
 
-PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
+SemanticGraphSnapshotStatus capturePassage(Passage          *p_passage_in,
+                                           long unsigned int mapId_in,
+                                           PassageRecord    &passageRecord_out)
 {
     PassageRecord record;
     int           passage_inId{};
@@ -45,7 +47,13 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
     {
         // getId cannot fail; continue as before.
     }
-    record.key = makeKey(EntityKind::PASSAGE, mapId_in, passage_inId);
+    EntityKey key2{};
+    if (makeKey(EntityKind::PASSAGE, mapId_in, passage_inId, key2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // makeKey cannot fail; continue as before.
+    }
+    record.key = key2;
     bool passage_inIsBad{};
     if (p_passage_in->isBad(passage_inIsBad) !=
         PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -116,7 +124,11 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
     }
     for (geometric::Plane *p_wall : passage_inAssociateWalls)
     {
-        appendWallRef(p_wall, record.associateWallRefs);
+        if (appendWallRef(p_wall, record.associateWallRefs) !=
+            SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+        {
+            // appendWallRef cannot fail; continue as before.
+        }
     }
     std::sort(record.associateWallRefs.begin(),
               record.associateWallRefs.end(),
@@ -128,7 +140,13 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
     {
         // getAssociateDoor cannot fail; continue as before.
     }
-    record.associateDoorRef = rawPlaneRef(p_passage_inAssociateDoor);
+    RawPlaneRef rawPlaneRef2{};
+    if (rawPlaneRef(p_passage_inAssociateDoor, rawPlaneRef2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // rawPlaneRef cannot fail; continue as before.
+    }
+    record.associateDoorRef = rawPlaneRef2;
 
     Passage::KnownSideProvenance provenance{};
     if (p_passage_in->getKnownSideProvenance(provenance) !=
@@ -136,8 +154,20 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
     {
         // getKnownSideProvenance cannot fail; continue as before.
     }
-    record.knownSideRoomRef = entityRefForRoom(provenance.p_room);
-    if (provenance.hasDirection())
+    EntityRef entityRef{};
+    if (entityRefForRoom(provenance.p_room, entityRef) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // entityRefForRoom cannot fail; continue as before.
+    }
+    record.knownSideRoomRef = entityRef;
+    bool provenanceHasDirection{};
+    if (provenance.hasDirection(provenanceHasDirection) !=
+        KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+    {
+        // hasDirection cannot fail; continue as before.
+    }
+    if (provenanceHasDirection)
     {
         record.knownSideDirection_World = provenance.direction_World;
     }
@@ -148,7 +178,13 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
     {
         // getProspectiveRoom cannot fail; continue as before.
     }
-    record.prospectiveRoomRef = entityRefForRoom(p_passage_inProspectiveRoom);
+    EntityRef entityRef2{};
+    if (entityRefForRoom(p_passage_inProspectiveRoom, entityRef2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // entityRefForRoom cannot fail; continue as before.
+    }
+    record.prospectiveRoomRef = entityRef2;
 
     std::size_t passage_inTraversalKnownToFarCount{};
     if (p_passage_in->getTraversalKnownToFarCount(
@@ -175,7 +211,8 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
     }
     record.traversalUnknownCount = passage_inTraversalUnknownCount;
 
-    return record;
+    passageRecord_out = record;
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

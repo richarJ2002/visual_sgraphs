@@ -22,6 +22,7 @@
  * @brief           Implements sortByKey(), declared in private_functions.h.
  */
 
+#include "Semantic/SemanticGraphSnapshot/SemanticGraphSnapshotStatus.h"
 #include <algorithm>
 
 namespace vs_graphs
@@ -31,7 +32,8 @@ namespace core
 namespace semantic
 {
 
-template <typename RecordT> void sortByKey(std::vector<RecordT> &records_inout)
+template <typename RecordT>
+SemanticGraphSnapshotStatus sortByKey(std::vector<RecordT> &records_inout)
 {
     /* Primary order is always by key. For the anomalous case this snapshot
      * deliberately never erases -- two distinct source objects captured
@@ -64,6 +66,8 @@ template <typename RecordT> void sortByKey(std::vector<RecordT> &records_inout)
                   }
                   return isValueLessForCollisionTiebreak(lhs_in, rhs_in);
               });
+
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

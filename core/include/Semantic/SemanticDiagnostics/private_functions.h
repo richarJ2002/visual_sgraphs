@@ -35,6 +35,7 @@
 
 #include <vector>
 
+#include "Semantic/SemanticDiagnostics/SemanticDiagnosticsStatus.h"
 #include "Thirdparty/nlohmann/json.hpp"
 
 #include "Semantic/SemanticAxiomEvaluator/objects.h"
@@ -56,12 +57,16 @@ nlohmann::json serializeFiniteAwareDouble(double value_in);
 /*! @brief Serializes one Finding's evidence: observedCount/expectedCount
  *  present only when set; numericValue present only when set, via
  *  serializeFiniteAwareDouble(). */
-nlohmann::json findingEvidenceToJson(const FindingEvidence &evidence_in);
+[[nodiscard]] SemanticDiagnosticsStatus
+    findingEvidenceToJson(const FindingEvidence &evidence_in,
+                          nlohmann::json        &json_out);
 
 /*! @brief Serializes \p keys_in as a sorted (ascending, from a private
  *  copy) JSON array of {kind, mapId, entityId} objects. Never mutates \p
  *  keys_in. */
-nlohmann::json entityKeysToJson(const std::vector<EntityKey> &keys_in);
+[[nodiscard]] SemanticDiagnosticsStatus
+    entityKeysToJson(const std::vector<EntityKey> &keys_in,
+                     nlohmann::json               &json_out);
 
 /*! @brief Serializes one FAIL Finding as a bounded SG_VIOLATION detail
  *  object for the given transition ("appeared", "changed", or "resolved"):
@@ -70,8 +75,10 @@ nlohmann::json entityKeysToJson(const std::vector<EntityKey> &keys_in);
  *  involvedKeys, and evidence. \p finding_in must have
  *  \c result == AxiomResult::FAIL -- see buildSemanticDiagnosticUpdate.cc,
  *  the only caller. */
-nlohmann::json violationDetailToJson(const Finding &finding_in,
-                                     const char    *p_transition_in);
+[[nodiscard]] SemanticDiagnosticsStatus
+    violationDetailToJson(const Finding  &finding_in,
+                          const char     *p_transition_in,
+                          nlohmann::json &json_out);
 
 } // namespace semantic
 } // namespace core

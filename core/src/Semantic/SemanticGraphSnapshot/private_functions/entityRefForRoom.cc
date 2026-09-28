@@ -34,12 +34,15 @@ namespace core
 namespace semantic
 {
 
-EntityRef entityRefForRoom(Room *p_room_in)
+SemanticGraphSnapshotStatus entityRefForRoom(Room      *p_room_in,
+                                             EntityRef &entityRef_out)
 {
     EntityRef reference;
     if (p_room_in == nullptr)
     {
-        return reference;
+        entityRef_out = reference;
+        return SemanticGraphSnapshotStatus::
+            SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
     }
     int room_inId{};
     if (p_room_in->getId(room_inId) != RoomStatus::ROOM_STATUS_SUCCESS)
@@ -63,16 +66,25 @@ EntityRef entityRefForRoom(Room *p_room_in)
     if (p_map == nullptr)
     {
         reference.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
-        return reference;
+        entityRef_out    = reference;
+        return SemanticGraphSnapshotStatus::
+            SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
     }
     int room_inId2{};
     if (p_room_in->getId(room_inId2) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
         // getId cannot fail; continue as before.
     }
-    reference.key    = makeKey(EntityKind::ROOM, p_map->getId(), room_inId2);
+    EntityKey key2{};
+    if (makeKey(EntityKind::ROOM, p_map->getId(), room_inId2, key2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // makeKey cannot fail; continue as before.
+    }
+    reference.key    = key2;
     reference.reason = UnavailableReason::NONE;
-    return reference;
+    entityRef_out    = reference;
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -63,10 +63,11 @@ namespace core
 namespace semantic
 {
 
-ResolvedRoomEndpoint
+SemanticAxiomEvaluatorStatus
     resolveRoomEndpoint(const EntityRef             &reference_in,
                         long unsigned int            expectedMapId_in,
-                        const SemanticGraphSnapshot &snapshot_in)
+                        const SemanticGraphSnapshot &snapshot_in,
+                        ResolvedRoomEndpoint        &endpoint_out)
 {
     ResolvedRoomEndpoint resolved;
 
@@ -95,7 +96,9 @@ ResolvedRoomEndpoint
          * localId present but no key; a genuinely absent reference
          * (UnavailableReason::NULL_REFERENCE) leaves both absent. */
         resolved.isReferenceUnresolvable = reference_in.localId.has_value();
-        return resolved;
+        endpoint_out                     = resolved;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     resolved.key         = reference_in.key;
@@ -109,13 +112,23 @@ ResolvedRoomEndpoint
     resolved.isReasonInconsistent =
         (reference_in.reason != UnavailableReason::NONE);
 
-    if (countMapSnapshotsWithId(snapshot_in, reference_in.key->mapId) > 1U)
+    std::size_t mapSnapshots{};
+    if (countMapSnapshotsWithId(snapshot_in,
+                                reference_in.key->mapId,
+                                mapSnapshots) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // countMapSnapshotsWithId cannot fail; continue as before.
+    }
+    if (mapSnapshots > 1U)
     {
         /* Which MapSnapshot is actually
          * authoritative for this map id is itself ambiguous, so no
          * first-match lookup below may supply positive proof. */
         resolved.isContainingMapAmbiguous = true;
-        return resolved;
+        endpoint_out                      = resolved;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
@@ -124,7 +137,16 @@ ResolvedRoomEndpoint
         {
             continue;
         }
-        if (countRoomRecordsWithKey(snapshot_in, *reference_in.key) > 1U)
+        std::size_t roomRecords{};
+        if (countRoomRecordsWithKey(snapshot_in,
+                                    *reference_in.key,
+                                    roomRecords) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // countRoomRecordsWithKey cannot fail; continue as before.
+        }
+        if (roomRecords > 1U)
         {
             /* More than one
              * distinct RoomRecord shares this exact key -- which room
@@ -134,8 +156,15 @@ ResolvedRoomEndpoint
             resolved.isDuplicateIdentity = true;
             break;
         }
-        const RoomRecord *p_foundRoom =
-            findRecordByKey(mapSnapshot.rooms, *reference_in.key);
+        const RoomRecord *p_foundRoom = nullptr;
+        if (findRecordByKey(mapSnapshot.rooms,
+                            *reference_in.key,
+                            p_foundRoom) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // findRecordByKey cannot fail; continue as before.
+        }
         if (p_foundRoom != nullptr)
         {
             resolved.isFoundInSnapshot = true;
@@ -169,7 +198,9 @@ ResolvedRoomEndpoint
         break;
     }
 
-    return resolved;
+    endpoint_out = resolved;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

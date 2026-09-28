@@ -32,16 +32,26 @@ namespace core
 namespace semantic
 {
 
-AxiomCapabilityEntry makeAxiomCapabilityEntry(AxiomCode         axiomCode_in,
-                                              CapabilityLevel   capability_in,
-                                              MissingProofOwner owner_in)
+SemanticAxiomEvaluatorStatus
+    makeAxiomCapabilityEntry(AxiomCode             axiomCode_in,
+                             CapabilityLevel       capability_in,
+                             MissingProofOwner     owner_in,
+                             AxiomCapabilityEntry &axiomCapabilityEntry_out)
 {
     AxiomCapabilityEntry entry;
-    entry.axiomCode      = axiomCode_in;
-    entry.classification = axiomClassFor(axiomCode_in);
-    entry.capability     = capability_in;
-    entry.owner          = owner_in;
-    return entry;
+    entry.axiomCode = axiomCode_in;
+    AxiomClass axiomClass{};
+    if (axiomClassFor(axiomCode_in, axiomClass) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // axiomClassFor cannot fail; continue as before.
+    }
+    entry.classification     = axiomClass;
+    entry.capability         = capability_in;
+    entry.owner              = owner_in;
+    axiomCapabilityEntry_out = entry;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

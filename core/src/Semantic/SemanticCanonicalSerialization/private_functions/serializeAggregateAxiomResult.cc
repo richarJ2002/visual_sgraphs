@@ -36,12 +36,30 @@ nlohmann::json
     serializeAggregateAxiomResult(const AggregateAxiomResult &value_in)
 {
     nlohmann::json json;
-    json["axiomCode"]      = static_cast<unsigned int>(value_in.axiomCode);
-    json["axiomCodeName"]  = axiomCodeName(value_in.axiomCode);
-    json["result"]         = static_cast<unsigned int>(value_in.result);
-    json["resultName"]     = axiomResultName(value_in.result);
+    json["axiomCode"] = static_cast<unsigned int>(value_in.axiomCode);
+    std::string axiomCodeName2{};
+    if (axiomCodeName(value_in.axiomCode, axiomCodeName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // axiomCodeName cannot fail; continue as before.
+    }
+    json["axiomCodeName"] = axiomCodeName2;
+    json["result"]        = static_cast<unsigned int>(value_in.result);
+    std::string axiomResultName2{};
+    if (axiomResultName(value_in.result, axiomResultName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // axiomResultName cannot fail; continue as before.
+    }
+    json["resultName"]     = axiomResultName2;
     json["classification"] = static_cast<unsigned int>(value_in.classification);
-    json["classificationName"]       = axiomClassName(value_in.classification);
+    std::string axiomClassName2{};
+    if (axiomClassName(value_in.classification, axiomClassName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // axiomClassName cannot fail; continue as before.
+    }
+    json["classificationName"]       = axiomClassName2;
     json["contributingFindingCount"] = value_in.contributingFindingCount;
     return json;
 }

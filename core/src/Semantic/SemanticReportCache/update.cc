@@ -32,7 +32,7 @@ namespace core
 namespace semantic
 {
 
-void SemanticReportCache::update(
+SemanticReportCacheStatus SemanticReportCache::update(
     const SemanticGraphSnapshot              &snapshot_in,
     const AxiomEvaluationReport              &evaluationReport_in,
     const std::vector<MapCompletenessResult> &completenessResults_in,
@@ -69,6 +69,8 @@ void SemanticReportCache::update(
 
     latestEntry     = std::move(entry);
     hasCachedReport = true;
+
+    return SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

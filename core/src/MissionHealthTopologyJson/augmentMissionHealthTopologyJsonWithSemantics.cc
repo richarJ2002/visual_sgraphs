@@ -66,11 +66,32 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
     for (const semantic::AggregateAxiomResult &aggregate :
          entry_in.evaluationReport.aggregates)
     {
+        std::string axiomCodeName2{};
+        if (semantic::axiomCodeName(aggregate.axiomCode, axiomCodeName2) !=
+            semantic::SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // axiomCodeName cannot fail; continue as before.
+        }
+        std::string axiomResultName2{};
+        if (semantic::axiomResultName(aggregate.result, axiomResultName2) !=
+            semantic::SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // axiomResultName cannot fail; continue as before.
+        }
+        std::string axiomClassName2{};
+        if (semantic::axiomClassName(aggregate.classification,
+                                     axiomClassName2) !=
+            semantic::SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // axiomClassName cannot fail; continue as before.
+        }
         aggregatesJson.push_back(
-            {{"axiomCode", semantic::axiomCodeName(aggregate.axiomCode)},
-             {"result", semantic::axiomResultName(aggregate.result)},
-             {"classification",
-              semantic::axiomClassName(aggregate.classification)},
+            {{"axiomCode", axiomCodeName2},
+             {"result", axiomResultName2},
+             {"classification", axiomClassName2},
              {"contributingFindingCount", aggregate.contributingFindingCount}});
     }
     topologyJson_in["semanticAggregates"] = std::move(aggregatesJson);
@@ -112,13 +133,33 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
         {
             // entityKeysToJson cannot fail; continue as before.
         }
-        violationsJson.push_back(
-            {{"findingId", finding.id},
-             {"axiomCode", semantic::axiomCodeName(finding.axiomCode)},
-             {"reasonCode", semantic::reasonCodeName(finding.reasonCode)},
-             {"severity", semantic::axiomClassName(finding.classification)},
-             {"involvedKeys", json3},
-             {"evidence", evidenceJson}});
+        std::string axiomCodeName3{};
+        if (semantic::axiomCodeName(finding.axiomCode, axiomCodeName3) !=
+            semantic::SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // axiomCodeName cannot fail; continue as before.
+        }
+        std::string reasonCodeName2{};
+        if (semantic::reasonCodeName(finding.reasonCode, reasonCodeName2) !=
+            semantic::SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // reasonCodeName cannot fail; continue as before.
+        }
+        std::string axiomClassName3{};
+        if (semantic::axiomClassName(finding.classification, axiomClassName3) !=
+            semantic::SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // axiomClassName cannot fail; continue as before.
+        }
+        violationsJson.push_back({{"findingId", finding.id},
+                                  {"axiomCode", axiomCodeName3},
+                                  {"reasonCode", reasonCodeName2},
+                                  {"severity", axiomClassName3},
+                                  {"involvedKeys", json3},
+                                  {"evidence", evidenceJson}});
     }
     topologyJson_in["semanticViolations"] = std::move(violationsJson);
 
@@ -131,7 +172,14 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
         nlohmann::json reasonsJson = nlohmann::json::array();
         for (const semantic::ReasonCode reason : sortedReasons)
         {
-            reasonsJson.push_back(semantic::reasonCodeName(reason));
+            std::string reasonCodeName3{};
+            if (semantic::reasonCodeName(reason, reasonCodeName3) !=
+                semantic::SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // reasonCodeName cannot fail; continue as before.
+            }
+            reasonsJson.push_back(reasonCodeName3);
         }
 
         nlohmann::json json4{};
@@ -141,13 +189,19 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
         {
             // entityKeysToJson cannot fail; continue as before.
         }
-        completenessJson.push_back(
-            {{"mapId", completeness.mapId},
-             {"isComplete", completeness.isComplete},
-             {"conservativeResult",
-              semantic::axiomResultName(completeness.conservativeResult)},
-             {"reasons", std::move(reasonsJson)},
-             {"relevantEntityKeys", json4}});
+        std::string axiomResultName3{};
+        if (semantic::axiomResultName(completeness.conservativeResult,
+                                      axiomResultName3) !=
+            semantic::SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // axiomResultName cannot fail; continue as before.
+        }
+        completenessJson.push_back({{"mapId", completeness.mapId},
+                                    {"isComplete", completeness.isComplete},
+                                    {"conservativeResult", axiomResultName3},
+                                    {"reasons", std::move(reasonsJson)},
+                                    {"relevantEntityKeys", json4}});
     }
     topologyJson_in["semanticMapCompleteness"] = std::move(completenessJson);
     nlohmann::json json5{};

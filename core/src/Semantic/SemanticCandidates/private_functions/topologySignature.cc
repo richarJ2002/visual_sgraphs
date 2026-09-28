@@ -19,17 +19,19 @@ namespace core
 namespace semantic
 {
 
-std::vector<std::string>
+SemanticCandidatesStatus
     topologySignature(const RoomContextSnapshot &snapshot_in,
                       const std::size_t          cap_in,
-                      const unsigned int         refinementIters_in)
+                      const unsigned int         refinementIters_in,
+                      std::vector<std::string>  &topologySignature_out)
 {
     const std::size_t passageCount = snapshot_in.passageContexts.size();
     /* "Absent passages omit the topology cue" -- a trivial
      * single-node (room-only) graph is not usable topology evidence. */
     if (passageCount == 0U || passageCount >= cap_in)
     {
-        return {};
+        topologySignature_out = {};
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
     }
     std::vector<int> farIds;
     farIds.reserve(std::min(passageCount, cap_in - passageCount - 1U));
@@ -41,7 +43,9 @@ std::vector<std::string>
         {
             if (1U + passageCount + farIds.size() == cap_in)
             {
-                return {};
+                topologySignature_out = {};
+                return SemanticCandidatesStatus::
+                    SEMANTIC_CANDIDATES_STATUS_SUCCESS;
             }
             farIds.push_back(passage.secondaryRoomId);
         }
@@ -49,7 +53,8 @@ std::vector<std::string>
     const std::size_t nodeCount = 1U + passageCount + farIds.size();
     if (nodeCount > cap_in)
     {
-        return {};
+        topologySignature_out = {};
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
     }
 
     std::vector<TopologyNode> graph(nodeCount);
@@ -122,7 +127,8 @@ std::vector<std::string>
         colors = std::move(refined);
     }
     std::sort(colors.begin(), colors.end());
-    return colors;
+    topologySignature_out = colors;
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -59,7 +59,13 @@ PassageStatus
                                                       transformedDistance));
     }
 
-    if (knownSideProvenance.hasDirection())
+    bool knownSideProvenanceHasDirection{};
+    if (knownSideProvenance.hasDirection(knownSideProvenanceHasDirection) !=
+        KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+    {
+        // hasDirection cannot fail; continue as before.
+    }
+    if (knownSideProvenanceHasDirection)
     {
         const Eigen::Vector3d transformedDirection =
             transform_oldWorldToNewWorld_in.rotation().toRotationMatrix() *

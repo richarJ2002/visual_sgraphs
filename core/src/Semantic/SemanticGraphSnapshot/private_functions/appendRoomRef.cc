@@ -32,13 +32,23 @@ namespace core
 namespace semantic
 {
 
-void appendRoomRef(Room *p_room_in, std::vector<EntityRef> &refs_inout)
+SemanticGraphSnapshotStatus appendRoomRef(Room                   *p_room_in,
+                                          std::vector<EntityRef> &refs_inout)
 {
     if (p_room_in == nullptr)
     {
-        return;
+        return SemanticGraphSnapshotStatus::
+            SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
     }
-    refs_inout.push_back(entityRefForRoom(p_room_in));
+    EntityRef entityRef{};
+    if (entityRefForRoom(p_room_in, entityRef) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // entityRefForRoom cannot fail; continue as before.
+    }
+    refs_inout.push_back(entityRef);
+
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

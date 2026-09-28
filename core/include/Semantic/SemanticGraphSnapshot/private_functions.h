@@ -34,6 +34,7 @@
 
 #include <Eigen/Core>
 
+#include "Semantic/SemanticGraphSnapshot/SemanticGraphSnapshotStatus.h"
 #include "Semantic/SemanticGraphSnapshot/objects.h"
 #include "Semantic/SemanticGraphSnapshot/public_functions.h"
 #include "Semantic/ValueOrder.h"
@@ -45,8 +46,10 @@ namespace core
 namespace semantic
 {
 /*! @brief Builds a map-qualified EntityKey from its three components. */
-EntityKey
-    makeKey(EntityKind kind_in, long unsigned int mapId_in, int entityId_in);
+[[nodiscard]] SemanticGraphSnapshotStatus makeKey(EntityKind        kind_in,
+                                                  long unsigned int mapId_in,
+                                                  int               entityId_in,
+                                                  EntityKey        &key_out);
 
 /*! @brief Sorts a vector of any record type carrying a public `key` field
  *  in place: primarily by that key, and -- for a genuine EntityKey
@@ -55,25 +58,30 @@ EntityKey
  *  isValueLessForCollisionTiebreak() overload for RecordT), so the result
  *  no longer depends on the pointer-ordered container the pre-sort input
  *  happened to come from. */
-template <typename RecordT> void sortByKey(std::vector<RecordT> &records_inout);
+template <typename RecordT>
+[[nodiscard]] SemanticGraphSnapshotStatus
+    sortByKey(std::vector<RecordT> &records_inout);
 
 /*! @brief Builds an EntityRef to \p p_room_in, or explains why one could
  *  not be built (null pointer, or a non-null room with no map); localId is
  *  populated whenever \p p_room_in is non-null, even when no map is
  *  available to form key. isLive/livenessUnavailableReason are populated
  *  from Room::isBad() whenever localId has a value (Room has isBad()). */
-EntityRef entityRefForRoom(Room *p_room_in);
+[[nodiscard]] SemanticGraphSnapshotStatus
+    entityRefForRoom(Room *p_room_in, EntityRef &entityRef_out);
 
 /*! @brief Same as entityRefForRoom(), for a Floor. Floor has no isBad(), so
  *  isLive is always left absent with livenessUnavailableReason ==
  *  NOT_TRACKED_BY_CURRENT_SCHEMA whenever localId has a value -- unknown
  *  liveness is never encoded as true. */
-EntityRef entityRefForFloor(Floor *p_floor_in);
+[[nodiscard]] SemanticGraphSnapshotStatus
+    entityRefForFloor(Floor *p_floor_in, EntityRef &entityRef_out);
 
 /*! @brief Same as entityRefForRoom(), for a Passage. Passage has isBad(),
  *  so isLive/livenessUnavailableReason are populated from it whenever
  *  localId has a value, exactly as for Room. */
-EntityRef entityRefForPassage(Passage *p_passage_in);
+[[nodiscard]] SemanticGraphSnapshotStatus
+    entityRefForPassage(Passage *p_passage_in, EntityRef &entityRef_out);
 
 /*! rawPlaneRef() is declared in the module's public_functions.h (promoted
  *  from here so SemanticsManager can also build a RawPlaneRef for its own
@@ -88,19 +96,21 @@ EntityRef entityRefForPassage(Passage *p_passage_in);
  *  a null \p p_wall_in appends nothing (Room::setWalls() rejects null
  *  before insertion, so this is not currently reachable, but is handled
  *  safely regardless). Never dereferences a null pointer. */
-void appendWallRef(geometric::Plane         *p_wall_in,
-                   std::vector<RawPlaneRef> &refs_inout);
+[[nodiscard]] SemanticGraphSnapshotStatus
+    appendWallRef(geometric::Plane         *p_wall_in,
+                  std::vector<RawPlaneRef> &refs_inout);
 
 /*! @brief Appends entityRefForRoom(\p p_room_in) to \p refs_inout when
  *  non-null (regardless of map/liveness -- see FloorRecord::roomRefs and
  *  WallRecord::ownerRoomRefs); a null \p p_room_in appends nothing. Never
  *  dereferences a null pointer. */
-void appendRoomRef(Room *p_room_in, std::vector<EntityRef> &refs_inout);
+[[nodiscard]] SemanticGraphSnapshotStatus
+    appendRoomRef(Room *p_room_in, std::vector<EntityRef> &refs_inout);
 
 /*! @brief Same as appendRoomRef(), for Passage references (see
  *  RoomRecord::passageRefs). */
-void appendPassageRef(Passage                *p_passage_in,
-                      std::vector<EntityRef> &refs_inout);
+[[nodiscard]] SemanticGraphSnapshotStatus
+    appendPassageRef(Passage *p_passage_in, std::vector<EntityRef> &refs_inout);
 
 /*! doubleTotalOrderKey(), isDoubleLess(), isVector3dLess(), isVector4dLess(),
  *  isEntityRefLess(), and isRawPlaneRefLess() are declared in the shared
@@ -187,10 +197,12 @@ bool isValueLessForCollisionTiebreak(const FloorRecord &lhs_in,
  *                                      Map::GetAllMarkerBasedMapRooms() for
  *                                      that map at capture time.
  */
-RoomRecord captureRoom(Room             *p_room_in,
-                       long unsigned int mapId_in,
-                       bool              isDetectedMember_in,
-                       bool              isMarkerBasedMember_in);
+[[nodiscard]] SemanticGraphSnapshotStatus
+    captureRoom(Room             *p_room_in,
+                long unsigned int mapId_in,
+                bool              isDetectedMember_in,
+                bool              isMarkerBasedMember_in,
+                RoomRecord       &roomRecord_out);
 
 /*!
  * @brief       Captures one WallRecord.
@@ -204,17 +216,24 @@ RoomRecord captureRoom(Room             *p_room_in,
  *                                         implementation for how it is
  *                                         built.
  */
-WallRecord
+[[nodiscard]] SemanticGraphSnapshotStatus
     captureWall(geometric::Plane *p_wall_in,
                 long unsigned int mapId_in,
                 const std::map<geometric::Plane *, std::vector<EntityRef>>
-                    &wallOwnersByPointer_in);
+                           &wallOwnersByPointer_in,
+                WallRecord &wallRecord_out);
 
 /*! @brief Captures one PassageRecord. \p p_passage_in must not be null. */
-PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in);
+[[nodiscard]] SemanticGraphSnapshotStatus
+    capturePassage(Passage          *p_passage_in,
+                   long unsigned int mapId_in,
+                   PassageRecord    &passageRecord_out);
 
 /*! @brief Captures one FloorRecord. \p p_floor_in must not be null. */
-FloorRecord captureFloor(Floor *p_floor_in, long unsigned int mapId_in);
+[[nodiscard]] SemanticGraphSnapshotStatus
+    captureFloor(Floor            *p_floor_in,
+                 long unsigned int mapId_in,
+                 FloorRecord      &floorRecord_out);
 
 } // namespace semantic
 } // namespace core

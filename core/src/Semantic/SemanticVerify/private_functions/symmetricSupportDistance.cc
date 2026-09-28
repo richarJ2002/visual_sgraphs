@@ -36,10 +36,12 @@ namespace semantic
  * larger (worse) of the two mean distances; 0.0 (vacuously passing) when
  * neither side has a usable sample, since not every synthetic/unit-test
  * observation populates a support cloud. */
-double symmetricSupportDistance(const VerifyWallObservation &wallA_in,
-                                const VerifyWallObservation &wallB_in,
-                                const Eigen::Matrix3d       &rotation_in,
-                                const Eigen::Vector3d       &translation_in)
+SemanticVerifyStatus
+    symmetricSupportDistance(const VerifyWallObservation &wallA_in,
+                             const VerifyWallObservation &wallB_in,
+                             const Eigen::Matrix3d       &rotation_in,
+                             const Eigen::Vector3d       &translation_in,
+                             double                      &distance_out)
 {
     double      sum   = 0.0;
     std::size_t count = 0U;
@@ -59,7 +61,8 @@ double symmetricSupportDistance(const VerifyWallObservation &wallA_in,
         sum += std::abs(wallA_in.normal_World.dot(pointA) + wallA_in.d);
         ++count;
     }
-    return count == 0U ? 0.0 : sum / static_cast<double>(count);
+    distance_out = count == 0U ? 0.0 : sum / static_cast<double>(count);
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -73,9 +73,10 @@ namespace core
 namespace semantic
 {
 
-LegacyMapCompletenessResult
-    computeLegacyMapCompleteness(const SemanticGraphSnapshot &snapshot_in,
-                                 const MapSnapshot           &mapSnapshot_in)
+SemanticAxiomEvaluatorStatus computeLegacyMapCompleteness(
+    const SemanticGraphSnapshot &snapshot_in,
+    const MapSnapshot           &mapSnapshot_in,
+    LegacyMapCompletenessResult &legacyMapCompleteness_out)
 {
     LegacyMapCompletenessResult result;
 
@@ -112,14 +113,26 @@ LegacyMapCompletenessResult
         }
         result.passageCount++;
 
-        const ResolvedRoomEndpoint knownSide =
-            resolveRoomEndpoint(passage.knownSideRoomRef,
+        ResolvedRoomEndpoint knownSide{};
+        if (resolveRoomEndpoint(passage.knownSideRoomRef,
                                 mapSnapshot_in.mapId,
-                                snapshot_in);
-        const ResolvedRoomEndpoint prospective =
-            resolveRoomEndpoint(passage.prospectiveRoomRef,
+                                snapshot_in,
+                                knownSide) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // resolveRoomEndpoint cannot fail; continue as before.
+        }
+        ResolvedRoomEndpoint prospective{};
+        if (resolveRoomEndpoint(passage.prospectiveRoomRef,
                                 mapSnapshot_in.mapId,
-                                snapshot_in);
+                                snapshot_in,
+                                prospective) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // resolveRoomEndpoint cannot fail; continue as before.
+        }
         const bool hasRealKnownSideRoom = knownSide.isFoundInSnapshot &&
                                           knownSide.isLive &&
                                           knownSide.isConfirmedRoomVariant;
@@ -142,7 +155,9 @@ LegacyMapCompletenessResult
         result.completeRoomCount == result.confirmedRoomCount &&
         result.fullyLinkedPassageCount == result.passageCount;
 
-    return result;
+    legacyMapCompleteness_out = result;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

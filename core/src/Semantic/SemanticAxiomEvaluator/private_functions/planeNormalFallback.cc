@@ -39,8 +39,9 @@ namespace
 constexpr double DEGENERATE_NORMAL_NORM_SQUARED = 1e-12;
 } // namespace
 
-Eigen::Vector3d
-    planeNormalFallback(const std::vector<Eigen::Vector3d> &corners_in)
+SemanticAxiomEvaluatorStatus
+    planeNormalFallback(const std::vector<Eigen::Vector3d> &corners_in,
+                        Eigen::Vector3d                    &normal_out)
 {
     const std::size_t cornerCount = corners_in.size();
     for (std::size_t cornerIndex = 0U; cornerIndex < cornerCount; ++cornerIndex)
@@ -53,10 +54,14 @@ Eigen::Vector3d
         const Eigen::Vector3d candidate = (second - first).cross(third - first);
         if (candidate.squaredNorm() >= DEGENERATE_NORMAL_NORM_SQUARED)
         {
-            return candidate;
+            normal_out = candidate;
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
         }
     }
-    return Eigen::Vector3d::Zero();
+    normal_out = Eigen::Vector3d::Zero();
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

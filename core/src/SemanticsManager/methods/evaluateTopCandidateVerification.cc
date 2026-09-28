@@ -199,7 +199,14 @@ void SemanticsManager::evaluateTopCandidateVerification(
      * VerificationVerdict input real; the shared merge trigger is
      * a separate, deliberately gated step (see the comment above this
      * method's call site in Run()). */
-    submitVerificationVerdict(result.toVerificationVerdict());
+    semantic::VerificationVerdict resultVerificationVerdict{};
+    if (result.toVerificationVerdict(resultVerificationVerdict) !=
+        semantic::SemanticVerifyResultStatus::
+            SEMANTIC_VERIFY_RESULT_STATUS_SUCCESS)
+    {
+        // toVerificationVerdict cannot fail; continue as before.
+    }
+    submitVerificationVerdict(resultVerificationVerdict);
 }
 
 } // namespace core

@@ -13,6 +13,7 @@
 #define VS_GRAPHS_CORE_SEMANTIC_SEMANTICVERIFY_PRIVATE_FUNCTIONS_H
 
 #include "Semantic/SemanticVerify.h"
+#include "Semantic/SemanticVerifyStatus.h"
 
 #include "Geometric/Plane.h"
 #include "LoopClosing.h"
@@ -86,91 +87,116 @@ constexpr double kConsecutiveMinDirectionAgreement = 0.85;
  * the angle and the edge overlap, not the offset. */
 constexpr double kConsecutiveMaxPlaneOffset_m = 0.35;
 
-bool isFiniteVector(const Eigen::Vector3d &value_in);
+[[nodiscard]] SemanticVerifyStatus
+    isFiniteVector(const Eigen::Vector3d &value_in, bool &isFiniteVector_out);
 
-RotationFit
+[[nodiscard]] SemanticVerifyStatus
     fitRotationFromNormals(const std::vector<Eigen::Vector3d> &normalsA_in,
-                           const std::vector<Eigen::Vector3d> &normalsB_in);
+                           const std::vector<Eigen::Vector3d> &normalsB_in,
+                           RotationFit                        &rotation_out);
 
-TranslationFit fitTranslation(const Eigen::Matrix3d              &rotation_in,
-                              const std::vector<Eigen::Vector3d> &normalsA_in,
-                              const std::vector<double>          &offsetsA_in,
-                              const std::vector<Eigen::Vector3d> &normalsB_in,
-                              const std::vector<double>          &offsetsB_in);
+[[nodiscard]] SemanticVerifyStatus
+    fitTranslation(const Eigen::Matrix3d              &rotation_in,
+                   const std::vector<Eigen::Vector3d> &normalsA_in,
+                   const std::vector<double>          &offsetsA_in,
+                   const std::vector<Eigen::Vector3d> &normalsB_in,
+                   const std::vector<double>          &offsetsB_in,
+                   TranslationFit                     &translation_out);
 
-double angleBetween_rad(const Eigen::Vector3d &first_in,
-                        const Eigen::Vector3d &second_in);
+[[nodiscard]] SemanticVerifyStatus
+    angleBetween_rad(const Eigen::Vector3d &first_in,
+                     const Eigen::Vector3d &second_in,
+                     double                &angle_rad_out);
 
-const VerifyWallObservation *
+[[nodiscard]] SemanticVerifyStatus
     findByWallId(const std::vector<VerifyWallObservation> &walls_in,
-                 const int                                 wallId_in);
+                 const int                                 wallId_in,
+                 const VerifyWallObservation             *&p_byWallId_out);
 
-double symmetricSupportDistance(const VerifyWallObservation &wallA_in,
-                                const VerifyWallObservation &wallB_in,
-                                const Eigen::Matrix3d       &rotation_in,
-                                const Eigen::Vector3d       &translation_in);
+[[nodiscard]] SemanticVerifyStatus
+    symmetricSupportDistance(const VerifyWallObservation &wallA_in,
+                             const VerifyWallObservation &wallB_in,
+                             const Eigen::Matrix3d       &rotation_in,
+                             const Eigen::Vector3d       &translation_in,
+                             double                      &distance_out);
 
-std::string stableRoomIdentity(const RoomContextSnapshot &context_in);
+[[nodiscard]] SemanticVerifyStatus
+    stableRoomIdentity(const RoomContextSnapshot &context_in,
+                       std::string               &identity_out);
 
-AlignmentCheck checkFixedTransformWalls(
+[[nodiscard]] SemanticVerifyStatus checkFixedTransformWalls(
     const std::vector<VerifyWallObservation> &survivingWalls_in,
     const std::vector<VerifyWallObservation> &absorbedWalls_in,
     const g2o::Sim3                          &transform_in,
     const SemanticVerifyConfig               &configuration_in,
-    std::size_t                              &matchedCount_out);
+    std::size_t                              &matchedCount_out,
+    AlignmentCheck                           &alignmentCheck_out);
 
-AlignmentCheck
+[[nodiscard]] SemanticVerifyStatus
     checkPassageTopology(const RoomContextSnapshot  &survivingContext_in,
                          const RoomContextSnapshot  &absorbedContext_in,
                          const g2o::Sim3            &transform_in,
                          const SemanticVerifyConfig &configuration_in,
                          std::size_t                &matchedCount_out,
-                         SemanticMergeReason        &contradictionReason_out);
+                         SemanticMergeReason        &contradictionReason_out,
+                         AlignmentCheck             &alignmentCheck_out);
 
-SemanticMergeRoomEvidence
+[[nodiscard]] SemanticVerifyStatus
     copyMergeRoomEvidence(const Room                 *p_room_in,
-                          const SemanticVerifyConfig &configuration_in);
+                          const SemanticVerifyConfig &configuration_in,
+                          SemanticMergeRoomEvidence  &evidence_out);
 
-std::vector<ConsecutiveAnchorPair> collectConsecutiveAnchors(
+[[nodiscard]] SemanticVerifyStatus collectConsecutiveAnchors(
     const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
-    const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in);
+    const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
+    std::vector<ConsecutiveAnchorPair>           &consecutiveAnchors_out);
 
-bool transformAbsorbedPoint(const g2o::Sim3       &transform_in,
-                            const Eigen::Vector3d &point_in,
-                            Eigen::Vector3d       &mapped_out);
+[[nodiscard]] SemanticVerifyStatus
+    transformAbsorbedPoint(const g2o::Sim3       &transform_in,
+                           const Eigen::Vector3d &point_in,
+                           Eigen::Vector3d       &mapped_out);
 
-bool checkConsecutiveFloors(core::Map       *p_survivingMap_in,
-                            core::Map       *p_absorbedMap_in,
-                            const g2o::Sim3 &transform_in,
-                            double           maximumOffset_m_in,
-                            std::string     &decision_out);
+[[nodiscard]] SemanticVerifyStatus
+    checkConsecutiveFloors(core::Map       *p_survivingMap_in,
+                           core::Map       *p_absorbedMap_in,
+                           const g2o::Sim3 &transform_in,
+                           double           maximumOffset_m_in,
+                           std::string     &decision_out,
+                           bool            &floorsMatch_out);
 
-AlignmentCheck
+[[nodiscard]] SemanticVerifyStatus
     checkAnchorRoomCentroids(const std::vector<ConsecutiveAnchorPair> &pairs_in,
                              const g2o::Sim3 &transform_in,
-                             double           maximumDistance_m_in);
+                             double           maximumDistance_m_in,
+                             AlignmentCheck  &alignmentCheck_out);
 
-bool passageGeometryIsUsable(const PassageContext &context_in);
+[[nodiscard]] SemanticVerifyStatus
+    passageGeometryIsUsable(const PassageContext &context_in,
+                            bool                 &isUsable_out);
 
-AlignmentCheck checkConsecutivePassageTopology(
+[[nodiscard]] SemanticVerifyStatus checkConsecutivePassageTopology(
     const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
     const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
     const g2o::Sim3                              &transform_in,
     double                                        maximumCentroidDistance_m_in,
     std::size_t                                  &matchedCount_out,
-    SemanticMergeReason                          &contradictionReason_out);
+    SemanticMergeReason                          &contradictionReason_out,
+    AlignmentCheck                               &alignmentCheck_out);
 
-bool wallSamplesSpanInterval(const VerifyWallObservation &wall_in,
-                             const Eigen::Vector3d       &axis_in,
-                             const Eigen::Vector3d       &origin_in,
-                             double                      &minimum_out,
-                             double                      &maximum_out);
+[[nodiscard]] SemanticVerifyStatus
+    wallSamplesSpanInterval(const VerifyWallObservation &wall_in,
+                            const Eigen::Vector3d       &axis_in,
+                            const Eigen::Vector3d       &origin_in,
+                            double                      &minimum_out,
+                            double                      &maximum_out,
+                            bool                        &hasFiniteSample_out);
 
-AlignmentCheck checkConsecutiveWallEdgeOverlap(
+[[nodiscard]] SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
     const std::vector<ConsecutiveAnchorPair> &pairs_in,
     const g2o::Sim3                          &transform_in,
     double                                    maximumNormalAngle_deg_in,
-    double                                    minimumOverlap_m_in);
+    double                                    minimumOverlap_m_in,
+    AlignmentCheck                           &alignmentCheck_out);
 
 } // namespace semantic
 } // namespace core

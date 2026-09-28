@@ -26,6 +26,7 @@
 #ifndef SEMANTIC_SHA256_DIGEST_H
 #define SEMANTIC_SHA256_DIGEST_H
 
+#include "Semantic/Sha256DigestStatus.h"
 #include <string>
 
 namespace vs_graphs
@@ -42,7 +43,8 @@ namespace semantic
  *  weaker hash "SHA-256". Deterministic and free of wall-clock data,
  *  pointer addresses, or unordered iteration -- suitable as a canonical
  *  content digest for two byte-identical inputs to always match. */
-std::string sha256HexDigest(const std::string &bytes_in);
+[[nodiscard]] Sha256DigestStatus sha256HexDigest(const std::string &bytes_in,
+                                                 std::string &hexDigest_out);
 
 } // namespace semantic
 } // namespace core

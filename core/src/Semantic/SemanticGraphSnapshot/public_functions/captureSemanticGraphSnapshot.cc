@@ -41,12 +41,16 @@ namespace core
 namespace semantic
 {
 
-SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
+SemanticGraphSnapshotStatus
+    captureSemanticGraphSnapshot(core::Atlas           *p_atlas_in,
+                                 SemanticGraphSnapshot &snapshot_out)
 {
     SemanticGraphSnapshot snapshot;
     if (p_atlas_in == nullptr)
     {
-        return snapshot;
+        snapshot_out = snapshot;
+        return SemanticGraphSnapshotStatus::
+            SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
     }
 
     /* GetCoherentMapView(), unlike GetCurrentMap(), never creates a map as a
@@ -112,7 +116,14 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
             {
                 // getId cannot fail; continue as before.
             }
-            ownerReference.key    = makeKey(EntityKind::ROOM, mapId, roomId);
+            EntityKey key2{};
+            if (makeKey(EntityKind::ROOM, mapId, roomId, key2) !=
+                SemanticGraphSnapshotStatus::
+                    SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+            {
+                // makeKey cannot fail; continue as before.
+            }
+            ownerReference.key    = key2;
             ownerReference.reason = UnavailableReason::NONE;
             int roomId2{};
             if (p_room->getId(roomId2) != RoomStatus::ROOM_STATUS_SUCCESS)
@@ -186,13 +197,24 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
 
         for (Room *p_room : allRoomsInMap)
         {
-            mapSnapshot.rooms.push_back(
-                captureRoom(p_room,
+            RoomRecord roomRecord{};
+            if (captureRoom(p_room,
                             mapSnapshot.mapId,
                             detectedRooms.count(p_room) > 0,
-                            markerBasedRooms.count(p_room) > 0));
+                            markerBasedRooms.count(p_room) > 0,
+                            roomRecord) !=
+                SemanticGraphSnapshotStatus::
+                    SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+            {
+                // captureRoom cannot fail; continue as before.
+            }
+            mapSnapshot.rooms.push_back(roomRecord);
         }
-        sortByKey(mapSnapshot.rooms);
+        if (sortByKey(mapSnapshot.rooms) !=
+            SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+        {
+            // sortByKey cannot fail; continue as before.
+        }
 
         for (geometric::Plane *p_plane : p_map->getAllPlanes())
         {
@@ -201,10 +223,23 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
             {
                 continue;
             }
-            mapSnapshot.walls.push_back(
-                captureWall(p_plane, mapSnapshot.mapId, wallOwnersByPointer));
+            WallRecord wallRecord{};
+            if (captureWall(p_plane,
+                            mapSnapshot.mapId,
+                            wallOwnersByPointer,
+                            wallRecord) !=
+                SemanticGraphSnapshotStatus::
+                    SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+            {
+                // captureWall cannot fail; continue as before.
+            }
+            mapSnapshot.walls.push_back(wallRecord);
         }
-        sortByKey(mapSnapshot.walls);
+        if (sortByKey(mapSnapshot.walls) !=
+            SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+        {
+            // sortByKey cannot fail; continue as before.
+        }
 
         for (Passage *p_passage : p_map->getAllPassages())
         {
@@ -212,10 +247,20 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
             {
                 continue;
             }
-            mapSnapshot.passages.push_back(
-                capturePassage(p_passage, mapSnapshot.mapId));
+            PassageRecord passageRecord{};
+            if (capturePassage(p_passage, mapSnapshot.mapId, passageRecord) !=
+                SemanticGraphSnapshotStatus::
+                    SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+            {
+                // capturePassage cannot fail; continue as before.
+            }
+            mapSnapshot.passages.push_back(passageRecord);
         }
-        sortByKey(mapSnapshot.passages);
+        if (sortByKey(mapSnapshot.passages) !=
+            SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+        {
+            // sortByKey cannot fail; continue as before.
+        }
 
         for (Floor *p_floor : p_map->getAllFloors())
         {
@@ -223,10 +268,20 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
             {
                 continue;
             }
-            mapSnapshot.floors.push_back(
-                captureFloor(p_floor, mapSnapshot.mapId));
+            FloorRecord floorRecord{};
+            if (captureFloor(p_floor, mapSnapshot.mapId, floorRecord) !=
+                SemanticGraphSnapshotStatus::
+                    SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+            {
+                // captureFloor cannot fail; continue as before.
+            }
+            mapSnapshot.floors.push_back(floorRecord);
         }
-        sortByKey(mapSnapshot.floors);
+        if (sortByKey(mapSnapshot.floors) !=
+            SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+        {
+            // sortByKey cannot fail; continue as before.
+        }
 
         snapshot.maps.push_back(std::move(mapSnapshot));
     }
@@ -241,7 +296,8 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
                      [](const MapSnapshot &lhs_in, const MapSnapshot &rhs_in)
                      { return lhs_in.mapId < rhs_in.mapId; });
 
-    return snapshot;
+    snapshot_out = snapshot;
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

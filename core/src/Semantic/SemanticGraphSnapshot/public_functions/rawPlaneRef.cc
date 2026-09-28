@@ -37,12 +37,15 @@ namespace core
 namespace semantic
 {
 
-RawPlaneRef rawPlaneRef(geometric::Plane *p_plane_in)
+SemanticGraphSnapshotStatus rawPlaneRef(geometric::Plane *p_plane_in,
+                                        RawPlaneRef      &rawPlaneRef_out)
 {
     RawPlaneRef reference;
     if (p_plane_in == nullptr)
     {
-        return reference;
+        rawPlaneRef_out = reference;
+        return SemanticGraphSnapshotStatus::
+            SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
     }
     reference.reason    = UnavailableReason::NONE;
     reference.planeId   = p_plane_in->getId();
@@ -54,11 +57,20 @@ RawPlaneRef rawPlaneRef(geometric::Plane *p_plane_in)
         reference.mapId = p_map->getId();
         if (reference.planeType == geometric::Plane::PlaneVariant::WALL)
         {
-            reference.wallKey =
-                makeKey(EntityKind::WALL, p_map->getId(), p_plane_in->getId());
+            EntityKey key{};
+            if (makeKey(EntityKind::WALL,
+                        p_map->getId(),
+                        p_plane_in->getId(),
+                        key) != SemanticGraphSnapshotStatus::
+                                    SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+            {
+                // makeKey cannot fail; continue as before.
+            }
+            reference.wallKey = key;
         }
     }
-    return reference;
+    rawPlaneRef_out = reference;
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -57,20 +57,31 @@ namespace core
 namespace semantic
 {
 
-void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
-                                   const SemanticGraphSnapshot &snapshot_in,
-                                   std::vector<Finding>        &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateOnePassageCardinality(const PassageRecord         &passage_in,
+                                  const SemanticGraphSnapshot &snapshot_in,
+                                  std::vector<Finding>        &findings_inout)
 {
     const long unsigned int expectedMapId =
         passage_in.declaredMapId.value_or(passage_in.key.mapId);
-    const ResolvedRoomEndpoint knownSide =
-        resolveRoomEndpoint(passage_in.knownSideRoomRef,
+    ResolvedRoomEndpoint knownSide{};
+    if (resolveRoomEndpoint(passage_in.knownSideRoomRef,
                             expectedMapId,
-                            snapshot_in);
-    const ResolvedRoomEndpoint prospective =
-        resolveRoomEndpoint(passage_in.prospectiveRoomRef,
+                            snapshot_in,
+                            knownSide) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // resolveRoomEndpoint cannot fail; continue as before.
+    }
+    ResolvedRoomEndpoint prospective{};
+    if (resolveRoomEndpoint(passage_in.prospectiveRoomRef,
                             expectedMapId,
-                            snapshot_in);
+                            snapshot_in,
+                            prospective) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // resolveRoomEndpoint cannot fail; continue as before.
+    }
 
     std::vector<EntityKey> involvedKeys{passage_in.key};
     if (knownSide.key.has_value())
@@ -85,22 +96,37 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
     if (knownSide.isReferenceUnresolvable ||
         prospective.isReferenceUnresolvable)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_02,
+        Finding finding{};
+        if (makeFinding(AxiomCode::AX_PASS_02,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_UNRESOLVABLE,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding) != SemanticAxiomEvaluatorStatus::
+                                        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (knownSide.isWrongKind || prospective.isWrongKind)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_02,
+        Finding finding2{};
+        if (makeFinding(AxiomCode::AX_PASS_02,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_WRONG_KIND,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding2);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (knownSide.isReasonInconsistent || prospective.isReasonInconsistent)
@@ -109,12 +135,20 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
          * EntityRef::reason is not NONE violates EntityRef's documented
          * invariant and must never flow through as an ordinary valid
          * reference. */
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_PASS_02,
-            AxiomResult::FAIL,
-            ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_REASON_INCONSISTENT,
-            involvedKeys));
-        return;
+        Finding finding3{};
+        if (makeFinding(
+                AxiomCode::AX_PASS_02,
+                AxiomResult::FAIL,
+                ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_REASON_INCONSISTENT,
+                involvedKeys,
+                finding3) != SemanticAxiomEvaluatorStatus::
+                                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding3);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (knownSide.isContainingMapAmbiguous ||
@@ -123,12 +157,21 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         /* A duplicate MapSnapshot::mapId for
          * the referenced map means no first-match lookup can supply
          * positive proof for this endpoint. */
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_PASS_02,
-            AxiomResult::FAIL,
-            ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_CONTAINING_MAP_AMBIGUOUS,
-            involvedKeys));
-        return;
+        Finding finding4{};
+        if (makeFinding(
+                AxiomCode::AX_PASS_02,
+                AxiomResult::FAIL,
+                ReasonCode::
+                    PASSAGE_CARDINALITY_ENDPOINT_CONTAINING_MAP_AMBIGUOUS,
+                involvedKeys,
+                finding4) != SemanticAxiomEvaluatorStatus::
+                                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding4);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     /* isLive is trustworthy only when isLiveAvailable -- a keyed endpoint
@@ -143,12 +186,20 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
                                 !prospective.isLive;
     if (knownSideBad || prospectiveBad)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_02,
+        Finding finding5{};
+        if (makeFinding(AxiomCode::AX_PASS_02,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_BAD,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding5) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding5);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if ((knownSide.isFoundInSnapshot &&
@@ -156,39 +207,70 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         (prospective.isFoundInSnapshot &&
          prospective.isTargetDeclaredMapMismatch))
     {
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_PASS_02,
-            AxiomResult::FAIL,
-            ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_DECLARED_MAP_MISMATCH,
-            involvedKeys));
-        return;
+        Finding finding6{};
+        if (makeFinding(
+                AxiomCode::AX_PASS_02,
+                AxiomResult::FAIL,
+                ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_DECLARED_MAP_MISMATCH,
+                involvedKeys,
+                finding6) != SemanticAxiomEvaluatorStatus::
+                                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding6);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if ((knownSide.isReferencePresent && knownSide.isCrossMap) ||
         (prospective.isReferencePresent && prospective.isCrossMap))
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_02,
+        Finding finding7{};
+        if (makeFinding(AxiomCode::AX_PASS_02,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_CROSS_MAP,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding7) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding7);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (knownSide.isReferencePresent && prospective.isReferencePresent &&
         knownSide.key.has_value() && prospective.key.has_value() &&
         (*knownSide.key == *prospective.key))
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_02,
+        Finding finding8{};
+        if (makeFinding(AxiomCode::AX_PASS_02,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_CARDINALITY_DUPLICATE_ENDPOINT,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding8) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding8);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    const ReversePassageEndpointScan reverseScan =
-        scanReversePassageEndpoints(passage_in, expectedMapId, snapshot_in);
+    ReversePassageEndpointScan reverseScan{};
+    if (scanReversePassageEndpoints(passage_in,
+                                    expectedMapId,
+                                    snapshot_in,
+                                    reverseScan) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // scanReversePassageEndpoints cannot fail; continue as before.
+    }
 
     if (!reverseScan.badReverseRoomKeys.empty())
     {
@@ -196,12 +278,20 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         anomalyKeys.insert(anomalyKeys.end(),
                            reverseScan.badReverseRoomKeys.begin(),
                            reverseScan.badReverseRoomKeys.end());
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_02,
+        Finding finding9{};
+        if (makeFinding(AxiomCode::AX_PASS_02,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_CARDINALITY_REVERSE_ENDPOINT_BAD,
-                        anomalyKeys));
-        return;
+                        anomalyKeys,
+                        finding9) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding9);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (!reverseScan.crossMapReverseRoomKeys.empty())
     {
@@ -209,12 +299,20 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         anomalyKeys.insert(anomalyKeys.end(),
                            reverseScan.crossMapReverseRoomKeys.begin(),
                            reverseScan.crossMapReverseRoomKeys.end());
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_PASS_02,
-            AxiomResult::FAIL,
-            ReasonCode::PASSAGE_CARDINALITY_REVERSE_ENDPOINT_CROSS_MAP,
-            anomalyKeys));
-        return;
+        Finding finding10{};
+        if (makeFinding(
+                AxiomCode::AX_PASS_02,
+                AxiomResult::FAIL,
+                ReasonCode::PASSAGE_CARDINALITY_REVERSE_ENDPOINT_CROSS_MAP,
+                anomalyKeys,
+                finding10) != SemanticAxiomEvaluatorStatus::
+                                  SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding10);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (!reverseScan.duplicateIdentityRoomKeys.empty())
     {
@@ -222,12 +320,20 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         anomalyKeys.insert(anomalyKeys.end(),
                            reverseScan.duplicateIdentityRoomKeys.begin(),
                            reverseScan.duplicateIdentityRoomKeys.end());
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_02,
+        Finding finding11{};
+        if (makeFinding(AxiomCode::AX_PASS_02,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_CARDINALITY_DUPLICATE_ROOM_IDENTITY,
-                        anomalyKeys));
-        return;
+                        anomalyKeys,
+                        finding11) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding11);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (!reverseScan.wrongKindReverseRoomKeys.empty())
     {
@@ -235,12 +341,20 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         anomalyKeys.insert(anomalyKeys.end(),
                            reverseScan.wrongKindReverseRoomKeys.begin(),
                            reverseScan.wrongKindReverseRoomKeys.end());
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_PASS_02,
-            AxiomResult::FAIL,
-            ReasonCode::PASSAGE_CARDINALITY_REVERSE_ENDPOINT_WRONG_KIND,
-            anomalyKeys));
-        return;
+        Finding finding12{};
+        if (makeFinding(
+                AxiomCode::AX_PASS_02,
+                AxiomResult::FAIL,
+                ReasonCode::PASSAGE_CARDINALITY_REVERSE_ENDPOINT_WRONG_KIND,
+                anomalyKeys,
+                finding12) != SemanticAxiomEvaluatorStatus::
+                                  SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding12);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (!reverseScan.duplicateReferenceRoomKeys.empty())
     {
@@ -248,21 +362,38 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         anomalyKeys.insert(anomalyKeys.end(),
                            reverseScan.duplicateReferenceRoomKeys.begin(),
                            reverseScan.duplicateReferenceRoomKeys.end());
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_PASS_02,
-            AxiomResult::FAIL,
-            ReasonCode::PASSAGE_CARDINALITY_REVERSE_REFERENCE_DUPLICATED,
-            anomalyKeys));
-        return;
+        Finding finding13{};
+        if (makeFinding(
+                AxiomCode::AX_PASS_02,
+                AxiomResult::FAIL,
+                ReasonCode::PASSAGE_CARDINALITY_REVERSE_REFERENCE_DUPLICATED,
+                anomalyKeys,
+                finding13) != SemanticAxiomEvaluatorStatus::
+                                  SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding13);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (knownSide.isDuplicateIdentity || prospective.isDuplicateIdentity)
     {
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_PASS_02,
-            AxiomResult::FAIL,
-            ReasonCode::PASSAGE_CARDINALITY_FORWARD_ENDPOINT_DUPLICATE_IDENTITY,
-            involvedKeys));
-        return;
+        Finding finding14{};
+        if (makeFinding(
+                AxiomCode::AX_PASS_02,
+                AxiomResult::FAIL,
+                ReasonCode::
+                    PASSAGE_CARDINALITY_FORWARD_ENDPOINT_DUPLICATE_IDENTITY,
+                involvedKeys,
+                finding14) != SemanticAxiomEvaluatorStatus::
+                                  SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding14);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if ((knownSide.isReferencePresent && !knownSide.isLiveAvailable) ||
@@ -273,12 +404,20 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
          * passage's cardinality cannot be certified either way. Checked
          * after every reverse-scan FAIL above so an independently known
          * contradiction still dominates (FAIL > UNKNOWN). */
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_PASS_02,
-            AxiomResult::UNKNOWN,
-            ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_LIVENESS_UNAVAILABLE,
-            involvedKeys));
-        return;
+        Finding finding15{};
+        if (makeFinding(
+                AxiomCode::AX_PASS_02,
+                AxiomResult::UNKNOWN,
+                ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_LIVENESS_UNAVAILABLE,
+                involvedKeys,
+                finding15) != SemanticAxiomEvaluatorStatus::
+                                  SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding15);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (!reverseScan.livenessUnavailableReverseRoomKeys.empty())
     {
@@ -293,17 +432,35 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
             anomalyKeys.end(),
             reverseScan.livenessUnavailableReverseRoomKeys.begin(),
             reverseScan.livenessUnavailableReverseRoomKeys.end());
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_PASS_02,
-            AxiomResult::UNKNOWN,
-            ReasonCode::
-                PASSAGE_CARDINALITY_REVERSE_ENDPOINT_LIVENESS_UNAVAILABLE,
-            anomalyKeys));
-        return;
+        Finding finding16{};
+        if (makeFinding(
+                AxiomCode::AX_PASS_02,
+                AxiomResult::UNKNOWN,
+                ReasonCode::
+                    PASSAGE_CARDINALITY_REVERSE_ENDPOINT_LIVENESS_UNAVAILABLE,
+                anomalyKeys,
+                finding16) != SemanticAxiomEvaluatorStatus::
+                                  SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding16);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    const bool knownSideReal   = isRealPassageEndpoint(knownSide);
-    const bool prospectiveReal = isRealPassageEndpoint(prospective);
+    bool knownSideReal{};
+    if (isRealPassageEndpoint(knownSide, knownSideReal) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // isRealPassageEndpoint cannot fail; continue as before.
+    }
+    bool prospectiveReal{};
+    if (isRealPassageEndpoint(prospective, prospectiveReal) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // isRealPassageEndpoint cannot fail; continue as before.
+    }
 
     /* Union of every real (forward or reverse) endpoint identity, computed
      * before applying the maximum-two-endpoint rule: a reverse-only room
@@ -334,54 +491,113 @@ void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
         anomalyKeys.insert(anomalyKeys.end(),
                            unionKeys.begin(),
                            unionKeys.end());
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_02,
+        Finding finding17{};
+        if (makeFinding(AxiomCode::AX_PASS_02,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_CARDINALITY_THIRD_ENDPOINT,
-                        anomalyKeys));
-        return;
+                        anomalyKeys,
+                        finding17) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding17);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (unionKeys.empty())
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_02,
+        Finding finding18{};
+        if (makeFinding(AxiomCode::AX_PASS_02,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_CARDINALITY_NO_CONFIRMED_ENDPOINT,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding18) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding18);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    if (knownSideReal &&
-        !roomListsPassageBack(snapshot_in, *knownSide.key, passage_in.key))
+    bool listsPassageBack{};
+    if ((knownSideReal) && roomListsPassageBack(snapshot_in,
+                                                *knownSide.key,
+                                                passage_in.key,
+                                                listsPassageBack) !=
+                               SemanticAxiomEvaluatorStatus::
+                                   SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_02,
-                        AxiomResult::FAIL,
-                        ReasonCode::PASSAGE_CARDINALITY_NON_RECIPROCAL,
-                        involvedKeys));
-        return;
+        // roomListsPassageBack cannot fail; continue as before.
     }
-    if (prospectiveReal &&
-        !roomListsPassageBack(snapshot_in, *prospective.key, passage_in.key))
+    if (knownSideReal && !listsPassageBack)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_02,
+        Finding finding19{};
+        if (makeFinding(AxiomCode::AX_PASS_02,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_CARDINALITY_NON_RECIPROCAL,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding19) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding19);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    bool listsPassageBack2{};
+    if ((prospectiveReal) && roomListsPassageBack(snapshot_in,
+                                                  *prospective.key,
+                                                  passage_in.key,
+                                                  listsPassageBack2) !=
+                                 SemanticAxiomEvaluatorStatus::
+                                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // roomListsPassageBack cannot fail; continue as before.
+    }
+    if (prospectiveReal && !listsPassageBack2)
+    {
+        Finding finding20{};
+        if (makeFinding(AxiomCode::AX_PASS_02,
+                        AxiomResult::FAIL,
+                        ReasonCode::PASSAGE_CARDINALITY_NON_RECIPROCAL,
+                        involvedKeys,
+                        finding20) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding20);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     /* At least one real, reciprocal, non-contradictory endpoint and no
      * third/bad/cross-map/unresolvable/duplicate reverse reference --
      * genuinely the best this schema can show. Still UNKNOWN, never PASS:
      * see this file's own Doxygen. */
-    findings_inout.push_back(
-        makeFinding(AxiomCode::AX_PASS_02,
+    Finding finding21{};
+    if (makeFinding(AxiomCode::AX_PASS_02,
                     AxiomResult::UNKNOWN,
                     ReasonCode::PASSAGE_CARDINALITY_ENDPOINT_SLOT_UNVERIFIED,
-                    involvedKeys));
+                    involvedKeys,
+                    finding21) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeFinding cannot fail; continue as before.
+    }
+    findings_inout.push_back(finding21);
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

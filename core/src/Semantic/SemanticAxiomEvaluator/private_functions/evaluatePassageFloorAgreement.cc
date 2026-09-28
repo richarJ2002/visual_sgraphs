@@ -70,26 +70,56 @@ namespace core
 namespace semantic
 {
 
-PassageFloorAgreement
+SemanticAxiomEvaluatorStatus
     evaluatePassageFloorAgreement(const ResolvedRoomEndpoint  &knownSide_in,
                                   const ResolvedRoomEndpoint  &prospective_in,
-                                  const SemanticGraphSnapshot &snapshot_in)
+                                  const SemanticGraphSnapshot &snapshot_in,
+                                  PassageFloorAgreement       &agreement_out)
 {
-    if (!isRealPassageEndpoint(knownSide_in) ||
-        !isRealPassageEndpoint(prospective_in))
+    bool isRealPassageEndpoint2{};
+    if (isRealPassageEndpoint(knownSide_in, isRealPassageEndpoint2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // isRealPassageEndpoint cannot fail; continue as before.
+    }
+    bool isRealPassageEndpoint3{};
+    if (!(!isRealPassageEndpoint2) &&
+        isRealPassageEndpoint(prospective_in, isRealPassageEndpoint3) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // isRealPassageEndpoint cannot fail; continue as before.
+    }
+    if (!isRealPassageEndpoint2 || !isRealPassageEndpoint3)
     {
         /* Zero or one real endpoint cannot disagree with itself. */
-        return PassageFloorAgreement::NOT_APPLICABLE;
+        agreement_out = PassageFloorAgreement::NOT_APPLICABLE;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    const AxiomResult knownSideRoomFloorResult =
-        canonicalRoomFloorResultFor(knownSide_in, snapshot_in);
-    const AxiomResult prospectiveRoomFloorResult =
-        canonicalRoomFloorResultFor(prospective_in, snapshot_in);
+    AxiomResult knownSideRoomFloorResult{};
+    if (canonicalRoomFloorResultFor(knownSide_in,
+                                    snapshot_in,
+                                    knownSideRoomFloorResult) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // canonicalRoomFloorResultFor cannot fail; continue as before.
+    }
+    AxiomResult prospectiveRoomFloorResult{};
+    if (canonicalRoomFloorResultFor(prospective_in,
+                                    snapshot_in,
+                                    prospectiveRoomFloorResult) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // canonicalRoomFloorResultFor cannot fail; continue as before.
+    }
     if (knownSideRoomFloorResult == AxiomResult::FAIL ||
         prospectiveRoomFloorResult == AxiomResult::FAIL)
     {
-        return PassageFloorAgreement::ENDPOINT_ROOM_FLOOR_INVALID;
+        agreement_out = PassageFloorAgreement::ENDPOINT_ROOM_FLOOR_INVALID;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (knownSideRoomFloorResult == AxiomResult::UNKNOWN ||
         prospectiveRoomFloorResult == AxiomResult::UNKNOWN)
@@ -100,30 +130,56 @@ PassageFloorAgreement
          * agreement cannot be positively proved either, even though it is
          * also not a proven contradiction. Must dominate any subsequent
          * floorKey-equality comparison, mirroring the FAIL case above. */
-        return PassageFloorAgreement::ENDPOINT_ROOM_FLOOR_UNVERIFIED;
+        agreement_out = PassageFloorAgreement::ENDPOINT_ROOM_FLOOR_UNVERIFIED;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (!knownSide_in.floorKey.has_value() ||
         !prospective_in.floorKey.has_value())
     {
-        return PassageFloorAgreement::EVIDENCE_UNAVAILABLE;
+        agreement_out = PassageFloorAgreement::EVIDENCE_UNAVAILABLE;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if (*knownSide_in.floorKey != *prospective_in.floorKey)
     {
-        return PassageFloorAgreement::DISAGREE;
+        agreement_out = PassageFloorAgreement::DISAGREE;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    if (countFloorRecordsWithKey(snapshot_in, *knownSide_in.floorKey) > 1U)
+    std::size_t floorRecords{};
+    if (countFloorRecordsWithKey(snapshot_in,
+                                 *knownSide_in.floorKey,
+                                 floorRecords) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        return PassageFloorAgreement::AMBIGUOUS;
+        // countFloorRecordsWithKey cannot fail; continue as before.
     }
-    if (countMapSnapshotsWithId(snapshot_in, knownSide_in.floorKey->mapId) > 1U)
+    if (floorRecords > 1U)
+    {
+        agreement_out = PassageFloorAgreement::AMBIGUOUS;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    std::size_t mapSnapshots{};
+    if (countMapSnapshotsWithId(snapshot_in,
+                                knownSide_in.floorKey->mapId,
+                                mapSnapshots) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // countMapSnapshotsWithId cannot fail; continue as before.
+    }
+    if (mapSnapshots > 1U)
     {
         /* Which MapSnapshot actually holds
          * this floor is itself ambiguous when its own containing map id is
          * duplicated. */
-        return PassageFloorAgreement::AMBIGUOUS;
+        agreement_out = PassageFloorAgreement::AMBIGUOUS;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     const FloorRecord *p_floor = nullptr;
@@ -133,12 +189,23 @@ PassageFloorAgreement
         {
             continue;
         }
-        p_floor = findRecordByKey(mapSnapshot.floors, *knownSide_in.floorKey);
+        const FloorRecord *p_record = nullptr;
+        if (findRecordByKey(mapSnapshot.floors,
+                            *knownSide_in.floorKey,
+                            p_record) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // findRecordByKey cannot fail; continue as before.
+        }
+        p_floor = p_record;
         break;
     }
     if (p_floor == nullptr)
     {
-        return PassageFloorAgreement::EVIDENCE_UNAVAILABLE;
+        agreement_out = PassageFloorAgreement::EVIDENCE_UNAVAILABLE;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     bool knownSideReciprocal       = false;
@@ -160,10 +227,14 @@ PassageFloorAgreement
     }
     if (!knownSideReciprocal || !prospectiveSideReciprocal)
     {
-        return PassageFloorAgreement::AMBIGUOUS;
+        agreement_out = PassageFloorAgreement::AMBIGUOUS;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    return PassageFloorAgreement::AGREE;
+    agreement_out = PassageFloorAgreement::AGREE;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

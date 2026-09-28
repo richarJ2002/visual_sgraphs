@@ -30,11 +30,14 @@ namespace core
 namespace semantic
 {
 
-bool passageGeometryIsUsable(const PassageContext &context_in)
+SemanticVerifyStatus passageGeometryIsUsable(const PassageContext &context_in,
+                                             bool                 &isUsable_out)
 {
-    return context_in.centroid_World.allFinite() &&
-           std::isfinite(context_in.width_m) && context_in.width_m > 0.0 &&
-           std::isfinite(context_in.height_m) && context_in.height_m > 0.0;
+    isUsable_out =
+        context_in.centroid_World.allFinite() &&
+        std::isfinite(context_in.width_m) && context_in.width_m > 0.0 &&
+        std::isfinite(context_in.height_m) && context_in.height_m > 0.0;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

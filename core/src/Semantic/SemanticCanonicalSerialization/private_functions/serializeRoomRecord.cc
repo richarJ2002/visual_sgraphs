@@ -72,8 +72,14 @@ nlohmann::json serializeRoomRecord(const RoomRecord &value_in,
     json["groundPlaneRef"] = serializeRawPlaneRef(value_in.groundPlaneRef);
     json["creationProvenanceReason"] =
         static_cast<unsigned int>(value_in.creationProvenanceReason);
-    json["creationProvenanceReasonName"] =
-        unavailableReasonName(value_in.creationProvenanceReason);
+    std::string unavailableReasonName2{};
+    if (unavailableReasonName(value_in.creationProvenanceReason,
+                              unavailableReasonName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // unavailableReasonName cannot fail; continue as before.
+    }
+    json["creationProvenanceReasonName"] = unavailableReasonName2;
 
     if (includeGeometry_in)
     {

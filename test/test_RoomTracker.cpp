@@ -1551,19 +1551,35 @@ TEST(RoomTrackerStep, MalformedPassVerdictFailsClosed)
 {
     semantic::VerificationVerdict malformed = passVerdict();
     malformed.inlierRatio = std::numeric_limits<double>::infinity();
-    EXPECT_FALSE(malformed.isPass());
+    bool isPass2{};
+    ASSERT_EQ((malformed.isPass(isPass2)),
+              semantic::VerificationVerdictStatus::
+                  VERIFICATION_VERDICT_STATUS_SUCCESS);
+    EXPECT_FALSE(isPass2);
 
     malformed            = passVerdict();
     malformed.confidence = -0.1;
-    EXPECT_FALSE(malformed.isPass());
+    bool isPass3{};
+    ASSERT_EQ((malformed.isPass(isPass3)),
+              semantic::VerificationVerdictStatus::
+                  VERIFICATION_VERDICT_STATUS_SUCCESS);
+    EXPECT_FALSE(isPass3);
 
     malformed           = passVerdict();
     malformed.hasPassed = false;
-    EXPECT_FALSE(malformed.isPass());
+    bool isPass4{};
+    ASSERT_EQ((malformed.isPass(isPass4)),
+              semantic::VerificationVerdictStatus::
+                  VERIFICATION_VERDICT_STATUS_SUCCESS);
+    EXPECT_FALSE(isPass4);
 
     malformed        = passVerdict();
     malformed.status = semantic::VerificationStatus::REJECTED;
-    EXPECT_FALSE(malformed.isPass());
+    bool isPass5{};
+    ASSERT_EQ((malformed.isPass(isPass5)),
+              semantic::VerificationVerdictStatus::
+                  VERIFICATION_VERDICT_STATUS_SUCCESS);
+    EXPECT_FALSE(isPass5);
 }
 
 TEST(RoomTrackerStep, ReacquireRetriesThenTimeouts)

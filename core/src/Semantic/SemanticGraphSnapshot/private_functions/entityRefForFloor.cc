@@ -34,12 +34,15 @@ namespace core
 namespace semantic
 {
 
-EntityRef entityRefForFloor(Floor *p_floor_in)
+SemanticGraphSnapshotStatus entityRefForFloor(Floor     *p_floor_in,
+                                              EntityRef &entityRef_out)
 {
     EntityRef reference;
     if (p_floor_in == nullptr)
     {
-        return reference;
+        entityRef_out = reference;
+        return SemanticGraphSnapshotStatus::
+            SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
     }
     /* Floor has no isBad()/setBad() in the current model (confirmed by
      * direct source read of Floor.h): a Floor has no liveness concept to
@@ -67,16 +70,25 @@ EntityRef entityRefForFloor(Floor *p_floor_in)
     if (p_map == nullptr)
     {
         reference.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
-        return reference;
+        entityRef_out    = reference;
+        return SemanticGraphSnapshotStatus::
+            SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
     }
     int floor_inId2{};
     if (p_floor_in->getId(floor_inId2) != FloorStatus::FLOOR_STATUS_SUCCESS)
     {
         // getId cannot fail; continue as before.
     }
-    reference.key    = makeKey(EntityKind::FLOOR, p_map->getId(), floor_inId2);
+    EntityKey key2{};
+    if (makeKey(EntityKind::FLOOR, p_map->getId(), floor_inId2, key2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // makeKey cannot fail; continue as before.
+    }
+    reference.key    = key2;
     reference.reason = UnavailableReason::NONE;
-    return reference;
+    entityRef_out    = reference;
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

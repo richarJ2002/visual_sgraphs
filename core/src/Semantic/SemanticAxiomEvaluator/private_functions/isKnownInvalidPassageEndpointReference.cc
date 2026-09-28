@@ -40,8 +40,9 @@ namespace core
 namespace semantic
 {
 
-bool isKnownInvalidPassageEndpointReference(
-    const ResolvedRoomEndpoint &endpoint_in)
+SemanticAxiomEvaluatorStatus isKnownInvalidPassageEndpointReference(
+    const ResolvedRoomEndpoint &endpoint_in,
+    bool                       &isKnownInvalidPassageEndpointReference_out)
 {
     if (!endpoint_in.isReferencePresent)
     {
@@ -51,14 +52,20 @@ bool isKnownInvalidPassageEndpointReference(
          * this predicate deliberately treats as "known invalid" too, since
          * an attempted-but-mapless reference is itself an observable
          * contradiction, not an ordinary absence. */
-        return endpoint_in.isReferenceUnresolvable;
+        isKnownInvalidPassageEndpointReference_out =
+            endpoint_in.isReferenceUnresolvable;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return endpoint_in.isWrongKind || endpoint_in.isDuplicateIdentity ||
-           endpoint_in.isReasonInconsistent ||
-           endpoint_in.isContainingMapAmbiguous ||
-           (endpoint_in.isFoundInSnapshot &&
-            endpoint_in.isTargetDeclaredMapMismatch) ||
-           (endpoint_in.isLiveAvailable && !endpoint_in.isLive);
+    isKnownInvalidPassageEndpointReference_out =
+        endpoint_in.isWrongKind || endpoint_in.isDuplicateIdentity ||
+        endpoint_in.isReasonInconsistent ||
+        endpoint_in.isContainingMapAmbiguous ||
+        (endpoint_in.isFoundInSnapshot &&
+         endpoint_in.isTargetDeclaredMapMismatch) ||
+        (endpoint_in.isLiveAvailable && !endpoint_in.isLive);
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

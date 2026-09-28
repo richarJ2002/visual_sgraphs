@@ -40,8 +40,9 @@ namespace core
 namespace semantic
 {
 
-void evaluateAxRoom01(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateAxRoom01(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout)
 {
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
     {
@@ -51,9 +52,18 @@ void evaluateAxRoom01(const SemanticGraphSnapshot &snapshot_in,
             {
                 continue;
             }
-            evaluateOneRoomCreationProvenance(room, findings_inout);
+            if (evaluateOneRoomCreationProvenance(room, findings_inout) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // evaluateOneRoomCreationProvenance cannot fail; continue as
+                // before.
+            }
         }
     }
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

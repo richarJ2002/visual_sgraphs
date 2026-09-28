@@ -204,8 +204,24 @@ bool resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
     {
         // getKnownSideProvenance cannot fail; continue as before.
     }
-    if (!proxy_inoutKnownSideProvenance.hasDirection() &&
-        transferredSide.hasDirection())
+    bool proxy_inoutKnownSideProvenanceHasDirection{};
+    if (proxy_inoutKnownSideProvenance.hasDirection(
+            proxy_inoutKnownSideProvenanceHasDirection) !=
+        semantic::KnownSideProvenanceStatus::
+            KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+    {
+        // hasDirection cannot fail; continue as before.
+    }
+    bool transferredSideHasDirection{};
+    if ((!proxy_inoutKnownSideProvenanceHasDirection) &&
+        transferredSide.hasDirection(transferredSideHasDirection) !=
+            semantic::KnownSideProvenanceStatus::
+                KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+    {
+        // hasDirection cannot fail; continue as before.
+    }
+    if (!proxy_inoutKnownSideProvenanceHasDirection &&
+        transferredSideHasDirection)
     {
         if (p_proxy_inout->setKnownSideDirection(
                 transferredSide.direction_World) !=

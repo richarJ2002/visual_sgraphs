@@ -22,15 +22,17 @@ namespace semantic
 /*! One (width,height) aperture pair, normalised by the room's valid median
  * extent. Kept paired (not flattened) so lexicographic sort and pairwise
  * Manhattan distance compare a passage's own width against its own height. */
-std::vector<std::pair<double, double>>
-    apertureSignature(const RoomContextSnapshot &snapshot_in,
-                      const double               median_in,
-                      const std::size_t          cap_in)
+SemanticCandidatesStatus apertureSignature(
+    const RoomContextSnapshot              &snapshot_in,
+    const double                            median_in,
+    const std::size_t                       cap_in,
+    std::vector<std::pair<double, double>> &apertureSignature_out)
 {
     std::vector<std::pair<double, double>> signature;
     if (!std::isfinite(median_in) || median_in <= 0.0)
     {
-        return signature;
+        apertureSignature_out = signature;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
     }
     signature.reserve(std::min(snapshot_in.passageContexts.size(), cap_in));
     for (const PassageContext &passage : snapshot_in.passageContexts)
@@ -39,8 +41,22 @@ std::vector<std::pair<double, double>>
         {
             break;
         }
-        if (passage.isApertureValid && finiteNonnegative(passage.width_m) &&
-            finiteNonnegative(passage.height_m) && passage.width_m > 0.0 &&
+        bool isFiniteNonnegative{};
+        if ((passage.isApertureValid) &&
+            finiteNonnegative(passage.width_m, isFiniteNonnegative) !=
+                SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // finiteNonnegative cannot fail; continue as before.
+        }
+        bool isFiniteNonnegative2{};
+        if ((passage.isApertureValid && isFiniteNonnegative) &&
+            finiteNonnegative(passage.height_m, isFiniteNonnegative2) !=
+                SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // finiteNonnegative cannot fail; continue as before.
+        }
+        if (passage.isApertureValid && isFiniteNonnegative &&
+            isFiniteNonnegative2 && passage.width_m > 0.0 &&
             passage.height_m > 0.0)
         {
             signature.emplace_back(passage.width_m / median_in,
@@ -48,7 +64,8 @@ std::vector<std::pair<double, double>>
         }
     }
     std::sort(signature.begin(), signature.end());
-    return signature;
+    apertureSignature_out = signature;
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

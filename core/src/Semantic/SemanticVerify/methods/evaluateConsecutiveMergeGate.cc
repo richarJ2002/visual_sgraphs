@@ -47,11 +47,18 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
-    if (!checkConsecutiveFloors(p_survivingMap_in,
-                                p_absorbedMap_in,
-                                transform_absorbedToSurviving_in,
-                                configuration_in.floor_match_tolerance_m,
-                                result.floorDecision))
+    bool floorsMatch{};
+    if (checkConsecutiveFloors(p_survivingMap_in,
+                               p_absorbedMap_in,
+                               transform_absorbedToSurviving_in,
+                               configuration_in.floor_match_tolerance_m,
+                               result.floorDecision,
+                               floorsMatch) !=
+        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // checkConsecutiveFloors cannot fail; continue as before.
+    }
+    if (!floorsMatch)
     {
         result.decision = result.floorDecision == "REJECTED"
                               ? SemanticMergeDecision::REJECT
@@ -87,8 +94,13 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         if (p_room != nullptr && !roomIsBad &&
             roomVariant == Room::RoomVariant::ROOM)
         {
-            survivingRooms.push_back(
-                copyMergeRoomEvidence(p_room, verifyConfiguration));
+            SemanticMergeRoomEvidence evidence{};
+            if (copyMergeRoomEvidence(p_room, verifyConfiguration, evidence) !=
+                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+            {
+                // copyMergeRoomEvidence cannot fail; continue as before.
+            }
+            survivingRooms.push_back(evidence);
         }
     }
     std::vector<SemanticMergeRoomEvidence> absorbedRooms;
@@ -110,13 +122,22 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         if (p_room != nullptr && !roomIsBad2 &&
             roomVariant2 == Room::RoomVariant::ROOM)
         {
-            absorbedRooms.push_back(
-                copyMergeRoomEvidence(p_room, verifyConfiguration));
+            SemanticMergeRoomEvidence evidence2{};
+            if (copyMergeRoomEvidence(p_room, verifyConfiguration, evidence2) !=
+                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+            {
+                // copyMergeRoomEvidence cannot fail; continue as before.
+            }
+            absorbedRooms.push_back(evidence2);
         }
     }
 
-    const std::vector<ConsecutiveAnchorPair> anchorPairs =
-        collectConsecutiveAnchors(survivingRooms, absorbedRooms);
+    std::vector<ConsecutiveAnchorPair> anchorPairs{};
+    if (collectConsecutiveAnchors(survivingRooms, absorbedRooms, anchorPairs) !=
+        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // collectConsecutiveAnchors cannot fail; continue as before.
+    }
     result.sharedRoomCount = anchorPairs.size();
     if (anchorPairs.empty())
     {
@@ -200,10 +221,15 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
-    const AlignmentCheck centroidCheck =
-        checkAnchorRoomCentroids(anchorPairs,
+    AlignmentCheck centroidCheck{};
+    if (checkAnchorRoomCentroids(anchorPairs,
                                  transform_absorbedToSurviving_in,
-                                 configuration_in.passage_match_tolerance_m);
+                                 configuration_in.passage_match_tolerance_m,
+                                 centroidCheck) !=
+        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // checkAnchorRoomCentroids cannot fail; continue as before.
+    }
     if (centroidCheck == AlignmentCheck::CONTRADICTION)
     {
         result.decision = SemanticMergeDecision::REJECT;
@@ -223,13 +249,19 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
     std::size_t         matchedPassages    = 0U;
     SemanticMergeReason topologyReason =
         SemanticMergeReason::PASSAGE_EVIDENCE_MISSING;
-    const AlignmentCheck topologyCheck = checkConsecutivePassageTopology(
-        survivingRooms,
-        absorbedRooms,
-        transform_absorbedToSurviving_in,
-        configuration_in.passage_match_tolerance_m,
-        matchedPassages,
-        topologyReason);
+    AlignmentCheck topologyCheck{};
+    if (checkConsecutivePassageTopology(
+            survivingRooms,
+            absorbedRooms,
+            transform_absorbedToSurviving_in,
+            configuration_in.passage_match_tolerance_m,
+            matchedPassages,
+            topologyReason,
+            topologyCheck) !=
+        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // checkConsecutivePassageTopology cannot fail; continue as before.
+    }
     result.matchedPassageCount = matchedPassages;
     if (topologyCheck == AlignmentCheck::CONTRADICTION)
     {
@@ -247,13 +279,18 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
     std::size_t alignedRoomCount = 0U;
     for (const ConsecutiveAnchorPair &pair : anchorPairs)
     {
-        std::size_t          pairMatchedWalls = 0U;
-        const AlignmentCheck wallCheck =
-            checkFixedTransformWalls(pair.p_surviving->walls,
+        std::size_t    pairMatchedWalls = 0U;
+        AlignmentCheck wallCheck{};
+        if (checkFixedTransformWalls(pair.p_surviving->walls,
                                      pair.p_absorbed->walls,
                                      transform_absorbedToSurviving_in,
                                      verifyConfiguration,
-                                     pairMatchedWalls);
+                                     pairMatchedWalls,
+                                     wallCheck) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // checkFixedTransformWalls cannot fail; continue as before.
+        }
         result.matchedWallCount += pairMatchedWalls;
         if (wallCheck == AlignmentCheck::CONTRADICTION)
         {
@@ -268,12 +305,18 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
             result.reason      = SemanticMergeReason::WALL_EVIDENCE_MISSING;
             continue;
         }
+        AlignmentCheck alignmentCheck{};
         if (checkConsecutiveWallEdgeOverlap(
                 {pair},
                 transform_absorbedToSurviving_in,
                 configuration_in.wall_coplanar_angle_deg,
-                configuration_in.wall_edge_overlap_m) ==
-            AlignmentCheck::CONTRADICTION)
+                configuration_in.wall_edge_overlap_m,
+                alignmentCheck) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // checkConsecutiveWallEdgeOverlap cannot fail; continue as before.
+        }
+        if (alignmentCheck == AlignmentCheck::CONTRADICTION)
         {
             result.decision = SemanticMergeDecision::REJECT;
             result.reason   = SemanticMergeReason::WALL_ALIGNMENT_CONTRADICTION;

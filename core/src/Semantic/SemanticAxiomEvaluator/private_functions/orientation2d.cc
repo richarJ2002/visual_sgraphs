@@ -32,12 +32,15 @@ namespace core
 namespace semantic
 {
 
-double orientation2d(const Eigen::Vector2d &p_in,
-                     const Eigen::Vector2d &q_in,
-                     const Eigen::Vector2d &r_in)
+SemanticAxiomEvaluatorStatus orientation2d(const Eigen::Vector2d &p_in,
+                                           const Eigen::Vector2d &q_in,
+                                           const Eigen::Vector2d &r_in,
+                                           double &orientation_out)
 {
-    return (q_in.x() - p_in.x()) * (r_in.y() - p_in.y()) -
-           (q_in.y() - p_in.y()) * (r_in.x() - p_in.x());
+    orientation_out = (q_in.x() - p_in.x()) * (r_in.y() - p_in.y()) -
+                      (q_in.y() - p_in.y()) * (r_in.x() - p_in.x());
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

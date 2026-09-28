@@ -39,8 +39,14 @@ nlohmann::json serializeEntityRef(const EntityRef &value_in)
     {
         json["key"] = serializeEntityKey(*value_in.key);
     }
-    json["reason"]     = static_cast<unsigned int>(value_in.reason);
-    json["reasonName"] = unavailableReasonName(value_in.reason);
+    json["reason"] = static_cast<unsigned int>(value_in.reason);
+    std::string unavailableReasonName2{};
+    if (unavailableReasonName(value_in.reason, unavailableReasonName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // unavailableReasonName cannot fail; continue as before.
+    }
+    json["reasonName"] = unavailableReasonName2;
     if (value_in.localId.has_value())
     {
         json["localId"] = *value_in.localId;
@@ -51,8 +57,14 @@ nlohmann::json serializeEntityRef(const EntityRef &value_in)
     }
     json["livenessUnavailableReason"] =
         static_cast<unsigned int>(value_in.livenessUnavailableReason);
-    json["livenessUnavailableReasonName"] =
-        unavailableReasonName(value_in.livenessUnavailableReason);
+    std::string unavailableReasonName3{};
+    if (unavailableReasonName(value_in.livenessUnavailableReason,
+                              unavailableReasonName3) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // unavailableReasonName cannot fail; continue as before.
+    }
+    json["livenessUnavailableReasonName"] = unavailableReasonName3;
     return json;
 }
 

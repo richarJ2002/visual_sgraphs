@@ -111,7 +111,14 @@ SemanticsManager::PassageSideEnforcementOutcome
                 {
                     // getKnownSideProvenance cannot fail; continue as before.
                 }
-                if (knownSide.hasDirection())
+                bool knownSideHasDirection{};
+                if (knownSide.hasDirection(knownSideHasDirection) !=
+                    semantic::KnownSideProvenanceStatus::
+                        KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+                {
+                    // hasDirection cannot fail; continue as before.
+                }
+                if (knownSideHasDirection)
                 {
                     Eigen::Vector3d passageCentroid{};
                     if (p_passage->getCentroid(passageCentroid) !=

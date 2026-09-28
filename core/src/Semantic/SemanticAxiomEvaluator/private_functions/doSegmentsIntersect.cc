@@ -32,40 +32,105 @@ namespace core
 namespace semantic
 {
 
-bool doSegmentsIntersect(const Eigen::Vector2d &p1_in,
-                         const Eigen::Vector2d &q1_in,
-                         const Eigen::Vector2d &p2_in,
-                         const Eigen::Vector2d &q2_in)
+SemanticAxiomEvaluatorStatus doSegmentsIntersect(const Eigen::Vector2d &p1_in,
+                                                 const Eigen::Vector2d &q1_in,
+                                                 const Eigen::Vector2d &p2_in,
+                                                 const Eigen::Vector2d &q2_in,
+                                                 bool &doSegmentsIntersect_out)
 {
-    const double orientation1 = orientation2d(p1_in, q1_in, p2_in);
-    const double orientation2 = orientation2d(p1_in, q1_in, q2_in);
-    const double orientation3 = orientation2d(p2_in, q2_in, p1_in);
-    const double orientation4 = orientation2d(p2_in, q2_in, q1_in);
+    double orientation1{};
+    if (orientation2d(p1_in, q1_in, p2_in, orientation1) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // orientation2d cannot fail; continue as before.
+    }
+    double orientation2{};
+    if (orientation2d(p1_in, q1_in, q2_in, orientation2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // orientation2d cannot fail; continue as before.
+    }
+    double orientation3{};
+    if (orientation2d(p2_in, q2_in, p1_in, orientation3) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // orientation2d cannot fail; continue as before.
+    }
+    double orientation4{};
+    if (orientation2d(p2_in, q2_in, q1_in, orientation4) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // orientation2d cannot fail; continue as before.
+    }
 
     if (((orientation1 > 0.0) != (orientation2 > 0.0)) &&
         ((orientation3 > 0.0) != (orientation4 > 0.0)) && orientation1 != 0.0 &&
         orientation2 != 0.0 && orientation3 != 0.0 && orientation4 != 0.0)
     {
-        return true;
+        doSegmentsIntersect_out = true;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    if (orientation1 == 0.0 && isOnSegmentBoundingBox(p1_in, q1_in, p2_in))
+    bool isOnSegmentBoundingBox2{};
+    if ((orientation1 == 0.0) &&
+        isOnSegmentBoundingBox(p1_in, q1_in, p2_in, isOnSegmentBoundingBox2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        return true;
+        // isOnSegmentBoundingBox cannot fail; continue as before.
     }
-    if (orientation2 == 0.0 && isOnSegmentBoundingBox(p1_in, q1_in, q2_in))
+    if (orientation1 == 0.0 && isOnSegmentBoundingBox2)
     {
-        return true;
+        doSegmentsIntersect_out = true;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    if (orientation3 == 0.0 && isOnSegmentBoundingBox(p2_in, q2_in, p1_in))
+    bool isOnSegmentBoundingBox3{};
+    if ((orientation2 == 0.0) &&
+        isOnSegmentBoundingBox(p1_in, q1_in, q2_in, isOnSegmentBoundingBox3) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        return true;
+        // isOnSegmentBoundingBox cannot fail; continue as before.
     }
-    if (orientation4 == 0.0 && isOnSegmentBoundingBox(p2_in, q2_in, q1_in))
+    if (orientation2 == 0.0 && isOnSegmentBoundingBox3)
     {
-        return true;
+        doSegmentsIntersect_out = true;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return false;
+    bool isOnSegmentBoundingBox4{};
+    if ((orientation3 == 0.0) &&
+        isOnSegmentBoundingBox(p2_in, q2_in, p1_in, isOnSegmentBoundingBox4) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // isOnSegmentBoundingBox cannot fail; continue as before.
+    }
+    if (orientation3 == 0.0 && isOnSegmentBoundingBox4)
+    {
+        doSegmentsIntersect_out = true;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    bool isOnSegmentBoundingBox5{};
+    if ((orientation4 == 0.0) &&
+        isOnSegmentBoundingBox(p2_in, q2_in, q1_in, isOnSegmentBoundingBox5) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // isOnSegmentBoundingBox cannot fail; continue as before.
+    }
+    if (orientation4 == 0.0 && isOnSegmentBoundingBox5)
+    {
+        doSegmentsIntersect_out = true;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    doSegmentsIntersect_out = false;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

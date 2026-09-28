@@ -31,7 +31,13 @@ namespace semantic
 RoomTrackerStatus RoomTracker::stateToString(RoomTrackingState state_in,
                                              std::string      &text_out)
 {
-    text_out = stateLiteral(state_in);
+    const char *p_stateLiteral = nullptr;
+    if (stateLiteral(state_in, p_stateLiteral) !=
+        RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+    {
+        // stateLiteral cannot fail; continue as before.
+    }
+    text_out = p_stateLiteral;
     return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 

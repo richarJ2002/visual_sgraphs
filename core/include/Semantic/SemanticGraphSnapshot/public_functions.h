@@ -27,6 +27,7 @@
 #ifndef SEMANTIC_GRAPH_SNAPSHOT_PUBLIC_FUNCTIONS_H
 #define SEMANTIC_GRAPH_SNAPSHOT_PUBLIC_FUNCTIONS_H
 
+#include "Semantic/SemanticGraphSnapshot/SemanticGraphSnapshotStatus.h"
 #include "Semantic/SemanticGraphSnapshot/objects.h"
 
 namespace vs_graphs
@@ -105,7 +106,9 @@ namespace semantic
  *                          reads through it. Passing nullptr returns a
  *                          default-constructed (empty) snapshot.
  */
-SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in);
+[[nodiscard]] SemanticGraphSnapshotStatus
+    captureSemanticGraphSnapshot(Atlas                 *p_atlas_in,
+                                 SemanticGraphSnapshot &snapshot_out);
 
 /*! @brief Builds a RawPlaneRef to \p p_plane_in, of any Plane::PlaneVariant;
  *  reason is UnavailableReason::NULL_REFERENCE when \p p_plane_in is
@@ -116,7 +119,8 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(Atlas *p_atlas_in);
  *  also needs it to convert its own manager-private Plane* evidence
  *  (openPassageEvidence/undefendedWalls) into pointer-free value
  *  records at the semantic transaction boundary. */
-RawPlaneRef rawPlaneRef(geometric::Plane *p_plane_in);
+[[nodiscard]] SemanticGraphSnapshotStatus
+    rawPlaneRef(geometric::Plane *p_plane_in, RawPlaneRef &rawPlaneRef_out);
 
 } // namespace semantic
 } // namespace core

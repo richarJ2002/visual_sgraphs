@@ -34,14 +34,18 @@ namespace core
 namespace semantic
 {
 
-bool isOnSegmentBoundingBox(const Eigen::Vector2d &p_in,
-                            const Eigen::Vector2d &q_in,
-                            const Eigen::Vector2d &r_in)
+SemanticAxiomEvaluatorStatus
+    isOnSegmentBoundingBox(const Eigen::Vector2d &p_in,
+                           const Eigen::Vector2d &q_in,
+                           const Eigen::Vector2d &r_in,
+                           bool                  &isOnSegmentBoundingBox_out)
 {
-    return r_in.x() <= std::max(p_in.x(), q_in.x()) &&
-           r_in.x() >= std::min(p_in.x(), q_in.x()) &&
-           r_in.y() <= std::max(p_in.y(), q_in.y()) &&
-           r_in.y() >= std::min(p_in.y(), q_in.y());
+    isOnSegmentBoundingBox_out = r_in.x() <= std::max(p_in.x(), q_in.x()) &&
+                                 r_in.x() >= std::min(p_in.x(), q_in.x()) &&
+                                 r_in.y() <= std::max(p_in.y(), q_in.y()) &&
+                                 r_in.y() >= std::min(p_in.y(), q_in.y());
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

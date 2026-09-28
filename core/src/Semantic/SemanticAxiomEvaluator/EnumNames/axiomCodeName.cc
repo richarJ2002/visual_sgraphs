@@ -31,44 +31,111 @@ namespace core
 namespace semantic
 {
 
-std::string axiomCodeName(AxiomCode code_in)
+SemanticAxiomEvaluatorStatus axiomCodeName(AxiomCode    code_in,
+                                           std::string &axiomCodeName_out)
 {
     switch (code_in)
     {
     case AxiomCode::AX_FRAME_01:
-        return "AX_FRAME_01";
-    case AxiomCode::AX_WALL_01:
-        return "AX_WALL_01";
-    case AxiomCode::AX_WALL_02:
-        return "AX_WALL_02";
-    case AxiomCode::AX_WALL_03:
-        return "AX_WALL_03";
-    case AxiomCode::AX_PASS_01:
-        return "AX_PASS_01";
-    case AxiomCode::AX_PASS_02:
-        return "AX_PASS_02";
-    case AxiomCode::AX_PASS_03:
-        return "AX_PASS_03";
-    case AxiomCode::AX_PASS_04:
-        return "AX_PASS_04";
-    case AxiomCode::AX_ROOM_01:
-        return "AX_ROOM_01";
-    case AxiomCode::AX_ROOM_02:
-        return "AX_ROOM_02";
-    case AxiomCode::AX_BOUND_01:
-        return "AX_BOUND_01";
-    case AxiomCode::AX_FLOOR_01:
-        return "AX_FLOOR_01";
-    case AxiomCode::AX_LIFE_01:
-        return "AX_LIFE_01";
-    case AxiomCode::AX_TXN_01:
-        return "AX_TXN_01";
-    case AxiomCode::AX_COMP_01:
-        return "AX_COMP_01";
-    case AxiomCode::AX_MERGE_01:
-        return "AX_MERGE_01";
+    {
+        axiomCodeName_out = "AX_FRAME_01";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return "UNKNOWN_AXIOM_CODE";
+    case AxiomCode::AX_WALL_01:
+    {
+        axiomCodeName_out = "AX_WALL_01";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_WALL_02:
+    {
+        axiomCodeName_out = "AX_WALL_02";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_WALL_03:
+    {
+        axiomCodeName_out = "AX_WALL_03";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_PASS_01:
+    {
+        axiomCodeName_out = "AX_PASS_01";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_PASS_02:
+    {
+        axiomCodeName_out = "AX_PASS_02";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_PASS_03:
+    {
+        axiomCodeName_out = "AX_PASS_03";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_PASS_04:
+    {
+        axiomCodeName_out = "AX_PASS_04";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_ROOM_01:
+    {
+        axiomCodeName_out = "AX_ROOM_01";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_ROOM_02:
+    {
+        axiomCodeName_out = "AX_ROOM_02";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_BOUND_01:
+    {
+        axiomCodeName_out = "AX_BOUND_01";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_FLOOR_01:
+    {
+        axiomCodeName_out = "AX_FLOOR_01";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_LIFE_01:
+    {
+        axiomCodeName_out = "AX_LIFE_01";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_TXN_01:
+    {
+        axiomCodeName_out = "AX_TXN_01";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_COMP_01:
+    {
+        axiomCodeName_out = "AX_COMP_01";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case AxiomCode::AX_MERGE_01:
+    {
+        axiomCodeName_out = "AX_MERGE_01";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    }
+    axiomCodeName_out = "UNKNOWN_AXIOM_CODE";
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

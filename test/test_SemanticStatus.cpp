@@ -19,13 +19,15 @@
  * @brief           Failure statuses of the semantic objects: every rejected
  *                  input returns INVALID_ARGUMENT and leaves the object and
  *                  the outputs unchanged; an absent element is data, not a
- *                  failure.
+ *                  failure; a finite transform that overflows is a
+ *                  numerical failure.
  */
 
 #include "Geometric/Plane.h"
 #include "Semantic/Floor.h"
 #include "Semantic/Passage.h"
 #include "Semantic/Room.h"
+#include "core/src/Semantic/SemanticVerify/private_functions.h"
 
 #include <gtest/gtest.h>
 
@@ -39,6 +41,7 @@ namespace geometric = vs_graphs::core::geometric;
 using semantic::FloorStatus;
 using semantic::PassageStatus;
 using semantic::RoomStatus;
+using semantic::SemanticVerifyStatus;
 
 TEST(SemanticStatus, RoomRejectsNullOrRepeatedWallsAndPassages)
 {
@@ -127,4 +130,51 @@ TEST(SemanticStatus, FloorRejectsNullRoomsAndDegeneratePlanes)
     EXPECT_EQ(
         floor.setPlaneIdentity(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0), 10U, 3U),
         FloorStatus::FLOOR_STATUS_SUCCESS);
+}
+
+TEST(SemanticStatus, TransformAbsorbedPointMapsAFinitePoint)
+{
+    const g2o::Sim3 transform(Eigen::Matrix3d::Identity(),
+                              Eigen::Vector3d(1.0, 0.0, 0.0),
+                              2.0);
+    Eigen::Vector3d mapped = Eigen::Vector3d::Zero();
+    ASSERT_EQ(semantic::transformAbsorbedPoint(transform,
+                                               Eigen::Vector3d(1.0, 2.0, 3.0),
+                                               mapped),
+              SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS);
+    EXPECT_TRUE(mapped.isApprox(Eigen::Vector3d(3.0, 4.0, 6.0)));
+}
+
+TEST(SemanticStatus, TransformAbsorbedPointRejectsNonFiniteOrDegenerateInput)
+{
+    const g2o::Sim3 identity;
+    const double    nan = std::numeric_limits<double>::quiet_NaN();
+    Eigen::Vector3d mapped(7.0, 8.0, 9.0);
+    EXPECT_EQ(semantic::transformAbsorbedPoint(identity,
+                                               Eigen::Vector3d(nan, 0.0, 0.0),
+                                               mapped),
+              SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_INVALID_ARGUMENT);
+    EXPECT_EQ(mapped, Eigen::Vector3d(7.0, 8.0, 9.0));
+
+    const g2o::Sim3 zeroScale(Eigen::Matrix3d::Identity(),
+                              Eigen::Vector3d::Zero(),
+                              0.0);
+    EXPECT_EQ(semantic::transformAbsorbedPoint(zeroScale,
+                                               Eigen::Vector3d(1.0, 2.0, 3.0),
+                                               mapped),
+              SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_INVALID_ARGUMENT);
+    EXPECT_EQ(mapped, Eigen::Vector3d(7.0, 8.0, 9.0));
+}
+
+TEST(SemanticStatus, TransformAbsorbedPointReportsOverflowAsNumericalFailure)
+{
+    /* Finite scale and point whose product exceeds the double range. */
+    const g2o::Sim3 hugeScale(Eigen::Matrix3d::Identity(),
+                              Eigen::Vector3d::Zero(),
+                              1e300);
+    Eigen::Vector3d mapped = Eigen::Vector3d::Zero();
+    EXPECT_EQ(semantic::transformAbsorbedPoint(hugeScale,
+                                               Eigen::Vector3d(1e10, 0.0, 0.0),
+                                               mapped),
+              SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_NUMERICAL_FAILURE);
 }

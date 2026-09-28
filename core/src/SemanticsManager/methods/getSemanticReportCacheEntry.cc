@@ -26,7 +26,14 @@ namespace core
 semantic::SemanticReportCacheEntry
     SemanticsManager::getSemanticReportCacheEntry(void) const
 {
-    return semanticReportCache.getLatest();
+    semantic::SemanticReportCacheEntry semanticReportCacheGetLatest{};
+    if (semanticReportCache.getLatest(semanticReportCacheGetLatest) !=
+        semantic::SemanticReportCacheStatus::
+            SEMANTIC_REPORT_CACHE_STATUS_SUCCESS)
+    {
+        // getLatest cannot fail; continue as before.
+    }
+    return semanticReportCacheGetLatest;
 }
 
 } // namespace core

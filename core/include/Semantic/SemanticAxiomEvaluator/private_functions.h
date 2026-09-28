@@ -33,6 +33,7 @@
 
 #include <Eigen/Core>
 
+#include "Semantic/SemanticAxiomEvaluator/SemanticAxiomEvaluatorStatus.h"
 #include "Semantic/SemanticGraphSnapshot/objects.h"
 #include "Semantic/ValueOrder.h"
 
@@ -47,7 +48,8 @@ namespace semantic
 /*!
  * @brief        Fixed "Class" column value for \p axiomCode_in.
  */
-AxiomClass axiomClassFor(AxiomCode axiomCode_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    axiomClassFor(AxiomCode axiomCode_in, AxiomClass &axiomClass_out);
 
 /*!
  * @brief        Constructs one AxiomCapabilityEntry row, deriving
@@ -56,9 +58,11 @@ AxiomClass axiomClassFor(AxiomCode axiomCode_in);
  *               "Class" column. Used only by
  *               computeAxiomCapabilityTable().
  */
-AxiomCapabilityEntry makeAxiomCapabilityEntry(AxiomCode         axiomCode_in,
-                                              CapabilityLevel   capability_in,
-                                              MissingProofOwner owner_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    makeAxiomCapabilityEntry(AxiomCode             axiomCode_in,
+                             CapabilityLevel       capability_in,
+                             MissingProofOwner     owner_in,
+                             AxiomCapabilityEntry &axiomCapabilityEntry_out);
 
 /*! @brief Constructs one Finding with a deterministic \c id derived only
  *  from \p axiomCode_in, \p reasonCode_in, and \p involvedKeys_in (sorted
@@ -66,11 +70,13 @@ AxiomCapabilityEntry makeAxiomCapabilityEntry(AxiomCode         axiomCode_in,
  *  for the exact textual encoding. The sole production constructor for
  *  Finding::id; every per-axiom evaluator uses this instead of building a
  *  Finding by hand. */
-Finding makeFinding(AxiomCode              axiomCode_in,
-                    AxiomResult            result_in,
-                    ReasonCode             reasonCode_in,
-                    std::vector<EntityKey> involvedKeys_in,
-                    FindingEvidence        evidence_in = FindingEvidence{});
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    makeFinding(AxiomCode              axiomCode_in,
+                AxiomResult            result_in,
+                ReasonCode             reasonCode_in,
+                std::vector<EntityKey> involvedKeys_in,
+                Finding               &finding_out,
+                FindingEvidence        evidence_in = FindingEvidence{});
 
 /*! @brief Sorts \p findings_inout ascending by Finding::id in place. Two
  *  Findings can never compare equal under this order unless they are
@@ -78,7 +84,8 @@ Finding makeFinding(AxiomCode              axiomCode_in,
  *  involvedKeys), since id is a complete, collision-free encoding of
  *  exactly those three fields for the bounded value ranges this module
  *  produces -- see makeFinding.cc. */
-void sortFindings(std::vector<Finding> &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    sortFindings(std::vector<Finding> &findings_inout);
 
 /*!
  * @brief        Groups \p findings_in by AxiomCode and applies FAIL >
@@ -87,16 +94,19 @@ void sortFindings(std::vector<Finding> &findings_inout);
  *               one per axiom code regardless of how many (if any)
  *               findings contributed.
  */
-std::vector<AggregateAxiomResult>
-    aggregateFindings(const std::vector<Finding> &findings_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    aggregateFindings(const std::vector<Finding>        &findings_in,
+                      std::vector<AggregateAxiomResult> &aggregateResults_out);
 
 /*! @brief Returns the first record in \p records_in (sorted ascending by
  *  RecordT::key, as every MapSnapshot record vector is documented to be)
  *  whose key equals \p key_in, or nullptr when none does. Non-owning:
  *  the returned pointer is valid exactly as long as \p records_in is. */
 template <typename RecordT>
-const RecordT *findRecordByKey(const std::vector<RecordT> &records_in,
-                               const EntityKey            &key_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    findRecordByKey(const std::vector<RecordT> &records_in,
+                    const EntityKey            &key_in,
+                    const RecordT             *&p_record_out);
 
 /*! @brief Resolves \p ref_in (an EntityRef expected to name a Room) against
  *  \p snapshot_in, comparing its key's mapId to \p expectedMapId_in. See
@@ -104,15 +114,18 @@ const RecordT *findRecordByKey(const std::vector<RecordT> &records_in,
  *  resolveRoomEndpoint.cc for why isLive/isConfirmedRoomVariant (not a
  *  not-yet-existing authoritative endpoint-slot field) are this slice's
  *  documented proxy for "real"/"confirmed". */
-ResolvedRoomEndpoint
+[[nodiscard]] SemanticAxiomEvaluatorStatus
     resolveRoomEndpoint(const EntityRef             &reference_in,
                         long unsigned int            expectedMapId_in,
-                        const SemanticGraphSnapshot &snapshot_in);
+                        const SemanticGraphSnapshot &snapshot_in,
+                        ResolvedRoomEndpoint        &endpoint_out);
 
 /*! @brief True when \p endpoint_in is found in the snapshot, live, and
  *  ROOM-variant -- this module's documented proxy for a "real"/"confirmed"
  *  passage endpoint (see resolveRoomEndpoint.cc's Doxygen). */
-bool isRealPassageEndpoint(const ResolvedRoomEndpoint &endpoint_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    isRealPassageEndpoint(const ResolvedRoomEndpoint &endpoint_in,
+                          bool &isRealPassageEndpoint_out);
 
 /*! @brief True when \p endpoint_in's forward reference is present and
  *  carries at least one independently observable contradiction: wrong
@@ -130,21 +143,27 @@ bool isRealPassageEndpoint(const ResolvedRoomEndpoint &endpoint_in);
  *  "known invalid" by this predicate (see resolveRoomEndpoint.cc's
  *  isLiveAvailable Doxygen); isReasonInconsistent covers the key/reason
  *  invariant violation listed above. */
-bool isKnownInvalidPassageEndpointReference(
-    const ResolvedRoomEndpoint &endpoint_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    isKnownInvalidPassageEndpointReference(
+        const ResolvedRoomEndpoint &endpoint_in,
+        bool                       &isKnownInvalidPassageEndpointReference_out);
 
 /*! @brief True when the live RoomRecord keyed \p roomKey_in (in the map
  *  named by \p roomKey_in.mapId) has a passageRefs entry naming
  *  \p passageKey_in; false when that room cannot be located at all. */
-bool roomListsPassageBack(const SemanticGraphSnapshot &snapshot_in,
-                          const EntityKey             &roomKey_in,
-                          const EntityKey             &passageKey_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    roomListsPassageBack(const SemanticGraphSnapshot &snapshot_in,
+                         const EntityKey             &roomKey_in,
+                         const EntityKey             &passageKey_in,
+                         bool                        &listsPassageBack_out);
 
 /*! @brief Counts how many RoomRecord entries in the map named by
  *  \p key_in.mapId share the exact key \p key_in; 0 when that map is not
  *  present in \p snapshot_in. Used to detect duplicate-identity ambiguity. */
-std::size_t countRoomRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
-                                    const EntityKey             &key_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    countRoomRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
+                            const EntityKey             &key_in,
+                            std::size_t                 &roomRecords_out);
 
 /*! @brief Counts how many FloorRecord entries across every MapSnapshot in
  *  \p snapshot_in whose own mapId equals \p key_in.mapId share the exact
@@ -154,31 +173,39 @@ std::size_t countRoomRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
  *  to one caller-chosen MapSnapshot, so a duplicate MapSnapshot::mapId
  *  cannot hide a same-key floor duplicated across the two map
  *  snapshots. */
-std::size_t countFloorRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
-                                     const EntityKey             &key_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    countFloorRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
+                             const EntityKey             &key_in,
+                             std::size_t                 &floorRecords_out);
 
 /*! @brief Counts how many WallRecord entries across every MapSnapshot in
  *  \p snapshot_in whose own mapId equals \p key_in.mapId share the exact
  *  key \p key_in; 0 when no such map is present. Used to detect
  *  duplicate-identity ambiguity; summed snapshot-wide across every
  *  matching-mapId MapSnapshot, not only the first. */
-std::size_t countWallRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
-                                    const EntityKey             &key_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    countWallRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
+                            const EntityKey             &key_in,
+                            std::size_t                 &wallRecords_out);
 
 /*! @brief Counts how many PassageRecord entries across every MapSnapshot in
  *  \p snapshot_in whose own mapId equals \p key_in.mapId share the exact
  *  key \p key_in; 0 when no such map is present. Used to detect
  *  duplicate-identity ambiguity; snapshot-wide (see
  *  countFloorRecordsWithKey's own Doxygen). */
-std::size_t countPassageRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
-                                       const EntityKey             &key_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    countPassageRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
+                               const EntityKey             &key_in,
+                               std::size_t                 &passageRecords_out);
 
 /*! @brief Counts how many MapSnapshot entries in \p snapshot_in.maps share
  *  the exact mapId \p mapId_in: a duplicate-map-identity preflight so no
  *  first-matching-map lookup anywhere in this module can silently prefer
  *  one of two ambiguous MapSnapshot entries over the other. */
-std::size_t countMapSnapshotsWithId(const SemanticGraphSnapshot &snapshot_in,
-                                    long unsigned int            mapId_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    countMapSnapshotsWithId(const SemanticGraphSnapshot &snapshot_in,
+                            long unsigned int            mapId_in,
+                            std::size_t                 &mapSnapshots_out);
 
 /*! @brief Scans every RoomRecord (live or retired) in every map of
  *  \p snapshot_in for a passageRefs entry naming \p passage_in, independent
@@ -187,10 +214,11 @@ std::size_t countMapSnapshotsWithId(const SemanticGraphSnapshot &snapshot_in,
  *  scanReversePassageEndpoints.cc. \p expectedMapId_in is \p passage_in's
  *  own containing/declared map id, used to classify a reverse reference
  *  from a different map as cross-map rather than confirmed. */
-ReversePassageEndpointScan
+[[nodiscard]] SemanticAxiomEvaluatorStatus
     scanReversePassageEndpoints(const PassageRecord         &passage_in,
                                 long unsigned int            expectedMapId_in,
-                                const SemanticGraphSnapshot &snapshot_in);
+                                const SemanticGraphSnapshot &snapshot_in,
+                                ReversePassageEndpointScan  &scan_out);
 
 /*! @brief Appends one AX-PASS-02 Finding for \p passage_in: forward
  *  endpoint checks (unresolvable/bad/cross-map/duplicate), the reverse
@@ -198,19 +226,22 @@ ReversePassageEndpointScan
  *  reverse reference, third confirmed endpoint), then cardinality/
  *  reciprocity, in that priority order. Never PASS in this slice -- see
  *  this function's own Doxygen in evaluateOnePassageCardinality.cc. */
-void evaluateOnePassageCardinality(const PassageRecord         &passage_in,
-                                   const SemanticGraphSnapshot &snapshot_in,
-                                   std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateOnePassageCardinality(const PassageRecord         &passage_in,
+                                  const SemanticGraphSnapshot &snapshot_in,
+                                  std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-PASS-03 Finding for \p passage_in. */
-void evaluateOnePassageSlotState(const PassageRecord         &passage_in,
-                                 const SemanticGraphSnapshot &snapshot_in,
-                                 std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateOnePassageSlotState(const PassageRecord         &passage_in,
+                                const SemanticGraphSnapshot &snapshot_in,
+                                std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-PASS-04 Finding for \p passage_in. */
-void evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
-                                   const SemanticGraphSnapshot &snapshot_in,
-                                   std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
+                                  const SemanticGraphSnapshot &snapshot_in,
+                                  std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-FLOOR-01 Finding for \p room_in's room-floor
  *  reciprocity, scanning every FloorRecord in \p mapSnapshot_in (not only
@@ -219,16 +250,18 @@ void evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
  *  \p snapshot_in is used only for the snapshot-wide
  *  countFloorRecordsWithKey() duplicate-identity check (that helper is
  *  snapshot-wide, see its own Doxygen). */
-void evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
-                                     const SemanticGraphSnapshot &snapshot_in,
-                                     const MapSnapshot    &mapSnapshot_in,
-                                     std::vector<Finding> &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateOneRoomFloorReciprocity(const RoomRecord            &room_in,
+                                    const SemanticGraphSnapshot &snapshot_in,
+                                    const MapSnapshot           &mapSnapshot_in,
+                                    std::vector<Finding> &findings_inout);
 
 /*! @brief Appends one AX-FLOOR-01 Finding for \p passage_in's endpoint
  *  floor identity. */
-void evaluateOnePassageFloorIdentity(const PassageRecord         &passage_in,
-                                     const SemanticGraphSnapshot &snapshot_in,
-                                     std::vector<Finding> &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateOnePassageFloorIdentity(const PassageRecord         &passage_in,
+                                    const SemanticGraphSnapshot &snapshot_in,
+                                    std::vector<Finding> &findings_inout);
 
 /*! @brief The aggregate AxiomResult (FAIL/UNKNOWN/PASS) of \p endpoint_in's
  *  own room/floor relationship, found via evaluateOneRoomFloorReciprocity()
@@ -240,9 +273,10 @@ void evaluateOnePassageFloorIdentity(const PassageRecord         &passage_in,
  *  hasFailingRoomFloorReciprocity() bool (FAIL-or-not) so
  *  evaluatePassageFloorAgreement() can also propagate a canonical UNKNOWN,
  *  not only FAIL. */
-AxiomResult
+[[nodiscard]] SemanticAxiomEvaluatorStatus
     canonicalRoomFloorResultFor(const ResolvedRoomEndpoint  &endpoint_in,
-                                const SemanticGraphSnapshot &snapshot_in);
+                                const SemanticGraphSnapshot &snapshot_in,
+                                AxiomResult &roomFloorResult_out);
 
 /*! @brief Compares \p knownSide_in and \p prospective_in's own floorKey,
  *  restricted to endpoints that are themselves real (isFoundInSnapshot &&
@@ -250,49 +284,62 @@ AxiomResult
  *  additionally resolved against \p snapshot_in's own FloorRecord
  *  collections: a dangling key naming no actual FloorRecord is
  *  EVIDENCE_UNAVAILABLE, not AGREE. */
-PassageFloorAgreement
+[[nodiscard]] SemanticAxiomEvaluatorStatus
     evaluatePassageFloorAgreement(const ResolvedRoomEndpoint  &knownSide_in,
                                   const ResolvedRoomEndpoint  &prospective_in,
-                                  const SemanticGraphSnapshot &snapshot_in);
+                                  const SemanticGraphSnapshot &snapshot_in,
+                                  PassageFloorAgreement       &agreement_out);
 
 /*! @brief True when any corner has a non-finite (NaN or Infinity)
  *  coordinate. */
-bool hasNonFiniteCoordinate(const std::vector<Eigen::Vector3d> &corners_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    hasNonFiniteCoordinate(const std::vector<Eigen::Vector3d> &corners_in,
+                           bool &hasNonFiniteCoordinate_out);
 
 /*! @brief Newell's-method best-fit polygon normal (unnormalized); see
  *  checkRoomBoundaryGeometry.cc for why a fallback is sometimes needed. */
-Eigen::Vector3d newellNormal(const std::vector<Eigen::Vector3d> &corners_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    newellNormal(const std::vector<Eigen::Vector3d> &corners_in,
+                 Eigen::Vector3d                    &normal_out);
 
 /*! @brief Cross product of the first non-collinear consecutive corner
  *  triple, used when newellNormal() degenerates to zero. */
-Eigen::Vector3d
-    planeNormalFallback(const std::vector<Eigen::Vector3d> &corners_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    planeNormalFallback(const std::vector<Eigen::Vector3d> &corners_in,
+                        Eigen::Vector3d                    &normal_out);
 
 /*! @brief Signed 2-D orientation of the ordered triple (p, q, r). */
-double orientation2d(const Eigen::Vector2d &p_in,
-                     const Eigen::Vector2d &q_in,
-                     const Eigen::Vector2d &r_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    orientation2d(const Eigen::Vector2d &p_in,
+                  const Eigen::Vector2d &q_in,
+                  const Eigen::Vector2d &r_in,
+                  double                &orientation_out);
 
 /*! @brief True when r_in, known collinear with segment p_in-q_in, lies on
  *  that segment's closed bounding box. */
-bool isOnSegmentBoundingBox(const Eigen::Vector2d &p_in,
-                            const Eigen::Vector2d &q_in,
-                            const Eigen::Vector2d &r_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    isOnSegmentBoundingBox(const Eigen::Vector2d &p_in,
+                           const Eigen::Vector2d &q_in,
+                           const Eigen::Vector2d &r_in,
+                           bool                  &isOnSegmentBoundingBox_out);
 
 /*! @brief True when closed segments p1_in-q1_in and p2_in-q2_in intersect
  *  (a proper crossing or any touching, including collinear overlap). */
-bool doSegmentsIntersect(const Eigen::Vector2d &p1_in,
-                         const Eigen::Vector2d &q1_in,
-                         const Eigen::Vector2d &p2_in,
-                         const Eigen::Vector2d &q2_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    doSegmentsIntersect(const Eigen::Vector2d &p1_in,
+                        const Eigen::Vector2d &q1_in,
+                        const Eigen::Vector2d &p2_in,
+                        const Eigen::Vector2d &q2_in,
+                        bool                  &doSegmentsIntersect_out);
 
 /*! @brief Structurally validates \p corners_in as a simple closed polygon:
  *  every corner finite, at least three corners, no zero-length consecutive
  *  edge, and no self-intersecting non-adjacent edge pair in the polygon's
  *  own best-fit plane (Newell's method). Purely geometric; does not read
  *  Room::BoundaryStatus or any observation gap. */
-RoomBoundaryGeometryStatus
-    checkRoomBoundaryGeometry(const std::vector<Eigen::Vector3d> &corners_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    checkRoomBoundaryGeometry(const std::vector<Eigen::Vector3d> &corners_in,
+                              RoomBoundaryGeometryStatus &geometryStatus_out);
 
 /*! @brief Typed validity of \p wallRef_in as boundary support evidence for
  *  \p room_in: VALID when present, WALL-typed, live, in \p room_in's own
@@ -302,73 +349,85 @@ RoomBoundaryGeometryStatus
  *  UNAVAILABLE for an ordinary evidence gap. A typed status (rather than
  *  a lossy boolean) so a known contradiction is never indistinguishable
  *  from merely unavailable evidence. */
-RoomBoundaryWallEvidenceStatus
-    isValidBoundaryWallEvidence(const RawPlaneRef           &wallReference_in,
-                                const RoomRecord            &room_in,
-                                const SemanticGraphSnapshot &snapshot_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus isValidBoundaryWallEvidence(
+    const RawPlaneRef              &wallReference_in,
+    const RoomRecord               &room_in,
+    const SemanticGraphSnapshot    &snapshot_in,
+    RoomBoundaryWallEvidenceStatus &evidenceStatus_out);
 
 /*! @brief Appends one AX-BOUND-01 Finding for \p room_in. Never PASS in
  *  this slice -- see this function's own Doxygen in
  *  evaluateOneRoomBoundary.cc. */
-void evaluateOneRoomBoundary(const RoomRecord            &room_in,
-                             const SemanticGraphSnapshot &snapshot_in,
-                             std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateOneRoomBoundary(const RoomRecord            &room_in,
+                            const SemanticGraphSnapshot &snapshot_in,
+                            std::vector<Finding>        &findings_inout);
 
 /*! @brief True when any entry of \p findings_in has result == \p result_in. */
-bool anyFindingIs(const std::vector<Finding> &findings_in,
-                  AxiomResult                 result_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    anyFindingIs(const std::vector<Finding> &findings_in,
+                 AxiomResult                 result_in,
+                 bool                       &hasFinding_out);
 
 /*! @brief Appends every entry of \p findings_in whose result == \p result_in
  *  to \p relevantKeys_inout's involvedKeys, without sorting/deduplicating
  *  (the caller does that once at the end). */
-void appendKeysFromFindings(const std::vector<Finding> &findings_in,
-                            AxiomResult                 result_in,
-                            std::vector<EntityKey>     &relevantKeys_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    appendKeysFromFindings(const std::vector<Finding> &findings_in,
+                           AxiomResult                 result_in,
+                           std::vector<EntityKey>     &relevantKeys_inout);
 
 /*!
  * @brief        Appends AX-FRAME-01's fixed UNKNOWN placeholder
  *               Finding: a single static snapshot cannot prove frame
  *               equivariance -- see evaluateTransition().
  */
-void evaluateAxFrame01(const SemanticGraphSnapshot &snapshot_in,
-                       std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxFrame01(const SemanticGraphSnapshot &snapshot_in,
+                      std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-WALL-01 Finding for \p wall_in, proving a single
  *  owner's liveness, unique identity, ROOM variant, declared-map agreement,
  *  and reciprocal wallRefs link -- see evaluateOneWall.cc. */
-void evaluateOneWall(const WallRecord            &wall_in,
-                     const SemanticGraphSnapshot &snapshot_in,
-                     std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateOneWall(const WallRecord            &wall_in,
+                    const SemanticGraphSnapshot &snapshot_in,
+                    std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-WALL-01 Finding per live WallRecord in every map of
  *  \p snapshot_in. */
-void evaluateAxWall01(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxWall01(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout);
 
 /*!
  * @brief        Appends AX-WALL-02's fixed UNKNOWN placeholder
  *               Finding: no current schema field records
  *               observation-ray/aperture-crossing evidence.
  */
-void evaluateAxWall02(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxWall02(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout);
 
 /*! @brief Returns the WallRecord in \p snapshot_in keyed exactly \p key_in,
  *  or nullptr when the map named by \p key_in.mapId is absent or has no
  *  such wall. */
-const WallRecord *
+[[nodiscard]] SemanticAxiomEvaluatorStatus
     findWallByKeyInSnapshot(const SemanticGraphSnapshot &snapshot_in,
-                            const EntityKey             &key_in);
+                            const EntityKey             &key_in,
+                            const WallRecord           *&p_wall_out);
 
 /*! @brief Appends one AX-WALL-03 Finding for \p wall_in. */
-void evaluateOneWallTwin(const WallRecord            &wall_in,
-                         const SemanticGraphSnapshot &snapshot_in,
-                         std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateOneWallTwin(const WallRecord            &wall_in,
+                        const SemanticGraphSnapshot &snapshot_in,
+                        std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-WALL-03 Finding per live WallRecord in every map of
  *  \p snapshot_in. */
-void evaluateAxWall03(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxWall03(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-PASS-01 Finding for \p passage_in's own aperture/
  *  skeleton provenance: PASSAGE_PROVENANCE_NOT_PASSABLE/FAIL when not
@@ -377,13 +436,15 @@ void evaluateAxWall03(const SemanticGraphSnapshot &snapshot_in,
  *  completeness consumes the identical leaf (extracted from
  *  evaluateAxPass01.cc) rather than re-deriving its own passable()
  *  check. */
-void evaluateOnePassageProvenance(const PassageRecord  &passage_in,
-                                  std::vector<Finding> &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateOnePassageProvenance(const PassageRecord  &passage_in,
+                                 std::vector<Finding> &findings_inout);
 
 /*! @brief Appends one AX-PASS-01 Finding per live PassageRecord, via
  *  evaluateOnePassageProvenance(). */
-void evaluateAxPass01(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxPass01(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-PASS-02 Finding per live room in \p mapSnapshot_in
  *  that has at least one passageRefs entry carrying a local id with no key
@@ -392,21 +453,25 @@ void evaluateAxPass01(const SemanticGraphSnapshot &snapshot_in,
  *  specific PassageRecord merely because a bare local id happens to equal
  *  that passage's own entityId -- local ids are unique only within one map
  *  and are not by themselves a map-qualified identity (see EntityKey.h). */
-void evaluateRoomMalformedPassageReferences(
-    const MapSnapshot    &mapSnapshot_in,
-    std::vector<Finding> &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateRoomMalformedPassageReferences(
+        const MapSnapshot    &mapSnapshot_in,
+        std::vector<Finding> &findings_inout);
 
 /*! @brief Appends one AX-PASS-02 Finding per live PassageRecord. */
-void evaluateAxPass02(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxPass02(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-PASS-03 Finding per live PassageRecord. */
-void evaluateAxPass03(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxPass03(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-PASS-04 Finding per live PassageRecord. */
-void evaluateAxPass04(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxPass04(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout);
 
 /*!
  * @brief        Appends one AX-ROOM-01 Finding for \p room_in: always
@@ -419,8 +484,9 @@ void evaluateAxPass04(const SemanticGraphSnapshot &snapshot_in,
  *               its own per-room loop, mirroring
  *               evaluateOnePassageProvenance().
  */
-void evaluateOneRoomCreationProvenance(const RoomRecord     &room_in,
-                                       std::vector<Finding> &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateOneRoomCreationProvenance(const RoomRecord     &room_in,
+                                      std::vector<Finding> &findings_inout);
 
 /*!
  * @brief        Appends one AX-ROOM-01 Finding per live, confirmed
@@ -428,27 +494,31 @@ void evaluateOneRoomCreationProvenance(const RoomRecord     &room_in,
  *               \p snapshot_in, via
  *               evaluateOneRoomCreationProvenance().
  */
-void evaluateAxRoom01(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxRoom01(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout);
 
 /*!
  * @brief        Appends AX-ROOM-02's fixed UNKNOWN placeholder
  *               Finding: no current schema field records independent
  *               far-side promotion evidence.
  */
-void evaluateAxRoom02(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxRoom02(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-BOUND-01 Finding per live, RoomRecord::variant ==
  *  ROOM RoomRecord in every map of \p snapshot_in. */
-void evaluateAxBound01(const SemanticGraphSnapshot &snapshot_in,
-                       std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxBound01(const SemanticGraphSnapshot &snapshot_in,
+                      std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-FLOOR-01 Finding per live, confirmed RoomRecord
  *  (room-floor reciprocity) plus one per live PassageRecord (endpoint floor
  *  agreement). */
-void evaluateAxFloor01(const SemanticGraphSnapshot &snapshot_in,
-                       std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxFloor01(const SemanticGraphSnapshot &snapshot_in,
+                      std::vector<Finding>        &findings_inout);
 
 /*!
  * @brief        Appends AX-LIFE-01's fixed UNKNOWN placeholder
@@ -456,8 +526,9 @@ void evaluateAxFloor01(const SemanticGraphSnapshot &snapshot_in,
  *               provenance, and detecting silent erasure
  *               additionally requires transition history.
  */
-void evaluateAxLife01(const SemanticGraphSnapshot &snapshot_in,
-                      std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxLife01(const SemanticGraphSnapshot &snapshot_in,
+                     std::vector<Finding>        &findings_inout);
 
 /*!
  * @brief        Appends AX-TXN-01's fixed UNKNOWN placeholder
@@ -465,21 +536,24 @@ void evaluateAxLife01(const SemanticGraphSnapshot &snapshot_in,
  *               transaction determinism/idempotence -- see
  *               evaluateTransition().
  */
-void evaluateAxTxn01(const SemanticGraphSnapshot &snapshot_in,
-                     std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxTxn01(const SemanticGraphSnapshot &snapshot_in,
+                    std::vector<Finding>        &findings_inout);
 
 /*! @brief Appends one AX-COMP-01 Finding per entry of \p completeness_in
  *  (or exactly one COMPLETENESS_NO_MAP_PRESENT Finding when it is empty). */
-void evaluateAxComp01(const std::vector<MapCompletenessResult> &completeness_in,
-                      std::vector<Finding>                     &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxComp01(const std::vector<MapCompletenessResult> &completeness_in,
+                     std::vector<Finding>                     &findings_inout);
 
 /*!
  * @brief        Appends AX-MERGE-01's fixed UNKNOWN placeholder
  *               Finding: no map-merge preservation/postcondition
  *               logic is implemented.
  */
-void evaluateAxMerge01(const SemanticGraphSnapshot &snapshot_in,
-                       std::vector<Finding>        &findings_inout);
+[[nodiscard]] SemanticAxiomEvaluatorStatus
+    evaluateAxMerge01(const SemanticGraphSnapshot &snapshot_in,
+                      std::vector<Finding>        &findings_inout);
 
 /*! @brief Exactly reproduces SemanticsManager::Run()'s current per-map
  *  completeness calculation for \p mapSnapshot_in -- see
@@ -488,9 +562,10 @@ void evaluateAxMerge01(const SemanticGraphSnapshot &snapshot_in,
  *  known-side/prospective room pointers directly with no map check at all;
  *  reproducing that exactly requires resolving those references regardless
  *  of which map they land in. */
-LegacyMapCompletenessResult
-    computeLegacyMapCompleteness(const SemanticGraphSnapshot &snapshot_in,
-                                 const MapSnapshot           &mapSnapshot_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus computeLegacyMapCompleteness(
+    const SemanticGraphSnapshot &snapshot_in,
+    const MapSnapshot           &mapSnapshot_in,
+    LegacyMapCompletenessResult &legacyMapCompleteness_out);
 
 /*! @brief Computes the conservative semantic-completeness result for
  *  \p mapSnapshot_in (every field of MapCompletenessResult except \c legacy
@@ -500,9 +575,10 @@ LegacyMapCompletenessResult
  *  \p snapshot_in using the same shared helpers the per-axiom evaluators
  *  use, to avoid a circular dependency (evaluateState() itself calls
  *  evaluateMapCompleteness() to build its AX-COMP-01 Finding). */
-MapCompletenessResult
-    computeConservativeMapCompleteness(const SemanticGraphSnapshot &snapshot_in,
-                                       const MapSnapshot &mapSnapshot_in);
+[[nodiscard]] SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
+    const SemanticGraphSnapshot &snapshot_in,
+    const MapSnapshot           &mapSnapshot_in,
+    MapCompletenessResult       &conservativeMapCompleteness_out);
 
 } // namespace semantic
 } // namespace core

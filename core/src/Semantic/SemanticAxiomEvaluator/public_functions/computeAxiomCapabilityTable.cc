@@ -96,56 +96,171 @@ namespace core
 namespace semantic
 {
 
-std::vector<AxiomCapabilityEntry> computeAxiomCapabilityTable()
+SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
+    std::vector<AxiomCapabilityEntry> &axiomCapabilityTable_out)
 {
-    return {makeAxiomCapabilityEntry(AxiomCode::AX_FRAME_01,
-                                     CapabilityLevel::DEFERRED,
-                                     MissingProofOwner::PHASE_2),
-            makeAxiomCapabilityEntry(AxiomCode::AX_WALL_01,
-                                     CapabilityLevel::PARTIAL,
-                                     MissingProofOwner::PHASE_4),
-            makeAxiomCapabilityEntry(AxiomCode::AX_WALL_02,
-                                     CapabilityLevel::DEFERRED,
-                                     MissingProofOwner::PHASE_4),
-            makeAxiomCapabilityEntry(AxiomCode::AX_WALL_03,
-                                     CapabilityLevel::PARTIAL,
-                                     MissingProofOwner::PHASE_4),
-            makeAxiomCapabilityEntry(AxiomCode::AX_PASS_01,
-                                     CapabilityLevel::PARTIAL,
-                                     MissingProofOwner::PHASE_5),
-            makeAxiomCapabilityEntry(AxiomCode::AX_PASS_02,
-                                     CapabilityLevel::PARTIAL,
-                                     MissingProofOwner::PHASE_3),
-            makeAxiomCapabilityEntry(AxiomCode::AX_PASS_03,
-                                     CapabilityLevel::PARTIAL,
-                                     MissingProofOwner::PHASE_3),
-            makeAxiomCapabilityEntry(AxiomCode::AX_PASS_04,
-                                     CapabilityLevel::PARTIAL,
-                                     MissingProofOwner::PHASE_3),
-            makeAxiomCapabilityEntry(AxiomCode::AX_ROOM_01,
-                                     CapabilityLevel::DEFERRED,
-                                     MissingProofOwner::PHASE_3),
-            makeAxiomCapabilityEntry(AxiomCode::AX_ROOM_02,
-                                     CapabilityLevel::DEFERRED,
-                                     MissingProofOwner::PHASE_3),
-            makeAxiomCapabilityEntry(AxiomCode::AX_BOUND_01,
-                                     CapabilityLevel::PARTIAL,
-                                     MissingProofOwner::PHASE_6),
-            makeAxiomCapabilityEntry(AxiomCode::AX_FLOOR_01,
-                                     CapabilityLevel::PARTIAL,
-                                     MissingProofOwner::PHASE_3),
-            makeAxiomCapabilityEntry(AxiomCode::AX_LIFE_01,
-                                     CapabilityLevel::DEFERRED,
-                                     MissingProofOwner::PHASE_4_OR_5),
-            makeAxiomCapabilityEntry(AxiomCode::AX_TXN_01,
-                                     CapabilityLevel::DEFERRED,
-                                     MissingProofOwner::PHASE_7),
-            makeAxiomCapabilityEntry(AxiomCode::AX_COMP_01,
-                                     CapabilityLevel::PARTIAL,
-                                     MissingProofOwner::PHASE_7),
-            makeAxiomCapabilityEntry(AxiomCode::AX_MERGE_01,
-                                     CapabilityLevel::DEFERRED,
-                                     MissingProofOwner::PHASE_8)};
+    AxiomCapabilityEntry axiomCapabilityEntry{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_FRAME_01,
+                                 CapabilityLevel::DEFERRED,
+                                 MissingProofOwner::PHASE_2,
+                                 axiomCapabilityEntry) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry2{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_WALL_01,
+                                 CapabilityLevel::PARTIAL,
+                                 MissingProofOwner::PHASE_4,
+                                 axiomCapabilityEntry2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry3{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_WALL_02,
+                                 CapabilityLevel::DEFERRED,
+                                 MissingProofOwner::PHASE_4,
+                                 axiomCapabilityEntry3) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry4{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_WALL_03,
+                                 CapabilityLevel::PARTIAL,
+                                 MissingProofOwner::PHASE_4,
+                                 axiomCapabilityEntry4) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry5{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_PASS_01,
+                                 CapabilityLevel::PARTIAL,
+                                 MissingProofOwner::PHASE_5,
+                                 axiomCapabilityEntry5) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry6{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_PASS_02,
+                                 CapabilityLevel::PARTIAL,
+                                 MissingProofOwner::PHASE_3,
+                                 axiomCapabilityEntry6) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry7{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_PASS_03,
+                                 CapabilityLevel::PARTIAL,
+                                 MissingProofOwner::PHASE_3,
+                                 axiomCapabilityEntry7) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry8{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_PASS_04,
+                                 CapabilityLevel::PARTIAL,
+                                 MissingProofOwner::PHASE_3,
+                                 axiomCapabilityEntry8) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry9{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_ROOM_01,
+                                 CapabilityLevel::DEFERRED,
+                                 MissingProofOwner::PHASE_3,
+                                 axiomCapabilityEntry9) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry10{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_ROOM_02,
+                                 CapabilityLevel::DEFERRED,
+                                 MissingProofOwner::PHASE_3,
+                                 axiomCapabilityEntry10) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry11{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_BOUND_01,
+                                 CapabilityLevel::PARTIAL,
+                                 MissingProofOwner::PHASE_6,
+                                 axiomCapabilityEntry11) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry12{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_FLOOR_01,
+                                 CapabilityLevel::PARTIAL,
+                                 MissingProofOwner::PHASE_3,
+                                 axiomCapabilityEntry12) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry13{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_LIFE_01,
+                                 CapabilityLevel::DEFERRED,
+                                 MissingProofOwner::PHASE_4_OR_5,
+                                 axiomCapabilityEntry13) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry14{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_TXN_01,
+                                 CapabilityLevel::DEFERRED,
+                                 MissingProofOwner::PHASE_7,
+                                 axiomCapabilityEntry14) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry15{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_COMP_01,
+                                 CapabilityLevel::PARTIAL,
+                                 MissingProofOwner::PHASE_7,
+                                 axiomCapabilityEntry15) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    AxiomCapabilityEntry axiomCapabilityEntry16{};
+    if (makeAxiomCapabilityEntry(AxiomCode::AX_MERGE_01,
+                                 CapabilityLevel::DEFERRED,
+                                 MissingProofOwner::PHASE_8,
+                                 axiomCapabilityEntry16) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeAxiomCapabilityEntry cannot fail; continue as before.
+    }
+    axiomCapabilityTable_out = {axiomCapabilityEntry,
+                                axiomCapabilityEntry2,
+                                axiomCapabilityEntry3,
+                                axiomCapabilityEntry4,
+                                axiomCapabilityEntry5,
+                                axiomCapabilityEntry6,
+                                axiomCapabilityEntry7,
+                                axiomCapabilityEntry8,
+                                axiomCapabilityEntry9,
+                                axiomCapabilityEntry10,
+                                axiomCapabilityEntry11,
+                                axiomCapabilityEntry12,
+                                axiomCapabilityEntry13,
+                                axiomCapabilityEntry14,
+                                axiomCapabilityEntry15,
+                                axiomCapabilityEntry16};
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

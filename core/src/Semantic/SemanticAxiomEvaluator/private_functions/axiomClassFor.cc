@@ -32,7 +32,8 @@ namespace core
 namespace semantic
 {
 
-AxiomClass axiomClassFor(AxiomCode axiomCode_in)
+SemanticAxiomEvaluatorStatus axiomClassFor(AxiomCode   axiomCode_in,
+                                           AxiomClass &axiomClass_out)
 {
     /* The catalogue marks every code "hard" except the derived
      * AX-COMP-01. A switch with no default lets -Wswitch catch a future
@@ -40,7 +41,11 @@ AxiomClass axiomClassFor(AxiomCode axiomCode_in)
     switch (axiomCode_in)
     {
     case AxiomCode::AX_COMP_01:
-        return AxiomClass::DERIVED;
+    {
+        axiomClass_out = AxiomClass::DERIVED;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
     case AxiomCode::AX_FRAME_01:
     case AxiomCode::AX_WALL_01:
     case AxiomCode::AX_WALL_02:
@@ -56,9 +61,15 @@ AxiomClass axiomClassFor(AxiomCode axiomCode_in)
     case AxiomCode::AX_LIFE_01:
     case AxiomCode::AX_TXN_01:
     case AxiomCode::AX_MERGE_01:
-        return AxiomClass::HARD;
+    {
+        axiomClass_out = AxiomClass::HARD;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return AxiomClass::HARD;
+    }
+    axiomClass_out = AxiomClass::HARD;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

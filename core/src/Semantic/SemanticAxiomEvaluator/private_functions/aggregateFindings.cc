@@ -54,8 +54,9 @@ constexpr AxiomCode ALL_AXIOM_CODES[16] = {AxiomCode::AX_FRAME_01,
                                            AxiomCode::AX_MERGE_01};
 } // namespace
 
-std::vector<AggregateAxiomResult>
-    aggregateFindings(const std::vector<Finding> &findings_in)
+SemanticAxiomEvaluatorStatus
+    aggregateFindings(const std::vector<Finding>        &findings_in,
+                      std::vector<AggregateAxiomResult> &aggregateResults_out)
 {
     std::vector<AggregateAxiomResult> aggregates;
     aggregates.reserve(16U);
@@ -63,8 +64,15 @@ std::vector<AggregateAxiomResult>
     for (const AxiomCode axiomCode : ALL_AXIOM_CODES)
     {
         AggregateAxiomResult aggregate;
-        aggregate.axiomCode                = axiomCode;
-        aggregate.classification           = axiomClassFor(axiomCode);
+        aggregate.axiomCode = axiomCode;
+        AxiomClass axiomClass{};
+        if (axiomClassFor(axiomCode, axiomClass) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // axiomClassFor cannot fail; continue as before.
+        }
+        aggregate.classification           = axiomClass;
         aggregate.result                   = AxiomResult::PASS;
         aggregate.contributingFindingCount = 0U;
 
@@ -106,7 +114,9 @@ std::vector<AggregateAxiomResult>
         aggregates.push_back(aggregate);
     }
 
-    return aggregates;
+    aggregateResults_out = aggregates;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

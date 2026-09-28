@@ -36,10 +36,11 @@ namespace core
 namespace semantic
 {
 
-RoomRecord captureRoom(Room             *p_room_in,
-                       long unsigned int mapId_in,
-                       bool              isDetectedMember_in,
-                       bool              isMarkerBasedMember_in)
+SemanticGraphSnapshotStatus captureRoom(Room             *p_room_in,
+                                        long unsigned int mapId_in,
+                                        bool              isDetectedMember_in,
+                                        bool        isMarkerBasedMember_in,
+                                        RoomRecord &roomRecord_out)
 {
     RoomRecord record;
     int        room_inId{};
@@ -47,7 +48,13 @@ RoomRecord captureRoom(Room             *p_room_in,
     {
         // getId cannot fail; continue as before.
     }
-    record.key = makeKey(EntityKind::ROOM, mapId_in, room_inId);
+    EntityKey key2{};
+    if (makeKey(EntityKind::ROOM, mapId_in, room_inId, key2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // makeKey cannot fail; continue as before.
+    }
+    record.key = key2;
     bool room_inIsBad{};
     if (p_room_in->isBad(room_inIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
@@ -110,7 +117,11 @@ RoomRecord captureRoom(Room             *p_room_in,
     }
     for (geometric::Plane *p_wall : room_inWalls)
     {
-        appendWallRef(p_wall, record.wallRefs);
+        if (appendWallRef(p_wall, record.wallRefs) !=
+            SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+        {
+            // appendWallRef cannot fail; continue as before.
+        }
     }
     /* Full value-based total order (see isRawPlaneRefLess()), not merely a
      * stable pass-through of pre-sort order. */
@@ -126,7 +137,11 @@ RoomRecord captureRoom(Room             *p_room_in,
     }
     for (Passage *p_passage : room_inPassages)
     {
-        appendPassageRef(p_passage, record.passageRefs);
+        if (appendPassageRef(p_passage, record.passageRefs) !=
+            SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+        {
+            // appendPassageRef cannot fail; continue as before.
+        }
     }
     std::sort(record.passageRefs.begin(),
               record.passageRefs.end(),
@@ -137,16 +152,29 @@ RoomRecord captureRoom(Room             *p_room_in,
     {
         // getFloor cannot fail; continue as before.
     }
-    record.floorRef                        = entityRefForFloor(p_room_inFloor);
+    EntityRef entityRef{};
+    if (entityRefForFloor(p_room_inFloor, entityRef) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // entityRefForFloor cannot fail; continue as before.
+    }
+    record.floorRef                        = entityRef;
     geometric::Plane *p_room_inGroundPlane = nullptr;
     if (p_room_in->getGroundPlane(p_room_inGroundPlane) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
         // getGroundPlane cannot fail; continue as before.
     }
-    record.groundPlaneRef = rawPlaneRef(p_room_inGroundPlane);
+    RawPlaneRef rawPlaneRef2{};
+    if (rawPlaneRef(p_room_inGroundPlane, rawPlaneRef2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // rawPlaneRef cannot fail; continue as before.
+    }
+    record.groundPlaneRef = rawPlaneRef2;
 
-    return record;
+    roomRecord_out = record;
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

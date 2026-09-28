@@ -16,6 +16,7 @@
 #ifndef ROOMTRACKER_H
 #define ROOMTRACKER_H
 #include "Semantic/RoomTrackerStatus.h"
+#include "Semantic/VerificationVerdictStatus.h"
 
 #include <cmath>
 #include <cstddef>
@@ -129,16 +130,17 @@ struct VerificationVerdict
     double             confidence                = 0.0;
 
     /*! Returns true only for a finite, internally consistent PASS. */
-    bool isPass() const
+    [[nodiscard]] VerificationVerdictStatus isPass(bool &isPass_out) const
     {
-        return status == VerificationStatus::PASS && hasPassed &&
-               std::isfinite(inlierRatio) && inlierRatio >= 0.0 &&
-               inlierRatio <= 1.0 && std::isfinite(normalisedConditionNumber) &&
-               normalisedConditionNumber >= 0.0 &&
-               normalisedConditionNumber <= 1.0 &&
-               std::isfinite(angularResidual_rad) &&
-               angularResidual_rad >= 0.0 && std::isfinite(confidence) &&
-               confidence >= 0.0 && confidence <= 1.0;
+        isPass_out =
+            status == VerificationStatus::PASS && hasPassed &&
+            std::isfinite(inlierRatio) && inlierRatio >= 0.0 &&
+            inlierRatio <= 1.0 && std::isfinite(normalisedConditionNumber) &&
+            normalisedConditionNumber >= 0.0 &&
+            normalisedConditionNumber <= 1.0 &&
+            std::isfinite(angularResidual_rad) && angularResidual_rad >= 0.0 &&
+            std::isfinite(confidence) && confidence >= 0.0 && confidence <= 1.0;
+        return VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS;
     }
 };
 

@@ -42,8 +42,10 @@ namespace core
 namespace semantic
 {
 
-std::size_t countFloorRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
-                                     const EntityKey             &key_in)
+SemanticAxiomEvaluatorStatus
+    countFloorRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
+                             const EntityKey             &key_in,
+                             std::size_t                 &floorRecords_out)
 {
     std::size_t matchCount = 0U;
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
@@ -60,7 +62,9 @@ std::size_t countFloorRecordsWithKey(const SemanticGraphSnapshot &snapshot_in,
             }
         }
     }
-    return matchCount;
+    floorRecords_out = matchCount;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

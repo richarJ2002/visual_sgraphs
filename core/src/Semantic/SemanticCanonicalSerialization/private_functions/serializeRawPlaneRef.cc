@@ -39,11 +39,17 @@ nlohmann::json serializeRawPlaneRef(const RawPlaneRef &value_in)
     {
         json["mapId"] = *value_in.mapId;
     }
-    json["planeId"]    = value_in.planeId;
-    json["isLive"]     = value_in.isLive;
-    json["planeType"]  = static_cast<int>(value_in.planeType);
-    json["reason"]     = static_cast<unsigned int>(value_in.reason);
-    json["reasonName"] = unavailableReasonName(value_in.reason);
+    json["planeId"]   = value_in.planeId;
+    json["isLive"]    = value_in.isLive;
+    json["planeType"] = static_cast<int>(value_in.planeType);
+    json["reason"]    = static_cast<unsigned int>(value_in.reason);
+    std::string unavailableReasonName2{};
+    if (unavailableReasonName(value_in.reason, unavailableReasonName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // unavailableReasonName cannot fail; continue as before.
+    }
+    json["reasonName"] = unavailableReasonName2;
     if (value_in.wallKey.has_value())
     {
         json["wallKey"] = serializeEntityKey(*value_in.wallKey);

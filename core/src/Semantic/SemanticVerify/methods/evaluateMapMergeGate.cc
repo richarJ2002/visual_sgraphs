@@ -81,8 +81,13 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
         if (p_room != nullptr && !roomIsBad &&
             roomVariant == Room::RoomVariant::ROOM)
         {
-            survivingRooms.push_back(
-                copyMergeRoomEvidence(p_room, configuration_in));
+            SemanticMergeRoomEvidence evidence{};
+            if (copyMergeRoomEvidence(p_room, configuration_in, evidence) !=
+                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+            {
+                // copyMergeRoomEvidence cannot fail; continue as before.
+            }
+            survivingRooms.push_back(evidence);
         }
     }
     std::vector<SemanticMergeRoomEvidence> absorbedRooms;
@@ -104,8 +109,13 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
         if (p_room != nullptr && !roomIsBad2 &&
             roomVariant2 == Room::RoomVariant::ROOM)
         {
-            absorbedRooms.push_back(
-                copyMergeRoomEvidence(p_room, configuration_in));
+            SemanticMergeRoomEvidence evidence2{};
+            if (copyMergeRoomEvidence(p_room, configuration_in, evidence2) !=
+                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+            {
+                // copyMergeRoomEvidence cannot fail; continue as before.
+            }
+            absorbedRooms.push_back(evidence2);
         }
     }
     SemanticMergeGateResult result2{};

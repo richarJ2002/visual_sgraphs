@@ -30,23 +30,26 @@ namespace core
 namespace semantic
 {
 
-AlignmentCheck checkFixedTransformWalls(
+SemanticVerifyStatus checkFixedTransformWalls(
     const std::vector<VerifyWallObservation> &survivingWalls_in,
     const std::vector<VerifyWallObservation> &absorbedWalls_in,
     const g2o::Sim3                          &transform_in,
     const SemanticVerifyConfig               &configuration_in,
-    std::size_t                              &matchedCount_out)
+    std::size_t                              &matchedCount_out,
+    AlignmentCheck                           &alignmentCheck_out)
 {
     matchedCount_out = 0U;
     if (survivingWalls_in.size() < 3U || absorbedWalls_in.size() < 3U)
     {
-        return AlignmentCheck::MISSING;
+        alignmentCheck_out = AlignmentCheck::MISSING;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     const double scale = transform_in.scale();
     if (!std::isfinite(scale) || scale <= 0.0)
     {
-        return AlignmentCheck::CONTRADICTION;
+        alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
     const Eigen::Matrix3d rotation =
         transform_in.rotation().toRotationMatrix().cast<double>();
@@ -54,7 +57,8 @@ AlignmentCheck checkFixedTransformWalls(
         transform_in.translation().cast<double>();
     if (!rotation.allFinite() || !translation.allFinite())
     {
-        return AlignmentCheck::CONTRADICTION;
+        alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     std::set<std::size_t> usedSurvivingWalls;
@@ -113,10 +117,11 @@ AlignmentCheck checkFixedTransformWalls(
         std::max(survivingWalls_in.size(), absorbedWalls_in.size());
     const double inlierRatio = static_cast<double>(matchedCount_out) /
                                static_cast<double>(evidenceCount);
-    return matchedCount_out >= 3U &&
-                   inlierRatio >= configuration_in.minInlierRatio
-               ? AlignmentCheck::ALIGNED
-               : AlignmentCheck::CONTRADICTION;
+    alignmentCheck_out =
+        matchedCount_out >= 3U && inlierRatio >= configuration_in.minInlierRatio
+            ? AlignmentCheck::ALIGNED
+            : AlignmentCheck::CONTRADICTION;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

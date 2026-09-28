@@ -32,7 +32,9 @@ namespace core
 namespace semantic
 {
 
-nlohmann::json findingEvidenceToJson(const FindingEvidence &evidence_in)
+SemanticDiagnosticsStatus
+    findingEvidenceToJson(const FindingEvidence &evidence_in,
+                          nlohmann::json        &json_out)
 {
     nlohmann::json json;
     if (evidence_in.observedCount.has_value())
@@ -48,7 +50,8 @@ nlohmann::json findingEvidenceToJson(const FindingEvidence &evidence_in)
         json["numericValue"] =
             serializeFiniteAwareDouble(*evidence_in.numericValue);
     }
-    return json;
+    json_out = json;
+    return SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS;
 }
 
 } // namespace semantic

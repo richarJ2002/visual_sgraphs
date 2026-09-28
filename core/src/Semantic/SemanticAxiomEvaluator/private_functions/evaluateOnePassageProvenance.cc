@@ -37,23 +37,40 @@ namespace core
 namespace semantic
 {
 
-void evaluateOnePassageProvenance(const PassageRecord  &passage_in,
-                                  std::vector<Finding> &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateOnePassageProvenance(const PassageRecord  &passage_in,
+                                 std::vector<Finding> &findings_inout)
 {
     if (!passage_in.isPassable)
     {
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_01,
+        Finding finding{};
+        if (makeFinding(AxiomCode::AX_PASS_01,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_PROVENANCE_NOT_PASSABLE,
-                        {passage_in.key}));
-        return;
+                        {passage_in.key},
+                        finding) != SemanticAxiomEvaluatorStatus::
+                                        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    findings_inout.push_back(
-        makeFinding(AxiomCode::AX_PASS_01,
+    Finding finding2{};
+    if (makeFinding(AxiomCode::AX_PASS_01,
                     AxiomResult::UNKNOWN,
                     ReasonCode::PASSAGE_PROVENANCE_FULL_CHAIN_UNVERIFIABLE,
-                    {passage_in.key}));
+                    {passage_in.key},
+                    finding2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // makeFinding cannot fail; continue as before.
+    }
+    findings_inout.push_back(finding2);
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

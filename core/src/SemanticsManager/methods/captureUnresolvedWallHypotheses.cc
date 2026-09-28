@@ -36,7 +36,14 @@ std::vector<semantic::UnresolvedWallHypothesisRecord>
     for (const auto &[wallId, state] : undefendedWalls)
     {
         semantic::UnresolvedWallHypothesisRecord record;
-        record.wallRef          = semantic::rawPlaneRef(state.p_wall);
+        semantic::RawPlaneRef                    rawPlaneRef2{};
+        if (semantic::rawPlaneRef(state.p_wall, rawPlaneRef2) !=
+            semantic::SemanticGraphSnapshotStatus::
+                SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+        {
+            // rawPlaneRef cannot fail; continue as before.
+        }
+        record.wallRef          = rawPlaneRef2;
         record.unresolvedCycles = state.unresolvedCycles;
         record.cloudPointCount  = state.cloudPointCount;
         record.observationCount = state.observationCount;

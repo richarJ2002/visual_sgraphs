@@ -48,8 +48,14 @@ nlohmann::json serializeWallRecord(const WallRecord &value_in,
     json["planeType"] = static_cast<int>(value_in.planeType);
     json["observationSideConsensusReason"] =
         static_cast<unsigned int>(value_in.observationSideConsensusReason);
-    json["observationSideConsensusReasonName"] =
-        unavailableReasonName(value_in.observationSideConsensusReason);
+    std::string unavailableReasonName2{};
+    if (unavailableReasonName(value_in.observationSideConsensusReason,
+                              unavailableReasonName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // unavailableReasonName cannot fail; continue as before.
+    }
+    json["observationSideConsensusReasonName"] = unavailableReasonName2;
     json["twinRef"] = serializeRawPlaneRef(value_in.twinRef);
 
     std::vector<EntityRef> ownerRoomRefs = value_in.ownerRoomRefs;
@@ -63,12 +69,24 @@ nlohmann::json serializeWallRecord(const WallRecord &value_in,
 
     json["quarantineReason"] =
         static_cast<unsigned int>(value_in.quarantineReason);
-    json["quarantineReasonName"] =
-        unavailableReasonName(value_in.quarantineReason);
+    std::string unavailableReasonName3{};
+    if (unavailableReasonName(value_in.quarantineReason,
+                              unavailableReasonName3) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // unavailableReasonName cannot fail; continue as before.
+    }
+    json["quarantineReasonName"] = unavailableReasonName3;
     json["observationRayEvidenceReason"] =
         static_cast<unsigned int>(value_in.observationRayEvidenceReason);
-    json["observationRayEvidenceReasonName"] =
-        unavailableReasonName(value_in.observationRayEvidenceReason);
+    std::string unavailableReasonName4{};
+    if (unavailableReasonName(value_in.observationRayEvidenceReason,
+                              unavailableReasonName4) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // unavailableReasonName cannot fail; continue as before.
+    }
+    json["observationRayEvidenceReasonName"] = unavailableReasonName4;
 
     if (includeGeometry_in)
     {

@@ -28,24 +28,44 @@ namespace core
 namespace semantic
 {
 
-const char *stateLiteral(RoomTrackingState state_in)
+RoomTrackerStatus stateLiteral(RoomTrackingState state_in,
+                               const char      *&p_stateLiteral_out)
 {
     switch (state_in)
     {
     case RoomTrackingState::UNKNOWN:
-        return "UNKNOWN";
-    case RoomTrackingState::CONFIRMED_ROOM:
-        return "CONFIRMED_ROOM";
-    case RoomTrackingState::CROSSING_PASSAGE:
-        return "CROSSING_PASSAGE";
-    case RoomTrackingState::LOST_WITHOUT_ROOM:
-        return "LOST_WITHOUT_ROOM";
-    case RoomTrackingState::LOST_WITH_LAST_ROOM:
-        return "LOST_WITH_LAST_ROOM";
-    case RoomTrackingState::REACQUIRING_IN_NEW_MAP:
-        return "REACQUIRING_IN_NEW_MAP";
+    {
+        p_stateLiteral_out = "UNKNOWN";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
     }
-    return "UNKNOWN";
+    case RoomTrackingState::CONFIRMED_ROOM:
+    {
+        p_stateLiteral_out = "CONFIRMED_ROOM";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    case RoomTrackingState::CROSSING_PASSAGE:
+    {
+        p_stateLiteral_out = "CROSSING_PASSAGE";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    case RoomTrackingState::LOST_WITHOUT_ROOM:
+    {
+        p_stateLiteral_out = "LOST_WITHOUT_ROOM";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    case RoomTrackingState::LOST_WITH_LAST_ROOM:
+    {
+        p_stateLiteral_out = "LOST_WITH_LAST_ROOM";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    case RoomTrackingState::REACQUIRING_IN_NEW_MAP:
+    {
+        p_stateLiteral_out = "REACQUIRING_IN_NEW_MAP";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    }
+    p_stateLiteral_out = "UNKNOWN";
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

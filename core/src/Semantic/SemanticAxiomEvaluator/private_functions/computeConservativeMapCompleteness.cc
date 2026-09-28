@@ -125,9 +125,10 @@ namespace core
 namespace semantic
 {
 
-MapCompletenessResult
-    computeConservativeMapCompleteness(const SemanticGraphSnapshot &snapshot_in,
-                                       const MapSnapshot &mapSnapshot_in)
+SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
+    const SemanticGraphSnapshot &snapshot_in,
+    const MapSnapshot           &mapSnapshot_in,
+    MapCompletenessResult       &conservativeMapCompleteness_out)
 {
     MapCompletenessResult result;
     result.mapId = mapSnapshot_in.mapId;
@@ -173,7 +174,15 @@ MapCompletenessResult
             ReasonCode::COMPLETENESS_LIVE_PROSPECTIVE_ROOM_PRESENT);
     }
 
-    if (countMapSnapshotsWithId(snapshot_in, mapSnapshot_in.mapId) > 1U)
+    std::size_t mapSnapshots{};
+    if (countMapSnapshotsWithId(snapshot_in,
+                                mapSnapshot_in.mapId,
+                                mapSnapshots) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // countMapSnapshotsWithId cannot fail; continue as before.
+    }
+    if (mapSnapshots > 1U)
     {
         /* Which MapSnapshot is
          * authoritative for this map is itself ambiguous, so no
@@ -188,28 +197,58 @@ MapCompletenessResult
     std::vector<EntityKey> duplicateIdentityKeys;
     for (const RoomRecord &room : mapSnapshot_in.rooms)
     {
-        if (countRoomRecordsWithKey(snapshot_in, room.key) > 1U)
+        std::size_t roomRecords{};
+        if (countRoomRecordsWithKey(snapshot_in, room.key, roomRecords) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // countRoomRecordsWithKey cannot fail; continue as before.
+        }
+        if (roomRecords > 1U)
         {
             duplicateIdentityKeys.push_back(room.key);
         }
     }
     for (const WallRecord &wall : mapSnapshot_in.walls)
     {
-        if (countWallRecordsWithKey(snapshot_in, wall.key) > 1U)
+        std::size_t wallRecords{};
+        if (countWallRecordsWithKey(snapshot_in, wall.key, wallRecords) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // countWallRecordsWithKey cannot fail; continue as before.
+        }
+        if (wallRecords > 1U)
         {
             duplicateIdentityKeys.push_back(wall.key);
         }
     }
     for (const PassageRecord &passage : mapSnapshot_in.passages)
     {
-        if (countPassageRecordsWithKey(snapshot_in, passage.key) > 1U)
+        std::size_t passageRecords{};
+        if (countPassageRecordsWithKey(snapshot_in,
+                                       passage.key,
+                                       passageRecords) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // countPassageRecordsWithKey cannot fail; continue as before.
+        }
+        if (passageRecords > 1U)
         {
             duplicateIdentityKeys.push_back(passage.key);
         }
     }
     for (const FloorRecord &floor : mapSnapshot_in.floors)
     {
-        if (countFloorRecordsWithKey(snapshot_in, floor.key) > 1U)
+        std::size_t floorRecords{};
+        if (countFloorRecordsWithKey(snapshot_in, floor.key, floorRecords) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // countFloorRecordsWithKey cannot fail; continue as before.
+        }
+        if (floorRecords > 1U)
         {
             duplicateIdentityKeys.push_back(floor.key);
         }
@@ -229,20 +268,40 @@ MapCompletenessResult
         {
             continue;
         }
-        evaluateOneRoomBoundary(room, snapshot_in, boundaryFindings);
+        if (evaluateOneRoomBoundary(room, snapshot_in, boundaryFindings) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateOneRoomBoundary cannot fail; continue as before.
+        }
     }
-    const bool anyBoundaryFail =
-        anyFindingIs(boundaryFindings, AxiomResult::FAIL);
-    const bool anyBoundaryUnknown =
-        anyFindingIs(boundaryFindings, AxiomResult::UNKNOWN);
+    bool anyBoundaryFail{};
+    if (anyFindingIs(boundaryFindings, AxiomResult::FAIL, anyBoundaryFail) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
+    bool anyBoundaryUnknown{};
+    if (anyFindingIs(boundaryFindings,
+                     AxiomResult::UNKNOWN,
+                     anyBoundaryUnknown) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
     if (result.completeRoomCount != result.confirmedRoomCount ||
         anyBoundaryFail)
     {
         failReasons.push_back(
             ReasonCode::COMPLETENESS_ROOM_BOUNDARY_NOT_COMPLETE);
-        appendKeysFromFindings(boundaryFindings,
-                               AxiomResult::FAIL,
-                               relevantKeys);
+        if (appendKeysFromFindings(boundaryFindings,
+                                   AxiomResult::FAIL,
+                                   relevantKeys) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // appendKeysFromFindings cannot fail; continue as before.
+        }
     }
 
     std::vector<Finding> passageCardinalityFindings;
@@ -258,15 +317,37 @@ MapCompletenessResult
          * AX-PASS-01 leaf evaluateAxPass01() calls, rather than a
          * hand-written passable() check, so both paths flow through the
          * same shared logic. */
-        evaluateOnePassageProvenance(passage, passageProvenanceFindings);
-        evaluateOnePassageCardinality(passage,
-                                      snapshot_in,
-                                      passageCardinalityFindings);
+        if (evaluateOnePassageProvenance(passage, passageProvenanceFindings) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateOnePassageProvenance cannot fail; continue as before.
+        }
+        if (evaluateOnePassageCardinality(passage,
+                                          snapshot_in,
+                                          passageCardinalityFindings) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateOnePassageCardinality cannot fail; continue as before.
+        }
     }
-    const bool anyPassageCardinalityFail =
-        anyFindingIs(passageCardinalityFindings, AxiomResult::FAIL);
-    const bool anyPassageProvenanceFail =
-        anyFindingIs(passageProvenanceFindings, AxiomResult::FAIL);
+    bool anyPassageCardinalityFail{};
+    if (anyFindingIs(passageCardinalityFindings,
+                     AxiomResult::FAIL,
+                     anyPassageCardinalityFail) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
+    bool anyPassageProvenanceFail{};
+    if (anyFindingIs(passageProvenanceFindings,
+                     AxiomResult::FAIL,
+                     anyPassageProvenanceFail) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
 
     /* AX-PASS-03 (slot state) and AX-PASS-04 (map/floor agreement):
      * conservative completeness must consume the same leaf checks as state
@@ -279,45 +360,108 @@ MapCompletenessResult
         {
             continue;
         }
-        evaluateOnePassageSlotState(passage, snapshot_in, passageSlotFindings);
-        evaluateOnePassageMapAndFloor(passage,
-                                      snapshot_in,
-                                      passageMapFloorFindings);
+        if (evaluateOnePassageSlotState(passage,
+                                        snapshot_in,
+                                        passageSlotFindings) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateOnePassageSlotState cannot fail; continue as before.
+        }
+        if (evaluateOnePassageMapAndFloor(passage,
+                                          snapshot_in,
+                                          passageMapFloorFindings) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateOnePassageMapAndFloor cannot fail; continue as before.
+        }
     }
-    const bool anyPassageSlotFail =
-        anyFindingIs(passageSlotFindings, AxiomResult::FAIL);
-    const bool anyPassageMapFloorFail =
-        anyFindingIs(passageMapFloorFindings, AxiomResult::FAIL);
+    bool anyPassageSlotFail{};
+    if (anyFindingIs(passageSlotFindings,
+                     AxiomResult::FAIL,
+                     anyPassageSlotFail) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
+    bool anyPassageMapFloorFail{};
+    if (anyFindingIs(passageMapFloorFindings,
+                     AxiomResult::FAIL,
+                     anyPassageMapFloorFail) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
 
     if (anyPassageProvenanceFail || anyPassageCardinalityFail ||
         anyPassageSlotFail || anyPassageMapFloorFail)
     {
         failReasons.push_back(
             ReasonCode::COMPLETENESS_PASSAGE_ENDPOINTS_INVALID);
-        appendKeysFromFindings(passageProvenanceFindings,
-                               AxiomResult::FAIL,
-                               relevantKeys);
-        appendKeysFromFindings(passageCardinalityFindings,
-                               AxiomResult::FAIL,
-                               relevantKeys);
-        appendKeysFromFindings(passageSlotFindings,
-                               AxiomResult::FAIL,
-                               relevantKeys);
-        appendKeysFromFindings(passageMapFloorFindings,
-                               AxiomResult::FAIL,
-                               relevantKeys);
+        if (appendKeysFromFindings(passageProvenanceFindings,
+                                   AxiomResult::FAIL,
+                                   relevantKeys) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // appendKeysFromFindings cannot fail; continue as before.
+        }
+        if (appendKeysFromFindings(passageCardinalityFindings,
+                                   AxiomResult::FAIL,
+                                   relevantKeys) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // appendKeysFromFindings cannot fail; continue as before.
+        }
+        if (appendKeysFromFindings(passageSlotFindings,
+                                   AxiomResult::FAIL,
+                                   relevantKeys) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // appendKeysFromFindings cannot fail; continue as before.
+        }
+        if (appendKeysFromFindings(passageMapFloorFindings,
+                                   AxiomResult::FAIL,
+                                   relevantKeys) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // appendKeysFromFindings cannot fail; continue as before.
+        }
     }
 
     std::vector<Finding> malformedPassageReferenceFindings;
-    evaluateRoomMalformedPassageReferences(mapSnapshot_in,
-                                           malformedPassageReferenceFindings);
-    if (anyFindingIs(malformedPassageReferenceFindings, AxiomResult::FAIL))
+    if (evaluateRoomMalformedPassageReferences(
+            mapSnapshot_in,
+            malformedPassageReferenceFindings) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // evaluateRoomMalformedPassageReferences cannot fail; continue as
+        // before.
+    }
+    bool hasFinding{};
+    if (anyFindingIs(malformedPassageReferenceFindings,
+                     AxiomResult::FAIL,
+                     hasFinding) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
+    if (hasFinding)
     {
         failReasons.push_back(
             ReasonCode::COMPLETENESS_ROOM_HAS_MALFORMED_PASSAGE_REFERENCE);
-        appendKeysFromFindings(malformedPassageReferenceFindings,
-                               AxiomResult::FAIL,
-                               relevantKeys);
+        if (appendKeysFromFindings(malformedPassageReferenceFindings,
+                                   AxiomResult::FAIL,
+                                   relevantKeys) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // appendKeysFromFindings cannot fail; continue as before.
+        }
     }
 
     std::vector<Finding> wallFindings;
@@ -328,20 +472,62 @@ MapCompletenessResult
         {
             continue;
         }
-        evaluateOneWall(wall, snapshot_in, wallFindings);
-        evaluateOneWallTwin(wall, snapshot_in, twinFindings);
+        if (evaluateOneWall(wall, snapshot_in, wallFindings) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateOneWall cannot fail; continue as before.
+        }
+        if (evaluateOneWallTwin(wall, snapshot_in, twinFindings) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateOneWallTwin cannot fail; continue as before.
+        }
     }
-    const bool anyWallFail = anyFindingIs(wallFindings, AxiomResult::FAIL);
-    const bool anyWallUnknown =
-        anyFindingIs(wallFindings, AxiomResult::UNKNOWN);
-    const bool anyTwinFail = anyFindingIs(twinFindings, AxiomResult::FAIL);
-    const bool anyTwinUnknown =
-        anyFindingIs(twinFindings, AxiomResult::UNKNOWN);
+    bool anyWallFail{};
+    if (anyFindingIs(wallFindings, AxiomResult::FAIL, anyWallFail) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
+    bool anyWallUnknown{};
+    if (anyFindingIs(wallFindings, AxiomResult::UNKNOWN, anyWallUnknown) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
+    bool anyTwinFail{};
+    if (anyFindingIs(twinFindings, AxiomResult::FAIL, anyTwinFail) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
+    bool anyTwinUnknown{};
+    if (anyFindingIs(twinFindings, AxiomResult::UNKNOWN, anyTwinUnknown) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
     if (anyWallFail || anyTwinFail)
     {
         failReasons.push_back(ReasonCode::COMPLETENESS_HARD_CONTRADICTION);
-        appendKeysFromFindings(wallFindings, AxiomResult::FAIL, relevantKeys);
-        appendKeysFromFindings(twinFindings, AxiomResult::FAIL, relevantKeys);
+        if (appendKeysFromFindings(wallFindings,
+                                   AxiomResult::FAIL,
+                                   relevantKeys) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // appendKeysFromFindings cannot fail; continue as before.
+        }
+        if (appendKeysFromFindings(twinFindings,
+                                   AxiomResult::FAIL,
+                                   relevantKeys) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // appendKeysFromFindings cannot fail; continue as before.
+        }
     }
 
     std::vector<Finding> floorFindings;
@@ -351,10 +537,15 @@ MapCompletenessResult
         {
             continue;
         }
-        evaluateOneRoomFloorReciprocity(room,
-                                        snapshot_in,
-                                        mapSnapshot_in,
-                                        floorFindings);
+        if (evaluateOneRoomFloorReciprocity(room,
+                                            snapshot_in,
+                                            mapSnapshot_in,
+                                            floorFindings) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateOneRoomFloorReciprocity cannot fail; continue as before.
+        }
     }
     for (const PassageRecord &passage : mapSnapshot_in.passages)
     {
@@ -362,15 +553,38 @@ MapCompletenessResult
         {
             continue;
         }
-        evaluateOnePassageFloorIdentity(passage, snapshot_in, floorFindings);
+        if (evaluateOnePassageFloorIdentity(passage,
+                                            snapshot_in,
+                                            floorFindings) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // evaluateOnePassageFloorIdentity cannot fail; continue as before.
+        }
     }
-    const bool anyFloorFail = anyFindingIs(floorFindings, AxiomResult::FAIL);
-    const bool anyFloorUnknown =
-        anyFindingIs(floorFindings, AxiomResult::UNKNOWN);
+    bool anyFloorFail{};
+    if (anyFindingIs(floorFindings, AxiomResult::FAIL, anyFloorFail) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
+    bool anyFloorUnknown{};
+    if (anyFindingIs(floorFindings, AxiomResult::UNKNOWN, anyFloorUnknown) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
     if (anyFloorFail)
     {
         failReasons.push_back(ReasonCode::COMPLETENESS_HARD_CONTRADICTION);
-        appendKeysFromFindings(floorFindings, AxiomResult::FAIL, relevantKeys);
+        if (appendKeysFromFindings(floorFindings,
+                                   AxiomResult::FAIL,
+                                   relevantKeys) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // appendKeysFromFindings cannot fail; continue as before.
+        }
     }
 
     if (failReasons.empty())
@@ -379,44 +593,74 @@ MapCompletenessResult
         {
             unknownReasons.push_back(
                 ReasonCode::COMPLETENESS_PASSAGE_SLOT_PROOF_UNAVAILABLE);
-            appendKeysFromFindings(passageCardinalityFindings,
-                                   AxiomResult::UNKNOWN,
-                                   relevantKeys);
-            appendKeysFromFindings(passageProvenanceFindings,
-                                   AxiomResult::UNKNOWN,
-                                   relevantKeys);
+            if (appendKeysFromFindings(passageCardinalityFindings,
+                                       AxiomResult::UNKNOWN,
+                                       relevantKeys) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // appendKeysFromFindings cannot fail; continue as before.
+            }
+            if (appendKeysFromFindings(passageProvenanceFindings,
+                                       AxiomResult::UNKNOWN,
+                                       relevantKeys) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // appendKeysFromFindings cannot fail; continue as before.
+            }
         }
         if (anyBoundaryUnknown)
         {
             unknownReasons.push_back(
                 ReasonCode::COMPLETENESS_EVIDENCE_UNAVAILABLE);
-            appendKeysFromFindings(boundaryFindings,
-                                   AxiomResult::UNKNOWN,
-                                   relevantKeys);
+            if (appendKeysFromFindings(boundaryFindings,
+                                       AxiomResult::UNKNOWN,
+                                       relevantKeys) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // appendKeysFromFindings cannot fail; continue as before.
+            }
         }
         if (anyWallUnknown)
         {
             unknownReasons.push_back(
                 ReasonCode::COMPLETENESS_EVIDENCE_UNAVAILABLE);
-            appendKeysFromFindings(wallFindings,
-                                   AxiomResult::UNKNOWN,
-                                   relevantKeys);
+            if (appendKeysFromFindings(wallFindings,
+                                       AxiomResult::UNKNOWN,
+                                       relevantKeys) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // appendKeysFromFindings cannot fail; continue as before.
+            }
         }
         if (anyTwinUnknown)
         {
             unknownReasons.push_back(
                 ReasonCode::COMPLETENESS_EVIDENCE_UNAVAILABLE);
-            appendKeysFromFindings(twinFindings,
-                                   AxiomResult::UNKNOWN,
-                                   relevantKeys);
+            if (appendKeysFromFindings(twinFindings,
+                                       AxiomResult::UNKNOWN,
+                                       relevantKeys) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // appendKeysFromFindings cannot fail; continue as before.
+            }
         }
         if (anyFloorUnknown)
         {
             unknownReasons.push_back(
                 ReasonCode::COMPLETENESS_EVIDENCE_UNAVAILABLE);
-            appendKeysFromFindings(floorFindings,
-                                   AxiomResult::UNKNOWN,
-                                   relevantKeys);
+            if (appendKeysFromFindings(floorFindings,
+                                       AxiomResult::UNKNOWN,
+                                       relevantKeys) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // appendKeysFromFindings cannot fail; continue as before.
+            }
         }
         std::vector<Finding> roomProvenanceFindings;
         for (const RoomRecord &room : mapSnapshot_in.rooms)
@@ -429,15 +673,36 @@ MapCompletenessResult
              * leaf evaluateAxRoom01() calls, rather than a hand-written
              * per-room loop, so both paths flow through the same shared
              * logic (mirroring the AX-PASS-01 provenance reuse above). */
-            evaluateOneRoomCreationProvenance(room, roomProvenanceFindings);
+            if (evaluateOneRoomCreationProvenance(room,
+                                                  roomProvenanceFindings) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // evaluateOneRoomCreationProvenance cannot fail; continue as
+                // before.
+            }
         }
-        if (anyFindingIs(roomProvenanceFindings, AxiomResult::UNKNOWN))
+        bool hasFinding2{};
+        if (anyFindingIs(roomProvenanceFindings,
+                         AxiomResult::UNKNOWN,
+                         hasFinding2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // anyFindingIs cannot fail; continue as before.
+        }
+        if (hasFinding2)
         {
             unknownReasons.push_back(
                 ReasonCode::COMPLETENESS_ROOM_CREATION_PROVENANCE_UNAVAILABLE);
-            appendKeysFromFindings(roomProvenanceFindings,
-                                   AxiomResult::UNKNOWN,
-                                   relevantKeys);
+            if (appendKeysFromFindings(roomProvenanceFindings,
+                                       AxiomResult::UNKNOWN,
+                                       relevantKeys) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // appendKeysFromFindings cannot fail; continue as before.
+            }
         }
     }
 
@@ -478,7 +743,9 @@ MapCompletenessResult
     }
     result.isComplete = (result.conservativeResult == AxiomResult::PASS);
 
-    return result;
+    conservativeMapCompleteness_out = result;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

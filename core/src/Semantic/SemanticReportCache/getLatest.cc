@@ -32,10 +32,12 @@ namespace core
 namespace semantic
 {
 
-SemanticReportCacheEntry SemanticReportCache::getLatest() const
+SemanticReportCacheStatus SemanticReportCache::getLatest(
+    SemanticReportCacheEntry &getLatest_out) const
 {
     std::lock_guard<std::mutex> lock(cacheMutex);
-    return latestEntry;
+    getLatest_out = latestEntry;
+    return SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -35,8 +35,14 @@ namespace semantic
 nlohmann::json serializeEntityKey(const EntityKey &value_in)
 {
     nlohmann::json json;
-    json["kind"]     = static_cast<unsigned int>(value_in.kind);
-    json["kindName"] = entityKindName(value_in.kind);
+    json["kind"] = static_cast<unsigned int>(value_in.kind);
+    std::string entityKindName2{};
+    if (entityKindName(value_in.kind, entityKindName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // entityKindName cannot fail; continue as before.
+    }
+    json["kindName"] = entityKindName2;
     json["mapId"]    = value_in.mapId;
     json["entityId"] = value_in.entityId;
     return json;

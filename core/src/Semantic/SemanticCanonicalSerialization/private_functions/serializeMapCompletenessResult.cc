@@ -42,9 +42,14 @@ nlohmann::json
     json["mapId"] = value_in.mapId;
     json["conservativeResult"] =
         static_cast<unsigned int>(value_in.conservativeResult);
-    json["conservativeResultName"] =
-        axiomResultName(value_in.conservativeResult);
-    json["isComplete"] = value_in.isComplete;
+    std::string axiomResultName2{};
+    if (axiomResultName(value_in.conservativeResult, axiomResultName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // axiomResultName cannot fail; continue as before.
+    }
+    json["conservativeResultName"] = axiomResultName2;
+    json["isComplete"]             = value_in.isComplete;
 
     std::vector<ReasonCode> reasons = value_in.reasons;
     std::sort(reasons.begin(),
@@ -59,7 +64,14 @@ nlohmann::json
     for (const ReasonCode reason : reasons)
     {
         reasonsJson.push_back(static_cast<unsigned int>(reason));
-        reasonNamesJson.push_back(reasonCodeName(reason));
+        std::string reasonCodeName2{};
+        if (reasonCodeName(reason, reasonCodeName2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // reasonCodeName cannot fail; continue as before.
+        }
+        reasonNamesJson.push_back(reasonCodeName2);
     }
     json["reasons"]     = std::move(reasonsJson);
     json["reasonNames"] = std::move(reasonNamesJson);

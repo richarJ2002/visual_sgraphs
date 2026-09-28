@@ -40,20 +40,31 @@ namespace core
 namespace semantic
 {
 
-void evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
-                                   const SemanticGraphSnapshot &snapshot_in,
-                                   std::vector<Finding>        &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
+                                  const SemanticGraphSnapshot &snapshot_in,
+                                  std::vector<Finding>        &findings_inout)
 {
     const long unsigned int expectedMapId =
         passage_in.declaredMapId.value_or(passage_in.key.mapId);
-    const ResolvedRoomEndpoint knownSide =
-        resolveRoomEndpoint(passage_in.knownSideRoomRef,
+    ResolvedRoomEndpoint knownSide{};
+    if (resolveRoomEndpoint(passage_in.knownSideRoomRef,
                             expectedMapId,
-                            snapshot_in);
-    const ResolvedRoomEndpoint prospective =
-        resolveRoomEndpoint(passage_in.prospectiveRoomRef,
+                            snapshot_in,
+                            knownSide) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // resolveRoomEndpoint cannot fail; continue as before.
+    }
+    ResolvedRoomEndpoint prospective{};
+    if (resolveRoomEndpoint(passage_in.prospectiveRoomRef,
                             expectedMapId,
-                            snapshot_in);
+                            snapshot_in,
+                            prospective) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // resolveRoomEndpoint cannot fail; continue as before.
+    }
 
     std::vector<EntityKey> involvedKeys{passage_in.key};
     if (knownSide.key.has_value())
@@ -65,19 +76,46 @@ void evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
         involvedKeys.push_back(*prospective.key);
     }
 
-    if (isKnownInvalidPassageEndpointReference(knownSide) ||
-        isKnownInvalidPassageEndpointReference(prospective))
+    bool isKnownInvalidPassageEndpointReference2{};
+    if (isKnownInvalidPassageEndpointReference(
+            knownSide,
+            isKnownInvalidPassageEndpointReference2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // isKnownInvalidPassageEndpointReference cannot fail; continue as
+        // before.
+    }
+    bool isKnownInvalidPassageEndpointReference3{};
+    if (!(isKnownInvalidPassageEndpointReference2) &&
+        isKnownInvalidPassageEndpointReference(
+            prospective,
+            isKnownInvalidPassageEndpointReference3) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // isKnownInvalidPassageEndpointReference cannot fail; continue as
+        // before.
+    }
+    if (isKnownInvalidPassageEndpointReference2 ||
+        isKnownInvalidPassageEndpointReference3)
     {
         /* A provably invalid forward reference (wrong kind, unresolvable,
          * duplicate identity, cross-map, declared-map mismatch, or
          * known-bad liveness) must dominate this clause too, not only
          * AX-PASS-02's own cardinality check. */
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_04,
+        Finding finding{};
+        if (makeFinding(AxiomCode::AX_PASS_04,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_FLOOR_FORWARD_ENDPOINT_INVALID,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding) != SemanticAxiomEvaluatorStatus::
+                                        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     if ((knownSide.isReferencePresent && knownSide.isCrossMap) ||
@@ -88,65 +126,152 @@ void evaluateOnePassageMapAndFloor(const PassageRecord         &passage_in,
          * unconditional-on-isReferencePresent cross-map check, since an
          * unenumerated or unconfirmed cross-map reference is just as much a
          * known contradiction as a confirmed one. */
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_04,
+        Finding finding2{};
+        if (makeFinding(AxiomCode::AX_PASS_04,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_FLOOR_ENDPOINT_CROSS_MAP,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding2);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    switch (evaluatePassageFloorAgreement(knownSide, prospective, snapshot_in))
+    PassageFloorAgreement agreement{};
+    if (evaluatePassageFloorAgreement(knownSide,
+                                      prospective,
+                                      snapshot_in,
+                                      agreement) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // evaluatePassageFloorAgreement cannot fail; continue as before.
+    }
+    switch (agreement)
     {
     case PassageFloorAgreement::DISAGREE:
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_04,
+    {
+        Finding finding3{};
+        if (makeFinding(AxiomCode::AX_PASS_04,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_FLOOR_DISAGREEMENT,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding3) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding3);
+    }
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     case PassageFloorAgreement::AMBIGUOUS:
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_04,
+    {
+        Finding finding4{};
+        if (makeFinding(AxiomCode::AX_PASS_04,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_FLOOR_IDENTITY_AMBIGUOUS,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding4) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding4);
+    }
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     case PassageFloorAgreement::ENDPOINT_ROOM_FLOOR_INVALID:
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_04,
+    {
+        Finding finding5{};
+        if (makeFinding(AxiomCode::AX_PASS_04,
                         AxiomResult::FAIL,
                         ReasonCode::PASSAGE_FLOOR_ENDPOINT_ROOM_FLOOR_INVALID,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding5) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding5);
+    }
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     case PassageFloorAgreement::EVIDENCE_UNAVAILABLE:
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_04,
+    {
+        Finding finding6{};
+        if (makeFinding(AxiomCode::AX_PASS_04,
                         AxiomResult::UNKNOWN,
                         ReasonCode::PASSAGE_FLOOR_EVIDENCE_UNAVAILABLE,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding6) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding6);
+    }
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     case PassageFloorAgreement::ENDPOINT_ROOM_FLOOR_UNVERIFIED:
-        findings_inout.push_back(makeFinding(
-            AxiomCode::AX_PASS_04,
-            AxiomResult::UNKNOWN,
-            ReasonCode::PASSAGE_FLOOR_ENDPOINT_ROOM_FLOOR_UNVERIFIED,
-            involvedKeys));
-        return;
+    {
+        Finding finding7{};
+        if (makeFinding(
+                AxiomCode::AX_PASS_04,
+                AxiomResult::UNKNOWN,
+                ReasonCode::PASSAGE_FLOOR_ENDPOINT_ROOM_FLOOR_UNVERIFIED,
+                involvedKeys,
+                finding7) != SemanticAxiomEvaluatorStatus::
+                                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding7);
+    }
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     case PassageFloorAgreement::NOT_APPLICABLE:
     case PassageFloorAgreement::AGREE:
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_04,
+    {
+        Finding finding8{};
+        if (makeFinding(AxiomCode::AX_PASS_04,
                         AxiomResult::PASS,
                         ReasonCode::PASSAGE_FLOOR_AGREEMENT_VALID,
-                        involvedKeys));
-        findings_inout.push_back(
-            makeFinding(AxiomCode::AX_PASS_04,
+                        involvedKeys,
+                        finding8) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding8);
+    }
+        Finding finding9{};
+        if (makeFinding(AxiomCode::AX_PASS_04,
                         AxiomResult::UNKNOWN,
                         ReasonCode::PASSAGE_FLOOR_ENDPOINT_PROOF_UNVERIFIED,
-                        involvedKeys));
-        return;
+                        involvedKeys,
+                        finding9) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // makeFinding cannot fail; continue as before.
+        }
+        findings_inout.push_back(finding9);
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

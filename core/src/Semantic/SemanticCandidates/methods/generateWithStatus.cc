@@ -114,42 +114,94 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
     {
         const RoomContextSnapshot &left  = firstRoom_in.second;
         const RoomContextSnapshot &right = secondRoom_in.second;
-        const std::vector<double>  leftAngles =
-            angleSignature(left,
+        std::vector<double>        leftAngles{};
+        if (angleSignature(left,
                            configuration_in.angleTolerance_rad,
-                           configuration_in.descriptorElementsCap);
-        const std::vector<double> rightAngles =
-            angleSignature(right,
+                           configuration_in.descriptorElementsCap,
+                           leftAngles) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // angleSignature cannot fail; continue as before.
+        }
+        std::vector<double> rightAngles{};
+        if (angleSignature(right,
                            configuration_in.angleTolerance_rad,
-                           configuration_in.descriptorElementsCap);
-        const double leftMedian =
-            medianExtent(left, configuration_in.descriptorElementsCap);
-        const double rightMedian =
-            medianExtent(right, configuration_in.descriptorElementsCap);
-        const std::vector<double> leftExtents =
-            extentSignature(left,
+                           configuration_in.descriptorElementsCap,
+                           rightAngles) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // angleSignature cannot fail; continue as before.
+        }
+        double leftMedian{};
+        if (medianExtent(left,
+                         configuration_in.descriptorElementsCap,
+                         leftMedian) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // medianExtent cannot fail; continue as before.
+        }
+        double rightMedian{};
+        if (medianExtent(right,
+                         configuration_in.descriptorElementsCap,
+                         rightMedian) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // medianExtent cannot fail; continue as before.
+        }
+        std::vector<double> leftExtents{};
+        if (extentSignature(left,
                             leftMedian,
-                            configuration_in.descriptorElementsCap);
-        const std::vector<double> rightExtents =
-            extentSignature(right,
+                            configuration_in.descriptorElementsCap,
+                            leftExtents) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // extentSignature cannot fail; continue as before.
+        }
+        std::vector<double> rightExtents{};
+        if (extentSignature(right,
                             rightMedian,
-                            configuration_in.descriptorElementsCap);
-        const std::vector<std::pair<double, double>> leftApertures =
-            apertureSignature(left,
+                            configuration_in.descriptorElementsCap,
+                            rightExtents) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // extentSignature cannot fail; continue as before.
+        }
+        std::vector<std::pair<double, double>> leftApertures{};
+        if (apertureSignature(left,
                               leftMedian,
-                              configuration_in.descriptorElementsCap);
-        const std::vector<std::pair<double, double>> rightApertures =
-            apertureSignature(right,
+                              configuration_in.descriptorElementsCap,
+                              leftApertures) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // apertureSignature cannot fail; continue as before.
+        }
+        std::vector<std::pair<double, double>> rightApertures{};
+        if (apertureSignature(right,
                               rightMedian,
-                              configuration_in.descriptorElementsCap);
-        const std::vector<std::string> leftTopology =
-            topologySignature(left,
+                              configuration_in.descriptorElementsCap,
+                              rightApertures) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // apertureSignature cannot fail; continue as before.
+        }
+        std::vector<std::string> leftTopology{};
+        if (topologySignature(left,
                               configuration_in.topologyNodesCap,
-                              configuration_in.topoRefinementIters);
-        const std::vector<std::string> rightTopology =
-            topologySignature(right,
+                              configuration_in.topoRefinementIters,
+                              leftTopology) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // topologySignature cannot fail; continue as before.
+        }
+        std::vector<std::string> rightTopology{};
+        if (topologySignature(right,
                               configuration_in.topologyNodesCap,
-                              configuration_in.topoRefinementIters);
+                              configuration_in.topoRefinementIters,
+                              rightTopology) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // topologySignature cannot fail; continue as before.
+        }
 
         /* Minimum evidence: "at least 2 walls with valid normals and bounds,
          * or 1 wall + 1 passage." The "with valid normals and bounds"
@@ -157,12 +209,36 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
          * wall in the mixed branch needs only a valid normal (its own bounds,
          * if invalid, simply omit that wall's extent element per the missing-
          * data rule -- it does not disqualify the room). */
-        const bool leftWallEvidence  = validWallEvidenceCount(left) >= 2U;
-        const bool rightWallEvidence = validWallEvidenceCount(right) >= 2U;
+        std::size_t validWallEvidenceCount2{};
+        if (validWallEvidenceCount(left, validWallEvidenceCount2) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // validWallEvidenceCount cannot fail; continue as before.
+        }
+        const bool  leftWallEvidence = validWallEvidenceCount2 >= 2U;
+        std::size_t validWallEvidenceCount3{};
+        if (validWallEvidenceCount(right, validWallEvidenceCount3) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // validWallEvidenceCount cannot fail; continue as before.
+        }
+        const bool  rightWallEvidence = validWallEvidenceCount3 >= 2U;
+        std::size_t validNormalCount2{};
+        if (validNormalCount(left, validNormalCount2) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // validNormalCount cannot fail; continue as before.
+        }
         const bool leftMixedEvidence =
-            validNormalCount(left) >= 1U && !left.passageContexts.empty();
+            validNormalCount2 >= 1U && !left.passageContexts.empty();
+        std::size_t validNormalCount3{};
+        if (validNormalCount(right, validNormalCount3) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // validNormalCount cannot fail; continue as before.
+        }
         const bool rightMixedEvidence =
-            validNormalCount(right) >= 1U && !right.passageContexts.empty();
+            validNormalCount3 >= 1U && !right.passageContexts.empty();
         if (!(leftWallEvidence || leftMixedEvidence) ||
             !(rightWallEvidence || rightMixedEvidence))
         {
@@ -170,27 +246,50 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
         }
 
         CandidateCueBreakdown cues;
-        cues.angleDistance = paddedMeanL1(leftAngles,
-                                          rightAngles,
-                                          configuration_in.angleMissingPenalty);
+        double                distance2{};
+        if (paddedMeanL1(leftAngles,
+                         rightAngles,
+                         configuration_in.angleMissingPenalty,
+                         distance2) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // paddedMeanL1 cannot fail; continue as before.
+        }
+        cues.angleDistance = distance2;
         if (cues.angleDistance <= configuration_in.angleTolerance_rad)
         {
             cues.angleDistance = 0.0;
         }
-        cues.extentDistance =
-            paddedMeanL1(leftExtents,
+        double distance3{};
+        if (paddedMeanL1(leftExtents,
                          rightExtents,
-                         configuration_in.extentMissingPenalty);
-        cues.apertureDistance =
-            pairedManhattanDistance(leftApertures,
+                         configuration_in.extentMissingPenalty,
+                         distance3) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // paddedMeanL1 cannot fail; continue as before.
+        }
+        cues.extentDistance = distance3;
+        double distance4{};
+        if (pairedManhattanDistance(leftApertures,
                                     rightApertures,
-                                    configuration_in.apertureMissingPenalty);
+                                    configuration_in.apertureMissingPenalty,
+                                    distance4) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // pairedManhattanDistance cannot fail; continue as before.
+        }
+        cues.apertureDistance = distance4;
         cues.isTopologyAvailable =
             !leftTopology.empty() && !rightTopology.empty();
-        cues.topologyDistance =
-            cues.isTopologyAvailable
-                ? stringDistance(leftTopology, rightTopology)
-                : 0.0;
+        double distance5{};
+        if ((cues.isTopologyAvailable) &&
+            stringDistance(leftTopology, rightTopology, distance5) !=
+                SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // stringDistance cannot fail; continue as before.
+        }
+        cues.topologyDistance    = cues.isTopologyAvailable ? distance5 : 0.0;
         const double angleWeight = !leftAngles.empty() && !rightAngles.empty()
                                        ? configuration_in.weightAngle
                                        : 0.0;
@@ -224,10 +323,37 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
         candidate.cues         = cues;
         candidate.distance     = cues.weightedNumerator / denominator;
         candidate.isMinimumEvidenceSatisfied = true;
-        candidate.hasLowConfidence           = validNormalCount(left) < 2U ||
-                                     validNormalCount(right) < 2U ||
-                                     missingBoundsFraction(left) > 0.5 ||
-                                     missingBoundsFraction(right) > 0.5;
+        std::size_t validNormalCount4{};
+        if (validNormalCount(left, validNormalCount4) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // validNormalCount cannot fail; continue as before.
+        }
+        std::size_t validNormalCount5{};
+        if (!(validNormalCount4 < 2U) &&
+            validNormalCount(right, validNormalCount5) !=
+                SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // validNormalCount cannot fail; continue as before.
+        }
+        double missingBoundsFraction2{};
+        if (!(validNormalCount4 < 2U || validNormalCount5 < 2U) &&
+            missingBoundsFraction(left, missingBoundsFraction2) !=
+                SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // missingBoundsFraction cannot fail; continue as before.
+        }
+        double missingBoundsFraction3{};
+        if (!(validNormalCount4 < 2U || validNormalCount5 < 2U ||
+              missingBoundsFraction2 > 0.5) &&
+            missingBoundsFraction(right, missingBoundsFraction3) !=
+                SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // missingBoundsFraction cannot fail; continue as before.
+        }
+        candidate.hasLowConfidence =
+            validNormalCount4 < 2U || validNormalCount5 < 2U ||
+            missingBoundsFraction2 > 0.5 || missingBoundsFraction3 > 0.5;
         return candidate;
     };
 

@@ -15,6 +15,7 @@
 
 #include "Semantic/RoomContextSnapshot.h"
 #include "Semantic/RoomTracker.h"
+#include "Semantic/SemanticVerifyResultStatus.h"
 #include "Semantic/SemanticVerifyStatus.h"
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 
@@ -191,7 +192,8 @@ struct SemanticVerifyResult
      *               consumer). Wiring that call site is out of scope
      *               here.
      */
-    VerificationVerdict toVerificationVerdict() const;
+    [[nodiscard]] SemanticVerifyResultStatus toVerificationVerdict(
+        VerificationVerdict &verificationVerdict_out) const;
 };
 
 class SemanticVerify

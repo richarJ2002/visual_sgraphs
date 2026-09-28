@@ -13,6 +13,7 @@
 #define VS_GRAPHS_CORE_SEMANTIC_ROOMTRACKER_PRIVATE_FUNCTIONS_H
 
 #include "Semantic/RoomTracker.h"
+#include "Semantic/RoomTrackerStatus.h"
 
 #include <cmath>
 #include <iostream>
@@ -25,11 +26,14 @@ namespace core
 namespace semantic
 {
 
-std::string formatDouble(double numericValue_in);
+[[nodiscard]] RoomTrackerStatus formatDouble(double       numericValue_in,
+                                             std::string &formattedValue_out);
 
-const char *stateLiteral(RoomTrackingState state_in);
+[[nodiscard]] RoomTrackerStatus stateLiteral(RoomTrackingState state_in,
+                                             const char *&p_stateLiteral_out);
 
-const char *eventLiteral(RoomTrackingEvent event_in);
+[[nodiscard]] RoomTrackerStatus eventLiteral(RoomTrackingEvent event_in,
+                                             const char *&p_eventLiteral_out);
 
 } // namespace semantic
 } // namespace core

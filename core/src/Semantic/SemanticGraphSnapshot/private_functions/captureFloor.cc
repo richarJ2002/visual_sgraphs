@@ -36,7 +36,9 @@ namespace core
 namespace semantic
 {
 
-FloorRecord captureFloor(Floor *p_floor_in, long unsigned int mapId_in)
+SemanticGraphSnapshotStatus captureFloor(Floor            *p_floor_in,
+                                         long unsigned int mapId_in,
+                                         FloorRecord      &floorRecord_out)
 {
     FloorRecord record;
     int         floor_inId{};
@@ -44,7 +46,13 @@ FloorRecord captureFloor(Floor *p_floor_in, long unsigned int mapId_in)
     {
         // getId cannot fail; continue as before.
     }
-    record.key = makeKey(EntityKind::FLOOR, mapId_in, floor_inId);
+    EntityKey key2{};
+    if (makeKey(EntityKind::FLOOR, mapId_in, floor_inId, key2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // makeKey cannot fail; continue as before.
+    }
+    record.key = key2;
 
     core::Map *p_declaredMap = nullptr;
     if (p_floor_in->getMap(p_declaredMap) != FloorStatus::FLOOR_STATUS_SUCCESS)
@@ -83,11 +91,16 @@ FloorRecord captureFloor(Floor *p_floor_in, long unsigned int mapId_in)
     }
     for (Room *p_room : floor_inRooms)
     {
-        appendRoomRef(p_room, record.roomRefs);
+        if (appendRoomRef(p_room, record.roomRefs) !=
+            SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+        {
+            // appendRoomRef cannot fail; continue as before.
+        }
     }
     std::sort(record.roomRefs.begin(), record.roomRefs.end(), &isEntityRefLess);
 
-    return record;
+    floorRecord_out = record;
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

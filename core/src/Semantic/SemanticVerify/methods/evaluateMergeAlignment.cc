@@ -41,29 +41,45 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
     std::map<std::string, const SemanticMergeRoomEvidence *> survivingById;
     for (const SemanticMergeRoomEvidence &room : survivingRooms_in)
     {
-        survivingById.emplace(stableRoomIdentity(room.context), &room);
+        std::string identity{};
+        if (stableRoomIdentity(room.context, identity) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // stableRoomIdentity cannot fail; continue as before.
+        }
+        survivingById.emplace(identity, &room);
     }
 
     bool hasMissingEvidence = false;
     for (const SemanticMergeRoomEvidence &absorbedRoom : absorbedRooms_in)
     {
+        std::string identity2{};
+        if (stableRoomIdentity(absorbedRoom.context, identity2) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // stableRoomIdentity cannot fail; continue as before.
+        }
         const std::map<std::string,
                        const SemanticMergeRoomEvidence *>::const_iterator
-            match =
-                survivingById.find(stableRoomIdentity(absorbedRoom.context));
+            match = survivingById.find(identity2);
         if (match == survivingById.end())
         {
             continue;
         }
         ++result.sharedRoomCount;
 
-        std::size_t          matchedWalls = 0U;
-        const AlignmentCheck wallCheck =
-            checkFixedTransformWalls(match->second->walls,
+        std::size_t    matchedWalls = 0U;
+        AlignmentCheck wallCheck{};
+        if (checkFixedTransformWalls(match->second->walls,
                                      absorbedRoom.walls,
                                      transform_absorbedToSurviving_in,
                                      configuration_in,
-                                     matchedWalls);
+                                     matchedWalls,
+                                     wallCheck) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // checkFixedTransformWalls cannot fail; continue as before.
+        }
         result.matchedWallCount += matchedWalls;
         if (wallCheck == AlignmentCheck::CONTRADICTION)
         {
@@ -81,13 +97,18 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
         std::size_t         matchedPassages = 0U;
         SemanticMergeReason topologyReason =
             SemanticMergeReason::PASSAGE_EVIDENCE_MISSING;
-        const AlignmentCheck topologyCheck =
-            checkPassageTopology(match->second->context,
+        AlignmentCheck topologyCheck{};
+        if (checkPassageTopology(match->second->context,
                                  absorbedRoom.context,
                                  transform_absorbedToSurviving_in,
                                  configuration_in,
                                  matchedPassages,
-                                 topologyReason);
+                                 topologyReason,
+                                 topologyCheck) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // checkPassageTopology cannot fail; continue as before.
+        }
         result.matchedPassageCount += matchedPassages;
         if (topologyCheck == AlignmentCheck::CONTRADICTION)
         {

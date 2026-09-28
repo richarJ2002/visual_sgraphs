@@ -34,14 +34,21 @@ namespace core
 namespace semantic
 {
 
-WallRecord
+SemanticGraphSnapshotStatus
     captureWall(geometric::Plane *p_wall_in,
                 long unsigned int mapId_in,
                 const std::map<geometric::Plane *, std::vector<EntityRef>>
-                    &wallOwnersByPointer_in)
+                           &wallOwnersByPointer_in,
+                WallRecord &wallRecord_out)
 {
     WallRecord record;
-    record.key       = makeKey(EntityKind::WALL, mapId_in, p_wall_in->getId());
+    EntityKey  key2{};
+    if (makeKey(EntityKind::WALL, mapId_in, p_wall_in->getId(), key2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // makeKey cannot fail; continue as before.
+    }
+    record.key       = key2;
     record.isLive    = !p_wall_in->isBad();
     record.planeType = p_wall_in->getPlaneType();
 
@@ -65,7 +72,13 @@ WallRecord
     record.successfulRefitGeneration = geometry.successfulRefitGeneration;
 
     record.observationOrigin_World_m = p_wall_in->getObservationOrigin_World();
-    record.twinRef                   = rawPlaneRef(p_wall_in->getTwinFace());
+    RawPlaneRef rawPlaneRef2{};
+    if (rawPlaneRef(p_wall_in->getTwinFace(), rawPlaneRef2) !=
+        SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+    {
+        // rawPlaneRef cannot fail; continue as before.
+    }
+    record.twinRef = rawPlaneRef2;
 
     const std::map<geometric::Plane *, std::vector<EntityRef>>::const_iterator
         ownerIt = wallOwnersByPointer_in.find(p_wall_in);
@@ -74,7 +87,8 @@ WallRecord
         record.ownerRoomRefs = ownerIt->second;
     }
 
-    return record;
+    wallRecord_out = record;
+    return SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

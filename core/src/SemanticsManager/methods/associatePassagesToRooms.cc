@@ -261,7 +261,14 @@ void SemanticsManager::associatePassagesToRooms(void)
         {
             // getKnownSideProvenance cannot fail; continue as before.
         }
-        if (!knownSide.hasDirection())
+        bool knownSideHasDirection{};
+        if (knownSide.hasDirection(knownSideHasDirection) !=
+            semantic::KnownSideProvenanceStatus::
+                KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+        {
+            // hasDirection cannot fail; continue as before.
+        }
+        if (!knownSideHasDirection)
         {
             /* Which side the passage was seen from is a property of the
              * observation that produced its supporting wall face, so take it
@@ -590,8 +597,15 @@ void SemanticsManager::associatePassagesToRooms(void)
             if (ownsExactSupportingWall &&
                 std::abs(roomSide_m) <= sideEpsilon_m)
             {
+                bool knownSideHasDirection2{};
+                if (knownSide.hasDirection(knownSideHasDirection2) !=
+                    semantic::KnownSideProvenanceStatus::
+                        KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+                {
+                    // hasDirection cannot fail; continue as before.
+                }
                 const double knownSideSign =
-                    knownSide.hasDirection()
+                    knownSideHasDirection2
                         ? knownSide.direction_World.dot(
                               passageEquation_World.head<3>())
                         : 0.0;
@@ -959,15 +973,30 @@ void SemanticsManager::associatePassagesToRooms(void)
             classifyAssociatedRoom(p_positiveSideRoom);
         }
 
+        bool knownSideHasDirection3{};
+        if (knownSide.hasDirection(knownSideHasDirection3) !=
+            semantic::KnownSideProvenanceStatus::
+                KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+        {
+            // hasDirection cannot fail; continue as before.
+        }
         const double knownSideSign =
-            knownSide.hasDirection()
+            knownSideHasDirection3
                 ? knownSide.direction_World.dot(passageEquation_World.head<3>())
                 : 0.0;
         const auto roomIsOnKnownSide = [&passageEquation_World,
                                         &knownSide,
                                         knownSideSign](semantic::Room *p_room)
         {
-            if (p_room == nullptr || !knownSide.hasDirection() ||
+            bool knownSideHasDirection{};
+            if (!(p_room == nullptr) &&
+                knownSide.hasDirection(knownSideHasDirection) !=
+                    semantic::KnownSideProvenanceStatus::
+                        KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+            {
+                // hasDirection cannot fail; continue as before.
+            }
+            if (p_room == nullptr || !knownSideHasDirection ||
                 std::abs(knownSideSign) < 1e-8)
             {
                 return false;
@@ -1063,11 +1092,18 @@ void SemanticsManager::associatePassagesToRooms(void)
                 {
                     // getId cannot fail; continue as before.
                 }
+                bool knownSideHasDirection4{};
+                if (knownSide.hasDirection(knownSideHasDirection4) !=
+                    semantic::KnownSideProvenanceStatus::
+                        KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+                {
+                    // hasDirection cannot fail; continue as before.
+                }
                 std::cout << "[SemMgr] semantic::Passage#" << passageId9
                           << " has 0 associated rooms (" << zeroRoomCycles
                           << "/" << maximumZeroRoomCycles
                           << " grace cycles); camera-side provenance="
-                          << (knownSide.hasDirection() ? "known" : "missing")
+                          << (knownSideHasDirection4 ? "known" : "missing")
                           << "." << std::endl;
             }
         }
@@ -1193,6 +1229,13 @@ void SemanticsManager::associatePassagesToRooms(void)
         if (confirmedAssociatedRoomCount == 2U)
         {
             semantic::Room *p_farSideConfirmedRoom = nullptr;
+            bool            knownSideHasDirection11{};
+            if (knownSide.hasDirection(knownSideHasDirection11) !=
+                semantic::KnownSideProvenanceStatus::
+                    KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+            {
+                // hasDirection cannot fail; continue as before.
+            }
             if (knownSide.p_room == p_negativeSideRoom)
             {
                 p_farSideConfirmedRoom = p_positiveSideRoom;
@@ -1201,7 +1244,7 @@ void SemanticsManager::associatePassagesToRooms(void)
             {
                 p_farSideConfirmedRoom = p_negativeSideRoom;
             }
-            else if (knownSide.hasDirection())
+            else if (knownSideHasDirection11)
             {
                 p_farSideConfirmedRoom = roomIsOnKnownSide(p_negativeSideRoom)
                                              ? p_positiveSideRoom
@@ -1297,16 +1340,33 @@ void SemanticsManager::associatePassagesToRooms(void)
         }
 
         bool passageHasProspectiveRoom2{};
+        bool knownSideHasDirection5{};
+        if (!(confirmedAssociatedRoomCount == 1) &&
+            (confirmedAssociatedRoomCount == 0) &&
+            knownSide.hasDirection(knownSideHasDirection5) !=
+                semantic::KnownSideProvenanceStatus::
+                    KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+        {
+            // hasDirection cannot fail; continue as before.
+        }
         if (((confirmedAssociatedRoomCount == 1 ||
-              (confirmedAssociatedRoomCount == 0 &&
-               knownSide.hasDirection()))) &&
+              (confirmedAssociatedRoomCount == 0 && knownSideHasDirection5))) &&
             p_passage->hasProspectiveRoom(passageHasProspectiveRoom2) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
             // hasProspectiveRoom cannot fail; continue as before.
         }
+        bool knownSideHasDirection6{};
+        if (!(confirmedAssociatedRoomCount == 1) &&
+            (confirmedAssociatedRoomCount == 0) &&
+            knownSide.hasDirection(knownSideHasDirection6) !=
+                semantic::KnownSideProvenanceStatus::
+                    KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+        {
+            // hasDirection cannot fail; continue as before.
+        }
         if ((confirmedAssociatedRoomCount == 1 ||
-             (confirmedAssociatedRoomCount == 0 && knownSide.hasDirection())) &&
+             (confirmedAssociatedRoomCount == 0 && knownSideHasDirection6)) &&
             !passageHasProspectiveRoom2)
         {
             /* Passage limit: don't create prospective if passage already has 2
@@ -1353,10 +1413,24 @@ void SemanticsManager::associatePassagesToRooms(void)
                      * created. */
                     vs_graphs::core::semantic::Room *p_knownRoom =
                         p_confirmedAssociatedRoom;
+                    bool knownSideHasDirection7{};
+                    if (knownSide.hasDirection(knownSideHasDirection7) !=
+                        semantic::KnownSideProvenanceStatus::
+                            KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+                    {
+                        // hasDirection cannot fail; continue as before.
+                    }
                     Eigen::Vector3d knownSideDirection =
-                        knownSide.hasDirection() ? knownSide.direction_World
-                                                 : Eigen::Vector3d::Zero();
-                    if (!knownSide.hasDirection() && p_knownRoom != nullptr)
+                        knownSideHasDirection7 ? knownSide.direction_World
+                                               : Eigen::Vector3d::Zero();
+                    bool knownSideHasDirection8{};
+                    if (knownSide.hasDirection(knownSideHasDirection8) !=
+                        semantic::KnownSideProvenanceStatus::
+                            KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+                    {
+                        // hasDirection cannot fail; continue as before.
+                    }
+                    if (!knownSideHasDirection8 && p_knownRoom != nullptr)
                     {
                         Eigen::Vector3d knownRoomCentroid2{};
                         if (p_knownRoom->getCentroid(knownRoomCentroid2) !=
@@ -1987,15 +2061,33 @@ void SemanticsManager::associatePassagesToRooms(void)
             // getTraversalEvidence cannot fail; continue as before.
         }
         bool passageHasProspectiveRoom3{};
+        bool knownSideHasDirection9{};
+        if (((passageIsPassable2 || passageTraversalEvidence2)) &&
+            !(confirmedAssociatedRoomCount > 0U) &&
+            knownSide.hasDirection(knownSideHasDirection9) !=
+                semantic::KnownSideProvenanceStatus::
+                    KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+        {
+            // hasDirection cannot fail; continue as before.
+        }
         if (((passageIsPassable2 || passageTraversalEvidence2) &&
-             (confirmedAssociatedRoomCount > 0U || knownSide.hasDirection())) &&
+             (confirmedAssociatedRoomCount > 0U || knownSideHasDirection9)) &&
             p_passage->hasProspectiveRoom(passageHasProspectiveRoom3) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
             // hasProspectiveRoom cannot fail; continue as before.
         }
+        bool knownSideHasDirection10{};
+        if (((passageIsPassable2 || passageTraversalEvidence2)) &&
+            !(confirmedAssociatedRoomCount > 0U) &&
+            knownSide.hasDirection(knownSideHasDirection10) !=
+                semantic::KnownSideProvenanceStatus::
+                    KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+        {
+            // hasDirection cannot fail; continue as before.
+        }
         if ((passageIsPassable2 || passageTraversalEvidence2) &&
-            (confirmedAssociatedRoomCount > 0U || knownSide.hasDirection()) &&
+            (confirmedAssociatedRoomCount > 0U || knownSideHasDirection10) &&
             !passageHasProspectiveRoom3)
         {
             int passageId18{};

@@ -34,17 +34,23 @@ namespace core
 namespace semantic
 {
 
-bool hasNonFiniteCoordinate(const std::vector<Eigen::Vector3d> &corners_in)
+SemanticAxiomEvaluatorStatus
+    hasNonFiniteCoordinate(const std::vector<Eigen::Vector3d> &corners_in,
+                           bool &hasNonFiniteCoordinate_out)
 {
     for (const Eigen::Vector3d &corner : corners_in)
     {
         if (!std::isfinite(corner.x()) || !std::isfinite(corner.y()) ||
             !std::isfinite(corner.z()))
         {
-            return true;
+            hasNonFiniteCoordinate_out = true;
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
         }
     }
-    return false;
+    hasNonFiniteCoordinate_out = false;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

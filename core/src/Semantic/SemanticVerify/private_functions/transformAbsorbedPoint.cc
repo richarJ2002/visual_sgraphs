@@ -30,9 +30,9 @@ namespace core
 namespace semantic
 {
 
-bool transformAbsorbedPoint(const g2o::Sim3       &transform_in,
-                            const Eigen::Vector3d &point_in,
-                            Eigen::Vector3d       &mapped_out)
+SemanticVerifyStatus transformAbsorbedPoint(const g2o::Sim3       &transform_in,
+                                            const Eigen::Vector3d &point_in,
+                                            Eigen::Vector3d       &mapped_out)
 {
     const double          scale = transform_in.scale();
     const Eigen::Matrix3d rotation =
@@ -42,10 +42,14 @@ bool transformAbsorbedPoint(const g2o::Sim3       &transform_in,
     if (!std::isfinite(scale) || scale <= 0.0 || !rotation.allFinite() ||
         !translation.allFinite() || !point_in.allFinite())
     {
-        return false;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_INVALID_ARGUMENT;
     }
     mapped_out = scale * (rotation * point_in) + translation;
-    return mapped_out.allFinite();
+    if (!mapped_out.allFinite())
+    {
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_NUMERICAL_FAILURE;
+    }
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

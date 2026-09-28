@@ -68,8 +68,14 @@ nlohmann::json serializePassageRecord(const PassageRecord &value_in,
     json["traversalUnknownCount"]    = value_in.traversalUnknownCount;
     json["endpointSlotReason"] =
         static_cast<unsigned int>(value_in.endpointSlotReason);
-    json["endpointSlotReasonName"] =
-        unavailableReasonName(value_in.endpointSlotReason);
+    std::string unavailableReasonName2{};
+    if (unavailableReasonName(value_in.endpointSlotReason,
+                              unavailableReasonName2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // unavailableReasonName cannot fail; continue as before.
+    }
+    json["endpointSlotReasonName"] = unavailableReasonName2;
 
     if (includeGeometry_in)
     {

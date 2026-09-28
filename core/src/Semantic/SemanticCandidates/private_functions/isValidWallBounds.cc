@@ -19,13 +19,16 @@ namespace core
 namespace semantic
 {
 
-bool isValidWallBounds(const WallBounds &bounds_in)
+SemanticCandidatesStatus isValidWallBounds(const WallBounds &bounds_in,
+                                           bool &isValidWallBounds_out)
 {
-    return bounds_in.isValid && std::isfinite(bounds_in.minU_m) &&
-           std::isfinite(bounds_in.maxU_m) && std::isfinite(bounds_in.minV_m) &&
-           std::isfinite(bounds_in.maxV_m) &&
-           bounds_in.maxU_m > bounds_in.minU_m &&
-           bounds_in.maxV_m > bounds_in.minV_m;
+    isValidWallBounds_out =
+        bounds_in.isValid && std::isfinite(bounds_in.minU_m) &&
+        std::isfinite(bounds_in.maxU_m) && std::isfinite(bounds_in.minV_m) &&
+        std::isfinite(bounds_in.maxV_m) &&
+        bounds_in.maxU_m > bounds_in.minU_m &&
+        bounds_in.maxV_m > bounds_in.minV_m;
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

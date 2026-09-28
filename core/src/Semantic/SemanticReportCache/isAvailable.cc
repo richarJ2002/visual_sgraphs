@@ -32,10 +32,12 @@ namespace core
 namespace semantic
 {
 
-bool SemanticReportCache::isAvailable() const
+SemanticReportCacheStatus
+    SemanticReportCache::isAvailable(bool &isAvailable_out) const
 {
     std::lock_guard<std::mutex> lock(cacheMutex);
-    return hasCachedReport;
+    isAvailable_out = hasCachedReport;
+    return SemanticReportCacheStatus::SEMANTIC_REPORT_CACHE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

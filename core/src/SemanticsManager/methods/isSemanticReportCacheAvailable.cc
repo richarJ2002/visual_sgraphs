@@ -25,7 +25,14 @@ namespace core
 
 bool SemanticsManager::isSemanticReportCacheAvailable(void) const
 {
-    return semanticReportCache.isAvailable();
+    bool semanticReportCacheIsAvailable{};
+    if (semanticReportCache.isAvailable(semanticReportCacheIsAvailable) !=
+        semantic::SemanticReportCacheStatus::
+            SEMANTIC_REPORT_CACHE_STATUS_SUCCESS)
+    {
+        // isAvailable cannot fail; continue as before.
+    }
+    return semanticReportCacheIsAvailable;
 }
 
 } // namespace core

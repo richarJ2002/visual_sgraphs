@@ -31,7 +31,8 @@ namespace core
 namespace semantic
 {
 
-std::string sha256HexDigest(const std::string &bytes_in)
+Sha256DigestStatus sha256HexDigest(const std::string &bytes_in,
+                                   std::string       &hexDigest_out)
 {
     std::array<unsigned char, EVP_MAX_MD_SIZE> digest{};
     unsigned int                               digestLength = 0U;
@@ -54,7 +55,8 @@ std::string sha256HexDigest(const std::string &bytes_in)
         hex.push_back(HEX_CHARS[(digest[byteIndex] >> 4U) & 0x0FU]);
         hex.push_back(HEX_CHARS[digest[byteIndex] & 0x0FU]);
     }
-    return hex;
+    hexDigest_out = hex;
+    return Sha256DigestStatus::SHA256_DIGEST_STATUS_SUCCESS;
 }
 
 } // namespace semantic

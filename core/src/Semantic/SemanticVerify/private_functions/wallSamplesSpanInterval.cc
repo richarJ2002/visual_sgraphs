@@ -30,11 +30,13 @@ namespace core
 namespace semantic
 {
 
-bool wallSamplesSpanInterval(const VerifyWallObservation &wall_in,
-                             const Eigen::Vector3d       &axis_in,
-                             const Eigen::Vector3d       &origin_in,
-                             double                      &minimum_out,
-                             double                      &maximum_out)
+SemanticVerifyStatus
+    wallSamplesSpanInterval(const VerifyWallObservation &wall_in,
+                            const Eigen::Vector3d       &axis_in,
+                            const Eigen::Vector3d       &origin_in,
+                            double                      &minimum_out,
+                            double                      &maximum_out,
+                            bool                        &hasFiniteSample_out)
 {
     bool   hasSample = false;
     double minimum   = std::numeric_limits<double>::infinity();
@@ -52,11 +54,13 @@ bool wallSamplesSpanInterval(const VerifyWallObservation &wall_in,
     }
     if (!hasSample)
     {
-        return false;
+        hasFiniteSample_out = false;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
-    minimum_out = minimum;
-    maximum_out = maximum;
-    return true;
+    minimum_out         = minimum;
+    maximum_out         = maximum;
+    hasFiniteSample_out = true;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -19,14 +19,17 @@ namespace core
 namespace semantic
 {
 
-std::vector<double> extentSignature(const RoomContextSnapshot &snapshot_in,
-                                    const double               median_in,
-                                    const std::size_t          cap_in)
+SemanticCandidatesStatus
+    extentSignature(const RoomContextSnapshot &snapshot_in,
+                    const double               median_in,
+                    const std::size_t          cap_in,
+                    std::vector<double>       &extentSignature_out)
 {
     std::vector<double> signature;
     if (!std::isfinite(median_in) || median_in <= 0.0)
     {
-        return signature;
+        extentSignature_out = signature;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
     }
     signature.reserve(std::min(snapshot_in.wallBounds.size(), cap_in));
     for (const WallBounds &bounds : snapshot_in.wallBounds)
@@ -35,7 +38,13 @@ std::vector<double> extentSignature(const RoomContextSnapshot &snapshot_in,
         {
             break;
         }
-        if (isValidWallBounds(bounds))
+        bool isValidWallBounds2{};
+        if (isValidWallBounds(bounds, isValidWallBounds2) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // isValidWallBounds cannot fail; continue as before.
+        }
+        if (isValidWallBounds2)
         {
             signature.push_back((bounds.maxU_m - bounds.minU_m) / median_in);
             if (signature.size() < cap_in)
@@ -46,7 +55,8 @@ std::vector<double> extentSignature(const RoomContextSnapshot &snapshot_in,
         }
     }
     std::sort(signature.begin(), signature.end());
-    return signature;
+    extentSignature_out = signature;
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

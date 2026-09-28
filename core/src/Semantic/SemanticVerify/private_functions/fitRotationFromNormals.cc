@@ -34,23 +34,38 @@ namespace semantic
  * closed-form pattern as Utils::computeMapTransform_Horn's covariance/SVD
  * step, applied to plane normals instead of point positions -- Horn's
  * function itself is not called; it is point-based and unsuitable here). */
-RotationFit
+SemanticVerifyStatus
     fitRotationFromNormals(const std::vector<Eigen::Vector3d> &normalsA_in,
-                           const std::vector<Eigen::Vector3d> &normalsB_in)
+                           const std::vector<Eigen::Vector3d> &normalsB_in,
+                           RotationFit                        &rotation_out)
 {
     RotationFit result;
     if (normalsA_in.size() != normalsB_in.size() || normalsA_in.size() < 3U)
     {
-        return result;
+        rotation_out = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     Eigen::Matrix3d covariance = Eigen::Matrix3d::Zero();
     for (std::size_t index = 0U; index < normalsA_in.size(); ++index)
     {
-        if (!isFiniteVector(normalsA_in[index]) ||
-            !isFiniteVector(normalsB_in[index]))
+        bool isFiniteVector2{};
+        if (isFiniteVector(normalsA_in[index], isFiniteVector2) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            return result;
+            // isFiniteVector cannot fail; continue as before.
+        }
+        bool isFiniteVector3{};
+        if (!(!isFiniteVector2) &&
+            isFiniteVector(normalsB_in[index], isFiniteVector3) !=
+                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // isFiniteVector cannot fail; continue as before.
+        }
+        if (!isFiniteVector2 || !isFiniteVector3)
+        {
+            rotation_out = result;
+            return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
         }
         covariance += normalsA_in[index] * normalsB_in[index].transpose();
     }
@@ -68,7 +83,8 @@ RotationFit
     result.rotation =
         svd.matrixV() * signCorrection * svd.matrixU().transpose();
     result.valid = result.rotation.allFinite();
-    return result;
+    rotation_out = result;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

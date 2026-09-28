@@ -35,11 +35,12 @@ namespace semantic
  * walls (or different places): positive disjointness evidence contradicts,
  * while walls without enough samples are skipped (the angle/offset core
  * owns their verdict). */
-AlignmentCheck checkConsecutiveWallEdgeOverlap(
+SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
     const std::vector<ConsecutiveAnchorPair> &pairs_in,
     const g2o::Sim3                          &transform_in,
     double                                    maximumNormalAngle_deg_in,
-    double                                    minimumOverlap_m_in)
+    double                                    minimumOverlap_m_in,
+    AlignmentCheck                           &alignmentCheck_out)
 {
     for (const ConsecutiveAnchorPair &pair : pairs_in)
     {
@@ -127,11 +128,18 @@ AlignmentCheck checkConsecutiveWallEdgeOverlap(
                 axis.normalize();
                 double survivingMinimum = 0.0;
                 double survivingMaximum = 0.0;
-                if (!wallSamplesSpanInterval(survivingWall,
-                                             axis,
-                                             survivingWall.centroid_World,
-                                             survivingMinimum,
-                                             survivingMaximum))
+                bool   hasFiniteSample{};
+                if (wallSamplesSpanInterval(survivingWall,
+                                            axis,
+                                            survivingWall.centroid_World,
+                                            survivingMinimum,
+                                            survivingMaximum,
+                                            hasFiniteSample) !=
+                    SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+                {
+                    // wallSamplesSpanInterval cannot fail; continue as before.
+                }
+                if (!hasFiniteSample)
                 {
                     continue;
                 }
@@ -144,9 +152,10 @@ AlignmentCheck checkConsecutiveWallEdgeOverlap(
                      absorbedWall.supportSample_World)
                 {
                     Eigen::Vector3d mappedSample = Eigen::Vector3d::Zero();
-                    if (!transformAbsorbedPoint(transform_in,
-                                                sample,
-                                                mappedSample))
+                    if (!(transformAbsorbedPoint(transform_in,
+                                                 sample,
+                                                 mappedSample) ==
+                          SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS))
                     {
                         continue;
                     }
@@ -173,11 +182,13 @@ AlignmentCheck checkConsecutiveWallEdgeOverlap(
             }
             if (hasCompatibleWall && !hasOverlapPartner)
             {
-                return AlignmentCheck::CONTRADICTION;
+                alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+                return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
             }
         }
     }
-    return AlignmentCheck::ALIGNED;
+    alignmentCheck_out = AlignmentCheck::ALIGNED;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

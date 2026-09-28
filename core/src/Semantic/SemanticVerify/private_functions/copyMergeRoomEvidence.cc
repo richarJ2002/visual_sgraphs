@@ -30,9 +30,10 @@ namespace core
 namespace semantic
 {
 
-SemanticMergeRoomEvidence
+SemanticVerifyStatus
     copyMergeRoomEvidence(const Room                 *p_room_in,
-                          const SemanticVerifyConfig &configuration_in)
+                          const SemanticVerifyConfig &configuration_in,
+                          SemanticMergeRoomEvidence  &evidence_out)
 {
     SemanticMergeRoomEvidence evidence;
     int                       room_inId{};
@@ -157,7 +158,13 @@ SemanticMergeRoomEvidence
             }
             context.knownSideRoomId = id2;
         }
-        context.hasKnownSideDirection = knownSide.hasDirection();
+        bool knownSideHasDirection{};
+        if (knownSide.hasDirection(knownSideHasDirection) !=
+            KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+        {
+            // hasDirection cannot fail; continue as before.
+        }
+        context.hasKnownSideDirection = knownSideHasDirection;
         if (context.hasKnownSideDirection)
         {
             context.knownSideDirection_World = knownSide.direction_World;
@@ -175,7 +182,8 @@ SemanticMergeRoomEvidence
         }
         evidence.context.passageContexts.push_back(context);
     }
-    return evidence;
+    evidence_out = evidence;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

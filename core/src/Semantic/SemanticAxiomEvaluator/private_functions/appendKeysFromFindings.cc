@@ -32,9 +32,10 @@ namespace core
 namespace semantic
 {
 
-void appendKeysFromFindings(const std::vector<Finding> &findings_in,
-                            AxiomResult                 result_in,
-                            std::vector<EntityKey>     &relevantKeys_inout)
+SemanticAxiomEvaluatorStatus
+    appendKeysFromFindings(const std::vector<Finding> &findings_in,
+                           AxiomResult                 result_in,
+                           std::vector<EntityKey>     &relevantKeys_inout)
 {
     for (const Finding &finding : findings_in)
     {
@@ -46,6 +47,9 @@ void appendKeysFromFindings(const std::vector<Finding> &findings_in,
                                   finding.involvedKeys.begin(),
                                   finding.involvedKeys.end());
     }
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

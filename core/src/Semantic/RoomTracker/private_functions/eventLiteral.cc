@@ -28,30 +28,59 @@ namespace core
 namespace semantic
 {
 
-const char *eventLiteral(RoomTrackingEvent event_in)
+RoomTrackerStatus eventLiteral(RoomTrackingEvent event_in,
+                               const char      *&p_eventLiteral_out)
 {
     switch (event_in)
     {
     case RoomTrackingEvent::FIRST_ROOM_CONFIRMED:
-        return "FIRST_ROOM_CONFIRMED";
-    case RoomTrackingEvent::PASSAGE_CROSSING_DETECTED:
-        return "PASSAGE_CROSSING_DETECTED";
-    case RoomTrackingEvent::TRACKING_LOST:
-        return "TRACKING_LOST";
-    case RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE:
-        return "PASSAGE_TRAVERSAL_COMPLETE";
-    case RoomTrackingEvent::ROOM_REACQUIRED:
-        return "ROOM_REACQUIRED";
-    case RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH:
-        return "NEW_MAP_WITH_ROOM_MATCH";
-    case RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM:
-        return "VERIFIED_MATCH_TO_LAST_ROOM";
-    case RoomTrackingEvent::LOST_TIMEOUT:
-        return "LOST_TIMEOUT";
-    case RoomTrackingEvent::REACQUIRE_TIMEOUT:
-        return "REACQUIRE_TIMEOUT";
+    {
+        p_eventLiteral_out = "FIRST_ROOM_CONFIRMED";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
     }
-    return "UNKNOWN_EVENT";
+    case RoomTrackingEvent::PASSAGE_CROSSING_DETECTED:
+    {
+        p_eventLiteral_out = "PASSAGE_CROSSING_DETECTED";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    case RoomTrackingEvent::TRACKING_LOST:
+    {
+        p_eventLiteral_out = "TRACKING_LOST";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    case RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE:
+    {
+        p_eventLiteral_out = "PASSAGE_TRAVERSAL_COMPLETE";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    case RoomTrackingEvent::ROOM_REACQUIRED:
+    {
+        p_eventLiteral_out = "ROOM_REACQUIRED";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    case RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH:
+    {
+        p_eventLiteral_out = "NEW_MAP_WITH_ROOM_MATCH";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    case RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM:
+    {
+        p_eventLiteral_out = "VERIFIED_MATCH_TO_LAST_ROOM";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    case RoomTrackingEvent::LOST_TIMEOUT:
+    {
+        p_eventLiteral_out = "LOST_TIMEOUT";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    case RoomTrackingEvent::REACQUIRE_TIMEOUT:
+    {
+        p_eventLiteral_out = "REACQUIRE_TIMEOUT";
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+    }
+    }
+    p_eventLiteral_out = "UNKNOWN_EVENT";
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -36,7 +36,9 @@ namespace core
 namespace semantic
 {
 
-nlohmann::json entityKeysToJson(const std::vector<EntityKey> &keys_in)
+SemanticDiagnosticsStatus
+    entityKeysToJson(const std::vector<EntityKey> &keys_in,
+                     nlohmann::json               &json_out)
 {
     std::vector<EntityKey> sortedKeys = keys_in;
     std::sort(sortedKeys.begin(), sortedKeys.end());
@@ -44,12 +46,20 @@ nlohmann::json entityKeysToJson(const std::vector<EntityKey> &keys_in)
     nlohmann::json json = nlohmann::json::array();
     for (const EntityKey &key : sortedKeys)
     {
+        std::string entityKindName2{};
+        if (entityKindName(key.kind, entityKindName2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // entityKindName cannot fail; continue as before.
+        }
         json.push_back({{"kind", static_cast<unsigned int>(key.kind)},
-                        {"kindName", entityKindName(key.kind)},
+                        {"kindName", entityKindName2},
                         {"mapId", key.mapId},
                         {"entityId", key.entityId}});
     }
-    return json;
+    json_out = json;
+    return SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS;
 }
 
 } // namespace semantic

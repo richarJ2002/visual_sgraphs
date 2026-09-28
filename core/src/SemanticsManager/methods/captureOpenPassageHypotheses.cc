@@ -36,8 +36,14 @@ std::vector<semantic::OpenPassageHypothesisRecord>
     for (const OpenPassageEvidence &evidence : openPassageEvidence)
     {
         semantic::OpenPassageHypothesisRecord record;
-        record.supportingWallRef =
-            semantic::rawPlaneRef(evidence.p_supportingWall);
+        semantic::RawPlaneRef                 rawPlaneRef2{};
+        if (semantic::rawPlaneRef(evidence.p_supportingWall, rawPlaneRef2) !=
+            semantic::SemanticGraphSnapshotStatus::
+                SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+        {
+            // rawPlaneRef cannot fail; continue as before.
+        }
+        record.supportingWallRef = rawPlaneRef2;
         record.centroid_World_m  = evidence.centroid_World_m;
         record.confirmationCount = evidence.confirmationCount;
         record.missedUpdateCount = evidence.missedUpdateCount;

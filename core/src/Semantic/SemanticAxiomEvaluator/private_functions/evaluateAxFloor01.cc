@@ -35,8 +35,9 @@ namespace core
 namespace semantic
 {
 
-void evaluateAxFloor01(const SemanticGraphSnapshot &snapshot_in,
-                       std::vector<Finding>        &findings_inout)
+SemanticAxiomEvaluatorStatus
+    evaluateAxFloor01(const SemanticGraphSnapshot &snapshot_in,
+                      std::vector<Finding>        &findings_inout)
 {
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
     {
@@ -46,10 +47,16 @@ void evaluateAxFloor01(const SemanticGraphSnapshot &snapshot_in,
             {
                 continue;
             }
-            evaluateOneRoomFloorReciprocity(room,
-                                            snapshot_in,
-                                            mapSnapshot,
-                                            findings_inout);
+            if (evaluateOneRoomFloorReciprocity(room,
+                                                snapshot_in,
+                                                mapSnapshot,
+                                                findings_inout) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // evaluateOneRoomFloorReciprocity cannot fail; continue as
+                // before.
+            }
         }
         for (const PassageRecord &passage : mapSnapshot.passages)
         {
@@ -57,11 +64,20 @@ void evaluateAxFloor01(const SemanticGraphSnapshot &snapshot_in,
             {
                 continue;
             }
-            evaluateOnePassageFloorIdentity(passage,
-                                            snapshot_in,
-                                            findings_inout);
+            if (evaluateOnePassageFloorIdentity(passage,
+                                                snapshot_in,
+                                                findings_inout) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // evaluateOnePassageFloorIdentity cannot fail; continue as
+                // before.
+            }
         }
     }
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

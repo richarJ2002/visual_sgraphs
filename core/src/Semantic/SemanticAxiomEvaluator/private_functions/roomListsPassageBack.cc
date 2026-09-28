@@ -55,17 +55,37 @@ namespace core
 namespace semantic
 {
 
-bool roomListsPassageBack(const SemanticGraphSnapshot &snapshot_in,
-                          const EntityKey             &roomKey_in,
-                          const EntityKey             &passageKey_in)
+SemanticAxiomEvaluatorStatus
+    roomListsPassageBack(const SemanticGraphSnapshot &snapshot_in,
+                         const EntityKey             &roomKey_in,
+                         const EntityKey             &passageKey_in,
+                         bool                        &listsPassageBack_out)
 {
-    if (countMapSnapshotsWithId(snapshot_in, roomKey_in.mapId) > 1U)
+    std::size_t mapSnapshots{};
+    if (countMapSnapshotsWithId(snapshot_in, roomKey_in.mapId, mapSnapshots) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        return false;
+        // countMapSnapshotsWithId cannot fail; continue as before.
     }
-    if (countPassageRecordsWithKey(snapshot_in, passageKey_in) != 1U)
+    if (mapSnapshots > 1U)
     {
-        return false;
+        listsPassageBack_out = false;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    std::size_t passageRecords{};
+    if (countPassageRecordsWithKey(snapshot_in,
+                                   passageKey_in,
+                                   passageRecords) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // countPassageRecordsWithKey cannot fail; continue as before.
+    }
+    if (passageRecords != 1U)
+    {
+        listsPassageBack_out = false;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     for (const MapSnapshot &mapSnapshot : snapshot_in.maps)
     {
@@ -73,17 +93,33 @@ bool roomListsPassageBack(const SemanticGraphSnapshot &snapshot_in,
         {
             continue;
         }
-        if (countRoomRecordsWithKey(snapshot_in, roomKey_in) > 1U)
+        std::size_t roomRecords{};
+        if (countRoomRecordsWithKey(snapshot_in, roomKey_in, roomRecords) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // countRoomRecordsWithKey cannot fail; continue as before.
+        }
+        if (roomRecords > 1U)
         {
             /* Ambiguous identity can never supply positive reciprocity
              * proof. */
-            return false;
+            listsPassageBack_out = false;
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
         }
-        const RoomRecord *p_room =
-            findRecordByKey(mapSnapshot.rooms, roomKey_in);
+        const RoomRecord *p_room = nullptr;
+        if (findRecordByKey(mapSnapshot.rooms, roomKey_in, p_room) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // findRecordByKey cannot fail; continue as before.
+        }
         if (p_room == nullptr)
         {
-            return false;
+            listsPassageBack_out = false;
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
         }
         std::size_t cleanMatchCount = 0U;
         for (const EntityRef &passageReference : p_room->passageRefs)
@@ -98,12 +134,16 @@ bool roomListsPassageBack(const SemanticGraphSnapshot &snapshot_in,
                 /* A keyed match whose own reason is not NONE is an
                  * invariant violation: a known contradiction, dominating
                  * even an otherwise-clean match elsewhere in this room. */
-                return false;
+                listsPassageBack_out = false;
+                return SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
             }
             if (passageReference.isLive.has_value() &&
                 !(*passageReference.isLive))
             {
-                return false;
+                listsPassageBack_out = false;
+                return SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
             }
             if (!passageReference.isLive.has_value())
             {
@@ -113,9 +153,13 @@ bool roomListsPassageBack(const SemanticGraphSnapshot &snapshot_in,
             }
             ++cleanMatchCount;
         }
-        return cleanMatchCount == 1U;
+        listsPassageBack_out = cleanMatchCount == 1U;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return false;
+    listsPassageBack_out = false;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

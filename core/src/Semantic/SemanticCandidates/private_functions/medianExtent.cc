@@ -19,8 +19,9 @@ namespace core
 namespace semantic
 {
 
-double medianExtent(const RoomContextSnapshot &snapshot_in,
-                    const std::size_t          cap_in)
+SemanticCandidatesStatus medianExtent(const RoomContextSnapshot &snapshot_in,
+                                      const std::size_t          cap_in,
+                                      double &medianExtent_out)
 {
     std::vector<double> spans;
     spans.reserve(std::min(snapshot_in.wallBounds.size(), cap_in));
@@ -30,7 +31,13 @@ double medianExtent(const RoomContextSnapshot &snapshot_in,
         {
             break;
         }
-        if (isValidWallBounds(bounds))
+        bool isValidWallBounds2{};
+        if (isValidWallBounds(bounds, isValidWallBounds2) !=
+            SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // isValidWallBounds cannot fail; continue as before.
+        }
+        if (isValidWallBounds2)
         {
             spans.push_back(bounds.maxU_m - bounds.minU_m);
             if (spans.size() < cap_in)
@@ -41,12 +48,15 @@ double medianExtent(const RoomContextSnapshot &snapshot_in,
     }
     if (spans.empty())
     {
-        return 0.0;
+        medianExtent_out = 0.0;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
     }
     std::sort(spans.begin(), spans.end());
     const std::size_t middle = spans.size() / 2U;
-    return spans.size() % 2U == 0U ? (spans[middle - 1U] + spans[middle]) / 2.0
+    medianExtent_out         = spans.size() % 2U == 0U
+                                   ? (spans[middle - 1U] + spans[middle]) / 2.0
                                    : spans[middle];
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

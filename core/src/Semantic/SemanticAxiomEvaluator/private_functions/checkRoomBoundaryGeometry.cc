@@ -50,18 +50,29 @@ constexpr double DEGENERATE_EDGE_LENGTH_SQUARED_M2 = 1e-12;
 constexpr double DEGENERATE_NORMAL_NORM_SQUARED    = 1e-12;
 } // namespace
 
-RoomBoundaryGeometryStatus
-    checkRoomBoundaryGeometry(const std::vector<Eigen::Vector3d> &corners_in)
+SemanticAxiomEvaluatorStatus
+    checkRoomBoundaryGeometry(const std::vector<Eigen::Vector3d> &corners_in,
+                              RoomBoundaryGeometryStatus &geometryStatus_out)
 {
     const std::size_t cornerCount = corners_in.size();
     if (cornerCount < 3U)
     {
-        return RoomBoundaryGeometryStatus::TOO_FEW_CORNERS;
+        geometryStatus_out = RoomBoundaryGeometryStatus::TOO_FEW_CORNERS;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    if (hasNonFiniteCoordinate(corners_in))
+    bool hasNonFiniteCoordinate2{};
+    if (hasNonFiniteCoordinate(corners_in, hasNonFiniteCoordinate2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        return RoomBoundaryGeometryStatus::NON_FINITE_CORNER;
+        // hasNonFiniteCoordinate cannot fail; continue as before.
+    }
+    if (hasNonFiniteCoordinate2)
+    {
+        geometryStatus_out = RoomBoundaryGeometryStatus::NON_FINITE_CORNER;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     for (std::size_t cornerIndex = 0U; cornerIndex < cornerCount; ++cornerIndex)
@@ -71,20 +82,36 @@ RoomBoundaryGeometryStatus
             corners_in[cornerIndex];
         if (edge.squaredNorm() < DEGENERATE_EDGE_LENGTH_SQUARED_M2)
         {
-            return RoomBoundaryGeometryStatus::DEGENERATE_EDGE;
+            geometryStatus_out = RoomBoundaryGeometryStatus::DEGENERATE_EDGE;
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
         }
     }
 
-    Eigen::Vector3d normal = newellNormal(corners_in);
+    Eigen::Vector3d normal{};
+    if (newellNormal(corners_in, normal) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // newellNormal cannot fail; continue as before.
+    }
     if (normal.squaredNorm() < DEGENERATE_NORMAL_NORM_SQUARED)
     {
-        normal = planeNormalFallback(corners_in);
+        Eigen::Vector3d normal2{};
+        if (planeNormalFallback(corners_in, normal2) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // planeNormalFallback cannot fail; continue as before.
+        }
+        normal = normal2;
     }
     if (normal.squaredNorm() < DEGENERATE_NORMAL_NORM_SQUARED)
     {
         /* Every corner is collinear (or coincident beyond the per-edge
          * check above): no well-defined polygon plane/area exists. */
-        return RoomBoundaryGeometryStatus::DEGENERATE_EDGE;
+        geometryStatus_out = RoomBoundaryGeometryStatus::DEGENERATE_EDGE;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     const Eigen::Vector3d unitNormal = normal.normalized();
 
@@ -125,17 +152,30 @@ RoomBoundaryGeometryStatus
                 continue;
             }
 
+            bool doSegmentsIntersect2{};
             if (doSegmentsIntersect(projected[edgeAStart],
                                     projected[edgeAEnd],
                                     projected[edgeBStart],
-                                    projected[edgeBEnd]))
+                                    projected[edgeBEnd],
+                                    doSegmentsIntersect2) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                return RoomBoundaryGeometryStatus::SELF_INTERSECTING;
+                // doSegmentsIntersect cannot fail; continue as before.
+            }
+            if (doSegmentsIntersect2)
+            {
+                geometryStatus_out =
+                    RoomBoundaryGeometryStatus::SELF_INTERSECTING;
+                return SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
             }
         }
     }
 
-    return RoomBoundaryGeometryStatus::VALID;
+    geometryStatus_out = RoomBoundaryGeometryStatus::VALID;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -30,32 +30,38 @@ namespace core
 namespace semantic
 {
 
-AlignmentCheck
+SemanticVerifyStatus
     checkAnchorRoomCentroids(const std::vector<ConsecutiveAnchorPair> &pairs_in,
                              const g2o::Sim3 &transform_in,
-                             double           maximumDistance_m_in)
+                             double           maximumDistance_m_in,
+                             AlignmentCheck  &alignmentCheck_out)
 {
     if (pairs_in.empty())
     {
-        return AlignmentCheck::MISSING;
+        alignmentCheck_out = AlignmentCheck::MISSING;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
     for (const ConsecutiveAnchorPair &pair : pairs_in)
     {
         Eigen::Vector3d mappedCentroid = Eigen::Vector3d::Zero();
-        if (!transformAbsorbedPoint(transform_in,
-                                    pair.p_absorbed->context.centroid,
-                                    mappedCentroid) ||
+        if (!(transformAbsorbedPoint(transform_in,
+                                     pair.p_absorbed->context.centroid,
+                                     mappedCentroid) ==
+              SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS) ||
             !pair.p_surviving->context.centroid.allFinite())
         {
-            return AlignmentCheck::MISSING;
+            alignmentCheck_out = AlignmentCheck::MISSING;
+            return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
         }
         if ((mappedCentroid - pair.p_surviving->context.centroid).norm() >
             maximumDistance_m_in)
         {
-            return AlignmentCheck::CONTRADICTION;
+            alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+            return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
         }
     }
-    return AlignmentCheck::ALIGNED;
+    alignmentCheck_out = AlignmentCheck::ALIGNED;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

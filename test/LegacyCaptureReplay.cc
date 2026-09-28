@@ -275,7 +275,13 @@ LegacyParseResult parseLegacyCapture(const nlohmann::json &json_in)
 
 std::string legacyTopologyDigest(const LegacyCapture &capture_in)
 {
-    return sha256HexDigest(topologyJson(capture_in).dump());
+    std::string hexDigest{};
+    if (sha256HexDigest(topologyJson(capture_in).dump(), hexDigest) !=
+        Sha256DigestStatus::SHA256_DIGEST_STATUS_SUCCESS)
+    {
+        // sha256HexDigest cannot fail; continue as before.
+    }
+    return hexDigest;
 }
 
 std::string legacyFullGeometryDigest(const LegacyCapture &capture_in)
@@ -314,7 +320,13 @@ std::string legacyFullGeometryDigest(const LegacyCapture &capture_in)
                          {"offsetD", capture_in.floor->offsetD}};
     }
 
-    return sha256HexDigest(json.dump());
+    std::string hexDigest{};
+    if (sha256HexDigest(json.dump(), hexDigest) !=
+        Sha256DigestStatus::SHA256_DIGEST_STATUS_SUCCESS)
+    {
+        // sha256HexDigest cannot fail; continue as before.
+    }
+    return hexDigest;
 }
 
 std::vector<LegacyAxiomResultRecord>
@@ -341,8 +353,12 @@ std::vector<LegacyAxiomResultRecord>
     static constexpr const char *kLegacySchemaInsufficient =
         "LEGACY_SCHEMA_INSUFFICIENT_NO_IDENTITY_LIVENESS_MAP_OR_PROVENANCE";
 
-    std::vector<AxiomCapabilityEntry> capabilityTable =
-        computeAxiomCapabilityTable();
+    std::vector<AxiomCapabilityEntry> capabilityTable{};
+    if (computeAxiomCapabilityTable(capabilityTable) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // computeAxiomCapabilityTable cannot fail; continue as before.
+    }
     std::vector<LegacyAxiomResultRecord> results;
     results.reserve(capabilityTable.size());
     for (const AxiomCapabilityEntry &entry : capabilityTable)
@@ -352,8 +368,15 @@ std::vector<LegacyAxiomResultRecord>
         if (entry.axiomCode == AxiomCode::AX_WALL_01 && hasUnresolvableOwner)
         {
             record.result = AxiomResult::FAIL;
-            record.reason =
-                reasonCodeName(ReasonCode::WALL_OWNERSHIP_OWNER_UNRESOLVABLE);
+            std::string reasonCodeName2{};
+            if (reasonCodeName(ReasonCode::WALL_OWNERSHIP_OWNER_UNRESOLVABLE,
+                               reasonCodeName2) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // reasonCodeName cannot fail; continue as before.
+            }
+            record.reason = reasonCodeName2;
         }
         else
         {
@@ -480,13 +503,31 @@ LegacyReplayResult
         for (const LegacyAxiomResultRecord &axiomResult :
              fileResult.axiomResults)
         {
-            const std::string codeName = axiomCodeName(axiomResult.axiomCode);
-            axiomResultsJson.push_back(
-                {{"axiomCode", codeName},
-                 {"result", axiomResultName(axiomResult.result)},
-                 {"reason", axiomResult.reason}});
+            std::string codeName{};
+            if (axiomCodeName(axiomResult.axiomCode, codeName) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // axiomCodeName cannot fail; continue as before.
+            }
+            std::string axiomResultName2{};
+            if (axiomResultName(axiomResult.result, axiomResultName2) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // axiomResultName cannot fail; continue as before.
+            }
+            axiomResultsJson.push_back({{"axiomCode", codeName},
+                                        {"result", axiomResultName2},
+                                        {"reason", axiomResult.reason}});
 
-            const std::string resultKey = axiomResultName(axiomResult.result);
+            std::string resultKey{};
+            if (axiomResultName(axiomResult.result, resultKey) !=
+                SemanticAxiomEvaluatorStatus::
+                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                // axiomResultName cannot fail; continue as before.
+            }
             if (!perAxiomTotals.contains(codeName))
             {
                 perAxiomTotals[codeName] = nlohmann::json::object();

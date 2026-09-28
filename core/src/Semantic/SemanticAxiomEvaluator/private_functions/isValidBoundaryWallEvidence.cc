@@ -64,10 +64,11 @@ namespace core
 namespace semantic
 {
 
-RoomBoundaryWallEvidenceStatus
-    isValidBoundaryWallEvidence(const RawPlaneRef           &wallReference_in,
-                                const RoomRecord            &room_in,
-                                const SemanticGraphSnapshot &snapshot_in)
+SemanticAxiomEvaluatorStatus isValidBoundaryWallEvidence(
+    const RawPlaneRef              &wallReference_in,
+    const RoomRecord               &room_in,
+    const SemanticGraphSnapshot    &snapshot_in,
+    RoomBoundaryWallEvidenceStatus &evidenceStatus_out)
 {
     if (wallReference_in.reason != UnavailableReason::NONE)
     {
@@ -82,33 +83,47 @@ RoomBoundaryWallEvidenceStatus
             wallReference_in.planeType !=
                 geometric::Plane::PlaneVariant::UNDEFINED)
         {
-            return RoomBoundaryWallEvidenceStatus::INVALID;
+            evidenceStatus_out = RoomBoundaryWallEvidenceStatus::INVALID;
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
         }
-        return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (wallReference_in.planeType != geometric::Plane::PlaneVariant::WALL)
     {
         /* A real, mapped, live plane pointer exists but is the wrong type:
          * a known contradiction, not merely missing evidence. */
-        return RoomBoundaryWallEvidenceStatus::INVALID;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::INVALID;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (!wallReference_in.isLive)
     {
-        return RoomBoundaryWallEvidenceStatus::INVALID;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::INVALID;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (!wallReference_in.mapId.has_value())
     {
         /* The plane exists and is live/WALL-typed but has no map of its
          * own: same-map/reciprocity cannot be verified either way. */
-        return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (*wallReference_in.mapId != room_in.key.mapId)
     {
-        return RoomBoundaryWallEvidenceStatus::INVALID;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::INVALID;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (!wallReference_in.wallKey.has_value())
     {
-        return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (wallReference_in.wallKey->kind != EntityKind::WALL ||
         wallReference_in.wallKey->mapId != *wallReference_in.mapId ||
@@ -117,21 +132,42 @@ RoomBoundaryWallEvidenceStatus
         /* The wallKey field itself is internally inconsistent with this
          * same reference's own mapId/planeId/kind: a known contradiction in
          * the raw data, not an ordinary gap. */
-        return RoomBoundaryWallEvidenceStatus::INVALID;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::INVALID;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
-    if (countWallRecordsWithKey(snapshot_in, *wallReference_in.wallKey) > 1U)
+    std::size_t wallRecords{};
+    if (countWallRecordsWithKey(snapshot_in,
+                                *wallReference_in.wallKey,
+                                wallRecords) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        return RoomBoundaryWallEvidenceStatus::INVALID;
+        // countWallRecordsWithKey cannot fail; continue as before.
     }
-    if (countMapSnapshotsWithId(snapshot_in, wallReference_in.wallKey->mapId) >
-        1U)
+    if (wallRecords > 1U)
+    {
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::INVALID;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    std::size_t mapSnapshots{};
+    if (countMapSnapshotsWithId(snapshot_in,
+                                wallReference_in.wallKey->mapId,
+                                mapSnapshots) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // countMapSnapshotsWithId cannot fail; continue as before.
+    }
+    if (mapSnapshots > 1U)
     {
         /* Which MapSnapshot actually holds
          * this wall is itself ambiguous when its own containing map id is
          * duplicated -- no first-match lookup below may supply positive
          * proof. */
-        return RoomBoundaryWallEvidenceStatus::INVALID;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::INVALID;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     const WallRecord *p_wall = nullptr;
@@ -141,22 +177,37 @@ RoomBoundaryWallEvidenceStatus
         {
             continue;
         }
-        p_wall = findRecordByKey(mapSnapshot.walls, *wallReference_in.wallKey);
+        const WallRecord *p_record = nullptr;
+        if (findRecordByKey(mapSnapshot.walls,
+                            *wallReference_in.wallKey,
+                            p_record) !=
+            SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+        {
+            // findRecordByKey cannot fail; continue as before.
+        }
+        p_wall = p_record;
         break;
     }
     if (p_wall == nullptr)
     {
-        return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (!p_wall->isLive ||
         p_wall->planeType != geometric::Plane::PlaneVariant::WALL)
     {
-        return RoomBoundaryWallEvidenceStatus::INVALID;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::INVALID;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     if (p_wall->declaredMapId.has_value() &&
         *p_wall->declaredMapId != p_wall->key.mapId)
     {
-        return RoomBoundaryWallEvidenceStatus::INVALID;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::INVALID;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
 
     /* Reuse the complete wall-record -> owner-ref -> live room-record ->
@@ -165,19 +216,39 @@ RoomBoundaryWallEvidenceStatus
      * reciprocal-ownership check that could drift out of agreement with
      * it. */
     std::vector<Finding> wallOwnershipScratch;
-    evaluateOneWall(*p_wall, snapshot_in, wallOwnershipScratch);
+    if (evaluateOneWall(*p_wall, snapshot_in, wallOwnershipScratch) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // evaluateOneWall cannot fail; continue as before.
+    }
     /* The aggregate AX-WALL-01
      * result for this wall must be a clean PASS -- a PASS finding
      * accompanied by an UNKNOWN (e.g. the wall's or owner's own declared map
      * being genuinely absent) is not full positive proof and must not be
      * reused as valid boundary evidence. */
-    if (anyFindingIs(wallOwnershipScratch, AxiomResult::FAIL))
+    bool hasFinding{};
+    if (anyFindingIs(wallOwnershipScratch, AxiomResult::FAIL, hasFinding) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        return RoomBoundaryWallEvidenceStatus::INVALID;
+        // anyFindingIs cannot fail; continue as before.
     }
-    if (anyFindingIs(wallOwnershipScratch, AxiomResult::UNKNOWN))
+    if (hasFinding)
     {
-        return RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::INVALID;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    bool hasFinding2{};
+    if (anyFindingIs(wallOwnershipScratch, AxiomResult::UNKNOWN, hasFinding2) !=
+        SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+    {
+        // anyFindingIs cannot fail; continue as before.
+    }
+    if (hasFinding2)
+    {
+        evidenceStatus_out = RoomBoundaryWallEvidenceStatus::UNAVAILABLE;
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
     for (const Finding &finding : wallOwnershipScratch)
     {
@@ -188,10 +259,14 @@ RoomBoundaryWallEvidenceStatus
                       finding.involvedKeys.end(),
                       room_in.key) != finding.involvedKeys.end())
         {
-            return RoomBoundaryWallEvidenceStatus::VALID;
+            evidenceStatus_out = RoomBoundaryWallEvidenceStatus::VALID;
+            return SemanticAxiomEvaluatorStatus::
+                SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
         }
     }
-    return RoomBoundaryWallEvidenceStatus::INVALID;
+    evidenceStatus_out = RoomBoundaryWallEvidenceStatus::INVALID;
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

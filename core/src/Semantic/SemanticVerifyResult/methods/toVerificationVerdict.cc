@@ -28,7 +28,8 @@ namespace core
 namespace semantic
 {
 
-VerificationVerdict SemanticVerifyResult::toVerificationVerdict() const
+SemanticVerifyResultStatus SemanticVerifyResult::toVerificationVerdict(
+    VerificationVerdict &verificationVerdict_out) const
 {
     VerificationVerdict verdict;
     verdict.status      = status;
@@ -38,7 +39,8 @@ VerificationVerdict SemanticVerifyResult::toVerificationVerdict() const
     verdict.normalisedConditionNumber = normalisedConditionNumber;
     verdict.angularResidual_rad       = angularResidual_rad;
     verdict.confidence                = confidence;
-    return verdict;
+    verificationVerdict_out           = verdict;
+    return SemanticVerifyResultStatus::SEMANTIC_VERIFY_RESULT_STATUS_SUCCESS;
 }
 
 } // namespace semantic

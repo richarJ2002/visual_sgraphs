@@ -31,20 +31,39 @@ namespace core
 namespace semantic
 {
 
-std::string entityKindName(EntityKind kind_in)
+SemanticAxiomEvaluatorStatus entityKindName(EntityKind   kind_in,
+                                            std::string &entityKindName_out)
 {
     switch (kind_in)
     {
     case EntityKind::ROOM:
-        return "ROOM";
-    case EntityKind::WALL:
-        return "WALL";
-    case EntityKind::PASSAGE:
-        return "PASSAGE";
-    case EntityKind::FLOOR:
-        return "FLOOR";
+    {
+        entityKindName_out = "ROOM";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
     }
-    return "UNKNOWN_ENTITY_KIND";
+    case EntityKind::WALL:
+    {
+        entityKindName_out = "WALL";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case EntityKind::PASSAGE:
+    {
+        entityKindName_out = "PASSAGE";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    case EntityKind::FLOOR:
+    {
+        entityKindName_out = "FLOOR";
+        return SemanticAxiomEvaluatorStatus::
+            SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+    }
+    }
+    entityKindName_out = "UNKNOWN_ENTITY_KIND";
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

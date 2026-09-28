@@ -32,29 +32,38 @@ namespace semantic
 
 /*! Solves N_B t = b (translation from offsets) via SVD, and reports
  * rank(N_B)/cond(N_B) for the observability gates. */
-TranslationFit fitTranslation(const Eigen::Matrix3d              &rotation_in,
-                              const std::vector<Eigen::Vector3d> &normalsA_in,
-                              const std::vector<double>          &offsetsA_in,
-                              const std::vector<Eigen::Vector3d> &normalsB_in,
-                              const std::vector<double>          &offsetsB_in)
+SemanticVerifyStatus
+    fitTranslation(const Eigen::Matrix3d              &rotation_in,
+                   const std::vector<Eigen::Vector3d> &normalsA_in,
+                   const std::vector<double>          &offsetsA_in,
+                   const std::vector<Eigen::Vector3d> &normalsB_in,
+                   const std::vector<double>          &offsetsB_in,
+                   TranslationFit                     &translation_out)
 {
     TranslationFit    result;
     const std::size_t count = normalsA_in.size();
     if (count == 0U || offsetsA_in.size() != count ||
         normalsB_in.size() != count || offsetsB_in.size() != count)
     {
-        return result;
+        translation_out = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     Eigen::MatrixXd N_B(static_cast<Eigen::Index>(count), 3);
     Eigen::VectorXd b(static_cast<Eigen::Index>(count));
     for (std::size_t index = 0U; index < count; ++index)
     {
-        if (!isFiniteVector(normalsB_in[index]) ||
-            !std::isfinite(offsetsA_in[index]) ||
+        bool isFiniteVector2{};
+        if (isFiniteVector(normalsB_in[index], isFiniteVector2) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // isFiniteVector cannot fail; continue as before.
+        }
+        if (!isFiniteVector2 || !std::isfinite(offsetsA_in[index]) ||
             !std::isfinite(offsetsB_in[index]))
         {
-            return result;
+            translation_out = result;
+            return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
         }
         N_B.row(static_cast<Eigen::Index>(index)) =
             normalsB_in[index].transpose();
@@ -91,12 +100,14 @@ TranslationFit fitTranslation(const Eigen::Matrix3d              &rotation_in,
 
     if (rank < 3U)
     {
-        return result;
+        translation_out = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     result.translation = svd.solve(b);
     result.valid       = result.translation.allFinite();
-    return result;
+    translation_out    = result;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic
