@@ -27,9 +27,11 @@ namespace core
 namespace semantic
 {
 
-void Room::setMetaMarkerId(int metaMarkerId_in)
+RoomStatus Room::setMetaMarkerId(int metaMarkerId_in)
 {
     metaMarkerId = metaMarkerId_in;
+
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

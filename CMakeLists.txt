@@ -654,6 +654,13 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
+  ament_add_gtest(test_SemanticStatus
+    test/test_SemanticStatus.cpp
+  )
+  target_link_libraries(test_SemanticStatus
+    ${PROJECT_NAME}_lib
+  )
+
   ament_add_gtest(test_room_tracker_integration
     test/test_room_tracker_integration.cpp
   )

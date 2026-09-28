@@ -27,10 +27,11 @@ namespace core
 namespace semantic
 {
 
-bool Room::hasPreviouslyVisited() const
+RoomStatus Room::hasPreviouslyVisited(bool &hasPreviouslyVisited_out) const
 {
     std::lock_guard<std::mutex> lock(stateMutex);
-    return wasPreviouslyVisited;
+    hasPreviouslyVisited_out = wasPreviouslyVisited;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

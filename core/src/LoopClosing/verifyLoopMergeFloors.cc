@@ -39,18 +39,40 @@ bool verifyLoopMergeFloors(
     const g2o::Sim3 &transform_absorbedWorldToSurvivingWorld_in,
     std::string     &result_out)
 {
-    semantic::Floor *p_survivingFloor =
-        semantic::Floor::selectBestObservedFloor(
-            p_survivingMap_in->getAllFloors());
-    semantic::Floor *p_absorbedFloor = semantic::Floor::selectBestObservedFloor(
-        p_absorbedMap_in->getAllFloors());
+    semantic::Floor *p_survivingFloor = nullptr;
+    if (semantic::Floor::selectBestObservedFloor(
+            p_survivingMap_in->getAllFloors(),
+            p_survivingFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // selectBestObservedFloor cannot fail; continue as before.
+    }
+    semantic::Floor *p_absorbedFloor = nullptr;
+    if (semantic::Floor::selectBestObservedFloor(
+            p_absorbedMap_in->getAllFloors(),
+            p_absorbedFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // selectBestObservedFloor cannot fail; continue as before.
+    }
 
+    std::optional<semantic::Floor::PlaneIdentity> survivingFloorPlaneIdentity{};
+    if ((p_survivingFloor != nullptr) &&
+        p_survivingFloor->getPlaneIdentity(survivingFloorPlaneIdentity) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getPlaneIdentity cannot fail; continue as before.
+    }
     const std::optional<semantic::Floor::PlaneIdentity> survivingIdentity =
-        p_survivingFloor != nullptr ? p_survivingFloor->getPlaneIdentity()
+        p_survivingFloor != nullptr ? survivingFloorPlaneIdentity
                                     : std::nullopt;
+    std::optional<semantic::Floor::PlaneIdentity> absorbedFloorPlaneIdentity{};
+    if ((p_absorbedFloor != nullptr) &&
+        p_absorbedFloor->getPlaneIdentity(absorbedFloorPlaneIdentity) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getPlaneIdentity cannot fail; continue as before.
+    }
     const std::optional<semantic::Floor::PlaneIdentity> absorbedIdentity =
-        p_absorbedFloor != nullptr ? p_absorbedFloor->getPlaneIdentity()
-                                   : std::nullopt;
+        p_absorbedFloor != nullptr ? absorbedFloorPlaneIdentity : std::nullopt;
 
     if (!survivingIdentity.has_value() || !absorbedIdentity.has_value())
     {
@@ -65,21 +87,32 @@ bool verifyLoopMergeFloors(
         return false;
     }
 
-    const std::optional<semantic::Floor::PlaneIdentity>
-        transformedAbsorbedIdentity = semantic::Floor::transformPlaneIdentity(
+    std::optional<semantic::Floor::PlaneIdentity> transformedAbsorbedIdentity{};
+    if (semantic::Floor::transformPlaneIdentity(
             *absorbedIdentity,
-            transform_absorbedWorldToSurvivingWorld_in);
+            transform_absorbedWorldToSurvivingWorld_in,
+            transformedAbsorbedIdentity) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // transformPlaneIdentity cannot fail; continue as before.
+    }
     double floorNormalAngle_deg = std::numeric_limits<double>::infinity();
     double floorOffset_m        = std::numeric_limits<double>::infinity();
 
-    const bool floorsMatch = transformedAbsorbedIdentity.has_value() &&
-                             semantic::Floor::planeIdentitiesMatch(
-                                 *survivingIdentity,
-                                 *transformedAbsorbedIdentity,
-                                 semantic::Floor::kMergeMaxPlaneNormalAngle_deg,
-                                 semantic::Floor::kMergeMaxPlaneOffset_m,
-                                 floorNormalAngle_deg,
-                                 floorOffset_m);
+    bool isMatch{};
+    if ((transformedAbsorbedIdentity.has_value()) &&
+        semantic::Floor::planeIdentitiesMatch(
+            *survivingIdentity,
+            *transformedAbsorbedIdentity,
+            semantic::Floor::kMergeMaxPlaneNormalAngle_deg,
+            semantic::Floor::kMergeMaxPlaneOffset_m,
+            floorNormalAngle_deg,
+            floorOffset_m,
+            isMatch) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // planeIdentitiesMatch cannot fail; continue as before.
+    }
+    const bool floorsMatch = transformedAbsorbedIdentity.has_value() && isMatch;
 
     if (!floorsMatch)
     {

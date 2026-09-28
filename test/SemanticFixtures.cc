@@ -108,13 +108,33 @@ void makeRoom(semantic::Room             &room_inout,
               const Eigen::Vector3d      &centroid_World_m_in,
               semantic::Room::RoomVariant variant_in)
 {
-    room_inout.setId(id_in);
-    room_inout.setMap(p_map_in);
-    room_inout.setRoomVariant(variant_in);
-    room_inout.setCentroid(centroid_World_m_in);
+    if (room_inout.setId(id_in) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (room_inout.setMap(p_map_in) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (room_inout.setRoomVariant(variant_in) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setRoomVariant cannot fail; continue as before.
+    }
+    if (room_inout.setCentroid(centroid_World_m_in) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
     if (p_wall_in != nullptr)
     {
-        room_inout.setWalls(p_wall_in);
+        if (room_inout.setWalls(p_wall_in) !=
+            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setWalls cannot fail; continue as before.
+        }
     }
 }
 
@@ -130,21 +150,61 @@ void makePassage(semantic::Passage     &passage_inout,
                  double                 width_m_in,
                  double                 height_m_in)
 {
-    passage_inout.setId(id_in);
-    passage_inout.setMap(p_map_in);
-    passage_inout.setPassable(passable_in);
-    passage_inout.setWidth(width_m_in);
-    passage_inout.setHeight(height_m_in);
-    passage_inout.setCentroid(centroid_World_m_in);
-    passage_inout.setGlobalEquation(g2o::Plane3D(equation_World_in));
+    if (passage_inout.setId(id_in) !=
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (passage_inout.setMap(p_map_in) !=
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (passage_inout.setPassable(passable_in) !=
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setPassable cannot fail; continue as before.
+    }
+    if (passage_inout.setWidth(width_m_in) !=
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setWidth cannot fail; continue as before.
+    }
+    if (passage_inout.setHeight(height_m_in) !=
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setHeight cannot fail; continue as before.
+    }
+    if (passage_inout.setCentroid(centroid_World_m_in) !=
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
+    if (passage_inout.setGlobalEquation(g2o::Plane3D(equation_World_in)) !=
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setGlobalEquation cannot fail; continue as before.
+    }
     if (p_knownSideRoom_in != nullptr)
     {
-        passage_inout.setKnownSideRoom(p_knownSideRoom_in);
-        passage_inout.setKnownSideDirection(knownSideDirection_World_in);
+        if (passage_inout.setKnownSideRoom(p_knownSideRoom_in) !=
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setKnownSideRoom cannot fail; continue as before.
+        }
+        if (passage_inout.setKnownSideDirection(knownSideDirection_World_in) !=
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // Rejected input: ignored, as before.
+        }
     }
     if (p_farRoom_in != nullptr)
     {
-        passage_inout.setProspectiveRoom(p_farRoom_in);
+        if (passage_inout.setProspectiveRoom(p_farRoom_in) !=
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setProspectiveRoom cannot fail; continue as before.
+        }
     }
 }
 
@@ -154,10 +214,27 @@ void makeFloor(semantic::Floor                     &floor_inout,
                const std::vector<semantic::Room *> &rooms_in,
                double                               centroidZ_World_m_in)
 {
-    floor_inout.setId(id_in);
-    floor_inout.setMap(p_map_in);
-    floor_inout.setCentroid(Eigen::Vector3d(0.0, 0.0, centroidZ_World_m_in));
-    floor_inout.setRooms(rooms_in);
+    if (floor_inout.setId(id_in) !=
+        vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (floor_inout.setMap(p_map_in) !=
+        vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (floor_inout.setCentroid(
+            Eigen::Vector3d(0.0, 0.0, centroidZ_World_m_in)) !=
+        vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
+    if (floor_inout.setRooms(rooms_in) !=
+        vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setRooms cannot fail; continue as before.
+    }
 }
 
 void makeKeyFrameAt(KeyFrame              &keyFrame_inout,

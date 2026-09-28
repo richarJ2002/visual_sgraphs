@@ -26,9 +26,11 @@ namespace core
 namespace semantic
 {
 
-const RoomTrackerConfig &RoomTracker::getConfig() const
+RoomTrackerStatus
+    RoomTracker::getConfig(const RoomTrackerConfig *&p_config_out) const
 {
-    return config;
+    p_config_out = &(config);
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

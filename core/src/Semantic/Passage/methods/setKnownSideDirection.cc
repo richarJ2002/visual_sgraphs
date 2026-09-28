@@ -28,18 +28,19 @@ namespace core
 namespace semantic
 {
 
-bool Passage::setKnownSideDirection(const Eigen::Vector3d &direction_World_in)
+PassageStatus
+    Passage::setKnownSideDirection(const Eigen::Vector3d &direction_World_in)
 {
     const double directionNorm = direction_World_in.norm();
     if (!direction_World_in.allFinite() || !std::isfinite(directionNorm) ||
         directionNorm < 1e-8)
     {
-        return false;
+        return PassageStatus::PASSAGE_STATUS_INVALID_ARGUMENT;
     }
 
     std::lock_guard<std::mutex> lock(geometryMutex);
     knownSideProvenance.direction_World = direction_World_in / directionNorm;
-    return true;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

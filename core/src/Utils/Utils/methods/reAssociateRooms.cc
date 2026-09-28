@@ -49,7 +49,14 @@ void Utils::reAssociateRooms(Atlas *p_atlas_in)
     for (vs_graphs::core::semantic::Room *p_room : allRooms)
     {
         /* Skip invalid structural elements */
-        if (p_room == nullptr || p_room->isBad())
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room == nullptr || roomIsBad)
         {
             continue;
         }
@@ -58,9 +65,14 @@ void Utils::reAssociateRooms(Atlas *p_atlas_in)
          * Only confirmed rooms may absorb provisional
          * structural elements.
          */
+        semantic::Room::RoomVariant roomVariant{};
+        if (p_room->getRoomVariant(roomVariant) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
         const bool isConfirmedRoom =
-            p_room->getRoomVariant() ==
-            vs_graphs::core::semantic::Room::RoomVariant::ROOM;
+            roomVariant == vs_graphs::core::semantic::Room::RoomVariant::ROOM;
 
         if (!isConfirmedRoom)
         {
@@ -70,8 +82,12 @@ void Utils::reAssociateRooms(Atlas *p_atlas_in)
         /* Require more than one valid wall before allowing consolidation */
         std::size_t validWallCount = 0;
 
-        const std::vector<vs_graphs::core::geometric::Plane *> roomWalls =
-            p_room->getWalls();
+        std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
+        if (p_room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
 
         for (vs_graphs::core::geometric::Plane *p_wall : roomWalls)
         {

@@ -240,8 +240,14 @@ void GeoSemHelpers::createMapPassage(
         }
 
         /* Find the distance from centroid to passage */
+        Eigen::Vector3d existingPassageCentroid{};
+        if (p_existingPassage->getCentroid(existingPassageCentroid) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
         Eigen::Vector3d centroidDistanceVector =
-            (centroid - p_existingPassage->getCentroid());
+            (centroid - existingPassageCentroid);
 
         /* Find distance from candidate passage to existing passage centroid */
         const double centroidDistance = centroidDistanceVector.norm();
@@ -253,8 +259,15 @@ void GeoSemHelpers::createMapPassage(
         }
 
         /* Extract the equation of the existing passage */
+        g2o::Plane3D existingPassageGlobalEquation{};
+        if (p_existingPassage->getGlobalEquation(
+                existingPassageGlobalEquation) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
         Eigen::Vector4d existingEquation =
-            p_existingPassage->getGlobalEquation().coeffs();
+            existingPassageGlobalEquation.coeffs();
 
         /* Find the normal norm of the existing plane */
         const double existingNormalNorm = existingEquation.head<3>().norm();
@@ -300,9 +313,15 @@ void GeoSemHelpers::createMapPassage(
             candidateEquation / candidateNormalNorm;
         const Eigen::Vector4d normalizedExistingEquation =
             existingEquation / existingNormalNorm;
+        Eigen::Vector3d existingPassageCentroid2{};
+        if (p_existingPassage->getCentroid(existingPassageCentroid2) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
         const double candidatePlaneResidual_m =
             std::abs(normalizedCandidateEquation.head<3>().dot(
-                         p_existingPassage->getCentroid()) +
+                         existingPassageCentroid2) +
                      normalizedCandidateEquation(3));
         const double existingPlaneResidual_m =
             std::abs(normalizedExistingEquation.head<3>().dot(centroid) +
@@ -333,8 +352,13 @@ void GeoSemHelpers::createMapPassage(
          *     that framed the passage; a downstream mid-plane pass pairs the
          *     two faces and recomputes a stable aperture plane.
          */
-        const std::vector<vs_graphs::core::geometric::Plane *>
-            existingSupportingWalls = p_existingPassage->getAssociateWalls();
+        std::vector<vs_graphs::core::geometric::Plane *>
+            existingSupportingWalls{};
+        if (p_existingPassage->getAssociateWalls(existingSupportingWalls) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getAssociateWalls cannot fail; continue as before.
+        }
         const bool isKnownSupportingFace =
             std::find(existingSupportingWalls.begin(),
                       existingSupportingWalls.end(),
@@ -342,29 +366,70 @@ void GeoSemHelpers::createMapPassage(
 
         if (isOpenPassage_in)
         {
-            p_existingPassage->setPassable(true);
-            p_existingPassage->setCentroid(centroid);
+            if (p_existingPassage->setPassable(true) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setPassable cannot fail; continue as before.
+            }
+            if (p_existingPassage->setCentroid(centroid) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setCentroid cannot fail; continue as before.
+            }
 
             if (isKnownSupportingFace)
             {
-                p_existingPassage->setGlobalEquation(passageEquation);
+                if (p_existingPassage->setGlobalEquation(passageEquation) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setGlobalEquation cannot fail; continue as before.
+                }
             }
         }
 
-        p_existingPassage->addAssociateWall(p_wallPlane_in);
-
-        if (p_doorPlane_in != nullptr &&
-            p_existingPassage->getAssociateDoor() == nullptr)
+        if (p_existingPassage->addAssociateWall(p_wallPlane_in) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            p_existingPassage->setAssociateDoor(p_doorPlane_in);
+            // addAssociateWall cannot fail; continue as before.
         }
 
+        vs_graphs::core::geometric::Plane *p_existingPassageAssociateDoor =
+            nullptr;
+        if ((p_doorPlane_in != nullptr) &&
+            p_existingPassage->getAssociateDoor(
+                p_existingPassageAssociateDoor) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getAssociateDoor cannot fail; continue as before.
+        }
+        if (p_doorPlane_in != nullptr &&
+            p_existingPassageAssociateDoor == nullptr)
+        {
+            if (p_existingPassage->setAssociateDoor(p_doorPlane_in) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setAssociateDoor cannot fail; continue as before.
+            }
+        }
+
+        int existingPassageId{};
+        if (p_existingPassage->getId(existingPassageId) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        bool existingPassageIsPassable{};
+        if (p_existingPassage->isPassable(existingPassageIsPassable) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // isPassable cannot fail; continue as before.
+        }
         std::cout << "[GeoSemHelper] Updated existing semantic::Passage#"
-                  << p_existingPassage->getId()
+                  << existingPassageId
                   << ": centroid distance=" << centroidDistance
                   << " m, normal alignment=" << normalAlignment << ", state="
-                  << (p_existingPassage->isPassable() ? "open" : "blocked")
-                  << "." << std::endl;
+                  << (existingPassageIsPassable ? "open" : "blocked") << "."
+                  << std::endl;
 
         return;
     }
@@ -381,28 +446,68 @@ void GeoSemHelpers::createMapPassage(
         new vs_graphs::core::semantic::Passage();
 
     /* Fill passage object */
-    p_newMapPassage->setId(passageId);
-    p_newMapPassage->setMap(p_atlas_inout->getCurrentMap());
+    if (p_newMapPassage->setId(passageId) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (p_newMapPassage->setMap(p_atlas_inout->getCurrentMap()) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
 
-    p_newMapPassage->setCentroid(centroid);
-    p_newMapPassage->setGlobalEquation(passageEquation);
+    if (p_newMapPassage->setCentroid(centroid) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
+    if (p_newMapPassage->setGlobalEquation(passageEquation) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setGlobalEquation cannot fail; continue as before.
+    }
 
-    p_newMapPassage->setWidth(width);
-    p_newMapPassage->setHeight(height);
-    p_newMapPassage->setPassable(isOpenPassage_in);
+    if (p_newMapPassage->setWidth(width) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setWidth cannot fail; continue as before.
+    }
+    if (p_newMapPassage->setHeight(height) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setHeight cannot fail; continue as before.
+    }
+    if (p_newMapPassage->setPassable(isOpenPassage_in) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setPassable cannot fail; continue as before.
+    }
 
-    p_newMapPassage->addAssociateWall(p_wallPlane_in);
+    if (p_newMapPassage->addAssociateWall(p_wallPlane_in) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // addAssociateWall cannot fail; continue as before.
+    }
 
     /*!
      * Both a detected closed door and a trajectory-detected open
      * passage represent a doorway.
      */
-    p_newMapPassage->setPassageType(
-        vs_graphs::core::semantic::Passage::PassageVariant::DOORWAY);
+    if (p_newMapPassage->setPassageType(
+            vs_graphs::core::semantic::Passage::PassageVariant::DOORWAY) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // setPassageType cannot fail; continue as before.
+    }
 
     if (p_doorPlane_in != nullptr)
     {
-        p_newMapPassage->setAssociateDoor(p_doorPlane_in);
+        if (p_newMapPassage->setAssociateDoor(p_doorPlane_in) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setAssociateDoor cannot fail; continue as before.
+        }
     }
 
     /* -------------------------------------------------------------- *

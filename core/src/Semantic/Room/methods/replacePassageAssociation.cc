@@ -27,14 +27,15 @@ namespace core
 namespace semantic
 {
 
-bool Room::replacePassageAssociation(
+RoomStatus Room::replacePassageAssociation(
     vs_graphs::core::semantic::Passage *p_retiredPassage_in,
-    vs_graphs::core::semantic::Passage *p_retainedPassage_in)
+    vs_graphs::core::semantic::Passage *p_retainedPassage_in,
+    bool                               &wasAssociationReplaced_out)
 {
     if (p_retiredPassage_in == nullptr || p_retainedPassage_in == nullptr ||
         p_retiredPassage_in == p_retainedPassage_in)
     {
-        return false;
+        return RoomStatus::ROOM_STATUS_INVALID_ARGUMENT;
     }
 
     std::lock_guard<std::mutex> lock(mapMutex);
@@ -70,7 +71,8 @@ bool Room::replacePassageAssociation(
         doorways.swap(rebuiltPassages);
     }
 
-    return wasAssociationReplaced;
+    wasAssociationReplaced_out = wasAssociationReplaced;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

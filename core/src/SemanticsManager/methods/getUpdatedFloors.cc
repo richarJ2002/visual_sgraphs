@@ -60,8 +60,12 @@ void SemanticsManager::getUpdatedFloors(void)
     /* Collapse legacy/merge duplicates before writing any hierarchy edge. */
     std::vector<vs_graphs::core::semantic::Floor *> floors =
         p_currentMap->getAllFloors();
-    semantic::Floor *p_keeperFloor =
-        semantic::Floor::selectBestObservedFloor(floors);
+    semantic::Floor *p_keeperFloor = nullptr;
+    if (semantic::Floor::selectBestObservedFloor(floors, p_keeperFloor) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // selectBestObservedFloor cannot fail; continue as before.
+    }
     if (p_keeperFloor == nullptr)
     {
         return;
@@ -72,7 +76,11 @@ void SemanticsManager::getUpdatedFloors(void)
         {
             continue;
         }
-        p_duplicateFloor->setRooms({});
+        if (p_duplicateFloor->setRooms({}) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // setRooms cannot fail; continue as before.
+        }
         p_currentMap->eraseMapFloor(p_duplicateFloor);
     }
 
@@ -92,15 +100,21 @@ void SemanticsManager::getUpdatedFloors(void)
             std::isfinite(groundNormalNorm) &&
             std::abs(groundNormalNorm - 1.0) <= 1e-3)
         {
-            groundIdentityUpdated = p_keeperFloor->setPlaneIdentity(
-                groundGeometry.equation_World,
-                groundGeometry.finiteSupportCount,
-                groundGeometry.observationCount);
+            groundIdentityUpdated =
+                (p_keeperFloor->setPlaneIdentity(
+                     groundGeometry.equation_World,
+                     groundGeometry.finiteSupportCount,
+                     groundGeometry.observationCount) ==
+                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
         }
     }
     if (!groundIdentityUpdated)
     {
-        p_keeperFloor->clearPlaneIdentity();
+        if (p_keeperFloor->clearPlaneIdentity() !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // clearPlaneIdentity cannot fail; continue as before.
+        }
     }
 
     /* Extract only CONFIRMED rooms (detected map rooms) for floor centroid.
@@ -113,13 +127,26 @@ void SemanticsManager::getUpdatedFloors(void)
         std::remove_if(confirmedRooms.begin(),
                        confirmedRooms.end(),
                        [](vs_graphs::core::semantic::Room *p_room)
-                       { return p_room == nullptr || p_room->isBad(); }),
+                       {
+                           bool roomIsBad{};
+                           if (!(p_room == nullptr) &&
+                               p_room->isBad(roomIsBad) !=
+                                   semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                           {
+                               // isBad cannot fail; continue as before.
+                           }
+                           return p_room == nullptr || roomIsBad;
+                       }),
         confirmedRooms.end());
 
     /* Keep hierarchy backlinks current even when no valid rooms remain. */
     if (confirmedRooms.empty())
     {
-        p_keeperFloor->setRooms({});
+        if (p_keeperFloor->setRooms({}) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // setRooms cannot fail; continue as before.
+        }
         return;
     }
 
@@ -130,15 +157,29 @@ void SemanticsManager::getUpdatedFloors(void)
     /* Extract centroids from each confirmed room */
     for (vs_graphs::core::semantic::Room *p_room : confirmedRooms)
     {
-        roomCentroids.push_back(p_room->getCentroid());
+        Eigen::Vector3d roomCentroid{};
+        if (p_room->getCentroid(roomCentroid) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
+        roomCentroids.push_back(roomCentroid);
     }
 
     /* Find the floor centroid from the confirmed room centroids */
     const Eigen::Vector3d floorCentroid =
         utils::utils::Utils::computeCentroidFromPoints(roomCentroids);
 
-    p_keeperFloor->setRooms(confirmedRooms);
-    p_keeperFloor->setCentroid(floorCentroid);
+    if (p_keeperFloor->setRooms(confirmedRooms) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setRooms cannot fail; continue as before.
+    }
+    if (p_keeperFloor->setCentroid(floorCentroid) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
 }
 
 } // namespace core

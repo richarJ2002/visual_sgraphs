@@ -28,7 +28,8 @@ namespace core
 namespace semantic
 {
 
-std::string RoomTracker::eventToJSON(const TransitionEvent &event_in)
+RoomTrackerStatus RoomTracker::eventToJSON(const TransitionEvent &event_in,
+                                           std::string           &json_out)
 {
     std::ostringstream textStream;
     textStream << "{";
@@ -45,7 +46,8 @@ std::string RoomTracker::eventToJSON(const TransitionEvent &event_in)
     textStream << "\"verification_pass\":"
                << (event_in.hasVerificationPassed ? "true" : "false");
     textStream << "}";
-    return textStream.str();
+    json_out = textStream.str();
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

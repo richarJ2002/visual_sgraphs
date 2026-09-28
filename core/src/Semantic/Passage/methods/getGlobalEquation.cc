@@ -28,10 +28,11 @@ namespace core
 namespace semantic
 {
 
-g2o::Plane3D Passage::getGlobalEquation() const
+PassageStatus Passage::getGlobalEquation(g2o::Plane3D &globalEquation_out) const
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
-    return globalEquation;
+    globalEquation_out = globalEquation;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

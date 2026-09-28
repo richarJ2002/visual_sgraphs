@@ -28,10 +28,12 @@ namespace core
 namespace semantic
 {
 
-vs_graphs::core::semantic::Room *Passage::getProspectiveRoom() const
+PassageStatus Passage::getProspectiveRoom(
+    vs_graphs::core::semantic::Room *&p_prospectiveRoom_out) const
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
-    return p_prospectiveRoom;
+    p_prospectiveRoom_out = p_prospectiveRoom;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

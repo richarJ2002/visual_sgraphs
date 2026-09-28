@@ -72,14 +72,27 @@ vs_graphs::core::semantic::Room *GeoSemHelpers::createBlankRoomCandidate(
      */
     const std::vector<vs_graphs::core::semantic::Passage *> currentMapPassages =
         p_atlas_inout->getAllPassages();
-    const std::size_t passablePassageCount =
-        std::count_if(currentMapPassages.begin(),
-                      currentMapPassages.end(),
-                      [](vs_graphs::core::semantic::Passage *p_passage)
-                      {
-                          return p_passage != nullptr && !p_passage->isBad() &&
-                                 p_passage->isPassable();
-                      });
+    const std::size_t passablePassageCount = std::count_if(
+        currentMapPassages.begin(),
+        currentMapPassages.end(),
+        [](vs_graphs::core::semantic::Passage *p_passage)
+        {
+            bool passageIsBad{};
+            if ((p_passage != nullptr) &&
+                p_passage->isBad(passageIsBad) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            bool passageIsPassable{};
+            if ((p_passage != nullptr && !passageIsBad) &&
+                p_passage->isPassable(passageIsPassable) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // isPassable cannot fail; continue as before.
+            }
+            return p_passage != nullptr && !passageIsBad && passageIsPassable;
+        });
 
     /* Recovery (explicit stable ID) restores an already-discovered identity
      * after a tracking-loss reset; it is not new discovery and must not be
@@ -112,18 +125,48 @@ vs_graphs::core::semantic::Room *GeoSemHelpers::createBlankRoomCandidate(
      *      p_atlas_inout->AddCandidateMapRoom(newRoom);
      */
 
-    p_newRoom->setId(roomId);
-    p_newRoom->setCentroid(centroid_in);
-    p_newRoom->setMap(p_atlas_inout->getCurrentMap());
+    if (p_newRoom->setId(roomId) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (p_newRoom->setCentroid(centroid_in) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
+    if (p_newRoom->setMap(p_atlas_inout->getCurrentMap()) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
 
-    p_newRoom->setName("SE#" + std::to_string(roomId));
+    if (p_newRoom->setName("SE#" + std::to_string(roomId)) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setName cannot fail; continue as before.
+    }
 
-    p_newRoom->setRoomVariant(
-        vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED);
+    if (p_newRoom->setRoomVariant(
+            vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setRoomVariant cannot fail; continue as before.
+    }
 
-    std::cout << "[GeoSemHelper] Created provisional SE#" << p_newRoom->getId()
-              << " at " << p_newRoom->getCentroid().transpose() << "."
-              << std::endl;
+    int newRoomId{};
+    if (p_newRoom->getId(newRoomId) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    Eigen::Vector3d newRoomCentroid{};
+    if (p_newRoom->getCentroid(newRoomCentroid) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
+    std::cout << "[GeoSemHelper] Created provisional SE#" << newRoomId << " at "
+              << newRoomCentroid.transpose() << "." << std::endl;
 
     return p_newRoom;
 }

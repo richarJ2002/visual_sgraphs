@@ -27,10 +27,11 @@ namespace core
 namespace semantic
 {
 
-std::string Room::getRoomTag() const
+RoomStatus Room::getRoomTag(std::string &roomTag_out) const
 {
     std::lock_guard<std::mutex> lock(stateMutex);
-    return roomTag;
+    roomTag_out = roomTag;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

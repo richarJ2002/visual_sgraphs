@@ -80,20 +80,33 @@ TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromConfirmedRoom)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker tracker;
-        const double          now = 100.0 + run * 1.0;
-        EXPECT_EQ(tracker.applyEvent(
+        semantic::RoomTracker                        tracker;
+        const double                                 now = 100.0 + run * 1.0;
+        vs_graphs::core::semantic::RoomTrackingState nextState{};
+        ASSERT_EQ((tracker.applyEvent(
                       semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                       now,
                       semantic::TraversalGuardValues(),
-                      passVerdict()),
-                  semantic::RoomTrackingState::CONFIRMED_ROOM);
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                                     now + run * 0.1,
-                                     semantic::TraversalGuardValues(),
-                                     failVerdict()),
-                  semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
-        EXPECT_TRUE(tracker.getLastEvent().isAccepted);
+                      passVerdict(),
+                      nextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState, semantic::RoomTrackingState::CONFIRMED_ROOM);
+        vs_graphs::core::semantic::RoomTrackingState nextState2{};
+        ASSERT_EQ(
+            (tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
+                                now + run * 0.1,
+                                semantic::TraversalGuardValues(),
+                                failVerdict(),
+                                nextState2)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState2, semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+        ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_TRUE((*p_lastEvent).isAccepted);
     }
 }
 
@@ -101,26 +114,49 @@ TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromCrossingPassage)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker tracker;
-        const double          now = 200.0 + run;
-        tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                           now,
-                           semantic::TraversalGuardValues(),
-                           passVerdict());
+        semantic::RoomTracker                        tracker;
+        const double                                 now = 200.0 + run;
+        vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+        ASSERT_EQ((tracker.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      trackerNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
         semantic::TraversalGuardValues crossing = nominalCrossing();
-        crossing.dwell_s = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(tracker.applyEvent(
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        crossing.dwell_s = (*p_trackerConfig).crossing_dwell_s;
+        vs_graphs::core::semantic::RoomTrackingState nextState{};
+        ASSERT_EQ((tracker.applyEvent(
                       semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
                       now,
                       crossing,
-                      passVerdict()),
-                  semantic::RoomTrackingState::CROSSING_PASSAGE);
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                                     now + run * 0.1,
-                                     semantic::TraversalGuardValues(),
-                                     failVerdict()),
-                  semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
-        EXPECT_TRUE(tracker.getLastEvent().isAccepted);
+                      passVerdict(),
+                      nextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState, semantic::RoomTrackingState::CROSSING_PASSAGE);
+        vs_graphs::core::semantic::RoomTrackingState nextState2{};
+        ASSERT_EQ(
+            (tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
+                                now + run * 0.1,
+                                semantic::TraversalGuardValues(),
+                                failVerdict(),
+                                nextState2)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState2, semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+        ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_TRUE((*p_lastEvent).isAccepted);
     }
 }
 
@@ -128,23 +164,41 @@ TEST(RoomTrackerTransitions, UnconditionalLostTimeout)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker tracker;
-        const double          now = 300.0 + run;
-        tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                           now,
-                           semantic::TraversalGuardValues(),
-                           passVerdict());
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                                     now,
-                                     semantic::TraversalGuardValues(),
-                                     failVerdict()),
-                  semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::LOST_TIMEOUT,
-                                     now + run * 0.1,
-                                     semantic::TraversalGuardValues(),
-                                     failVerdict()),
-                  semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
-        EXPECT_TRUE(tracker.getLastEvent().isAccepted);
+        semantic::RoomTracker                        tracker;
+        const double                                 now = 300.0 + run;
+        vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+        ASSERT_EQ((tracker.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      trackerNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState nextState{};
+        ASSERT_EQ(
+            (tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
+                                now,
+                                semantic::TraversalGuardValues(),
+                                failVerdict(),
+                                nextState)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState, semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
+        vs_graphs::core::semantic::RoomTrackingState nextState2{};
+        ASSERT_EQ((tracker.applyEvent(semantic::RoomTrackingEvent::LOST_TIMEOUT,
+                                      now + run * 0.1,
+                                      semantic::TraversalGuardValues(),
+                                      failVerdict(),
+                                      nextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState2, semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+        ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_TRUE((*p_lastEvent).isAccepted);
     }
 }
 
@@ -152,30 +206,53 @@ TEST(RoomTrackerTransitions, UnconditionalReacquireTimeout)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker tracker;
-        const double          now = 400.0 + run;
-        tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                           now,
-                           semantic::TraversalGuardValues(),
-                           passVerdict());
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                                     now,
-                                     semantic::TraversalGuardValues(),
-                                     failVerdict()),
-                  semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
-        EXPECT_EQ(tracker.applyEvent(
+        semantic::RoomTracker                        tracker;
+        const double                                 now = 400.0 + run;
+        vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+        ASSERT_EQ((tracker.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      trackerNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState nextState{};
+        ASSERT_EQ(
+            (tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
+                                now,
+                                semantic::TraversalGuardValues(),
+                                failVerdict(),
+                                nextState)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState, semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
+        vs_graphs::core::semantic::RoomTrackingState nextState2{};
+        ASSERT_EQ((tracker.applyEvent(
                       semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
                       now,
                       semantic::TraversalGuardValues(),
-                      passVerdict()),
+                      passVerdict(),
+                      nextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState2,
                   semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
-        EXPECT_EQ(
-            tracker.applyEvent(semantic::RoomTrackingEvent::REACQUIRE_TIMEOUT,
-                               now + run * 0.1,
-                               semantic::TraversalGuardValues(),
-                               failVerdict()),
-            semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
-        EXPECT_TRUE(tracker.getLastEvent().isAccepted);
+        vs_graphs::core::semantic::RoomTrackingState nextState3{};
+        ASSERT_EQ(
+            (tracker.applyEvent(semantic::RoomTrackingEvent::REACQUIRE_TIMEOUT,
+                                now + run * 0.1,
+                                semantic::TraversalGuardValues(),
+                                failVerdict(),
+                                nextState3)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState3, semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+        ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_TRUE((*p_lastEvent).isAccepted);
     }
 }
 
@@ -187,27 +264,49 @@ TEST(RoomTrackerTransitions, GuardedFirstRoomConfirmed)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker tracker;
-        const double          now = 10.0 + run;
+        semantic::RoomTracker                        tracker;
+        const double                                 now = 10.0 + run;
         /* Guard satisfied: verification verdict PASS. */
-        EXPECT_EQ(tracker.applyEvent(
+        vs_graphs::core::semantic::RoomTrackingState nextState{};
+        ASSERT_EQ((tracker.applyEvent(
                       semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
                       now,
                       semantic::TraversalGuardValues(),
-                      passVerdict(2U)),
-                  semantic::RoomTrackingState::CONFIRMED_ROOM);
-        EXPECT_TRUE(tracker.getLastEvent().isAccepted);
+                      passVerdict(2U),
+                      nextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState, semantic::RoomTrackingState::CONFIRMED_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+        ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_TRUE((*p_lastEvent).isAccepted);
 
         /* Guard rejected: reset, verification verdict FAIL. */
-        semantic::RoomTracker second;
-        EXPECT_EQ(
-            second.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                              now + run * 0.1,
-                              semantic::TraversalGuardValues(),
-                              failVerdict()),
-            semantic::RoomTrackingState::UNKNOWN);
-        EXPECT_FALSE(second.getLastEvent().isAccepted);
-        EXPECT_EQ(second.getLastEvent().targetState,
+        semantic::RoomTracker                        second;
+        vs_graphs::core::semantic::RoomTrackingState nextState2{};
+        ASSERT_EQ((second.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now + run * 0.1,
+                      semantic::TraversalGuardValues(),
+                      failVerdict(),
+                      nextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState2, semantic::RoomTrackingState::UNKNOWN);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent2 =
+            nullptr;
+        ASSERT_EQ((second.getLastEvent(p_lastEvent2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_FALSE((*p_lastEvent2).isAccepted);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent3 =
+            nullptr;
+        ASSERT_EQ((second.getLastEvent(p_lastEvent3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ((*p_lastEvent3).targetState,
                   semantic::RoomTrackingState::UNKNOWN);
     }
 }
@@ -216,75 +315,155 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker tracker;
-        const double          now = 20.0 + run;
-        tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                           now,
-                           semantic::TraversalGuardValues(),
-                           passVerdict());
+        semantic::RoomTracker                        tracker;
+        const double                                 now = 20.0 + run;
+        vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+        ASSERT_EQ((tracker.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      trackerNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
 
         /* Guard satisfied: passable crossing with dwell and confidence above
          * the configured thresholds. */
         semantic::TraversalGuardValues crossing = nominalCrossing();
-        crossing.dwell_s = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(tracker.applyEvent(
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        crossing.dwell_s = (*p_trackerConfig).crossing_dwell_s;
+        vs_graphs::core::semantic::RoomTrackingState nextState{};
+        ASSERT_EQ((tracker.applyEvent(
                       semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
                       now,
                       crossing,
-                      passVerdict()),
-                  semantic::RoomTrackingState::CROSSING_PASSAGE);
-        EXPECT_TRUE(tracker.getLastEvent().isAccepted);
+                      passVerdict(),
+                      nextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState, semantic::RoomTrackingState::CROSSING_PASSAGE);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+        ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_TRUE((*p_lastEvent).isAccepted);
 
         /* Guard rejected below dwell threshold. */
-        semantic::RoomTracker second;
-        second.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                          now,
-                          semantic::TraversalGuardValues(),
-                          passVerdict());
+        semantic::RoomTracker                        second;
+        vs_graphs::core::semantic::RoomTrackingState secondNextState{};
+        ASSERT_EQ((second.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      secondNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
         semantic::TraversalGuardValues shortDwell = nominalCrossing();
-        shortDwell.dwell_s = tracker.getConfig().crossing_dwell_s / 2.0;
-        EXPECT_EQ(second.applyEvent(
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig2 =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        shortDwell.dwell_s = (*p_trackerConfig2).crossing_dwell_s / 2.0;
+        vs_graphs::core::semantic::RoomTrackingState nextState2{};
+        ASSERT_EQ((second.applyEvent(
                       semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
                       now,
                       shortDwell,
-                      passVerdict()),
-                  semantic::RoomTrackingState::CONFIRMED_ROOM);
-        EXPECT_FALSE(second.getLastEvent().isAccepted);
+                      passVerdict(),
+                      nextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState2, semantic::RoomTrackingState::CONFIRMED_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent2 =
+            nullptr;
+        ASSERT_EQ((second.getLastEvent(p_lastEvent2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_FALSE((*p_lastEvent2).isAccepted);
 
         /* Guard rejected below confidence threshold. */
-        semantic::RoomTracker third;
-        third.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                         now,
-                         semantic::TraversalGuardValues(),
-                         passVerdict());
+        semantic::RoomTracker                        third;
+        vs_graphs::core::semantic::RoomTrackingState thirdNextState{};
+        ASSERT_EQ(
+            (third.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                              now,
+                              semantic::TraversalGuardValues(),
+                              passVerdict(),
+                              thirdNextState)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
         semantic::TraversalGuardValues lowConfidence = nominalCrossing();
-        lowConfidence.dwell_s = tracker.getConfig().crossing_dwell_s;
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig3 =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        lowConfidence.dwell_s = (*p_trackerConfig3).crossing_dwell_s;
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig4 =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig4)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
         lowConfidence.confidence =
-            tracker.getConfig().crossing_confidence - 0.1;
-        EXPECT_EQ(third.applyEvent(
+            (*p_trackerConfig4).crossing_confidence - 0.1;
+        vs_graphs::core::semantic::RoomTrackingState nextState3{};
+        ASSERT_EQ((third.applyEvent(
                       semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
                       now,
                       lowConfidence,
-                      passVerdict()),
-                  semantic::RoomTrackingState::CONFIRMED_ROOM);
-        EXPECT_FALSE(third.getLastEvent().isAccepted);
+                      passVerdict(),
+                      nextState3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState3, semantic::RoomTrackingState::CONFIRMED_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent3 =
+            nullptr;
+        ASSERT_EQ((third.getLastEvent(p_lastEvent3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_FALSE((*p_lastEvent3).isAccepted);
 
         /* Guard rejected: crossing segment not passable. */
-        semantic::RoomTracker fourth;
-        fourth.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                          now,
-                          semantic::TraversalGuardValues(),
-                          passVerdict());
+        semantic::RoomTracker                        fourth;
+        vs_graphs::core::semantic::RoomTrackingState fourthNextState{};
+        ASSERT_EQ((fourth.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      fourthNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
         semantic::TraversalGuardValues blocked = nominalCrossing();
         blocked.isPassable                     = false;
-        blocked.dwell_s = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(fourth.applyEvent(
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig5 =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig5)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        blocked.dwell_s = (*p_trackerConfig5).crossing_dwell_s;
+        vs_graphs::core::semantic::RoomTrackingState nextState4{};
+        ASSERT_EQ((fourth.applyEvent(
                       semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
                       now,
                       blocked,
-                      passVerdict()),
-                  semantic::RoomTrackingState::CONFIRMED_ROOM);
-        EXPECT_FALSE(fourth.getLastEvent().isAccepted);
+                      passVerdict(),
+                      nextState4)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState4, semantic::RoomTrackingState::CONFIRMED_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent4 =
+            nullptr;
+        ASSERT_EQ((fourth.getLastEvent(p_lastEvent4)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_FALSE((*p_lastEvent4).isAccepted);
     }
 }
 
@@ -292,74 +471,153 @@ TEST(RoomTrackerTransitions, GuardedPassageTraversalComplete)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker tracker;
-        const double          now = 30.0 + run;
-        tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                           now,
-                           semantic::TraversalGuardValues(),
-                           passVerdict());
+        semantic::RoomTracker                        tracker;
+        const double                                 now = 30.0 + run;
+        vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+        ASSERT_EQ((tracker.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      trackerNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
         semantic::TraversalGuardValues crossed = nominalCrossing();
-        crossed.dwell_s = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(tracker.applyEvent(
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        crossed.dwell_s = (*p_trackerConfig).crossing_dwell_s;
+        vs_graphs::core::semantic::RoomTrackingState nextState{};
+        ASSERT_EQ((tracker.applyEvent(
                       semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
                       now,
                       crossed,
-                      passVerdict()),
-                  semantic::RoomTrackingState::CROSSING_PASSAGE);
+                      passVerdict(),
+                      nextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState, semantic::RoomTrackingState::CROSSING_PASSAGE);
 
         /* Guard satisfied: both sides observed, dwell elapsed, verdict PASS. */
         semantic::TraversalGuardValues complete = nominalCrossing();
         complete.areBothSidesObserved           = true;
-        complete.dwell_s = tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(tracker.applyEvent(
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig2 =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        complete.dwell_s = (*p_trackerConfig2).crossing_dwell_s;
+        vs_graphs::core::semantic::RoomTrackingState nextState2{};
+        ASSERT_EQ((tracker.applyEvent(
                       semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
                       now,
                       complete,
-                      passVerdict()),
-                  semantic::RoomTrackingState::CONFIRMED_ROOM);
-        EXPECT_TRUE(tracker.getLastEvent().isAccepted);
+                      passVerdict(),
+                      nextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState2, semantic::RoomTrackingState::CONFIRMED_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+        ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_TRUE((*p_lastEvent).isAccepted);
 
         /* Guard rejected: traversal complete verdict FAILS verification. */
-        semantic::RoomTracker second;
-        second.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                          now,
-                          semantic::TraversalGuardValues(),
-                          passVerdict());
-        crossed.dwell_s = second.getConfig().crossing_dwell_s;
-        second.applyEvent(
-            semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-            now,
-            crossed,
-            passVerdict());
-        EXPECT_EQ(second.applyEvent(
+        semantic::RoomTracker                        second;
+        vs_graphs::core::semantic::RoomTrackingState secondNextState{};
+        ASSERT_EQ((second.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      secondNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_secondConfig =
+            nullptr;
+        ASSERT_EQ((second.getConfig(p_secondConfig)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        crossed.dwell_s = (*p_secondConfig).crossing_dwell_s;
+        vs_graphs::core::semantic::RoomTrackingState secondNextState2{};
+        ASSERT_EQ((second.applyEvent(
+                      semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                      now,
+                      crossed,
+                      passVerdict(),
+                      secondNextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState nextState3{};
+        ASSERT_EQ((second.applyEvent(
                       semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
                       now,
                       complete,
-                      failVerdict()),
-                  semantic::RoomTrackingState::CROSSING_PASSAGE);
-        EXPECT_FALSE(second.getLastEvent().isAccepted);
+                      failVerdict(),
+                      nextState3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState3, semantic::RoomTrackingState::CROSSING_PASSAGE);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent2 =
+            nullptr;
+        ASSERT_EQ((second.getLastEvent(p_lastEvent2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_FALSE((*p_lastEvent2).isAccepted);
 
         /* Guard rejected: neither side observed. */
-        semantic::RoomTracker third;
-        third.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                         now,
-                         semantic::TraversalGuardValues(),
-                         passVerdict());
-        crossed.dwell_s = third.getConfig().crossing_dwell_s;
-        third.applyEvent(semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                         now,
-                         crossed,
-                         passVerdict());
+        semantic::RoomTracker                        third;
+        vs_graphs::core::semantic::RoomTrackingState thirdNextState{};
+        ASSERT_EQ(
+            (third.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                              now,
+                              semantic::TraversalGuardValues(),
+                              passVerdict(),
+                              thirdNextState)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_thirdConfig =
+            nullptr;
+        ASSERT_EQ((third.getConfig(p_thirdConfig)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        crossed.dwell_s = (*p_thirdConfig).crossing_dwell_s;
+        vs_graphs::core::semantic::RoomTrackingState thirdNextState2{};
+        ASSERT_EQ((third.applyEvent(
+                      semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                      now,
+                      crossed,
+                      passVerdict(),
+                      thirdNextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
         semantic::TraversalGuardValues oneSided = nominalCrossing();
         oneSided.areBothSidesObserved           = false;
-        oneSided.dwell_s = third.getConfig().crossing_dwell_s;
-        EXPECT_EQ(third.applyEvent(
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_thirdConfig2 =
+            nullptr;
+        ASSERT_EQ((third.getConfig(p_thirdConfig2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        oneSided.dwell_s = (*p_thirdConfig2).crossing_dwell_s;
+        vs_graphs::core::semantic::RoomTrackingState nextState4{};
+        ASSERT_EQ((third.applyEvent(
                       semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
                       now,
                       oneSided,
-                      passVerdict()),
-                  semantic::RoomTrackingState::CROSSING_PASSAGE);
-        EXPECT_FALSE(third.getLastEvent().isAccepted);
+                      passVerdict(),
+                      nextState4)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState4, semantic::RoomTrackingState::CROSSING_PASSAGE);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent3 =
+            nullptr;
+        ASSERT_EQ((third.getLastEvent(p_lastEvent3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_FALSE((*p_lastEvent3).isAccepted);
     }
 }
 
@@ -367,53 +625,97 @@ TEST(RoomTrackerTransitions, GuardedRoomReacquired)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker tracker;
-        const double          now = 40.0 + run;
-        tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                           now,
-                           semantic::TraversalGuardValues(),
-                           passVerdict());
-        tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                           now,
-                           semantic::TraversalGuardValues(),
-                           failVerdict());
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::LOST_TIMEOUT,
-                                     now,
-                                     semantic::TraversalGuardValues(),
-                                     failVerdict()),
-                  semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
+        semantic::RoomTracker                        tracker;
+        const double                                 now = 40.0 + run;
+        vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+        ASSERT_EQ((tracker.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      trackerNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState trackerNextState2{};
+        ASSERT_EQ(
+            (tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
+                                now,
+                                semantic::TraversalGuardValues(),
+                                failVerdict(),
+                                trackerNextState2)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState nextState{};
+        ASSERT_EQ((tracker.applyEvent(semantic::RoomTrackingEvent::LOST_TIMEOUT,
+                                      now,
+                                      semantic::TraversalGuardValues(),
+                                      failVerdict(),
+                                      nextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState, semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
 
         /* Guard satisfied: verification PASS reacquires the room. */
-        EXPECT_EQ(
-            tracker.applyEvent(semantic::RoomTrackingEvent::ROOM_REACQUIRED,
-                               now,
-                               semantic::TraversalGuardValues(),
-                               passVerdict(4U)),
-            semantic::RoomTrackingState::CONFIRMED_ROOM);
-        EXPECT_TRUE(tracker.getLastEvent().isAccepted);
+        vs_graphs::core::semantic::RoomTrackingState nextState2{};
+        ASSERT_EQ(
+            (tracker.applyEvent(semantic::RoomTrackingEvent::ROOM_REACQUIRED,
+                                now,
+                                semantic::TraversalGuardValues(),
+                                passVerdict(4U),
+                                nextState2)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState2, semantic::RoomTrackingState::CONFIRMED_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+        ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_TRUE((*p_lastEvent).isAccepted);
 
         /* Guard rejected: verification FAIL keeps the lost state. */
-        semantic::RoomTracker second;
-        second.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                          now,
-                          semantic::TraversalGuardValues(),
-                          passVerdict());
-        second.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                          now,
-                          semantic::TraversalGuardValues(),
-                          failVerdict());
-        EXPECT_EQ(second.applyEvent(semantic::RoomTrackingEvent::LOST_TIMEOUT,
-                                    now,
-                                    semantic::TraversalGuardValues(),
-                                    failVerdict()),
-                  semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
-        EXPECT_EQ(
-            second.applyEvent(semantic::RoomTrackingEvent::ROOM_REACQUIRED,
-                              now + run * 0.1,
-                              semantic::TraversalGuardValues(),
-                              failVerdict()),
-            semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
-        EXPECT_FALSE(second.getLastEvent().isAccepted);
+        semantic::RoomTracker                        second;
+        vs_graphs::core::semantic::RoomTrackingState secondNextState{};
+        ASSERT_EQ((second.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      secondNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState secondNextState2{};
+        ASSERT_EQ((second.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
+                                     now,
+                                     semantic::TraversalGuardValues(),
+                                     failVerdict(),
+                                     secondNextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState nextState3{};
+        ASSERT_EQ((second.applyEvent(semantic::RoomTrackingEvent::LOST_TIMEOUT,
+                                     now,
+                                     semantic::TraversalGuardValues(),
+                                     failVerdict(),
+                                     nextState3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState3, semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
+        vs_graphs::core::semantic::RoomTrackingState nextState4{};
+        ASSERT_EQ(
+            (second.applyEvent(semantic::RoomTrackingEvent::ROOM_REACQUIRED,
+                               now + run * 0.1,
+                               semantic::TraversalGuardValues(),
+                               failVerdict(),
+                               nextState4)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState4, semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent2 =
+            nullptr;
+        ASSERT_EQ((second.getLastEvent(p_lastEvent2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_FALSE((*p_lastEvent2).isAccepted);
     }
 }
 
@@ -421,44 +723,81 @@ TEST(RoomTrackerTransitions, GuardedNewMapWithRoomMatch)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker tracker;
-        const double          now = 50.0 + run;
-        tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                           now,
-                           semantic::TraversalGuardValues(),
-                           passVerdict());
-        EXPECT_EQ(tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                                     now,
-                                     semantic::TraversalGuardValues(),
-                                     failVerdict()),
-                  semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
+        semantic::RoomTracker                        tracker;
+        const double                                 now = 50.0 + run;
+        vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+        ASSERT_EQ((tracker.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      trackerNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState nextState{};
+        ASSERT_EQ(
+            (tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
+                                now,
+                                semantic::TraversalGuardValues(),
+                                failVerdict(),
+                                nextState)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState, semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
 
         /* Guard satisfied: verification PASS on a new-map match. */
-        EXPECT_EQ(tracker.applyEvent(
+        vs_graphs::core::semantic::RoomTrackingState nextState2{};
+        ASSERT_EQ((tracker.applyEvent(
                       semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
                       now,
                       semantic::TraversalGuardValues(),
-                      passVerdict(3U)),
+                      passVerdict(3U),
+                      nextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState2,
                   semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
-        EXPECT_TRUE(tracker.getLastEvent().isAccepted);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+        ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_TRUE((*p_lastEvent).isAccepted);
 
         /* Guard rejected: verification FAIL stays lost. */
-        semantic::RoomTracker second;
-        second.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                          now,
-                          semantic::TraversalGuardValues(),
-                          passVerdict());
-        second.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                          now,
-                          semantic::TraversalGuardValues(),
-                          failVerdict());
-        EXPECT_EQ(second.applyEvent(
+        semantic::RoomTracker                        second;
+        vs_graphs::core::semantic::RoomTrackingState secondNextState{};
+        ASSERT_EQ((second.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      secondNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState secondNextState2{};
+        ASSERT_EQ((second.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
+                                     now,
+                                     semantic::TraversalGuardValues(),
+                                     failVerdict(),
+                                     secondNextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState nextState3{};
+        ASSERT_EQ((second.applyEvent(
                       semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
                       now + run * 0.1,
                       semantic::TraversalGuardValues(),
-                      failVerdict()),
-                  semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
-        EXPECT_FALSE(second.getLastEvent().isAccepted);
+                      failVerdict(),
+                      nextState3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState3, semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent2 =
+            nullptr;
+        ASSERT_EQ((second.getLastEvent(p_lastEvent2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_FALSE((*p_lastEvent2).isAccepted);
     }
 }
 
@@ -466,53 +805,100 @@ TEST(RoomTrackerTransitions, GuardedVerifiedMatchToLastRoom)
 {
     for (int run = 0; run < 5; ++run)
     {
-        semantic::RoomTracker tracker;
-        const double          now = 60.0 + run;
-        tracker.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                           now,
-                           semantic::TraversalGuardValues(),
-                           passVerdict());
-        tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                           now,
-                           semantic::TraversalGuardValues(),
-                           failVerdict());
-        EXPECT_EQ(tracker.applyEvent(
+        semantic::RoomTracker                        tracker;
+        const double                                 now = 60.0 + run;
+        vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+        ASSERT_EQ((tracker.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      trackerNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState trackerNextState2{};
+        ASSERT_EQ(
+            (tracker.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
+                                now,
+                                semantic::TraversalGuardValues(),
+                                failVerdict(),
+                                trackerNextState2)),
+            vs_graphs::core::semantic::RoomTrackerStatus::
+                ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState nextState{};
+        ASSERT_EQ((tracker.applyEvent(
                       semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
                       now,
                       semantic::TraversalGuardValues(),
-                      passVerdict()),
+                      passVerdict(),
+                      nextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState,
                   semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
 
         /* Guard satisfied: full verification gates PASS. */
-        EXPECT_EQ(tracker.applyEvent(
+        vs_graphs::core::semantic::RoomTrackingState nextState2{};
+        ASSERT_EQ((tracker.applyEvent(
                       semantic::RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
                       now,
                       semantic::TraversalGuardValues(),
-                      passVerdict(6U)),
-                  semantic::RoomTrackingState::CONFIRMED_ROOM);
-        EXPECT_TRUE(tracker.getLastEvent().isAccepted);
+                      passVerdict(6U),
+                      nextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState2, semantic::RoomTrackingState::CONFIRMED_ROOM);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+        ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_TRUE((*p_lastEvent).isAccepted);
 
         /* Guard rejected: verification FAIL stays in reacquire. */
-        semantic::RoomTracker second;
-        second.applyEvent(semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                          now,
-                          semantic::TraversalGuardValues(),
-                          passVerdict());
-        second.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
-                          now,
-                          semantic::TraversalGuardValues(),
-                          failVerdict());
-        second.applyEvent(semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
-                          now,
-                          semantic::TraversalGuardValues(),
-                          passVerdict());
-        EXPECT_EQ(second.applyEvent(
+        semantic::RoomTracker                        second;
+        vs_graphs::core::semantic::RoomTrackingState secondNextState{};
+        ASSERT_EQ((second.applyEvent(
+                      semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      secondNextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState secondNextState2{};
+        ASSERT_EQ((second.applyEvent(semantic::RoomTrackingEvent::TRACKING_LOST,
+                                     now,
+                                     semantic::TraversalGuardValues(),
+                                     failVerdict(),
+                                     secondNextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState secondNextState3{};
+        ASSERT_EQ((second.applyEvent(
+                      semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
+                      now,
+                      semantic::TraversalGuardValues(),
+                      passVerdict(),
+                      secondNextState3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        vs_graphs::core::semantic::RoomTrackingState nextState3{};
+        ASSERT_EQ((second.applyEvent(
                       semantic::RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
                       now + run * 0.1,
                       semantic::TraversalGuardValues(),
-                      failVerdict()),
+                      failVerdict(),
+                      nextState3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState3,
                   semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
-        EXPECT_FALSE(second.getLastEvent().isAccepted);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent2 =
+            nullptr;
+        ASSERT_EQ((second.getLastEvent(p_lastEvent2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_FALSE((*p_lastEvent2).isAccepted);
     }
 }
 
@@ -555,9 +941,11 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
         const semantic::RoomTrackingState sourceState = entry.first;
         for (semantic::RoomTrackingEvent event : allEvents)
         {
-            if (std::find(entry.second.begin(),
-                          entry.second.end(),
-                          semantic::RoomTracker::eventToString(event)) !=
+            std::string text{};
+            ASSERT_EQ((semantic::RoomTracker::eventToString(event, text)),
+                      vs_graphs::core::semantic::RoomTrackerStatus::
+                          ROOM_TRACKER_STATUS_SUCCESS);
+            if (std::find(entry.second.begin(), entry.second.end(), text) !=
                 entry.second.end())
             {
                 continue; /* Defined for this source state. */
@@ -569,11 +957,15 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
             if (sourceState != semantic::RoomTrackingState::UNKNOWN)
             {
                 /* Drive to the source state along a valid path. */
-                tracker.applyEvent(
-                    semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                    now,
-                    semantic::TraversalGuardValues(),
-                    passVerdict());
+                vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+                ASSERT_EQ((tracker.applyEvent(
+                              semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                              now,
+                              semantic::TraversalGuardValues(),
+                              passVerdict(),
+                              trackerNextState)),
+                          vs_graphs::core::semantic::RoomTrackerStatus::
+                              ROOM_TRACKER_STATUS_SUCCESS);
                 if (sourceState == semantic::RoomTrackingState::CONFIRMED_ROOM)
                 {
                     /* Already reached. */
@@ -582,66 +974,129 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
                          semantic::RoomTrackingState::CROSSING_PASSAGE)
                 {
                     semantic::TraversalGuardValues crossed = nominalCrossing();
-                    crossed.dwell_s = tracker.getConfig().crossing_dwell_s;
-                    tracker.applyEvent(
-                        semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                        now,
-                        crossed,
-                        passVerdict());
+                    const vs_graphs::core::semantic::RoomTrackerConfig
+                        *p_trackerConfig = nullptr;
+                    ASSERT_EQ((tracker.getConfig(p_trackerConfig)),
+                              vs_graphs::core::semantic::RoomTrackerStatus::
+                                  ROOM_TRACKER_STATUS_SUCCESS);
+                    crossed.dwell_s = (*p_trackerConfig).crossing_dwell_s;
+                    vs_graphs::core::semantic::RoomTrackingState
+                        trackerNextState2{};
+                    ASSERT_EQ((tracker.applyEvent(semantic::RoomTrackingEvent::
+                                                      PASSAGE_CROSSING_DETECTED,
+                                                  now,
+                                                  crossed,
+                                                  passVerdict(),
+                                                  trackerNextState2)),
+                              vs_graphs::core::semantic::RoomTrackerStatus::
+                                  ROOM_TRACKER_STATUS_SUCCESS);
                 }
                 else if (sourceState ==
                          semantic::RoomTrackingState::LOST_WITH_LAST_ROOM)
                 {
-                    tracker.applyEvent(
-                        semantic::RoomTrackingEvent::TRACKING_LOST,
-                        now,
-                        semantic::TraversalGuardValues(),
-                        failVerdict());
+                    vs_graphs::core::semantic::RoomTrackingState
+                        trackerNextState3{};
+                    ASSERT_EQ((tracker.applyEvent(
+                                  semantic::RoomTrackingEvent::TRACKING_LOST,
+                                  now,
+                                  semantic::TraversalGuardValues(),
+                                  failVerdict(),
+                                  trackerNextState3)),
+                              vs_graphs::core::semantic::RoomTrackerStatus::
+                                  ROOM_TRACKER_STATUS_SUCCESS);
                 }
                 else if (sourceState ==
                          semantic::RoomTrackingState::LOST_WITHOUT_ROOM)
                 {
-                    tracker.applyEvent(
-                        semantic::RoomTrackingEvent::TRACKING_LOST,
-                        now,
-                        semantic::TraversalGuardValues(),
-                        failVerdict());
-                    tracker.applyEvent(
-                        semantic::RoomTrackingEvent::LOST_TIMEOUT,
-                        now,
-                        semantic::TraversalGuardValues(),
-                        failVerdict());
+                    vs_graphs::core::semantic::RoomTrackingState
+                        trackerNextState4{};
+                    ASSERT_EQ((tracker.applyEvent(
+                                  semantic::RoomTrackingEvent::TRACKING_LOST,
+                                  now,
+                                  semantic::TraversalGuardValues(),
+                                  failVerdict(),
+                                  trackerNextState4)),
+                              vs_graphs::core::semantic::RoomTrackerStatus::
+                                  ROOM_TRACKER_STATUS_SUCCESS);
+                    vs_graphs::core::semantic::RoomTrackingState
+                        trackerNextState5{};
+                    ASSERT_EQ((tracker.applyEvent(
+                                  semantic::RoomTrackingEvent::LOST_TIMEOUT,
+                                  now,
+                                  semantic::TraversalGuardValues(),
+                                  failVerdict(),
+                                  trackerNextState5)),
+                              vs_graphs::core::semantic::RoomTrackerStatus::
+                                  ROOM_TRACKER_STATUS_SUCCESS);
                 }
                 else if (sourceState ==
                          semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP)
                 {
-                    tracker.applyEvent(
-                        semantic::RoomTrackingEvent::TRACKING_LOST,
-                        now,
-                        semantic::TraversalGuardValues(),
-                        failVerdict());
-                    tracker.applyEvent(
-                        semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
-                        now,
-                        semantic::TraversalGuardValues(),
-                        passVerdict());
+                    vs_graphs::core::semantic::RoomTrackingState
+                        trackerNextState6{};
+                    ASSERT_EQ((tracker.applyEvent(
+                                  semantic::RoomTrackingEvent::TRACKING_LOST,
+                                  now,
+                                  semantic::TraversalGuardValues(),
+                                  failVerdict(),
+                                  trackerNextState6)),
+                              vs_graphs::core::semantic::RoomTrackerStatus::
+                                  ROOM_TRACKER_STATUS_SUCCESS);
+                    vs_graphs::core::semantic::RoomTrackingState
+                        trackerNextState7{};
+                    ASSERT_EQ(
+                        (tracker.applyEvent(semantic::RoomTrackingEvent::
+                                                NEW_MAP_WITH_ROOM_MATCH,
+                                            now,
+                                            semantic::TraversalGuardValues(),
+                                            passVerdict(),
+                                            trackerNextState7)),
+                        vs_graphs::core::semantic::RoomTrackerStatus::
+                            ROOM_TRACKER_STATUS_SUCCESS);
                 }
             }
 
-            EXPECT_EQ(tracker.getState(), sourceState)
-                << "setup mismatch before injecting "
-                << semantic::RoomTracker::eventToString(event);
-            EXPECT_EQ(tracker.applyEvent(event,
-                                         now + 1.0,
-                                         nominalCrossing(),
-                                         passVerdict()),
-                      sourceState)
-                << "undefined event "
-                << semantic::RoomTracker::eventToString(event)
-                << " must not change state "
-                << semantic::RoomTracker::stateToString(sourceState);
-            EXPECT_FALSE(tracker.getLastEvent().isAccepted);
-            EXPECT_EQ(tracker.getState(), sourceState);
+            vs_graphs::core::semantic::RoomTrackingState state2{};
+            ASSERT_EQ((tracker.getState(state2)),
+                      vs_graphs::core::semantic::RoomTrackerStatus::
+                          ROOM_TRACKER_STATUS_SUCCESS);
+            std::string text2{};
+            ASSERT_EQ((semantic::RoomTracker::eventToString(event, text2)),
+                      vs_graphs::core::semantic::RoomTrackerStatus::
+                          ROOM_TRACKER_STATUS_SUCCESS);
+            EXPECT_EQ(state2, sourceState)
+                << "setup mismatch before injecting " << text2;
+            vs_graphs::core::semantic::RoomTrackingState nextState{};
+            ASSERT_EQ((tracker.applyEvent(event,
+                                          now + 1.0,
+                                          nominalCrossing(),
+                                          passVerdict(),
+                                          nextState)),
+                      vs_graphs::core::semantic::RoomTrackerStatus::
+                          ROOM_TRACKER_STATUS_SUCCESS);
+            std::string text3{};
+            ASSERT_EQ((semantic::RoomTracker::eventToString(event, text3)),
+                      vs_graphs::core::semantic::RoomTrackerStatus::
+                          ROOM_TRACKER_STATUS_SUCCESS);
+            std::string text4{};
+            ASSERT_EQ(
+                (semantic::RoomTracker::stateToString(sourceState, text4)),
+                vs_graphs::core::semantic::RoomTrackerStatus::
+                    ROOM_TRACKER_STATUS_SUCCESS);
+            EXPECT_EQ(nextState, sourceState)
+                << "undefined event " << text3 << " must not change state "
+                << text4;
+            const vs_graphs::core::semantic::TransitionEvent *p_lastEvent =
+                nullptr;
+            ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                      vs_graphs::core::semantic::RoomTrackerStatus::
+                          ROOM_TRACKER_STATUS_SUCCESS);
+            EXPECT_FALSE((*p_lastEvent).isAccepted);
+            vs_graphs::core::semantic::RoomTrackingState state3{};
+            ASSERT_EQ((tracker.getState(state3)),
+                      vs_graphs::core::semantic::RoomTrackerStatus::
+                          ROOM_TRACKER_STATUS_SUCCESS);
+            EXPECT_EQ(state3, sourceState);
         }
     }
 }
@@ -658,178 +1113,390 @@ TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
         const double          t0 = 1000.0 + run * 100.0;
 
         /* UNKNOWN -> CONFIRMED_ROOM once a room is confirmed. */
-        EXPECT_EQ(tracker.step(t0,
-                               semantic::TraversalGuardValues(),
-                               passVerdict(),
-                               nominalTracking()),
-                  semantic::RoomTrackingState::CONFIRMED_ROOM);
+        vs_graphs::core::semantic::RoomTrackingState nextState{};
+        ASSERT_EQ((tracker.step(t0,
+                                semantic::TraversalGuardValues(),
+                                passVerdict(),
+                                nominalTracking(),
+                                nextState)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState, semantic::RoomTrackingState::CONFIRMED_ROOM);
 
         /* Crossing guard holds; the dwell has not yet elapsed. */
         semantic::TraversalGuardValues crossing = nominalCrossing();
         const double                   t1 = t0 + 1.0; /* < crossing_dwell_s */
-        EXPECT_EQ(tracker.step(t1, crossing, passVerdict(), nominalTracking()),
-                  semantic::RoomTrackingState::CONFIRMED_ROOM);
+        vs_graphs::core::semantic::RoomTrackingState nextState2{};
+        ASSERT_EQ((tracker.step(t1,
+                                crossing,
+                                passVerdict(),
+                                nominalTracking(),
+                                nextState2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState2, semantic::RoomTrackingState::CONFIRMED_ROOM);
 
         /* Now the dwell has elapsed: the crossing commits. */
-        const double t2 = t1 + tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(tracker.step(t2, crossing, passVerdict(), nominalTracking()),
-                  semantic::RoomTrackingState::CROSSING_PASSAGE);
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        const double t2 = t1 + (*p_trackerConfig).crossing_dwell_s;
+        vs_graphs::core::semantic::RoomTrackingState nextState3{};
+        ASSERT_EQ((tracker.step(t2,
+                                crossing,
+                                passVerdict(),
+                                nominalTracking(),
+                                nextState3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState3, semantic::RoomTrackingState::CROSSING_PASSAGE);
 
         /* Traversal completion needs both sides + dwell + verdict PASS. */
         semantic::TraversalGuardValues complete = nominalCrossing();
         complete.areBothSidesObserved           = true;
-        const double t3 = t2 + tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(tracker.step(t3, complete, passVerdict(), nominalTracking()),
-                  semantic::RoomTrackingState::CROSSING_PASSAGE);
-        const double t4 = t3 + tracker.getConfig().crossing_dwell_s;
-        EXPECT_EQ(tracker.step(t4, complete, passVerdict(), nominalTracking()),
-                  semantic::RoomTrackingState::CONFIRMED_ROOM);
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig2 =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        const double t3 = t2 + (*p_trackerConfig2).crossing_dwell_s;
+        vs_graphs::core::semantic::RoomTrackingState nextState4{};
+        ASSERT_EQ((tracker.step(t3,
+                                complete,
+                                passVerdict(),
+                                nominalTracking(),
+                                nextState4)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState4, semantic::RoomTrackingState::CROSSING_PASSAGE);
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig3 =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig3)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        const double t4 = t3 + (*p_trackerConfig3).crossing_dwell_s;
+        vs_graphs::core::semantic::RoomTrackingState nextState5{};
+        ASSERT_EQ((tracker.step(t4,
+                                complete,
+                                passVerdict(),
+                                nominalTracking(),
+                                nextState5)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_EQ(nextState5, semantic::RoomTrackingState::CONFIRMED_ROOM);
 
-        EXPECT_TRUE(tracker.getLastEvent().isAccepted);
-        EXPECT_GE(tracker.getEventHistory().size(), 3U);
+        const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+        ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_TRUE((*p_lastEvent).isAccepted);
+        const std::vector<vs_graphs::core::semantic::TransitionEvent>
+            *p_eventHistory = nullptr;
+        ASSERT_EQ((tracker.getEventHistory(p_eventHistory)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        EXPECT_GE((*p_eventHistory).size(), 3U);
     }
 }
 
 TEST(RoomTrackerStep, HysteresisResetsDwellOnGuardFailure)
 {
-    semantic::RoomTracker tracker;
-    const double          t0 = 0.0;
-    tracker.step(t0,
-                 semantic::TraversalGuardValues(),
-                 passVerdict(),
-                 nominalTracking());
+    semantic::RoomTracker                        tracker;
+    const double                                 t0 = 0.0;
+    vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+    ASSERT_EQ((tracker.step(t0,
+                            semantic::TraversalGuardValues(),
+                            passVerdict(),
+                            nominalTracking(),
+                            trackerNextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
 
-    semantic::TraversalGuardValues crossing = nominalCrossing();
-    const double                   t1       = t0 + 1.0;
-    EXPECT_EQ(tracker.step(t1, crossing, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CONFIRMED_ROOM);
+    semantic::TraversalGuardValues               crossing = nominalCrossing();
+    const double                                 t1       = t0 + 1.0;
+    vs_graphs::core::semantic::RoomTrackingState nextState{};
+    ASSERT_EQ(
+        (tracker
+             .step(t1, crossing, passVerdict(), nominalTracking(), nextState)),
+        vs_graphs::core::semantic::RoomTrackerStatus::
+            ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState, semantic::RoomTrackingState::CONFIRMED_ROOM);
 
     /* Guard fails (confidence drops below threshold); dwell must reset. */
-    semantic::TraversalGuardValues weak = crossing;
-    weak.confidence                     = 0.0;
-    const double t2                     = t1 + 1.0;
-    EXPECT_EQ(tracker.step(t2, weak, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CONFIRMED_ROOM);
+    semantic::TraversalGuardValues weak             = crossing;
+    weak.confidence                                 = 0.0;
+    const double                                 t2 = t1 + 1.0;
+    vs_graphs::core::semantic::RoomTrackingState nextState2{};
+    ASSERT_EQ(
+        (tracker.step(t2, weak, passVerdict(), nominalTracking(), nextState2)),
+        vs_graphs::core::semantic::RoomTrackerStatus::
+            ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState2, semantic::RoomTrackingState::CONFIRMED_ROOM);
 
     /* Re-satisfying the guard restarts the full dwell window. */
-    const double t3 = t2 + tracker.getConfig().crossing_dwell_s - 0.5;
-    EXPECT_EQ(tracker.step(t3, crossing, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CONFIRMED_ROOM);
-    const double t4 = t3 + tracker.getConfig().crossing_dwell_s;
-    EXPECT_EQ(tracker.step(t4, crossing, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CROSSING_PASSAGE);
+    const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig =
+        nullptr;
+    ASSERT_EQ((tracker.getConfig(p_trackerConfig)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    const double t3 = t2 + (*p_trackerConfig).crossing_dwell_s - 0.5;
+    vs_graphs::core::semantic::RoomTrackingState nextState3{};
+    ASSERT_EQ(
+        (tracker
+             .step(t3, crossing, passVerdict(), nominalTracking(), nextState3)),
+        vs_graphs::core::semantic::RoomTrackerStatus::
+            ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState3, semantic::RoomTrackingState::CONFIRMED_ROOM);
+    const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig2 =
+        nullptr;
+    ASSERT_EQ((tracker.getConfig(p_trackerConfig2)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    const double t4 = t3 + (*p_trackerConfig2).crossing_dwell_s;
+    vs_graphs::core::semantic::RoomTrackingState nextState4{};
+    ASSERT_EQ(
+        (tracker
+             .step(t4, crossing, passVerdict(), nominalTracking(), nextState4)),
+        vs_graphs::core::semantic::RoomTrackerStatus::
+            ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState4, semantic::RoomTrackingState::CROSSING_PASSAGE);
 }
 
 TEST(RoomTrackerStep, InvalidCrossingGuardsFailClosed)
 {
-    semantic::RoomTracker tracker;
-    tracker.step(10.0,
-                 semantic::TraversalGuardValues(),
-                 passVerdict(),
-                 nominalTracking());
+    semantic::RoomTracker                        tracker;
+    vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+    ASSERT_EQ((tracker.step(10.0,
+                            semantic::TraversalGuardValues(),
+                            passVerdict(),
+                            nominalTracking(),
+                            trackerNextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
 
     semantic::TraversalGuardValues invalid = nominalCrossing();
     invalid.confidence = std::numeric_limits<double>::quiet_NaN();
-    EXPECT_EQ(tracker.step(11.0, invalid, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CONFIRMED_ROOM);
+    vs_graphs::core::semantic::RoomTrackingState nextState{};
+    ASSERT_EQ(
+        (tracker
+             .step(11.0, invalid, passVerdict(), nominalTracking(), nextState)),
+        vs_graphs::core::semantic::RoomTrackerStatus::
+            ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState, semantic::RoomTrackingState::CONFIRMED_ROOM);
 
     invalid            = nominalCrossing();
     invalid.confidence = 1.1;
-    EXPECT_EQ(tracker.step(12.0, invalid, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CONFIRMED_ROOM);
+    vs_graphs::core::semantic::RoomTrackingState nextState2{};
+    ASSERT_EQ((tracker.step(12.0,
+                            invalid,
+                            passVerdict(),
+                            nominalTracking(),
+                            nextState2)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState2, semantic::RoomTrackingState::CONFIRMED_ROOM);
 }
 
 TEST(RoomTrackerStep, BothSidesAndDwellAccumulateAcrossCycles)
 {
-    semantic::RoomTracker tracker;
-    tracker.step(100.0,
-                 semantic::TraversalGuardValues(),
-                 passVerdict(),
-                 nominalTracking());
+    semantic::RoomTracker                        tracker;
+    vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+    ASSERT_EQ((tracker.step(100.0,
+                            semantic::TraversalGuardValues(),
+                            passVerdict(),
+                            nominalTracking(),
+                            trackerNextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
 
-    semantic::TraversalGuardValues crossing = nominalCrossing();
-    EXPECT_EQ(tracker.step(101.0, crossing, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CONFIRMED_ROOM);
-    EXPECT_EQ(tracker.step(103.0, crossing, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CROSSING_PASSAGE);
+    semantic::TraversalGuardValues               crossing = nominalCrossing();
+    vs_graphs::core::semantic::RoomTrackingState nextState{};
+    ASSERT_EQ((tracker.step(101.0,
+                            crossing,
+                            passVerdict(),
+                            nominalTracking(),
+                            nextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState, semantic::RoomTrackingState::CONFIRMED_ROOM);
+    vs_graphs::core::semantic::RoomTrackingState nextState2{};
+    ASSERT_EQ((tracker.step(103.0,
+                            crossing,
+                            passVerdict(),
+                            nominalTracking(),
+                            nextState2)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState2, semantic::RoomTrackingState::CROSSING_PASSAGE);
 
     semantic::TraversalGuardValues oneSide = nominalCrossing();
     oneSide.areBothSidesObserved           = true;
-    EXPECT_EQ(tracker.step(104.0, oneSide, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CROSSING_PASSAGE);
-    EXPECT_EQ(tracker.step(105.0,
-                           nominalCrossing(),
-                           passVerdict(),
-                           nominalTracking()),
-              semantic::RoomTrackingState::CROSSING_PASSAGE);
-    EXPECT_EQ(tracker.step(106.0,
-                           nominalCrossing(),
-                           passVerdict(),
-                           nominalTracking()),
-              semantic::RoomTrackingState::CONFIRMED_ROOM);
+    vs_graphs::core::semantic::RoomTrackingState nextState3{};
+    ASSERT_EQ((tracker.step(104.0,
+                            oneSide,
+                            passVerdict(),
+                            nominalTracking(),
+                            nextState3)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState3, semantic::RoomTrackingState::CROSSING_PASSAGE);
+    vs_graphs::core::semantic::RoomTrackingState nextState4{};
+    ASSERT_EQ((tracker.step(105.0,
+                            nominalCrossing(),
+                            passVerdict(),
+                            nominalTracking(),
+                            nextState4)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState4, semantic::RoomTrackingState::CROSSING_PASSAGE);
+    vs_graphs::core::semantic::RoomTrackingState nextState5{};
+    ASSERT_EQ((tracker.step(106.0,
+                            nominalCrossing(),
+                            passVerdict(),
+                            nominalTracking(),
+                            nextState5)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState5, semantic::RoomTrackingState::CONFIRMED_ROOM);
 }
 
 TEST(RoomTrackerStep, SteadyDomainInputIgnoresTimestampDiscontinuity)
 {
-    semantic::RoomTracker tracker;
-    tracker.step(1000.0,
-                 semantic::TraversalGuardValues(),
-                 passVerdict(),
-                 nominalTracking());
+    semantic::RoomTracker                        tracker;
+    vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+    ASSERT_EQ((tracker.step(1000.0,
+                            semantic::TraversalGuardValues(),
+                            passVerdict(),
+                            nominalTracking(),
+                            trackerNextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
 
-    semantic::TraversalGuardValues crossing = nominalCrossing();
-    EXPECT_EQ(tracker.step(1001.0, crossing, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CONFIRMED_ROOM);
+    semantic::TraversalGuardValues               crossing = nominalCrossing();
+    vs_graphs::core::semantic::RoomTrackingState nextState{};
+    ASSERT_EQ((tracker.step(1001.0,
+                            crossing,
+                            passVerdict(),
+                            nominalTracking(),
+                            nextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState, semantic::RoomTrackingState::CONFIRMED_ROOM);
     /* A SLAM timestamp reset must not make the injected steady-domain clock
      * move backwards or complete the dwell early. */
-    EXPECT_EQ(tracker.step(2.0, crossing, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CONFIRMED_ROOM);
-    EXPECT_EQ(tracker.step(1003.0, crossing, passVerdict(), nominalTracking()),
-              semantic::RoomTrackingState::CROSSING_PASSAGE);
+    vs_graphs::core::semantic::RoomTrackingState nextState2{};
+    ASSERT_EQ((tracker.step(2.0,
+                            crossing,
+                            passVerdict(),
+                            nominalTracking(),
+                            nextState2)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState2, semantic::RoomTrackingState::CONFIRMED_ROOM);
+    vs_graphs::core::semantic::RoomTrackingState nextState3{};
+    ASSERT_EQ((tracker.step(1003.0,
+                            crossing,
+                            passVerdict(),
+                            nominalTracking(),
+                            nextState3)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState3, semantic::RoomTrackingState::CROSSING_PASSAGE);
 }
 
 TEST(RoomTrackerStep, TrackingLossIsConsumedOncePerEpisode)
 {
-    semantic::RoomTracker tracker;
-    tracker.step(1.0,
-                 semantic::TraversalGuardValues(),
-                 passVerdict(),
-                 nominalTracking());
+    semantic::RoomTracker                        tracker;
+    vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+    ASSERT_EQ((tracker.step(1.0,
+                            semantic::TraversalGuardValues(),
+                            passVerdict(),
+                            nominalTracking(),
+                            trackerNextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
 
     semantic::TrackingStatusInput lost;
     lost.isLost = true;
-    tracker.step(2.0, semantic::TraversalGuardValues(), failVerdict(), lost);
-    const std::size_t eventCountAfterLoss = tracker.getEventHistory().size();
-    tracker.step(3.0, semantic::TraversalGuardValues(), failVerdict(), lost);
-    EXPECT_EQ(tracker.getEventHistory().size(), eventCountAfterLoss);
+    vs_graphs::core::semantic::RoomTrackingState trackerNextState2{};
+    ASSERT_EQ((tracker.step(2.0,
+                            semantic::TraversalGuardValues(),
+                            failVerdict(),
+                            lost,
+                            trackerNextState2)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    const std::vector<vs_graphs::core::semantic::TransitionEvent>
+        *p_trackerEventHistory = nullptr;
+    ASSERT_EQ((tracker.getEventHistory(p_trackerEventHistory)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    const std::size_t eventCountAfterLoss = (*p_trackerEventHistory).size();
+    vs_graphs::core::semantic::RoomTrackingState trackerNextState3{};
+    ASSERT_EQ((tracker.step(3.0,
+                            semantic::TraversalGuardValues(),
+                            failVerdict(),
+                            lost,
+                            trackerNextState3)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    const std::vector<vs_graphs::core::semantic::TransitionEvent>
+        *p_eventHistory = nullptr;
+    ASSERT_EQ((tracker.getEventHistory(p_eventHistory)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ((*p_eventHistory).size(), eventCountAfterLoss);
 }
 
 TEST(RoomTrackerStep, TimeoutDecaysToLostWithoutRoom)
 {
-    semantic::RoomTracker tracker;
-    const double          t0 = 2000.0;
-    tracker.step(t0,
-                 semantic::TraversalGuardValues(),
-                 passVerdict(),
-                 nominalTracking());
+    semantic::RoomTracker                        tracker;
+    const double                                 t0 = 2000.0;
+    vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+    ASSERT_EQ((tracker.step(t0,
+                            semantic::TraversalGuardValues(),
+                            passVerdict(),
+                            nominalTracking(),
+                            trackerNextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
 
     /* Tracking is lost once: CONFIRMED_ROOM -> LOST_WITH_LAST_ROOM. */
     semantic::TrackingStatusInput lost;
     lost.isLost = true;
-    EXPECT_EQ(tracker.step(t0 + 1.0,
-                           semantic::TraversalGuardValues(),
-                           failVerdict(),
-                           lost),
-              semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
+    vs_graphs::core::semantic::RoomTrackingState nextState{};
+    ASSERT_EQ((tracker.step(t0 + 1.0,
+                            semantic::TraversalGuardValues(),
+                            failVerdict(),
+                            lost,
+                            nextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState, semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
 
     /* Loss persists; the lost_timeout decays to LOST_WITHOUT_ROOM. */
-    const double tExpire = t0 + 1.0 + tracker.getConfig().lost_timeout_s;
-    EXPECT_EQ(tracker.step(tExpire,
-                           semantic::TraversalGuardValues(),
-                           failVerdict(),
-                           lost),
-              semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
-    EXPECT_TRUE(tracker.getLastEvent().isAccepted);
+    const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig =
+        nullptr;
+    ASSERT_EQ((tracker.getConfig(p_trackerConfig)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    const double tExpire = t0 + 1.0 + (*p_trackerConfig).lost_timeout_s;
+    vs_graphs::core::semantic::RoomTrackingState nextState2{};
+    ASSERT_EQ((tracker.step(tExpire,
+                            semantic::TraversalGuardValues(),
+                            failVerdict(),
+                            lost,
+                            nextState2)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState2, semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
+    const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+    ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_TRUE((*p_lastEvent).isAccepted);
 }
 
 TEST(RoomTrackerStep, UndefinedTrackingLossFromUnknownIsRejected)
@@ -837,13 +1504,25 @@ TEST(RoomTrackerStep, UndefinedTrackingLossFromUnknownIsRejected)
     semantic::RoomTracker         tracker;
     semantic::TrackingStatusInput lost;
     lost.isLost = true;
-    EXPECT_EQ(tracker.step(0.0,
-                           semantic::TraversalGuardValues(),
-                           failVerdict(),
-                           lost),
-              semantic::RoomTrackingState::UNKNOWN);
-    EXPECT_FALSE(tracker.getLastEvent().isAccepted);
-    EXPECT_EQ(tracker.getLastEvent().event,
+    vs_graphs::core::semantic::RoomTrackingState nextState{};
+    ASSERT_EQ((tracker.step(0.0,
+                            semantic::TraversalGuardValues(),
+                            failVerdict(),
+                            lost,
+                            nextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState, semantic::RoomTrackingState::UNKNOWN);
+    const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+    ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_FALSE((*p_lastEvent).isAccepted);
+    const vs_graphs::core::semantic::TransitionEvent *p_lastEvent2 = nullptr;
+    ASSERT_EQ((tracker.getLastEvent(p_lastEvent2)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ((*p_lastEvent2).event,
               semantic::RoomTrackingEvent::TRACKING_LOST);
 }
 
@@ -855,9 +1534,17 @@ TEST(RoomTrackerStep, UnavailableVerificationCannotConfirmOrMutateState)
     semantic::TraversalGuardValues crossing;
     semantic::TrackingStatusInput  tracking;
 
-    EXPECT_EQ(tracker.step(10.0, crossing, unavailable, tracking),
-              semantic::RoomTrackingState::UNKNOWN);
-    EXPECT_EQ(tracker.getEventHistory().size(), 0U);
+    vs_graphs::core::semantic::RoomTrackingState nextState{};
+    ASSERT_EQ((tracker.step(10.0, crossing, unavailable, tracking, nextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState, semantic::RoomTrackingState::UNKNOWN);
+    const std::vector<vs_graphs::core::semantic::TransitionEvent>
+        *p_eventHistory = nullptr;
+    ASSERT_EQ((tracker.getEventHistory(p_eventHistory)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ((*p_eventHistory).size(), 0U);
 }
 
 TEST(RoomTrackerStep, MalformedPassVerdictFailsClosed)
@@ -881,55 +1568,91 @@ TEST(RoomTrackerStep, MalformedPassVerdictFailsClosed)
 
 TEST(RoomTrackerStep, ReacquireRetriesThenTimeouts)
 {
-    semantic::RoomTracker tracker;
-    const double          t0 = 3000.0;
-    tracker.step(t0,
-                 semantic::TraversalGuardValues(),
-                 passVerdict(),
-                 nominalTracking());
+    semantic::RoomTracker                        tracker;
+    const double                                 t0 = 3000.0;
+    vs_graphs::core::semantic::RoomTrackingState trackerNextState{};
+    ASSERT_EQ((tracker.step(t0,
+                            semantic::TraversalGuardValues(),
+                            passVerdict(),
+                            nominalTracking(),
+                            trackerNextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
 
     semantic::TrackingStatusInput lost;
     lost.isLost = true;
-    EXPECT_EQ(tracker.step(t0 + 1.0,
-                           semantic::TraversalGuardValues(),
-                           failVerdict(),
-                           lost),
-              semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
+    vs_graphs::core::semantic::RoomTrackingState nextState{};
+    ASSERT_EQ((tracker.step(t0 + 1.0,
+                            semantic::TraversalGuardValues(),
+                            failVerdict(),
+                            lost,
+                            nextState)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState, semantic::RoomTrackingState::LOST_WITH_LAST_ROOM);
 
     /* New map (still lost) with a verified match -> REACQUIRING. */
     semantic::TrackingStatusInput newMap;
     newMap.isLost          = true;
     newMap.isNewMapCreated = true;
-    EXPECT_EQ(tracker.step(t0 + 2.0,
-                           semantic::TraversalGuardValues(),
-                           passVerdict(),
-                           newMap),
-              semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
+    vs_graphs::core::semantic::RoomTrackingState nextState2{};
+    ASSERT_EQ((tracker.step(t0 + 2.0,
+                            semantic::TraversalGuardValues(),
+                            passVerdict(),
+                            newMap,
+                            nextState2)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(nextState2, semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
 
     /* Failed verification retries at the configured interval; after the
      * configured max retries the reacquire is retired. */
-    const double       tRetry = t0 + 2.0;
-    double             t      = tRetry;
+    const double                                        tRetry = t0 + 2.0;
+    double                                              t      = tRetry;
+    const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig =
+        nullptr;
+    ASSERT_EQ((tracker.getConfig(p_trackerConfig)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
     const unsigned int expectedRetries =
-        tracker.getConfig().reacquire_max_retries;
+        (*p_trackerConfig).reacquire_max_retries;
     for (unsigned int attempt = 0U; attempt < expectedRetries + 1U; ++attempt)
     {
-        t += tracker.getConfig().reacquire_retry_interval_s;
-        const semantic::RoomTrackingState state =
-            tracker.step(t,
-                         semantic::TraversalGuardValues(),
-                         failVerdict(),
-                         newMap);
+        const vs_graphs::core::semantic::RoomTrackerConfig *p_trackerConfig2 =
+            nullptr;
+        ASSERT_EQ((tracker.getConfig(p_trackerConfig2)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
+        t += (*p_trackerConfig2).reacquire_retry_interval_s;
+        semantic::RoomTrackingState state{};
+        ASSERT_EQ((tracker.step(t,
+                                semantic::TraversalGuardValues(),
+                                failVerdict(),
+                                newMap,
+                                state)),
+                  vs_graphs::core::semantic::RoomTrackerStatus::
+                      ROOM_TRACKER_STATUS_SUCCESS);
         if (attempt < expectedRetries)
         {
             EXPECT_EQ(state,
                       semantic::RoomTrackingState::REACQUIRING_IN_NEW_MAP);
         }
     }
-    EXPECT_EQ(tracker.getState(),
-              semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
-    EXPECT_TRUE(tracker.getLastEvent().isAccepted);
-    EXPECT_EQ(tracker.getLastEvent().event,
+    vs_graphs::core::semantic::RoomTrackingState state2{};
+    ASSERT_EQ((tracker.getState(state2)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ(state2, semantic::RoomTrackingState::LOST_WITHOUT_ROOM);
+    const vs_graphs::core::semantic::TransitionEvent *p_lastEvent = nullptr;
+    ASSERT_EQ((tracker.getLastEvent(p_lastEvent)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_TRUE((*p_lastEvent).isAccepted);
+    const vs_graphs::core::semantic::TransitionEvent *p_lastEvent2 = nullptr;
+    ASSERT_EQ((tracker.getLastEvent(p_lastEvent2)),
+              vs_graphs::core::semantic::RoomTrackerStatus::
+                  ROOM_TRACKER_STATUS_SUCCESS);
+    EXPECT_EQ((*p_lastEvent2).event,
               semantic::RoomTrackingEvent::REACQUIRE_TIMEOUT);
 }
 

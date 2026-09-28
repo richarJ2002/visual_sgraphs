@@ -87,7 +87,11 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
     {
         if (p_marker != nullptr)
         {
-            p_marker->applyTransform(transform_oldWorldToNewWorld);
+            if (p_marker->applyTransform(transform_oldWorldToNewWorld) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // applyTransform cannot fail; continue as before.
+            }
         }
     }
 
@@ -95,23 +99,49 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
     {
         if (p_passage != nullptr)
         {
-            p_passage->applyTransform(transform_oldWorldToNewWorld);
+            if (p_passage->applyTransform(transform_oldWorldToNewWorld) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // applyTransform cannot fail; continue as before.
+            }
         }
     }
 
     for (semantic::Room *p_room : detectedRooms)
     {
-        if (p_room != nullptr && !p_room->isBad())
+        bool roomIsBad{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_room->applyTransform(transform_oldWorldToNewWorld);
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad)
+        {
+            if (p_room->applyTransform(transform_oldWorldToNewWorld) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // applyTransform cannot fail; continue as before.
+            }
         }
     }
 
     for (semantic::Room *p_room : markerBasedRooms)
     {
-        if (p_room != nullptr && !p_room->isBad())
+        bool roomIsBad2{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_room->applyTransform(transform_oldWorldToNewWorld);
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad2)
+        {
+            if (p_room->applyTransform(transform_oldWorldToNewWorld) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // applyTransform cannot fail; continue as before.
+            }
         }
     }
 
@@ -119,7 +149,11 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
     {
         if (p_floor != nullptr)
         {
-            p_floor->applyTransform(transform_oldWorldToNewWorld);
+            if (p_floor->applyTransform(transform_oldWorldToNewWorld) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // applyTransform cannot fail; continue as before.
+            }
         }
     }
 

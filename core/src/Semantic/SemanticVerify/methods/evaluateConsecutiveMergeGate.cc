@@ -30,11 +30,12 @@ namespace core
 namespace semantic
 {
 
-SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
-    core::Map            *p_survivingMap_in,
-    core::Map            *p_absorbedMap_in,
-    const g2o::Sim3      &transform_absorbedToSurviving_in,
-    const MapMergeConfig &configuration_in)
+SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
+    core::Map               *p_survivingMap_in,
+    core::Map               *p_absorbedMap_in,
+    const g2o::Sim3         &transform_absorbedToSurviving_in,
+    SemanticMergeGateResult &result_out,
+    const MapMergeConfig    &configuration_in)
 {
     SemanticMergeGateResult result;
     if (p_survivingMap_in == nullptr || p_absorbedMap_in == nullptr ||
@@ -42,7 +43,8 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     {
         result.decision = SemanticMergeDecision::REJECT;
         result.reason   = SemanticMergeReason::INVALID_INPUT;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     if (!checkConsecutiveFloors(p_survivingMap_in,
@@ -57,7 +59,8 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
         result.reason   = result.decision == SemanticMergeDecision::REJECT
                               ? SemanticMergeReason::FLOOR_CONTRADICTION
                               : SemanticMergeReason::FLOOR_EVIDENCE_MISSING;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
     result.floorDecision = "ACCEPTED";
 
@@ -68,8 +71,21 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     std::vector<SemanticMergeRoomEvidence> survivingRooms;
     for (Room *p_room : p_survivingMap_in->getAllRooms())
     {
-        if (p_room != nullptr && !p_room->isBad() &&
-            p_room->getRoomVariant() == Room::RoomVariant::ROOM)
+        bool roomIsBad{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        Room::RoomVariant roomVariant{};
+        if ((p_room != nullptr && !roomIsBad) &&
+            p_room->getRoomVariant(roomVariant) !=
+                RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad &&
+            roomVariant == Room::RoomVariant::ROOM)
         {
             survivingRooms.push_back(
                 copyMergeRoomEvidence(p_room, verifyConfiguration));
@@ -78,8 +94,21 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     std::vector<SemanticMergeRoomEvidence> absorbedRooms;
     for (Room *p_room : p_absorbedMap_in->getAllRooms())
     {
-        if (p_room != nullptr && !p_room->isBad() &&
-            p_room->getRoomVariant() == Room::RoomVariant::ROOM)
+        bool roomIsBad2{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad2) != RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        Room::RoomVariant roomVariant2{};
+        if ((p_room != nullptr && !roomIsBad2) &&
+            p_room->getRoomVariant(roomVariant2) !=
+                RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad2 &&
+            roomVariant2 == Room::RoomVariant::ROOM)
         {
             absorbedRooms.push_back(
                 copyMergeRoomEvidence(p_room, verifyConfiguration));
@@ -93,7 +122,8 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     {
         result.decision = SemanticMergeDecision::DEFER;
         result.reason   = SemanticMergeReason::SHARED_ROOM_IDENTITY_MISSING;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     /* Room-prior seed: the old final room and the new starting room must
@@ -101,15 +131,61 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     Room *p_oldFinalRoom = p_absorbedMap_in->getFinalRoom();
     Room *p_newStartRoom = p_survivingMap_in->getStartingRoom();
     bool  seedAnchored   = false;
+    bool  oldFinalRoomHasRoomTag{};
+    if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr) &&
+        p_oldFinalRoom->hasRoomTag(oldFinalRoomHasRoomTag) !=
+            RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // hasRoomTag cannot fail; continue as before.
+    }
+    bool newStartRoomHasRoomTag{};
+    if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
+         oldFinalRoomHasRoomTag) &&
+        p_newStartRoom->hasRoomTag(newStartRoomHasRoomTag) !=
+            RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // hasRoomTag cannot fail; continue as before.
+    }
+    std::string oldFinalRoomRoomTag{};
+    if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
+         oldFinalRoomHasRoomTag && newStartRoomHasRoomTag) &&
+        p_oldFinalRoom->getRoomTag(oldFinalRoomRoomTag) !=
+            RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getRoomTag cannot fail; continue as before.
+    }
+    std::string oldFinalRoomRoomTag2{};
+    if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
+         oldFinalRoomHasRoomTag && newStartRoomHasRoomTag &&
+         !oldFinalRoomRoomTag.empty()) &&
+        p_oldFinalRoom->getRoomTag(oldFinalRoomRoomTag2) !=
+            RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getRoomTag cannot fail; continue as before.
+    }
+    std::string newStartRoomRoomTag{};
+    if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
+         oldFinalRoomHasRoomTag && newStartRoomHasRoomTag &&
+         !oldFinalRoomRoomTag.empty()) &&
+        p_newStartRoom->getRoomTag(newStartRoomRoomTag) !=
+            RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getRoomTag cannot fail; continue as before.
+    }
     if (p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
-        p_oldFinalRoom->hasRoomTag() && p_newStartRoom->hasRoomTag() &&
-        !p_oldFinalRoom->getRoomTag().empty() &&
-        p_oldFinalRoom->getRoomTag() == p_newStartRoom->getRoomTag())
+        oldFinalRoomHasRoomTag && newStartRoomHasRoomTag &&
+        !oldFinalRoomRoomTag.empty() &&
+        oldFinalRoomRoomTag2 == newStartRoomRoomTag)
     {
         for (const ConsecutiveAnchorPair &pair : anchorPairs)
         {
-            if (pair.p_surviving->context.roomTag ==
-                p_newStartRoom->getRoomTag())
+            std::string newStartRoomRoomTag2{};
+            if (p_newStartRoom->getRoomTag(newStartRoomRoomTag2) !=
+                RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
+            if (pair.p_surviving->context.roomTag == newStartRoomRoomTag2)
             {
                 seedAnchored = true;
                 break;
@@ -120,7 +196,8 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     {
         result.decision = SemanticMergeDecision::REJECT;
         result.reason   = SemanticMergeReason::SHARED_ROOM_IDENTITY_MISSING;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     const AlignmentCheck centroidCheck =
@@ -131,13 +208,15 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     {
         result.decision = SemanticMergeDecision::REJECT;
         result.reason   = SemanticMergeReason::WALL_ALIGNMENT_CONTRADICTION;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
     if (centroidCheck == AlignmentCheck::MISSING)
     {
         result.decision = SemanticMergeDecision::DEFER;
         result.reason   = SemanticMergeReason::WALL_EVIDENCE_MISSING;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     bool                hasMissingEvidence = false;
@@ -156,7 +235,8 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     {
         result.decision = SemanticMergeDecision::REJECT;
         result.reason   = topologyReason;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
     if (topologyCheck == AlignmentCheck::MISSING)
     {
@@ -179,7 +259,8 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
         {
             result.decision = SemanticMergeDecision::REJECT;
             result.reason   = SemanticMergeReason::WALL_ALIGNMENT_CONTRADICTION;
-            return result;
+            result_out      = result;
+            return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
         }
         if (wallCheck == AlignmentCheck::MISSING)
         {
@@ -196,7 +277,8 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
         {
             result.decision = SemanticMergeDecision::REJECT;
             result.reason   = SemanticMergeReason::WALL_ALIGNMENT_CONTRADICTION;
-            return result;
+            result_out      = result;
+            return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
         }
         ++alignedRoomCount;
     }
@@ -204,11 +286,13 @@ SemanticMergeGateResult SemanticVerify::evaluateConsecutiveMergeGate(
     if (hasMissingEvidence || alignedRoomCount != anchorPairs.size())
     {
         result.decision = SemanticMergeDecision::DEFER;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
     result.decision = SemanticMergeDecision::ACCEPT;
     result.reason   = SemanticMergeReason::ALIGNED;
-    return result;
+    result_out      = result;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

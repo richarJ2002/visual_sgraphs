@@ -37,7 +37,10 @@ TEST(RoomCreationBudget, AllowsTheFirstRoomWithZeroPassages)
         GeoSemHelpers::createBlankRoomCandidate(&atlas,
                                                 Eigen::Vector3d::Zero()));
     ASSERT_NE(room, nullptr);
-    EXPECT_EQ(room->getId(), 0);
+    int id{};
+    ASSERT_EQ((room->getId(id)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(id, 0);
 }
 
 TEST(RoomCreationBudget, RefusesASecondRoomWithoutAPassablePassage)
@@ -69,9 +72,12 @@ TEST(RoomCreationBudget, AllowsASecondRoomOnceAPassablePassageExists)
     atlas.addCandidateMapRoom(firstRoom.get());
 
     semantic::Passage passage;
-    passage.setId(1);
-    passage.setMap(p_map);
-    passage.setPassable(true);
+    ASSERT_EQ((passage.setId(1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setPassable(true)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     atlas.addMapPassage(&passage);
 
     std::unique_ptr<semantic::Room> secondRoom(
@@ -96,9 +102,12 @@ TEST(RoomCreationBudget, ABlockedPassageDoesNotUnlockASecondRoom)
      * plane near a wall -- no free-space evidence yet, so it must not spend the
      * room-creation budget. */
     semantic::Passage blockedPassage;
-    blockedPassage.setId(1);
-    blockedPassage.setMap(p_map);
-    blockedPassage.setPassable(false);
+    ASSERT_EQ((blockedPassage.setId(1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((blockedPassage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((blockedPassage.setPassable(false)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     atlas.addMapPassage(&blockedPassage);
 
     std::unique_ptr<semantic::Room> secondRoom(
@@ -120,9 +129,12 @@ TEST(RoomCreationBudget, ThirdRoomRequiresATwoPassablePassages)
     atlas.addCandidateMapRoom(firstRoom.get());
 
     semantic::Passage passage;
-    passage.setId(1);
-    passage.setMap(p_map);
-    passage.setPassable(true);
+    ASSERT_EQ((passage.setId(1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setPassable(true)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     atlas.addMapPassage(&passage);
 
     std::unique_ptr<semantic::Room> secondRoom(
@@ -140,9 +152,12 @@ TEST(RoomCreationBudget, ThirdRoomRequiresATwoPassablePassages)
     EXPECT_EQ(thirdRoom, nullptr);
 
     semantic::Passage secondPassage;
-    secondPassage.setId(2);
-    secondPassage.setMap(p_map);
-    secondPassage.setPassable(true);
+    ASSERT_EQ((secondPassage.setId(2)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((secondPassage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((secondPassage.setPassable(true)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     atlas.addMapPassage(&secondPassage);
 
     std::unique_ptr<semantic::Room> thirdRoomRetry(

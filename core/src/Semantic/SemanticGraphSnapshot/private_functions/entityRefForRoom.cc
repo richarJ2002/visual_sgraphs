@@ -41,18 +41,36 @@ EntityRef entityRefForRoom(Room *p_room_in)
     {
         return reference;
     }
-    reference.localId                   = p_room_in->getId();
-    reference.isLive                    = !p_room_in->isBad();
+    int room_inId{};
+    if (p_room_in->getId(room_inId) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    reference.localId = room_inId;
+    bool room_inIsBad{};
+    if (p_room_in->isBad(room_inIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    reference.isLive                    = !room_inIsBad;
     reference.livenessUnavailableReason = UnavailableReason::NONE;
 
-    core::Map *p_map = p_room_in->getMap();
+    core::Map *p_map = nullptr;
+    if (p_room_in->getMap(p_map) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     if (p_map == nullptr)
     {
         reference.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
         return reference;
     }
-    reference.key =
-        makeKey(EntityKind::ROOM, p_map->getId(), p_room_in->getId());
+    int room_inId2{};
+    if (p_room_in->getId(room_inId2) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    reference.key    = makeKey(EntityKind::ROOM, p_map->getId(), room_inId2);
     reference.reason = UnavailableReason::NONE;
     return reference;
 }

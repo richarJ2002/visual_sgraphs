@@ -46,10 +46,51 @@ bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in)
     }
     semantic::Room *p_oldFinalRoom = p_oldMap_in->getFinalRoom();
     semantic::Room *p_newStartRoom = p_currentMap_in->getStartingRoom();
+    bool            oldFinalRoomHasRoomTag{};
+    if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr) &&
+        p_oldFinalRoom->hasRoomTag(oldFinalRoomHasRoomTag) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // hasRoomTag cannot fail; continue as before.
+    }
+    bool newStartRoomHasRoomTag{};
+    if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
+         oldFinalRoomHasRoomTag) &&
+        p_newStartRoom->hasRoomTag(newStartRoomHasRoomTag) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // hasRoomTag cannot fail; continue as before.
+    }
+    std::string oldFinalRoomRoomTag{};
+    if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
+         oldFinalRoomHasRoomTag && newStartRoomHasRoomTag) &&
+        p_oldFinalRoom->getRoomTag(oldFinalRoomRoomTag) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getRoomTag cannot fail; continue as before.
+    }
+    std::string oldFinalRoomRoomTag2{};
+    if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
+         oldFinalRoomHasRoomTag && newStartRoomHasRoomTag &&
+         !oldFinalRoomRoomTag.empty()) &&
+        p_oldFinalRoom->getRoomTag(oldFinalRoomRoomTag2) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getRoomTag cannot fail; continue as before.
+    }
+    std::string newStartRoomRoomTag{};
+    if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
+         oldFinalRoomHasRoomTag && newStartRoomHasRoomTag &&
+         !oldFinalRoomRoomTag.empty()) &&
+        p_newStartRoom->getRoomTag(newStartRoomRoomTag) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getRoomTag cannot fail; continue as before.
+    }
     return p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
-           p_oldFinalRoom->hasRoomTag() && p_newStartRoom->hasRoomTag() &&
-           !p_oldFinalRoom->getRoomTag().empty() &&
-           p_oldFinalRoom->getRoomTag() == p_newStartRoom->getRoomTag();
+           oldFinalRoomHasRoomTag && newStartRoomHasRoomTag &&
+           !oldFinalRoomRoomTag.empty() &&
+           oldFinalRoomRoomTag2 == newStartRoomRoomTag;
 }
 
 } // namespace core

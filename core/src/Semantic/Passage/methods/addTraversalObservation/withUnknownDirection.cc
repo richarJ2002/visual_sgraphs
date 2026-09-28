@@ -28,9 +28,15 @@ namespace core
 namespace semantic
 {
 
-void Passage::addTraversalObservation()
+PassageStatus Passage::addTraversalObservation()
 {
-    addTraversalObservation(TraversalDirection::UNKNOWN);
+    if (addTraversalObservation(TraversalDirection::UNKNOWN) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // addTraversalObservation cannot fail; continue as before.
+    }
+
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

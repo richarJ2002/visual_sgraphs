@@ -38,25 +38,59 @@ void GeoSemHelpers::markerSemanticAnalysis(
         vs_graphs::core::semantic::Marker *p_currentMapMarker;
 
         // Check the type of the marker
+        int currentMarkerId{};
+        if (p_currentMarker->getId(currentMarkerId) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         std::pair<bool, std::string> result =
-            checkIfMarkerIsDoorway(p_currentMarker->getId(), envRooms_in);
+            checkIfMarkerIsDoorway(currentMarkerId, envRooms_in);
         bool        markerIsDoorway = result.first;
         std::string doorwayName     = result.second;
 
         // Change the marker type
-        p_currentMarker->setMarkerType(
-            markerIsDoorway
-                ? vs_graphs::core::semantic::Marker::MarkerVariant::ON_DOOR
-                : vs_graphs::core::semantic::Marker::MarkerVariant::
-                      ON_ROOM_CENTER);
+        if (p_currentMarker->setMarkerType(
+                markerIsDoorway
+                    ? vs_graphs::core::semantic::Marker::MarkerVariant::ON_DOOR
+                    : vs_graphs::core::semantic::Marker::MarkerVariant::
+                          ON_ROOM_CENTER) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // setMarkerType cannot fail; continue as before.
+        }
 
         // If the marker is not in the map, add it
-        if (!p_currentMarker->isMarkerInGMap())
+        bool currentMarkerIsMarkerInGMap{};
+        if (p_currentMarker->isMarkerInGMap(currentMarkerIsMarkerInGMap) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            p_currentMarker->setMap(p_atlas_in->getCurrentMap());
-            p_currentMarker->setGlobalPose(p_keyFrame_in->getPoseInverse() *
-                                           p_currentMarker->getLocalPose());
-            p_currentMarker->setMarkerInGMap(true);
+            // isMarkerInGMap cannot fail; continue as before.
+        }
+        if (!currentMarkerIsMarkerInGMap)
+        {
+            if (p_currentMarker->setMap(p_atlas_in->getCurrentMap()) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
+            Sophus::SE3f currentMarkerLocalPose{};
+            if (p_currentMarker->getLocalPose(currentMarkerLocalPose) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // getLocalPose cannot fail; continue as before.
+            }
+            if (p_currentMarker->setGlobalPose(p_keyFrame_in->getPoseInverse() *
+                                               currentMarkerLocalPose) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // setGlobalPose cannot fail; continue as before.
+            }
+            if (p_currentMarker->setMarkerInGMap(true) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // setMarkerInGMap cannot fail; continue as before.
+            }
 
             // Creating a new marker in the map
             p_currentMapMarker =
@@ -64,14 +98,41 @@ void GeoSemHelpers::markerSemanticAnalysis(
         }
         // Else, add the observation to the existing marker
         else
+        {
             for (auto p_mappedMarker : p_atlas_in->getAllMarkers())
-                if (p_mappedMarker->getId() == p_currentMarker->getId())
+            {
+                int mappedMarkerId{};
+                if (p_mappedMarker->getId(mappedMarkerId) !=
+                    semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int currentMarkerId2{};
+                if (p_currentMarker->getId(currentMarkerId2) !=
+                    semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                if (mappedMarkerId == currentMarkerId2)
                 {
                     p_currentMapMarker = p_mappedMarker;
-                    p_currentMapMarker->addObservation(
-                        p_keyFrame_in,
-                        p_currentMarker->getLocalPose());
+                    Sophus::SE3f currentMarkerLocalPose2{};
+                    if (p_currentMarker->getLocalPose(
+                            currentMarkerLocalPose2) !=
+                        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+                    {
+                        // getLocalPose cannot fail; continue as before.
+                    }
+                    if (p_currentMapMarker->addObservation(
+                            p_keyFrame_in,
+                            currentMarkerLocalPose2) !=
+                        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+                    {
+                        // addObservation cannot fail; continue as before.
+                    }
                 }
+            }
+        }
     }
 }
 

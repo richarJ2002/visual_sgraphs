@@ -34,18 +34,49 @@ bool segmentCrossesPassageOpening(
     const double           minimumSideDistance_m_in,
     const bool             requirePassable_in)
 {
+    bool passage_inIsPassable{};
+    if (!(p_passage_in == nullptr) && (requirePassable_in) &&
+        p_passage_in->isPassable(passage_inIsPassable) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // isPassable cannot fail; continue as before.
+    }
     if (p_passage_in == nullptr ||
-        (requirePassable_in && !p_passage_in->isPassable()))
+        (requirePassable_in && !passage_inIsPassable))
     {
         return false;
     }
 
+    g2o::Plane3D passage_inGlobalEquation{};
+    if (p_passage_in->getGlobalEquation(passage_inGlobalEquation) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    Eigen::Vector3d passage_inCentroid{};
+    if (p_passage_in->getCentroid(passage_inCentroid) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
+    double passage_inWidth{};
+    if (p_passage_in->getWidth(passage_inWidth) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getWidth cannot fail; continue as before.
+    }
+    double passage_inHeight{};
+    if (p_passage_in->getHeight(passage_inHeight) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getHeight cannot fail; continue as before.
+    }
     return segmentCrossesAperture(segmentStart_World_m_in,
                                   segmentEnd_World_m_in,
-                                  p_passage_in->getGlobalEquation().coeffs(),
-                                  p_passage_in->getCentroid(),
-                                  p_passage_in->getWidth(),
-                                  p_passage_in->getHeight(),
+                                  passage_inGlobalEquation.coeffs(),
+                                  passage_inCentroid,
+                                  passage_inWidth,
+                                  passage_inHeight,
                                   groundNormal_World_in,
                                   openingMargin_m_in,
                                   minimumSideDistance_m_in);

@@ -25,15 +25,17 @@ namespace core
 namespace semantic
 {
 
-void Marker::eraseObservation(core::KeyFrame *p_keyFrame_in)
+MarkerStatus Marker::eraseObservation(core::KeyFrame *p_keyFrame_in)
 {
     if (p_keyFrame_in == nullptr)
     {
-        return;
+        return MarkerStatus::MARKER_STATUS_SUCCESS;
     }
 
     std::lock_guard<std::mutex> lock(observationsMutex);
     observations.erase(p_keyFrame_in);
+
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

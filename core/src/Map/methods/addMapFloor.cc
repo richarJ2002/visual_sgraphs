@@ -46,17 +46,35 @@ void Map::addMapFloor(semantic::Floor *p_floor_inout)
     for (auto floorIterator = floorIndex.begin();
          floorIterator != floorIndex.end();)
     {
+        int floor_inoutId{};
+        if ((floorIterator->second == p_floor_inout) &&
+            p_floor_inout->getId(floor_inoutId) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         floorIterator = floorIterator->second == p_floor_inout &&
-                                floorIterator->first != p_floor_inout->getId()
+                                floorIterator->first != floor_inoutId
                             ? floorIndex.erase(floorIterator)
                             : std::next(floorIterator);
     }
 
-    const auto existingFloorIterator = floorIndex.find(p_floor_inout->getId());
+    int floor_inoutId2{};
+    if (p_floor_inout->getId(floor_inoutId2) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    const auto existingFloorIterator = floorIndex.find(floor_inoutId2);
 
-    if (p_floor_inout->getId() < 0 ||
-        (existingFloorIterator != floorIndex.end() &&
-         existingFloorIterator->second != p_floor_inout))
+    int floor_inoutId3{};
+    if (p_floor_inout->getId(floor_inoutId3) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    if (floor_inoutId3 < 0 || (existingFloorIterator != floorIndex.end() &&
+                               existingFloorIterator->second != p_floor_inout))
     {
         while (floorIndex.count(nextAvailableFloorId) > 0)
         {
@@ -65,20 +83,42 @@ void Map::addMapFloor(semantic::Floor *p_floor_inout)
 
         const int replacementFloorId = nextAvailableFloorId++;
 
-        std::cerr << "[Map] semantic::Floor ID collision for "
-                  << p_floor_inout->getId() << "; reassigned to "
-                  << replacementFloorId << "." << std::endl;
+        int floor_inoutId4{};
+        if (p_floor_inout->getId(floor_inoutId4) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        std::cerr << "[Map] semantic::Floor ID collision for " << floor_inoutId4
+                  << "; reassigned to " << replacementFloorId << "."
+                  << std::endl;
 
-        p_floor_inout->setId(replacementFloorId);
+        if (p_floor_inout->setId(replacementFloorId) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // setId cannot fail; continue as before.
+        }
     }
     else
     {
+        int floor_inoutId5{};
+        if (p_floor_inout->getId(floor_inoutId5) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         nextAvailableFloorId =
-            std::max(nextAvailableFloorId, p_floor_inout->getId() + 1);
+            std::max(nextAvailableFloorId, floor_inoutId5 + 1);
     }
 
     floors.insert(p_floor_inout);
-    floorIndex.insert_or_assign(p_floor_inout->getId(), p_floor_inout);
+    int floor_inoutId6{};
+    if (p_floor_inout->getId(floor_inoutId6) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    floorIndex.insert_or_assign(floor_inoutId6, p_floor_inout);
 }
 
 } // namespace core

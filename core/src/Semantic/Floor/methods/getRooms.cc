@@ -28,10 +28,12 @@ namespace core
 namespace semantic
 {
 
-std::vector<vs_graphs::core::semantic::Room *> Floor::getRooms() const
+FloorStatus Floor::getRooms(
+    std::vector<vs_graphs::core::semantic::Room *> &rooms_out) const
 {
     std::lock_guard<std::mutex> lock(roomsMutex);
-    return rooms;
+    rooms_out = rooms;
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

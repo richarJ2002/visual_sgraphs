@@ -30,14 +30,25 @@ namespace core
 bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
                                        geometric::Plane *p_candidateWall_in)
 {
-    if (p_room_inout == nullptr || p_room_inout->isBad() ||
+    bool room_inoutIsBad{};
+    if (!(p_room_inout == nullptr) &&
+        p_room_inout->isBad(room_inoutIsBad) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_room_inout == nullptr || room_inoutIsBad ||
         p_candidateWall_in == nullptr || p_candidateWall_in->isBad())
     {
         return false;
     }
 
-    const std::vector<geometric::Plane *> existingWalls =
-        p_room_inout->getWalls();
+    std::vector<geometric::Plane *> existingWalls{};
+    if (p_room_inout->getWalls(existingWalls) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getWalls cannot fail; continue as before.
+    }
     const bool alreadyPresent =
         std::find(existingWalls.begin(),
                   existingWalls.end(),
@@ -71,7 +82,19 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
             {
                 return true;
             }
-            return p_first->getId() < p_second->getId();
+            int firstId{};
+            if (p_first->getId(firstId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int secondId{};
+            if (p_second->getId(secondId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            return firstId < secondId;
         });
 
     switch (enforcePassageApertureBackstop(p_room_inout,
@@ -102,8 +125,14 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
 
     if (isWallFaceForeignToRoom(p_room_inout, p_candidateWall_in))
     {
+        int room_inoutId{};
+        if (p_room_inout->getId(room_inoutId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         std::cout << "[SemMgr] Wall#" << p_candidateWall_in->getId()
-                  << " rejected from semantic::Room#" << p_room_inout->getId()
+                  << " rejected from semantic::Room#" << room_inoutId
                   << ": this face was observed from the opposite side, so it "
                      "bounds the neighbouring room."
                   << std::endl;
@@ -117,7 +146,11 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
     if (!topologyParameters.enabled || p_groundPlane == nullptr ||
         p_groundPlane->isBad())
     {
-        p_room_inout->setWalls(p_candidateWall_in);
+        if (p_room_inout->setWalls(p_candidateWall_in) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setWalls cannot fail; continue as before.
+        }
         return true;
     }
 
@@ -127,7 +160,11 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
 
     if (!groundEquation_World.allFinite() || groundNormalNorm < 1e-8)
     {
-        p_room_inout->setWalls(p_candidateWall_in);
+        if (p_room_inout->setWalls(p_candidateWall_in) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setWalls cannot fail; continue as before.
+        }
         return true;
     }
 
@@ -147,7 +184,11 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
                                   topologyParameters.minimumWallLength_m,
                                   candidateSegment))
     {
-        p_room_inout->setWalls(p_candidateWall_in);
+        if (p_room_inout->setWalls(p_candidateWall_in) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setWalls cannot fail; continue as before.
+        }
         return true;
     }
 
@@ -219,11 +260,23 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
 
     for (geometric::Plane *p_weakerWall : weakerClashingWalls)
     {
-        if (p_room_inout->removeWall(p_weakerWall))
+        bool room_inoutWasWallRemoved{};
+        if (p_room_inout->removeWall(p_weakerWall, room_inoutWasWallRemoved) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
+            room_inoutWasWallRemoved = false; // rejected input reads as before
+        }
+        if (room_inoutWasWallRemoved)
+        {
+            int room_inoutId2{};
+            if (p_room_inout->getId(room_inoutId2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             std::cout << "[SemMgr] Replaced clashing Wall#"
                       << p_weakerWall->getId() << " in semantic::Room#"
-                      << p_room_inout->getId() << " with stronger Wall#"
+                      << room_inoutId2 << " with stronger Wall#"
                       << p_candidateWall_in->getId() << "." << std::endl;
         }
     }
@@ -239,13 +292,26 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
      * own intra-room repair. */
     for (vs_graphs::core::semantic::Room *p_otherRoom : p_atlas->getAllRooms())
     {
-        if (p_otherRoom == nullptr || p_otherRoom->isBad() ||
+        bool otherRoomIsBad{};
+        if (!(p_otherRoom == nullptr) &&
+            p_otherRoom->isBad(otherRoomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_otherRoom == nullptr || otherRoomIsBad ||
             p_otherRoom == p_room_inout)
         {
             continue;
         }
 
-        for (geometric::Plane *p_otherWall : p_otherRoom->getWalls())
+        std::vector<geometric::Plane *> otherRoomWalls{};
+        if (p_otherRoom->getWalls(otherRoomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
+        for (geometric::Plane *p_otherWall : otherRoomWalls)
         {
             if (p_otherWall == nullptr || p_otherWall == p_candidateWall_in)
             {
@@ -297,16 +363,32 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
                 continue;
             }
 
+            int room_inoutId3{};
+            if (p_room_inout->getId(room_inoutId3) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int otherRoomId{};
+            if (p_otherRoom->getId(otherRoomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             std::cout << "[SemMgr] Wall#" << p_candidateWall_in->getId()
-                      << " rejected from semantic::Room#"
-                      << p_room_inout->getId() << ": crosses semantic::Room#"
-                      << p_otherRoom->getId() << "'s already-admitted Wall#"
-                      << p_otherWall->getId() << "." << std::endl;
+                      << " rejected from semantic::Room#" << room_inoutId3
+                      << ": crosses semantic::Room#" << otherRoomId
+                      << "'s already-admitted Wall#" << p_otherWall->getId()
+                      << "." << std::endl;
             return false;
         }
     }
 
-    p_room_inout->setWalls(p_candidateWall_in);
+    if (p_room_inout->setWalls(p_candidateWall_in) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setWalls cannot fail; continue as before.
+    }
     return true;
 }
 

@@ -47,16 +47,40 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
     std::unordered_set<std::string> firstMapRoomTags;
     for (semantic::Room *p_room : p_firstMap_in->getAllDetectedMapRooms())
     {
-        if (p_room->hasRoomTag())
+        bool roomHasRoomTag{};
+        if (p_room->hasRoomTag(roomHasRoomTag) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            firstMapRoomTags.insert(p_room->getRoomTag());
+            // hasRoomTag cannot fail; continue as before.
+        }
+        if (roomHasRoomTag)
+        {
+            std::string roomTag{};
+            if (p_room->getRoomTag(roomTag) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
+            firstMapRoomTags.insert(roomTag);
         }
     }
     for (semantic::Room *p_room : p_firstMap_in->getAllMarkerBasedMapRooms())
     {
-        if (p_room->hasRoomTag())
+        bool roomHasRoomTag2{};
+        if (p_room->hasRoomTag(roomHasRoomTag2) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            firstMapRoomTags.insert(p_room->getRoomTag());
+            // hasRoomTag cannot fail; continue as before.
+        }
+        if (roomHasRoomTag2)
+        {
+            std::string roomTag2{};
+            if (p_room->getRoomTag(roomTag2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
+            firstMapRoomTags.insert(roomTag2);
         }
     }
 
@@ -74,25 +98,57 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
 
     for (semantic::Room *p_room : p_secondMap_in->getAllDetectedMapRooms())
     {
-        if (p_room->hasRoomTag() &&
-            firstMapRoomTags.count(p_room->getRoomTag()) != 0U)
+        bool roomHasRoomTag3{};
+        if (p_room->hasRoomTag(roomHasRoomTag3) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
+            // hasRoomTag cannot fail; continue as before.
+        }
+        std::string roomTag3{};
+        if ((roomHasRoomTag3) && p_room->getRoomTag(roomTag3) !=
+                                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomTag cannot fail; continue as before.
+        }
+        if (roomHasRoomTag3 && firstMapRoomTags.count(roomTag3) != 0U)
+        {
+            std::string roomTag4{};
+            if (p_room->getRoomTag(roomTag4) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
             std::cout << "[SemMgr] sharesRoomNameTag: MATCH found tag "
-                      << p_room->getRoomTag() << " between maps "
-                      << p_firstMap_in->getId() << " and "
-                      << p_secondMap_in->getId() << std::endl;
+                      << roomTag4 << " between maps " << p_firstMap_in->getId()
+                      << " and " << p_secondMap_in->getId() << std::endl;
             return true;
         }
     }
     for (semantic::Room *p_room : p_secondMap_in->getAllMarkerBasedMapRooms())
     {
-        if (p_room->hasRoomTag() &&
-            firstMapRoomTags.count(p_room->getRoomTag()) != 0U)
+        bool roomHasRoomTag4{};
+        if (p_room->hasRoomTag(roomHasRoomTag4) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
+            // hasRoomTag cannot fail; continue as before.
+        }
+        std::string roomTag5{};
+        if ((roomHasRoomTag4) && p_room->getRoomTag(roomTag5) !=
+                                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomTag cannot fail; continue as before.
+        }
+        if (roomHasRoomTag4 && firstMapRoomTags.count(roomTag5) != 0U)
+        {
+            std::string roomTag6{};
+            if (p_room->getRoomTag(roomTag6) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
             std::cout << "[SemMgr] sharesRoomNameTag: MATCH found tag "
-                      << p_room->getRoomTag() << " between maps "
-                      << p_firstMap_in->getId() << " and "
-                      << p_secondMap_in->getId() << std::endl;
+                      << roomTag6 << " between maps " << p_firstMap_in->getId()
+                      << " and " << p_secondMap_in->getId() << std::endl;
             return true;
         }
     }

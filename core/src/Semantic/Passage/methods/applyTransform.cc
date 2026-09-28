@@ -28,7 +28,8 @@ namespace core
 namespace semantic
 {
 
-void Passage::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
+PassageStatus
+    Passage::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
 
@@ -76,6 +77,8 @@ void Passage::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 
     width *= absoluteScale;
     height *= absoluteScale;
+
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

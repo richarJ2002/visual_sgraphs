@@ -27,10 +27,12 @@ namespace core
 namespace semantic
 {
 
-RoomContextSnapshot *Room::getMatchedContext() const
+RoomStatus
+    Room::getMatchedContext(RoomContextSnapshot *&p_matchedContext_out) const
 {
     std::lock_guard<std::mutex> lock(stateMutex);
-    return p_matchedContext;
+    p_matchedContext_out = p_matchedContext;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

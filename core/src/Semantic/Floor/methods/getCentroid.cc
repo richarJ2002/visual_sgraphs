@@ -28,10 +28,11 @@ namespace core
 namespace semantic
 {
 
-Eigen::Vector3d Floor::getCentroid() const
+FloorStatus Floor::getCentroid(Eigen::Vector3d &centroid_out) const
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
-    return centroid;
+    centroid_out = centroid;
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

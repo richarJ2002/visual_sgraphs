@@ -83,23 +83,53 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
 
     for (semantic::Room *p_room : newRooms)
     {
-        if (!p_room || p_room->isBad())
+        bool roomIsBad{};
+        if (!(!p_room) && p_room->isBad(roomIsBad) !=
+                              semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (!p_room || roomIsBad)
             continue;
 
-        if (p_room->hasRoomTag())
+        bool roomHasRoomTag{};
+        if (p_room->hasRoomTag(roomHasRoomTag) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // hasRoomTag cannot fail; continue as before.
+        }
+        if (roomHasRoomTag)
             continue;
 
-        Eigen::Vector3d roomCentroid = p_room->getCentroid();
-        double          bestDistance = std::numeric_limits<double>::max();
+        Eigen::Vector3d roomCentroid{};
+        if (p_room->getCentroid(roomCentroid) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
+        double bestDistance = std::numeric_limits<double>::max();
         const semantic::RoomContextSnapshot *p_bestMatch = nullptr;
 
         for (const semantic::RoomContextSnapshot &snap : allContext)
         {
             /* PREFER tag-based matching if snapshot has persistent tag.
              * This provides deterministic identity across restarts. */
-            if (!snap.roomTag.empty() && p_room->hasRoomTag())
+            bool roomHasRoomTag2{};
+            if ((!snap.roomTag.empty()) &&
+                p_room->hasRoomTag(roomHasRoomTag2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                if (p_room->getRoomTag() == snap.roomTag)
+                // hasRoomTag cannot fail; continue as before.
+            }
+            if (!snap.roomTag.empty() && roomHasRoomTag2)
+            {
+                std::string roomTag2{};
+                if (p_room->getRoomTag(roomTag2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getRoomTag cannot fail; continue as before.
+                }
+                if (roomTag2 == snap.roomTag)
                 {
                     p_bestMatch  = &snap;
                     bestDistance = 0.0;
@@ -115,7 +145,12 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
             /* Verify wall-normal agreement: compare the first available
              * wall normal of the new room against each snapshot wall
              * normal. Accept when |cosθ| > kWallNormalAlignmentCosTheta. */
-            std::vector<geometric::Plane *> roomWalls = p_room->getWalls();
+            std::vector<geometric::Plane *> roomWalls{};
+            if (p_room->getWalls(roomWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
             if (roomWalls.empty() || snap.wallNormals.empty())
             {
                 /* Fallback: accept on centroid distance alone when no wall
@@ -128,8 +163,14 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                 continue;
             }
 
-            std::optional<Eigen::Vector3d> newRoomNormal =
-                p_room->getWallNormalTowardRoom_World(roomWalls[0]);
+            std::optional<Eigen::Vector3d> newRoomNormal{};
+            if (p_room->getWallNormalTowardRoom_World(roomWalls[0],
+                                                      newRoomNormal) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWallNormalTowardRoom_World cannot fail; continue as
+                // before.
+            }
             if (!newRoomNormal)
                 continue;
 
@@ -156,7 +197,12 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
 
         if (p_bestMatch)
         {
-            p_room->setRoomTag("room_" + std::to_string(p_bestMatch->roomId));
+            if (p_room->setRoomTag("room_" +
+                                   std::to_string(p_bestMatch->roomId)) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setRoomTag cannot fail; continue as before.
+            }
 
             /* Locate the snapshot pointer in the stored history so the
              * room can hold a non-owning reference for WP3. */
@@ -167,7 +213,12 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                     if (storedSnap.roomId == p_bestMatch->roomId &&
                         storedSnap.centroid.isApprox(p_bestMatch->centroid))
                     {
-                        p_room->setMatchedContext(&storedSnap);
+                        if (p_room->setMatchedContext(&storedSnap) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // setMatchedContext cannot fail; continue as
+                            // before.
+                        }
                         break;
                     }
                 }
@@ -189,7 +240,20 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                     continue;
                 for (semantic::Room *r : p_map->getAllDetectedMapRooms())
                 {
-                    if (r && !r->isBad() && r->getId() == p_bestMatch->roomId)
+                    bool rIsBad{};
+                    if ((r) && r->isBad(rIsBad) !=
+                                   semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
+                    int rId{};
+                    if ((r && !rIsBad) &&
+                        r->getId(rId) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    if (r && !rIsBad && rId == p_bestMatch->roomId)
                     {
                         p_priorRoom = r;
                         p_priorMap  = p_map;
@@ -202,33 +266,84 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
 
             if (p_priorRoom && p_priorMap)
             {
-                std::cout << "[Atlas] Prior semantic::Room#"
-                          << p_priorRoom->getId() << " has "
-                          << p_priorRoom->getWalls().size() << " walls"
+                int priorRoomId{};
+                if (p_priorRoom->getId(priorRoomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                std::vector<geometric::Plane *> priorRoomWalls{};
+                if (p_priorRoom->getWalls(priorRoomWalls) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getWalls cannot fail; continue as before.
+                }
+                std::cout << "[Atlas] Prior semantic::Room#" << priorRoomId
+                          << " has " << priorRoomWalls.size() << " walls"
                           << std::endl;
 
                 /* Transfer walls from prior room to current room */
-                for (geometric::Plane *p_wall : p_priorRoom->getWalls())
+                std::vector<geometric::Plane *> priorRoomWalls2{};
+                if (p_priorRoom->getWalls(priorRoomWalls2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getWalls cannot fail; continue as before.
+                }
+                for (geometric::Plane *p_wall : priorRoomWalls2)
                 {
                     if (!p_wall || p_wall->isBad())
                         continue;
 
                     /* Re-associate wall to new room */
-                    p_priorRoom->removeWall(p_wall);
-                    p_room->setWalls(p_wall);
+                    bool priorRoomWasWallRemoved{};
+                    if (p_priorRoom->removeWall(p_wall,
+                                                priorRoomWasWallRemoved) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        priorRoomWasWallRemoved =
+                            false; // rejected input reads as before
+                    }
+                    if (p_room->setWalls(p_wall) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // setWalls cannot fail; continue as before.
+                    }
 
-                    std::cout
-                        << "[Atlas] Transferred Wall#" << p_wall->getId()
-                        << " from prior semantic::Room#" << p_priorRoom->getId()
-                        << " to matched semantic::Room#" << p_room->getId()
-                        << std::endl;
+                    int priorRoomId2{};
+                    if (p_priorRoom->getId(priorRoomId2) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    int roomId2{};
+                    if (p_room->getId(roomId2) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    std::cout << "[Atlas] Transferred Wall#" << p_wall->getId()
+                              << " from prior semantic::Room#" << priorRoomId2
+                              << " to matched semantic::Room#" << roomId2
+                              << std::endl;
                 }
 
                 /* Passages will be re-associated by associatePassagesToRooms()
                  */
 
-                std::cout << "[Atlas] semantic::Room#" << p_room->getId()
-                          << " now has " << p_room->getWalls().size()
+                int roomId3{};
+                if (p_room->getId(roomId3) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                std::vector<geometric::Plane *> roomWalls2{};
+                if (p_room->getWalls(roomWalls2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getWalls cannot fail; continue as before.
+                }
+                std::cout << "[Atlas] semantic::Room#" << roomId3 << " now has "
+                          << roomWalls2.size()
                           << " walls (continuing from prior semantic::Room#"
                           << p_bestMatch->roomId << ")" << std::endl;
             }
@@ -240,11 +355,22 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                     << std::endl;
             }
 
-            std::cout << "[Atlas] Matched room " << p_room->getId()
-                      << " in new map, tagged with identity \""
-                      << p_room->getRoomTag() << "\" (prior room "
-                      << p_bestMatch->roomId << ", dist=" << bestDistance
-                      << " m)" << std::endl;
+            int roomId4{};
+            if (p_room->getId(roomId4) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            std::string roomTag3{};
+            if (p_room->getRoomTag(roomTag3) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
+            std::cout << "[Atlas] Matched room " << roomId4
+                      << " in new map, tagged with identity \"" << roomTag3
+                      << "\" (prior room " << p_bestMatch->roomId
+                      << ", dist=" << bestDistance << " m)" << std::endl;
         }
     }
 }

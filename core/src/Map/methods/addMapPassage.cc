@@ -44,20 +44,43 @@ void vs_graphs::core::Map::addMapPassage(
 
     unique_lock<mutex> lock(mapMutex);
 
-    const auto existingPassage = passageIndex.find(p_passage_inout->getId());
-    if (p_passage_inout->getId() < 0 ||
-        (existingPassage != passageIndex.end() &&
-         existingPassage->second != p_passage_inout))
+    int passage_inoutId{};
+    if (p_passage_inout->getId(passage_inoutId) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
+        // getId cannot fail; continue as before.
+    }
+    const auto existingPassage = passageIndex.find(passage_inoutId);
+    int        passage_inoutId2{};
+    if (p_passage_inout->getId(passage_inoutId2) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    if (passage_inoutId2 < 0 || (existingPassage != passageIndex.end() &&
+                                 existingPassage->second != p_passage_inout))
+    {
+        int passage_inoutId3{};
+        if (p_passage_inout->getId(passage_inoutId3) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         std::cerr << "[Map] semantic::Passage ID collision for "
-                  << p_passage_inout->getId()
+                  << passage_inoutId3
                   << "; caller must resolve it before destination insertion."
                   << std::endl;
         return;
     }
 
     passages.insert(p_passage_inout);
-    passageIndex.insert_or_assign(p_passage_inout->getId(), p_passage_inout);
+    int passage_inoutId4{};
+    if (p_passage_inout->getId(passage_inoutId4) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    passageIndex.insert_or_assign(passage_inoutId4, p_passage_inout);
 }
 
 } // namespace core

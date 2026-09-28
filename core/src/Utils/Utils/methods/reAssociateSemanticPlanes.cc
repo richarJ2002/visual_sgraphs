@@ -265,13 +265,36 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 
             for (semantic::Room *p_room : p_atlas_in->getAllRooms())
             {
-                if (p_room == nullptr || p_room->isBad())
+                bool roomIsBad{};
+                if (!(p_room == nullptr) &&
+                    p_room->isBad(roomIsBad) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_room == nullptr || roomIsBad)
                 {
                     continue;
                 }
 
-                p_room->replaceWall(p_retiredPlane, p_retainedPlane);
-                p_room->replaceGroundPlane(p_retiredPlane, p_retainedPlane);
+                bool roomWasWallReplaced{};
+                if (p_room->replaceWall(p_retiredPlane,
+                                        p_retainedPlane,
+                                        roomWasWallReplaced) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    roomWasWallReplaced =
+                        false; // rejected input reads as before
+                }
+                bool roomWasGroundPlaneReplaced{};
+                if (p_room->replaceGroundPlane(p_retiredPlane,
+                                               p_retainedPlane,
+                                               roomWasGroundPlaneReplaced) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    roomWasGroundPlaneReplaced =
+                        false; // rejected input reads as before
+                }
             }
 
             for (vs_graphs::core::semantic::Passage *p_passage :
@@ -279,8 +302,16 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             {
                 if (p_passage != nullptr)
                 {
-                    p_passage->replacePlaneAssociation(p_retiredPlane,
-                                                       p_retainedPlane);
+                    bool passageWasAssociationReplaced{};
+                    if (p_passage->replacePlaneAssociation(
+                            p_retiredPlane,
+                            p_retainedPlane,
+                            passageWasAssociationReplaced) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        passageWasAssociationReplaced =
+                            false; // rejected input reads as before
+                    }
                 }
             }
 

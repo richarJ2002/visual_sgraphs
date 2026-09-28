@@ -99,12 +99,19 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
     p_map->addMapPlane(&wall);
 
     semantic::Room room;
-    room.setId(7);
-    room.setMap(p_map);
-    room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
-    room.setWalls(&wall);
-    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    room.setBoundaryStatus(semantic::Room::BoundaryStatus::INCOMPLETE);
+    ASSERT_EQ((room.setId(7)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(&wall)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (room.setBoundaryStatus(semantic::Room::BoundaryStatus::INCOMPLETE)),
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
     const long unsigned int mapId = p_map->getId();
@@ -136,7 +143,10 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
     /* The room-tag side effect on the live semantic::Room mirrors the exported
      * field (verifies the exporter uses the same production
      * semantic::Room::setRoomTag() path it always has). */
-    EXPECT_EQ(room.getRoomTag(), "room_7");
+    std::string roomTag2{};
+    ASSERT_EQ((room.getRoomTag(roomTag2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(roomTag2, "room_7");
 }
 
 TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
@@ -153,16 +163,23 @@ TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
     p_map->addMapPlane(&wall);
 
     semantic::Floor floor;
-    floor.setId(42);
-    floor.setMap(p_map);
+    ASSERT_EQ((floor.setId(42)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
+    ASSERT_EQ((floor.setMap(p_map)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     p_map->addMapFloor(&floor);
 
     semantic::Room room;
-    room.setId(8);
-    room.setMap(p_map);
-    room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
-    room.setWalls(&wall);
-    room.setFloor(&floor);
+    ASSERT_EQ((room.setId(8)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(&wall)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setFloor(&floor)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
     const long unsigned int mapId = p_map->getId();
@@ -200,12 +217,18 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
     p_map->addMapPlane(&badWall);
 
     semantic::Room room;
-    room.setId(9);
-    room.setMap(p_map);
-    room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
-    room.setWalls(&refitWall);
-    room.setWalls(&unrefitWall);
-    room.setWalls(&badWall);
+    ASSERT_EQ((room.setId(9)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(&refitWall)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(&unrefitWall)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(&badWall)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
     const long unsigned int mapId = p_map->getId();
@@ -235,13 +258,17 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     Map  *p_map = atlas.getCurrentMap();
 
     semantic::Room knownRoom;
-    knownRoom.setId(20);
-    knownRoom.setMap(p_map);
+    ASSERT_EQ((knownRoom.setId(20)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((knownRoom.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&knownRoom);
 
     semantic::Room farRoom;
-    farRoom.setId(21);
-    farRoom.setMap(p_map);
+    ASSERT_EQ((farRoom.setId(21)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((farRoom.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&farRoom);
 
     geometric::Plane associatedWall;
@@ -252,52 +279,83 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
      * room, known-side direction, mixed traversal evidence, one associated
      * wall. */
     semantic::Passage fullPassage;
-    fullPassage.setId(40);
-    fullPassage.setMap(p_map);
-    fullPassage.setPassable(true);
-    fullPassage.setWidth(1.2);
-    fullPassage.setHeight(2.1);
-    fullPassage.setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0));
-    fullPassage.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
-    fullPassage.setKnownSideRoom(&knownRoom);
-    fullPassage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0));
-    fullPassage.setProspectiveRoom(&farRoom);
-    fullPassage.addAssociateWall(&associatedWall);
-    fullPassage.addTraversalObservation(
-        semantic::Passage::TraversalDirection::KNOWN_TO_FAR);
-    fullPassage.addTraversalObservation(
-        semantic::Passage::TraversalDirection::KNOWN_TO_FAR);
-    fullPassage.addTraversalObservation(
-        semantic::Passage::TraversalDirection::FAR_TO_KNOWN);
-    fullPassage.addTraversalObservation(
-        semantic::Passage::TraversalDirection::UNKNOWN);
+    ASSERT_EQ((fullPassage.setId(40)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.setPassable(true)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.setWidth(1.2)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.setHeight(2.1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.setKnownSideRoom(&knownRoom)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (fullPassage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.setProspectiveRoom(&farRoom)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.addAssociateWall(&associatedWall)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.addTraversalObservation(
+                  semantic::Passage::TraversalDirection::KNOWN_TO_FAR)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.addTraversalObservation(
+                  semantic::Passage::TraversalDirection::KNOWN_TO_FAR)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.addTraversalObservation(
+                  semantic::Passage::TraversalDirection::FAR_TO_KNOWN)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((fullPassage.addTraversalObservation(
+                  semantic::Passage::TraversalDirection::UNKNOWN)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_map->addMapPassage(&fullPassage);
-    knownRoom.setDoorways(&fullPassage);
+    ASSERT_EQ((knownRoom.setDoorways(&fullPassage)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     /* semantic::Passage B: no far-side room resolved yet, invalid (negative)
      * aperture, no known-side direction, no traversal evidence. */
     semantic::Passage sparsePassage;
-    sparsePassage.setId(41);
-    sparsePassage.setMap(p_map);
-    sparsePassage.setPassable(false);
-    sparsePassage.setWidth(-1.0);
-    sparsePassage.setHeight(0.5);
-    sparsePassage.setCentroid(Eigen::Vector3d(2.0, 1.0, 1.0));
-    sparsePassage.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -2.0)));
+    ASSERT_EQ((sparsePassage.setId(41)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((sparsePassage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((sparsePassage.setPassable(false)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((sparsePassage.setWidth(-1.0)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((sparsePassage.setHeight(0.5)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((sparsePassage.setCentroid(Eigen::Vector3d(2.0, 1.0, 1.0))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((sparsePassage.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -2.0)))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_map->addMapPassage(&sparsePassage);
-    knownRoom.setDoorways(&sparsePassage);
+    ASSERT_EQ((knownRoom.setDoorways(&sparsePassage)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     /* semantic::Passage C: non-finite (NaN) height and default (missing) width.
      */
     semantic::Passage nonFinitePassage;
-    nonFinitePassage.setId(42);
-    nonFinitePassage.setMap(p_map);
-    nonFinitePassage.setHeight(std::numeric_limits<double>::quiet_NaN());
-    nonFinitePassage.setCentroid(Eigen::Vector3d(3.0, 1.0, 1.0));
+    ASSERT_EQ((nonFinitePassage.setId(42)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((nonFinitePassage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (nonFinitePassage.setHeight(std::numeric_limits<double>::quiet_NaN())),
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((nonFinitePassage.setCentroid(Eigen::Vector3d(3.0, 1.0, 1.0))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_map->addMapPassage(&nonFinitePassage);
-    knownRoom.setDoorways(&nonFinitePassage);
+    ASSERT_EQ((knownRoom.setDoorways(&nonFinitePassage)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     const long unsigned int mapId = p_map->getId();
     atlas.exportRoomContextFromCurrentMap();
@@ -335,7 +393,10 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     EXPECT_TRUE(full.knownSideDirection_World.isApprox(
         Eigen::Vector3d(-1.0, 0.0, 0.0)));
     EXPECT_TRUE(full.hasKnownSideRoom);
-    EXPECT_EQ(full.knownSideRoomId, knownRoom.getId());
+    int id2{};
+    ASSERT_EQ((knownRoom.getId(id2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(full.knownSideRoomId, id2);
     EXPECT_EQ(full.traversalKnownToFarCount, 2U);
     EXPECT_EQ(full.traversalFarToKnownCount, 1U);
     EXPECT_EQ(full.traversalUnknownCount, 1U);
@@ -373,15 +434,21 @@ TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
     p_map->addMapPlane(&badWall);
 
     semantic::Passage defaultPassage;
-    defaultPassage.setId(50);
-    defaultPassage.setMap(p_map);
+    ASSERT_EQ((defaultPassage.setId(50)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((defaultPassage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_map->addMapPassage(&defaultPassage);
 
     semantic::Room room;
-    room.setId(30);
-    room.setMap(p_map);
-    room.setWalls(&badWall);
-    room.setDoorways(&defaultPassage);
+    ASSERT_EQ((room.setId(30)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(&badWall)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setDoorways(&defaultPassage)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
     const long unsigned int mapId = p_map->getId();
@@ -418,16 +485,23 @@ TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
     Map  *p_oldMap = atlas.getCurrentMap();
 
     semantic::Room visitedRoom;
-    visitedRoom.setId(5);
-    visitedRoom.setMap(p_oldMap);
-    visitedRoom.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
-    visitedRoom.setPreviouslyVisited(true);
+    ASSERT_EQ((visitedRoom.setId(5)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((visitedRoom.setMap(p_oldMap)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((visitedRoom.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((visitedRoom.setPreviouslyVisited(true)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_oldMap->addDetectedMapRoom(&visitedRoom);
 
     semantic::Room freshRoom;
-    freshRoom.setId(6);
-    freshRoom.setMap(p_oldMap);
-    freshRoom.setCentroid(Eigen::Vector3d(2.0, 2.0, 2.0));
+    ASSERT_EQ((freshRoom.setId(6)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((freshRoom.setMap(p_oldMap)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((freshRoom.setCentroid(Eigen::Vector3d(2.0, 2.0, 2.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_oldMap->addDetectedMapRoom(&freshRoom);
 
     const long unsigned int oldMapId = p_oldMap->getId();
@@ -466,10 +540,14 @@ TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
     p_oldMap->addMapPlane(&wall);
 
     semantic::Room room;
-    room.setId(5);
-    room.setMap(p_oldMap);
-    room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
-    room.setWalls(&wall);
+    ASSERT_EQ((room.setId(5)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_oldMap)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(&wall)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_oldMap->addDetectedMapRoom(&room);
 
     const long unsigned int oldMapId = p_oldMap->getId();
@@ -507,10 +585,14 @@ TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
         p_oldMap->addMapPlane(&wall);
 
         semantic::Room room;
-        room.setId(static_cast<int>(iteration));
-        room.setMap(p_oldMap);
-        room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
-        room.setWalls(&wall);
+        ASSERT_EQ((room.setId(static_cast<int>(iteration))),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        ASSERT_EQ((room.setMap(p_oldMap)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        ASSERT_EQ((room.setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0))),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        ASSERT_EQ((room.setWalls(&wall)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
         p_oldMap->addDetectedMapRoom(&room);
 
         const long unsigned int oldMapId = p_oldMap->getId();
@@ -581,10 +663,14 @@ TEST(RoomContextPersist,
         p_map->addMapPlane(p_wall.get());
 
         auto p_room = std::make_unique<semantic::Room>();
-        p_room->setId(static_cast<int>(iteration));
-        p_room->setMap(p_map);
-        p_room->setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
-        p_room->setWalls(p_wall.get());
+        ASSERT_EQ((p_room->setId(static_cast<int>(iteration))),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        ASSERT_EQ((p_room->setMap(p_map)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        ASSERT_EQ((p_room->setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0))),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        ASSERT_EQ((p_room->setWalls(p_wall.get())),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
         p_map->addDetectedMapRoom(p_room.get());
 
         walls.push_back(std::move(p_wall));

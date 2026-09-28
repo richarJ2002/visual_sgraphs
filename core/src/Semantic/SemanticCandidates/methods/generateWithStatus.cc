@@ -19,17 +19,25 @@ namespace core
 namespace semantic
 {
 
-SemanticCandidateGeneration SemanticCandidates::generateWithStatus(
+SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
     const std::map<long unsigned int, std::vector<RoomContextSnapshot>>
                                   &history_in,
+    SemanticCandidateGeneration   &generation_out,
     const SemanticCandidateConfig &configuration_in,
     const std::optional<int>       anchorRoomId_in)
 {
-    SemanticCandidateGeneration result;
-    result.rejectionReason = validateConfig(configuration_in);
+    SemanticCandidateGeneration            result;
+    SemanticCandidateConfigRejectionReason rejectionReason2{};
+    if (validateConfig(configuration_in, rejectionReason2) !=
+        SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+    {
+        // validateConfig cannot fail; continue as before.
+    }
+    result.rejectionReason = rejectionReason2;
     if (result.rejectionReason != SemanticCandidateConfigRejectionReason::NONE)
     {
-        return result;
+        generation_out = result;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
     }
 
     const std::size_t roomCap = configuration_in.candidatePairCap;
@@ -303,7 +311,8 @@ SemanticCandidateGeneration SemanticCandidates::generateWithStatus(
     /* Runtime budgets are profiling metadata only. Deliberately do not read a
      * clock here: deterministic candidate bytes must not depend on scheduling.
      */
-    return result;
+    generation_out = result;
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

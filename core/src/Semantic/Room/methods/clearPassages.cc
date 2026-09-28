@@ -27,10 +27,12 @@ namespace core
 namespace semantic
 {
 
-void Room::clearPassages()
+RoomStatus Room::clearPassages()
 {
     std::lock_guard<std::mutex> lock(mapMutex);
     doorways.clear();
+
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

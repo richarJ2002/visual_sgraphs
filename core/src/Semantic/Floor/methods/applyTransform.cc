@@ -28,7 +28,8 @@ namespace core
 namespace semantic
 {
 
-void Floor::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
+FloorStatus
+    Floor::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
 
@@ -36,9 +37,14 @@ void Floor::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 
     if (planeIdentity.has_value())
     {
-        const std::optional<PlaneIdentity> transformedIdentity =
-            transformPlaneIdentity(*planeIdentity,
-                                   transform_oldWorldToNewWorld_in);
+        std::optional<PlaneIdentity> transformedIdentity{};
+        if (transformPlaneIdentity(*planeIdentity,
+                                   transform_oldWorldToNewWorld_in,
+                                   transformedIdentity) !=
+            FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // transformPlaneIdentity cannot fail; continue as before.
+        }
 
         if (transformedIdentity.has_value())
         {
@@ -49,6 +55,8 @@ void Floor::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
             planeIdentity.reset();
         }
     }
+
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

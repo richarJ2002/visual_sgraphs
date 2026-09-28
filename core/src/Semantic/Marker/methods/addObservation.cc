@@ -25,16 +25,19 @@ namespace core
 namespace semantic
 {
 
-void Marker::addObservation(core::KeyFrame     *p_keyFrame_in,
-                            const Sophus::SE3f &markerPose_markerToCamera_in)
+MarkerStatus
+    Marker::addObservation(core::KeyFrame     *p_keyFrame_in,
+                           const Sophus::SE3f &markerPose_markerToCamera_in)
 {
     if (p_keyFrame_in == nullptr || p_keyFrame_in->isBad())
     {
-        return;
+        return MarkerStatus::MARKER_STATUS_SUCCESS;
     }
 
     std::lock_guard<std::mutex> lock(observationsMutex);
     observations.insert_or_assign(p_keyFrame_in, markerPose_markerToCamera_in);
+
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

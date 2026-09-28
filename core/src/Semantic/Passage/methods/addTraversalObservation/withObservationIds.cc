@@ -28,9 +28,10 @@ namespace core
 namespace semantic
 {
 
-bool Passage::addTraversalObservation(TraversalDirection direction_in,
-                                      unsigned long      frameId_in,
-                                      unsigned long      keyFrameId_in)
+PassageStatus Passage::addTraversalObservation(TraversalDirection direction_in,
+                                               unsigned long      frameId_in,
+                                               unsigned long      keyFrameId_in,
+                                               bool &wasObservationAdded_out)
 {
     std::lock_guard<std::mutex>                   lock(typeMutex);
     const std::pair<unsigned long, unsigned long> segmentId(frameId_in,
@@ -39,7 +40,8 @@ bool Passage::addTraversalObservation(TraversalDirection direction_in,
                   traversalSegmentHistory.end(),
                   segmentId) != traversalSegmentHistory.end())
     {
-        return false;
+        wasObservationAdded_out = false;
+        return PassageStatus::PASSAGE_STATUS_SUCCESS;
     }
 
     constexpr std::size_t maximumTraversalSegmentHistory = 128U;
@@ -62,7 +64,8 @@ bool Passage::addTraversalObservation(TraversalDirection direction_in,
     {
         ++(*p_counter);
     }
-    return true;
+    wasObservationAdded_out = true;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

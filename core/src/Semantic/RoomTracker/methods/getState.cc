@@ -26,9 +26,10 @@ namespace core
 namespace semantic
 {
 
-RoomTrackingState RoomTracker::getState() const
+RoomTrackerStatus RoomTracker::getState(RoomTrackingState &state_out) const
 {
-    return trackingState;
+    state_out = trackingState;
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

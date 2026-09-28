@@ -28,9 +28,11 @@ namespace core
 namespace semantic
 {
 
-void Floor::setId(int value_in)
+FloorStatus Floor::setId(int value_in)
 {
     id = value_in;
+
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -36,8 +36,19 @@ void Atlas::addCandidateMapRoom(semantic::Room *p_room_in)
     {
         return;
     }
-    observeRoomIdentity(p_room_in->getId());
-    Map *p_ownerMap = p_room_in->getMap();
+    int room_inId{};
+    if (p_room_in->getId(room_inId) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    observeRoomIdentity(room_inId);
+    Map *p_ownerMap = nullptr;
+    if (p_room_in->getMap(p_ownerMap) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     p_ownerMap->addCandidateMapRoom(p_room_in);
 }
 

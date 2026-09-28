@@ -245,15 +245,25 @@ void Utils::propagateSemanticPoseCorrections(
             continue;
         }
 
-        const Sophus::SE3f markerPose_MarkerToOldWorld =
-            p_marker->getGlobalPose();
+        Sophus::SE3f markerPose_MarkerToOldWorld{};
+        if (p_marker->getGlobalPose(markerPose_MarkerToOldWorld) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // getGlobalPose cannot fail; continue as before.
+        }
 
         const PoseCorrectionNode *p_selectedNode = nullptr;
         double                    smallestReconstructionError_m2 =
             std::numeric_limits<double>::infinity();
 
+        std::map<core::KeyFrame *, Sophus::SE3f> markerObservations{};
+        if (p_marker->getObservations(markerObservations) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // getObservations cannot fail; continue as before.
+        }
         for (const auto &[p_observingKeyFrame, markerPose_MarkerToCamera] :
-             p_marker->getObservations())
+             markerObservations)
         {
             const PoseCorrectionNode *p_observerNode =
                 findNodeForKeyFrame(p_observingKeyFrame);
@@ -291,7 +301,11 @@ void Utils::propagateSemanticPoseCorrections(
          * pose correction, and repeated GBA/remerge cycles would accumulate
          * that observation noise.
          */
-        p_marker->applyTransform(markerCorrection_oldWorldToNewWorld);
+        if (p_marker->applyTransform(markerCorrection_oldWorldToNewWorld) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // applyTransform cannot fail; continue as before.
+        }
         markerCorrections_oldWorldToNewWorld.insert_or_assign(
             p_marker,
             markerCorrection_oldWorldToNewWorld);
@@ -305,12 +319,22 @@ void Utils::propagateSemanticPoseCorrections(
             continue;
         }
 
-        const Eigen::Vector3d passageCentroid_OldWorld_m =
-            p_passage->getCentroid();
+        Eigen::Vector3d passageCentroid_OldWorld_m{};
+        if (p_passage->getCentroid(passageCentroid_OldWorld_m) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
 
         const g2o::Sim3 *p_passageCorrection = nullptr;
 
-        if (geometric::Plane *p_doorPlane = p_passage->getAssociateDoor();
+        vs_graphs::core::geometric::Plane *p_passageAssociateDoor = nullptr;
+        if (p_passage->getAssociateDoor(p_passageAssociateDoor) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getAssociateDoor cannot fail; continue as before.
+        }
+        if (geometric::Plane *p_doorPlane = p_passageAssociateDoor;
             p_doorPlane != nullptr)
         {
             const auto correctionIterator =
@@ -327,7 +351,14 @@ void Utils::propagateSemanticPoseCorrections(
             double closestWallSquaredDistance_m2 =
                 std::numeric_limits<double>::infinity();
 
-            for (geometric::Plane *p_wall : p_passage->getAssociateWalls())
+            std::vector<vs_graphs::core::geometric::Plane *>
+                passageAssociateWalls{};
+            if (p_passage->getAssociateWalls(passageAssociateWalls) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getAssociateWalls cannot fail; continue as before.
+            }
+            for (geometric::Plane *p_wall : passageAssociateWalls)
             {
                 const auto correctionIterator =
                     planeCorrections_oldWorldToNewWorld.find(p_wall);
@@ -359,10 +390,14 @@ void Utils::propagateSemanticPoseCorrections(
             }
         }
 
-        p_passage->applyTransform(
-            p_passageCorrection != nullptr
-                ? *p_passageCorrection
-                : selectCorrectionForPoint(passageCentroid_OldWorld_m));
+        if (p_passage->applyTransform(
+                p_passageCorrection != nullptr
+                    ? *p_passageCorrection
+                    : selectCorrectionForPoint(passageCentroid_OldWorld_m)) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // applyTransform cannot fail; continue as before.
+        }
     }
 
     std::map<semantic::Room *, g2o::Sim3> roomCorrections_oldWorldToNewWorld;
@@ -375,18 +410,35 @@ void Utils::propagateSemanticPoseCorrections(
 
     for (semantic::Room *p_room : rooms)
     {
-        if (p_room == nullptr || p_room->isBad() ||
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room == nullptr || roomIsBad ||
             !correctedRooms.insert(p_room).second)
         {
             continue;
         }
 
-        const Eigen::Vector3d roomCentroid_OldWorld_m = p_room->getCentroid();
+        Eigen::Vector3d roomCentroid_OldWorld_m{};
+        if (p_room->getCentroid(roomCentroid_OldWorld_m) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
         roomCentroids_OldWorld_m.insert_or_assign(p_room,
                                                   roomCentroid_OldWorld_m);
 
         const g2o::Sim3  *p_roomCorrection = nullptr;
-        semantic::Marker *p_metaMarker     = p_room->getMetaMarker();
+        semantic::Marker *p_metaMarker     = nullptr;
+        if (p_room->getMetaMarker(p_metaMarker) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getMetaMarker cannot fail; continue as before.
+        }
 
         if (p_metaMarker != nullptr)
         {
@@ -405,7 +457,13 @@ void Utils::propagateSemanticPoseCorrections(
             double closestWallSquaredDistance_m2 =
                 std::numeric_limits<double>::infinity();
 
-            for (geometric::Plane *p_wall : p_room->getWalls())
+            std::vector<geometric::Plane *> roomWalls{};
+            if (p_room->getWalls(roomWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
+            for (geometric::Plane *p_wall : roomWalls)
             {
                 const auto correctionIterator =
                     planeCorrections_oldWorldToNewWorld.find(p_wall);
@@ -436,7 +494,11 @@ void Utils::propagateSemanticPoseCorrections(
                 ? *p_roomCorrection
                 : selectCorrectionForPoint(roomCentroid_OldWorld_m);
 
-        p_room->applyTransform(roomCorrection_oldWorldToNewWorld);
+        if (p_room->applyTransform(roomCorrection_oldWorldToNewWorld) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // applyTransform cannot fail; continue as before.
+        }
         roomCorrections_oldWorldToNewWorld.insert_or_assign(
             p_room,
             roomCorrection_oldWorldToNewWorld);
@@ -449,16 +511,40 @@ void Utils::propagateSemanticPoseCorrections(
             continue;
         }
 
-        const Eigen::Vector3d floorCentroid_OldWorld_m = p_floor->getCentroid();
+        Eigen::Vector3d floorCentroid_OldWorld_m{};
+        if (p_floor->getCentroid(floorCentroid_OldWorld_m) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
 
         const g2o::Sim3 *p_floorCorrection = nullptr;
         double           closestRoomSquaredDistance_m2 =
             std::numeric_limits<double>::infinity();
 
-        for (semantic::Room *p_room : p_floor->getRooms())
+        std::vector<vs_graphs::core::semantic::Room *> floorRooms{};
+        if (p_floor->getRooms(floorRooms) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            if (p_room == nullptr || p_room->isBad() ||
-                p_room->getMap() != p_map_inout)
+            // getRooms cannot fail; continue as before.
+        }
+        for (semantic::Room *p_room : floorRooms)
+        {
+            bool roomIsBad2{};
+            if (!(p_room == nullptr) &&
+                p_room->isBad(roomIsBad2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            core::Map *p_roomMap = nullptr;
+            if (!(p_room == nullptr || roomIsBad2) &&
+                p_room->getMap(p_roomMap) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getMap cannot fail; continue as before.
+            }
+            if (p_room == nullptr || roomIsBad2 || p_roomMap != p_map_inout)
             {
                 continue;
             }
@@ -485,10 +571,14 @@ void Utils::propagateSemanticPoseCorrections(
             }
         }
 
-        p_floor->applyTransform(
-            p_floorCorrection != nullptr
-                ? *p_floorCorrection
-                : selectCorrectionForPoint(floorCentroid_OldWorld_m));
+        if (p_floor->applyTransform(
+                p_floorCorrection != nullptr
+                    ? *p_floorCorrection
+                    : selectCorrectionForPoint(floorCentroid_OldWorld_m)) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // applyTransform cannot fail; continue as before.
+        }
     }
 
     auto skeletonClusters_OldWorld_m = p_map_inout->getSkeletonClusterPoints();

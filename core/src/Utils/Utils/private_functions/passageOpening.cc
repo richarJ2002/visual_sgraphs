@@ -44,16 +44,28 @@ bool crossesPassablePassageOpening(
     const double                        openingMargin_m_in,
     const double                        minimumSideDistance_m_in)
 {
-    if (p_passage_in == nullptr || !p_passage_in->isPassable() ||
+    bool passage_inIsPassable{};
+    if (!(p_passage_in == nullptr) &&
+        p_passage_in->isPassable(passage_inIsPassable) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // isPassable cannot fail; continue as before.
+    }
+    if (p_passage_in == nullptr || !passage_inIsPassable ||
         !segmentStart_World_m_in.allFinite() ||
         !segmentEnd_World_m_in.allFinite())
     {
         return false;
     }
 
-    Eigen::Vector4d passageEquation_World =
-        p_passage_in->getGlobalEquation().coeffs();
-    const double passageNormalNorm = passageEquation_World.head<3>().norm();
+    g2o::Plane3D passage_inGlobalEquation{};
+    if (p_passage_in->getGlobalEquation(passage_inGlobalEquation) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    Eigen::Vector4d passageEquation_World = passage_inGlobalEquation.coeffs();
+    const double    passageNormalNorm = passageEquation_World.head<3>().norm();
 
     if (!passageEquation_World.allFinite() || passageNormalNorm < 1e-8)
     {
@@ -86,7 +98,12 @@ bool crossesPassablePassageOpening(
     const Eigen::Vector3d intersection_World_m =
         segmentStart_World_m_in +
         interpolation * (segmentEnd_World_m_in - segmentStart_World_m_in);
-    const Eigen::Vector3d passageCentroid_World_m = p_passage_in->getCentroid();
+    Eigen::Vector3d passageCentroid_World_m{};
+    if (p_passage_in->getCentroid(passageCentroid_World_m) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
 
     if (!passageCentroid_World_m.allFinite())
     {
@@ -106,10 +123,21 @@ bool crossesPassablePassageOpening(
             groundNormal_World_in;
     const double horizontalOffset_m = horizontalOffset_World_m.norm();
 
-    return horizontalOffset_m <=
-               0.5 * p_passage_in->getWidth() + openingMargin_m_in &&
-           verticalOffset_m <=
-               0.5 * p_passage_in->getHeight() + openingMargin_m_in;
+    double passage_inWidth{};
+    if (p_passage_in->getWidth(passage_inWidth) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getWidth cannot fail; continue as before.
+    }
+    double passage_inHeight{};
+    if ((horizontalOffset_m <= 0.5 * passage_inWidth + openingMargin_m_in) &&
+        p_passage_in->getHeight(passage_inHeight) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getHeight cannot fail; continue as before.
+    }
+    return horizontalOffset_m <= 0.5 * passage_inWidth + openingMargin_m_in &&
+           verticalOffset_m <= 0.5 * passage_inHeight + openingMargin_m_in;
 }
 
 } // namespace utils

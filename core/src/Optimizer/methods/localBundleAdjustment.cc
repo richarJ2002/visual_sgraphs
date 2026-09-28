@@ -163,11 +163,23 @@ void Optimizer::localBundleAdjustment(
              markerIt != vend;
              markerIt++)
         {
-            if (localMarkerId.find((*markerIt)->getId()) == localMarkerId.end())
+            int id2{};
+            if ((*markerIt)->getId(id2) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (localMarkerId.find(id2) == localMarkerId.end())
             {
                 vs_graphs::core::semantic::Marker *p_marker = *markerIt;
                 localMarkerList.push_back(p_marker);
-                localMarkerId[p_marker->getId()] = true;
+                int markerId{};
+                if (p_marker->getId(markerId) !=
+                    semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                localMarkerId[markerId] = true;
             }
         }
 
@@ -201,12 +213,23 @@ void Optimizer::localBundleAdjustment(
              markerIt != vend;
              markerIt++)
         {
-            if (localDoorwayId.find((*markerIt)->getId()) ==
-                localDoorwayId.end())
+            int id3{};
+            if ((*markerIt)->getId(id3) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (localDoorwayId.find(id3) == localDoorwayId.end())
             {
                 vs_graphs::core::semantic::Passage *p_doorway = *markerIt;
                 localPassageList.push_back(p_doorway);
-                localDoorwayId[p_doorway->getId()] = true;
+                int doorwayId{};
+                if (p_doorway->getId(doorwayId) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                localDoorwayId[doorwayId] = true;
             }
         }
     }
@@ -215,8 +238,12 @@ void Optimizer::localBundleAdjustment(
     for (const auto &room : allRooms)
     {
         // Get the walls of the room
-        std::vector<vs_graphs::core::geometric::Plane *> roomWalls =
-            room->getWalls();
+        std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
+        if (room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
         // Add the room to the local map if any of the walls are in the local
         // map
         for (const auto &wall : roomWalls)
@@ -235,8 +262,12 @@ void Optimizer::localBundleAdjustment(
          markerIt != vend;
          markerIt++)
     {
-        std::vector<vs_graphs::core::geometric::Plane *> roomWalls =
-            (*markerIt)->getWalls();
+        std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
+        if ((*markerIt)->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
         for (const auto &roomWall : roomWalls)
         {
             if (localPlaneId.find(roomWall->getId()) == localPlaneId.end())
@@ -686,16 +717,32 @@ void Optimizer::localBundleAdjustment(
         // Adding a vertex for each marker
         semantic::Marker     *p_mapMarker    = *markerIt;
         g2o::VertexSE3Expmap *p_markerVertex = new g2o::VertexSE3Expmap();
-        p_markerVertex->setEstimate(g2o::SE3Quat(
-            p_mapMarker->getGlobalPose().unit_quaternion().cast<double>(),
-            p_mapMarker->getGlobalPose().translation().cast<double>()));
+        Sophus::SE3f          mapMarkerGlobalPose{};
+        if (p_mapMarker->getGlobalPose(mapMarkerGlobalPose) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // getGlobalPose cannot fail; continue as before.
+        }
+        Sophus::SE3f mapMarkerGlobalPose2{};
+        if (p_mapMarker->getGlobalPose(mapMarkerGlobalPose2) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // getGlobalPose cannot fail; continue as before.
+        }
+        p_markerVertex->setEstimate(
+            g2o::SE3Quat(mapMarkerGlobalPose.unit_quaternion().cast<double>(),
+                         mapMarkerGlobalPose2.translation().cast<double>()));
         int opId = maximumOpId + markerCount;
         p_markerVertex->setId(opId);
         optimizer.addVertex(p_markerVertex);
         markerCount++;
 
         // Setting the local optimization ID for the marker
-        p_mapMarker->setOpId(opId);
+        if (p_mapMarker->setOpId(opId) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // setOpId cannot fail; continue as before.
+        }
 
         // 🚧 [vS-Graphs v.2.0] in contrast with the first version of visual
         // S-Graphs, where there was an edge between the marker and the
@@ -891,8 +938,12 @@ void Optimizer::localBundleAdjustment(
         {
             // Variables
             vs_graphs::core::semantic::Room *p_mapRoom = *markerIt;
-            std::vector<vs_graphs::core::geometric::Plane *> walls =
-                p_mapRoom->getWalls();
+            std::vector<vs_graphs::core::geometric::Plane *> walls{};
+            if (p_mapRoom->getWalls(walls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
 
             // No need to optimize if there are no walls
             if (walls.empty())
@@ -904,13 +955,23 @@ void Optimizer::localBundleAdjustment(
             // Setting the local optimization ID for the room
             int opId = maximumOpId + roomCount;
             p_vertexRoom->setId(opId);
-            p_mapRoom->setOpId(opId);
+            if (p_mapRoom->setOpId(opId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setOpId cannot fail; continue as before.
+            }
             roomCount++;
 
             // Initialize the room vertex (centroid estimate)
+            Eigen::Vector3d mapRoomCentroid{};
+            if (p_mapRoom->getCentroid(mapRoomCentroid) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
             p_vertexRoom->setEstimate(
                 g2o::SE3Quat(Eigen::Quaterniond::Identity(),
-                             p_mapRoom->getCentroid().cast<double>()));
+                             mapRoomCentroid.cast<double>()));
             p_vertexRoom->setFixed(true);
             optimizer.addVertex(p_vertexRoom);
 
@@ -1228,14 +1289,24 @@ void Optimizer::localBundleAdjustment(
     {
         try
         {
-            semantic::Marker     *p_mapMarker = *markerIt;
+            semantic::Marker *p_mapMarker = *markerIt;
+            int               mapMarkerOpId{};
+            if (p_mapMarker->getOpId(mapMarkerOpId) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // getOpId cannot fail; continue as before.
+            }
             g2o::VertexSE3Expmap *p_markerVertex =
                 static_cast<g2o::VertexSE3Expmap *>(
-                    optimizer.vertex(p_mapMarker->getOpId()));
+                    optimizer.vertex(mapMarkerOpId));
             g2o::SE3Quat poseEstimate = p_markerVertex->estimate();
             Sophus::SE3f Tiw(poseEstimate.rotation().cast<float>(),
                              poseEstimate.translation().cast<float>());
-            p_mapMarker->setGlobalPose(Tiw);
+            if (p_mapMarker->setGlobalPose(Tiw) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // setGlobalPose cannot fail; continue as before.
+            }
         }
         catch (std::exception &e)
         {

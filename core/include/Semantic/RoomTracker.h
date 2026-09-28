@@ -15,6 +15,7 @@
 
 #ifndef ROOMTRACKER_H
 #define ROOMTRACKER_H
+#include "Semantic/RoomTrackerStatus.h"
 
 #include <cmath>
 #include <cstddef>
@@ -225,7 +226,7 @@ class RoomTracker
     /*!
      * @brief       Resets state, timers, retry counters and event history.
      */
-    void reset(double now_s_in);
+    [[nodiscard]] RoomTrackerStatus reset(double now_s_in);
 
     /*!
      * @brief        Per-cycle integration entry point.
@@ -254,12 +255,15 @@ class RoomTracker
      * @param[in]    tracking_in
      *               Tracking-loss and new-map lifecycle signals.
      *
-     * @return       The state after the cycle.
+     * @param[out] nextState_out The state after the cycle.
+     * @return ROOM_TRACKER_STATUS_SUCCESS.
      */
-    RoomTrackingState step(double                      now_s_in,
-                           const TraversalGuardValues &crossing_in,
-                           const VerificationVerdict  &verification_in,
-                           const TrackingStatusInput  &tracking_in);
+    [[nodiscard]] RoomTrackerStatus
+        step(double                      now_s_in,
+             const TraversalGuardValues &crossing_in,
+             const VerificationVerdict  &verification_in,
+             const TrackingStatusInput  &tracking_in,
+             RoomTrackingState          &nextState_out);
 
     /*!
      * @brief        Discrete transition oracle: applies exactly one
@@ -284,48 +288,58 @@ class RoomTracker
      *               Explicit verification verdict for the guarded
      *               rows.
      *
-     * @return       The state after applying the row.
+     * @param[out] nextState_out The state after applying the row.
+     * @return ROOM_TRACKER_STATUS_SUCCESS.
      */
-    RoomTrackingState applyEvent(RoomTrackingEvent           event_in,
-                                 double                      now_s_in,
-                                 const TraversalGuardValues &crossing_in,
-                                 const VerificationVerdict  &verification_in);
+    [[nodiscard]] RoomTrackerStatus
+        applyEvent(RoomTrackingEvent           event_in,
+                   double                      now_s_in,
+                   const TraversalGuardValues &crossing_in,
+                   const VerificationVerdict  &verification_in,
+                   RoomTrackingState          &nextState_out);
 
     /*!
      * @brief       Returns the current state.
      */
-    RoomTrackingState getState() const;
+    [[nodiscard]] RoomTrackerStatus
+        getState(RoomTrackingState &state_out) const;
 
     /*!
      * @brief       Returns every recorded TransitionEvent (accepted or
      *              rejected), oldest first.
      */
-    const std::vector<TransitionEvent> &getEventHistory() const;
+    [[nodiscard]] RoomTrackerStatus getEventHistory(
+        const std::vector<TransitionEvent> *&p_eventHistory_out) const;
 
     /*!
      * @brief       Returns the most recent TransitionEvent record.
      */
-    const TransitionEvent &getLastEvent() const;
+    [[nodiscard]] RoomTrackerStatus
+        getLastEvent(const TransitionEvent *&p_lastEvent_out) const;
 
     /*!
      * @brief       Returns the tracker configuration.
      */
-    const RoomTrackerConfig &getConfig() const;
+    [[nodiscard]] RoomTrackerStatus
+        getConfig(const RoomTrackerConfig *&p_config_out) const;
 
     /*!
      * @brief       Renders a state as a stable literal name.
      */
-    static std::string stateToString(RoomTrackingState state_in);
+    [[nodiscard]] static RoomTrackerStatus
+        stateToString(RoomTrackingState state_in, std::string &text_out);
 
     /*!
      * @brief       Renders an event as a stable literal name.
      */
-    static std::string eventToString(RoomTrackingEvent event_in);
+    [[nodiscard]] static RoomTrackerStatus
+        eventToString(RoomTrackingEvent event_in, std::string &text_out);
 
     /*!
      * @brief       Serialises a TransitionEvent as one JSON object line.
      */
-    static std::string eventToJSON(const TransitionEvent &event_in);
+    [[nodiscard]] static RoomTrackerStatus
+        eventToJSON(const TransitionEvent &event_in, std::string &json_out);
 
     /*!
      * @brief        Confidence formula:
@@ -338,40 +352,49 @@ class RoomTracker
      *               non-positive sigma results in 1.0 for a zero
      *               residual and 0.0 otherwise.
      */
-    static double computeConfidence(double inlierRatio_in,
-                                    double normalizedConditionNumber_in,
-                                    double angularResidual_rad_in,
-                                    double sigmaTheta_rad_in);
+    [[nodiscard]] static RoomTrackerStatus
+        computeConfidence(double  inlierRatio_in,
+                          double  normalizedConditionNumber_in,
+                          double  angularResidual_rad_in,
+                          double  sigmaTheta_rad_in,
+                          double &confidence_out);
 
   private:
     /*!
      * @brief       Central row engine: applies the source row for (state,
      *              event). Returns true when the transition was committed.
      */
-    bool applyRow(RoomTrackingState           source_in,
-                  RoomTrackingEvent           event_in,
-                  double                      now_s_in,
-                  const TraversalGuardValues &crossing_in,
-                  const VerificationVerdict  &verification_in);
+    [[nodiscard]] RoomTrackerStatus
+        applyRow(RoomTrackingState           source_in,
+                 RoomTrackingEvent           event_in,
+                 double                      now_s_in,
+                 const TraversalGuardValues &crossing_in,
+                 const VerificationVerdict  &verification_in,
+                 bool                       &isAccepted_out);
 
     /*!
      * @brief       Commits target as the new state and records the event.
      */
-    void commit(RoomTrackingState           source_in,
-                RoomTrackingEvent           event_in,
-                double                      now_s_in,
-                const TraversalGuardValues &crossing_in,
-                const VerificationVerdict  &verification_in,
-                bool                        accepted_in);
+    [[nodiscard]] RoomTrackerStatus
+        commit(RoomTrackingState           source_in,
+               RoomTrackingEvent           event_in,
+               double                      now_s_in,
+               const TraversalGuardValues &crossing_in,
+               const VerificationVerdict  &verification_in,
+               bool                        accepted_in);
 
     /*!
      * @brief       Accumulates the crossing/dwell timer for the given state.
      *
-     * @return      Dwell seconds elapsed so far (accumulated countdown).
+     * @param[out] accumulatedDwell_out Dwell seconds elapsed so far
+     * (accumulated countdown).
+     * @return ROOM_TRACKER_STATUS_SUCCESS.
      */
-    double accumulateDwell(RoomTrackingState state_in,
-                           double            now_s_in,
-                           bool              guardSatisfied_in);
+    [[nodiscard]] RoomTrackerStatus
+        accumulateDwell(RoomTrackingState state_in,
+                        double            now_s_in,
+                        bool              guardSatisfied_in,
+                        double           &accumulatedDwell_out);
 
   private:
     RoomTrackerConfig            config;

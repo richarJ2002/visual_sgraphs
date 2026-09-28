@@ -28,9 +28,11 @@ namespace core
 namespace semantic
 {
 
-void Floor::setName(std::string value_in)
+FloorStatus Floor::setName(std::string value_in)
 {
     name = value_in;
+
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

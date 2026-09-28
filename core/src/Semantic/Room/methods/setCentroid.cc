@@ -27,10 +27,12 @@ namespace core
 namespace semantic
 {
 
-void Room::setCentroid(Eigen::Vector3d centroid_in)
+RoomStatus Room::setCentroid(Eigen::Vector3d centroid_in)
 {
     std::lock_guard<std::mutex> lock(mapMutex);
     centroid = centroid_in;
+
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

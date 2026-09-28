@@ -49,7 +49,19 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                       return true;
                   }
 
-                  return p_firstRoom->getId() < p_secondRoom->getId();
+                  int firstRoomId{};
+                  if (p_firstRoom->getId(firstRoomId) !=
+                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                  {
+                      // getId cannot fail; continue as before.
+                  }
+                  int secondRoomId{};
+                  if (p_secondRoom->getId(secondRoomId) !=
+                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                  {
+                      // getId cannot fail; continue as before.
+                  }
+                  return firstRoomId < secondRoomId;
               });
 
     std::vector<semantic::Passage *> allPassages = p_atlas->getAllPassages();
@@ -66,7 +78,19 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
             {
                 return true;
             }
-            return p_first->getId() < p_second->getId();
+            int firstId{};
+            if (p_first->getId(firstId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int secondId{};
+            if (p_second->getId(secondId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            return firstId < secondId;
         });
 
     Eigen::Vector3d   groundNormal_World = Eigen::Vector3d::Zero();
@@ -87,12 +111,25 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
 
     for (semantic::Room *p_room : allRooms)
     {
-        if (p_room == nullptr || p_room->isBad())
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room == nullptr || roomIsBad)
         {
             continue;
         }
 
-        for (geometric::Plane *p_wall : p_room->getWalls())
+        std::vector<geometric::Plane *> roomWalls{};
+        if (p_room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
+        for (geometric::Plane *p_wall : roomWalls)
         {
             if (p_wall == nullptr || p_wall->isBad())
             {
@@ -134,9 +171,23 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
         {
             for (semantic::Passage *p_passage : allPassages)
             {
-                if (p_passage == nullptr || !p_passage->isPassable() ||
+                bool passageIsPassable{};
+                if (!(p_passage == nullptr) &&
+                    p_passage->isPassable(passageIsPassable) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // isPassable cannot fail; continue as before.
+                }
+                Eigen::Vector3d nearOwnerCentroid{};
+                if (!(p_passage == nullptr || !passageIsPassable) &&
+                    p_nearOwner->getCentroid(nearOwnerCentroid) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getCentroid cannot fail; continue as before.
+                }
+                if (p_passage == nullptr || !passageIsPassable ||
                     !segmentCrossesPassageOpening(
-                        p_nearOwner->getCentroid(),
+                        nearOwnerCentroid,
                         p_wall->getCentroid().cast<double>(),
                         p_passage,
                         groundNormal_World,
@@ -148,11 +199,30 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     continue;
                 }
 
-                semantic::Room *p_farSideOwner =
-                    p_passage->getProspectiveRoom();
-                if (p_farSideOwner == nullptr || p_farSideOwner->isBad() ||
+                semantic::Room *p_farSideOwner = nullptr;
+                if (p_passage->getProspectiveRoom(p_farSideOwner) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getProspectiveRoom cannot fail; continue as before.
+                }
+                bool farSideOwnerIsBad{};
+                if (!(p_farSideOwner == nullptr) &&
+                    p_farSideOwner->isBad(farSideOwnerIsBad) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                core::Map *p_farSideOwnerMap = nullptr;
+                if (!(p_farSideOwner == nullptr || farSideOwnerIsBad ||
+                      p_farSideOwner == p_nearOwner) &&
+                    p_farSideOwner->getMap(p_farSideOwnerMap) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getMap cannot fail; continue as before.
+                }
+                if (p_farSideOwner == nullptr || farSideOwnerIsBad ||
                     p_farSideOwner == p_nearOwner ||
-                    p_farSideOwner->getMap() != p_atlas->getCurrentMap())
+                    p_farSideOwnerMap != p_atlas->getCurrentMap())
                 {
                     passageRejectedOwners.insert(p_nearOwner);
                     continue;
@@ -163,9 +233,17 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     owners.end(),
                     [p_nearOwner, p_farSideOwner](semantic::Room *p_owner)
                     {
+                        semantic::Room::RoomVariant ownerRoomVariant{};
+                        if ((p_owner != p_nearOwner &&
+                             p_owner != p_farSideOwner) &&
+                            p_owner->getRoomVariant(ownerRoomVariant) !=
+                                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // getRoomVariant cannot fail; continue as before.
+                        }
                         return p_owner != p_nearOwner &&
                                p_owner != p_farSideOwner &&
-                               p_owner->getRoomVariant() ==
+                               ownerRoomVariant ==
                                    semantic::Room::RoomVariant::ROOM;
                     });
                 if (wouldStealDistinctConfirmedOwner)
@@ -173,14 +251,76 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     continue;
                 }
 
+                semantic::Room::RoomVariant farSideOwnerRoomVariant{};
+                if (!(p_retainedOwner == nullptr) &&
+                    p_farSideOwner->getRoomVariant(farSideOwnerRoomVariant) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getRoomVariant cannot fail; continue as before.
+                }
+                semantic::Room::RoomVariant retainedOwnerRoomVariant{};
+                if (!(p_retainedOwner == nullptr) &&
+                    (farSideOwnerRoomVariant ==
+                     semantic::Room::RoomVariant::ROOM) &&
+                    p_retainedOwner->getRoomVariant(retainedOwnerRoomVariant) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getRoomVariant cannot fail; continue as before.
+                }
+                semantic::Room::RoomVariant farSideOwnerRoomVariant2{};
+                if (!(p_retainedOwner == nullptr ||
+                      (farSideOwnerRoomVariant ==
+                           semantic::Room::RoomVariant::ROOM &&
+                       retainedOwnerRoomVariant !=
+                           semantic::Room::RoomVariant::ROOM)) &&
+                    p_farSideOwner->getRoomVariant(farSideOwnerRoomVariant2) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getRoomVariant cannot fail; continue as before.
+                }
+                semantic::Room::RoomVariant retainedOwnerRoomVariant2{};
+                if (!(p_retainedOwner == nullptr ||
+                      (farSideOwnerRoomVariant ==
+                           semantic::Room::RoomVariant::ROOM &&
+                       retainedOwnerRoomVariant !=
+                           semantic::Room::RoomVariant::ROOM)) &&
+                    p_retainedOwner->getRoomVariant(
+                        retainedOwnerRoomVariant2) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getRoomVariant cannot fail; continue as before.
+                }
+                int farSideOwnerId{};
+                if (!(p_retainedOwner == nullptr ||
+                      (farSideOwnerRoomVariant ==
+                           semantic::Room::RoomVariant::ROOM &&
+                       retainedOwnerRoomVariant !=
+                           semantic::Room::RoomVariant::ROOM)) &&
+                    (farSideOwnerRoomVariant2 == retainedOwnerRoomVariant2) &&
+                    p_farSideOwner->getId(farSideOwnerId) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int retainedOwnerId{};
+                if (!(p_retainedOwner == nullptr ||
+                      (farSideOwnerRoomVariant ==
+                           semantic::Room::RoomVariant::ROOM &&
+                       retainedOwnerRoomVariant !=
+                           semantic::Room::RoomVariant::ROOM)) &&
+                    (farSideOwnerRoomVariant2 == retainedOwnerRoomVariant2) &&
+                    p_retainedOwner->getId(retainedOwnerId) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 if (p_retainedOwner == nullptr ||
-                    (p_farSideOwner->getRoomVariant() ==
+                    (farSideOwnerRoomVariant ==
                          semantic::Room::RoomVariant::ROOM &&
-                     p_retainedOwner->getRoomVariant() !=
+                     retainedOwnerRoomVariant !=
                          semantic::Room::RoomVariant::ROOM) ||
-                    (p_farSideOwner->getRoomVariant() ==
-                         p_retainedOwner->getRoomVariant() &&
-                     p_farSideOwner->getId() < p_retainedOwner->getId()))
+                    (farSideOwnerRoomVariant2 == retainedOwnerRoomVariant2 &&
+                     farSideOwnerId < retainedOwnerId))
                 {
                     p_retainedOwner = p_farSideOwner;
                 }
@@ -192,9 +332,15 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
         {
             for (semantic::Room *p_owner : owners)
             {
+                semantic::Room::RoomVariant ownerRoomVariant{};
+                if ((passageRejectedOwners.count(p_owner) == 0U) &&
+                    p_owner->getRoomVariant(ownerRoomVariant) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getRoomVariant cannot fail; continue as before.
+                }
                 if (passageRejectedOwners.count(p_owner) == 0U &&
-                    p_owner->getRoomVariant() ==
-                        semantic::Room::RoomVariant::ROOM)
+                    ownerRoomVariant == semantic::Room::RoomVariant::ROOM)
                 {
                     p_retainedOwner = p_owner;
                     break;
@@ -241,9 +387,15 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                         continue;
                     }
 
-                    const double distance_m = (p_owner->getCentroid() -
-                                               meanObservationPosition_World_m)
-                                                  .norm();
+                    Eigen::Vector3d ownerCentroid{};
+                    if (p_owner->getCentroid(ownerCentroid) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getCentroid cannot fail; continue as before.
+                    }
+                    const double distance_m =
+                        (ownerCentroid - meanObservationPosition_World_m)
+                            .norm();
                     if (distance_m < bestDistance_m)
                     {
                         bestDistance_m  = distance_m;
@@ -267,16 +419,36 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
 
         for (semantic::Room *p_owner : owners)
         {
-            if (p_owner != p_retainedOwner && p_owner->removeWall(p_wall))
+            bool ownerWasWallRemoved{};
+            if ((p_owner != p_retainedOwner) &&
+                p_owner->removeWall(p_wall, ownerWasWallRemoved) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
+                ownerWasWallRemoved = false; // rejected input reads as before
+            }
+            if (p_owner != p_retainedOwner && ownerWasWallRemoved)
+            {
+                int retainedOwnerId2{};
+                if ((p_retainedOwner != nullptr) &&
+                    p_retainedOwner->getId(retainedOwnerId2) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int ownerId{};
+                if (p_owner->getId(ownerId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cerr << "[SemMgr] Corrected duplicate ownership of Wall#"
                           << p_wall->getId() << ": "
                           << (p_retainedOwner != nullptr
                                   ? "retained semantic::Room#" +
-                                        std::to_string(p_retainedOwner->getId())
+                                        std::to_string(retainedOwnerId2)
                                   : "left orphaned")
-                          << ", detached semantic::Room#" << p_owner->getId()
-                          << "." << std::endl;
+                          << ", detached semantic::Room#" << ownerId << "."
+                          << std::endl;
             }
         }
 
@@ -284,7 +456,11 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
             std::find(owners.begin(), owners.end(), p_retainedOwner) ==
                 owners.end())
         {
-            p_retainedOwner->setWalls(p_wall);
+            if (p_retainedOwner->setWalls(p_wall) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setWalls cannot fail; continue as before.
+            }
         }
     }
 }

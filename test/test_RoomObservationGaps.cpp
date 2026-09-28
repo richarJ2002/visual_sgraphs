@@ -124,16 +124,21 @@ TEST(RoomObservationGaps, ReportsAFullCircleGapForARoomWithNoWalls)
     atlas.addMapPlane(ground.get());
 
     semantic::Room room;
-    room.setId(1);
-    room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
+    ASSERT_EQ((room.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     atlas.addDetectedMapRoom(&room);
 
     manager.validateRoomBoundariesForTest();
 
-    const std::vector<semantic::Room::ObservationGap> gaps =
-        room.getObservationGaps();
+    std::vector<semantic::Room::ObservationGap> gaps{};
+    ASSERT_EQ((room.getObservationGaps(gaps)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(gaps.size(), 1U);
     EXPECT_NEAR(gaps.front().spanAngle_rad, 2.0 * M_PI, 1e-6);
 }
@@ -160,19 +165,25 @@ TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
                              2.0);
 
     semantic::Room room;
-    room.setId(1);
-    room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
-    room.setWalls(northWall.get());
+    ASSERT_EQ((room.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(northWall.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     atlas.addDetectedMapRoom(&room);
 
     manager.validateRoomBoundariesForTest();
 
     /* One wall gives one point on the circle -- the gap wraps all the way
      * around back to that same point, i.e. one (nearly) full-circle gap. */
-    const std::vector<semantic::Room::ObservationGap> gaps =
-        room.getObservationGaps();
+    std::vector<semantic::Room::ObservationGap> gaps{};
+    ASSERT_EQ((room.getObservationGaps(gaps)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(gaps.size(), 1U);
     EXPECT_GT(gaps.front().spanAngle_rad, M_PI);
 }
@@ -225,24 +236,38 @@ TEST(RoomObservationGaps, ReportsNoGapsForARoomWithACompleteBoundary)
                              2.0);
 
     semantic::Room room;
-    room.setId(1);
-    room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
-    room.setWalls(north.get());
-    room.setWalls(south.get());
-    room.setWalls(east.get());
-    room.setWalls(west.get());
+    ASSERT_EQ((room.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(north.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(south.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(east.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(west.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     atlas.addDetectedMapRoom(&room);
 
     manager.validateRoomBoundariesForTest();
 
-    ASSERT_EQ(room.getBoundaryStatus(),
-              semantic::Room::BoundaryStatus::COMPLETE);
+    vs_graphs::core::semantic::Room::BoundaryStatus boundaryStatus{};
+    ASSERT_EQ((room.getBoundaryStatus(boundaryStatus)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ(boundaryStatus, semantic::Room::BoundaryStatus::COMPLETE);
     /* Four evenly-spaced walls around a rectangle are each exactly 90 deg
      * apart (wall midpoints sit on the centroid's principal axes) --
      * comfortably under the (100 deg) gap-reporting threshold. */
-    EXPECT_TRUE(room.getObservationGaps().empty());
+    std::vector<vs_graphs::core::semantic::Room::ObservationGap>
+        observationGaps{};
+    ASSERT_EQ((room.getObservationGaps(observationGaps)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(observationGaps.empty());
 }
 
 } // namespace core

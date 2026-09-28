@@ -42,24 +42,73 @@ RoomRecord captureRoom(Room             *p_room_in,
                        bool              isMarkerBasedMember_in)
 {
     RoomRecord record;
-    record.key    = makeKey(EntityKind::ROOM, mapId_in, p_room_in->getId());
-    record.isLive = !p_room_in->isBad();
+    int        room_inId{};
+    if (p_room_in->getId(room_inId) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    record.key = makeKey(EntityKind::ROOM, mapId_in, room_inId);
+    bool room_inIsBad{};
+    if (p_room_in->isBad(room_inIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    record.isLive              = !room_inIsBad;
     record.isDetectedMember    = isDetectedMember_in;
     record.isMarkerBasedMember = isMarkerBasedMember_in;
 
-    core::Map *p_declaredMap = p_room_in->getMap();
+    core::Map *p_declaredMap = nullptr;
+    if (p_room_in->getMap(p_declaredMap) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     if (p_declaredMap != nullptr)
     {
         record.declaredMapId = p_declaredMap->getId();
     }
 
-    record.variant                 = p_room_in->getRoomVariant();
-    record.centroid_World_m        = p_room_in->getCentroid();
-    record.boundaryStatus          = p_room_in->getBoundaryStatus();
-    record.boundaryCorners_World_m = p_room_in->getBoundaryCorners_World_m();
-    record.observationGaps         = p_room_in->getObservationGaps();
+    Room::RoomVariant room_inRoomVariant{};
+    if (p_room_in->getRoomVariant(room_inRoomVariant) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getRoomVariant cannot fail; continue as before.
+    }
+    record.variant = room_inRoomVariant;
+    Eigen::Vector3d room_inCentroid{};
+    if (p_room_in->getCentroid(room_inCentroid) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
+    record.centroid_World_m = room_inCentroid;
+    Room::BoundaryStatus room_inBoundaryStatus{};
+    if (p_room_in->getBoundaryStatus(room_inBoundaryStatus) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getBoundaryStatus cannot fail; continue as before.
+    }
+    record.boundaryStatus = room_inBoundaryStatus;
+    std::vector<Eigen::Vector3d> room_inBoundaryCorners_World_m{};
+    if (p_room_in->getBoundaryCorners_World_m(room_inBoundaryCorners_World_m) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getBoundaryCorners_World_m cannot fail; continue as before.
+    }
+    record.boundaryCorners_World_m = room_inBoundaryCorners_World_m;
+    std::vector<Room::ObservationGap> room_inObservationGaps{};
+    if (p_room_in->getObservationGaps(room_inObservationGaps) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getObservationGaps cannot fail; continue as before.
+    }
+    record.observationGaps = room_inObservationGaps;
 
-    for (geometric::Plane *p_wall : p_room_in->getWalls())
+    std::vector<geometric::Plane *> room_inWalls{};
+    if (p_room_in->getWalls(room_inWalls) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getWalls cannot fail; continue as before.
+    }
+    for (geometric::Plane *p_wall : room_inWalls)
     {
         appendWallRef(p_wall, record.wallRefs);
     }
@@ -69,7 +118,13 @@ RoomRecord captureRoom(Room             *p_room_in,
               record.wallRefs.end(),
               &isRawPlaneRefLess);
 
-    for (Passage *p_passage : p_room_in->getPassages())
+    std::vector<vs_graphs::core::semantic::Passage *> room_inPassages{};
+    if (p_room_in->getPassages(room_inPassages) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getPassages cannot fail; continue as before.
+    }
+    for (Passage *p_passage : room_inPassages)
     {
         appendPassageRef(p_passage, record.passageRefs);
     }
@@ -77,8 +132,19 @@ RoomRecord captureRoom(Room             *p_room_in,
               record.passageRefs.end(),
               &isEntityRefLess);
 
-    record.floorRef       = entityRefForFloor(p_room_in->getFloor());
-    record.groundPlaneRef = rawPlaneRef(p_room_in->getGroundPlane());
+    Floor *p_room_inFloor = nullptr;
+    if (p_room_in->getFloor(p_room_inFloor) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getFloor cannot fail; continue as before.
+    }
+    record.floorRef                        = entityRefForFloor(p_room_inFloor);
+    geometric::Plane *p_room_inGroundPlane = nullptr;
+    if (p_room_in->getGroundPlane(p_room_inGroundPlane) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getGroundPlane cannot fail; continue as before.
+    }
+    record.groundPlaneRef = rawPlaneRef(p_room_inGroundPlane);
 
     return record;
 }

@@ -28,7 +28,8 @@ namespace core
 namespace semantic
 {
 
-SemanticVerify::MapMergeConfig SemanticVerify::mapMergeConfigFromSystemParams()
+SemanticVerifyStatus SemanticVerify::mapMergeConfigFromSystemParams(
+    SemanticVerify::MapMergeConfig &configuration_out)
 {
     MapMergeConfig configuration;
     configuration.passage_match_tolerance_m = static_cast<double>(
@@ -41,7 +42,8 @@ SemanticVerify::MapMergeConfig SemanticVerify::mapMergeConfigFromSystemParams()
         types::SystemParams::getParams()->mapMerge.floorMatchTolerance_m);
     configuration.room_centroid_tolerance_m = static_cast<double>(
         types::SystemParams::getParams()->mapMerge.roomCentroidTolerance_m);
-    return configuration;
+    configuration_out = configuration;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

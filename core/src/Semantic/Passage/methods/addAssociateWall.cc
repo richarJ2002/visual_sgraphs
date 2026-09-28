@@ -28,11 +28,12 @@ namespace core
 namespace semantic
 {
 
-void Passage::addAssociateWall(vs_graphs::core::geometric::Plane *p_wall_in)
+PassageStatus
+    Passage::addAssociateWall(vs_graphs::core::geometric::Plane *p_wall_in)
 {
     if (p_wall_in == nullptr)
     {
-        return;
+        return PassageStatus::PASSAGE_STATUS_SUCCESS;
     }
 
     std::lock_guard<std::mutex> lock(geometryMutex);
@@ -47,6 +48,8 @@ void Passage::addAssociateWall(vs_graphs::core::geometric::Plane *p_wall_in)
     {
         associateWalls.push_back(p_wall_in);
     }
+
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

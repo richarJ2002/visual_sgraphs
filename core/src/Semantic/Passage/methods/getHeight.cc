@@ -28,10 +28,11 @@ namespace core
 namespace semantic
 {
 
-double Passage::getHeight() const
+PassageStatus Passage::getHeight(double &height_out) const
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
-    return height;
+    height_out = height;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

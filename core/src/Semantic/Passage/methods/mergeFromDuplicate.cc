@@ -28,12 +28,26 @@ namespace core
 namespace semantic
 {
 
-bool Passage::mergeFromDuplicate(Passage *p_duplicate_inout)
+PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
+                                          bool    &wasGeometryReplaced_out)
 {
-    if (p_duplicate_inout == nullptr || p_duplicate_inout == this ||
-        p_duplicate_inout->getId() != getId())
+    int duplicate_inoutId{};
+    if (!(p_duplicate_inout == nullptr || p_duplicate_inout == this) &&
+        p_duplicate_inout->getId(duplicate_inoutId) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        return false;
+        // getId cannot fail; continue as before.
+    }
+    int id{};
+    if (!(p_duplicate_inout == nullptr || p_duplicate_inout == this) &&
+        getId(id) != PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    if (p_duplicate_inout == nullptr || p_duplicate_inout == this ||
+        duplicate_inoutId != id)
+    {
+        return PassageStatus::PASSAGE_STATUS_INVALID_ARGUMENT;
     }
 
     bool canonicalIsRecoveryProxy = false;
@@ -172,7 +186,8 @@ bool Passage::mergeFromDuplicate(Passage *p_duplicate_inout)
         }
     }
 
-    return replacedGeometry;
+    wasGeometryReplaced_out = replacedGeometry;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

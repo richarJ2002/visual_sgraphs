@@ -26,7 +26,14 @@ namespace core
 const std::vector<semantic::TransitionEvent> &
     SemanticsManager::getRoomTrackerEventHistoryForTest() const
 {
-    return roomTracker.getEventHistory();
+    const std::vector<semantic::TransitionEvent> *p_roomTrackerEventHistory =
+        nullptr;
+    if (roomTracker.getEventHistory(p_roomTrackerEventHistory) !=
+        semantic::RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+    {
+        // getEventHistory cannot fail; continue as before.
+    }
+    return (*p_roomTrackerEventHistory);
 }
 
 } // namespace core

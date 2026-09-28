@@ -28,9 +28,9 @@ namespace core
 namespace semantic
 {
 
-bool Floor::setPlaneIdentity(const Eigen::Vector4d &equation_World_in,
-                             const std::size_t      finiteSupportCount_in,
-                             const std::size_t      observationCount_in)
+FloorStatus Floor::setPlaneIdentity(const Eigen::Vector4d &equation_World_in,
+                                    const std::size_t finiteSupportCount_in,
+                                    const std::size_t observationCount_in)
 {
     Eigen::Vector4d normalizedEquation_World = equation_World_in;
     const double    normalNorm = normalizedEquation_World.head<3>().norm();
@@ -38,7 +38,7 @@ bool Floor::setPlaneIdentity(const Eigen::Vector4d &equation_World_in,
     if (!normalizedEquation_World.allFinite() || !std::isfinite(normalNorm) ||
         normalNorm < 1e-8)
     {
-        return false;
+        return FloorStatus::FLOOR_STATUS_INVALID_ARGUMENT;
     }
 
     normalizedEquation_World /= normalNorm;
@@ -47,7 +47,7 @@ bool Floor::setPlaneIdentity(const Eigen::Vector4d &equation_World_in,
     planeIdentity = PlaneIdentity{normalizedEquation_World,
                                   finiteSupportCount_in,
                                   observationCount_in};
-    return true;
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

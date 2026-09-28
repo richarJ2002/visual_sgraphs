@@ -30,9 +30,10 @@ namespace core
 namespace semantic
 {
 
-SemanticVerifyResult
+SemanticVerifyStatus
     SemanticVerify::verify(const std::vector<VerifyWallObservation> &wallsA_in,
                            const std::vector<VerifyWallObservation> &wallsB_in,
+                           SemanticVerifyResult                     &result_out,
                            const SemanticVerifyConfig &configuration_in)
 {
     SemanticVerifyResult result;
@@ -44,7 +45,8 @@ SemanticVerifyResult
     {
         result.status       = VerificationStatus::REJECTED;
         result.rejectReason = VerifyRejectReason::TOO_FEW_WALLS;
-        return result;
+        result_out          = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     /* Full cross-product candidate set. No pre-filtering by raw normal
@@ -270,7 +272,8 @@ SemanticVerifyResult
     {
         result.status       = VerificationStatus::REJECTED;
         result.rejectReason = VerifyRejectReason::NO_VALID_HYPOTHESIS;
-        return result;
+        result_out          = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     const auto signatureOf = [](const Hypothesis &hypothesis_in)
@@ -342,14 +345,16 @@ SemanticVerifyResult
          * hypotheses. */
         result.status       = VerificationStatus::REJECTED;
         result.rejectReason = VerifyRejectReason::AMBIGUOUS_TOP_HYPOTHESES;
-        return result;
+        result_out          = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     if (inlierRatio < configuration_in.minInlierRatio)
     {
         result.status       = VerificationStatus::REJECTED;
         result.rejectReason = VerifyRejectReason::BELOW_MIN_INLIER_RATIO;
-        return result;
+        result_out          = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     const Hypothesis &seed = best[0];
@@ -477,7 +482,8 @@ SemanticVerifyResult
         result.rejectReason    = VerifyRejectReason::REFINED_FIT_NOT_OBSERVABLE;
         result.rank            = refinedFit.rank;
         result.conditionNumber = refinedFit.conditionNumber;
-        return result;
+        result_out             = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     std::sort(angularResiduals.begin(), angularResiduals.end());
@@ -508,7 +514,8 @@ SemanticVerifyResult
                    0.0,
                    1.0);
 
-    return result;
+    result_out = result;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

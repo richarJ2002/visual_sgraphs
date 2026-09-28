@@ -27,10 +27,12 @@ namespace core
 namespace semantic
 {
 
-std::vector<Room::ObservationGap> Room::getObservationGaps() const
+RoomStatus Room::getObservationGaps(
+    std::vector<Room::ObservationGap> &observationGaps_out) const
 {
     std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
-    return observationGaps;
+    observationGaps_out = observationGaps;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -27,10 +27,11 @@ namespace core
 namespace semantic
 {
 
-Floor *Room::getFloor() const
+RoomStatus Room::getFloor(Floor *&p_floor_out) const
 {
     std::lock_guard<std::mutex> lock(floorMutex);
-    return p_floor;
+    p_floor_out = p_floor;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

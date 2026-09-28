@@ -25,10 +25,11 @@ namespace core
 namespace semantic
 {
 
-double Marker::getTime() const
+MarkerStatus Marker::getTime(double &time_out) const
 {
     std::lock_guard<std::mutex> lock(stateMutex);
-    return time;
+    time_out = time;
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

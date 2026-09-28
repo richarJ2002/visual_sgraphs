@@ -28,10 +28,11 @@ namespace core
 namespace semantic
 {
 
-bool Floor::hasPlaneIdentity() const
+FloorStatus Floor::hasPlaneIdentity(bool &hasPlaneIdentity_out) const
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
-    return planeIdentity.has_value();
+    hasPlaneIdentity_out = planeIdentity.has_value();
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

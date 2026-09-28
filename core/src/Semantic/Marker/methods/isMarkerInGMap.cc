@@ -25,10 +25,11 @@ namespace core
 namespace semantic
 {
 
-bool Marker::isMarkerInGMap() const
+MarkerStatus Marker::isMarkerInGMap(bool &isMarkerInGMap_out) const
 {
     std::lock_guard<std::mutex> lock(stateMutex);
-    return isInGlobalMap;
+    isMarkerInGMap_out = isInGlobalMap;
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

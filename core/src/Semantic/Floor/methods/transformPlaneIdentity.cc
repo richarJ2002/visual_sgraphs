@@ -28,9 +28,10 @@ namespace core
 namespace semantic
 {
 
-std::optional<Floor::PlaneIdentity> Floor::transformPlaneIdentity(
-    const PlaneIdentity &identity_OldWorld_in,
-    const g2o::Sim3     &transform_oldWorldToNewWorld_in)
+FloorStatus Floor::transformPlaneIdentity(
+    const PlaneIdentity                 &identity_OldWorld_in,
+    const g2o::Sim3                     &transform_oldWorldToNewWorld_in,
+    std::optional<Floor::PlaneIdentity> &transformedIdentity_out)
 {
     Eigen::Vector4d equation_OldWorld = identity_OldWorld_in.equation_World;
     const double    oldNormalNorm     = equation_OldWorld.head<3>().norm();
@@ -38,7 +39,8 @@ std::optional<Floor::PlaneIdentity> Floor::transformPlaneIdentity(
     if (!equation_OldWorld.allFinite() || !std::isfinite(oldNormalNorm) ||
         oldNormalNorm < 1e-8)
     {
-        return std::nullopt;
+        transformedIdentity_out = std::nullopt;
+        return FloorStatus::FLOOR_STATUS_SUCCESS;
     }
 
     equation_OldWorld /= oldNormalNorm;
@@ -52,7 +54,8 @@ std::optional<Floor::PlaneIdentity> Floor::transformPlaneIdentity(
     if (!rotation_oldWorldToNewWorld.allFinite() ||
         !translation_NewWorld.allFinite() || !std::isfinite(scale))
     {
-        return std::nullopt;
+        transformedIdentity_out = std::nullopt;
+        return FloorStatus::FLOOR_STATUS_SUCCESS;
     }
 
     const Eigen::Vector3d normal_NewWorld =
@@ -66,13 +69,16 @@ std::optional<Floor::PlaneIdentity> Floor::transformPlaneIdentity(
     if (!equation_NewWorld.allFinite() || !std::isfinite(newNormalNorm) ||
         newNormalNorm < 1e-8)
     {
-        return std::nullopt;
+        transformedIdentity_out = std::nullopt;
+        return FloorStatus::FLOOR_STATUS_SUCCESS;
     }
 
     equation_NewWorld /= newNormalNorm;
-    return PlaneIdentity{equation_NewWorld,
-                         identity_OldWorld_in.finiteSupportCount,
-                         identity_OldWorld_in.observationCount};
+    transformedIdentity_out =
+        PlaneIdentity{equation_NewWorld,
+                      identity_OldWorld_in.finiteSupportCount,
+                      identity_OldWorld_in.observationCount};
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

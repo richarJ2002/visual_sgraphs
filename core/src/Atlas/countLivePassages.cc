@@ -41,7 +41,14 @@ std::size_t countLivePassages(Map *p_map_in)
     std::size_t liveCount = 0U;
     for (semantic::Passage *p_passage : p_map_in->getAllPassages())
     {
-        if (p_passage != nullptr && !p_passage->isBad())
+        bool passageIsBad{};
+        if ((p_passage != nullptr) &&
+            p_passage->isBad(passageIsBad) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_passage != nullptr && !passageIsBad)
         {
             ++liveCount;
         }

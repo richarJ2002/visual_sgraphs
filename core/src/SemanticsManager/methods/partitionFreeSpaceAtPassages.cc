@@ -46,8 +46,21 @@ std::vector<std::vector<Eigen::Vector3d>>
 
     for (semantic::Passage *p_passage : allPassages)
     {
-        if (p_passage != nullptr && !p_passage->isBad() &&
-            p_passage->isPassable())
+        bool passageIsBad{};
+        if ((p_passage != nullptr) &&
+            p_passage->isBad(passageIsBad) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        bool passageIsPassable{};
+        if ((p_passage != nullptr && !passageIsBad) &&
+            p_passage->isPassable(passageIsPassable) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // isPassable cannot fail; continue as before.
+        }
+        if (p_passage != nullptr && !passageIsBad && passageIsPassable)
         {
             confirmedOpenPassages.push_back(p_passage);
         }

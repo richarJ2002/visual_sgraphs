@@ -50,18 +50,31 @@ EntityRef entityRefForFloor(Floor *p_floor_in)
      * exists even though its liveness cannot be read -- unlike
      * entityRefForRoom()'s explicit isBad() read, unknown liveness must
      * never be encoded as true. */
-    reference.localId = p_floor_in->getId();
+    int floor_inId{};
+    if (p_floor_in->getId(floor_inId) != FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    reference.localId = floor_inId;
     reference.livenessUnavailableReason =
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA;
 
-    core::Map *p_map = p_floor_in->getMap();
+    core::Map *p_map = nullptr;
+    if (p_floor_in->getMap(p_map) != FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     if (p_map == nullptr)
     {
         reference.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
         return reference;
     }
-    reference.key =
-        makeKey(EntityKind::FLOOR, p_map->getId(), p_floor_in->getId());
+    int floor_inId2{};
+    if (p_floor_in->getId(floor_inId2) != FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    reference.key    = makeKey(EntityKind::FLOOR, p_map->getId(), floor_inId2);
     reference.reason = UnavailableReason::NONE;
     return reference;
 }

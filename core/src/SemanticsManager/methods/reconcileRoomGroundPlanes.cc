@@ -35,16 +35,31 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
 
     std::vector<vs_graphs::core::semantic::Floor *> floors =
         p_currentMap->getAllFloors();
-    semantic::Floor *p_canonicalFloor =
-        semantic::Floor::selectBestObservedFloor(floors);
-    if (p_canonicalFloor == nullptr || !p_canonicalFloor->hasPlaneIdentity())
+    semantic::Floor *p_canonicalFloor = nullptr;
+    if (semantic::Floor::selectBestObservedFloor(floors, p_canonicalFloor) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // selectBestObservedFloor cannot fail; continue as before.
+    }
+    bool canonicalFloorHasPlaneIdentity{};
+    if (!(p_canonicalFloor == nullptr) &&
+        p_canonicalFloor->hasPlaneIdentity(canonicalFloorHasPlaneIdentity) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // hasPlaneIdentity cannot fail; continue as before.
+    }
+    if (p_canonicalFloor == nullptr || !canonicalFloorHasPlaneIdentity)
     {
         /* No canonical identity to reconcile against yet. */
         return;
     }
 
-    const std::optional<semantic::Floor::PlaneIdentity> canonicalIdentity =
-        p_canonicalFloor->getPlaneIdentity();
+    std::optional<semantic::Floor::PlaneIdentity> canonicalIdentity{};
+    if (p_canonicalFloor->getPlaneIdentity(canonicalIdentity) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getPlaneIdentity cannot fail; continue as before.
+    }
     if (!canonicalIdentity.has_value())
     {
         return;
@@ -56,12 +71,24 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
     for (vs_graphs::core::semantic::Room *p_room :
          p_atlas->getAllDetectedMapRooms())
     {
-        if (p_room == nullptr || p_room->isBad())
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room == nullptr || roomIsBad)
         {
             continue;
         }
 
-        geometric::Plane *p_roomGroundPlane = p_room->getGroundPlane();
+        geometric::Plane *p_roomGroundPlane = nullptr;
+        if (p_room->getGroundPlane(p_roomGroundPlane) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getGroundPlane cannot fail; continue as before.
+        }
         if (p_roomGroundPlane == nullptr || p_roomGroundPlane->isBad() ||
             p_roomGroundPlane == p_canonicalGroundPlane)
         {
@@ -93,13 +120,19 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
 
         double normalAngle_deg = 0.0;
         double offset_m        = 0.0;
+        bool   isMatch{};
         if (semantic::Floor::planeIdentitiesMatch(
                 canonicalIdentity.value(),
                 roomIdentity,
                 semantic::Floor::kMergeMaxPlaneNormalAngle_deg,
                 semantic::Floor::kMergeMaxPlaneOffset_m,
                 normalAngle_deg,
-                offset_m))
+                offset_m,
+                isMatch) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // planeIdentitiesMatch cannot fail; continue as before.
+        }
+        if (isMatch)
         {
             /* Within tolerance -- nothing to reconcile. */
             continue;
@@ -112,23 +145,49 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
                 canonicalIdentity->observationCount &&
             p_canonicalGroundPlane != nullptr)
         {
-            p_room->setGroundPlane(p_canonicalGroundPlane);
-            std::cout << "[SemMgr] semantic::Room#" << p_room->getId()
+            if (p_room->setGroundPlane(p_canonicalGroundPlane) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setGroundPlane cannot fail; continue as before.
+            }
+            int roomId{};
+            if (p_room->getId(roomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int canonicalFloorId{};
+            if (p_canonicalFloor->getId(canonicalFloorId) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            std::cout << "[SemMgr] semantic::Room#" << roomId
                       << "'s ground plane disagreed with semantic::Floor#"
-                      << p_canonicalFloor->getId()
-                      << "'s canonical level (normal " << normalAngle_deg
-                      << " deg, offset " << offset_m
+                      << canonicalFloorId << "'s canonical level (normal "
+                      << normalAngle_deg << " deg, offset " << offset_m
                       << " m) -- re-pointed to the canonical plane."
                       << std::endl;
         }
         else
         {
+            int roomId2{};
+            if (p_room->getId(roomId2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int canonicalFloorId2{};
+            if (p_canonicalFloor->getId(canonicalFloorId2) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             std::cout
-                << "[SemMgr] semantic::Room#" << p_room->getId()
+                << "[SemMgr] semantic::Room#" << roomId2
                 << "'s ground plane is more observed than semantic::Floor#"
-                << p_canonicalFloor->getId()
-                << "'s current canonical level (normal " << normalAngle_deg
-                << " deg, offset " << offset_m
+                << canonicalFloorId2 << "'s current canonical level (normal "
+                << normalAngle_deg << " deg, offset " << offset_m
                 << " m) -- left as-is; the floor will re-select its "
                    "canonical identity next cycle."
                 << std::endl;

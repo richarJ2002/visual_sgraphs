@@ -60,19 +60,37 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
     for (vs_graphs::core::semantic::Room *p_room_World : allRooms_World)
     {
         /* Skip room if invalid */
-        if (p_room_World == nullptr || p_room_World->isBad())
+        bool room_WorldIsBad{};
+        if (!(p_room_World == nullptr) &&
+            p_room_World->isBad(room_WorldIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room_World == nullptr || room_WorldIsBad)
         {
             continue;
         }
 
         /* Skip rooms already matched to another cluster in this cycle */
-        if (excludedRoomIds_in.count(p_room_World->getId()) > 0)
+        int room_WorldId{};
+        if (p_room_World->getId(room_WorldId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        if (excludedRoomIds_in.count(room_WorldId) > 0)
         {
             continue;
         }
 
         /* Extract room centroid */
-        const Eigen::Vector3d roomCenter_World = p_room_World->getCentroid();
+        Eigen::Vector3d roomCenter_World{};
+        if (p_room_World->getCentroid(roomCenter_World) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
 
         /* Find the distance from the cluster center to the room center */
         const double roomCenterRelClusterCenterDistance =
@@ -85,8 +103,12 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
             static_cast<double>(p_sysParams->roomSeg.finiteWallBoundsMargin_m));
 
         /* Extract the walls from the room */
-        const std::vector<vs_graphs::core::geometric::Plane *> roomWallsList =
-            p_room_World->getWalls();
+        std::vector<vs_graphs::core::geometric::Plane *> roomWallsList{};
+        if (p_room_World->getWalls(roomWallsList) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
 
         /* Init a list to track the room wall ids */
         std::unordered_set<int> roomWallIds;

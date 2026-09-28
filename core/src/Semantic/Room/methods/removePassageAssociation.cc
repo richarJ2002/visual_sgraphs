@@ -27,12 +27,13 @@ namespace core
 namespace semantic
 {
 
-bool Room::removePassageAssociation(
-    vs_graphs::core::semantic::Passage *p_removedPassage_in)
+RoomStatus Room::removePassageAssociation(
+    vs_graphs::core::semantic::Passage *p_removedPassage_in,
+    bool                               &wasPassageRemoved_out)
 {
     if (p_removedPassage_in == nullptr)
     {
-        return false;
+        return RoomStatus::ROOM_STATUS_INVALID_ARGUMENT;
     }
 
     std::lock_guard<std::mutex> lock(mapMutex);
@@ -42,11 +43,13 @@ bool Room::removePassageAssociation(
 
     if (passageIt == doorways.end())
     {
-        return false;
+        wasPassageRemoved_out = false;
+        return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
     doorways.erase(passageIt);
-    return true;
+    wasPassageRemoved_out = true;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -27,11 +27,12 @@ namespace core
 namespace semantic
 {
 
-bool Room::removeWall(geometric::Plane *p_wall_in)
+RoomStatus Room::removeWall(geometric::Plane *p_wall_in,
+                            bool             &wasWallRemoved_out)
 {
     if (p_wall_in == nullptr)
     {
-        return false;
+        return RoomStatus::ROOM_STATUS_INVALID_ARGUMENT;
     }
 
     std::lock_guard<std::mutex> lock(wallsMutex);
@@ -40,7 +41,8 @@ bool Room::removeWall(geometric::Plane *p_wall_in)
     const bool wasWallRemoved = wallIt != walls.end();
     walls.erase(wallIt, walls.end());
 
-    return wasWallRemoved;
+    wasWallRemoved_out = wasWallRemoved;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

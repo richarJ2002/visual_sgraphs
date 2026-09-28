@@ -26,7 +26,7 @@ namespace core
 namespace semantic
 {
 
-void RoomTracker::reset(double now_s_in)
+RoomTrackerStatus RoomTracker::reset(double now_s_in)
 {
     trackingState = RoomTrackingState::UNKNOWN;
     eventHistory.clear();
@@ -42,6 +42,8 @@ void RoomTracker::reset(double now_s_in)
     {
         lastReceivedTime_s = now_s_in;
     }
+
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

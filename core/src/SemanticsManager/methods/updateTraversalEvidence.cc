@@ -148,7 +148,14 @@ void SemanticsManager::updateTraversalEvidence(
 
         for (vs_graphs::core::semantic::Passage *p_passage : passages)
         {
-            if (p_passage == nullptr || !p_passage->isPassable())
+            bool passageIsPassable{};
+            if (!(p_passage == nullptr) &&
+                p_passage->isPassable(passageIsPassable) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // isPassable cannot fail; continue as before.
+            }
+            if (p_passage == nullptr || !passageIsPassable)
             {
                 continue;
             }
@@ -165,16 +172,31 @@ void SemanticsManager::updateTraversalEvidence(
                                              minimumSideDistance_m,
                                              true))
             {
-                const bool wasSettled = p_passage->getTraversalEvidence();
+                bool wasSettled{};
+                if (p_passage->getTraversalEvidence(wasSettled) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getTraversalEvidence cannot fail; continue as before.
+                }
 
                 semantic::Passage::TraversalDirection traversalDirection =
                     semantic::Passage::TraversalDirection::UNKNOWN;
-                semantic::Passage::KnownSideProvenance knownSide =
-                    p_passage->getKnownSideProvenance();
+                semantic::Passage::KnownSideProvenance knownSide{};
+                if (p_passage->getKnownSideProvenance(knownSide) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getKnownSideProvenance cannot fail; continue as before.
+                }
                 if (!knownSide.hasDirection())
                 {
+                    g2o::Plane3D passageGlobalEquation{};
+                    if (p_passage->getGlobalEquation(passageGlobalEquation) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // getGlobalEquation cannot fail; continue as before.
+                    }
                     Eigen::Vector4d passageEquation =
-                        p_passage->getGlobalEquation().coeffs();
+                        passageGlobalEquation.coeffs();
                     const double normalNorm = passageEquation.head<3>().norm();
                     if (passageEquation.allFinite() && normalNorm > 1e-8)
                     {
@@ -185,17 +207,36 @@ void SemanticsManager::updateTraversalEvidence(
                             passageEquation(3);
                         if (std::abs(observationSide) > minimumSideDistance_m)
                         {
-                            p_passage->setKnownSideDirection(
-                                (observationSide > 0.0 ? 1.0 : -1.0) *
-                                passageEquation.head<3>());
-                            knownSide = p_passage->getKnownSideProvenance();
+                            if (p_passage->setKnownSideDirection(
+                                    (observationSide > 0.0 ? 1.0 : -1.0) *
+                                    passageEquation.head<3>()) !=
+                                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                            {
+                                // Rejected input: ignored, as before.
+                            }
+                            semantic::Passage::KnownSideProvenance
+                                passageKnownSideProvenance{};
+                            if (p_passage->getKnownSideProvenance(
+                                    passageKnownSideProvenance) !=
+                                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                            {
+                                // getKnownSideProvenance cannot fail; continue
+                                // as before.
+                            }
+                            knownSide = passageKnownSideProvenance;
                         }
                     }
                 }
                 if (knownSide.hasDirection())
                 {
+                    Eigen::Vector3d passageCentroid{};
+                    if (p_passage->getCentroid(passageCentroid) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // getCentroid cannot fail; continue as before.
+                    }
                     const Eigen::Vector3d startFromPassage_World_m =
-                        previousCameraCenter_World_m - p_passage->getCentroid();
+                        previousCameraCenter_World_m - passageCentroid;
                     traversalDirection =
                         startFromPassage_World_m.dot(
                             knownSide.direction_World) >= 0.0
@@ -212,7 +253,15 @@ void SemanticsManager::updateTraversalEvidence(
                 if (traversalDirection ==
                     semantic::Passage::TraversalDirection::KNOWN_TO_FAR)
                 {
-                    p_reachedRoom = p_passage->getProspectiveRoom();
+                    vs_graphs::core::semantic::Room *p_passageProspectiveRoom =
+                        nullptr;
+                    if (p_passage->getProspectiveRoom(
+                            p_passageProspectiveRoom) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // getProspectiveRoom cannot fail; continue as before.
+                    }
+                    p_reachedRoom = p_passageProspectiveRoom;
                 }
                 else if (traversalDirection ==
                          semantic::Passage::TraversalDirection::FAR_TO_KNOWN)
@@ -221,45 +270,117 @@ void SemanticsManager::updateTraversalEvidence(
                 }
                 const std::vector<semantic::Room *> activeRooms =
                     p_activeMap->getAllRooms();
+                bool reachedRoomIsBad{};
+                if ((p_reachedRoom != nullptr) &&
+                    p_reachedRoom->isBad(reachedRoomIsBad) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                core::Map *p_reachedRoomMap = nullptr;
+                if ((p_reachedRoom != nullptr && !reachedRoomIsBad) &&
+                    p_reachedRoom->getMap(p_reachedRoomMap) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getMap cannot fail; continue as before.
+                }
                 const bool reachedRoomIsLive =
-                    p_reachedRoom != nullptr && !p_reachedRoom->isBad() &&
-                    p_reachedRoom->getMap() == p_activeMap &&
+                    p_reachedRoom != nullptr && !reachedRoomIsBad &&
+                    p_reachedRoomMap == p_activeMap &&
                     std::find(activeRooms.begin(),
                               activeRooms.end(),
                               p_reachedRoom) != activeRooms.end();
                 if (reachedRoomIsLive)
                 {
-                    if (p_reachedRoom->getRoomVariant() ==
+                    semantic::Room::RoomVariant reachedRoomRoomVariant{};
+                    if (p_reachedRoom->getRoomVariant(reachedRoomRoomVariant) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getRoomVariant cannot fail; continue as before.
+                    }
+                    if (reachedRoomRoomVariant ==
                         semantic::Room::RoomVariant::UNDEFINED)
                     {
                         p_activeMap->promoteCandidateMapRoom(p_reachedRoom);
-                        p_reachedRoom->setRoomVariant(
-                            semantic::Room::RoomVariant::ROOM);
-                        p_reachedRoom->setName(
-                            "semantic::Room#" +
-                            std::to_string(p_reachedRoom->getId()));
-                        p_reachedRoom->setBoundaryStatus(
-                            semantic::Room::BoundaryStatus::UNOBSERVED);
-                        prospectiveRoomCycles.erase(p_reachedRoom->getId());
+                        if (p_reachedRoom->setRoomVariant(
+                                semantic::Room::RoomVariant::ROOM) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // setRoomVariant cannot fail; continue as before.
+                        }
+                        int reachedRoomId2{};
+                        if (p_reachedRoom->getId(reachedRoomId2) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
+                        if (p_reachedRoom->setName(
+                                "semantic::Room#" +
+                                std::to_string(reachedRoomId2)) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // setName cannot fail; continue as before.
+                        }
+                        if (p_reachedRoom->setBoundaryStatus(
+                                semantic::Room::BoundaryStatus::UNOBSERVED) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // setBoundaryStatus cannot fail; continue as
+                            // before.
+                        }
+                        int reachedRoomId3{};
+                        if (p_reachedRoom->getId(reachedRoomId3) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
+                        prospectiveRoomCycles.erase(reachedRoomId3);
 
-                        semantic::Floor *p_floor =
-                            semantic::Floor::selectBestObservedFloor(
-                                p_activeMap->getAllFloors());
+                        semantic::Floor *p_floor = nullptr;
+                        if (semantic::Floor::selectBestObservedFloor(
+                                p_activeMap->getAllFloors(),
+                                p_floor) !=
+                            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                        {
+                            // selectBestObservedFloor cannot fail; continue as
+                            // before.
+                        }
                         if (p_floor != nullptr)
                         {
-                            p_floor->addRoom(p_reachedRoom);
+                            if (p_floor->addRoom(p_reachedRoom) !=
+                                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                            {
+                                // addRoom cannot fail; continue as before.
+                            }
+                        }
+                        int reachedRoomId4{};
+                        if (p_reachedRoom->getId(reachedRoomId4) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
+                        int passageId{};
+                        if (p_passage->getId(passageId) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
                         }
                         std::cout
                             << "SG_PIPELINE {\"event\":\"room_promotion\","
                                "\"map_id\":"
                             << p_activeMap->getId()
-                            << ",\"room_id\":" << p_reachedRoom->getId()
-                            << ",\"passage_id\":" << p_passage->getId()
+                            << ",\"room_id\":" << reachedRoomId4
+                            << ",\"passage_id\":" << passageId
                             << ",\"reason\":\"PASSAGE_TRAVERSAL\","
                                "\"semantic_cycle\":"
                             << pipelineSemanticCycle << "}" << std::endl;
                     }
-                    const int reachedRoomId = p_reachedRoom->getId();
+                    int reachedRoomId{};
+                    if (p_reachedRoom->getId(reachedRoomId) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
                     {
                         std::lock_guard<std::mutex> currentRoomLock(
                             currentRoomMutex);
@@ -268,13 +389,22 @@ void SemanticsManager::updateTraversalEvidence(
                     p_atlas->setCurrentSemanticRoomIdentity(reachedRoomId);
                     /* Completed passage traversal into this room: entry
                      * evidence marks it visited. */
-                    p_reachedRoom->setPreviouslyVisited(true);
+                    if (p_reachedRoom->setPreviouslyVisited(true) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // setPreviouslyVisited cannot fail; continue as before.
+                    }
                 }
 
-                const bool addedTraversal =
-                    p_passage->addTraversalObservation(traversalDirection,
+                bool addedTraversal{};
+                if (p_passage->addTraversalObservation(traversalDirection,
                                                        p_keyFrame->frameId,
-                                                       p_keyFrame->id);
+                                                       p_keyFrame->id,
+                                                       addedTraversal) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // addTraversalObservation cannot fail; continue as before.
+                }
 
                 /* Only newly accepted segment evidence is a new tracker event.
                  * The passage owns segment deduplication, so replayed history
@@ -284,9 +414,18 @@ void SemanticsManager::updateTraversalEvidence(
                     std::lock_guard<std::mutex> currentRoomLock(
                         currentRoomMutex);
                     isCrossingEventPending = true;
+                    bool passageHasBidirectionalTraversalEvidence{};
+                    if (!(isCrossingBothSidesPending) &&
+                        p_passage->hasBidirectionalTraversalEvidence(
+                            passageHasBidirectionalTraversalEvidence) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // hasBidirectionalTraversalEvidence cannot fail;
+                        // continue as before.
+                    }
                     isCrossingBothSidesPending =
                         isCrossingBothSidesPending ||
-                        p_passage->hasBidirectionalTraversalEvidence();
+                        passageHasBidirectionalTraversalEvidence;
                     /* Test seam: empty outside tests (SemanticsManager.h). */
                     std::function<void()> publishHook =
                         std::move(roomTrackerPendingPublishHook);
@@ -298,8 +437,13 @@ void SemanticsManager::updateTraversalEvidence(
 
                 if (addedTraversal && !wasSettled)
                 {
-                    std::cout << "[SemMgr] semantic::Passage#"
-                              << p_passage->getId()
+                    int passageId2{};
+                    if (p_passage->getId(passageId2) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    std::cout << "[SemMgr] semantic::Passage#" << passageId2
                               << " traversed (traversal evidence settled)."
                               << std::endl;
                 }

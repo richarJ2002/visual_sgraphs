@@ -23,6 +23,7 @@
 
 #include "KeyFrame.h"
 #include "Map.h"
+#include "Semantic/MarkerStatus.h"
 
 namespace vs_graphs
 {
@@ -83,31 +84,34 @@ class Marker
      * @param[in]   transform_oldWorldToNewWorld_in
      *              Transform from the old map frame to the surviving frame.
      */
-    void applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
+    [[nodiscard]] MarkerStatus
+        applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
 
-    int  getId() const;
-    void setId(int id_in);
+    [[nodiscard]] MarkerStatus getId(int &id_out) const;
+    [[nodiscard]] MarkerStatus setId(int id_in);
 
-    int  getOpId() const;
-    void setOpId(int opId_in);
+    [[nodiscard]] MarkerStatus getOpId(int &opId_out) const;
+    [[nodiscard]] MarkerStatus setOpId(int opId_in);
 
-    int  getOpIdG() const;
-    void setOpIdG(int opIdG_in);
+    [[nodiscard]] MarkerStatus getOpIdG(int &opIdG_out) const;
+    [[nodiscard]] MarkerStatus setOpIdG(int opIdG_in);
 
-    double getTime() const;
-    void   setTime(double timestamp_in);
+    [[nodiscard]] MarkerStatus getTime(double &time_out) const;
+    [[nodiscard]] MarkerStatus setTime(double timestamp_in);
 
-    MarkerVariant getMarkerType() const;
-    void          setMarkerType(MarkerVariant newType_in);
+    [[nodiscard]] MarkerStatus
+        getMarkerType(Marker::MarkerVariant &markerType_out) const;
+    [[nodiscard]] MarkerStatus setMarkerType(MarkerVariant newType_in);
 
-    bool isMarkerInGMap() const;
-    void setMarkerInGMap(bool isInGlobalMap_in);
+    [[nodiscard]] MarkerStatus isMarkerInGMap(bool &isMarkerInGMap_out) const;
+    [[nodiscard]] MarkerStatus setMarkerInGMap(bool isInGlobalMap_in);
 
-    Sophus::SE3f getLocalPose() const;
-    void         setLocalPose(const Sophus::SE3f &localPose_in);
+    [[nodiscard]] MarkerStatus getLocalPose(Sophus::SE3f &localPose_out) const;
+    [[nodiscard]] MarkerStatus setLocalPose(const Sophus::SE3f &localPose_in);
 
-    Sophus::SE3f getGlobalPose() const;
-    void         setGlobalPose(const Sophus::SE3f &globalPose_in);
+    [[nodiscard]] MarkerStatus
+        getGlobalPose(Sophus::SE3f &globalPose_out) const;
+    [[nodiscard]] MarkerStatus setGlobalPose(const Sophus::SE3f &globalPose_in);
 
     /*!
      * @brief       Adds or replaces a marker observation from one keyframe.
@@ -118,23 +122,25 @@ class Marker
      * @param[in]   markerPose_markerToCamera_in
      *              Marker pose expressed in the observing camera frame.
      */
-    void addObservation(KeyFrame           *p_keyFrame_in,
-                        const Sophus::SE3f &markerPose_markerToCamera_in);
+    [[nodiscard]] MarkerStatus
+        addObservation(KeyFrame           *p_keyFrame_in,
+                       const Sophus::SE3f &markerPose_markerToCamera_in);
 
     /*!
      * @brief Removes an observation before its keyframe is retired.
      *
      * @param[in] p_keyFrame_in Non-owning observing keyframe pointer.
      */
-    void eraseObservation(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] MarkerStatus eraseObservation(KeyFrame *p_keyFrame_in);
 
     /*!
      * @brief       Returns a thread-safe snapshot of marker observations.
      */
-    std::map<KeyFrame *, Sophus::SE3f> getObservations() const;
+    [[nodiscard]] MarkerStatus getObservations(
+        std::map<core::KeyFrame *, Sophus::SE3f> &observations_out) const;
 
-    Map *getMap();
-    void setMap(Map *p_map_in);
+    [[nodiscard]] MarkerStatus getMap(core::Map *&p_map_out);
+    [[nodiscard]] MarkerStatus setMap(Map *p_map_in);
 
   protected:
     Map               *p_map{nullptr};

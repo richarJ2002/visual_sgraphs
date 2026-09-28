@@ -32,10 +32,22 @@ std::pair<bool, std::string> GeoSemHelpers::checkIfMarkerIsDoorway(
     // Loop over all markers attached to doorways
     for (const auto &room : envRooms_in)
     {
-        if (room->getMetaMarkerId() == markerId_in)
+        int roomMetaMarkerId{};
+        if (room->getMetaMarkerId(roomMetaMarkerId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getMetaMarkerId cannot fail; continue as before.
+        }
+        if (roomMetaMarkerId == markerId_in)
         {
             isDoorway = false;
-            name      = room->getName();
+            std::string roomName{};
+            if (room->getName(roomName) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getName cannot fail; continue as before.
+            }
+            name = roomName;
             break; // No need to continue searching if found
         }
     }

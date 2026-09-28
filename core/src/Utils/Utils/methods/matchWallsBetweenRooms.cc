@@ -58,15 +58,27 @@ std::size_t Utils::matchWallsBetweenRooms(
     {
         std::vector<std::pair<geometric::Plane *, Eigen::Vector3d>> validWalls;
 
-        for (geometric::Plane *p_wall : p_room_in->getWalls())
+        std::vector<geometric::Plane *> room_inWalls{};
+        if (p_room_in->getWalls(room_inWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
+        for (geometric::Plane *p_wall : room_inWalls)
         {
             if (p_wall == nullptr || p_wall->isBad())
             {
                 continue;
             }
 
-            const std::optional<Eigen::Vector3d> normal_World =
-                p_room_in->getWallNormalTowardRoom_World(p_wall);
+            std::optional<Eigen::Vector3d> normal_World{};
+            if (p_room_in->getWallNormalTowardRoom_World(p_wall,
+                                                         normal_World) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWallNormalTowardRoom_World cannot fail; continue as
+                // before.
+            }
 
             if (!normal_World.has_value())
             {

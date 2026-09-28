@@ -25,10 +25,12 @@ namespace core
 namespace semantic
 {
 
-void Marker::setTime(double timestamp_in)
+MarkerStatus Marker::setTime(double timestamp_in)
 {
     std::lock_guard<std::mutex> lock(stateMutex);
     time = timestamp_in;
+
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

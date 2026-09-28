@@ -36,13 +36,24 @@ void SemanticsManager::recomputeRoomCentroidsFromWalls(void)
 
     for (vs_graphs::core::semantic::Room *p_room : p_atlas->getAllRooms())
     {
-        if (p_room == nullptr || p_room->isBad())
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room == nullptr || roomIsBad)
         {
             continue;
         }
 
-        const std::vector<vs_graphs::core::geometric::Plane *> roomWalls =
-            p_room->getWalls();
+        std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
+        if (p_room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
         if (roomWalls.empty())
         {
             continue;
@@ -60,8 +71,14 @@ void SemanticsManager::recomputeRoomCentroidsFromWalls(void)
 
             const Eigen::Vector3d wallCentroid_World_m =
                 p_wall->getCentroid().cast<double>();
-            const std::optional<Eigen::Vector3d> inwardNormal_World =
-                p_room->getWallNormalTowardRoom_World(p_wall);
+            std::optional<Eigen::Vector3d> inwardNormal_World{};
+            if (p_room->getWallNormalTowardRoom_World(p_wall,
+                                                      inwardNormal_World) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWallNormalTowardRoom_World cannot fail; continue as
+                // before.
+            }
 
             wallCentroidSum +=
                 inwardNormal_World
@@ -73,7 +90,11 @@ void SemanticsManager::recomputeRoomCentroidsFromWalls(void)
 
         if (wallCount > 0)
         {
-            p_room->setCentroid(wallCentroidSum / wallCount);
+            if (p_room->setCentroid(wallCentroidSum / wallCount) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setCentroid cannot fail; continue as before.
+            }
         }
     }
 }

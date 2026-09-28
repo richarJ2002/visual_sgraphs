@@ -17,14 +17,24 @@ namespace core
 namespace semantic
 {
 
-std::vector<SemanticCandidate> SemanticCandidates::generate(
+SemanticCandidatesStatus SemanticCandidates::generate(
     const std::map<long unsigned int, std::vector<RoomContextSnapshot>>
-                                  &history_in,
-    const SemanticCandidateConfig &configuration_in,
-    const std::optional<int>       anchorRoomId_in)
+                                   &history_in,
+    std::vector<SemanticCandidate> &candidates_out,
+    const SemanticCandidateConfig  &configuration_in,
+    const std::optional<int>        anchorRoomId_in)
 {
-    return generateWithStatus(history_in, configuration_in, anchorRoomId_in)
-        .candidates;
+    SemanticCandidateGeneration generation{};
+    if (generateWithStatus(history_in,
+                           generation,
+                           configuration_in,
+                           anchorRoomId_in) !=
+        SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+    {
+        // generateWithStatus cannot fail; continue as before.
+    }
+    candidates_out = generation.candidates;
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

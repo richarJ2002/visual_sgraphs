@@ -27,10 +27,12 @@ namespace core
 namespace semantic
 {
 
-void Room::setMap(core::Map *p_map_in)
+RoomStatus Room::setMap(core::Map *p_map_in)
 {
     unique_lock<mutex> lock(mapMutex);
     p_map = p_map_in;
+
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

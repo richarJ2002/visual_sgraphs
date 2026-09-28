@@ -212,76 +212,183 @@ void Utils::fuseDuplicateRoomsAfterMerge(
     /* Evaluate each imported hypothesis against rooms that already existed. */
     for (semantic::Room *p_importedRoom : importedRooms_in)
     {
-        if (p_importedRoom == nullptr || p_importedRoom->isBad())
+        bool importedRoomIsBad{};
+        if (!(p_importedRoom == nullptr) &&
+            p_importedRoom->isBad(importedRoomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_importedRoom == nullptr || importedRoomIsBad)
         {
             continue;
         }
 
-        const semantic::Room::RoomVariant importedRoomType =
-            p_importedRoom->getRoomVariant();
+        semantic::Room::RoomVariant importedRoomType{};
+        if (p_importedRoom->getRoomVariant(importedRoomType) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
 
         if (importedRoomType == semantic::Room::RoomVariant::UNDEFINED)
         {
             continue;
         }
 
-        const Eigen::Vector3d importedCentroid_World_m =
-            p_importedRoom->getCentroid();
+        Eigen::Vector3d importedCentroid_World_m{};
+        if (p_importedRoom->getCentroid(importedCentroid_World_m) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
 
         if (!importedCentroid_World_m.allFinite())
         {
             continue;
         }
 
-        const std::vector<geometric::Plane *> importedWalls =
-            p_importedRoom->getWalls();
+        std::vector<geometric::Plane *> importedWalls{};
+        if (p_importedRoom->getWalls(importedWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
 
         semantic::Room *p_bestRetainedRoom = nullptr;
         double bestCentroidDistance_m = std::numeric_limits<double>::infinity();
 
         for (semantic::Room *p_candidateRoom : p_map_inout->getAllRooms())
         {
+            bool candidateRoomIsBad{};
+            if (!(p_candidateRoom == nullptr ||
+                  p_candidateRoom == p_importedRoom) &&
+                p_candidateRoom->isBad(candidateRoomIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            semantic::Room::RoomVariant candidateRoomRoomVariant{};
+            if (!(p_candidateRoom == nullptr ||
+                  p_candidateRoom == p_importedRoom || candidateRoomIsBad ||
+                  importedRoomSet.count(p_candidateRoom) > 0U) &&
+                p_candidateRoom->getRoomVariant(candidateRoomRoomVariant) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomVariant cannot fail; continue as before.
+            }
             if (p_candidateRoom == nullptr ||
-                p_candidateRoom == p_importedRoom || p_candidateRoom->isBad() ||
+                p_candidateRoom == p_importedRoom || candidateRoomIsBad ||
                 importedRoomSet.count(p_candidateRoom) > 0U ||
-                p_candidateRoom->getRoomVariant() != importedRoomType)
+                candidateRoomRoomVariant != importedRoomType)
             {
                 continue;
             }
 
-            const std::string importedIdentity  = p_importedRoom->getRoomTag();
-            const std::string candidateIdentity = p_candidateRoom->getRoomTag();
-            const bool        identitiesMatch =
+            std::string importedIdentity{};
+            if (p_importedRoom->getRoomTag(importedIdentity) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
+            std::string candidateIdentity{};
+            if (p_candidateRoom->getRoomTag(candidateIdentity) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
+            int importedRoomId{};
+            if (!(!importedIdentity.empty() && !candidateIdentity.empty()) &&
+                p_importedRoom->getId(importedRoomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int candidateRoomId{};
+            if (!(!importedIdentity.empty() && !candidateIdentity.empty()) &&
+                p_candidateRoom->getId(candidateRoomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            const bool identitiesMatch =
                 !importedIdentity.empty() && !candidateIdentity.empty()
-                           ? importedIdentity == candidateIdentity
-                           : p_importedRoom->getId() == p_candidateRoom->getId();
+                    ? importedIdentity == candidateIdentity
+                    : importedRoomId == candidateRoomId;
             if (identitiesMatch)
             {
                 p_bestRetainedRoom = p_candidateRoom;
+                Eigen::Vector3d candidateRoomCentroid{};
+                if (p_candidateRoom->getCentroid(candidateRoomCentroid) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getCentroid cannot fail; continue as before.
+                }
                 bestCentroidDistance_m =
-                    (p_candidateRoom->getCentroid() - importedCentroid_World_m)
-                        .norm();
+                    (candidateRoomCentroid - importedCentroid_World_m).norm();
                 break;
             }
 
             /* Geometry-only fusion remains a compatibility fallback solely
              * for legacy unnumbered rooms. Mission rooms always carry a
              * non-negative stable ID and must never cross identities. */
-            if (p_importedRoom->getId() >= 0 || p_candidateRoom->getId() >= 0)
+            int importedRoomId2{};
+            if (p_importedRoom->getId(importedRoomId2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int candidateRoomId2{};
+            if (!(importedRoomId2 >= 0) &&
+                p_candidateRoom->getId(candidateRoomId2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (importedRoomId2 >= 0 || candidateRoomId2 >= 0)
             {
                 continue;
             }
 
-            if (p_importedRoom->getHasKnownLabel() &&
-                p_candidateRoom->getHasKnownLabel() &&
-                p_importedRoom->getMetaMarkerId() !=
-                    p_candidateRoom->getMetaMarkerId())
+            bool importedRoomHasKnownLabel{};
+            if (p_importedRoom->getHasKnownLabel(importedRoomHasKnownLabel) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getHasKnownLabel cannot fail; continue as before.
+            }
+            bool candidateRoomHasKnownLabel{};
+            if ((importedRoomHasKnownLabel) &&
+                p_candidateRoom->getHasKnownLabel(candidateRoomHasKnownLabel) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getHasKnownLabel cannot fail; continue as before.
+            }
+            int importedRoomMetaMarkerId{};
+            if ((importedRoomHasKnownLabel && candidateRoomHasKnownLabel) &&
+                p_importedRoom->getMetaMarkerId(importedRoomMetaMarkerId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getMetaMarkerId cannot fail; continue as before.
+            }
+            int candidateRoomMetaMarkerId{};
+            if ((importedRoomHasKnownLabel && candidateRoomHasKnownLabel) &&
+                p_candidateRoom->getMetaMarkerId(candidateRoomMetaMarkerId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getMetaMarkerId cannot fail; continue as before.
+            }
+            if (importedRoomHasKnownLabel && candidateRoomHasKnownLabel &&
+                importedRoomMetaMarkerId != candidateRoomMetaMarkerId)
             {
                 continue;
             }
 
-            const Eigen::Vector3d candidateCentroid_World_m =
-                p_candidateRoom->getCentroid();
+            Eigen::Vector3d candidateCentroid_World_m{};
+            if (p_candidateRoom->getCentroid(candidateCentroid_World_m) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
 
             const double centroidDistance_m =
                 (candidateCentroid_World_m - importedCentroid_World_m).norm();
@@ -294,8 +401,12 @@ void Utils::fuseDuplicateRoomsAfterMerge(
                 continue;
             }
 
-            const std::vector<geometric::Plane *> candidateWalls =
-                p_candidateRoom->getWalls();
+            std::vector<geometric::Plane *> candidateWalls{};
+            if (p_candidateRoom->getWalls(candidateWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
 
             std::size_t sameSideSharedWallCount   = 0U;
             bool        hasOppositeSideSharedWall = false;
@@ -365,8 +476,12 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             continue;
         }
 
-        const std::vector<geometric::Plane *> retainedWalls =
-            p_bestRetainedRoom->getWalls();
+        std::vector<geometric::Plane *> retainedWalls{};
+        if (p_bestRetainedRoom->getWalls(retainedWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
 
         /*! A wall can bound the retained (near) room only when no passable
          * passage aperture separates its centroid from the retained room
@@ -413,8 +528,12 @@ void Utils::fuseDuplicateRoomsAfterMerge(
                           .minimumSideDistance_m)
                 : 0.30;
 
-        const Eigen::Vector3d retainedCentroid_World_m =
-            p_bestRetainedRoom->getCentroid();
+        Eigen::Vector3d retainedCentroid_World_m{};
+        if (p_bestRetainedRoom->getCentroid(retainedCentroid_World_m) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
 
         const std::vector<semantic::Passage *> mergePassages =
             p_map_inout->getAllPassages();
@@ -438,9 +557,21 @@ void Utils::fuseDuplicateRoomsAfterMerge(
 
         if (roomsAreSeparatedByPassage)
         {
+            int importedRoomId3{};
+            if (p_importedRoom->getId(importedRoomId3) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int bestRetainedRoomId{};
+            if (p_bestRetainedRoom->getId(bestRetainedRoomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             std::cout << "[SemanticMerge] Preserved semantic::Room#"
-                      << p_importedRoom->getId() << " and semantic::Room#"
-                      << p_bestRetainedRoom->getId()
+                      << importedRoomId3 << " and semantic::Room#"
+                      << bestRetainedRoomId
                       << "; a passable passage separates their centroids."
                       << std::endl;
             continue;
@@ -469,7 +600,19 @@ void Utils::fuseDuplicateRoomsAfterMerge(
                 {
                     return true;
                 }
-                return p_first->getId() < p_second->getId();
+                int firstId{};
+                if (p_first->getId(firstId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int secondId{};
+                if (p_second->getId(secondId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                return firstId < secondId;
             });
 
         for (geometric::Plane *p_importedWall : importedWalls)
@@ -506,17 +649,37 @@ void Utils::fuseDuplicateRoomsAfterMerge(
              * leaving that confirmed owner unchanged. */
             for (semantic::Room *p_existingOwner : mapRooms)
             {
-                if (p_existingOwner == nullptr || p_existingOwner->isBad() ||
+                bool existingOwnerIsBad{};
+                if (!(p_existingOwner == nullptr) &&
+                    p_existingOwner->isBad(existingOwnerIsBad) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                semantic::Room::RoomVariant existingOwnerRoomVariant{};
+                if (!(p_existingOwner == nullptr || existingOwnerIsBad ||
+                      p_existingOwner == p_importedRoom ||
+                      p_existingOwner == p_bestRetainedRoom) &&
+                    p_existingOwner->getRoomVariant(existingOwnerRoomVariant) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getRoomVariant cannot fail; continue as before.
+                }
+                if (p_existingOwner == nullptr || existingOwnerIsBad ||
                     p_existingOwner == p_importedRoom ||
                     p_existingOwner == p_bestRetainedRoom ||
-                    p_existingOwner->getRoomVariant() !=
+                    existingOwnerRoomVariant !=
                         semantic::Room::RoomVariant::ROOM)
                 {
                     continue;
                 }
 
-                const std::vector<geometric::Plane *> ownerWalls =
-                    p_existingOwner->getWalls();
+                std::vector<geometric::Plane *> ownerWalls{};
+                if (p_existingOwner->getWalls(ownerWalls) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getWalls cannot fail; continue as before.
+                }
                 if (std::find(ownerWalls.begin(),
                               ownerWalls.end(),
                               p_importedWall) != ownerWalls.end())
@@ -529,10 +692,21 @@ void Utils::fuseDuplicateRoomsAfterMerge(
             if (p_separatingPassage != nullptr &&
                 p_targetRoom == p_bestRetainedRoom)
             {
-                vs_graphs::core::semantic::Room *p_farSideRoom =
-                    p_separatingPassage->getProspectiveRoom();
+                vs_graphs::core::semantic::Room *p_farSideRoom = nullptr;
+                if (p_separatingPassage->getProspectiveRoom(p_farSideRoom) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getProspectiveRoom cannot fail; continue as before.
+                }
 
-                if (p_farSideRoom == nullptr || p_farSideRoom->isBad() ||
+                bool farSideRoomIsBad{};
+                if (!(p_farSideRoom == nullptr) &&
+                    p_farSideRoom->isBad(farSideRoomIsBad) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_farSideRoom == nullptr || farSideRoomIsBad ||
                     p_farSideRoom == p_importedRoom)
                 {
                     p_farSideRoom = nullptr;
@@ -550,42 +724,82 @@ void Utils::fuseDuplicateRoomsAfterMerge(
          * ownership inside the authorized room fusion. */
         for (const WallTransfer &transfer : wallTransfers)
         {
-            p_importedRoom->removeWall(transfer.p_wall);
+            bool importedRoomWasWallRemoved{};
+            if (p_importedRoom->removeWall(transfer.p_wall,
+                                           importedRoomWasWallRemoved) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                importedRoomWasWallRemoved =
+                    false; // rejected input reads as before
+            }
 
             if (transfer.p_targetRoom == nullptr)
             {
+                int id{};
+                if (transfer.p_separatingPassage->getId(id) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout << "[SemanticMerge] Far-side Wall#"
                           << transfer.p_wall->getId()
-                          << " at semantic::Passage#"
-                          << transfer.p_separatingPassage->getId()
+                          << " at semantic::Passage#" << id
                           << " has no prospective; left unbound." << std::endl;
                 continue;
             }
 
-            transfer.p_targetRoom->setWalls(transfer.p_wall);
+            if (transfer.p_targetRoom->setWalls(transfer.p_wall) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setWalls cannot fail; continue as before.
+            }
 
             if (transfer.p_separatingPassage != nullptr &&
                 transfer.p_targetRoom != p_bestRetainedRoom)
             {
+                int id2{};
+                if (transfer.p_targetRoom->getId(id2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout << "[SemanticMerge] Redirected far-side Wall#"
                           << transfer.p_wall->getId()
-                          << " to stable semantic::Room#"
-                          << transfer.p_targetRoom->getId() << "." << std::endl;
+                          << " to stable semantic::Room#" << id2 << "."
+                          << std::endl;
             }
         }
 
-        for (vs_graphs::core::semantic::Passage *p_importedPassage :
-             p_importedRoom->getPassages())
+        std::vector<vs_graphs::core::semantic::Passage *>
+            importedRoomPassages{};
+        if (p_importedRoom->getPassages(importedRoomPassages) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_bestRetainedRoom->setDoorways(p_importedPassage);
+            // getPassages cannot fail; continue as before.
+        }
+        for (vs_graphs::core::semantic::Passage *p_importedPassage :
+             importedRoomPassages)
+        {
+            if (p_bestRetainedRoom->setDoorways(p_importedPassage) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setDoorways cannot fail; continue as before.
+            }
         }
 
         for (semantic::Passage *p_passage : p_map_inout->getAllPassages())
         {
             if (p_passage != nullptr)
             {
-                p_passage->replaceProspectiveRoom(p_importedRoom,
-                                                  p_bestRetainedRoom);
+                bool passageWasRoomReplaced{};
+                if (p_passage->replaceProspectiveRoom(p_importedRoom,
+                                                      p_bestRetainedRoom,
+                                                      passageWasRoomReplaced) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    passageWasRoomReplaced =
+                        false; // rejected input reads as before
+                }
             }
         }
 
@@ -595,53 +809,168 @@ void Utils::fuseDuplicateRoomsAfterMerge(
         const double importedWeight = static_cast<double>(
             std::max<std::size_t>(importedWalls.size(), 1U));
 
+        Eigen::Vector3d bestRetainedRoomCentroid{};
+        if (p_bestRetainedRoom->getCentroid(bestRetainedRoomCentroid) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
         const Eigen::Vector3d fusedCentroid_World_m =
-            (retainedWeight * p_bestRetainedRoom->getCentroid() +
+            (retainedWeight * bestRetainedRoomCentroid +
              importedWeight * importedCentroid_World_m) /
             (retainedWeight + importedWeight);
 
-        p_bestRetainedRoom->setCentroid(fusedCentroid_World_m);
-
-        if (p_bestRetainedRoom->getGroundPlane() == nullptr)
+        if (p_bestRetainedRoom->setCentroid(fusedCentroid_World_m) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_bestRetainedRoom->setGroundPlane(
-                p_importedRoom->getGroundPlane());
+            // setCentroid cannot fail; continue as before.
         }
 
-        if (!p_bestRetainedRoom->getHasKnownLabel() &&
-            p_importedRoom->getHasKnownLabel())
+        geometric::Plane *p_bestRetainedRoomGroundPlane = nullptr;
+        if (p_bestRetainedRoom->getGroundPlane(p_bestRetainedRoomGroundPlane) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_bestRetainedRoom->setHasKnownLabel(true);
-            p_bestRetainedRoom->setMetaMarker(p_importedRoom->getMetaMarker());
-            p_bestRetainedRoom->setMetaMarkerId(
-                p_importedRoom->getMetaMarkerId());
-            p_bestRetainedRoom->setName(p_importedRoom->getName());
+            // getGroundPlane cannot fail; continue as before.
+        }
+        if (p_bestRetainedRoomGroundPlane == nullptr)
+        {
+            geometric::Plane *p_importedRoomGroundPlane = nullptr;
+            if (p_importedRoom->getGroundPlane(p_importedRoomGroundPlane) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getGroundPlane cannot fail; continue as before.
+            }
+            if (p_bestRetainedRoom->setGroundPlane(p_importedRoomGroundPlane) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setGroundPlane cannot fail; continue as before.
+            }
+        }
+
+        bool bestRetainedRoomHasKnownLabel{};
+        if (p_bestRetainedRoom->getHasKnownLabel(
+                bestRetainedRoomHasKnownLabel) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getHasKnownLabel cannot fail; continue as before.
+        }
+        bool importedRoomHasKnownLabel2{};
+        if ((!bestRetainedRoomHasKnownLabel) &&
+            p_importedRoom->getHasKnownLabel(importedRoomHasKnownLabel2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getHasKnownLabel cannot fail; continue as before.
+        }
+        if (!bestRetainedRoomHasKnownLabel && importedRoomHasKnownLabel2)
+        {
+            if (p_bestRetainedRoom->setHasKnownLabel(true) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setHasKnownLabel cannot fail; continue as before.
+            }
+            semantic::Marker *p_importedRoomMetaMarker = nullptr;
+            if (p_importedRoom->getMetaMarker(p_importedRoomMetaMarker) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getMetaMarker cannot fail; continue as before.
+            }
+            if (p_bestRetainedRoom->setMetaMarker(p_importedRoomMetaMarker) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setMetaMarker cannot fail; continue as before.
+            }
+            int importedRoomMetaMarkerId2{};
+            if (p_importedRoom->getMetaMarkerId(importedRoomMetaMarkerId2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getMetaMarkerId cannot fail; continue as before.
+            }
+            if (p_bestRetainedRoom->setMetaMarkerId(
+                    importedRoomMetaMarkerId2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setMetaMarkerId cannot fail; continue as before.
+            }
+            std::string importedRoomName{};
+            if (p_importedRoom->getName(importedRoomName) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getName cannot fail; continue as before.
+            }
+            if (p_bestRetainedRoom->setName(importedRoomName) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setName cannot fail; continue as before.
+            }
         }
 
         /* Presence on either side proves the UAV has been there: a room fused
          * from a visited duplicate stays visited. */
-        if (p_importedRoom->hasPreviouslyVisited())
+        bool importedRoomHasPreviouslyVisited{};
+        if (p_importedRoom->hasPreviouslyVisited(
+                importedRoomHasPreviouslyVisited) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_bestRetainedRoom->setPreviouslyVisited(true);
+            // hasPreviouslyVisited cannot fail; continue as before.
+        }
+        if (importedRoomHasPreviouslyVisited)
+        {
+            if (p_bestRetainedRoom->setPreviouslyVisited(true) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setPreviouslyVisited cannot fail; continue as before.
+            }
         }
 
         for (semantic::Floor *p_floor : p_map_inout->getAllFloors())
         {
             if (p_floor != nullptr)
             {
-                p_floor->replaceRoom(p_importedRoom, p_bestRetainedRoom);
+                bool floorWasRoomReplaced{};
+                if (p_floor->replaceRoom(p_importedRoom,
+                                         p_bestRetainedRoom,
+                                         floorWasRoomReplaced) !=
+                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                    floorWasRoomReplaced =
+                        false; // rejected input reads as before
+                }
             }
         }
 
         p_map_inout->eraseDetectedMapRoom(p_importedRoom);
         p_map_inout->eraseMarkerBasedMapRoom(p_importedRoom);
-        p_importedRoom->clearWalls();
-        p_importedRoom->clearPassages();
-        p_importedRoom->setBad();
+        if (p_importedRoom->clearWalls() !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // clearWalls cannot fail; continue as before.
+        }
+        if (p_importedRoom->clearPassages() !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // clearPassages cannot fail; continue as before.
+        }
+        if (p_importedRoom->setBad() !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setBad cannot fail; continue as before.
+        }
 
+        int importedRoomId4{};
+        if (p_importedRoom->getId(importedRoomId4) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        int bestRetainedRoomId2{};
+        if (p_bestRetainedRoom->getId(bestRetainedRoomId2) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         std::cout << "[SemanticMerge] Fused duplicate semantic::Room#"
-                  << p_importedRoom->getId() << " into semantic::Room#"
-                  << p_bestRetainedRoom->getId() << " (centroid distance "
+                  << importedRoomId4 << " into semantic::Room#"
+                  << bestRetainedRoomId2 << " (centroid distance "
                   << bestCentroidDistance_m << " m)." << std::endl;
     }
 }

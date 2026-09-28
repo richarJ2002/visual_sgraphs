@@ -28,10 +28,12 @@ namespace core
 namespace semantic
 {
 
-Passage::KnownSideProvenance Passage::getKnownSideProvenance() const
+PassageStatus Passage::getKnownSideProvenance(
+    Passage::KnownSideProvenance &knownSideProvenance_out) const
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
-    return knownSideProvenance;
+    knownSideProvenance_out = knownSideProvenance;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

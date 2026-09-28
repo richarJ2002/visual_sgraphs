@@ -79,8 +79,10 @@ TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
     TestAtlas atlas(0);
 
     semantic::Room priorRoom;
-    priorRoom.setId(42);
-    priorRoom.setCentroid(Eigen::Vector3d::Zero());
+    ASSERT_EQ((priorRoom.setId(42)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((priorRoom.setCentroid(Eigen::Vector3d::Zero())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     atlas.getCurrentMap()->addDetectedMapRoom(&priorRoom);
 
     atlas.createNewMap();
@@ -92,13 +94,18 @@ TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
     EXPECT_EQ(history.at(0U).front().wallBounds.size(), 0U);
 
     semantic::Room newRoom;
-    newRoom.setId(84);
-    newRoom.setCentroid(Eigen::Vector3d::Zero());
+    ASSERT_EQ((newRoom.setId(84)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((newRoom.setCentroid(Eigen::Vector3d::Zero())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     pNewMap->addDetectedMapRoom(&newRoom);
 
     atlas.matchRoomsToContext(pNewMap);
     EXPECT_TRUE(atlas.tryLockRoomContext());
-    EXPECT_TRUE(newRoom.getRoomTag().empty());
+    std::string roomTag{};
+    ASSERT_EQ((newRoom.getRoomTag(roomTag)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(roomTag.empty());
 }
 
 TEST(AtlasLockOrder, NewMapEventIsConsumedExactlyOnce)

@@ -27,9 +27,15 @@ namespace core
 namespace semantic
 {
 
-bool Room::isBoundaryComplete() const
+RoomStatus Room::isBoundaryComplete(bool &isBoundaryComplete_out) const
 {
-    return getBoundaryStatus() == BoundaryStatus::COMPLETE;
+    Room::BoundaryStatus boundaryStatus{};
+    if (getBoundaryStatus(boundaryStatus) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getBoundaryStatus cannot fail; continue as before.
+    }
+    isBoundaryComplete_out = boundaryStatus == BoundaryStatus::COMPLETE;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -39,23 +39,82 @@ namespace semantic
 PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
 {
     PassageRecord record;
-    record.key = makeKey(EntityKind::PASSAGE, mapId_in, p_passage_in->getId());
-    record.isLive = !p_passage_in->isBad();
+    int           passage_inId{};
+    if (p_passage_in->getId(passage_inId) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    record.key = makeKey(EntityKind::PASSAGE, mapId_in, passage_inId);
+    bool passage_inIsBad{};
+    if (p_passage_in->isBad(passage_inIsBad) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    record.isLive = !passage_inIsBad;
 
-    core::Map *p_declaredMap = p_passage_in->getMap();
+    core::Map *p_declaredMap = nullptr;
+    if (p_passage_in->getMap(p_declaredMap) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     if (p_declaredMap != nullptr)
     {
         record.declaredMapId = p_declaredMap->getId();
     }
 
-    record.passageType      = p_passage_in->getPassageType();
-    record.equation_World   = p_passage_in->getGlobalEquation().coeffs();
-    record.centroid_World_m = p_passage_in->getCentroid();
-    record.width_m          = p_passage_in->getWidth();
-    record.height_m         = p_passage_in->getHeight();
-    record.isPassable       = p_passage_in->isPassable();
+    Passage::PassageVariant passage_inPassageType{};
+    if (p_passage_in->getPassageType(passage_inPassageType) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getPassageType cannot fail; continue as before.
+    }
+    record.passageType = passage_inPassageType;
+    g2o::Plane3D passage_inGlobalEquation{};
+    if (p_passage_in->getGlobalEquation(passage_inGlobalEquation) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    record.equation_World = passage_inGlobalEquation.coeffs();
+    Eigen::Vector3d passage_inCentroid{};
+    if (p_passage_in->getCentroid(passage_inCentroid) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
+    record.centroid_World_m = passage_inCentroid;
+    double passage_inWidth{};
+    if (p_passage_in->getWidth(passage_inWidth) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getWidth cannot fail; continue as before.
+    }
+    record.width_m = passage_inWidth;
+    double passage_inHeight{};
+    if (p_passage_in->getHeight(passage_inHeight) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getHeight cannot fail; continue as before.
+    }
+    record.height_m = passage_inHeight;
+    bool passage_inIsPassable{};
+    if (p_passage_in->isPassable(passage_inIsPassable) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // isPassable cannot fail; continue as before.
+    }
+    record.isPassable = passage_inIsPassable;
 
-    for (geometric::Plane *p_wall : p_passage_in->getAssociateWalls())
+    std::vector<vs_graphs::core::geometric::Plane *> passage_inAssociateWalls{};
+    if (p_passage_in->getAssociateWalls(passage_inAssociateWalls) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getAssociateWalls cannot fail; continue as before.
+    }
+    for (geometric::Plane *p_wall : passage_inAssociateWalls)
     {
         appendWallRef(p_wall, record.associateWallRefs);
     }
@@ -63,24 +122,58 @@ PassageRecord capturePassage(Passage *p_passage_in, long unsigned int mapId_in)
               record.associateWallRefs.end(),
               &isRawPlaneRefLess);
 
-    record.associateDoorRef = rawPlaneRef(p_passage_in->getAssociateDoor());
+    vs_graphs::core::geometric::Plane *p_passage_inAssociateDoor = nullptr;
+    if (p_passage_in->getAssociateDoor(p_passage_inAssociateDoor) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getAssociateDoor cannot fail; continue as before.
+    }
+    record.associateDoorRef = rawPlaneRef(p_passage_inAssociateDoor);
 
-    const Passage::KnownSideProvenance provenance =
-        p_passage_in->getKnownSideProvenance();
+    Passage::KnownSideProvenance provenance{};
+    if (p_passage_in->getKnownSideProvenance(provenance) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getKnownSideProvenance cannot fail; continue as before.
+    }
     record.knownSideRoomRef = entityRefForRoom(provenance.p_room);
     if (provenance.hasDirection())
     {
         record.knownSideDirection_World = provenance.direction_World;
     }
 
-    record.prospectiveRoomRef =
-        entityRefForRoom(p_passage_in->getProspectiveRoom());
+    vs_graphs::core::semantic::Room *p_passage_inProspectiveRoom = nullptr;
+    if (p_passage_in->getProspectiveRoom(p_passage_inProspectiveRoom) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getProspectiveRoom cannot fail; continue as before.
+    }
+    record.prospectiveRoomRef = entityRefForRoom(p_passage_inProspectiveRoom);
 
-    record.traversalKnownToFarCount =
-        p_passage_in->getTraversalKnownToFarCount();
-    record.traversalFarToKnownCount =
-        p_passage_in->getTraversalFarToKnownCount();
-    record.traversalUnknownCount = p_passage_in->getTraversalUnknownCount();
+    std::size_t passage_inTraversalKnownToFarCount{};
+    if (p_passage_in->getTraversalKnownToFarCount(
+            passage_inTraversalKnownToFarCount) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getTraversalKnownToFarCount cannot fail; continue as before.
+    }
+    record.traversalKnownToFarCount = passage_inTraversalKnownToFarCount;
+    std::size_t passage_inTraversalFarToKnownCount{};
+    if (p_passage_in->getTraversalFarToKnownCount(
+            passage_inTraversalFarToKnownCount) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getTraversalFarToKnownCount cannot fail; continue as before.
+    }
+    record.traversalFarToKnownCount = passage_inTraversalFarToKnownCount;
+    std::size_t passage_inTraversalUnknownCount{};
+    if (p_passage_in->getTraversalUnknownCount(
+            passage_inTraversalUnknownCount) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getTraversalUnknownCount cannot fail; continue as before.
+    }
+    record.traversalUnknownCount = passage_inTraversalUnknownCount;
 
     return record;
 }

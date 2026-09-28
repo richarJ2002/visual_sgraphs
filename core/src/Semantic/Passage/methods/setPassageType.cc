@@ -28,10 +28,12 @@ namespace core
 namespace semantic
 {
 
-void Passage::setPassageType(Passage::PassageVariant newType_in)
+PassageStatus Passage::setPassageType(Passage::PassageVariant newType_in)
 {
     unique_lock<mutex> lock(typeMutex);
     passageType = newType_in;
+
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

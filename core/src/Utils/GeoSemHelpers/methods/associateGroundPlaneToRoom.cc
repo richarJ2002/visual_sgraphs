@@ -27,21 +27,31 @@ void GeoSemHelpers::associateGroundPlaneToRoom(
     Atlas                           *p_atlas_in,
     vs_graphs::core::semantic::Room *p_givenRoom_inout)
 {
-    std::vector<vs_graphs::core::geometric::Plane *> allWalls =
-        p_givenRoom_inout->getWalls();
+    std::vector<vs_graphs::core::geometric::Plane *> allWalls{};
+    if (p_givenRoom_inout->getWalls(allWalls) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getWalls cannot fail; continue as before.
+    }
     vs_graphs::core::geometric::Plane *p_associatedGroundPlane = nullptr;
     size_t                             maximumInliers          = 0;
 
     // get the ground planes from the Atlas
     std::vector<vs_graphs::core::geometric::Plane *> groundPlanes;
     for (const auto &plane : p_atlas_in->getAllPlanes())
+    {
         if (plane->getPlaneType() ==
             vs_graphs::core::geometric::Plane::PlaneVariant::GROUND)
+        {
             groundPlanes.push_back(plane);
+        }
+    }
 
     if (groundPlanes.empty())
+    {
         // no ground planes in the Atlas
         return;
+    }
     else
     {
         // check which ground plane has the most points within the walls
@@ -60,13 +70,25 @@ void GeoSemHelpers::associateGroundPlaneToRoom(
         }
 
         if (p_associatedGroundPlane != nullptr)
-            p_givenRoom_inout->setGroundPlane(p_associatedGroundPlane);
+        {
+            if (p_givenRoom_inout->setGroundPlane(p_associatedGroundPlane) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setGroundPlane cannot fail; continue as before.
+            }
+        }
         else
+        {
             // set the biggest ground plane as the ground plane of the room
             // [TODO] - logic for when ground plane is not found within the
             // walls
-            p_givenRoom_inout->setGroundPlane(
-                p_atlas_in->getBiggestGroundPlane());
+            if (p_givenRoom_inout->setGroundPlane(
+                    p_atlas_in->getBiggestGroundPlane()) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setGroundPlane cannot fail; continue as before.
+            }
+        }
     }
 }
 

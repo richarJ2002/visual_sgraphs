@@ -146,12 +146,24 @@ System::MissionHealthSnapshot
         {
             for (semantic::Room *p_room : p_activeMap->getAllRooms())
             {
-                if (p_room == nullptr || p_room->isBad())
+                bool roomIsBad{};
+                if (!(p_room == nullptr) &&
+                    p_room->isBad(roomIsBad) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_room == nullptr || roomIsBad)
                 {
                     continue;
                 }
-                if (p_room->getRoomVariant() !=
-                    semantic::Room::RoomVariant::ROOM)
+                semantic::Room::RoomVariant roomVariant{};
+                if (p_room->getRoomVariant(roomVariant) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getRoomVariant cannot fail; continue as before.
+                }
+                if (roomVariant != semantic::Room::RoomVariant::ROOM)
                 {
                     ++snapshot.unresolvedRoomCount;
                     continue;
@@ -159,12 +171,31 @@ System::MissionHealthSnapshot
 
                 ++snapshot.confirmedRoomCount;
                 RoomHealth room;
-                room.id = p_room->getId();
-                for (semantic::Passage *p_passage : p_room->getPassages())
+                int        roomId{};
+                if (p_room->getId(roomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                room.id = roomId;
+                std::vector<vs_graphs::core::semantic::Passage *>
+                    roomPassages{};
+                if (p_room->getPassages(roomPassages) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getPassages cannot fail; continue as before.
+                }
+                for (semantic::Passage *p_passage : roomPassages)
                 {
                     if (p_passage != nullptr)
                     {
-                        room.passageIds.push_back(p_passage->getId());
+                        int passageId{};
+                        if (p_passage->getId(passageId) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
+                        room.passageIds.push_back(passageId);
                     }
                 }
                 std::sort(room.passageIds.begin(), room.passageIds.end());
@@ -178,14 +209,45 @@ System::MissionHealthSnapshot
                     continue;
                 }
                 FloorHealth floor;
-                floor.id = p_floor->getId();
-                for (semantic::Room *p_room : p_floor->getRooms())
+                int         floorId{};
+                if (p_floor->getId(floorId) !=
+                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                 {
-                    if (p_room != nullptr && !p_room->isBad() &&
-                        p_room->getRoomVariant() ==
-                            semantic::Room::RoomVariant::ROOM)
+                    // getId cannot fail; continue as before.
+                }
+                floor.id = floorId;
+                std::vector<vs_graphs::core::semantic::Room *> floorRooms{};
+                if (p_floor->getRooms(floorRooms) !=
+                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                    // getRooms cannot fail; continue as before.
+                }
+                for (semantic::Room *p_room : floorRooms)
+                {
+                    bool roomIsBad2{};
+                    if ((p_room != nullptr) &&
+                        p_room->isBad(roomIsBad2) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        floor.roomIds.push_back(p_room->getId());
+                        // isBad cannot fail; continue as before.
+                    }
+                    semantic::Room::RoomVariant roomVariant2{};
+                    if ((p_room != nullptr && !roomIsBad2) &&
+                        p_room->getRoomVariant(roomVariant2) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getRoomVariant cannot fail; continue as before.
+                    }
+                    if (p_room != nullptr && !roomIsBad2 &&
+                        roomVariant2 == semantic::Room::RoomVariant::ROOM)
+                    {
+                        int roomId2{};
+                        if (p_room->getId(roomId2) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
+                        floor.roomIds.push_back(roomId2);
                         ++snapshot.floorRoomLinkCount;
                     }
                 }
@@ -200,31 +262,127 @@ System::MissionHealthSnapshot
                     continue;
                 }
                 PassageHealth passage;
-                passage.id         = p_passage->getId();
-                passage.isPassable = p_passage->isPassable();
+                int           passageId2{};
+                if (p_passage->getId(passageId2) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                passage.id = passageId2;
+                bool passageIsPassable{};
+                if (p_passage->isPassable(passageIsPassable) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // isPassable cannot fail; continue as before.
+                }
+                passage.isPassable = passageIsPassable;
+                semantic::Passage::KnownSideProvenance
+                    passageKnownSideProvenance{};
+                if (p_passage->getKnownSideProvenance(
+                        passageKnownSideProvenance) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getKnownSideProvenance cannot fail; continue as before.
+                }
+                semantic::Passage::KnownSideProvenance
+                    passageKnownSideProvenance2{};
+                if ((passageKnownSideProvenance.p_room) &&
+                    p_passage->getKnownSideProvenance(
+                        passageKnownSideProvenance2) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getKnownSideProvenance cannot fail; continue as before.
+                }
+                int id2{};
+                if ((passageKnownSideProvenance.p_room) &&
+                    passageKnownSideProvenance2.p_room->getId(id2) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 passage.primaryRoomId =
-                    p_passage->getKnownSideProvenance().p_room
-                        ? p_passage->getKnownSideProvenance().p_room->getId()
-                        : -1;
-                passage.secondaryRoomId =
-                    p_passage->getProspectiveRoom()
-                        ? p_passage->getProspectiveRoom()->getId()
-                        : -1;
-                passage.primaryTraversalCount =
-                    p_passage->getTraversalKnownToFarCount();
+                    passageKnownSideProvenance.p_room ? id2 : -1;
+                vs_graphs::core::semantic::Room *p_passageProspectiveRoom =
+                    nullptr;
+                if (p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getProspectiveRoom cannot fail; continue as before.
+                }
+                vs_graphs::core::semantic::Room *p_passageProspectiveRoom2 =
+                    nullptr;
+                if ((p_passageProspectiveRoom) &&
+                    p_passage->getProspectiveRoom(p_passageProspectiveRoom2) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getProspectiveRoom cannot fail; continue as before.
+                }
+                int id3{};
+                if ((p_passageProspectiveRoom) &&
+                    p_passageProspectiveRoom2->getId(id3) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                passage.secondaryRoomId = p_passageProspectiveRoom ? id3 : -1;
+                std::size_t passageTraversalKnownToFarCount{};
+                if (p_passage->getTraversalKnownToFarCount(
+                        passageTraversalKnownToFarCount) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getTraversalKnownToFarCount cannot fail; continue as
+                    // before.
+                }
+                passage.primaryTraversalCount = passageTraversalKnownToFarCount;
+                std::size_t passageTraversalFarToKnownCount{};
+                if (p_passage->getTraversalFarToKnownCount(
+                        passageTraversalFarToKnownCount) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getTraversalFarToKnownCount cannot fail; continue as
+                    // before.
+                }
                 passage.secondaryTraversalCount =
-                    p_passage->getTraversalFarToKnownCount();
-                passage.unknownCount = p_passage->getTraversalUnknownCount();
-                const semantic::Passage::KnownSideProvenance knownSide =
-                    p_passage->getKnownSideProvenance();
+                    passageTraversalFarToKnownCount;
+                std::size_t passageTraversalUnknownCount{};
+                if (p_passage->getTraversalUnknownCount(
+                        passageTraversalUnknownCount) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getTraversalUnknownCount cannot fail; continue as before.
+                }
+                passage.unknownCount = passageTraversalUnknownCount;
+                semantic::Passage::KnownSideProvenance knownSide{};
+                if (p_passage->getKnownSideProvenance(knownSide) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getKnownSideProvenance cannot fail; continue as before.
+                }
                 if (knownSide.p_room != nullptr)
                 {
-                    passage.primaryRoomId = knownSide.p_room->getId();
+                    int id4{};
+                    if (knownSide.p_room->getId(id4) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    passage.primaryRoomId = id4;
                 }
-                semantic::Room *p_farSideRoom = p_passage->getProspectiveRoom();
+                semantic::Room *p_farSideRoom = nullptr;
+                if (p_passage->getProspectiveRoom(p_farSideRoom) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getProspectiveRoom cannot fail; continue as before.
+                }
                 if (p_farSideRoom != nullptr)
                 {
-                    passage.secondaryRoomId = p_farSideRoom->getId();
+                    int farSideRoomId{};
+                    if (p_farSideRoom->getId(farSideRoomId) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    passage.secondaryRoomId = farSideRoomId;
                 }
                 snapshot.passages.push_back(passage);
             }

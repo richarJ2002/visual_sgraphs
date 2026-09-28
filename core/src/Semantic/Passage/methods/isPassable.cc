@@ -28,10 +28,11 @@ namespace core
 namespace semantic
 {
 
-bool Passage::isPassable() const
+PassageStatus Passage::isPassable(bool &isPassable_out) const
 {
     std::lock_guard<std::mutex> lock(typeMutex);
-    return isMarkedPassable;
+    isPassable_out = isMarkedPassable;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

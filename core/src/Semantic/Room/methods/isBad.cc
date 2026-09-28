@@ -27,10 +27,11 @@ namespace core
 namespace semantic
 {
 
-bool Room::isBad()
+RoomStatus Room::isBad(bool &isBad_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return isBadFlag;
+    isBad_out = isBadFlag;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

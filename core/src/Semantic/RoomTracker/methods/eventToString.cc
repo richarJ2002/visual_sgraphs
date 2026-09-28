@@ -28,9 +28,11 @@ namespace core
 namespace semantic
 {
 
-std::string RoomTracker::eventToString(RoomTrackingEvent event_in)
+RoomTrackerStatus RoomTracker::eventToString(RoomTrackingEvent event_in,
+                                             std::string      &text_out)
 {
-    return eventLiteral(event_in);
+    text_out = eventLiteral(event_in);
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

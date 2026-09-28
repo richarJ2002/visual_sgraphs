@@ -32,7 +32,12 @@ namespace core
 
 void Atlas::addMapMarker(semantic::Marker *p_marker_in)
 {
-    Map *p_ownerMap = p_marker_in->getMap();
+    Map *p_ownerMap = nullptr;
+    if (p_marker_in->getMap(p_ownerMap) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     p_ownerMap->addMapMarker(p_marker_in);
 }
 

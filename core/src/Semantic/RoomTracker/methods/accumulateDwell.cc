@@ -26,21 +26,24 @@ namespace core
 namespace semantic
 {
 
-double RoomTracker::accumulateDwell(RoomTrackingState state_in,
-                                    double            now_s_in,
-                                    bool              guardSatisfied_in)
+RoomTrackerStatus RoomTracker::accumulateDwell(RoomTrackingState state_in,
+                                               double            now_s_in,
+                                               bool    guardSatisfied_in,
+                                               double &accumulatedDwell_out)
 {
     (void)state_in;
     if (!guardSatisfied_in)
     {
         crossingDwellStartTime_s = -1.0;
-        return 0.0;
+        accumulatedDwell_out     = 0.0;
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
     }
     if (crossingDwellStartTime_s < 0.0)
     {
         crossingDwellStartTime_s = now_s_in;
     }
-    return now_s_in - crossingDwellStartTime_s;
+    accumulatedDwell_out = now_s_in - crossingDwellStartTime_s;
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

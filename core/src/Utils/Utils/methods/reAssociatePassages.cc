@@ -63,7 +63,14 @@ void Utils::reAssociatePassages(Atlas *p_atlas_in)
     const auto liveRoomHandle =
         [&activeRoomSet](semantic::Room *p_room) -> semantic::Room *
     {
-        return p_room != nullptr && !p_room->isBad() &&
+        bool roomIsBad{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        return p_room != nullptr && !roomIsBad &&
                        activeRoomSet.count(p_room) > 0U
                    ? p_room
                    : nullptr;
@@ -84,7 +91,19 @@ void Utils::reAssociatePassages(Atlas *p_atlas_in)
                       return true;
                   }
 
-                  return p_firstPassage->getId() < p_secondPassage->getId();
+                  int firstPassageId{};
+                  if (p_firstPassage->getId(firstPassageId) !=
+                      semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                  {
+                      // getId cannot fail; continue as before.
+                  }
+                  int secondPassageId{};
+                  if (p_secondPassage->getId(secondPassageId) !=
+                      semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                  {
+                      // getId cannot fail; continue as before.
+                  }
+                  return firstPassageId < secondPassageId;
               });
 
     const types::SystemParams::SemSeg::PassageDetection &passageParameters =
@@ -114,8 +133,15 @@ void Utils::reAssociatePassages(Atlas *p_atlas_in)
             continue;
         }
 
+        g2o::Plane3D retainedPassageGlobalEquation{};
+        if (p_retainedPassage->getGlobalEquation(
+                retainedPassageGlobalEquation) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
         Eigen::Vector4d retainedEquation =
-            p_retainedPassage->getGlobalEquation().coeffs();
+            retainedPassageGlobalEquation.coeffs();
         const double retainedNormalNorm = retainedEquation.head<3>().norm();
 
         if (!retainedEquation.allFinite() || retainedNormalNorm < 1e-8)
@@ -137,10 +163,18 @@ void Utils::reAssociatePassages(Atlas *p_atlas_in)
                 continue;
             }
 
-            const Eigen::Vector3d retainedCentroid_World_m =
-                p_retainedPassage->getCentroid();
-            const Eigen::Vector3d candidateCentroid_World_m =
-                p_candidatePassage->getCentroid();
+            Eigen::Vector3d retainedCentroid_World_m{};
+            if (p_retainedPassage->getCentroid(retainedCentroid_World_m) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
+            Eigen::Vector3d candidateCentroid_World_m{};
+            if (p_candidatePassage->getCentroid(candidateCentroid_World_m) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
 
             if (!retainedCentroid_World_m.allFinite() ||
                 !candidateCentroid_World_m.allFinite() ||
@@ -150,8 +184,15 @@ void Utils::reAssociatePassages(Atlas *p_atlas_in)
                 continue;
             }
 
+            g2o::Plane3D candidatePassageGlobalEquation{};
+            if (p_candidatePassage->getGlobalEquation(
+                    candidatePassageGlobalEquation) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
             Eigen::Vector4d candidateEquation =
-                p_candidatePassage->getGlobalEquation().coeffs();
+                candidatePassageGlobalEquation.coeffs();
             const double candidateNormalNorm =
                 candidateEquation.head<3>().norm();
 
@@ -181,23 +222,61 @@ void Utils::reAssociatePassages(Atlas *p_atlas_in)
                 continue;
             }
 
+            vs_graphs::core::semantic::Room *p_retainedPassageProspectiveRoom =
+                nullptr;
+            if (p_retainedPassage->getProspectiveRoom(
+                    p_retainedPassageProspectiveRoom) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getProspectiveRoom cannot fail; continue as before.
+            }
             semantic::Room *p_retainedHandle =
-                liveRoomHandle(p_retainedPassage->getProspectiveRoom());
+                liveRoomHandle(p_retainedPassageProspectiveRoom);
+            vs_graphs::core::semantic::Room *p_candidatePassageProspectiveRoom =
+                nullptr;
+            if (p_candidatePassage->getProspectiveRoom(
+                    p_candidatePassageProspectiveRoom) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getProspectiveRoom cannot fail; continue as before.
+            }
             semantic::Room *p_candidateHandle =
-                liveRoomHandle(p_candidatePassage->getProspectiveRoom());
+                liveRoomHandle(p_candidatePassageProspectiveRoom);
 
-            p_retainedPassage->mergeKnownSideProvenance(
-                p_candidatePassage->getKnownSideProvenance());
-            const semantic::Passage::KnownSideProvenance knownSide =
-                p_retainedPassage->getKnownSideProvenance();
+            semantic::Passage::KnownSideProvenance
+                candidatePassageKnownSideProvenance{};
+            if (p_candidatePassage->getKnownSideProvenance(
+                    candidatePassageKnownSideProvenance) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getKnownSideProvenance cannot fail; continue as before.
+            }
+            if (p_retainedPassage->mergeKnownSideProvenance(
+                    candidatePassageKnownSideProvenance) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // mergeKnownSideProvenance cannot fail; continue as before.
+            }
+            semantic::Passage::KnownSideProvenance knownSide{};
+            if (p_retainedPassage->getKnownSideProvenance(knownSide) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getKnownSideProvenance cannot fail; continue as before.
+            }
 
             const auto isProvenFarSide =
                 [&knownSide, &retainedCentroid_World_m](semantic::Room *p_room)
             {
+                Eigen::Vector3d roomCentroid{};
+                if ((p_room != nullptr && knownSide.hasDirection()) &&
+                    p_room->getCentroid(roomCentroid) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getCentroid cannot fail; continue as before.
+                }
                 return p_room != nullptr && knownSide.hasDirection() &&
-                       knownSide.direction_World.dot(p_room->getCentroid() -
-                                                     retainedCentroid_World_m) <
-                           -0.20;
+                       knownSide.direction_World.dot(
+                           roomCentroid - retainedCentroid_World_m) < -0.20;
             };
 
             semantic::Room *p_survivingHandle = p_retainedHandle;
@@ -219,10 +298,18 @@ void Utils::reAssociatePassages(Atlas *p_atlas_in)
                 }
             }
 
-            p_retainedPassage->setProspectiveRoom(p_survivingHandle);
+            if (p_retainedPassage->setProspectiveRoom(p_survivingHandle) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setProspectiveRoom cannot fail; continue as before.
+            }
             if (p_survivingHandle != nullptr)
             {
-                p_survivingHandle->setDoorways(p_retainedPassage);
+                if (p_survivingHandle->setDoorways(p_retainedPassage) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // setDoorways cannot fail; continue as before.
+                }
             }
 
             Eigen::Vector3d fusedCentroid_World_m =
@@ -233,48 +320,169 @@ void Utils::reAssociatePassages(Atlas *p_atlas_in)
             fusedCentroid_World_m -=
                 fusedCentroidResidual_m * retainedEquation.head<3>();
 
-            p_retainedPassage->setCentroid(fusedCentroid_World_m);
-            p_retainedPassage->setWidth(
-                std::max(p_retainedPassage->getWidth(),
-                         p_candidatePassage->getWidth()));
-            p_retainedPassage->setHeight(
-                std::max(p_retainedPassage->getHeight(),
-                         p_candidatePassage->getHeight()));
-            p_retainedPassage->setPassable(p_retainedPassage->isPassable() ||
-                                           p_candidatePassage->isPassable());
+            if (p_retainedPassage->setCentroid(fusedCentroid_World_m) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setCentroid cannot fail; continue as before.
+            }
+            double retainedPassageWidth{};
+            if (p_retainedPassage->getWidth(retainedPassageWidth) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getWidth cannot fail; continue as before.
+            }
+            double candidatePassageWidth{};
+            if (p_candidatePassage->getWidth(candidatePassageWidth) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getWidth cannot fail; continue as before.
+            }
+            if (p_retainedPassage->setWidth(
+                    std::max(retainedPassageWidth, candidatePassageWidth)) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setWidth cannot fail; continue as before.
+            }
+            double retainedPassageHeight{};
+            if (p_retainedPassage->getHeight(retainedPassageHeight) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getHeight cannot fail; continue as before.
+            }
+            double candidatePassageHeight{};
+            if (p_candidatePassage->getHeight(candidatePassageHeight) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getHeight cannot fail; continue as before.
+            }
+            if (p_retainedPassage->setHeight(
+                    std::max(retainedPassageHeight, candidatePassageHeight)) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setHeight cannot fail; continue as before.
+            }
+            bool retainedPassageIsPassable{};
+            if (p_retainedPassage->isPassable(retainedPassageIsPassable) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // isPassable cannot fail; continue as before.
+            }
+            bool candidatePassageIsPassable{};
+            if (!(retainedPassageIsPassable) &&
+                p_candidatePassage->isPassable(candidatePassageIsPassable) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // isPassable cannot fail; continue as before.
+            }
+            if (p_retainedPassage->setPassable(retainedPassageIsPassable ||
+                                               candidatePassageIsPassable) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setPassable cannot fail; continue as before.
+            }
 
-            const std::size_t retainedTraversalCount =
-                p_retainedPassage->getTraversalObservationCount();
-            const std::size_t candidateTraversalCount =
-                p_candidatePassage->getTraversalObservationCount();
+            std::size_t retainedTraversalCount{};
+            if (p_retainedPassage->getTraversalObservationCount(
+                    retainedTraversalCount) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getTraversalObservationCount cannot fail; continue as before.
+            }
+            std::size_t candidateTraversalCount{};
+            if (p_candidatePassage->getTraversalObservationCount(
+                    candidateTraversalCount) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getTraversalObservationCount cannot fail; continue as before.
+            }
             const std::size_t maximumTraversalCount =
                 std::numeric_limits<std::size_t>::max();
 
-            p_retainedPassage->setTraversalObservationCount(
-                candidateTraversalCount >
-                        maximumTraversalCount - retainedTraversalCount
-                    ? maximumTraversalCount
-                    : retainedTraversalCount + candidateTraversalCount);
-
-            for (geometric::Plane *p_supportingWall :
-                 p_candidatePassage->getAssociateWalls())
+            if (p_retainedPassage->setTraversalObservationCount(
+                    candidateTraversalCount >
+                            maximumTraversalCount - retainedTraversalCount
+                        ? maximumTraversalCount
+                        : retainedTraversalCount + candidateTraversalCount) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                p_retainedPassage->addAssociateWall(p_supportingWall);
+                // setTraversalObservationCount cannot fail; continue as before.
             }
 
-            if (p_retainedPassage->getAssociateDoor() == nullptr &&
-                p_candidatePassage->getAssociateDoor() != nullptr)
+            std::vector<vs_graphs::core::geometric::Plane *>
+                candidatePassageAssociateWalls{};
+            if (p_candidatePassage->getAssociateWalls(
+                    candidatePassageAssociateWalls) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                p_retainedPassage->setAssociateDoor(
-                    p_candidatePassage->getAssociateDoor());
+                // getAssociateWalls cannot fail; continue as before.
+            }
+            for (geometric::Plane *p_supportingWall :
+                 candidatePassageAssociateWalls)
+            {
+                if (p_retainedPassage->addAssociateWall(p_supportingWall) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // addAssociateWall cannot fail; continue as before.
+                }
+            }
+
+            vs_graphs::core::geometric::Plane *p_retainedPassageAssociateDoor =
+                nullptr;
+            if (p_retainedPassage->getAssociateDoor(
+                    p_retainedPassageAssociateDoor) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getAssociateDoor cannot fail; continue as before.
+            }
+            vs_graphs::core::geometric::Plane *p_candidatePassageAssociateDoor =
+                nullptr;
+            if ((p_retainedPassageAssociateDoor == nullptr) &&
+                p_candidatePassage->getAssociateDoor(
+                    p_candidatePassageAssociateDoor) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getAssociateDoor cannot fail; continue as before.
+            }
+            if (p_retainedPassageAssociateDoor == nullptr &&
+                p_candidatePassageAssociateDoor != nullptr)
+            {
+                vs_graphs::core::geometric::Plane
+                    *p_candidatePassageAssociateDoor2 = nullptr;
+                if (p_candidatePassage->getAssociateDoor(
+                        p_candidatePassageAssociateDoor2) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getAssociateDoor cannot fail; continue as before.
+                }
+                if (p_retainedPassage->setAssociateDoor(
+                        p_candidatePassageAssociateDoor2) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setAssociateDoor cannot fail; continue as before.
+                }
             }
 
             for (semantic::Room *p_room : p_activeMap->getAllRooms())
             {
-                if (p_room != nullptr && !p_room->isBad())
+                bool roomIsBad{};
+                if ((p_room != nullptr) &&
+                    p_room->isBad(roomIsBad) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    p_room->replacePassageAssociation(p_candidatePassage,
-                                                      p_retainedPassage);
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_room != nullptr && !roomIsBad)
+                {
+                    bool roomWasAssociationReplaced{};
+                    if (p_room->replacePassageAssociation(
+                            p_candidatePassage,
+                            p_retainedPassage,
+                            roomWasAssociationReplaced) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        roomWasAssociationReplaced =
+                            false; // rejected input reads as before
+                    }
                 }
             }
 
@@ -288,8 +496,16 @@ void Utils::reAssociatePassages(Atlas *p_atlas_in)
             }
 
             p_activeMap->eraseMapPassage(p_candidatePassage);
-            p_candidatePassage->setProspectiveRoom(nullptr);
-            p_candidatePassage->setMap(nullptr);
+            if (p_candidatePassage->setProspectiveRoom(nullptr) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setProspectiveRoom cannot fail; continue as before.
+            }
+            if (p_candidatePassage->setMap(nullptr) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             retiredPassages.insert(p_candidatePassage);
         }
     }

@@ -36,8 +36,19 @@ void Atlas::addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
     {
         return;
     }
-    observePassageIdentity(p_passage_in->getId());
-    vs_graphs::core::Map *p_ownerMap = p_passage_in->getMap();
+    int passage_inId{};
+    if (p_passage_in->getId(passage_inId) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    observePassageIdentity(passage_inId);
+    vs_graphs::core::Map *p_ownerMap = nullptr;
+    if (p_passage_in->getMap(p_ownerMap) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     p_ownerMap->addMapPassage(p_passage_in);
 }
 

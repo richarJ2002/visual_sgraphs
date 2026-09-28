@@ -169,8 +169,11 @@ TEST(CandidateGen, UsesDeterministicNumeratorAndDenominator)
     config.weightAperture = 0.0;
     config.weightTopology = 0.0;
 
-    const std::vector<semantic::SemanticCandidate> candidates =
-        semantic::SemanticCandidates::generate(history, config);
+    std::vector<semantic::SemanticCandidate> candidates{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, candidates, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(candidates.size(), 1U);
     EXPECT_DOUBLE_EQ(candidates.front().cues.weightDenominator, 3.0);
     EXPECT_DOUBLE_EQ(candidates.front().cues.weightedNumerator,
@@ -189,10 +192,14 @@ TEST(CandidateGen, DoesNotDependOnContainerInsertionOrder)
     first[10U].push_back(makeRoom(1, 1.0));
     second[10U].push_back(makeRoom(1, 1.0));
     second[20U].push_back(makeRoom(2, 1.2));
-    const std::vector<semantic::SemanticCandidate> left =
-        semantic::SemanticCandidates::generate(first);
-    const std::vector<semantic::SemanticCandidate> right =
-        semantic::SemanticCandidates::generate(second);
+    std::vector<semantic::SemanticCandidate> left{};
+    ASSERT_EQ((semantic::SemanticCandidates::generate(first, left)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
+    std::vector<semantic::SemanticCandidate> right{};
+    ASSERT_EQ((semantic::SemanticCandidates::generate(second, right)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(left.size(), right.size());
     ASSERT_FALSE(left.empty());
     EXPECT_EQ(left.front().roomAId, right.front().roomAId);
@@ -210,15 +217,20 @@ TEST(CandidateGen, CanonicalizesLocalTopologyWithoutComparingRawIds)
     config.weightExtent   = 0.0;
     config.weightAperture = 0.0;
     config.weightTopology = 1.0;
-    const std::vector<semantic::SemanticCandidate> same =
-        semantic::SemanticCandidates::generate(history, config);
+    std::vector<semantic::SemanticCandidate> same{};
+    ASSERT_EQ((semantic::SemanticCandidates::generate(history, same, config)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(same.size(), 1U);
     EXPECT_TRUE(same.front().cues.isTopologyAvailable);
     EXPECT_DOUBLE_EQ(same.front().cues.topologyDistance, 0.0);
 
     history[2U][0].passageContexts[0].hasFarSideRoom = false;
-    const std::vector<semantic::SemanticCandidate> changed =
-        semantic::SemanticCandidates::generate(history, config);
+    std::vector<semantic::SemanticCandidate> changed{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, changed, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(changed.size(), 1U);
     EXPECT_GT(changed.front().cues.topologyDistance, 0.0);
 }
@@ -234,51 +246,88 @@ TEST(CandidateGen, AngleToleranceControlsNearZeroEquivalence)
     config.weightAperture     = 0.0;
     config.weightTopology     = 0.0;
     config.angleTolerance_rad = 1.0e-9;
-    EXPECT_DOUBLE_EQ(semantic::SemanticCandidates::generate(history, config)
-                         .front()
-                         .cues.angleDistance,
-                     0.0);
+    std::vector<vs_graphs::core::semantic::SemanticCandidate> candidates{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, candidates, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
+    EXPECT_DOUBLE_EQ(candidates.front().cues.angleDistance, 0.0);
     config.angleTolerance_rad = 1.0e-12;
-    EXPECT_GT(semantic::SemanticCandidates::generate(history, config)
-                  .front()
-                  .cues.angleDistance,
-              0.0);
+    std::vector<vs_graphs::core::semantic::SemanticCandidate> candidates2{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, candidates2, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
+    EXPECT_GT(candidates2.front().cues.angleDistance, 0.0);
 }
 
 TEST(CandidateGen, RejectsInvalidConfigurationWithTypedReason)
 {
     semantic::SemanticCandidateConfig config;
     config.angleTolerance_rad = std::numeric_limits<double>::quiet_NaN();
-    EXPECT_EQ(semantic::SemanticCandidates::validateConfig(config),
+    vs_graphs::core::semantic::SemanticCandidateConfigRejectionReason
+        rejectionReason2{};
+    ASSERT_EQ((semantic::SemanticCandidates::validateConfig(config,
+                                                            rejectionReason2)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
+    EXPECT_EQ(rejectionReason2,
               semantic::SemanticCandidateConfigRejectionReason::
                   NONFINITE_ANGLE_TOLERANCE);
     config.angleTolerance_rad = 1.0e-9;
     config.runtimeBudget_ms   = std::numeric_limits<double>::infinity();
-    EXPECT_EQ(semantic::SemanticCandidates::validateConfig(config),
+    vs_graphs::core::semantic::SemanticCandidateConfigRejectionReason
+        rejectionReason3{};
+    ASSERT_EQ((semantic::SemanticCandidates::validateConfig(config,
+                                                            rejectionReason3)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
+    EXPECT_EQ(rejectionReason3,
               semantic::SemanticCandidateConfigRejectionReason::
                   NONFINITE_RUNTIME_BUDGET);
     config.runtimeBudget_ms = 0.0;
     config.topK             = 0U;
-    const semantic::SemanticCandidateGeneration result =
-        semantic::SemanticCandidates::generateWithStatus({}, config);
+    semantic::SemanticCandidateGeneration result{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generateWithStatus({}, result, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     EXPECT_EQ(result.rejectionReason,
               semantic::SemanticCandidateConfigRejectionReason::TOP_K_ZERO);
     EXPECT_TRUE(result.candidates.empty());
     config.topK             = 10U;
     config.candidatePairCap = 5U;
-    EXPECT_EQ(semantic::SemanticCandidates::validateConfig(config),
+    vs_graphs::core::semantic::SemanticCandidateConfigRejectionReason
+        rejectionReason4{};
+    ASSERT_EQ((semantic::SemanticCandidates::validateConfig(config,
+                                                            rejectionReason4)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
+    EXPECT_EQ(rejectionReason4,
               semantic::SemanticCandidateConfigRejectionReason::
                   TOP_K_EXCEEDS_PAIR_CAP);
     config.candidatePairCap      = 1000U;
     config.descriptorElementsCap = 0U;
+    vs_graphs::core::semantic::SemanticCandidateConfigRejectionReason
+        rejectionReason5{};
+    ASSERT_EQ((semantic::SemanticCandidates::validateConfig(config,
+                                                            rejectionReason5)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     EXPECT_EQ(
-        semantic::SemanticCandidates::validateConfig(config),
+        rejectionReason5,
         semantic::SemanticCandidateConfigRejectionReason::DESCRIPTOR_CAP_ZERO);
     config.descriptorElementsCap = 4096U;
     config.weightAngle           = std::numeric_limits<double>::max();
     config.weightExtent          = std::numeric_limits<double>::max();
+    vs_graphs::core::semantic::SemanticCandidateConfigRejectionReason
+        rejectionReason6{};
+    ASSERT_EQ((semantic::SemanticCandidates::validateConfig(config,
+                                                            rejectionReason6)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     EXPECT_EQ(
-        semantic::SemanticCandidates::validateConfig(config),
+        rejectionReason6,
         semantic::SemanticCandidateConfigRejectionReason::WEIGHT_SUM_OVERFLOW);
 }
 
@@ -290,8 +339,11 @@ TEST(CandidateGen, OmitsTopologyWhenNodeCapWouldBeExceeded)
     history[2U].push_back(makeTopologyRoom(2, 2, 3, true));
     semantic::SemanticCandidateConfig config;
     config.topologyNodesCap = 2U;
-    const std::vector<semantic::SemanticCandidate> candidates =
-        semantic::SemanticCandidates::generate(history, config);
+    std::vector<semantic::SemanticCandidate> candidates{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, candidates, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(candidates.size(), 1U);
     EXPECT_FALSE(candidates.front().cues.isTopologyAvailable);
 }
@@ -317,8 +369,12 @@ TEST(CandidateGen, SeededTransformInvarianceIs100Of100)
             history;
         history[10U].push_back(source);
         history[20U].push_back(rotateRoom(source, rotation));
-        const std::vector<semantic::SemanticCandidate> candidates =
-            semantic::SemanticCandidates::generate(history, config);
+        std::vector<semantic::SemanticCandidate> candidates{};
+        ASSERT_EQ((semantic::SemanticCandidates::generate(history,
+                                                          candidates,
+                                                          config)),
+                  vs_graphs::core::semantic::SemanticCandidatesStatus::
+                      SEMANTIC_CANDIDATES_STATUS_SUCCESS);
         ASSERT_EQ(candidates.size(), 1U);
         EXPECT_NEAR(candidates.front().distance, 0.0, 1.0e-12);
     }
@@ -344,8 +400,12 @@ TEST(CandidateGen, SeededTopOneStabilityIsAtLeast45Of50)
         history[20U] = {makeRoom(11, 1.0 + perturbation(generator)),
                         makeRoom(12, 0.35),
                         makeRoom(13, 2.0)};
-        const std::vector<semantic::SemanticCandidate> candidates =
-            semantic::SemanticCandidates::generate(history, config);
+        std::vector<semantic::SemanticCandidate> candidates{};
+        ASSERT_EQ((semantic::SemanticCandidates::generate(history,
+                                                          candidates,
+                                                          config)),
+                  vs_graphs::core::semantic::SemanticCandidatesStatus::
+                      SEMANTIC_CANDIDATES_STATUS_SUCCESS);
         ASSERT_EQ(candidates.size(), 1U);
         if (candidates.front().roomAId == 1 && candidates.front().roomBId == 11)
         {
@@ -378,8 +438,12 @@ TEST(CandidateGen, SeededTruePairRecallIsAtLeast48Of50)
             history[20U].push_back(
                 makeRoom(200 + distractor, 0.1 + 0.2 * distractor));
         }
-        const std::vector<semantic::SemanticCandidate> candidates =
-            semantic::SemanticCandidates::generate(history, config);
+        std::vector<semantic::SemanticCandidate> candidates{};
+        ASSERT_EQ((semantic::SemanticCandidates::generate(history,
+                                                          candidates,
+                                                          config)),
+                  vs_graphs::core::semantic::SemanticCandidatesStatus::
+                      SEMANTIC_CANDIDATES_STATUS_SUCCESS);
         const bool found = std::any_of(
             candidates.begin(),
             candidates.end(),
@@ -400,10 +464,16 @@ TEST(CandidateGen, CandidateBytesAreInsertionOrderIndependent)
     first[20U]  = {makeRoom(13, 1.2), makeRoom(11, 1.0), makeRoom(12, 0.8)};
     second[10U] = {first[10U][2], first[10U][0], first[10U][1]};
     second[20U] = {first[20U][1], first[20U][2], first[20U][0]};
-    const std::string left =
-        candidateBytes(semantic::SemanticCandidates::generate(first));
-    const std::string right =
-        candidateBytes(semantic::SemanticCandidates::generate(second));
+    std::vector<vs_graphs::core::semantic::SemanticCandidate> candidates{};
+    ASSERT_EQ((semantic::SemanticCandidates::generate(first, candidates)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
+    const std::string left = candidateBytes(candidates);
+    std::vector<vs_graphs::core::semantic::SemanticCandidate> candidates2{};
+    ASSERT_EQ((semantic::SemanticCandidates::generate(second, candidates2)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
+    const std::string right = candidateBytes(candidates2);
     EXPECT_EQ(left, right);
 }
 
@@ -416,10 +486,16 @@ TEST(CandidateGen, RuntimeBudgetNeverChangesDeterministicBytes)
     semantic::SemanticCandidateConfig unprofiled;
     semantic::SemanticCandidateConfig profiled = unprofiled;
     profiled.runtimeBudget_ms                  = 1.0e-12;
-    const std::vector<semantic::SemanticCandidate> left =
-        semantic::SemanticCandidates::generate(history, unprofiled);
-    const std::vector<semantic::SemanticCandidate> right =
-        semantic::SemanticCandidates::generate(history, profiled);
+    std::vector<semantic::SemanticCandidate> left{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, left, unprofiled)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
+    std::vector<semantic::SemanticCandidate> right{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, right, profiled)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     EXPECT_EQ(candidateBytes(left), candidateBytes(right));
     ASSERT_FALSE(right.empty());
     EXPECT_FALSE(right.front().cues.isRuntimeBudgetExceeded);
@@ -433,8 +509,10 @@ TEST(CandidateGen, WallOnlyRoomsScoreWallCuesWithTopologyAndApertureAbsent)
         history;
     history[10U].push_back(makeRoom(1, 1.0));
     history[20U].push_back(makeRoom(2, 1.2));
-    const std::vector<semantic::SemanticCandidate> candidates =
-        semantic::SemanticCandidates::generate(history);
+    std::vector<semantic::SemanticCandidate> candidates{};
+    ASSERT_EQ((semantic::SemanticCandidates::generate(history, candidates)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(candidates.size(), 1U);
     EXPECT_TRUE(candidates.front().isMinimumEvidenceSatisfied);
     EXPECT_FALSE(candidates.front().cues.isTopologyAvailable);
@@ -464,8 +542,11 @@ TEST(CandidateGen, PartiallyMissingBoundsOmitsExtentButRetainsAngleEvidence)
         historySame;
     historySame[10U].push_back(baseline);
     historySame[20U].push_back(sameThirdNormal);
-    const std::vector<semantic::SemanticCandidate> sameCandidates =
-        semantic::SemanticCandidates::generate(historySame);
+    std::vector<semantic::SemanticCandidate> sameCandidates{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(historySame, sameCandidates)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(sameCandidates.size(), 1U);
     EXPECT_DOUBLE_EQ(sameCandidates.front().cues.angleDistance, 0.0);
     EXPECT_DOUBLE_EQ(sameCandidates.front().cues.extentDistance, 0.0);
@@ -479,8 +560,11 @@ TEST(CandidateGen, PartiallyMissingBoundsOmitsExtentButRetainsAngleEvidence)
         historyDiff;
     historyDiff[10U].push_back(baseline);
     historyDiff[20U].push_back(differentThirdNormal);
-    const std::vector<semantic::SemanticCandidate> diffCandidates =
-        semantic::SemanticCandidates::generate(historyDiff);
+    std::vector<semantic::SemanticCandidate> diffCandidates{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(historyDiff, diffCandidates)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(diffCandidates.size(), 1U);
     /* The third wall's normal changed and still contributes to the angle
      * signature even though its bounds were invalid in both rooms. */
@@ -502,8 +586,11 @@ TEST(CandidateGen, UnequalSignatureCountsExercisePadding)
     config.weightExtent   = 0.0;
     config.weightAperture = 0.0;
     config.weightTopology = 0.0;
-    const std::vector<semantic::SemanticCandidate> candidates =
-        semantic::SemanticCandidates::generate(history, config);
+    std::vector<semantic::SemanticCandidate> candidates{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, candidates, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(candidates.size(), 1U);
 
     /* Reference signatures use the same acos(|dot|) fold as production (a
@@ -539,14 +626,21 @@ TEST(CandidateGen, InvalidMedianDisablesExtentAndApertureCues)
     /* With only extent/aperture weighted and both disabled, the denominator
      * is zero and the pair is rejected -- proving neither cue leaked a
      * spurious zero-weighted contribution. */
-    EXPECT_TRUE(
-        semantic::SemanticCandidates::generate(history, config).empty());
+    std::vector<vs_graphs::core::semantic::SemanticCandidate> candidates{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, candidates, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
+    EXPECT_TRUE(candidates.empty());
 
     /* Allowing topology proves the room itself was not rejected for lack of
      * minimum evidence -- only the normalised-size cues were disabled. */
     config.weightTopology = 1.0;
-    const std::vector<semantic::SemanticCandidate> withTopology =
-        semantic::SemanticCandidates::generate(history, config);
+    std::vector<semantic::SemanticCandidate> withTopology{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, withTopology, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(withTopology.size(), 1U);
     EXPECT_DOUBLE_EQ(withTopology.front().cues.extentDistance, 0.0);
     EXPECT_DOUBLE_EQ(withTopology.front().cues.apertureDistance, 0.0);
@@ -566,8 +660,11 @@ TEST(CandidateGen, AmbiguityMarginMarksOnlyCandidatesWithinMargin)
     config.weightAperture  = 0.0;
     config.weightTopology  = 0.0;
     config.ambiguityMargin = 0.05;
-    const std::vector<semantic::SemanticCandidate> candidates =
-        semantic::SemanticCandidates::generate(history, config);
+    std::vector<semantic::SemanticCandidate> candidates{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, candidates, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(candidates.size(), 3U);
     EXPECT_EQ(candidates[0].roomBId, 11);
     EXPECT_TRUE(candidates[0].isAmbiguous);
@@ -591,8 +688,13 @@ TEST(CandidateGen, FallbackFindsTruePairWhenAnchorHasNoUsableEvidence)
     config.weightExtent   = 0.0;
     config.weightAperture = 0.0;
     config.weightTopology = 0.0;
-    const std::vector<semantic::SemanticCandidate> candidates =
-        semantic::SemanticCandidates::generate(history, config, 999);
+    std::vector<semantic::SemanticCandidate> candidates{};
+    ASSERT_EQ((semantic::SemanticCandidates::generate(history,
+                                                      candidates,
+                                                      config,
+                                                      999)),
+              vs_graphs::core::semantic::SemanticCandidatesStatus::
+                  SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(candidates.size(), 1U);
     EXPECT_EQ(candidates.front().roomAId, 1);
     EXPECT_EQ(candidates.front().roomBId, 101);
@@ -614,8 +716,11 @@ TEST(CandidateGen, TieBreaksByMapAndRoomIdWhenDistancesAreEqual)
     config.weightAperture = 0.0;
     config.weightTopology = 0.0;
     config.topK           = 10U;
-    const std::vector<semantic::SemanticCandidate> candidates =
-        semantic::SemanticCandidates::generate(history, config);
+    std::vector<semantic::SemanticCandidate> candidates{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, candidates, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_GE(candidates.size(), 2U);
     EXPECT_DOUBLE_EQ(candidates[0].distance, 0.0);
     EXPECT_DOUBLE_EQ(candidates[1].distance, 0.0);
@@ -643,8 +748,11 @@ TEST(CandidateGen, AperturePairwiseManhattanDistinguishesSwappedWidthHeight)
     config.weightAngle    = 0.0;
     config.weightExtent   = 0.0;
     config.weightTopology = 0.0;
-    const std::vector<semantic::SemanticCandidate> candidates =
-        semantic::SemanticCandidates::generate(history, config);
+    std::vector<semantic::SemanticCandidate> candidates{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::generate(history, candidates, config)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
     ASSERT_EQ(candidates.size(), 1U);
     EXPECT_NEAR(candidates.front().cues.apertureDistance, 4.0 / 3.0, 1.0e-9);
     EXPECT_DOUBLE_EQ(candidates.front().distance,
@@ -655,7 +763,13 @@ TEST(CandidateGen, RejectsZeroTopoRefinementIters)
 {
     semantic::SemanticCandidateConfig config;
     config.topoRefinementIters = 0U;
-    EXPECT_EQ(semantic::SemanticCandidates::validateConfig(config),
+    vs_graphs::core::semantic::SemanticCandidateConfigRejectionReason
+        rejectionReason{};
+    ASSERT_EQ(
+        (semantic::SemanticCandidates::validateConfig(config, rejectionReason)),
+        vs_graphs::core::semantic::SemanticCandidatesStatus::
+            SEMANTIC_CANDIDATES_STATUS_SUCCESS);
+    EXPECT_EQ(rejectionReason,
               semantic::SemanticCandidateConfigRejectionReason::
                   TOPO_REFINEMENT_ITERS_ZERO);
 }

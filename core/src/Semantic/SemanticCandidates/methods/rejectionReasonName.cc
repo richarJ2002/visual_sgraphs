@@ -17,56 +17,121 @@ namespace core
 namespace semantic
 {
 
-const char *SemanticCandidates::rejectionReasonName(
-    const SemanticCandidateConfigRejectionReason reason_in)
+SemanticCandidatesStatus SemanticCandidates::rejectionReasonName(
+    const SemanticCandidateConfigRejectionReason reason_in,
+    const char                                 *&p_name_out)
 {
     switch (reason_in)
     {
     case SemanticCandidateConfigRejectionReason::NONE:
-        return "none";
+    {
+        p_name_out = "none";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     case SemanticCandidateConfigRejectionReason::TOP_K_ZERO:
-        return "top_k_zero";
+    {
+        p_name_out = "top_k_zero";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     case SemanticCandidateConfigRejectionReason::PAIR_CAP_ZERO:
-        return "candidate_pair_cap_zero";
+    {
+        p_name_out = "candidate_pair_cap_zero";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     case SemanticCandidateConfigRejectionReason::TOPOLOGY_CAP_ZERO:
-        return "topology_nodes_cap_zero";
+    {
+        p_name_out = "topology_nodes_cap_zero";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     case SemanticCandidateConfigRejectionReason::GLOBAL_FALLBACK_CAP_ZERO:
-        return "global_fallback_cap_zero";
+    {
+        p_name_out = "global_fallback_cap_zero";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     case SemanticCandidateConfigRejectionReason::TOP_K_EXCEEDS_PAIR_CAP:
-        return "top_k_exceeds_pair_cap";
+    {
+        p_name_out = "top_k_exceeds_pair_cap";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     case SemanticCandidateConfigRejectionReason::
         GLOBAL_FALLBACK_EXCEEDS_PAIR_CAP:
-        return "global_fallback_exceeds_pair_cap";
-    case SemanticCandidateConfigRejectionReason::DESCRIPTOR_CAP_ZERO:
-        return "descriptor_elements_cap_zero";
-    case SemanticCandidateConfigRejectionReason::TOPO_REFINEMENT_ITERS_ZERO:
-        return "topo_refinement_iters_zero";
-    case SemanticCandidateConfigRejectionReason::NONFINITE_WEIGHT:
-        return "nonfinite_weight";
-    case SemanticCandidateConfigRejectionReason::NEGATIVE_WEIGHT:
-        return "negative_weight";
-    case SemanticCandidateConfigRejectionReason::WEIGHT_SUM_OVERFLOW:
-        return "weight_sum_overflow";
-    case SemanticCandidateConfigRejectionReason::ALL_WEIGHTS_ZERO:
-        return "all_weights_zero";
-    case SemanticCandidateConfigRejectionReason::NONFINITE_PENALTY:
-        return "nonfinite_penalty";
-    case SemanticCandidateConfigRejectionReason::NEGATIVE_PENALTY:
-        return "negative_penalty";
-    case SemanticCandidateConfigRejectionReason::NONFINITE_AMBIGUITY_MARGIN:
-        return "nonfinite_ambiguity_margin";
-    case SemanticCandidateConfigRejectionReason::NEGATIVE_AMBIGUITY_MARGIN:
-        return "negative_ambiguity_margin";
-    case SemanticCandidateConfigRejectionReason::NONFINITE_ANGLE_TOLERANCE:
-        return "nonfinite_angle_tolerance";
-    case SemanticCandidateConfigRejectionReason::NEGATIVE_ANGLE_TOLERANCE:
-        return "negative_angle_tolerance";
-    case SemanticCandidateConfigRejectionReason::NONFINITE_RUNTIME_BUDGET:
-        return "nonfinite_runtime_budget";
-    case SemanticCandidateConfigRejectionReason::NEGATIVE_RUNTIME_BUDGET:
-        return "negative_runtime_budget";
+    {
+        p_name_out = "global_fallback_exceeds_pair_cap";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
     }
-    return "unknown";
+    case SemanticCandidateConfigRejectionReason::DESCRIPTOR_CAP_ZERO:
+    {
+        p_name_out = "descriptor_elements_cap_zero";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::TOPO_REFINEMENT_ITERS_ZERO:
+    {
+        p_name_out = "topo_refinement_iters_zero";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::NONFINITE_WEIGHT:
+    {
+        p_name_out = "nonfinite_weight";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::NEGATIVE_WEIGHT:
+    {
+        p_name_out = "negative_weight";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::WEIGHT_SUM_OVERFLOW:
+    {
+        p_name_out = "weight_sum_overflow";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::ALL_WEIGHTS_ZERO:
+    {
+        p_name_out = "all_weights_zero";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::NONFINITE_PENALTY:
+    {
+        p_name_out = "nonfinite_penalty";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::NEGATIVE_PENALTY:
+    {
+        p_name_out = "negative_penalty";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::NONFINITE_AMBIGUITY_MARGIN:
+    {
+        p_name_out = "nonfinite_ambiguity_margin";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::NEGATIVE_AMBIGUITY_MARGIN:
+    {
+        p_name_out = "negative_ambiguity_margin";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::NONFINITE_ANGLE_TOLERANCE:
+    {
+        p_name_out = "nonfinite_angle_tolerance";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::NEGATIVE_ANGLE_TOLERANCE:
+    {
+        p_name_out = "negative_angle_tolerance";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::NONFINITE_RUNTIME_BUDGET:
+    {
+        p_name_out = "nonfinite_runtime_budget";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    case SemanticCandidateConfigRejectionReason::NEGATIVE_RUNTIME_BUDGET:
+    {
+        p_name_out = "negative_runtime_budget";
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    }
+    p_name_out = "unknown";
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

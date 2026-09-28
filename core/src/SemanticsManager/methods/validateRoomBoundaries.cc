@@ -73,20 +73,32 @@ void SemanticsManager::validateRoomBoundaries(void)
         /* Refresh stored corners every cycle the loop is COMPLETE (even when
          * the status itself didn't change -- wall positions can still
          * drift), and clear them the moment it stops being COMPLETE. */
-        p_room_in->setBoundaryCorners_World_m(
-            boundaryStatus_in == semantic::Room::BoundaryStatus::COMPLETE
-                ? corners_World_m_in
-                : std::vector<Eigen::Vector3d>{});
+        if (p_room_in->setBoundaryCorners_World_m(
+                boundaryStatus_in == semantic::Room::BoundaryStatus::COMPLETE
+                    ? corners_World_m_in
+                    : std::vector<Eigen::Vector3d>{}) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setBoundaryCorners_World_m cannot fail; continue as before.
+        }
 
-        const semantic::Room::BoundaryStatus previousBoundaryStatus =
-            p_room_in->getBoundaryStatus();
+        semantic::Room::BoundaryStatus previousBoundaryStatus{};
+        if (p_room_in->getBoundaryStatus(previousBoundaryStatus) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getBoundaryStatus cannot fail; continue as before.
+        }
 
         if (previousBoundaryStatus == boundaryStatus_in)
         {
             return;
         }
 
-        p_room_in->setBoundaryStatus(boundaryStatus_in);
+        if (p_room_in->setBoundaryStatus(boundaryStatus_in) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setBoundaryStatus cannot fail; continue as before.
+        }
 
         const auto boundaryStatusName =
             [](const semantic::Room::BoundaryStatus status)
@@ -106,15 +118,33 @@ void SemanticsManager::validateRoomBoundaries(void)
             return "unknown";
         };
 
-        std::cout << "[SemMgr] semantic::Room#" << p_room_in->getId()
+        int room_inId{};
+        if (p_room_in->getId(room_inId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        std::vector<geometric::Plane *> room_inWalls{};
+        if (p_room_in->getWalls(room_inWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
+        std::cout << "[SemMgr] semantic::Room#" << room_inId
                   << " boundary=" << boundaryStatusName(boundaryStatus_in)
-                  << " (" << p_room_in->getWalls().size() << " walls)"
-                  << std::endl;
+                  << " (" << room_inWalls.size() << " walls)" << std::endl;
     };
 
     for (semantic::Room *p_room : p_atlas->getAllRooms())
     {
-        if (p_room == nullptr || p_room->isBad())
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room == nullptr || roomIsBad)
         {
             continue;
         }
@@ -129,7 +159,13 @@ void SemanticsManager::validateRoomBoundaries(void)
             hasAmbiguousConflict = false;
             wallSegments.clear();
 
-            for (geometric::Plane *p_wall : p_room->getWalls())
+            std::vector<geometric::Plane *> roomWalls2{};
+            if (p_room->getWalls(roomWalls2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
+            for (geometric::Plane *p_wall : roomWalls2)
             {
                 FiniteWallSegment2d wallSegment;
 
@@ -146,9 +182,20 @@ void SemanticsManager::validateRoomBoundaries(void)
                 }
             }
 
-            std::cout << "[SemMgr] semantic::Room#" << p_room->getId()
-                      << " boundary check: roomWalls="
-                      << p_room->getWalls().size()
+            int roomId{};
+            if (p_room->getId(roomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            std::vector<geometric::Plane *> roomWalls3{};
+            if (p_room->getWalls(roomWalls3) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
+            std::cout << "[SemMgr] semantic::Room#" << roomId
+                      << " boundary check: roomWalls=" << roomWalls3.size()
                       << ", wallSegments=" << wallSegments.size()
                       << ", minWallCount="
                       << topologyParameters.minimumWallCount << std::endl;
@@ -224,13 +271,27 @@ void SemanticsManager::validateRoomBoundaries(void)
                             ? wallSegments[secondWallIndex].p_wall
                             : wallSegments[firstWallIndex].p_wall;
 
-                    if (p_room->removeWall(p_rejectedWall))
+                    bool roomWasWallRemoved{};
+                    if (p_room->removeWall(p_rejectedWall,
+                                           roomWasWallRemoved) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        roomWasWallRemoved =
+                            false; // rejected input reads as before
+                    }
+                    if (roomWasWallRemoved)
                     {
                         boundaryWasRepaired = true;
 
+                        int roomId2{};
+                        if (p_room->getId(roomId2) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
                         std::cout << "[SemMgr] Detached clashing Wall#"
                                   << p_rejectedWall->getId()
-                                  << " from semantic::Room#" << p_room->getId()
+                                  << " from semantic::Room#" << roomId2
                                   << "; Wall#" << p_retainedWall->getId()
                                   << " has decisively stronger finite support."
                                   << std::endl;
@@ -249,19 +310,32 @@ void SemanticsManager::validateRoomBoundaries(void)
          * the CONFLICTING/INCOMPLETE/UNOBSERVED branches below so it isn't
          * skipped by any of their early `continue`s. */
         {
-            const Eigen::Vector3d gapCentroid_World_m = p_room->getCentroid();
+            Eigen::Vector3d gapCentroid_World_m{};
+            if (p_room->getCentroid(gapCentroid_World_m) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
             if (gapCentroid_World_m.allFinite())
             {
                 const Eigen::Vector2d gapCentroidGround_m(
                     gapCentroid_World_m.dot(groundAxisU_World),
                     gapCentroid_World_m.dot(groundAxisV_World));
-                p_room->setObservationGaps(
-                    computeRoomObservationGaps(wallSegments,
-                                               gapCentroidGround_m));
+                if (p_room->setObservationGaps(
+                        computeRoomObservationGaps(wallSegments,
+                                                   gapCentroidGround_m)) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // setObservationGaps cannot fail; continue as before.
+                }
             }
             else
             {
-                p_room->setObservationGaps({});
+                if (p_room->setObservationGaps({}) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // setObservationGaps cannot fail; continue as before.
+                }
             }
         }
 
@@ -279,7 +353,12 @@ void SemanticsManager::validateRoomBoundaries(void)
             continue;
         }
 
-        const Eigen::Vector3d roomCentroid_World_m = p_room->getCentroid();
+        Eigen::Vector3d roomCentroid_World_m{};
+        if (p_room->getCentroid(roomCentroid_World_m) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
 
         if (!roomCentroid_World_m.allFinite())
         {
@@ -352,8 +431,14 @@ void SemanticsManager::validateRoomBoundaries(void)
 
                 if (!reducedClosure.hasOpenBoundary)
                 {
+                    int roomId3{};
+                    if (p_room->getId(roomId3) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
                     std::cout
-                        << "[SemMgr] semantic::Room#" << p_room->getId()
+                        << "[SemMgr] semantic::Room#" << roomId3
                         << ": excluding Wall#"
                         << wallSegments[excludeIndex].p_wall->getId()
                         << " lets the remaining " << reducedWallSegments.size()
@@ -433,7 +518,12 @@ void SemanticsManager::validateRoomBoundaries(void)
         const double enclosedArea_m2 =
             computePolygonArea_m2(boundaryCorners_World_m);
 
-        std::cout << "[SemMgr] semantic::Room#" << p_room->getId()
+        int roomId4{};
+        if (p_room->getId(roomId4) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        std::cout << "[SemMgr] semantic::Room#" << roomId4
                   << " boundary validation: walls=" << wallSegments.size()
                   << ", corners=" << boundaryCorners_World_m.size()
                   << ", selfIntersects="
@@ -514,10 +604,20 @@ void SemanticsManager::validateRoomBoundaries(void)
                 }
             }
 
-            const std::vector<semantic::Passage *> roomPassages =
-                p_room->getPassages();
+            std::vector<semantic::Passage *> roomPassages{};
+            if (p_room->getPassages(roomPassages) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getPassages cannot fail; continue as before.
+            }
 
-            for (geometric::Plane *p_ownedWall : p_room->getWalls())
+            std::vector<geometric::Plane *> roomWalls4{};
+            if (p_room->getWalls(roomWalls4) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
+            for (geometric::Plane *p_ownedWall : roomWalls4)
             {
                 if (p_ownedWall == nullptr)
                 {
@@ -540,8 +640,13 @@ void SemanticsManager::validateRoomBoundaries(void)
                         {
                             return false;
                         }
-                        const std::vector<geometric::Plane *> supportingWalls =
-                            p_passage->getAssociateWalls();
+                        std::vector<geometric::Plane *> supportingWalls{};
+                        if (p_passage->getAssociateWalls(supportingWalls) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                        {
+                            // getAssociateWalls cannot fail; continue as
+                            // before.
+                        }
                         return std::find(supportingWalls.begin(),
                                          supportingWalls.end(),
                                          p_ownedWall) != supportingWalls.end();
@@ -552,9 +657,22 @@ void SemanticsManager::validateRoomBoundaries(void)
                     continue;
                 }
 
-                if (p_room->removeWall(p_ownedWall))
+                bool roomWasWallRemoved2{};
+                if (p_room->removeWall(p_ownedWall, roomWasWallRemoved2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    std::cout << "[SemMgr] semantic::Room#" << p_room->getId()
+                    roomWasWallRemoved2 =
+                        false; // rejected input reads as before
+                }
+                if (roomWasWallRemoved2)
+                {
+                    int roomId5{};
+                    if (p_room->getId(roomId5) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    std::cout << "[SemMgr] semantic::Room#" << roomId5
                               << "'s boundary is COMPLETE; detached Wall#"
                               << p_ownedWall->getId()
                               << ", which is neither part of the closed wall "

@@ -27,9 +27,10 @@ namespace core
 namespace semantic
 {
 
-int Room::getId() const
+RoomStatus Room::getId(int &id_out) const
 {
-    return id;
+    id_out = id;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

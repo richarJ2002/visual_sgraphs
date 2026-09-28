@@ -906,8 +906,14 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                 continue;
             }
 
+            Eigen::Vector3d existingPassageCentroid{};
+            if (p_existingPassage->getCentroid(existingPassageCentroid) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
             const Eigen::Vector3d existingCentroid =
-                p_existingPassage->getCentroid().cast<double>();
+                existingPassageCentroid.cast<double>();
 
             if (!existingCentroid.allFinite())
             {
@@ -931,8 +937,15 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                 continue;
             }
 
+            g2o::Plane3D existingPassageGlobalEquation{};
+            if (p_existingPassage->getGlobalEquation(
+                    existingPassageGlobalEquation) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
             Eigen::Vector3d existingNormal =
-                p_existingPassage->getGlobalEquation().normal();
+                existingPassageGlobalEquation.normal();
 
             if (!existingNormal.allFinite() || existingNormal.norm() < 1e-8)
             {
@@ -979,8 +992,16 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
              * Connected ESDF free space through the wall is stronger evidence
              * than a stale blocked-door classification at the same opening.
              */
-            p_matchingPassage->setPassable(true);
-            p_matchingPassage->setCentroid(candidate.crossingPoint);
+            if (p_matchingPassage->setPassable(true) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setPassable cannot fail; continue as before.
+            }
+            if (p_matchingPassage->setCentroid(candidate.crossingPoint) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setCentroid cannot fail; continue as before.
+            }
 
             /*
              * A passage is framed by the wall face that first produced it.
@@ -991,8 +1012,12 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
              * flip with it. Only refresh the plane when this face already
              * anchors the passage; otherwise just pair the face.
              */
-            const std::vector<geometric::Plane *> matchingSupportingWalls =
-                p_matchingPassage->getAssociateWalls();
+            std::vector<geometric::Plane *> matchingSupportingWalls{};
+            if (p_matchingPassage->getAssociateWalls(matchingSupportingWalls) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getAssociateWalls cannot fail; continue as before.
+            }
             const bool isKnownSupportingFace =
                 std::find(matchingSupportingWalls.begin(),
                           matchingSupportingWalls.end(),
@@ -1000,11 +1025,19 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
             if (isKnownSupportingFace)
             {
-                p_matchingPassage->setGlobalEquation(
-                    candidate.p_wall->getGlobalEquation());
+                if (p_matchingPassage->setGlobalEquation(
+                        candidate.p_wall->getGlobalEquation()) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setGlobalEquation cannot fail; continue as before.
+                }
             }
 
-            p_matchingPassage->addAssociateWall(candidate.p_wall);
+            if (p_matchingPassage->addAssociateWall(candidate.p_wall) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // addAssociateWall cannot fail; continue as before.
+            }
 
             /* Open passages previously carried no size estimate at all
              * (only door-typed/blocked passages did) -- diameter from the
@@ -1015,9 +1048,18 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
              * heightSpan_m already hold the running max -- see the
              * temporal evidence merge above). */
             constexpr double defaultOpenPassageHeight_m = 2.0;
-            p_matchingPassage->setWidth(2.0 * candidate.openingRadius);
-            p_matchingPassage->setHeight(
-                std::max(candidate.heightSpan_m, defaultOpenPassageHeight_m));
+            if (p_matchingPassage->setWidth(2.0 * candidate.openingRadius) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setWidth cannot fail; continue as before.
+            }
+            if (p_matchingPassage->setHeight(
+                    std::max(candidate.heightSpan_m,
+                             defaultOpenPassageHeight_m)) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setHeight cannot fail; continue as before.
+            }
 
             continue;
         }
@@ -1066,16 +1108,30 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
          * branch above for the same estimate's derivation. */
         for (semantic::Passage *p_created : p_atlas->getAllPassages())
         {
+            Eigen::Vector3d createdCentroid{};
+            if (!(p_created == nullptr) &&
+                p_created->getCentroid(createdCentroid) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
             if (p_created == nullptr ||
-                !p_created->getCentroid().isApprox(candidate.crossingPoint,
-                                                   1e-6))
+                !createdCentroid.isApprox(candidate.crossingPoint, 1e-6))
             {
                 continue;
             }
             constexpr double defaultOpenPassageHeight_m = 2.0;
-            p_created->setWidth(2.0 * candidate.openingRadius);
-            p_created->setHeight(
-                std::max(candidate.heightSpan_m, defaultOpenPassageHeight_m));
+            if (p_created->setWidth(2.0 * candidate.openingRadius) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setWidth cannot fail; continue as before.
+            }
+            if (p_created->setHeight(std::max(candidate.heightSpan_m,
+                                              defaultOpenPassageHeight_m)) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setHeight cannot fail; continue as before.
+            }
             break;
         }
     }

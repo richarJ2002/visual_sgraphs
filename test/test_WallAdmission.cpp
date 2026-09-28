@@ -310,15 +310,21 @@ TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
     }
 
     semantic::Room room;
-    room.setId(1);
-    room.setMap(p_map);
+    ASSERT_EQ((room.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     /* semantic::Room centroid on the -X side: opposite the keyframes that
      * actually observed this wall. */
-    room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0));
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     const bool admitted = manager.admitWallToRoomForTest(&room, wall.get());
     EXPECT_FALSE(admitted);
-    EXPECT_TRUE(room.getWalls().empty());
+    std::vector<vs_graphs::core::geometric::Plane *> walls{};
+    ASSERT_EQ((room.getWalls(walls)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(walls.empty());
 }
 
 TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
@@ -341,13 +347,19 @@ TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
     }
 
     semantic::Room room;
-    room.setId(1);
-    room.setMap(p_map);
-    room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0));
+    ASSERT_EQ((room.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     const bool admitted = manager.admitWallToRoomForTest(&room, wall.get());
     EXPECT_TRUE(admitted);
-    EXPECT_EQ(room.getWalls().size(), 1U);
+    std::vector<vs_graphs::core::geometric::Plane *> walls{};
+    ASSERT_EQ((room.getWalls(walls)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(walls.size(), 1U);
 }
 
 TEST(WallAdmission, AdmitsWallWithNoObservationEvidenceRatherThanRejectingBlind)
@@ -363,9 +375,12 @@ TEST(WallAdmission, AdmitsWallWithNoObservationEvidenceRatherThanRejectingBlind)
         makeAdmissibleWallAtOrigin(1, p_map);
 
     semantic::Room room;
-    room.setId(1);
-    room.setMap(p_map);
-    room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0));
+    ASSERT_EQ((room.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     const bool admitted = manager.admitWallToRoomForTest(&room, wall.get());
     EXPECT_TRUE(admitted);
@@ -386,26 +401,38 @@ TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
     /* semantic::Passage at x=0, generous aperture, with a stable prospective
      * room on the far (+x) side. */
     semantic::Passage passage;
-    passage.setId(1);
-    passage.setMap(p_map);
-    passage.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
-    passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0));
-    passage.setWidth(2.0);
-    passage.setHeight(2.0);
-    passage.setPassable(true);
+    ASSERT_EQ((passage.setId(1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setWidth(2.0)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setHeight(2.0)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setPassable(true)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     /* Known near side is -X (established elsewhere, e.g. by an earlier
      * wall's admission on this passage) -- the B2 fix only substitutes a
      * synthesized near-side point when this is available; guessing from the
      * ambiguous room centroid's own residual sign would be as likely to
      * point the wrong way as the right one. */
-    passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0));
+    ASSERT_EQ((passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
     semantic::Room prospective;
-    prospective.setId(2);
-    prospective.setMap(p_map);
-    prospective.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
-    passage.setProspectiveRoom(&prospective);
+    ASSERT_EQ((prospective.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((prospective.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((prospective.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setProspectiveRoom(&prospective)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
     atlas.addMapPassage(&passage);
 
@@ -416,20 +443,32 @@ TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
     wall.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
 
     semantic::Room room;
-    room.setId(4);
-    room.setMap(p_map);
+    ASSERT_EQ((room.setId(4)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     /* Degenerate case: essentially sitting on the passage plane itself,
      * well inside any plausible minimumSideDistance_m. Before the B2 fix,
      * this made segmentCrossesPassageOpening silently report "no crossing",
      * letting the far-side wall fall through to ordinary admission on the
      * near room instead of being routed to the prospective far-side room. */
-    room.setCentroid(Eigen::Vector3d(0.0005, 0.0, 0.0));
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(0.0005, 0.0, 0.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     const bool admitted = manager.admitWallToRoomForTest(&room, &wall);
     EXPECT_TRUE(admitted);
-    EXPECT_TRUE(room.getWalls().empty());
-    ASSERT_EQ(prospective.getWalls().size(), 1U);
-    EXPECT_EQ(prospective.getWalls().front(), &wall);
+    std::vector<vs_graphs::core::geometric::Plane *> walls{};
+    ASSERT_EQ((room.getWalls(walls)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(walls.empty());
+    std::vector<vs_graphs::core::geometric::Plane *> walls2{};
+    ASSERT_EQ((prospective.getWalls(walls2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ(walls2.size(), 1U);
+    std::vector<vs_graphs::core::geometric::Plane *> walls3{};
+    ASSERT_EQ((prospective.getWalls(walls3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(walls3.front(), &wall);
 }
 
 TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
@@ -444,20 +483,31 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
     SemanticsManager manager(&atlas);
 
     semantic::Passage passage;
-    passage.setId(1);
-    passage.setMap(p_map);
-    passage.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
-    passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0));
-    passage.setWidth(2.0);
-    passage.setHeight(2.0);
-    passage.setPassable(true);
+    ASSERT_EQ((passage.setId(1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setWidth(2.0)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setHeight(2.0)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setPassable(true)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
     semantic::Room prospective;
-    prospective.setId(2);
-    prospective.setMap(p_map);
-    prospective.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
-    passage.setProspectiveRoom(&prospective);
+    ASSERT_EQ((prospective.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((prospective.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((prospective.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setProspectiveRoom(&prospective)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
     atlas.addMapPassage(&passage);
 
@@ -467,14 +517,23 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
     wall.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
 
     semantic::Room room;
-    room.setId(4);
-    room.setMap(p_map);
-    room.setCentroid(Eigen::Vector3d(0.0005, 0.0, 0.0));
+    ASSERT_EQ((room.setId(4)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(0.0005, 0.0, 0.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     const bool admitted = manager.admitWallToRoomForTest(&room, &wall);
     EXPECT_FALSE(admitted);
-    EXPECT_TRUE(room.getWalls().empty());
-    EXPECT_TRUE(prospective.getWalls().empty());
+    std::vector<vs_graphs::core::geometric::Plane *> walls{};
+    ASSERT_EQ((room.getWalls(walls)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(walls.empty());
+    std::vector<vs_graphs::core::geometric::Plane *> walls2{};
+    ASSERT_EQ((prospective.getWalls(walls2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(walls2.empty());
 }
 
 /* ---------------------------------------------------------------------- *
@@ -582,9 +641,12 @@ TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
                                   Eigen::Vector3d(0.0, 1.0, 0.0),
                                   Eigen::Vector3d(1.0, 0.0, 0.0));
     semantic::Room roomA;
-    roomA.setId(1);
-    roomA.setMap(p_map);
-    roomA.setWalls(wallX.get());
+    ASSERT_EQ((roomA.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((roomA.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((roomA.setWalls(wallX.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     atlas.addDetectedMapRoom(&roomA);
 
     /* Wall Y: normal +X, runs along world Y through the origin -- crosses
@@ -596,15 +658,26 @@ TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
                                   Eigen::Vector3d(0.0, 1.0, 0.0));
 
     semantic::Room roomB;
-    roomB.setId(2);
-    roomB.setMap(p_map);
+    ASSERT_EQ((roomB.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((roomB.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     const bool admitted = manager.admitWallToRoomForTest(&roomB, wallY.get());
 
     EXPECT_FALSE(admitted);
-    EXPECT_TRUE(roomB.getWalls().empty());
-    ASSERT_EQ(roomA.getWalls().size(), 1U);
-    EXPECT_EQ(roomA.getWalls().front(), wallX.get());
+    std::vector<vs_graphs::core::geometric::Plane *> walls2{};
+    ASSERT_EQ((roomB.getWalls(walls2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(walls2.empty());
+    std::vector<vs_graphs::core::geometric::Plane *> walls3{};
+    ASSERT_EQ((roomA.getWalls(walls3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ(walls3.size(), 1U);
+    std::vector<vs_graphs::core::geometric::Plane *> walls4{};
+    ASSERT_EQ((roomA.getWalls(walls4)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(walls4.front(), wallX.get());
 }
 
 /* ---------------------------------------------------------------------- *
@@ -625,24 +698,38 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
 
     /* semantic::Passage at x=0, generous aperture, known near side -X. */
     semantic::Passage passage;
-    passage.setId(1);
-    passage.setMap(p_map);
-    passage.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
-    passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0));
-    passage.setWidth(2.0);
-    passage.setHeight(2.0);
-    passage.setPassable(true);
-    passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0));
+    ASSERT_EQ((passage.setId(1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setWidth(2.0)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setHeight(2.0)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setPassable(true)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
     /* Prospective far-side room whose centroid lies beyond the wall plane,
      * as a deep room's free-space centroid naturally does. */
     semantic::Room prospective;
-    prospective.setId(2);
-    prospective.setMap(p_map);
-    prospective.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED);
-    prospective.setCentroid(Eigen::Vector3d(3.0, 0.0, 0.0));
-    passage.setProspectiveRoom(&prospective);
+    ASSERT_EQ((prospective.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((prospective.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (prospective.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED)),
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((prospective.setCentroid(Eigen::Vector3d(3.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setProspectiveRoom(&prospective)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
     atlas.addMapPassage(&passage);
     atlas.addDetectedMapRoom(&prospective);
@@ -656,12 +743,19 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
     wall.setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0));
 
     /* Pre-place the wall as the aperture backstop would have routed it. */
-    prospective.setWalls(&wall);
+    ASSERT_EQ((prospective.setWalls(&wall)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     manager.enforcePassageSideInvariantForTest();
 
-    ASSERT_EQ(prospective.getWalls().size(), 1U);
-    EXPECT_EQ(prospective.getWalls().front(), &wall);
+    std::vector<vs_graphs::core::geometric::Plane *> walls{};
+    ASSERT_EQ((prospective.getWalls(walls)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ(walls.size(), 1U);
+    std::vector<vs_graphs::core::geometric::Plane *> walls2{};
+    ASSERT_EQ((prospective.getWalls(walls2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(walls2.front(), &wall);
 }
 
 TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
@@ -674,21 +768,34 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
     SemanticsManager manager(&atlas);
 
     semantic::Passage passage;
-    passage.setId(1);
-    passage.setMap(p_map);
-    passage.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
-    passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0));
-    passage.setWidth(2.0);
-    passage.setHeight(2.0);
-    passage.setPassable(true);
+    ASSERT_EQ((passage.setId(1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setWidth(2.0)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setHeight(2.0)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setPassable(true)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
     semantic::Room prospective;
-    prospective.setId(2);
-    prospective.setMap(p_map);
-    prospective.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED);
-    prospective.setCentroid(Eigen::Vector3d(3.0, 0.0, 0.0));
-    passage.setProspectiveRoom(&prospective);
+    ASSERT_EQ((prospective.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((prospective.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (prospective.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED)),
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((prospective.setCentroid(Eigen::Vector3d(3.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setProspectiveRoom(&prospective)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
     atlas.addMapPassage(&passage);
     atlas.addDetectedMapRoom(&prospective);
@@ -700,11 +807,15 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
     wall.setCentroid(Eigen::Vector3d(1.5, 0.0, 0.0));
     wall.setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0));
 
-    prospective.setWalls(&wall);
+    ASSERT_EQ((prospective.setWalls(&wall)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     manager.enforcePassageSideInvariantForTest();
 
-    EXPECT_TRUE(prospective.getWalls().empty());
+    std::vector<vs_graphs::core::geometric::Plane *> walls{};
+    ASSERT_EQ((prospective.getWalls(walls)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(walls.empty());
 }
 
 TEST(WallAdmission, BoundsTrimStrayOutliersButKeepTheGridSurface)

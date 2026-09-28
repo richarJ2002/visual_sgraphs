@@ -39,32 +39,70 @@ void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
         return;
     }
 
+    semantic::Floor *p_bestFloor = nullptr;
     if (semantic::Floor::selectBestObservedFloor(
-            {p_retainedFloor_inout, p_duplicateFloor_in}) ==
-        p_duplicateFloor_in)
+            {p_retainedFloor_inout, p_duplicateFloor_in},
+            p_bestFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        const std::optional<semantic::Floor::PlaneIdentity> betterIdentity =
-            p_duplicateFloor_in->getPlaneIdentity();
+        // selectBestObservedFloor cannot fail; continue as before.
+    }
+    if (p_bestFloor == p_duplicateFloor_in)
+    {
+        std::optional<semantic::Floor::PlaneIdentity> betterIdentity{};
+        if (p_duplicateFloor_in->getPlaneIdentity(betterIdentity) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getPlaneIdentity cannot fail; continue as before.
+        }
         if (betterIdentity.has_value())
         {
-            p_retainedFloor_inout->setPlaneIdentity(
-                betterIdentity->equation_World,
-                betterIdentity->finiteSupportCount,
-                betterIdentity->observationCount);
+            if (p_retainedFloor_inout->setPlaneIdentity(
+                    betterIdentity->equation_World,
+                    betterIdentity->finiteSupportCount,
+                    betterIdentity->observationCount) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // Rejected input: ignored, as before.
+            }
         }
-        const Eigen::Vector3d betterCentroid =
-            p_duplicateFloor_in->getCentroid();
+        Eigen::Vector3d betterCentroid{};
+        if (p_duplicateFloor_in->getCentroid(betterCentroid) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
         if (betterCentroid.allFinite())
         {
-            p_retainedFloor_inout->setCentroid(betterCentroid);
+            if (p_retainedFloor_inout->setCentroid(betterCentroid) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // setCentroid cannot fail; continue as before.
+            }
         }
     }
 
-    for (semantic::Room *p_room : p_duplicateFloor_in->getRooms())
+    std::vector<vs_graphs::core::semantic::Room *> duplicateFloor_inRooms{};
+    if (p_duplicateFloor_in->getRooms(duplicateFloor_inRooms) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        if (p_room != nullptr && !p_room->isBad())
+        // getRooms cannot fail; continue as before.
+    }
+    for (semantic::Room *p_room : duplicateFloor_inRooms)
+    {
+        bool roomIsBad{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_retainedFloor_inout->addRoom(p_room);
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad)
+        {
+            if (p_retainedFloor_inout->addRoom(p_room) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // addRoom cannot fail; continue as before.
+            }
         }
     }
 }

@@ -30,23 +30,36 @@ namespace core
 namespace semantic
 {
 
-std::vector<VerifyWallObservation> SemanticVerify::collectWallObservations(
-    const Room                 *p_room_in,
-    const SemanticVerifyConfig &configuration_in)
+SemanticVerifyStatus SemanticVerify::collectWallObservations(
+    const Room                         *p_room_in,
+    const SemanticVerifyConfig         &configuration_in,
+    std::vector<VerifyWallObservation> &observations_out)
 {
     std::vector<VerifyWallObservation> observations;
     if (p_room_in == nullptr)
     {
-        return observations;
+        observations_out = observations;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
-    const Eigen::Vector3d roomCentroid_World = p_room_in->getCentroid();
+    Eigen::Vector3d roomCentroid_World{};
+    if (p_room_in->getCentroid(roomCentroid_World) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
     if (!isFiniteVector(roomCentroid_World))
     {
-        return observations;
+        observations_out = observations;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
-    for (geometric::Plane *p_wall : p_room_in->getWalls())
+    std::vector<geometric::Plane *> room_inWalls{};
+    if (p_room_in->getWalls(room_inWalls) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getWalls cannot fail; continue as before.
+    }
+    for (geometric::Plane *p_wall : room_inWalls)
     {
         if (observations.size() == configuration_in.maxWallsPerRoom)
         {
@@ -122,7 +135,8 @@ std::vector<VerifyWallObservation> SemanticVerify::collectWallObservations(
         observations.push_back(std::move(observation));
     }
 
-    return observations;
+    observations_out = observations;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

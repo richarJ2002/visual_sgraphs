@@ -28,10 +28,13 @@ namespace core
 namespace semantic
 {
 
-bool Passage::hasBidirectionalTraversalEvidence() const
+PassageStatus Passage::hasBidirectionalTraversalEvidence(
+    bool &hasBidirectionalTraversalEvidence_out) const
 {
     std::lock_guard<std::mutex> lock(typeMutex);
-    return traversalKnownToFarCount > 0U && traversalFarToKnownCount > 0U;
+    hasBidirectionalTraversalEvidence_out =
+        traversalKnownToFarCount > 0U && traversalFarToKnownCount > 0U;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

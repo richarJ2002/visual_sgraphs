@@ -28,14 +28,23 @@ namespace core
 namespace semantic
 {
 
-std::optional<int> Passage::getProspectiveRoomId() const
+PassageStatus Passage::getProspectiveRoomId(
+    std::optional<int> &prospectiveRoomId_out) const
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
     if (p_prospectiveRoom == nullptr)
     {
-        return std::nullopt;
+        prospectiveRoomId_out = std::nullopt;
+        return PassageStatus::PASSAGE_STATUS_SUCCESS;
     }
-    return p_prospectiveRoom->getId();
+    int prospectiveRoomId{};
+    if (p_prospectiveRoom->getId(prospectiveRoomId) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    prospectiveRoomId_out = prospectiveRoomId;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

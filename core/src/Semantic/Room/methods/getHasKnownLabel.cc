@@ -27,9 +27,10 @@ namespace core
 namespace semantic
 {
 
-bool Room::getHasKnownLabel() const
+RoomStatus Room::getHasKnownLabel(bool &hasKnownLabel_out) const
 {
-    return hasKnownLabel;
+    hasKnownLabel_out = hasKnownLabel;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

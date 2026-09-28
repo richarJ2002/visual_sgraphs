@@ -28,9 +28,11 @@ namespace core
 namespace semantic
 {
 
-void Passage::setOpId(int value_in)
+PassageStatus Passage::setOpId(int value_in)
 {
     opId = value_in;
+
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

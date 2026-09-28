@@ -28,7 +28,7 @@ namespace core
 namespace semantic
 {
 
-void Passage::addTraversalObservation(TraversalDirection direction_in)
+PassageStatus Passage::addTraversalObservation(TraversalDirection direction_in)
 {
     std::lock_guard<std::mutex> lock(typeMutex);
 
@@ -46,6 +46,8 @@ void Passage::addTraversalObservation(TraversalDirection direction_in)
     {
         ++(*p_counter);
     }
+
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -26,9 +26,11 @@ namespace core
 namespace semantic
 {
 
-const std::vector<TransitionEvent> &RoomTracker::getEventHistory() const
+RoomTrackerStatus RoomTracker::getEventHistory(
+    const std::vector<TransitionEvent> *&p_eventHistory_out) const
 {
-    return eventHistory;
+    p_eventHistory_out = &(eventHistory);
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

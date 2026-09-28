@@ -28,19 +28,30 @@ namespace core
 namespace semantic
 {
 
-const char *
-    SemanticVerify::mergeDecisionName(const SemanticMergeDecision decision_in)
+SemanticVerifyStatus
+    SemanticVerify::mergeDecisionName(const SemanticMergeDecision decision_in,
+                                      const char                *&p_name_out)
 {
     switch (decision_in)
     {
     case SemanticMergeDecision::ACCEPT:
-        return "ACCEPT";
-    case SemanticMergeDecision::DEFER:
-        return "DEFER";
-    case SemanticMergeDecision::REJECT:
-        return "REJECT";
+    {
+        p_name_out = "ACCEPT";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
-    return "UNKNOWN";
+    case SemanticMergeDecision::DEFER:
+    {
+        p_name_out = "DEFER";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    case SemanticMergeDecision::REJECT:
+    {
+        p_name_out = "REJECT";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    }
+    p_name_out = "UNKNOWN";
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -101,20 +101,41 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
         return semantic::SemanticMergeDecision::REJECT;
     }
 
-    const semantic::SemanticMergeGateResult semanticMergeGate =
-        semantic::SemanticVerify::evaluateMapMergeGate(
+    semantic::SemanticVerifyConfig configuration{};
+    if (semantic::SemanticVerify::configFromSystemParams(configuration) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // configFromSystemParams cannot fail; continue as before.
+    }
+    semantic::SemanticMergeGateResult semanticMergeGate{};
+    if (semantic::SemanticVerify::evaluateMapMergeGate(
             p_currentMap,
             p_mergeMap,
             oldCorrectedPose.inverse(),
-            semantic::SemanticVerify::configFromSystemParams());
+            semanticMergeGate,
+            configuration) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // evaluateMapMergeGate cannot fail; continue as before.
+    }
     const std::string floorVerificationResult = semanticMergeGate.floorDecision;
+    const char       *p_name                  = nullptr;
+    if (semantic::SemanticVerify::mergeDecisionName(semanticMergeGate.decision,
+                                                    p_name) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // mergeDecisionName cannot fail; continue as before.
+    }
+    const char *p_name2 = nullptr;
+    if (semantic::SemanticVerify::mergeReasonName(semanticMergeGate.reason,
+                                                  p_name2) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // mergeReasonName cannot fail; continue as before.
+    }
     std::cout << "[SemanticMergeGate] surviving_map=" << p_currentMap->getId()
-              << " absorbed_map=" << p_mergeMap->getId() << " decision="
-              << semantic::SemanticVerify::mergeDecisionName(
-                     semanticMergeGate.decision)
-              << " reason="
-              << semantic::SemanticVerify::mergeReasonName(
-                     semanticMergeGate.reason)
+              << " absorbed_map=" << p_mergeMap->getId()
+              << " decision=" << p_name << " reason=" << p_name2
               << " shared_rooms=" << semanticMergeGate.sharedRoomCount
               << " aligned_rooms=" << semanticMergeGate.alignedRoomCount
               << " matched_walls=" << semanticMergeGate.matchedWallCount
@@ -262,8 +283,13 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
         {
             if (p_existingMarker != nullptr)
             {
-                nextMarkerId =
-                    std::max(nextMarkerId, p_existingMarker->getId() + 1);
+                int existingMarkerId{};
+                if (p_existingMarker->getId(existingMarkerId) !=
+                    semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                nextMarkerId = std::max(nextMarkerId, existingMarkerId + 1);
             }
         }
 
@@ -274,8 +300,16 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                 continue;
             }
 
-            p_marker->setMap(p_currentMap);
-            p_marker->setId(nextMarkerId++);
+            if (p_marker->setMap(p_currentMap) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
+            if (p_marker->setId(nextMarkerId++) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
             p_currentMap->addMapMarker(p_marker);
             p_mergeMap->eraseMapMarker(p_marker);
         }
@@ -291,8 +325,22 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             for (semantic::Passage *p_existingPassage :
                  p_currentMap->getAllPassages())
             {
+                int existingPassageId{};
+                if ((p_existingPassage != nullptr) &&
+                    p_existingPassage->getId(existingPassageId) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int passageId{};
+                if ((p_existingPassage != nullptr) &&
+                    p_passage->getId(passageId) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 if (p_existingPassage != nullptr &&
-                    p_existingPassage->getId() == p_passage->getId())
+                    existingPassageId == passageId)
                 {
                     p_retainedPassage = p_existingPassage;
                     break;
@@ -302,51 +350,105 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             p_mergeMap->eraseMapPassage(p_passage);
             if (p_retainedPassage != nullptr)
             {
-                p_retainedPassage->mergeFromDuplicate(p_passage);
+                bool retainedPassageWasGeometryReplaced{};
+                if (p_retainedPassage->mergeFromDuplicate(
+                        p_passage,
+                        retainedPassageWasGeometryReplaced) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    retainedPassageWasGeometryReplaced =
+                        false; // rejected input reads as before
+                }
                 for (semantic::Room *p_room : mergeMapDetectedRooms)
                 {
                     if (p_room != nullptr)
                     {
-                        p_room->replacePassageAssociation(p_passage,
-                                                          p_retainedPassage);
+                        bool roomWasAssociationReplaced{};
+                        if (p_room->replacePassageAssociation(
+                                p_passage,
+                                p_retainedPassage,
+                                roomWasAssociationReplaced) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            roomWasAssociationReplaced =
+                                false; // rejected input reads as before
+                        }
                     }
                 }
                 for (semantic::Room *p_room : mergeMapMarkerRooms)
                 {
                     if (p_room != nullptr)
                     {
-                        p_room->replacePassageAssociation(p_passage,
-                                                          p_retainedPassage);
+                        bool roomWasAssociationReplaced2{};
+                        if (p_room->replacePassageAssociation(
+                                p_passage,
+                                p_retainedPassage,
+                                roomWasAssociationReplaced2) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            roomWasAssociationReplaced2 =
+                                false; // rejected input reads as before
+                        }
                     }
                 }
-                p_passage->setBad();
+                if (p_passage->setBad() !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setBad cannot fail; continue as before.
+                }
                 continue;
             }
 
-            p_passage->setMap(p_currentMap);
+            if (p_passage->setMap(p_currentMap) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_currentMap->addMapPassage(p_passage);
         }
 
         for (semantic::Room *p_room : mergeMapDetectedRooms)
         {
-            if (p_room == nullptr || p_room->isBad())
+            bool roomIsBad{};
+            if (!(p_room == nullptr) &&
+                p_room->isBad(roomIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_room == nullptr || roomIsBad)
             {
                 continue;
             }
 
-            p_room->setMap(p_currentMap);
+            if (p_room->setMap(p_currentMap) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_currentMap->addDetectedMapRoom(p_room);
             p_mergeMap->eraseDetectedMapRoom(p_room);
         }
 
         for (semantic::Room *p_room : mergeMapMarkerRooms)
         {
-            if (p_room == nullptr || p_room->isBad())
+            bool roomIsBad2{};
+            if (!(p_room == nullptr) &&
+                p_room->isBad(roomIsBad2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_room == nullptr || roomIsBad2)
             {
                 continue;
             }
 
-            p_room->setMap(p_currentMap);
+            if (p_room->setMap(p_currentMap) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_currentMap->addCandidateMapRoom(p_room);
             p_mergeMap->eraseMarkerBasedMapRoom(p_room);
         }
@@ -363,8 +465,21 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             for (semantic::Floor *p_existingFloor :
                  p_currentMap->getAllFloors())
             {
-                if (p_existingFloor != nullptr &&
-                    p_existingFloor->getId() == p_floor->getId())
+                int existingFloorId{};
+                if ((p_existingFloor != nullptr) &&
+                    p_existingFloor->getId(existingFloorId) !=
+                        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int floorId{};
+                if ((p_existingFloor != nullptr) &&
+                    p_floor->getId(floorId) !=
+                        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                if (p_existingFloor != nullptr && existingFloorId == floorId)
                 {
                     p_retainedFloor = p_existingFloor;
                     break;
@@ -375,7 +490,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                 mergeFloorEvidenceAndRooms(p_retainedFloor, p_floor);
                 continue;
             }
-            p_floor->setMap(p_currentMap);
+            if (p_floor->setMap(p_currentMap) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_currentMap->addMapFloor(p_floor);
         }
 
@@ -387,12 +506,25 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 
         for (semantic::Room *p_room : p_currentMap->getAllRooms())
         {
-            if (p_room == nullptr || p_room->isBad())
+            bool roomIsBad3{};
+            if (!(p_room == nullptr) &&
+                p_room->isBad(roomIsBad3) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_room == nullptr || roomIsBad3)
             {
                 continue;
             }
 
-            for (geometric::Plane *p_wall : p_room->getWalls())
+            std::vector<geometric::Plane *> roomWalls{};
+            if (p_room->getWalls(roomWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
+            for (geometric::Plane *p_wall : roomWalls)
             {
                 if (p_wall != nullptr && !p_wall->isBad())
                 {

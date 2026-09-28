@@ -36,8 +36,19 @@ void Atlas::addMapFloor(semantic::Floor *p_floor_in)
     {
         return;
     }
-    observeFloorIdentity(p_floor_in->getId());
-    Map *p_ownerMap = p_floor_in->getMap();
+    int floor_inId{};
+    if (p_floor_in->getId(floor_inId) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    observeFloorIdentity(floor_inId);
+    Map *p_ownerMap = nullptr;
+    if (p_floor_in->getMap(p_ownerMap) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     p_ownerMap->addMapFloor(p_floor_in);
 }
 

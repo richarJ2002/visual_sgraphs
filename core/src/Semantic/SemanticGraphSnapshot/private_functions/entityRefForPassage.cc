@@ -41,18 +41,39 @@ EntityRef entityRefForPassage(Passage *p_passage_in)
     {
         return reference;
     }
-    reference.localId                   = p_passage_in->getId();
-    reference.isLive                    = !p_passage_in->isBad();
+    int passage_inId{};
+    if (p_passage_in->getId(passage_inId) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    reference.localId = passage_inId;
+    bool passage_inIsBad{};
+    if (p_passage_in->isBad(passage_inIsBad) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    reference.isLive                    = !passage_inIsBad;
     reference.livenessUnavailableReason = UnavailableReason::NONE;
 
-    core::Map *p_map = p_passage_in->getMap();
+    core::Map *p_map = nullptr;
+    if (p_passage_in->getMap(p_map) != PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     if (p_map == nullptr)
     {
         reference.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
         return reference;
     }
-    reference.key =
-        makeKey(EntityKind::PASSAGE, p_map->getId(), p_passage_in->getId());
+    int passage_inId2{};
+    if (p_passage_in->getId(passage_inId2) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    reference.key = makeKey(EntityKind::PASSAGE, p_map->getId(), passage_inId2);
     reference.reason = UnavailableReason::NONE;
     return reference;
 }

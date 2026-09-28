@@ -44,8 +44,12 @@ void collapseMergedFloors(Map *p_survivingMap_inout)
         return;
     }
 
-    semantic::Floor *p_keeperFloor =
-        semantic::Floor::selectBestObservedFloor(allFloors);
+    semantic::Floor *p_keeperFloor = nullptr;
+    if (semantic::Floor::selectBestObservedFloor(allFloors, p_keeperFloor) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // selectBestObservedFloor cannot fail; continue as before.
+    }
     if (p_keeperFloor == nullptr)
     {
         return;
@@ -58,18 +62,47 @@ void collapseMergedFloors(Map *p_survivingMap_inout)
             continue;
         }
 
-        for (semantic::Room *p_room : p_duplicateFloor->getRooms())
+        std::vector<vs_graphs::core::semantic::Room *> duplicateFloorRooms{};
+        if (p_duplicateFloor->getRooms(duplicateFloorRooms) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            if (p_room != nullptr && !p_room->isBad())
+            // getRooms cannot fail; continue as before.
+        }
+        for (semantic::Room *p_room : duplicateFloorRooms)
+        {
+            bool roomIsBad{};
+            if ((p_room != nullptr) &&
+                p_room->isBad(roomIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                p_keeperFloor->addRoom(p_room);
+                // isBad cannot fail; continue as before.
+            }
+            if (p_room != nullptr && !roomIsBad)
+            {
+                if (p_keeperFloor->addRoom(p_room) !=
+                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                    // addRoom cannot fail; continue as before.
+                }
             }
         }
 
         p_survivingMap_inout->eraseMapFloor(p_duplicateFloor);
+        int duplicateFloorId{};
+        if (p_duplicateFloor->getId(duplicateFloorId) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        int keeperFloorId{};
+        if (p_keeperFloor->getId(keeperFloorId) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         std::cout << "[LoopClosing] Fused duplicate semantic::Floor#"
-                  << p_duplicateFloor->getId() << " into semantic::Floor#"
-                  << p_keeperFloor->getId()
+                  << duplicateFloorId << " into semantic::Floor#"
+                  << keeperFloorId
                   << " and retained the better-observed plane identity."
                   << std::endl;
     }
@@ -77,9 +110,20 @@ void collapseMergedFloors(Map *p_survivingMap_inout)
     for (semantic::Room *p_room :
          p_survivingMap_inout->getAllDetectedMapRooms())
     {
-        if (p_room != nullptr && !p_room->isBad())
+        bool roomIsBad2{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_keeperFloor->addRoom(p_room);
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad2)
+        {
+            if (p_keeperFloor->addRoom(p_room) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // addRoom cannot fail; continue as before.
+            }
         }
     }
 }

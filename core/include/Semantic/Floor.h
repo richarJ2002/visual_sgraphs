@@ -21,6 +21,7 @@
 
 #include "Map.h"
 #include "Room.h"
+#include "Semantic/FloorStatus.h"
 
 #include <cstddef>
 #include <optional>
@@ -58,7 +59,8 @@ class Floor
                                  rooms; // Floor's rooms and corridors
     std::optional<PlaneIdentity> planeIdentity;
 
-    void detachRoom(vs_graphs::core::semantic::Room *p_room_inout);
+    [[nodiscard]] FloorStatus
+        detachRoom(vs_graphs::core::semantic::Room *p_room_inout);
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -82,64 +84,74 @@ class Floor
      * @param[in]   transform_oldWorldToNewWorld_in
      *              Transform from the current plane frame to the new map frame.
      */
-    void applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
+    [[nodiscard]] FloorStatus
+        applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
 
-    int  getId() const;
-    void setId(int value_in);
+    [[nodiscard]] FloorStatus getId(int &id_out) const;
+    [[nodiscard]] FloorStatus setId(int value_in);
 
-    int  getOpId() const;
-    void setOpId(int value_in);
+    [[nodiscard]] FloorStatus getOpId(int &opId_out) const;
+    [[nodiscard]] FloorStatus setOpId(int value_in);
 
-    int  getOpIdG() const;
-    void setOpIdG(int value_in);
+    [[nodiscard]] FloorStatus getOpIdG(int &opIdG_out) const;
+    [[nodiscard]] FloorStatus setOpIdG(int value_in);
 
-    std::string getName() const;
-    void        setName(std::string value_in);
+    [[nodiscard]] FloorStatus getName(std::string &name_out) const;
+    [[nodiscard]] FloorStatus setName(std::string value_in);
 
-    Eigen::Vector3d getCentroid() const;
-    void            setCentroid(Eigen::Vector3d value_in);
+    [[nodiscard]] FloorStatus getCentroid(Eigen::Vector3d &centroid_out) const;
+    [[nodiscard]] FloorStatus setCentroid(Eigen::Vector3d value_in);
 
     /*! Returns true when a finite normalized ground-plane identity is stored.
      */
-    bool hasPlaneIdentity() const;
+    [[nodiscard]] FloorStatus
+        hasPlaneIdentity(bool &hasPlaneIdentity_out) const;
 
     /*! Returns one atomic snapshot of the equation and its evidence quality. */
-    std::optional<PlaneIdentity> getPlaneIdentity() const;
+    [[nodiscard]] FloorStatus getPlaneIdentity(
+        std::optional<Floor::PlaneIdentity> &planeIdentity_out) const;
 
     /*!
      * Stores a normalized equation and evidence. Invalid equations are ignored
      * so a previously valid identity is never overwritten by missing data.
      */
-    bool setPlaneIdentity(const Eigen::Vector4d &equation_World_in,
-                          std::size_t            finiteSupportCount_in,
-                          std::size_t            observationCount_in);
+    [[nodiscard]] FloorStatus
+        setPlaneIdentity(const Eigen::Vector4d &equation_World_in,
+                         std::size_t            finiteSupportCount_in,
+                         std::size_t            observationCount_in);
 
     /*! Marks the current ground-plane identity unavailable. */
-    void clearPlaneIdentity(void);
+    [[nodiscard]] FloorStatus clearPlaneIdentity(void);
 
     /*! Transforms an identity under the active old-world to new-world Sim3. */
-    static std::optional<PlaneIdentity> transformPlaneIdentity(
-        const PlaneIdentity &identity_OldWorld_in,
-        const g2o::Sim3     &transform_oldWorldToNewWorld_in);
+    [[nodiscard]] static FloorStatus transformPlaneIdentity(
+        const PlaneIdentity                 &identity_OldWorld_in,
+        const g2o::Sim3                     &transform_oldWorldToNewWorld_in,
+        std::optional<Floor::PlaneIdentity> &transformedIdentity_out);
 
     /*! Compares normalized planes with sign-invariant angle and offset tests.
      */
-    static bool planeIdentitiesMatch(const PlaneIdentity &firstIdentity_in,
-                                     const PlaneIdentity &secondIdentity_in,
-                                     double  maximumNormalAngle_deg_in,
-                                     double  maximumOffset_m_in,
-                                     double &normalAngle_deg_inout,
-                                     double &offset_m_inout);
+    [[nodiscard]] static FloorStatus
+        planeIdentitiesMatch(const PlaneIdentity &firstIdentity_in,
+                             const PlaneIdentity &secondIdentity_in,
+                             double               maximumNormalAngle_deg_in,
+                             double               maximumOffset_m_in,
+                             double              &normalAngle_deg_inout,
+                             double              &offset_m_inout,
+                             bool                &isMatch_out);
 
     /*! Selects the valid identity with most finite support, then observations.
      */
-    static Floor *
-        selectBestObservedFloor(const std::vector<Floor *> &floors_in);
+    [[nodiscard]] static FloorStatus
+        selectBestObservedFloor(const std::vector<Floor *> &floors_in,
+                                Floor                     *&p_bestFloor_out);
 
-    void addRoom(vs_graphs::core::semantic::Room *p_value_inout);
-    std::vector<vs_graphs::core::semantic::Room *> getRooms() const;
-    void                                           setRooms(
-                                                  const std::vector<vs_graphs::core::semantic::Room *> &value_in);
+    [[nodiscard]] FloorStatus
+        addRoom(vs_graphs::core::semantic::Room *p_value_inout);
+    [[nodiscard]] FloorStatus getRooms(
+        std::vector<vs_graphs::core::semantic::Room *> &rooms_out) const;
+    [[nodiscard]] FloorStatus setRooms(
+        const std::vector<vs_graphs::core::semantic::Room *> &value_in);
 
     /*!
      * @brief       Replaces a retired room association after consolidation.
@@ -150,13 +162,17 @@ class Floor
      * @param[in,out] p_retainedRoom_inout
      *              Structural element which absorbs the relationship.
      *
-     * @return      True when the retired room was present.
+     * @param[out] wasRoomReplaced_out True when the retired room was present.
+     * @return FLOOR_STATUS_SUCCESS, or FLOOR_STATUS_INVALID_ARGUMENT when an
+     * input is rejected.
      */
-    bool replaceRoom(vs_graphs::core::semantic::Room *p_retiredRoom_inout,
-                     vs_graphs::core::semantic::Room *p_retainedRoom_inout);
+    [[nodiscard]] FloorStatus
+        replaceRoom(vs_graphs::core::semantic::Room *p_retiredRoom_inout,
+                    vs_graphs::core::semantic::Room *p_retainedRoom_inout,
+                    bool                            &wasRoomReplaced_out);
 
-    vs_graphs::core::Map *getMap();
-    void                  setMap(vs_graphs::core::Map *p_map_in);
+    [[nodiscard]] FloorStatus getMap(vs_graphs::core::Map *&p_map_out);
+    [[nodiscard]] FloorStatus setMap(vs_graphs::core::Map *p_map_in);
 
   protected:
     vs_graphs::core::Map *p_map{nullptr};

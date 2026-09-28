@@ -57,7 +57,8 @@ struct SyntheticRoom
                                                              wall_in.normal.z(),
                                                              wall_in.d)));
         wall->setCentroid(wall_in.centroid);
-        room.setWalls(wall.get());
+        ASSERT_EQ((room.setWalls(wall.get())),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
         ownedWalls.push_back(std::move(wall));
     }
 };
@@ -143,8 +144,16 @@ std::unique_ptr<SyntheticRoom> buildRoom(int                         roomId_in,
                                          const Eigen::Vector3d &centroid_in)
 {
     auto room = std::make_unique<SyntheticRoom>();
-    room->room.setId(roomId_in);
-    room->room.setCentroid(centroid_in);
+    if (room->room.setId(roomId_in) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (room->room.setCentroid(centroid_in) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
     for (const RawWall &wall : walls_in)
     {
         room->addWall(wall);
@@ -185,16 +194,31 @@ TEST(GeometricVerify, AcceptsGroundTruthCorrelatedRooms)
     const std::unique_ptr<SyntheticRoom> roomB =
         buildRoom(2, wallsB, centroidB);
 
-    semantic::SemanticVerifyConfig                     config;
-    const std::vector<semantic::VerifyWallObservation> observationsA =
-        semantic::SemanticVerify::collectWallObservations(&roomA->room, config);
-    const std::vector<semantic::VerifyWallObservation> observationsB =
-        semantic::SemanticVerify::collectWallObservations(&roomB->room, config);
+    semantic::SemanticVerifyConfig               config;
+    std::vector<semantic::VerifyWallObservation> observationsA{};
+    ASSERT_EQ(
+        (semantic::SemanticVerify::collectWallObservations(&roomA->room,
+                                                           config,
+                                                           observationsA)),
+        vs_graphs::core::semantic::SemanticVerifyStatus::
+            SEMANTIC_VERIFY_STATUS_SUCCESS);
+    std::vector<semantic::VerifyWallObservation> observationsB{};
+    ASSERT_EQ(
+        (semantic::SemanticVerify::collectWallObservations(&roomB->room,
+                                                           config,
+                                                           observationsB)),
+        vs_graphs::core::semantic::SemanticVerifyStatus::
+            SEMANTIC_VERIFY_STATUS_SUCCESS);
     ASSERT_EQ(observationsA.size(), 4U);
     ASSERT_EQ(observationsB.size(), 4U);
 
-    const semantic::SemanticVerifyResult result =
-        semantic::SemanticVerify::verify(observationsA, observationsB, config);
+    semantic::SemanticVerifyResult result{};
+    ASSERT_EQ((semantic::SemanticVerify::verify(observationsA,
+                                                observationsB,
+                                                result,
+                                                config)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
 
     ASSERT_EQ(result.status, semantic::VerificationStatus::PASS);
     EXPECT_TRUE(result.hasPassed);
@@ -236,14 +260,29 @@ TEST(GeometricVerify, RejectsRankDeficientCorrespondences)
     const std::unique_ptr<SyntheticRoom> roomB =
         buildRoom(2, wallsB, Eigen::Vector3d(2.0, 0.5, 0.5));
 
-    semantic::SemanticVerifyConfig                     config;
-    const std::vector<semantic::VerifyWallObservation> observationsA =
-        semantic::SemanticVerify::collectWallObservations(&roomA->room, config);
-    const std::vector<semantic::VerifyWallObservation> observationsB =
-        semantic::SemanticVerify::collectWallObservations(&roomB->room, config);
+    semantic::SemanticVerifyConfig               config;
+    std::vector<semantic::VerifyWallObservation> observationsA{};
+    ASSERT_EQ(
+        (semantic::SemanticVerify::collectWallObservations(&roomA->room,
+                                                           config,
+                                                           observationsA)),
+        vs_graphs::core::semantic::SemanticVerifyStatus::
+            SEMANTIC_VERIFY_STATUS_SUCCESS);
+    std::vector<semantic::VerifyWallObservation> observationsB{};
+    ASSERT_EQ(
+        (semantic::SemanticVerify::collectWallObservations(&roomB->room,
+                                                           config,
+                                                           observationsB)),
+        vs_graphs::core::semantic::SemanticVerifyStatus::
+            SEMANTIC_VERIFY_STATUS_SUCCESS);
 
-    const semantic::SemanticVerifyResult result =
-        semantic::SemanticVerify::verify(observationsA, observationsB, config);
+    semantic::SemanticVerifyResult result{};
+    ASSERT_EQ((semantic::SemanticVerify::verify(observationsA,
+                                                observationsB,
+                                                result,
+                                                config)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
     EXPECT_EQ(result.status, semantic::VerificationStatus::REJECTED);
     EXPECT_FALSE(result.hasPassed);
     /* Only 2 walls per side -- never reaches hypothesis search. */
@@ -287,13 +326,28 @@ TEST(GeometricVerify, CorrectHypothesisWinsOverOutlierCorrespondences)
 
     semantic::SemanticVerifyConfig config;
     config.minInlierRatio = 0.5; // 4 true inliers out of min(5,5)=5 walls
-    const std::vector<semantic::VerifyWallObservation> observationsA =
-        semantic::SemanticVerify::collectWallObservations(&roomA->room, config);
-    const std::vector<semantic::VerifyWallObservation> observationsB =
-        semantic::SemanticVerify::collectWallObservations(&roomB->room, config);
+    std::vector<semantic::VerifyWallObservation> observationsA{};
+    ASSERT_EQ(
+        (semantic::SemanticVerify::collectWallObservations(&roomA->room,
+                                                           config,
+                                                           observationsA)),
+        vs_graphs::core::semantic::SemanticVerifyStatus::
+            SEMANTIC_VERIFY_STATUS_SUCCESS);
+    std::vector<semantic::VerifyWallObservation> observationsB{};
+    ASSERT_EQ(
+        (semantic::SemanticVerify::collectWallObservations(&roomB->room,
+                                                           config,
+                                                           observationsB)),
+        vs_graphs::core::semantic::SemanticVerifyStatus::
+            SEMANTIC_VERIFY_STATUS_SUCCESS);
 
-    const semantic::SemanticVerifyResult result =
-        semantic::SemanticVerify::verify(observationsA, observationsB, config);
+    semantic::SemanticVerifyResult result{};
+    ASSERT_EQ((semantic::SemanticVerify::verify(observationsA,
+                                                observationsB,
+                                                result,
+                                                config)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
     ASSERT_EQ(result.status, semantic::VerificationStatus::PASS);
     EXPECT_EQ(result.rejectReason, semantic::VerifyRejectReason::NONE);
     EXPECT_EQ(result.inliers.size(), 4U);
@@ -357,13 +411,28 @@ TEST(GeometricVerify, RejectsAmbiguousEquallyGoodHypotheses)
 
     semantic::SemanticVerifyConfig config;
     config.ambiguityMarginInliers = 1U;
-    const std::vector<semantic::VerifyWallObservation> observationsA =
-        semantic::SemanticVerify::collectWallObservations(&roomA->room, config);
-    const std::vector<semantic::VerifyWallObservation> observationsB =
-        semantic::SemanticVerify::collectWallObservations(&roomB->room, config);
+    std::vector<semantic::VerifyWallObservation> observationsA{};
+    ASSERT_EQ(
+        (semantic::SemanticVerify::collectWallObservations(&roomA->room,
+                                                           config,
+                                                           observationsA)),
+        vs_graphs::core::semantic::SemanticVerifyStatus::
+            SEMANTIC_VERIFY_STATUS_SUCCESS);
+    std::vector<semantic::VerifyWallObservation> observationsB{};
+    ASSERT_EQ(
+        (semantic::SemanticVerify::collectWallObservations(&roomB->room,
+                                                           config,
+                                                           observationsB)),
+        vs_graphs::core::semantic::SemanticVerifyStatus::
+            SEMANTIC_VERIFY_STATUS_SUCCESS);
 
-    const semantic::SemanticVerifyResult result =
-        semantic::SemanticVerify::verify(observationsA, observationsB, config);
+    semantic::SemanticVerifyResult result{};
+    ASSERT_EQ((semantic::SemanticVerify::verify(observationsA,
+                                                observationsB,
+                                                result,
+                                                config)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
     EXPECT_EQ(result.status, semantic::VerificationStatus::REJECTED);
     /* See the comment above: with only two independent wall directions and
      * exactly 4 walls, every 3-wall minimal sample necessarily contains one
@@ -380,45 +449,61 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
     Map absorbedMap;
 
     semantic::Floor survivingFloor;
-    survivingFloor.setId(1);
+    ASSERT_EQ((survivingFloor.setId(1)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     ASSERT_TRUE(
-        survivingFloor.setPlaneIdentity(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
-                                        100U,
-                                        5U));
+        (survivingFloor.setPlaneIdentity(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
+                                         100U,
+                                         5U) ==
+         vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
     survivingMap.addMapFloor(&survivingFloor);
 
     semantic::Floor matchingAbsorbedFloor;
-    matchingAbsorbedFloor.setId(2);
-    ASSERT_TRUE(matchingAbsorbedFloor.setPlaneIdentity(
-        Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
-        100U,
-        5U));
+    ASSERT_EQ((matchingAbsorbedFloor.setId(2)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
+    ASSERT_TRUE((matchingAbsorbedFloor.setPlaneIdentity(
+                     Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
+                     100U,
+                     5U) ==
+                 vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
     absorbedMap.addMapFloor(&matchingAbsorbedFloor);
 
     const Eigen::Isometry3d        identity = Eigen::Isometry3d::Identity();
     semantic::SemanticVerifyResult acceptedResult;
-    EXPECT_TRUE(semantic::SemanticVerify::runFloorGate(acceptedResult,
-                                                       &survivingMap,
-                                                       &absorbedMap,
-                                                       identity));
+    bool                           hasPassed{};
+    ASSERT_EQ((semantic::SemanticVerify::runFloorGate(acceptedResult,
+                                                      &survivingMap,
+                                                      &absorbedMap,
+                                                      identity,
+                                                      hasPassed)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
+    EXPECT_TRUE(hasPassed);
     EXPECT_TRUE(acceptedResult.hasFloorGateRun);
     EXPECT_TRUE(acceptedResult.hasFloorGatePassed);
     EXPECT_EQ(acceptedResult.floorGateResult, "ACCEPTED");
 
     Map             mismatchedMap;
     semantic::Floor mismatchedFloor;
-    mismatchedFloor.setId(3);
+    ASSERT_EQ((mismatchedFloor.setId(3)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     ASSERT_TRUE(
-        mismatchedFloor.setPlaneIdentity(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0),
-                                         100U,
-                                         5U));
+        (mismatchedFloor.setPlaneIdentity(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0),
+                                          100U,
+                                          5U) ==
+         vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
     mismatchedMap.addMapFloor(&mismatchedFloor);
 
     semantic::SemanticVerifyResult rejectedResult;
-    EXPECT_FALSE(semantic::SemanticVerify::runFloorGate(rejectedResult,
-                                                        &survivingMap,
-                                                        &mismatchedMap,
-                                                        identity));
+    bool                           hasPassed2{};
+    ASSERT_EQ((semantic::SemanticVerify::runFloorGate(rejectedResult,
+                                                      &survivingMap,
+                                                      &mismatchedMap,
+                                                      identity,
+                                                      hasPassed2)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
+    EXPECT_FALSE(hasPassed2);
     EXPECT_TRUE(rejectedResult.hasFloorGateRun);
     EXPECT_FALSE(rejectedResult.hasFloorGatePassed);
     EXPECT_EQ(rejectedResult.floorGateResult, "REJECTED");
@@ -431,10 +516,13 @@ TEST(GeometricVerify, SemanticMergeGateAcceptsAlignedStableHierarchy)
     const semantic::SemanticMergeRoomEvidence absorbed =
         makeMergeEvidence(2, 3, Eigen::Vector3d::UnitX());
 
-    const semantic::SemanticMergeGateResult result =
-        semantic::SemanticVerify::evaluateMergeAlignment({surviving},
-                                                         {absorbed},
-                                                         g2o::Sim3());
+    semantic::SemanticMergeGateResult result{};
+    ASSERT_EQ((semantic::SemanticVerify::evaluateMergeAlignment({surviving},
+                                                                {absorbed},
+                                                                g2o::Sim3(),
+                                                                result)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
 
     EXPECT_EQ(result.decision, semantic::SemanticMergeDecision::ACCEPT);
     EXPECT_EQ(result.reason, semantic::SemanticMergeReason::ALIGNED);
@@ -452,11 +540,14 @@ TEST(GeometricVerify,
     semantic::SemanticMergeRoomEvidence incorrectlyMatchedPriorRoom =
         makeMergeEvidence(2, 0, Eigen::Vector3d::UnitX());
 
-    const semantic::SemanticMergeGateResult result =
-        semantic::SemanticVerify::evaluateMergeAlignment(
-            {currentRoom},
-            {incorrectlyMatchedPriorRoom},
-            g2o::Sim3());
+    semantic::SemanticMergeGateResult result{};
+    ASSERT_EQ((semantic::SemanticVerify::evaluateMergeAlignment(
+                  {currentRoom},
+                  {incorrectlyMatchedPriorRoom},
+                  g2o::Sim3(),
+                  result)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
 
     EXPECT_EQ(result.decision, semantic::SemanticMergeDecision::REJECT);
     EXPECT_EQ(result.reason,
@@ -472,10 +563,13 @@ TEST(GeometricVerify, SemanticMergeGateDefersWhenPassageEvidenceIsMissing)
         makeMergeEvidence(2, 3, Eigen::Vector3d::UnitX());
     absorbed.context.passageContexts.clear();
 
-    const semantic::SemanticMergeGateResult result =
-        semantic::SemanticVerify::evaluateMergeAlignment({surviving},
-                                                         {absorbed},
-                                                         g2o::Sim3());
+    semantic::SemanticMergeGateResult result{};
+    ASSERT_EQ((semantic::SemanticVerify::evaluateMergeAlignment({surviving},
+                                                                {absorbed},
+                                                                g2o::Sim3(),
+                                                                result)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
 
     EXPECT_EQ(result.decision, semantic::SemanticMergeDecision::DEFER);
     EXPECT_EQ(result.reason,
@@ -489,10 +583,13 @@ TEST(GeometricVerify, SemanticMergeGateRejectsOpposedPassageDirection)
     const semantic::SemanticMergeRoomEvidence absorbed =
         makeMergeEvidence(2, 3, -Eigen::Vector3d::UnitX());
 
-    const semantic::SemanticMergeGateResult result =
-        semantic::SemanticVerify::evaluateMergeAlignment({surviving},
-                                                         {absorbed},
-                                                         g2o::Sim3());
+    semantic::SemanticMergeGateResult result{};
+    ASSERT_EQ((semantic::SemanticVerify::evaluateMergeAlignment({surviving},
+                                                                {absorbed},
+                                                                g2o::Sim3(),
+                                                                result)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
 
     EXPECT_EQ(result.decision, semantic::SemanticMergeDecision::REJECT);
     EXPECT_EQ(result.reason,
@@ -504,21 +601,35 @@ TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
     Map            map;
     semantic::Room roomZero;
     semantic::Room roomTwo;
-    roomZero.setId(0);
-    roomZero.setRoomTag("room_0");
-    roomZero.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    roomZero.setCentroid(Eigen::Vector3d::Zero());
-    roomTwo.setId(2);
-    roomTwo.setRoomTag("room_2");
-    roomTwo.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    roomTwo.setCentroid(Eigen::Vector3d::Zero());
+    ASSERT_EQ((roomZero.setId(0)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((roomZero.setRoomTag("room_0")),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((roomZero.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((roomZero.setCentroid(Eigen::Vector3d::Zero())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((roomTwo.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((roomTwo.setRoomTag("room_2")),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((roomTwo.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((roomTwo.setCentroid(Eigen::Vector3d::Zero())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     map.addDetectedMapRoom(&roomZero);
     map.addDetectedMapRoom(&roomTwo);
 
     utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map, {&roomTwo});
 
-    EXPECT_FALSE(roomZero.isBad());
-    EXPECT_FALSE(roomTwo.isBad());
+    bool isBad2{};
+    ASSERT_EQ((roomZero.isBad(isBad2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_FALSE(isBad2);
+    bool isBad3{};
+    ASSERT_EQ((roomTwo.isBad(isBad3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_FALSE(isBad3);
     EXPECT_EQ(map.getAllDetectedMapRooms().size(), 2U);
 }
 
@@ -527,21 +638,35 @@ TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
     Map            map;
     semantic::Room retainedRoom;
     semantic::Room importedRoom;
-    retainedRoom.setId(2);
-    retainedRoom.setRoomTag("room_2");
-    retainedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    retainedRoom.setCentroid(Eigen::Vector3d::Zero());
-    importedRoom.setId(2);
-    importedRoom.setRoomTag("room_2");
-    importedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    importedRoom.setCentroid(Eigen::Vector3d::Zero());
+    ASSERT_EQ((retainedRoom.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((retainedRoom.setRoomTag("room_2")),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((retainedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((retainedRoom.setCentroid(Eigen::Vector3d::Zero())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedRoom.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedRoom.setRoomTag("room_2")),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedRoom.setCentroid(Eigen::Vector3d::Zero())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     map.addDetectedMapRoom(&retainedRoom);
     map.addDetectedMapRoom(&importedRoom);
 
     utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map, {&importedRoom});
 
-    EXPECT_FALSE(retainedRoom.isBad());
-    EXPECT_TRUE(importedRoom.isBad());
+    bool isBad2{};
+    ASSERT_EQ((retainedRoom.isBad(isBad2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_FALSE(isBad2);
+    bool isBad3{};
+    ASSERT_EQ((importedRoom.isBad(isBad3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(isBad3);
     EXPECT_EQ(map.getAllDetectedMapRooms().size(), 1U);
     EXPECT_EQ(map.getAllDetectedMapRooms().front(), &retainedRoom);
 }
@@ -554,41 +679,72 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
     Map            map;
     semantic::Room retainedRoom;
     semantic::Room importedRoom;
-    retainedRoom.setId(2);
-    retainedRoom.setRoomTag("room_2");
-    retainedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    retainedRoom.setCentroid(Eigen::Vector3d::Zero());
-    importedRoom.setId(2);
-    importedRoom.setRoomTag("room_2");
-    importedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    importedRoom.setCentroid(Eigen::Vector3d::Zero());
-    importedRoom.setPreviouslyVisited(true);
+    ASSERT_EQ((retainedRoom.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((retainedRoom.setRoomTag("room_2")),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((retainedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((retainedRoom.setCentroid(Eigen::Vector3d::Zero())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedRoom.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedRoom.setRoomTag("room_2")),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedRoom.setCentroid(Eigen::Vector3d::Zero())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedRoom.setPreviouslyVisited(true)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     map.addDetectedMapRoom(&retainedRoom);
     map.addDetectedMapRoom(&importedRoom);
 
     utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map, {&importedRoom});
 
-    EXPECT_TRUE(importedRoom.isBad());
-    EXPECT_TRUE(retainedRoom.hasPreviouslyVisited());
+    bool isBad2{};
+    ASSERT_EQ((importedRoom.isBad(isBad2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(isBad2);
+    bool hasPreviouslyVisited2{};
+    ASSERT_EQ((retainedRoom.hasPreviouslyVisited(hasPreviouslyVisited2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(hasPreviouslyVisited2);
 
     semantic::Room retainedUnvisited;
     semantic::Room importedUnvisited;
-    retainedUnvisited.setId(3);
-    retainedUnvisited.setRoomTag("room_3");
-    retainedUnvisited.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    retainedUnvisited.setCentroid(Eigen::Vector3d::Zero());
-    importedUnvisited.setId(3);
-    importedUnvisited.setRoomTag("room_3");
-    importedUnvisited.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    importedUnvisited.setCentroid(Eigen::Vector3d::Zero());
+    ASSERT_EQ((retainedUnvisited.setId(3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((retainedUnvisited.setRoomTag("room_3")),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (retainedUnvisited.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((retainedUnvisited.setCentroid(Eigen::Vector3d::Zero())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedUnvisited.setId(3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedUnvisited.setRoomTag("room_3")),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (importedUnvisited.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((importedUnvisited.setCentroid(Eigen::Vector3d::Zero())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     map.addDetectedMapRoom(&retainedUnvisited);
     map.addDetectedMapRoom(&importedUnvisited);
 
     utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map,
                                                       {&importedUnvisited});
 
-    EXPECT_TRUE(importedUnvisited.isBad());
-    EXPECT_FALSE(retainedUnvisited.hasPreviouslyVisited());
+    bool isBad3{};
+    ASSERT_EQ((importedUnvisited.isBad(isBad3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(isBad3);
+    bool hasPreviouslyVisited3{};
+    ASSERT_EQ((retainedUnvisited.hasPreviouslyVisited(hasPreviouslyVisited3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_FALSE(hasPreviouslyVisited3);
 }
 
 TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
@@ -626,39 +782,63 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
     const std::unique_ptr<SyntheticRoom> roomB =
         buildRoom(2, wallsB, centroidB);
 
-    semantic::SemanticVerifyConfig                     config;
-    const std::vector<semantic::VerifyWallObservation> observationsA =
-        semantic::SemanticVerify::collectWallObservations(&roomA->room, config);
-    const std::vector<semantic::VerifyWallObservation> observationsB =
-        semantic::SemanticVerify::collectWallObservations(&roomB->room, config);
+    semantic::SemanticVerifyConfig               config;
+    std::vector<semantic::VerifyWallObservation> observationsA{};
+    ASSERT_EQ(
+        (semantic::SemanticVerify::collectWallObservations(&roomA->room,
+                                                           config,
+                                                           observationsA)),
+        vs_graphs::core::semantic::SemanticVerifyStatus::
+            SEMANTIC_VERIFY_STATUS_SUCCESS);
+    std::vector<semantic::VerifyWallObservation> observationsB{};
+    ASSERT_EQ(
+        (semantic::SemanticVerify::collectWallObservations(&roomB->room,
+                                                           config,
+                                                           observationsB)),
+        vs_graphs::core::semantic::SemanticVerifyStatus::
+            SEMANTIC_VERIFY_STATUS_SUCCESS);
 
-    semantic::SemanticVerifyResult result =
-        semantic::SemanticVerify::verify(observationsA, observationsB, config);
+    semantic::SemanticVerifyResult result{};
+    ASSERT_EQ((semantic::SemanticVerify::verify(observationsA,
+                                                observationsB,
+                                                result,
+                                                config)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
     ASSERT_EQ(result.status, semantic::VerificationStatus::PASS);
     ASSERT_TRUE(result.hasPassed);
 
     Map             survivingMap;
     Map             absorbedMap;
     semantic::Floor survivingFloor;
-    survivingFloor.setId(1);
+    ASSERT_EQ((survivingFloor.setId(1)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     ASSERT_TRUE(
-        survivingFloor.setPlaneIdentity(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
-                                        100U,
-                                        5U));
+        (survivingFloor.setPlaneIdentity(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
+                                         100U,
+                                         5U) ==
+         vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
     survivingMap.addMapFloor(&survivingFloor);
 
     semantic::Floor matchingAbsorbedFloor;
-    matchingAbsorbedFloor.setId(2);
-    ASSERT_TRUE(matchingAbsorbedFloor.setPlaneIdentity(
-        Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
-        100U,
-        5U));
+    ASSERT_EQ((matchingAbsorbedFloor.setId(2)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
+    ASSERT_TRUE((matchingAbsorbedFloor.setPlaneIdentity(
+                     Eigen::Vector4d(0.0, 0.0, 1.0, 0.0),
+                     100U,
+                     5U) ==
+                 vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
     absorbedMap.addMapFloor(&matchingAbsorbedFloor);
 
-    EXPECT_TRUE(semantic::SemanticVerify::runFloorGate(result,
-                                                       &survivingMap,
-                                                       &absorbedMap,
-                                                       result.transform_AToB));
+    bool hasPassed2{};
+    ASSERT_EQ((semantic::SemanticVerify::runFloorGate(result,
+                                                      &survivingMap,
+                                                      &absorbedMap,
+                                                      result.transform_AToB,
+                                                      hasPassed2)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
+    EXPECT_TRUE(hasPassed2);
     EXPECT_TRUE(result.hasFloorGateRun);
     EXPECT_TRUE(result.hasFloorGatePassed);
     EXPECT_EQ(result.floorGateResult, "ACCEPTED");
@@ -672,18 +852,25 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
      * combined verdict must follow the floor gate down. */
     Map             mismatchedMap;
     semantic::Floor mismatchedFloor;
-    mismatchedFloor.setId(3);
+    ASSERT_EQ((mismatchedFloor.setId(3)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     ASSERT_TRUE(
-        mismatchedFloor.setPlaneIdentity(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0),
-                                         100U,
-                                         5U));
+        (mismatchedFloor.setPlaneIdentity(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0),
+                                          100U,
+                                          5U) ==
+         vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
     mismatchedMap.addMapFloor(&mismatchedFloor);
 
     semantic::SemanticVerifyResult mismatchedResult = result;
-    EXPECT_FALSE(semantic::SemanticVerify::runFloorGate(mismatchedResult,
-                                                        &survivingMap,
-                                                        &mismatchedMap,
-                                                        result.transform_AToB));
+    bool                           hasPassed3{};
+    ASSERT_EQ((semantic::SemanticVerify::runFloorGate(mismatchedResult,
+                                                      &survivingMap,
+                                                      &mismatchedMap,
+                                                      result.transform_AToB,
+                                                      hasPassed3)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
+    EXPECT_FALSE(hasPassed3);
     EXPECT_EQ(mismatchedResult.floorGateResult, "REJECTED");
     EXPECT_FALSE(mismatchedResult.toVerificationVerdict().hasPassed);
 }
@@ -717,8 +904,10 @@ TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
     params->factor.huberDelta                    = 2.0F;
     params->factor.optimizerIterations           = 7U;
 
-    const semantic::SemanticVerifyConfig config =
-        semantic::SemanticVerify::configFromSystemParams();
+    semantic::SemanticVerifyConfig config{};
+    ASSERT_EQ((semantic::SemanticVerify::configFromSystemParams(config)),
+              vs_graphs::core::semantic::SemanticVerifyStatus::
+                  SEMANTIC_VERIFY_STATUS_SUCCESS);
 
     EXPECT_NEAR(config.maxNormalAngle_deg, 17.5, 1e-5);
     EXPECT_NEAR(config.maxOffset_m, 0.42, 1e-5);
@@ -786,17 +975,28 @@ TEST(GeometricVerify, SeededUncorrelatedRoomsProduceNoFalseAccepts)
         const std::unique_ptr<SyntheticRoom> roomB =
             buildRoom(2, wallsB, Eigen::Vector3d(0.0, 0.0, 0.0));
 
-        const std::vector<semantic::VerifyWallObservation> observationsA =
-            semantic::SemanticVerify::collectWallObservations(&roomA->room,
-                                                              config);
-        const std::vector<semantic::VerifyWallObservation> observationsB =
-            semantic::SemanticVerify::collectWallObservations(&roomB->room,
-                                                              config);
+        std::vector<semantic::VerifyWallObservation> observationsA{};
+        ASSERT_EQ(
+            (semantic::SemanticVerify::collectWallObservations(&roomA->room,
+                                                               config,
+                                                               observationsA)),
+            vs_graphs::core::semantic::SemanticVerifyStatus::
+                SEMANTIC_VERIFY_STATUS_SUCCESS);
+        std::vector<semantic::VerifyWallObservation> observationsB{};
+        ASSERT_EQ(
+            (semantic::SemanticVerify::collectWallObservations(&roomB->room,
+                                                               config,
+                                                               observationsB)),
+            vs_graphs::core::semantic::SemanticVerifyStatus::
+                SEMANTIC_VERIFY_STATUS_SUCCESS);
 
-        const semantic::SemanticVerifyResult result =
-            semantic::SemanticVerify::verify(observationsA,
-                                             observationsB,
-                                             config);
+        semantic::SemanticVerifyResult result{};
+        ASSERT_EQ((semantic::SemanticVerify::verify(observationsA,
+                                                    observationsB,
+                                                    result,
+                                                    config)),
+                  vs_graphs::core::semantic::SemanticVerifyStatus::
+                      SEMANTIC_VERIFY_STATUS_SUCCESS);
         if (result.status == semantic::VerificationStatus::PASS)
         {
             ++falseAccepts;

@@ -26,12 +26,13 @@ namespace core
 namespace semantic
 {
 
-void RoomTracker::commit(RoomTrackingState           source_in,
-                         RoomTrackingEvent           event_in,
-                         double                      now_s_in,
-                         const TraversalGuardValues &crossing_in,
-                         const VerificationVerdict  &verification_in,
-                         bool                        accepted_in)
+RoomTrackerStatus
+    RoomTracker::commit(RoomTrackingState           source_in,
+                        RoomTrackingEvent           event_in,
+                        double                      now_s_in,
+                        const TraversalGuardValues &crossing_in,
+                        const VerificationVerdict  &verification_in,
+                        bool                        accepted_in)
 {
     TransitionEvent transitionRecord;
     transitionRecord.timestamp_s           = now_s_in;
@@ -83,8 +84,13 @@ void RoomTracker::commit(RoomTrackingState           source_in,
 
     if (accepted_in)
     {
-        std::cout << "[RoomTracker] transition: "
-                  << eventToJSON(transitionRecord) << std::endl;
+        std::string json{};
+        if (eventToJSON(transitionRecord, json) !=
+            RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // eventToJSON cannot fail; continue as before.
+        }
+        std::cout << "[RoomTracker] transition: " << json << std::endl;
 
         trackingState            = transitionRecord.targetState;
         lastEnterStateTime_s     = now_s_in;
@@ -99,9 +105,17 @@ void RoomTracker::commit(RoomTrackingState           source_in,
     }
     else
     {
-        std::cout << "[RoomTracker] WARN rejected transition: "
-                  << eventToJSON(transitionRecord) << std::endl;
+        std::string json2{};
+        if (eventToJSON(transitionRecord, json2) !=
+            RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // eventToJSON cannot fail; continue as before.
+        }
+        std::cout << "[RoomTracker] WARN rejected transition: " << json2
+                  << std::endl;
     }
+
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

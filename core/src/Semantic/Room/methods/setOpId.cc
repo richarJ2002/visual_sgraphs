@@ -27,9 +27,11 @@ namespace core
 namespace semantic
 {
 
-void Room::setOpId(int opId_in)
+RoomStatus Room::setOpId(int opId_in)
 {
     opId = opId_in;
+
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

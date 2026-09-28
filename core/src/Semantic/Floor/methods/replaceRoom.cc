@@ -28,12 +28,14 @@ namespace core
 namespace semantic
 {
 
-bool Floor::replaceRoom(Room *p_retiredRoom_inout, Room *p_retainedRoom_inout)
+FloorStatus Floor::replaceRoom(Room *p_retiredRoom_inout,
+                               Room *p_retainedRoom_inout,
+                               bool &wasRoomReplaced_out)
 {
     if (p_retiredRoom_inout == nullptr || p_retainedRoom_inout == nullptr ||
         p_retiredRoom_inout == p_retainedRoom_inout)
     {
-        return false;
+        return FloorStatus::FLOOR_STATUS_INVALID_ARGUMENT;
     }
 
     {
@@ -41,14 +43,24 @@ bool Floor::replaceRoom(Room *p_retiredRoom_inout, Room *p_retainedRoom_inout)
         if (std::find(rooms.begin(), rooms.end(), p_retiredRoom_inout) ==
             rooms.end())
         {
-            return false;
+            wasRoomReplaced_out = false;
+            return FloorStatus::FLOOR_STATUS_SUCCESS;
         }
     }
 
-    Floor *p_previousRetainedFloor = p_retainedRoom_inout->getFloor();
+    Floor *p_previousRetainedFloor = nullptr;
+    if (p_retainedRoom_inout->getFloor(p_previousRetainedFloor) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getFloor cannot fail; continue as before.
+    }
     if (p_previousRetainedFloor != nullptr && p_previousRetainedFloor != this)
     {
-        p_previousRetainedFloor->detachRoom(p_retainedRoom_inout);
+        if (p_previousRetainedFloor->detachRoom(p_retainedRoom_inout) !=
+            FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // detachRoom cannot fail; continue as before.
+        }
     }
 
     bool                replacedRetiredRoom = false;
@@ -86,14 +98,29 @@ bool Floor::replaceRoom(Room *p_retiredRoom_inout, Room *p_retainedRoom_inout)
 
     if (replacedRetiredRoom)
     {
-        if (p_retiredRoom_inout->getFloor() == this)
+        Floor *p_retiredRoom_inoutFloor = nullptr;
+        if (p_retiredRoom_inout->getFloor(p_retiredRoom_inoutFloor) !=
+            RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_retiredRoom_inout->setFloor(nullptr);
+            // getFloor cannot fail; continue as before.
         }
-        p_retainedRoom_inout->setFloor(this);
+        if (p_retiredRoom_inoutFloor == this)
+        {
+            if (p_retiredRoom_inout->setFloor(nullptr) !=
+                RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setFloor cannot fail; continue as before.
+            }
+        }
+        if (p_retainedRoom_inout->setFloor(this) !=
+            RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setFloor cannot fail; continue as before.
+        }
     }
 
-    return replacedRetiredRoom;
+    wasRoomReplaced_out = replacedRetiredRoom;
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

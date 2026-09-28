@@ -345,16 +345,32 @@ void Optimizer::bundleAdjustment(
     {
         // Adding a vertex for each marker
         g2o::VertexSE3Expmap *p_markerPoseVertex = new g2o::VertexSE3Expmap();
-        p_markerPoseVertex->setEstimate(g2o::SE3Quat(
-            marker->getGlobalPose().unit_quaternion().cast<double>(),
-            marker->getGlobalPose().translation().cast<double>()));
+        Sophus::SE3f          markerGlobalPose{};
+        if (marker->getGlobalPose(markerGlobalPose) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // getGlobalPose cannot fail; continue as before.
+        }
+        Sophus::SE3f markerGlobalPose2{};
+        if (marker->getGlobalPose(markerGlobalPose2) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // getGlobalPose cannot fail; continue as before.
+        }
+        p_markerPoseVertex->setEstimate(
+            g2o::SE3Quat(markerGlobalPose.unit_quaternion().cast<double>(),
+                         markerGlobalPose2.translation().cast<double>()));
         int globalOptimizationId = maxGlobalOptimizationId + markerCount;
         p_markerPoseVertex->setId(globalOptimizationId);
         optimizer.addVertex(p_markerPoseVertex);
         markerCount++;
 
         // Setting the Global Optimization ID for the marker
-        marker->setOpIdG(globalOptimizationId);
+        if (marker->setOpIdG(globalOptimizationId) !=
+            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // setOpIdG cannot fail; continue as before.
+        }
 
         /*!
          * The edge used to connect a Marker vertex (SE3) to a KeyFrame vertex
@@ -506,8 +522,12 @@ void Optimizer::bundleAdjustment(
         try
         {
             // Variables
-            std::vector<vs_graphs::core::geometric::Plane *> walls =
-                room->getWalls();
+            std::vector<vs_graphs::core::geometric::Plane *> walls{};
+            if (room->getWalls(walls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
 
             // No need to optimize if there are no walls
             if (walls.empty())
@@ -519,13 +539,23 @@ void Optimizer::bundleAdjustment(
             // Setting the local optimization ID for the room
             int globalOptimizationId = maxGlobalOptimizationId + roomCount;
             p_roomPoseVertex->setId(globalOptimizationId);
-            room->setOpIdG(globalOptimizationId);
+            if (room->setOpIdG(globalOptimizationId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setOpIdG cannot fail; continue as before.
+            }
             roomCount++;
 
             // Initialize the room vertex (centroid estimate)
+            Eigen::Vector3d roomCentroid{};
+            if (room->getCentroid(roomCentroid) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
             p_roomPoseVertex->setEstimate(
                 g2o::SE3Quat(Eigen::Quaterniond::Identity(),
-                             room->getCentroid().cast<double>()));
+                             roomCentroid.cast<double>()));
             p_roomPoseVertex->setFixed(true);
             optimizer.addVertex(p_roomPoseVertex);
 
@@ -906,9 +936,15 @@ void Optimizer::bundleAdjustment(
         // [GBA] Globally optimized markers
         for (semantic::Marker *p_marker : markers_in)
         {
+            int markerOpIdG{};
+            if (p_marker->getOpIdG(markerOpIdG) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // getOpIdG cannot fail; continue as before.
+            }
             g2o::VertexSE3Expmap *p_markerVertex =
                 static_cast<g2o::VertexSE3Expmap *>(
-                    optimizer.vertex(p_marker->getOpIdG()));
+                    optimizer.vertex(markerOpIdG));
 
             if (p_markerVertex == nullptr)
             {
@@ -918,9 +954,13 @@ void Optimizer::bundleAdjustment(
             const g2o::SE3Quat markerPose_MarkerToWorld =
                 p_markerVertex->estimate();
 
-            p_marker->setGlobalPose(Sophus::SE3f(
-                markerPose_MarkerToWorld.rotation().cast<float>(),
-                markerPose_MarkerToWorld.translation().cast<float>()));
+            if (p_marker->setGlobalPose(Sophus::SE3f(
+                    markerPose_MarkerToWorld.rotation().cast<float>(),
+                    markerPose_MarkerToWorld.translation().cast<float>())) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // setGlobalPose cannot fail; continue as before.
+            }
         }
     }
 
@@ -957,13 +997,24 @@ void Optimizer::bundleAdjustment(
         {
             try
             {
+                int roomOpIdG{};
+                if (p_room->getOpIdG(roomOpIdG) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getOpIdG cannot fail; continue as before.
+                }
                 g2o::VertexSE3Expmap *p_roomVertex =
                     static_cast<g2o::VertexSE3Expmap *>(
-                        optimizer.vertex(p_room->getOpIdG()));
+                        optimizer.vertex(roomOpIdG));
 
                 if (p_roomVertex != nullptr)
                 {
-                    p_room->setCentroid(p_roomVertex->estimate().translation());
+                    if (p_room->setCentroid(
+                            p_roomVertex->estimate().translation()) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // setCentroid cannot fail; continue as before.
+                    }
                 }
             }
             catch (const std::exception &caughtException)

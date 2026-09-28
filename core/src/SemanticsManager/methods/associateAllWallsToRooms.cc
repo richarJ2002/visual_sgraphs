@@ -63,10 +63,37 @@ void SemanticsManager::associateAllWallsToRooms(void)
     };
     for (semantic::Room *p_room : allRooms)
     {
-        if (p_room != nullptr && !p_room->isBad() &&
-            p_room->getMap() == p_activeMap &&
-            p_room->getId() == currentRoomIdSnapshot &&
-            p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM)
+        bool roomIsBad{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        core::Map *p_roomMap = nullptr;
+        if ((p_room != nullptr && !roomIsBad) &&
+            p_room->getMap(p_roomMap) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getMap cannot fail; continue as before.
+        }
+        int roomId{};
+        if ((p_room != nullptr && !roomIsBad && p_roomMap == p_activeMap) &&
+            p_room->getId(roomId) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        semantic::Room::RoomVariant roomVariant{};
+        if ((p_room != nullptr && !roomIsBad && p_roomMap == p_activeMap &&
+             roomId == currentRoomIdSnapshot) &&
+            p_room->getRoomVariant(roomVariant) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad && p_roomMap == p_activeMap &&
+            roomId == currentRoomIdSnapshot &&
+            roomVariant == semantic::Room::RoomVariant::ROOM)
         {
             p_currentRoom = p_room;
             break;
@@ -103,8 +130,12 @@ void SemanticsManager::associateAllWallsToRooms(void)
         }
 
         /* Extract the walls currently assigned to the room */
-        const std::vector<vs_graphs::core::geometric::Plane *> roomWalls =
-            room->getWalls();
+        std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
+        if (room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
 
         /* Check whether the requested wall is already present */
         return std::any_of(
@@ -173,7 +204,14 @@ void SemanticsManager::associateAllWallsToRooms(void)
         for (vs_graphs::core::semantic::Room *room : allRooms)
         {
             /* Skip invalid rooms */
-            if (room == nullptr || room->isBad())
+            bool roomIsBad2{};
+            if (!(room == nullptr) &&
+                room->isBad(roomIsBad2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (room == nullptr || roomIsBad2)
             {
                 continue;
             }
@@ -197,7 +235,14 @@ void SemanticsManager::associateAllWallsToRooms(void)
         semantic::Room *p_selectedOwner = nullptr;
         for (semantic::Room *p_room : p_atlas->getAllRooms())
         {
-            if (p_room != nullptr && !p_room->isBad() &&
+            bool roomIsBad3{};
+            if ((p_room != nullptr) &&
+                p_room->isBad(roomIsBad3) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_room != nullptr && !roomIsBad3 &&
                 roomContainsWall(p_room, p_wall))
             {
                 p_selectedOwner = p_room;
@@ -213,6 +258,12 @@ void SemanticsManager::associateAllWallsToRooms(void)
             }
             undefendedWalls.erase(p_wall->getId());
             loggedOrphanWallIds.erase(p_wall->getId());
+            int selectedOwnerId{};
+            if (p_selectedOwner->getId(selectedOwnerId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             std::cout << "SG_PIPELINE {\"event\":\"wall_admission\","
                          "\"map_id\":"
                       << p_activeMap->getId()
@@ -220,7 +271,7 @@ void SemanticsManager::associateAllWallsToRooms(void)
                       << ",\"wall_id\":" << p_wall->getId()
                       << ",\"class\":\"WALL\","
                          "\"lifecycle\":\"COMMITTED\",\"owner_room_id\":"
-                      << p_selectedOwner->getId() << ",\"reason\":\""
+                      << selectedOwnerId << ",\"reason\":\""
                       << (p_selectedOwner == p_currentRoom
                               ? "CURRENT_ROOM_OBSERVATION"
                               : "PASSAGE_FAR_SIDE_PRECEDENCE")

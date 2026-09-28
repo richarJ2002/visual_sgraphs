@@ -27,10 +27,12 @@ namespace core
 namespace semantic
 {
 
-void Room::setMetaMarker(Marker *p_metaMarker_in)
+RoomStatus Room::setMetaMarker(Marker *p_metaMarker_in)
 {
     std::lock_guard<std::mutex> lock(stateMutex);
     p_metaMarker = p_metaMarker_in;
+
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

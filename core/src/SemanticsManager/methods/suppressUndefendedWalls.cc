@@ -88,33 +88,62 @@ void SemanticsManager::suppressUndefendedWalls(void)
             allRooms.end(),
             [p_wall](semantic::Room *p_room)
             {
-                if (p_room == nullptr || p_room->isBad())
+                bool roomIsBad{};
+                if (!(p_room == nullptr) &&
+                    p_room->isBad(roomIsBad) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_room == nullptr || roomIsBad)
                 {
                     return false;
                 }
 
-                const std::vector<geometric::Plane *> roomWalls =
-                    p_room->getWalls();
+                std::vector<geometric::Plane *> roomWalls{};
+                if (p_room->getWalls(roomWalls) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getWalls cannot fail; continue as before.
+                }
                 return std::find(roomWalls.begin(), roomWalls.end(), p_wall) !=
                        roomWalls.end();
             });
-        const bool associatedWithPassage =
-            std::any_of(allPassages.begin(),
-                        allPassages.end(),
-                        [p_wall](semantic::Passage *p_passage)
-                        {
-                            if (p_passage == nullptr || p_passage->isBad())
-                            {
-                                return false;
-                            }
+        const bool associatedWithPassage = std::any_of(
+            allPassages.begin(),
+            allPassages.end(),
+            [p_wall](semantic::Passage *p_passage)
+            {
+                bool passageIsBad{};
+                if (!(p_passage == nullptr) &&
+                    p_passage->isBad(passageIsBad) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_passage == nullptr || passageIsBad)
+                {
+                    return false;
+                }
 
-                            const std::vector<geometric::Plane *> passageWalls =
-                                p_passage->getAssociateWalls();
-                            return p_passage->getAssociateDoor() == p_wall ||
-                                   std::find(passageWalls.begin(),
-                                             passageWalls.end(),
-                                             p_wall) != passageWalls.end();
-                        });
+                std::vector<geometric::Plane *> passageWalls{};
+                if (p_passage->getAssociateWalls(passageWalls) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getAssociateWalls cannot fail; continue as before.
+                }
+                vs_graphs::core::geometric::Plane *p_passageAssociateDoor =
+                    nullptr;
+                if (p_passage->getAssociateDoor(p_passageAssociateDoor) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getAssociateDoor cannot fail; continue as before.
+                }
+                return p_passageAssociateDoor == p_wall ||
+                       std::find(passageWalls.begin(),
+                                 passageWalls.end(),
+                                 p_wall) != passageWalls.end();
+            });
         const WallAdmissionEvidence evidence =
             evaluateWallAdmissionEvidence(p_wall,
                                           p_sysParams,

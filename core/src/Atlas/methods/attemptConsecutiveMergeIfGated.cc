@@ -60,8 +60,13 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         p_params != nullptr ? p_params->mapMerge.minRoomsPerMap : 1U;
     const unsigned int minimumWalls =
         p_params != nullptr ? p_params->mapMerge.minWallsPerMap : 3U;
-    const semantic::SemanticVerify::MapMergeConfig mergeConfiguration =
-        semantic::SemanticVerify::mapMergeConfigFromSystemParams();
+    semantic::SemanticVerify::MapMergeConfig mergeConfiguration{};
+    if (semantic::SemanticVerify::mapMergeConfigFromSystemParams(
+            mergeConfiguration) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // mapMergeConfigFromSystemParams cannot fail; continue as before.
+    }
 
     for (Map *p_oldMap : getAllMaps())
     {
@@ -126,9 +131,23 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
          * the prior-link room takes part nowhere would fuse on a
          * coincidental resemblance. Same DEFER as too few anchors. */
         semantic::Room *p_oldFinalRoom = p_oldMap->getFinalRoom();
-        const bool      isSeedAnchored =
-            p_oldFinalRoom != nullptr && p_oldFinalRoom->hasRoomTag() &&
-            anchorTags.count(p_oldFinalRoom->getRoomTag()) > 0U;
+        bool            oldFinalRoomHasRoomTag{};
+        if ((p_oldFinalRoom != nullptr) &&
+            p_oldFinalRoom->hasRoomTag(oldFinalRoomHasRoomTag) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // hasRoomTag cannot fail; continue as before.
+        }
+        std::string oldFinalRoomRoomTag{};
+        if ((p_oldFinalRoom != nullptr && oldFinalRoomHasRoomTag) &&
+            p_oldFinalRoom->getRoomTag(oldFinalRoomRoomTag) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomTag cannot fail; continue as before.
+        }
+        const bool isSeedAnchored = p_oldFinalRoom != nullptr &&
+                                    oldFinalRoomHasRoomTag &&
+                                    anchorTags.count(oldFinalRoomRoomTag) > 0U;
         if (anchorCount < minimumAnchors || !isSeedAnchored)
         {
             recordAttempt();
@@ -181,24 +200,40 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         const g2o::Sim3 transformSim3(transformOldToCurrent.linear(),
                                       transformOldToCurrent.translation(),
                                       1.0);
-        const semantic::SemanticMergeGateResult gateResult =
-            semantic::SemanticVerify::evaluateConsecutiveMergeGate(
+        semantic::SemanticMergeGateResult gateResult{};
+        if (semantic::SemanticVerify::evaluateConsecutiveMergeGate(
                 p_currentMap,
                 p_oldMap,
                 transformSim3,
-                mergeConfiguration);
+                gateResult,
+                mergeConfiguration) !=
+            semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // evaluateConsecutiveMergeGate cannot fail; continue as before.
+        }
         recordAttempt();
-        std::cout
-            << "SG_PIPELINE {\"event\":\"consecutive_merge_attempt\","
-               "\"old_map_id\":"
-            << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
-            << ",\"anchors\":" << anchorCount << ",\"decision\":\""
-            << semantic::SemanticVerify::mergeDecisionName(gateResult.decision)
-            << "\",\"reason\":\""
-            << semantic::SemanticVerify::mergeReasonName(gateResult.reason)
-            << "\",\"matched_walls\":" << gateResult.matchedWallCount
-            << ",\"matched_passages\":" << gateResult.matchedPassageCount << "}"
-            << std::endl;
+        const char *p_name = nullptr;
+        if (semantic::SemanticVerify::mergeDecisionName(gateResult.decision,
+                                                        p_name) !=
+            semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // mergeDecisionName cannot fail; continue as before.
+        }
+        const char *p_name2 = nullptr;
+        if (semantic::SemanticVerify::mergeReasonName(gateResult.reason,
+                                                      p_name2) !=
+            semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // mergeReasonName cannot fail; continue as before.
+        }
+        std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_attempt\","
+                     "\"old_map_id\":"
+                  << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
+                  << ",\"anchors\":" << anchorCount << ",\"decision\":\""
+                  << p_name << "\",\"reason\":\"" << p_name2
+                  << "\",\"matched_walls\":" << gateResult.matchedWallCount
+                  << ",\"matched_passages\":" << gateResult.matchedPassageCount
+                  << "}" << std::endl;
         if (gateResult.decision != semantic::SemanticMergeDecision::ACCEPT)
         {
             continue;

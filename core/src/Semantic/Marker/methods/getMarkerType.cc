@@ -25,10 +25,11 @@ namespace core
 namespace semantic
 {
 
-Marker::MarkerVariant Marker::getMarkerType() const
+MarkerStatus Marker::getMarkerType(Marker::MarkerVariant &markerType_out) const
 {
     std::lock_guard<std::mutex> lock(stateMutex);
-    return markerType;
+    markerType_out = markerType;
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

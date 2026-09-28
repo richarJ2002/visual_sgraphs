@@ -27,6 +27,7 @@
 
 #include "Geometric/Plane.h"
 #include "Passage.h"
+#include "Semantic/RoomStatus.h"
 #include "Thirdparty/g2o/g2o/types/vertex_plane.h"
 
 #include <cstdint>
@@ -276,14 +277,16 @@ class Room
      *               Transform from the current plane frame to the
      *               new map frame.
      */
-    void applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
+    [[nodiscard]] RoomStatus
+        applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
 
     /*!
      * @brief        Returns the room identifier assigned by the atlas.
      *
-     * @return       Atlas room identifier.
+     * @param[out] id_out Atlas room identifier.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    int getId() const;
+    [[nodiscard]] RoomStatus getId(int &id_out) const;
 
     /*!
      * @brief        Sets the room identifier assigned by the atlas.
@@ -291,14 +294,15 @@ class Room
      * @param[in]    id_in
      *               New atlas room identifier.
      */
-    void setId(int id_in);
+    [[nodiscard]] RoomStatus setId(int id_in);
 
     /*!
      * @brief        Returns the local optimizer vertex identifier.
      *
-     * @return       Local optimizer identifier.
+     * @param[out] opId_out Local optimizer identifier.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    int getOpId() const;
+    [[nodiscard]] RoomStatus getOpId(int &opId_out) const;
 
     /*!
      * @brief        Sets the local optimizer vertex identifier.
@@ -306,14 +310,15 @@ class Room
      * @param[in]    opId_in
      *               New local optimizer identifier.
      */
-    void setOpId(int opId_in);
+    [[nodiscard]] RoomStatus setOpId(int opId_in);
 
     /*!
      * @brief        Returns the global optimizer vertex identifier.
      *
-     * @return       Global optimizer identifier.
+     * @param[out] opIdG_out Global optimizer identifier.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    int getOpIdG() const;
+    [[nodiscard]] RoomStatus getOpIdG(int &opIdG_out) const;
 
     /*!
      * @brief        Sets the global optimizer vertex identifier.
@@ -321,27 +326,29 @@ class Room
      * @param[in]    opIdG_in
      *               New global optimizer identifier.
      */
-    void setOpIdG(int opIdG_in);
+    [[nodiscard]] RoomStatus setOpIdG(int opIdG_in);
 
     /*!
      * @brief        Reports whether the room has been invalidated.
      *
-     * @return       True when the room is marked bad.
+     * @param[out] isBad_out True when the room is marked bad.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    bool isBad();
+    [[nodiscard]] RoomStatus isBad(bool &isBad_out);
 
     /*!
      * @brief        Marks the room as invalid for subsequent
      *               processing.
      */
-    void setBad();
+    [[nodiscard]] RoomStatus setBad();
 
     /*!
      * @brief        Returns the room's current classification.
      *
-     * @return       Active room variant.
+     * @param[out] roomVariant_out Active room variant.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    RoomVariant getRoomVariant();
+    [[nodiscard]] RoomStatus getRoomVariant(Room::RoomVariant &roomVariant_out);
 
     /*!
      * @brief        Updates the room's classification.
@@ -349,15 +356,17 @@ class Room
      * @param[in]    variant_in
      *               New room variant.
      */
-    void setRoomVariant(RoomVariant variant_in);
+    [[nodiscard]] RoomStatus setRoomVariant(RoomVariant variant_in);
 
     /*!
      * @brief        Returns the latest finite-wall boundary
      *               validation result.
      *
-     * @return       Active boundary status.
+     * @param[out] boundaryStatus_out Active boundary status.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    BoundaryStatus getBoundaryStatus() const;
+    [[nodiscard]] RoomStatus
+        getBoundaryStatus(Room::BoundaryStatus &boundaryStatus_out) const;
 
     /*!
      * @brief        Updates the finite-wall boundary validation
@@ -367,15 +376,19 @@ class Room
      *               Result produced by the semantic boundary
      *               validator.
      */
-    void setBoundaryStatus(BoundaryStatus boundaryStatus_in);
+    [[nodiscard]] RoomStatus
+        setBoundaryStatus(BoundaryStatus boundaryStatus_in);
 
     /*!
      * @brief        Reports whether observed wall extents form a
      *               closed valid loop.
      *
-     * @return       True while the boundary status is COMPLETE.
+     * @param[out] isBoundaryComplete_out True while the boundary status is
+     * COMPLETE.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    bool isBoundaryComplete() const;
+    [[nodiscard]] RoomStatus
+        isBoundaryComplete(bool &isBoundaryComplete_out) const;
 
     /*!
      * @brief        Returns the ordered, closed-loop corner points
@@ -392,10 +405,12 @@ class Room
      *              to match these corners -- those bounds are owned
      *              by the measurement/refit pipeline.
      *
-     * @return       Closed-loop corners in the world frame, or an
-     *               empty vector when incomplete.
+     * @param[out] boundaryCorners_World_m_out Closed-loop corners in the world
+     * frame, or an empty vector when incomplete.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    std::vector<Eigen::Vector3d> getBoundaryCorners_World_m() const;
+    [[nodiscard]] RoomStatus getBoundaryCorners_World_m(
+        std::vector<Eigen::Vector3d> &boundaryCorners_World_m_out) const;
 
     /*!
      * @brief        Sets the room's finite wall boundary corner
@@ -404,7 +419,7 @@ class Room
      * @param[in]    corners_World_m_in
      *               Closed-loop corners in the world frame.
      */
-    void setBoundaryCorners_World_m(
+    [[nodiscard]] RoomStatus setBoundaryCorners_World_m(
         std::vector<Eigen::Vector3d> corners_World_m_in);
 
     /*!
@@ -426,9 +441,12 @@ class Room
      *              nothing else yet; a future observation planner is
      *              the intended consumer, not built here.
      *
-     * @return       Unobserved sectors around the room centroid.
+     * @param[out] observationGaps_out Unobserved sectors around the room
+     * centroid.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    std::vector<ObservationGap> getObservationGaps() const;
+    [[nodiscard]] RoomStatus getObservationGaps(
+        std::vector<Room::ObservationGap> &observationGaps_out) const;
 
     /*!
      * @brief        Sets the room's currently unobserved angular
@@ -437,15 +455,17 @@ class Room
      * @param[in]    gaps_in
      *               New unobserved sectors.
      */
-    void setObservationGaps(std::vector<ObservationGap> gaps_in);
+    [[nodiscard]] RoomStatus
+        setObservationGaps(std::vector<ObservationGap> gaps_in);
 
     /*!
      * @brief        Reports whether the room has an externally known
      *               label.
      *
-     * @return       True when a known label was assigned.
+     * @param[out] hasKnownLabel_out True when a known label was assigned.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    bool getHasKnownLabel() const;
+    [[nodiscard]] RoomStatus getHasKnownLabel(bool &hasKnownLabel_out) const;
 
     /*!
      * @brief        Sets whether the room has an externally known
@@ -454,15 +474,16 @@ class Room
      * @param[in]    hasKnownLabel_in
      *               New known-label flag.
      */
-    void setHasKnownLabel(bool hasKnownLabel_in);
+    [[nodiscard]] RoomStatus setHasKnownLabel(bool hasKnownLabel_in);
 
     /*!
      * @brief        Returns the identifier of the room's metadata
      *               marker.
      *
-     * @return       Metadata marker identifier.
+     * @param[out] metaMarkerId_out Metadata marker identifier.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    int getMetaMarkerId() const;
+    [[nodiscard]] RoomStatus getMetaMarkerId(int &metaMarkerId_out) const;
 
     /*!
      * @brief        Sets the identifier of the room's metadata
@@ -471,15 +492,16 @@ class Room
      * @param[in]    metaMarkerId_in
      *               New metadata marker identifier.
      */
-    void setMetaMarkerId(int metaMarkerId_in);
+    [[nodiscard]] RoomStatus setMetaMarkerId(int metaMarkerId_in);
 
     /*!
      * @brief        Returns the non-owning metadata marker
      *               associated with the room.
      *
-     * @return       Associated marker, or nullptr when unset.
+     * @param[out] p_metaMarker_out Associated marker, or nullptr when unset.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    Marker *getMetaMarker() const;
+    [[nodiscard]] RoomStatus getMetaMarker(Marker *&p_metaMarker_out) const;
 
     /*!
      * @brief        Associates a non-owning metadata marker with the
@@ -488,14 +510,15 @@ class Room
      * @param[in]    p_metaMarker_in
      *               Marker to associate; may be null.
      */
-    void setMetaMarker(Marker *p_metaMarker_in);
+    [[nodiscard]] RoomStatus setMetaMarker(Marker *p_metaMarker_in);
 
     /*!
      * @brief        Returns the human-readable room label.
      *
-     * @return       Room name, possibly empty.
+     * @param[out] name_out Room name, possibly empty.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    std::string getName() const;
+    [[nodiscard]] RoomStatus getName(std::string &name_out) const;
 
     /*!
      * @brief        Sets the human-readable room label.
@@ -503,16 +526,17 @@ class Room
      * @param[in]    name_in
      *               New room name.
      */
-    void setName(std::string name_in);
+    [[nodiscard]] RoomStatus setName(std::string name_in);
 
     /*!
      * @brief        Returns the persistent room identity tag assigned by
      *               Atlas room-context matching.
      *
-     * @return       Tag string (e.g. "room_5") or an empty string when the
-     *               room has not been matched to a prior-map context.
+     * @param[out] roomTag_out Tag string (e.g. "room_5") or an empty string
+     * when the room has not been matched to a prior-map context.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    std::string getRoomTag() const;
+    [[nodiscard]] RoomStatus getRoomTag(std::string &roomTag_out) const;
 
     /*!
      * @brief        Assigns a persistent room identity tag.
@@ -520,15 +544,16 @@ class Room
      * @param[in]    tag_in
      *               Tag string (e.g. "room_5") propagated from a prior map.
      */
-    void setRoomTag(const std::string &tag_in);
+    [[nodiscard]] RoomStatus setRoomTag(const std::string &tag_in);
 
     /*!
      * @brief        Reports whether the room carries a persistent
      *               identity tag.
      *
-     * @return       True when a room tag was assigned.
+     * @param[out] hasRoomTag_out True when a room tag was assigned.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    bool hasRoomTag() const;
+    [[nodiscard]] RoomStatus hasRoomTag(bool &hasRoomTag_out) const;
 
     /*!
      * @brief        Marks identity restored after a map reset but
@@ -537,15 +562,16 @@ class Room
      * @param[in]    isRecoveryProxy_in
      *               New recovery-proxy flag.
      */
-    void setRecoveryProxy(bool isRecoveryProxy_in);
+    [[nodiscard]] RoomStatus setRecoveryProxy(bool isRecoveryProxy_in);
 
     /*!
      * @brief        Returns whether this room still lacks fresh
      *               active-map observations.
      *
-     * @return       True while the room is a recovery proxy.
+     * @param[out] isRecoveryProxy_out True while the room is a recovery proxy.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    bool isRecoveryProxy() const;
+    [[nodiscard]] RoomStatus isRecoveryProxy(bool &isRecoveryProxy_out) const;
 
     /*!
      * @brief        Marks that the UAV has entered this room.
@@ -553,14 +579,16 @@ class Room
      * @param[in]    wasPreviouslyVisited_in
      *               New visited flag.
      */
-    void setPreviouslyVisited(bool wasPreviouslyVisited_in);
+    [[nodiscard]] RoomStatus setPreviouslyVisited(bool wasPreviouslyVisited_in);
 
     /*!
      * @brief        Returns whether the UAV has entered this room.
      *
-     * @return       True once the room was visited.
+     * @param[out] hasPreviouslyVisited_out True once the room was visited.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    bool hasPreviouslyVisited() const;
+    [[nodiscard]] RoomStatus
+        hasPreviouslyVisited(bool &hasPreviouslyVisited_out) const;
 
     /*!
      * @brief        Stores a non-owning pointer to the context snapshot from
@@ -569,15 +597,18 @@ class Room
      * @param[in]    p_matchedContext_in
      *               Pointer to a snapshot owned by the Atlas, or nullptr.
      */
-    void setMatchedContext(RoomContextSnapshot *p_matchedContext_in);
+    [[nodiscard]] RoomStatus
+        setMatchedContext(RoomContextSnapshot *p_matchedContext_in);
 
     /*!
      * @brief        Returns the context snapshot associated with
      *               this room, or nullptr when no match exists.
      *
-     * @return       Non-owning matched snapshot, or nullptr.
+     * @param[out] p_matchedContext_out Non-owning matched snapshot, or nullptr.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    RoomContextSnapshot *getMatchedContext() const;
+    [[nodiscard]] RoomStatus
+        getMatchedContext(RoomContextSnapshot *&p_matchedContext_out) const;
 
     /*!
      * @brief        Adds a non-owning passage association to the
@@ -587,14 +618,17 @@ class Room
      *               Passage to associate; null pointers are
      *               ignored.
      */
-    void setDoorways(vs_graphs::core::semantic::Passage *p_passage_in);
+    [[nodiscard]] RoomStatus
+        setDoorways(vs_graphs::core::semantic::Passage *p_passage_in);
 
     /*!
      * @brief        Returns the passages associated with the room.
      *
-     * @return       Non-owning associated passages.
+     * @param[out] passages_out Non-owning associated passages.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    std::vector<vs_graphs::core::semantic::Passage *> getPassages() const;
+    [[nodiscard]] RoomStatus getPassages(
+        std::vector<vs_graphs::core::semantic::Passage *> &passages_out) const;
 
     /*!
      * @brief        Replaces a retired passage with its retained fused entity.
@@ -604,11 +638,15 @@ class Room
      * @param[in]    p_retainedPassage_in
      *               Passage which retains the combined associations.
      *
-     * @return       True when this room referenced the retired passage.
+     * @param[out] wasAssociationReplaced_out True when this room referenced the
+     * retired passage.
+     * @return ROOM_STATUS_SUCCESS, or ROOM_STATUS_INVALID_ARGUMENT when an
+     * input is rejected.
      */
-    bool replacePassageAssociation(
+    [[nodiscard]] RoomStatus replacePassageAssociation(
         vs_graphs::core::semantic::Passage *p_retiredPassage_in,
-        vs_graphs::core::semantic::Passage *p_retainedPassage_in);
+        vs_graphs::core::semantic::Passage *p_retainedPassage_in,
+        bool                               &wasAssociationReplaced_out);
 
     /*!
      * @brief        Removes every passage association without
@@ -618,7 +656,7 @@ class Room
      *              passage-room edges from the latest geometric
      *              evidence.
      */
-    void clearPassages();
+    [[nodiscard]] RoomStatus clearPassages();
 
     /*!
      * @brief        Removes a single passage association from this room.
@@ -630,10 +668,14 @@ class Room
      * @param[in]    p_removedPassage_in
      *               Passage whose association should be revoked.
      *
-     * @return       True when the association was present and removed.
+     * @param[out] wasPassageRemoved_out True when the association was present
+     * and removed.
+     * @return ROOM_STATUS_SUCCESS, or ROOM_STATUS_INVALID_ARGUMENT when an
+     * input is rejected.
      */
-    bool removePassageAssociation(
-        vs_graphs::core::semantic::Passage *p_removedPassage_in);
+    [[nodiscard]] RoomStatus removePassageAssociation(
+        vs_graphs::core::semantic::Passage *p_removedPassage_in,
+        bool                               &wasPassageRemoved_out);
 
     /*!
      * @brief        Adds a non-owning wall-plane association to this
@@ -649,7 +691,8 @@ class Room
      *               Wall plane to associate; null pointers are
      *               ignored.
      */
-    void setWalls(vs_graphs::core::geometric::Plane *p_wall_in);
+    [[nodiscard]] RoomStatus
+        setWalls(vs_graphs::core::geometric::Plane *p_wall_in);
 
     /*!
      * @brief        Replaces a retired wall-plane association atomically.
@@ -663,10 +706,15 @@ class Room
      * @param[in]    p_retainedWall_in
      *               Wall plane which owns the fused geometry.
      *
-     * @return       True when this room referenced the retired wall.
+     * @param[out] wasWallReplaced_out True when this room referenced the
+     * retired wall.
+     * @return ROOM_STATUS_SUCCESS, or ROOM_STATUS_INVALID_ARGUMENT when an
+     * input is rejected.
      */
-    bool replaceWall(vs_graphs::core::geometric::Plane *p_retiredWall_in,
-                     vs_graphs::core::geometric::Plane *p_retainedWall_in);
+    [[nodiscard]] RoomStatus
+        replaceWall(vs_graphs::core::geometric::Plane *p_retiredWall_in,
+                    vs_graphs::core::geometric::Plane *p_retainedWall_in,
+                    bool                              &wasWallReplaced_out);
 
     /*!
      * @brief        Removes one non-owning wall association.
@@ -674,18 +722,24 @@ class Room
      * @param[in]    p_wall_in
      *               Wall whose ownership relationship is removed.
      *
-     * @return       True when the wall was associated with this
-     *               room.
+     * @param[out] wasWallRemoved_out True when the wall was associated with
+     * this room.
+     * @return ROOM_STATUS_SUCCESS, or ROOM_STATUS_INVALID_ARGUMENT when an
+     * input is rejected.
      */
-    bool removeWall(vs_graphs::core::geometric::Plane *p_wall_in);
+    [[nodiscard]] RoomStatus
+        removeWall(vs_graphs::core::geometric::Plane *p_wall_in,
+                   bool                              &wasWallRemoved_out);
 
     /*!
      * @brief        Returns the wall planes associated with the
      *               room.
      *
-     * @return       Non-owning associated walls.
+     * @param[out] walls_out Non-owning associated walls.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    std::vector<vs_graphs::core::geometric::Plane *> getWalls() const;
+    [[nodiscard]] RoomStatus
+        getWalls(std::vector<geometric::Plane *> &walls_out) const;
 
     /*!
      * @brief        Returns a wall normal oriented toward this room's centroid.
@@ -700,33 +754,41 @@ class Room
      *               Non-owning pointer to the wall plane whose normal is
      *               required.
      *
-     * @return       Unit wall normal expressed in the world frame and pointing
-     *               toward the room centroid, or `std::nullopt` when the wall,
-     *               plane equation, or room centroid is invalid. If the room
-     *               centroid lies exactly on the wall, the normalized stored
-     *               normal direction is returned.
+     * @param[out] wallNormalTowardRoom_World_out Unit wall normal expressed in
+     * the world frame and pointing toward the room centroid, or `std::nullopt`
+     * when the wall, plane equation, or room centroid is invalid. If the room
+     * centroid lies exactly on the wall, the normalized stored normal direction
+     * is returned.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    std::optional<Eigen::Vector3d>
-        getWallNormalTowardRoom_World(const geometric::Plane *p_wall_in) const;
+    [[nodiscard]] RoomStatus getWallNormalTowardRoom_World(
+        const geometric::Plane         *p_wall_in,
+        std::optional<Eigen::Vector3d> &wallNormalTowardRoom_World_out) const;
 
     /*!
      * @brief        Removes all wall associations without deleting the planes.
      */
-    void clearWalls();
+    [[nodiscard]] RoomStatus clearWalls();
 
     /*!
      * @brief        Removes null and invalid wall associations atomically.
      *
-     * @return       Number of wall associations that remain valid.
+     * @param[out] removedWallCount_out Number of wall associations that remain
+     * valid.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    std::size_t removeInvalidWalls();
+    [[nodiscard]] RoomStatus
+        removeInvalidWalls(std::size_t &removedWallCount_out);
 
     /*!
      * @brief        Returns the non-owning ground-plane association.
      *
-     * @return       Associated ground plane, or nullptr when unset.
+     * @param[out] p_groundPlane_out Associated ground plane, or nullptr when
+     * unset.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    geometric::Plane *getGroundPlane() const;
+    [[nodiscard]] RoomStatus
+        getGroundPlane(geometric::Plane *&p_groundPlane_out) const;
 
     /*!
      * @brief        Associates a non-owning ground plane with the
@@ -735,7 +797,7 @@ class Room
      * @param[in]    p_groundPlane_in
      *               Ground plane to associate; may be null.
      */
-    void setGroundPlane(geometric::Plane *p_groundPlane_in);
+    [[nodiscard]] RoomStatus setGroundPlane(geometric::Plane *p_groundPlane_in);
 
     /*!
      * @brief        Replaces a retired ground-plane association.
@@ -746,18 +808,24 @@ class Room
      * @param[in]    p_retainedGround_in
      *               Ground plane which owns the fused geometry.
      *
-     * @return       True when this room referenced the retired ground plane.
+     * @param[out] wasGroundPlaneReplaced_out True when this room referenced the
+     * retired ground plane.
+     * @return ROOM_STATUS_SUCCESS, or ROOM_STATUS_INVALID_ARGUMENT when an
+     * input is rejected.
      */
-    bool replaceGroundPlane(geometric::Plane *p_retiredGround_in,
-                            geometric::Plane *p_retainedGround_in);
+    [[nodiscard]] RoomStatus
+        replaceGroundPlane(geometric::Plane *p_retiredGround_in,
+                           geometric::Plane *p_retainedGround_in,
+                           bool             &wasGroundPlaneReplaced_out);
 
     /*!
      * @brief        Returns the non-owning floor node associated with
      *               this room.
      *
-     * @return       Associated floor, or nullptr when unset.
+     * @param[out] p_floor_out Associated floor, or nullptr when unset.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    Floor *getFloor() const;
+    [[nodiscard]] RoomStatus getFloor(Floor *&p_floor_out) const;
 
     /*!
      * @brief        Sets the non-owning floor node associated with
@@ -766,15 +834,16 @@ class Room
      * @param[in]    p_floor_in
      *               Floor to associate; may be null.
      */
-    void setFloor(Floor *p_floor_in);
+    [[nodiscard]] RoomStatus setFloor(Floor *p_floor_in);
 
     /*!
      * @brief        Returns the room centroid in the active map
      *               frame.
      *
-     * @return       Centroid in metres in the world frame.
+     * @param[out] centroid_out Centroid in metres in the world frame.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    Eigen::Vector3d getCentroid() const;
+    [[nodiscard]] RoomStatus getCentroid(Eigen::Vector3d &centroid_out) const;
 
     /*!
      * @brief        Sets the room centroid in the active map frame.
@@ -782,14 +851,15 @@ class Room
      * @param[in]    centroid_in
      *               New centroid in metres in the world frame.
      */
-    void setCentroid(Eigen::Vector3d centroid_in);
+    [[nodiscard]] RoomStatus setCentroid(Eigen::Vector3d centroid_in);
 
     /*!
      * @brief        Returns the map that owns this room.
      *
-     * @return       Non-owning owning map, or nullptr when unset.
+     * @param[out] p_map_out Non-owning owning map, or nullptr when unset.
+     * @return ROOM_STATUS_SUCCESS.
      */
-    Map *getMap();
+    [[nodiscard]] RoomStatus getMap(core::Map *&p_map_out);
 
     /*!
      * @brief        Assigns the room to a map.
@@ -797,7 +867,7 @@ class Room
      * @param[in]    p_map_in
      *               Owning map; shall be non-null.
      */
-    void setMap(Map *p_map_in);
+    [[nodiscard]] RoomStatus setMap(Map *p_map_in);
 
   protected:
     /* ---------------------------------------------------------------------- *

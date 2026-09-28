@@ -28,9 +28,10 @@ namespace core
 namespace semantic
 {
 
-int Passage::getOpId() const
+PassageStatus Passage::getOpId(int &opId_out) const
 {
-    return opId;
+    opId_out = opId;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -26,22 +26,28 @@ namespace core
 namespace semantic
 {
 
-bool RoomTracker::applyRow(RoomTrackingState           source_in,
-                           RoomTrackingEvent           event_in,
-                           double                      now_s_in,
-                           const TraversalGuardValues &crossing_in,
-                           const VerificationVerdict  &verification_in)
+RoomTrackerStatus
+    RoomTracker::applyRow(RoomTrackingState           source_in,
+                          RoomTrackingEvent           event_in,
+                          double                      now_s_in,
+                          const TraversalGuardValues &crossing_in,
+                          const VerificationVerdict  &verification_in,
+                          bool                       &isAccepted_out)
 {
     /* Transition table, guarded rows first. */
     if (source_in == RoomTrackingState::UNKNOWN &&
         event_in == RoomTrackingEvent::FIRST_ROOM_CONFIRMED)
     {
-        commit(source_in,
-               event_in,
-               now_s_in,
-               crossing_in,
-               verification_in,
-               verification_in.isPass());
+        if (commit(source_in,
+                   event_in,
+                   now_s_in,
+                   crossing_in,
+                   verification_in,
+                   verification_in.isPass()) !=
+            RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // commit cannot fail; continue as before.
+        }
     }
     else if (source_in == RoomTrackingState::CONFIRMED_ROOM &&
              event_in == RoomTrackingEvent::PASSAGE_CROSSING_DETECTED)
@@ -53,12 +59,16 @@ bool RoomTracker::applyRow(RoomTrackingState           source_in,
             crossing_in.confidence >= 0.0 && crossing_in.confidence <= 1.0 &&
             crossing_in.dwell_s >= config.crossing_dwell_s &&
             crossing_in.confidence >= config.crossing_confidence;
-        commit(source_in,
-               event_in,
-               now_s_in,
-               crossing_in,
-               verification_in,
-               guardSatisfied);
+        if (commit(source_in,
+                   event_in,
+                   now_s_in,
+                   crossing_in,
+                   verification_in,
+                   guardSatisfied) !=
+            RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // commit cannot fail; continue as before.
+        }
     }
     else if (source_in == RoomTrackingState::CROSSING_PASSAGE &&
              event_in == RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE)
@@ -68,96 +78,128 @@ bool RoomTracker::applyRow(RoomTrackingState           source_in,
             std::isfinite(crossing_in.dwell_s) && crossing_in.dwell_s >= 0.0 &&
             crossing_in.dwell_s >= config.crossing_dwell_s &&
             verification_in.isPass();
-        commit(source_in,
-               event_in,
-               now_s_in,
-               crossing_in,
-               verification_in,
-               guardSatisfied);
+        if (commit(source_in,
+                   event_in,
+                   now_s_in,
+                   crossing_in,
+                   verification_in,
+                   guardSatisfied) !=
+            RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // commit cannot fail; continue as before.
+        }
     }
     else if (source_in == RoomTrackingState::LOST_WITHOUT_ROOM &&
              event_in == RoomTrackingEvent::ROOM_REACQUIRED)
     {
-        commit(source_in,
-               event_in,
-               now_s_in,
-               crossing_in,
-               verification_in,
-               verification_in.isPass());
+        if (commit(source_in,
+                   event_in,
+                   now_s_in,
+                   crossing_in,
+                   verification_in,
+                   verification_in.isPass()) !=
+            RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // commit cannot fail; continue as before.
+        }
     }
     else if (source_in == RoomTrackingState::LOST_WITH_LAST_ROOM &&
              event_in == RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH)
     {
-        commit(source_in,
-               event_in,
-               now_s_in,
-               crossing_in,
-               verification_in,
-               verification_in.isPass());
+        if (commit(source_in,
+                   event_in,
+                   now_s_in,
+                   crossing_in,
+                   verification_in,
+                   verification_in.isPass()) !=
+            RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // commit cannot fail; continue as before.
+        }
     }
     else if (source_in == RoomTrackingState::REACQUIRING_IN_NEW_MAP &&
              event_in == RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM)
     {
-        commit(source_in,
-               event_in,
-               now_s_in,
-               crossing_in,
-               verification_in,
-               verification_in.isPass());
+        if (commit(source_in,
+                   event_in,
+                   now_s_in,
+                   crossing_in,
+                   verification_in,
+                   verification_in.isPass()) !=
+            RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // commit cannot fail; continue as before.
+        }
     }
     /* Unconditional rows: no guard checks, transition always fires. */
     else if (source_in == RoomTrackingState::CONFIRMED_ROOM &&
              event_in == RoomTrackingEvent::TRACKING_LOST)
     {
-        commit(source_in,
-               event_in,
-               now_s_in,
-               crossing_in,
-               verification_in,
-               true);
+        if (commit(source_in,
+                   event_in,
+                   now_s_in,
+                   crossing_in,
+                   verification_in,
+                   true) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // commit cannot fail; continue as before.
+        }
     }
     else if (source_in == RoomTrackingState::CROSSING_PASSAGE &&
              event_in == RoomTrackingEvent::TRACKING_LOST)
     {
-        commit(source_in,
-               event_in,
-               now_s_in,
-               crossing_in,
-               verification_in,
-               true);
+        if (commit(source_in,
+                   event_in,
+                   now_s_in,
+                   crossing_in,
+                   verification_in,
+                   true) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // commit cannot fail; continue as before.
+        }
     }
     else if (source_in == RoomTrackingState::LOST_WITH_LAST_ROOM &&
              event_in == RoomTrackingEvent::LOST_TIMEOUT)
     {
-        commit(source_in,
-               event_in,
-               now_s_in,
-               crossing_in,
-               verification_in,
-               true);
+        if (commit(source_in,
+                   event_in,
+                   now_s_in,
+                   crossing_in,
+                   verification_in,
+                   true) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // commit cannot fail; continue as before.
+        }
     }
     else if (source_in == RoomTrackingState::REACQUIRING_IN_NEW_MAP &&
              event_in == RoomTrackingEvent::REACQUIRE_TIMEOUT)
     {
-        commit(source_in,
-               event_in,
-               now_s_in,
-               crossing_in,
-               verification_in,
-               true);
+        if (commit(source_in,
+                   event_in,
+                   now_s_in,
+                   crossing_in,
+                   verification_in,
+                   true) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // commit cannot fail; continue as before.
+        }
     }
     else
     {
         /* Events with no defined row for the source state are rejected. */
-        commit(source_in,
-               event_in,
-               now_s_in,
-               crossing_in,
-               verification_in,
-               false);
+        if (commit(source_in,
+                   event_in,
+                   now_s_in,
+                   crossing_in,
+                   verification_in,
+                   false) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // commit cannot fail; continue as before.
+        }
     }
 
-    return eventHistory.back().isAccepted;
+    isAccepted_out = eventHistory.back().isAccepted;
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

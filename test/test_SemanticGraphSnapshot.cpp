@@ -126,16 +126,24 @@ TEST(SemanticGraphSnapshot,
         p_map->addDetectedMapRoom(&room);
 
         Passage passage;
-        passage.setId(3);
-        passage.setMap(p_map);
-        passage.setKnownSideRoom(&room);
+        ASSERT_EQ(
+            (passage.setId(3)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        ASSERT_EQ(
+            (passage.setMap(p_map)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        ASSERT_EQ(
+            (passage.setKnownSideRoom(&room)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
         p_map->addMapPassage(&passage);
-        room.setDoorways(&passage);
+        ASSERT_EQ((room.setDoorways(&passage)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
         Floor floor;
         test::makeFloor(floor, 4, p_map, {&room});
         p_map->addMapFloor(&floor);
-        room.setFloor(&floor);
+        ASSERT_EQ((room.setFloor(&floor)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
         capturedSnapshot = captureSemanticGraphSnapshot(&atlas);
@@ -210,21 +218,29 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
     p_mapB->addDetectedMapRoom(&roomB);
 
     Passage passageA;
-    passageA.setId(1);
-    passageA.setMap(p_mapA);
+    ASSERT_EQ((passageA.setId(1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passageA.setMap(p_mapA)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_mapA->addMapPassage(&passageA);
     Passage passageB;
-    passageB.setId(1);
-    passageB.setMap(p_mapB);
+    ASSERT_EQ((passageB.setId(1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passageB.setMap(p_mapB)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_mapB->addMapPassage(&passageB);
 
     Floor floorA;
-    floorA.setId(1);
-    floorA.setMap(p_mapA);
+    ASSERT_EQ((floorA.setId(1)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
+    ASSERT_EQ((floorA.setMap(p_mapA)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     p_mapA->addMapFloor(&floorA);
     Floor floorB;
-    floorB.setId(1);
-    floorB.setMap(p_mapB);
+    ASSERT_EQ((floorB.setId(1)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
+    ASSERT_EQ((floorB.setMap(p_mapB)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     p_mapB->addMapFloor(&floorB);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
@@ -274,13 +290,16 @@ TEST(SemanticGraphSnapshot,
 
     /* Room: enumerated from mapA, but declares mapB. */
     Room mismatchedRoom;
-    mismatchedRoom.setId(1);
-    mismatchedRoom.setMap(p_mapB);
+    ASSERT_EQ((mismatchedRoom.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((mismatchedRoom.setMap(p_mapB)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_mapA->addDetectedMapRoom(&mismatchedRoom);
 
     /* Room: enumerated from mapA, declares no map at all. */
     Room noMapRoom;
-    noMapRoom.setId(2);
+    ASSERT_EQ((noMapRoom.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_mapA->addDetectedMapRoom(&noMapRoom);
 
     /* Wall: enumerated from mapA, but declares mapB. */
@@ -314,24 +333,30 @@ TEST(SemanticGraphSnapshot,
 
     /* Passage: enumerated from mapA, declares no map at all. */
     Passage noMapPassage;
-    noMapPassage.setId(4);
+    ASSERT_EQ((noMapPassage.setId(4)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_mapA->addMapPassage(&noMapPassage);
 
     /* Passage: enumerated from mapA, but declares mapB. */
     Passage mismatchedPassage;
-    mismatchedPassage.setId(7);
-    mismatchedPassage.setMap(p_mapB);
+    ASSERT_EQ((mismatchedPassage.setId(7)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((mismatchedPassage.setMap(p_mapB)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_mapA->addMapPassage(&mismatchedPassage);
 
     /* Floor: enumerated from mapA, but declares mapB. */
     Floor mismatchedFloor;
-    mismatchedFloor.setId(5);
-    mismatchedFloor.setMap(p_mapB);
+    ASSERT_EQ((mismatchedFloor.setId(5)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
+    ASSERT_EQ((mismatchedFloor.setMap(p_mapB)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     p_mapA->addMapFloor(&mismatchedFloor);
 
     /* Floor: enumerated from mapA, declares no map at all. */
     Floor noMapFloor;
-    noMapFloor.setId(8);
+    ASSERT_EQ((noMapFloor.setId(8)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     p_mapA->addMapFloor(&noMapFloor);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
@@ -402,18 +427,24 @@ TEST(SemanticGraphSnapshot,
     Map  *p_map = atlas.getCurrentMap();
 
     Room detectedOnly;
-    detectedOnly.setId(1);
-    detectedOnly.setMap(p_map);
+    ASSERT_EQ((detectedOnly.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((detectedOnly.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&detectedOnly);
 
     Room candidateOnly;
-    candidateOnly.setId(2);
-    candidateOnly.setMap(p_map);
+    ASSERT_EQ((candidateOnly.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((candidateOnly.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addCandidateMapRoom(&candidateOnly);
 
     Room bothCollections;
-    bothCollections.setId(3);
-    bothCollections.setMap(p_map);
+    ASSERT_EQ((bothCollections.setId(3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((bothCollections.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&bothCollections);
     p_map->addCandidateMapRoom(&bothCollections);
 
@@ -470,22 +501,29 @@ TEST(SemanticGraphSnapshot,
                         0.5,
                         Eigen::Vector3d::Zero());
     Room unusualGroundRoom;
-    unusualGroundRoom.setId(3);
-    unusualGroundRoom.setMap(p_mapA);
-    unusualGroundRoom.setGroundPlane(&unmappedWrongTypeGround);
+    ASSERT_EQ((unusualGroundRoom.setId(3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((unusualGroundRoom.setMap(p_mapA)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((unusualGroundRoom.setGroundPlane(&unmappedWrongTypeGround)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_mapA->addDetectedMapRoom(&unusualGroundRoom);
 
     /* Room referenced as a "missing-from-enumeration" far-side target: it
      * has a real map but was never added to any Map room collection. */
     Room ghostRoom;
-    ghostRoom.setId(99);
-    ghostRoom.setMap(p_mapA);
+    ASSERT_EQ((ghostRoom.setId(99)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((ghostRoom.setMap(p_mapA)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     /* Room in mapB, referenced cross-map from a Passage enumerated under
      * mapA. */
     Room crossMapRoom;
-    crossMapRoom.setId(7);
-    crossMapRoom.setMap(p_mapB);
+    ASSERT_EQ((crossMapRoom.setId(7)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((crossMapRoom.setMap(p_mapB)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_mapB->addDetectedMapRoom(&crossMapRoom);
 
     /* Bad wall, referenced as another room's ground plane, to prove
@@ -495,16 +533,23 @@ TEST(SemanticGraphSnapshot,
     p_mapA->addMapPlane(&badGroundPlane);
     badGroundPlane.setBad();
     Room badGroundOwnerRoom;
-    badGroundOwnerRoom.setId(9);
-    badGroundOwnerRoom.setMap(p_mapA);
-    badGroundOwnerRoom.setGroundPlane(&badGroundPlane);
+    ASSERT_EQ((badGroundOwnerRoom.setId(9)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((badGroundOwnerRoom.setMap(p_mapA)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((badGroundOwnerRoom.setGroundPlane(&badGroundPlane)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_mapA->addDetectedMapRoom(&badGroundOwnerRoom);
 
     Passage passage;
-    passage.setId(10);
-    passage.setMap(p_mapA);
-    passage.setKnownSideRoom(&ghostRoom);
-    passage.setProspectiveRoom(&crossMapRoom);
+    ASSERT_EQ((passage.setId(10)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_mapA)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setKnownSideRoom(&ghostRoom)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setProspectiveRoom(&crossMapRoom)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_mapA->addMapPassage(&passage);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
@@ -617,17 +662,23 @@ TEST(SemanticGraphSnapshot,
      * wall-detection contract violation upstream; nothing in Room::setWalls()
      * enforces WALL-typed membership). */
     Room room;
-    room.setId(3);
-    room.setMap(p_map);
-    room.setWalls(&groundNotWall);
+    ASSERT_EQ((room.setId(3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(&groundNotWall)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
     /* Case 3: a Passage whose getAssociateWalls() names the same
      * GROUND-typed plane. */
     Passage passage;
-    passage.setId(4);
-    passage.setMap(p_map);
-    passage.addAssociateWall(&groundNotWall);
+    ASSERT_EQ((passage.setId(4)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.addAssociateWall(&groundNotWall)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_map->addMapPassage(&passage);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
@@ -680,23 +731,32 @@ TEST(SemanticGraphSnapshot,
 
     /* An unmapped, bad, non-null Room, referenced from a Passage. */
     Room unmappedBadRoom;
-    unmappedBadRoom.setId(42);
-    unmappedBadRoom.setBad();
+    ASSERT_EQ((unmappedBadRoom.setId(42)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((unmappedBadRoom.setBad()),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     Passage passage;
-    passage.setId(1);
-    passage.setMap(p_map);
-    passage.setProspectiveRoom(&unmappedBadRoom);
+    ASSERT_EQ((passage.setId(1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setProspectiveRoom(&unmappedBadRoom)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_map->addMapPassage(&passage);
 
     /* An unmapped, non-null Floor, referenced from a Room. */
     Floor unmappedFloor;
-    unmappedFloor.setId(7);
+    ASSERT_EQ((unmappedFloor.setId(7)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
 
     Room room;
-    room.setId(2);
-    room.setMap(p_map);
-    room.setFloor(&unmappedFloor);
+    ASSERT_EQ((room.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setFloor(&unmappedFloor)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
@@ -866,14 +926,38 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
         Map  *p_map = atlas.getCurrentMap();
 
         std::unique_ptr<Room> p_lowerCentroidRoom = std::make_unique<Room>();
-        p_lowerCentroidRoom->setId(1);
-        p_lowerCentroidRoom->setMap(p_map);
-        p_lowerCentroidRoom->setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
+        if (p_lowerCentroidRoom->setId(1) !=
+            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setId cannot fail; continue as before.
+        }
+        if (p_lowerCentroidRoom->setMap(p_map) !=
+            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setMap cannot fail; continue as before.
+        }
+        if (p_lowerCentroidRoom->setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0)) !=
+            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setCentroid cannot fail; continue as before.
+        }
 
         std::unique_ptr<Room> p_higherCentroidRoom = std::make_unique<Room>();
-        p_higherCentroidRoom->setId(1);
-        p_higherCentroidRoom->setMap(p_map);
-        p_higherCentroidRoom->setCentroid(Eigen::Vector3d(2.0, 0.0, 0.0));
+        if (p_higherCentroidRoom->setId(1) !=
+            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setId cannot fail; continue as before.
+        }
+        if (p_higherCentroidRoom->setMap(p_map) !=
+            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setMap cannot fail; continue as before.
+        }
+        if (p_higherCentroidRoom->setCentroid(Eigen::Vector3d(2.0, 0.0, 0.0)) !=
+            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setCentroid cannot fail; continue as before.
+        }
 
         if (constructLowerCentroidFirst_in)
         {
@@ -1048,7 +1132,8 @@ TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
                    p_map,
                    &sharedWall,
                    Eigen::Vector3d(-1, 0, 1));
-    badOwnerSameId.setBad();
+    ASSERT_EQ((badOwnerSameId.setBad()),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&badOwnerSameId);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
@@ -1099,9 +1184,12 @@ TEST(SemanticGraphSnapshot,
 
     /* Enumerated from mapA (AddDetectedMapRoom), but declares mapB. */
     Room mismatchedOwner;
-    mismatchedOwner.setId(2);
-    mismatchedOwner.setMap(p_mapB);
-    mismatchedOwner.setWalls(&wall);
+    ASSERT_EQ((mismatchedOwner.setId(2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((mismatchedOwner.setMap(p_mapB)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((mismatchedOwner.setWalls(&wall)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_mapA->addDetectedMapRoom(&mismatchedOwner);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();
@@ -1163,7 +1251,8 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
     /* A retired (bad) room that still lists the wall. */
     Room badOwner;
     test::makeRoom(badOwner, 4, p_map, &sharedWall, Eigen::Vector3d(0, 1, 1));
-    badOwner.setBad();
+    ASSERT_EQ((badOwner.setBad()),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&badOwner);
 
     /* A room registered in BOTH Map::GetAllDetectedMapRooms() and
@@ -1252,8 +1341,16 @@ TEST(
         for (int roomId : roomIdInsertionOrder_in)
         {
             std::unique_ptr<Room> p_room = std::make_unique<Room>();
-            p_room->setId(roomId);
-            p_room->setMap(p_map);
+            if (p_room->setId(roomId) !=
+                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
+            if (p_room->setMap(p_map) !=
+                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_map->addDetectedMapRoom(p_room.get());
             rooms.push_back(std::move(p_room));
         }
@@ -1286,16 +1383,25 @@ TEST(
     Atlas atlas(0);
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
-    room.setId(1);
-    room.setMap(p_map);
-    room.setCentroid(Eigen::Vector3d(3.0, 4.0, 5.0));
+    ASSERT_EQ((room.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(3.0, 4.0, 5.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
     {
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
         (void)captureSemanticGraphSnapshot(&atlas);
     }
-    EXPECT_EQ(room.getCentroid(), Eigen::Vector3d(3.0, 4.0, 5.0));
-    EXPECT_FALSE(room.isBad());
+    Eigen::Vector3d centroid{};
+    ASSERT_EQ((room.getCentroid(centroid)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(centroid, Eigen::Vector3d(3.0, 4.0, 5.0));
+    bool isBad2{};
+    ASSERT_EQ((room.isBad(isBad2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_FALSE(isBad2);
     EXPECT_EQ(p_map->getAllDetectedMapRooms().size(), 1U);
 }
 
@@ -1344,14 +1450,32 @@ TEST(
             walls.push_back(std::move(p_wall));
 
             std::unique_ptr<Passage> p_passage = std::make_unique<Passage>();
-            p_passage->setId(entityId);
-            p_passage->setMap(p_mapA);
+            if (p_passage->setId(entityId) !=
+                vs_graphs::core::semantic::PassageStatus::
+                    PASSAGE_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
+            if (p_passage->setMap(p_mapA) !=
+                vs_graphs::core::semantic::PassageStatus::
+                    PASSAGE_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_mapA->addMapPassage(p_passage.get());
             passages.push_back(std::move(p_passage));
 
             std::unique_ptr<Floor> p_floor = std::make_unique<Floor>();
-            p_floor->setId(entityId);
-            p_floor->setMap(p_mapA);
+            if (p_floor->setId(entityId) !=
+                vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
+            if (p_floor->setMap(p_mapA) !=
+                vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_mapA->addMapFloor(p_floor.get());
             floors.push_back(std::move(p_floor));
         }
@@ -1444,8 +1568,18 @@ TEST(
         for (int index = 0; index < 3; ++index)
         {
             std::unique_ptr<Passage> p_passage = std::make_unique<Passage>();
-            p_passage->setId(index + 1);
-            p_passage->setMap(p_map);
+            if (p_passage->setId(index + 1) !=
+                vs_graphs::core::semantic::PassageStatus::
+                    PASSAGE_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
+            if (p_passage->setMap(p_map) !=
+                vs_graphs::core::semantic::PassageStatus::
+                    PASSAGE_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_map->addMapPassage(p_passage.get());
             passages.push_back(std::move(p_passage));
         }
@@ -1454,8 +1588,16 @@ TEST(
         for (int index = 0; index < 3; ++index)
         {
             std::unique_ptr<Room> p_room = std::make_unique<Room>();
-            p_room->setId(index + 20);
-            p_room->setMap(p_map);
+            if (p_room->setId(index + 20) !=
+                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
+            if (p_room->setMap(p_map) !=
+                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             owningRooms.push_back(std::move(p_room));
         }
 
@@ -1473,16 +1615,40 @@ TEST(
         p_map->addMapPlane(p_sharedWall.get());
 
         Room subjectRoom;
-        subjectRoom.setId(10);
-        subjectRoom.setMap(p_map);
+        if (subjectRoom.setId(10) !=
+            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setId cannot fail; continue as before.
+        }
+        if (subjectRoom.setMap(p_map) !=
+            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setMap cannot fail; continue as before.
+        }
 
         Floor subjectFloor;
-        subjectFloor.setId(30);
-        subjectFloor.setMap(p_map);
+        if (subjectFloor.setId(30) !=
+            vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // setId cannot fail; continue as before.
+        }
+        if (subjectFloor.setMap(p_map) !=
+            vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // setMap cannot fail; continue as before.
+        }
 
         Passage subjectPassage;
-        subjectPassage.setId(40);
-        subjectPassage.setMap(p_map);
+        if (subjectPassage.setId(40) !=
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setId cannot fail; continue as before.
+        }
+        if (subjectPassage.setMap(p_map) !=
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setMap cannot fail; continue as before.
+        }
 
         const std::vector<int> memberOrder = ascendingInsertionOrder_in
                                                  ? std::vector<int>{0, 1, 2}
@@ -1490,11 +1656,32 @@ TEST(
         for (int index : memberOrder)
         {
             const std::size_t memberIndex = static_cast<std::size_t>(index);
-            subjectRoom.setWalls(walls[memberIndex].get());
-            subjectRoom.setDoorways(passages[memberIndex].get());
-            owningRooms[memberIndex]->setWalls(p_sharedWall.get());
-            subjectFloor.addRoom(owningRooms[memberIndex].get());
-            subjectPassage.addAssociateWall(walls[memberIndex].get());
+            if (subjectRoom.setWalls(walls[memberIndex].get()) !=
+                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setWalls cannot fail; continue as before.
+            }
+            if (subjectRoom.setDoorways(passages[memberIndex].get()) !=
+                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setDoorways cannot fail; continue as before.
+            }
+            if (owningRooms[memberIndex]->setWalls(p_sharedWall.get()) !=
+                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setWalls cannot fail; continue as before.
+            }
+            if (subjectFloor.addRoom(owningRooms[memberIndex].get()) !=
+                vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // addRoom cannot fail; continue as before.
+            }
+            if (subjectPassage.addAssociateWall(walls[memberIndex].get()) !=
+                vs_graphs::core::semantic::PassageStatus::
+                    PASSAGE_STATUS_SUCCESS)
+            {
+                // addAssociateWall cannot fail; continue as before.
+            }
         }
         p_map->addDetectedMapRoom(&subjectRoom);
         for (const std::unique_ptr<Room> &p_owningRoom : owningRooms)
@@ -1572,8 +1759,10 @@ TEST(SemanticGraphSnapshot,
     Atlas atlas(0);
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
-    room.setId(1);
-    room.setMap(p_map);
+    ASSERT_EQ((room.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
     std::unique_lock<std::mutex> lock    = atlas.acquireSemanticUpdateLock();

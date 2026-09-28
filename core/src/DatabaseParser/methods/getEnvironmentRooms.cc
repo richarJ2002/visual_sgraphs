@@ -39,26 +39,56 @@ std::vector<semantic::Room *>
             semantic::Room *p_environmentRoom = new semantic::Room();
 
             // Fill the room entity
-            p_environmentRoom->setOpId(-1);
-            p_environmentRoom->setOpIdG(-1);
-            p_environmentRoom->setId(stoi(environmentDatum.key()));
-            p_environmentRoom->setName(environmentDatum.value()["name"]);
-            p_environmentRoom->setMetaMarkerId(
-                environmentDatum.value()["metaMarker"]);
+            if (p_environmentRoom->setOpId(-1) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setOpId cannot fail; continue as before.
+            }
+            if (p_environmentRoom->setOpIdG(-1) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setOpIdG cannot fail; continue as before.
+            }
+            if (p_environmentRoom->setId(stoi(environmentDatum.key())) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
+            if (p_environmentRoom->setName(environmentDatum.value()["name"]) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setName cannot fail; continue as before.
+            }
+            if (p_environmentRoom->setMetaMarkerId(
+                    environmentDatum.value()["metaMarker"]) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setMetaMarkerId cannot fail; continue as before.
+            }
 
             // Set the room variant (corridors are incomplete rooms, not a
             // distinct semantic type, so every env room is a plain ROOM)
-            p_environmentRoom->setRoomVariant(
-                semantic::Room::RoomVariant::ROOM);
+            if (p_environmentRoom->setRoomVariant(
+                    semantic::Room::RoomVariant::ROOM) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setRoomVariant cannot fail; continue as before.
+            }
 
             // Fill the vector
             environmentRooms.push_back(p_environmentRoom);
         }
 
         // Print the loaded rooms
+        std::string name2{};
+        if (environmentRooms[0]->getName(name2) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getName cannot fail; continue as before.
+        }
         VSLAM_LOG_INFO("- Fetched %d rooms from the JSON file! [e.g., '%s'].\n",
                        static_cast<int>(environmentRooms.size()),
-                       environmentRooms[0]->getName().c_str());
+                       name2.c_str());
     }
     else
         VSLAM_LOG_INFO("- No rooms found in the JSON file!\n");

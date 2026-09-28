@@ -49,9 +49,31 @@ SemanticsManager::ActiveMapBootstrapResult
         }
         for (semantic::Room *p_room : activeRooms)
         {
-            if (p_room != nullptr && !p_room->isBad() &&
-                p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM &&
-                p_room->getId() == roomId_in)
+            bool roomIsBad{};
+            if ((p_room != nullptr) &&
+                p_room->isBad(roomIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            semantic::Room::RoomVariant roomVariant{};
+            if ((p_room != nullptr && !roomIsBad) &&
+                p_room->getRoomVariant(roomVariant) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomVariant cannot fail; continue as before.
+            }
+            int roomId{};
+            if ((p_room != nullptr && !roomIsBad &&
+                 roomVariant == semantic::Room::RoomVariant::ROOM) &&
+                p_room->getId(roomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (p_room != nullptr && !roomIsBad &&
+                roomVariant == semantic::Room::RoomVariant::ROOM &&
+                roomId == roomId_in)
             {
                 return p_room;
             }
@@ -81,10 +103,41 @@ SemanticsManager::ActiveMapBootstrapResult
     {
         for (semantic::Room *p_room : activeRooms)
         {
-            if (p_room != nullptr && !p_room->isBad() &&
-                p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM &&
-                (p_bootstrapRoom == nullptr ||
-                 p_room->getId() < p_bootstrapRoom->getId()))
+            bool roomIsBad{};
+            if ((p_room != nullptr) &&
+                p_room->isBad(roomIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            semantic::Room::RoomVariant roomVariant{};
+            if ((p_room != nullptr && !roomIsBad) &&
+                p_room->getRoomVariant(roomVariant) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomVariant cannot fail; continue as before.
+            }
+            int roomId2{};
+            if ((p_room != nullptr && !roomIsBad &&
+                 roomVariant == semantic::Room::RoomVariant::ROOM) &&
+                !(p_bootstrapRoom == nullptr) &&
+                p_room->getId(roomId2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int bootstrapRoomId{};
+            if ((p_room != nullptr && !roomIsBad &&
+                 roomVariant == semantic::Room::RoomVariant::ROOM) &&
+                !(p_bootstrapRoom == nullptr) &&
+                p_bootstrapRoom->getId(bootstrapRoomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (p_room != nullptr && !roomIsBad &&
+                roomVariant == semantic::Room::RoomVariant::ROOM &&
+                (p_bootstrapRoom == nullptr || roomId2 < bootstrapRoomId))
             {
                 p_bootstrapRoom = p_room;
             }
@@ -183,28 +236,71 @@ SemanticsManager::ActiveMapBootstrapResult
         }
         p_atlas->addCandidateMapRoom(p_bootstrapRoom);
         p_activeMap->promoteCandidateMapRoom(p_bootstrapRoom);
-        p_bootstrapRoom->setRoomVariant(semantic::Room::RoomVariant::ROOM);
-        p_bootstrapRoom->setName("semantic::Room#" +
-                                 std::to_string(p_bootstrapRoom->getId()));
-        p_bootstrapRoom->setBoundaryStatus(
-            semantic::Room::BoundaryStatus::UNOBSERVED);
-        p_bootstrapRoom->setRoomTag(
-            recoveryContext.has_value() && !recoveryContext->roomTag.empty()
-                ? recoveryContext->roomTag
-                : "room_" + std::to_string(p_bootstrapRoom->getId()));
-        p_bootstrapRoom->setRecoveryProxy(recoveryContext.has_value());
+        if (p_bootstrapRoom->setRoomVariant(
+                semantic::Room::RoomVariant::ROOM) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setRoomVariant cannot fail; continue as before.
+        }
+        int bootstrapRoomId2{};
+        if (p_bootstrapRoom->getId(bootstrapRoomId2) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        if (p_bootstrapRoom->setName("semantic::Room#" +
+                                     std::to_string(bootstrapRoomId2)) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setName cannot fail; continue as before.
+        }
+        if (p_bootstrapRoom->setBoundaryStatus(
+                semantic::Room::BoundaryStatus::UNOBSERVED) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setBoundaryStatus cannot fail; continue as before.
+        }
+        int bootstrapRoomId3{};
+        if (!(recoveryContext.has_value() &&
+              !recoveryContext->roomTag.empty()) &&
+            p_bootstrapRoom->getId(bootstrapRoomId3) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        if (p_bootstrapRoom->setRoomTag(
+                recoveryContext.has_value() && !recoveryContext->roomTag.empty()
+                    ? recoveryContext->roomTag
+                    : "room_" + std::to_string(bootstrapRoomId3)) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setRoomTag cannot fail; continue as before.
+        }
+        if (p_bootstrapRoom->setRecoveryProxy(recoveryContext.has_value()) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setRecoveryProxy cannot fail; continue as before.
+        }
         if (recoveryContext.has_value())
         {
-            p_bootstrapRoom->setPreviouslyVisited(
-                recoveryContext->wasPreviouslyVisited);
+            if (p_bootstrapRoom->setPreviouslyVisited(
+                    recoveryContext->wasPreviouslyVisited) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setPreviouslyVisited cannot fail; continue as before.
+            }
         }
         initializedRoom = !recoveryContext.has_value();
         recoveredRoom   = recoveryContext.has_value();
     }
 
     std::vector<semantic::Floor *> floors = p_activeMap->getAllFloors();
-    semantic::Floor               *p_canonicalFloor =
-        semantic::Floor::selectBestObservedFloor(floors);
+    semantic::Floor               *p_canonicalFloor = nullptr;
+    if (semantic::Floor::selectBestObservedFloor(floors, p_canonicalFloor) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // selectBestObservedFloor cannot fail; continue as before.
+    }
     if (p_canonicalFloor == nullptr)
     {
         const std::optional<int> recoveryFloorId =
@@ -212,33 +308,65 @@ SemanticsManager::ActiveMapBootstrapResult
                 ? std::optional<int>(recoveryContext->floorId)
                 : std::nullopt;
         GeoSemHelpers::createMapFloor(p_atlas, recoveryFloorId);
-        floors           = p_activeMap->getAllFloors();
-        p_canonicalFloor = semantic::Floor::selectBestObservedFloor(floors);
+        floors                       = p_activeMap->getAllFloors();
+        semantic::Floor *p_bestFloor = nullptr;
+        if (semantic::Floor::selectBestObservedFloor(floors, p_bestFloor) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // selectBestObservedFloor cannot fail; continue as before.
+        }
+        p_canonicalFloor = p_bestFloor;
     }
     if (p_canonicalFloor == nullptr)
     {
+        int bootstrapRoomId4{};
+        if (p_bootstrapRoom->getId(bootstrapRoomId4) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         std::cout << "SG_PIPELINE {\"event\":\"initialization\","
                      "\"map_id\":"
                   << p_activeMap->getId()
                   << ",\"reason\":\"FLOOR_CREATION_FAILED\","
                      "\"room_id\":"
-                  << p_bootstrapRoom->getId()
+                  << bootstrapRoomId4
                   << ",\"semantic_cycle\":" << pipelineSemanticCycle << "}"
                   << std::endl;
         return ActiveMapBootstrapResult::FLOOR_CREATION_FAILED;
     }
 
-    p_canonicalFloor->addRoom(p_bootstrapRoom);
+    if (p_canonicalFloor->addRoom(p_bootstrapRoom) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // addRoom cannot fail; continue as before.
+    }
     if (resolveLiveRoomById(currentRoomIdSnapshot) == nullptr)
     {
         {
             std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
-            currentRoomId = p_bootstrapRoom->getId();
-            p_atlas->setCurrentSemanticRoomIdentity(p_bootstrapRoom->getId());
+            int                         bootstrapRoomId5{};
+            if (p_bootstrapRoom->getId(bootstrapRoomId5) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            currentRoomId = bootstrapRoomId5;
+            int bootstrapRoomId6{};
+            if (p_bootstrapRoom->getId(bootstrapRoomId6) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            p_atlas->setCurrentSemanticRoomIdentity(bootstrapRoomId6);
         }
         /* The UAV starts inside the bootstrap room: presence evidences entry.
          * Marked outside the current-room lock; the room owns its mutex. */
-        p_bootstrapRoom->setPreviouslyVisited(true);
+        if (p_bootstrapRoom->setPreviouslyVisited(true) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setPreviouslyVisited cannot fail; continue as before.
+        }
         /* Mission-chain trace: the room this map started with. Set once;
          * later bootstrap cycles must not overwrite it. */
         if (p_activeMap->getStartingRoom() == nullptr)
@@ -263,64 +391,159 @@ SemanticsManager::ActiveMapBootstrapResult
                  * below) is restored. A zero-sized aperture shrinks geometric
                  * tests to their margin sliver, as before this change. */
                 p_recoveryPassage = new semantic::Passage();
-                p_recoveryPassage->setId(passageContext.id);
-                p_recoveryPassage->setMap(p_activeMap);
-                p_recoveryPassage->setPassable(passageContext.isPassable);
-                p_recoveryPassage->setPassageType(
-                    semantic::Passage::PassageVariant::DOORWAY);
-                p_recoveryPassage->setRecoveryProxy(true);
+                if (p_recoveryPassage->setId(passageContext.id) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setId cannot fail; continue as before.
+                }
+                if (p_recoveryPassage->setMap(p_activeMap) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setMap cannot fail; continue as before.
+                }
+                if (p_recoveryPassage->setPassable(passageContext.isPassable) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setPassable cannot fail; continue as before.
+                }
+                if (p_recoveryPassage->setPassageType(
+                        semantic::Passage::PassageVariant::DOORWAY) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setPassageType cannot fail; continue as before.
+                }
+                if (p_recoveryPassage->setRecoveryProxy(true) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setRecoveryProxy cannot fail; continue as before.
+                }
                 for (std::size_t observationIndex = 0U;
                      observationIndex < passageContext.traversalKnownToFarCount;
                      ++observationIndex)
                 {
-                    p_recoveryPassage->addTraversalObservation(
-                        semantic::Passage::TraversalDirection::KNOWN_TO_FAR);
+                    if (p_recoveryPassage->addTraversalObservation(
+                            semantic::Passage::TraversalDirection::
+                                KNOWN_TO_FAR) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // addTraversalObservation cannot fail; continue as
+                        // before.
+                    }
                 }
                 for (std::size_t observationIndex = 0U;
                      observationIndex < passageContext.traversalFarToKnownCount;
                      ++observationIndex)
                 {
-                    p_recoveryPassage->addTraversalObservation(
-                        semantic::Passage::TraversalDirection::FAR_TO_KNOWN);
+                    if (p_recoveryPassage->addTraversalObservation(
+                            semantic::Passage::TraversalDirection::
+                                FAR_TO_KNOWN) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // addTraversalObservation cannot fail; continue as
+                        // before.
+                    }
                 }
                 for (std::size_t observationIndex = 0U;
                      observationIndex < passageContext.traversalUnknownCount;
                      ++observationIndex)
                 {
-                    p_recoveryPassage->addTraversalObservation(
-                        semantic::Passage::TraversalDirection::UNKNOWN);
+                    if (p_recoveryPassage->addTraversalObservation(
+                            semantic::Passage::TraversalDirection::UNKNOWN) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // addTraversalObservation cannot fail; continue as
+                        // before.
+                    }
                 }
                 p_atlas->addMapPassage(p_recoveryPassage);
             }
 
-            if (passageContext.hasKnownSideRoom &&
-                passageContext.knownSideRoomId == p_bootstrapRoom->getId())
+            int bootstrapRoomId7{};
+            if ((passageContext.hasKnownSideRoom) &&
+                p_bootstrapRoom->getId(bootstrapRoomId7) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                p_recoveryPassage->setKnownSideRoom(p_bootstrapRoom);
+                // getId cannot fail; continue as before.
+            }
+            if (passageContext.hasKnownSideRoom &&
+                passageContext.knownSideRoomId == bootstrapRoomId7)
+            {
+                if (p_recoveryPassage->setKnownSideRoom(p_bootstrapRoom) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setKnownSideRoom cannot fail; continue as before.
+                }
+            }
+            int bootstrapRoomId8{};
+            if ((passageContext.hasFarSideRoom) &&
+                p_bootstrapRoom->getId(bootstrapRoomId8) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
             }
             if (passageContext.hasFarSideRoom &&
-                passageContext.secondaryRoomId == p_bootstrapRoom->getId())
+                passageContext.secondaryRoomId == bootstrapRoomId8)
             {
-                p_recoveryPassage->setProspectiveRoom(p_bootstrapRoom);
+                if (p_recoveryPassage->setProspectiveRoom(p_bootstrapRoom) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setProspectiveRoom cannot fail; continue as before.
+                }
             }
-            if (p_recoveryPassage->getKnownSideProvenance().p_room == nullptr &&
-                p_recoveryPassage->getProspectiveRoom() == nullptr)
+            semantic::Passage::KnownSideProvenance
+                recoveryPassageKnownSideProvenance{};
+            if (p_recoveryPassage->getKnownSideProvenance(
+                    recoveryPassageKnownSideProvenance) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                p_recoveryPassage->setKnownSideRoom(p_bootstrapRoom);
+                // getKnownSideProvenance cannot fail; continue as before.
             }
-            p_bootstrapRoom->setDoorways(p_recoveryPassage);
+            vs_graphs::core::semantic::Room *p_recoveryPassageProspectiveRoom =
+                nullptr;
+            if ((recoveryPassageKnownSideProvenance.p_room == nullptr) &&
+                p_recoveryPassage->getProspectiveRoom(
+                    p_recoveryPassageProspectiveRoom) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getProspectiveRoom cannot fail; continue as before.
+            }
+            if (recoveryPassageKnownSideProvenance.p_room == nullptr &&
+                p_recoveryPassageProspectiveRoom == nullptr)
+            {
+                if (p_recoveryPassage->setKnownSideRoom(p_bootstrapRoom) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setKnownSideRoom cannot fail; continue as before.
+                }
+            }
+            if (p_bootstrapRoom->setDoorways(p_recoveryPassage) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setDoorways cannot fail; continue as before.
+            }
             ++restoredPassageCount;
         }
     }
 
     if (initializedRoom)
     {
+        int bootstrapRoomId9{};
+        if (p_bootstrapRoom->getId(bootstrapRoomId9) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        int canonicalFloorId{};
+        if (p_canonicalFloor->getId(canonicalFloorId) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         std::cout << "SG_PIPELINE {\"event\":\"initialization\","
                      "\"map_id\":"
                   << p_activeMap->getId()
                   << ",\"reason\":\"BOOTSTRAP_CREATED\",\"room_id\":"
-                  << p_bootstrapRoom->getId()
-                  << ",\"floor_id\":" << p_canonicalFloor->getId()
+                  << bootstrapRoomId9 << ",\"floor_id\":" << canonicalFloorId
                   << ",\"semantic_cycle\":" << pipelineSemanticCycle << "}"
                   << std::endl;
         return ActiveMapBootstrapResult::INITIALIZED;
@@ -328,12 +551,23 @@ SemanticsManager::ActiveMapBootstrapResult
 
     if (recoveredRoom)
     {
+        int bootstrapRoomId10{};
+        if (p_bootstrapRoom->getId(bootstrapRoomId10) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        int canonicalFloorId2{};
+        if (p_canonicalFloor->getId(canonicalFloorId2) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         std::cout << "SG_PIPELINE {\"event\":\"initialization\","
                      "\"map_id\":"
                   << p_activeMap->getId()
                   << ",\"reason\":\"RECOVERY_RESTORED\",\"room_id\":"
-                  << p_bootstrapRoom->getId()
-                  << ",\"floor_id\":" << p_canonicalFloor->getId()
+                  << bootstrapRoomId10 << ",\"floor_id\":" << canonicalFloorId2
                   << ",\"restored_passages\":" << restoredPassageCount
                   << ",\"semantic_cycle\":" << pipelineSemanticCycle << "}"
                   << std::endl;

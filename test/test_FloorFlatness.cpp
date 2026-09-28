@@ -80,17 +80,24 @@ TEST(FloorFlatness, RepointsALessObservedRoomGroundPlaneToTheCanonicalOne)
     atlas.addMapPlane(roomGround.get());
 
     std::unique_ptr<semantic::Room> room = std::make_unique<semantic::Room>();
-    room->setId(1);
-    room->setMap(p_map);
-    room->setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    room->setGroundPlane(roomGround.get());
+    ASSERT_EQ((room->setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room->setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room->setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room->setGroundPlane(roomGround.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     atlas.addDetectedMapRoom(room.get());
 
     /* Establish the canonical semantic::Floor identity first, as Run() does. */
     manager.getUpdatedFloorsForTest();
     manager.reconcileRoomGroundPlanesForTest();
 
-    EXPECT_EQ(room->getGroundPlane(), canonicalGround.get());
+    vs_graphs::core::geometric::Plane *p_groundPlane = nullptr;
+    ASSERT_EQ((room->getGroundPlane(p_groundPlane)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(p_groundPlane, canonicalGround.get());
 }
 
 TEST(FloorFlatness, LeavesAnAgreeingRoomGroundPlaneUntouched)
@@ -109,16 +116,23 @@ TEST(FloorFlatness, LeavesAnAgreeingRoomGroundPlaneUntouched)
     atlas.addMapPlane(roomGround.get());
 
     std::unique_ptr<semantic::Room> room = std::make_unique<semantic::Room>();
-    room->setId(1);
-    room->setMap(p_map);
-    room->setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    room->setGroundPlane(roomGround.get());
+    ASSERT_EQ((room->setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room->setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room->setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room->setGroundPlane(roomGround.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     atlas.addDetectedMapRoom(room.get());
 
     manager.getUpdatedFloorsForTest();
     manager.reconcileRoomGroundPlanesForTest();
 
-    EXPECT_EQ(room->getGroundPlane(), roomGround.get());
+    vs_graphs::core::geometric::Plane *p_groundPlane = nullptr;
+    ASSERT_EQ((room->getGroundPlane(p_groundPlane)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(p_groundPlane, roomGround.get());
 }
 
 } // namespace core

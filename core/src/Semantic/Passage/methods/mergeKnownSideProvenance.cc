@@ -28,7 +28,8 @@ namespace core
 namespace semantic
 {
 
-void Passage::mergeKnownSideProvenance(const KnownSideProvenance &provenance_in)
+PassageStatus
+    Passage::mergeKnownSideProvenance(const KnownSideProvenance &provenance_in)
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
     if (!knownSideProvenance.hasDirection() && provenance_in.hasDirection())
@@ -39,6 +40,8 @@ void Passage::mergeKnownSideProvenance(const KnownSideProvenance &provenance_in)
     {
         knownSideProvenance.p_room = provenance_in.p_room;
     }
+
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

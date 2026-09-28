@@ -28,9 +28,10 @@ namespace core
 namespace semantic
 {
 
-std::string Floor::getName() const
+FloorStatus Floor::getName(std::string &name_out) const
 {
-    return name;
+    name_out = name;
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

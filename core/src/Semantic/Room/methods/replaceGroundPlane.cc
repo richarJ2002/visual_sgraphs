@@ -27,24 +27,27 @@ namespace core
 namespace semantic
 {
 
-bool Room::replaceGroundPlane(geometric::Plane *p_retiredGround_in,
-                              geometric::Plane *p_retainedGround_in)
+RoomStatus Room::replaceGroundPlane(geometric::Plane *p_retiredGround_in,
+                                    geometric::Plane *p_retainedGround_in,
+                                    bool &wasGroundPlaneReplaced_out)
 {
     if (p_retiredGround_in == nullptr || p_retainedGround_in == nullptr ||
         p_retiredGround_in == p_retainedGround_in)
     {
-        return false;
+        return RoomStatus::ROOM_STATUS_INVALID_ARGUMENT;
     }
 
     std::lock_guard<std::mutex> lock(wallsMutex);
 
     if (p_groundPlane != p_retiredGround_in)
     {
-        return false;
+        wasGroundPlaneReplaced_out = false;
+        return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
-    p_groundPlane = p_retainedGround_in;
-    return true;
+    p_groundPlane              = p_retainedGround_in;
+    wasGroundPlaneReplaced_out = true;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

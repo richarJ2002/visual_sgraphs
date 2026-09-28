@@ -34,9 +34,31 @@ semantic::Room *SemanticsManager::findRoomByMapAndId(long unsigned int mapId_in,
         }
         for (semantic::Room *p_room : p_map->getAllRooms())
         {
-            if (p_room != nullptr && !p_room->isBad() &&
-                p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM &&
-                p_room->getId() == roomId_in)
+            bool roomIsBad{};
+            if ((p_room != nullptr) &&
+                p_room->isBad(roomIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            semantic::Room::RoomVariant roomVariant{};
+            if ((p_room != nullptr && !roomIsBad) &&
+                p_room->getRoomVariant(roomVariant) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomVariant cannot fail; continue as before.
+            }
+            int roomId{};
+            if ((p_room != nullptr && !roomIsBad &&
+                 roomVariant == semantic::Room::RoomVariant::ROOM) &&
+                p_room->getId(roomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (p_room != nullptr && !roomIsBad &&
+                roomVariant == semantic::Room::RoomVariant::ROOM &&
+                roomId == roomId_in)
             {
                 return p_room;
             }

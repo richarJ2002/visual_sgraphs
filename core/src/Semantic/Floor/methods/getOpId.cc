@@ -28,9 +28,10 @@ namespace core
 namespace semantic
 {
 
-int Floor::getOpId() const
+FloorStatus Floor::getOpId(int &opId_out) const
 {
-    return opId;
+    opId_out = opId;
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

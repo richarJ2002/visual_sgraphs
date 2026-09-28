@@ -35,15 +35,29 @@ SemanticsManager::PassageSideEnforcementOutcome
         const std::vector<semantic::Passage *> &allPassages_in,
         const Eigen::Vector3d                  &groundNormal_World_in)
 {
-    if (p_room_inout == nullptr || p_room_inout->isBad() ||
-        p_wall_in == nullptr || p_wall_in->isBad())
+    bool room_inoutIsBad{};
+    if (!(p_room_inout == nullptr) &&
+        p_room_inout->isBad(room_inoutIsBad) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_room_inout == nullptr || room_inoutIsBad || p_wall_in == nullptr ||
+        p_wall_in->isBad())
     {
         return PassageSideEnforcementOutcome::NO_VIOLATION;
     }
 
     for (semantic::Passage *p_passage : allPassages_in)
     {
-        if (p_passage == nullptr || p_passage->isBad())
+        bool passageIsBad{};
+        if (!(p_passage == nullptr) &&
+            p_passage->isBad(passageIsBad) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_passage == nullptr || passageIsBad)
         {
             continue;
         }
@@ -66,9 +80,19 @@ SemanticsManager::PassageSideEnforcementOutcome
          * WRONG side as the right one -- worse than the original silent
          * no-crossing report, not better. With no known side yet, this
          * degenerate case is left exactly as before the fix. */
-        Eigen::Vector3d segmentStart_World_m = p_room_inout->getCentroid();
-        Eigen::Vector4d passageEquation_World =
-            p_passage->getGlobalEquation().coeffs();
+        Eigen::Vector3d segmentStart_World_m{};
+        if (p_room_inout->getCentroid(segmentStart_World_m) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
+        g2o::Plane3D passageGlobalEquation{};
+        if (p_passage->getGlobalEquation(passageGlobalEquation) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        Eigen::Vector4d passageEquation_World = passageGlobalEquation.coeffs();
         const double passageNormalNorm = passageEquation_World.head<3>().norm();
         if (passageEquation_World.allFinite() && passageNormalNorm > 1e-8)
         {
@@ -81,13 +105,23 @@ SemanticsManager::PassageSideEnforcementOutcome
 
             if (std::abs(roomCentroidSide_m) < minimumSideDistance_m)
             {
-                const semantic::Passage::KnownSideProvenance knownSide =
-                    p_passage->getKnownSideProvenance();
+                semantic::Passage::KnownSideProvenance knownSide{};
+                if (p_passage->getKnownSideProvenance(knownSide) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getKnownSideProvenance cannot fail; continue as before.
+                }
                 if (knownSide.hasDirection())
                 {
-                    segmentStart_World_m = p_passage->getCentroid() +
-                                           (minimumSideDistance_m * 2.0) *
-                                               knownSide.direction_World;
+                    Eigen::Vector3d passageCentroid{};
+                    if (p_passage->getCentroid(passageCentroid) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // getCentroid cannot fail; continue as before.
+                    }
+                    segmentStart_World_m =
+                        passageCentroid + (minimumSideDistance_m * 2.0) *
+                                              knownSide.direction_World;
                 }
             }
         }
@@ -108,15 +142,33 @@ SemanticsManager::PassageSideEnforcementOutcome
         bool ownedByConfirmedRoom = false;
         for (vs_graphs::core::semantic::Room *p_other : p_atlas->getAllRooms())
         {
-            if (p_other == nullptr || p_other->isBad() ||
-                p_other == p_room_inout ||
-                p_other->getRoomVariant() ==
+            bool otherIsBad{};
+            if (!(p_other == nullptr) &&
+                p_other->isBad(otherIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            semantic::Room::RoomVariant otherRoomVariant{};
+            if (!(p_other == nullptr || otherIsBad ||
+                  p_other == p_room_inout) &&
+                p_other->getRoomVariant(otherRoomVariant) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomVariant cannot fail; continue as before.
+            }
+            if (p_other == nullptr || otherIsBad || p_other == p_room_inout ||
+                otherRoomVariant ==
                     vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
             {
                 continue;
             }
-            const std::vector<geometric::Plane *> otherWalls =
-                p_other->getWalls();
+            std::vector<geometric::Plane *> otherWalls{};
+            if (p_other->getWalls(otherWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
             if (std::find(otherWalls.begin(), otherWalls.end(), p_wall_in) !=
                 otherWalls.end())
             {
@@ -128,12 +180,22 @@ SemanticsManager::PassageSideEnforcementOutcome
         {
             /* A distinct confirmed room already owns this wall. Leave it on
              * that owner rather than re-binding it to the near room. */
-            p_room_inout->removeWall(p_wall_in);
+            bool room_inoutWasWallRemoved{};
+            if (p_room_inout->removeWall(p_wall_in, room_inoutWasWallRemoved) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                room_inoutWasWallRemoved =
+                    false; // rejected input reads as before
+            }
             return PassageSideEnforcementOutcome::REMOVED_UNBOUND;
         }
 
-        vs_graphs::core::semantic::Room *p_prospective =
-            p_passage->getProspectiveRoom();
+        vs_graphs::core::semantic::Room *p_prospective = nullptr;
+        if (p_passage->getProspectiveRoom(p_prospective) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getProspectiveRoom cannot fail; continue as before.
+        }
 
         /* The wall is already sitting in the room this exact aperture
          * crossing would route it to -- there is nothing to enforce. Live-
@@ -149,25 +211,60 @@ SemanticsManager::PassageSideEnforcementOutcome
             continue;
         }
 
-        if (p_prospective == nullptr || p_prospective->isBad())
+        bool prospectiveIsBad{};
+        if (!(p_prospective == nullptr) &&
+            p_prospective->isBad(prospectiveIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_room_inout->removeWall(p_wall_in);
+            // isBad cannot fail; continue as before.
+        }
+        if (p_prospective == nullptr || prospectiveIsBad)
+        {
+            bool room_inoutWasWallRemoved2{};
+            if (p_room_inout->removeWall(p_wall_in,
+                                         room_inoutWasWallRemoved2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                room_inoutWasWallRemoved2 =
+                    false; // rejected input reads as before
+            }
+            int passageId{};
+            if (p_passage->getId(passageId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             std::cout << "[SemMgr] Far-side Wall#" << p_wall_in->getId()
-                      << " at semantic::Passage#" << p_passage->getId()
+                      << " at semantic::Passage#" << passageId
                       << " has no opposite stable room; left unbound."
                       << std::endl;
             return PassageSideEnforcementOutcome::REMOVED_UNBOUND;
         }
 
-        p_room_inout->removeWall(p_wall_in);
+        bool room_inoutWasWallRemoved3{};
+        if (p_room_inout->removeWall(p_wall_in, room_inoutWasWallRemoved3) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            room_inoutWasWallRemoved3 = false; // rejected input reads as before
+        }
         if (p_atlas->getRoomWallPlaneById(p_wall_in->getId()) == nullptr)
         {
             p_atlas->addRoomWallPlane(p_wall_in);
         }
-        p_prospective->setWalls(p_wall_in);
+        if (p_prospective->setWalls(p_wall_in) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setWalls cannot fail; continue as before.
+        }
+        int prospectiveId{};
+        if (p_prospective->getId(prospectiveId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         std::cout << "[SemMgr] Redirected far-side Wall#" << p_wall_in->getId()
-                  << " to prospective semantic::Room#" << p_prospective->getId()
-                  << "." << std::endl;
+                  << " to prospective semantic::Room#" << prospectiveId << "."
+                  << std::endl;
         return PassageSideEnforcementOutcome::REROUTED;
     }
 
@@ -180,8 +277,14 @@ SemanticsManager::PassageSideEnforcementOutcome
      * against an already-confirmed passage. */
     for (const OpenPassageEvidence &evidence : openPassageEvidence)
     {
+        Eigen::Vector3d room_inoutCentroid{};
+        if (p_room_inout->getCentroid(room_inoutCentroid) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
         if (!segmentCrossesOpenPassageEvidence(
-                p_room_inout->getCentroid(),
+                room_inoutCentroid,
                 p_wall_in->getCentroid().cast<double>(),
                 evidence.p_supportingWall,
                 evidence.centroid_World_m,
@@ -199,15 +302,33 @@ SemanticsManager::PassageSideEnforcementOutcome
         bool ownedByConfirmedRoom = false;
         for (vs_graphs::core::semantic::Room *p_other : p_atlas->getAllRooms())
         {
-            if (p_other == nullptr || p_other->isBad() ||
-                p_other == p_room_inout ||
-                p_other->getRoomVariant() ==
+            bool otherIsBad2{};
+            if (!(p_other == nullptr) &&
+                p_other->isBad(otherIsBad2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            semantic::Room::RoomVariant otherRoomVariant2{};
+            if (!(p_other == nullptr || otherIsBad2 ||
+                  p_other == p_room_inout) &&
+                p_other->getRoomVariant(otherRoomVariant2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomVariant cannot fail; continue as before.
+            }
+            if (p_other == nullptr || otherIsBad2 || p_other == p_room_inout ||
+                otherRoomVariant2 ==
                     vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
             {
                 continue;
             }
-            const std::vector<geometric::Plane *> otherWalls =
-                p_other->getWalls();
+            std::vector<geometric::Plane *> otherWalls{};
+            if (p_other->getWalls(otherWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
             if (std::find(otherWalls.begin(), otherWalls.end(), p_wall_in) !=
                 otherWalls.end())
             {
@@ -220,14 +341,25 @@ SemanticsManager::PassageSideEnforcementOutcome
             continue;
         }
 
-        p_room_inout->removeWall(p_wall_in);
+        bool room_inoutWasWallRemoved4{};
+        if (p_room_inout->removeWall(p_wall_in, room_inoutWasWallRemoved4) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            room_inoutWasWallRemoved4 = false; // rejected input reads as before
+        }
+        int room_inoutId{};
+        if (p_room_inout->getId(room_inoutId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         std::cout << "[SemMgr] Far-side Wall#" << p_wall_in->getId()
                   << " crosses an unconfirmed passage opening (evidence at "
                      "wall "
                   << (evidence.p_supportingWall != nullptr
                           ? evidence.p_supportingWall->getId()
                           : -1)
-                  << "); removed from semantic::Room#" << p_room_inout->getId()
+                  << "); removed from semantic::Room#" << room_inoutId
                   << " pending confirmation." << std::endl;
         return PassageSideEnforcementOutcome::REMOVED_UNBOUND;
     }

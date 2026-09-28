@@ -167,7 +167,12 @@ void SemanticsManager::run(void)
                     continue;
                 }
 
-                const int  roomId = p_candidate->getId();
+                int roomId{};
+                if (p_candidate->getId(roomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 const bool isTrackedProspective =
                     prospectiveRoomCycles.count(roomId) > 0U;
 
@@ -176,8 +181,24 @@ void SemanticsManager::run(void)
                 for (vs_graphs::core::semantic::Passage *p_passage :
                      allPassages)
                 {
-                    if (p_passage != nullptr && !p_passage->isBad() &&
-                        p_passage->getProspectiveRoom() == p_candidate)
+                    bool passageIsBad{};
+                    if ((p_passage != nullptr) &&
+                        p_passage->isBad(passageIsBad) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
+                    vs_graphs::core::semantic::Room *p_passageProspectiveRoom =
+                        nullptr;
+                    if ((p_passage != nullptr && !passageIsBad) &&
+                        p_passage->getProspectiveRoom(
+                            p_passageProspectiveRoom) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // getProspectiveRoom cannot fail; continue as before.
+                    }
+                    if (p_passage != nullptr && !passageIsBad &&
+                        p_passageProspectiveRoom == p_candidate)
                     {
                         referencingPassages.push_back(p_passage);
                     }
@@ -188,19 +209,58 @@ void SemanticsManager::run(void)
                     continue;
                 }
 
-                bool hasValidGeometry =
-                    !p_candidate->isBad() &&
-                    p_candidate->getCentroid().allFinite() &&
-                    p_candidate->getMap() != nullptr &&
-                    p_atlas->isActiveMap(p_candidate->getMap());
+                bool candidateIsBad{};
+                if (p_candidate->isBad(candidateIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                Eigen::Vector3d candidateCentroid{};
+                if ((!candidateIsBad) &&
+                    p_candidate->getCentroid(candidateCentroid) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getCentroid cannot fail; continue as before.
+                }
+                core::Map *p_candidateMap2 = nullptr;
+                if ((!candidateIsBad && candidateCentroid.allFinite()) &&
+                    p_candidate->getMap(p_candidateMap2) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getMap cannot fail; continue as before.
+                }
+                core::Map *p_candidateMap3 = nullptr;
+                if ((!candidateIsBad && candidateCentroid.allFinite() &&
+                     p_candidateMap2 != nullptr) &&
+                    p_candidate->getMap(p_candidateMap3) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getMap cannot fail; continue as before.
+                }
+                bool hasValidGeometry = !candidateIsBad &&
+                                        candidateCentroid.allFinite() &&
+                                        p_candidateMap2 != nullptr &&
+                                        p_atlas->isActiveMap(p_candidateMap3);
 
                 for (vs_graphs::core::semantic::Passage *p_passage :
                      referencingPassages)
                 {
+                    g2o::Plane3D passageGlobalEquation{};
+                    if (p_passage->getGlobalEquation(passageGlobalEquation) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // getGlobalEquation cannot fail; continue as before.
+                    }
                     const Eigen::Vector4d passageEquation_World =
-                        p_passage->getGlobalEquation().coeffs();
+                        passageGlobalEquation.coeffs();
 
-                    if (!p_passage->getCentroid().allFinite() ||
+                    Eigen::Vector3d passageCentroid{};
+                    if (p_passage->getCentroid(passageCentroid) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // getCentroid cannot fail; continue as before.
+                    }
+                    if (!passageCentroid.allFinite() ||
                         !passageEquation_World.allFinite() ||
                         passageEquation_World.head<3>().norm() < 1e-8)
                     {
@@ -209,7 +269,13 @@ void SemanticsManager::run(void)
                     }
                 }
 
-                if (!p_candidate->isBad() && !referencingPassages.empty() &&
+                bool candidateIsBad2{};
+                if (p_candidate->isBad(candidateIsBad2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (!candidateIsBad2 && !referencingPassages.empty() &&
                     hasValidGeometry)
                 {
                     /* Wall count and age are deliberately irrelevant here. */
@@ -220,17 +286,36 @@ void SemanticsManager::run(void)
                 for (vs_graphs::core::semantic::Passage *p_passage :
                      referencingPassages)
                 {
-                    p_passage->setProspectiveRoom(nullptr);
+                    if (p_passage->setProspectiveRoom(nullptr) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // setProspectiveRoom cannot fail; continue as before.
+                    }
                 }
 
-                if (!p_candidate->isBad())
+                bool candidateIsBad3{};
+                if (p_candidate->isBad(candidateIsBad3) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    Map *p_candidateMap = p_candidate->getMap();
+                    // isBad cannot fail; continue as before.
+                }
+                if (!candidateIsBad3)
+                {
+                    Map *p_candidateMap = nullptr;
+                    if (p_candidate->getMap(p_candidateMap) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getMap cannot fail; continue as before.
+                    }
                     if (p_candidateMap != nullptr)
                     {
                         p_candidateMap->eraseMarkerBasedMapRoom(p_candidate);
                     }
-                    p_candidate->setBad();
+                    if (p_candidate->setBad() !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // setBad cannot fail; continue as before.
+                    }
                     if (loggedRoomCleanupIds.insert(roomId).second)
                     {
                         std::cout << "[SemMgr] Cleaning up orphaned "
@@ -361,10 +446,16 @@ void SemanticsManager::run(void)
             lastKnownRoomIdSnapshot >= 0
                 ? std::optional<int>(lastKnownRoomIdSnapshot)
                 : std::nullopt;
-        const std::vector<semantic::SemanticCandidate> candidates =
-            semantic::SemanticCandidates::generate(copiedContext,
+        std::vector<semantic::SemanticCandidate> candidates{};
+        if (semantic::SemanticCandidates::generate(copiedContext,
+                                                   candidates,
                                                    candidateConfiguration,
-                                                   anchorRoomId);
+                                                   anchorRoomId) !=
+            semantic::SemanticCandidatesStatus::
+                SEMANTIC_CANDIDATES_STATUS_SUCCESS)
+        {
+            // generate cannot fail; continue as before.
+        }
         std::cout << "[SemMgr] semantic_candidates count=" << candidates.size()
                   << std::endl;
 
@@ -432,11 +523,24 @@ void SemanticsManager::run(void)
         std::size_t prospectiveRoomCount = 0U;
         for (semantic::Room *p_room : pipelineRooms)
         {
-            if (p_room == nullptr || p_room->isBad())
+            bool roomIsBad{};
+            if (!(p_room == nullptr) &&
+                p_room->isBad(roomIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_room == nullptr || roomIsBad)
             {
                 continue;
             }
-            if (p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM)
+            semantic::Room::RoomVariant roomVariant{};
+            if (p_room->getRoomVariant(roomVariant) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomVariant cannot fail; continue as before.
+            }
+            if (roomVariant == semantic::Room::RoomVariant::ROOM)
             {
                 realRoomCount++;
             }
@@ -444,7 +548,13 @@ void SemanticsManager::run(void)
             {
                 prospectiveRoomCount++;
             }
-            for (geometric::Plane *p_wall : p_room->getWalls())
+            std::vector<geometric::Plane *> roomWalls{};
+            if (p_room->getWalls(roomWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
+            for (geometric::Plane *p_wall : roomWalls)
             {
                 if (p_wall != nullptr && !p_wall->isBad())
                 {
@@ -468,7 +578,16 @@ void SemanticsManager::run(void)
             pipelinePassages.begin(),
             pipelinePassages.end(),
             [](semantic::Passage *p_passage)
-            { return p_passage != nullptr && !p_passage->isBad(); });
+            {
+                bool passageIsBad{};
+                if ((p_passage != nullptr) &&
+                    p_passage->isBad(passageIsBad) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                return p_passage != nullptr && !passageIsBad;
+            });
         std::cout << "SG_PIPELINE {\"event\":\"heartbeat\",\"map_id\":"
                   << (p_pipelineMap != nullptr
                           ? static_cast<long long>(p_pipelineMap->getId())

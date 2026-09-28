@@ -27,10 +27,11 @@ namespace core
 namespace semantic
 {
 
-core::Map *Room::getMap()
+RoomStatus Room::getMap(core::Map *&p_map_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return p_map;
+    p_map_out = p_map;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

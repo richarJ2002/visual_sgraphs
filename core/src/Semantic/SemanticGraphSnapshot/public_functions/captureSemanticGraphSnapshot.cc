@@ -107,13 +107,32 @@ SemanticGraphSnapshot captureSemanticGraphSnapshot(core::Atlas *p_atlas_in)
         for (Room *p_room : roomsInMap)
         {
             EntityRef ownerReference;
-            ownerReference.key =
-                makeKey(EntityKind::ROOM, mapId, p_room->getId());
-            ownerReference.reason                    = UnavailableReason::NONE;
-            ownerReference.localId                   = p_room->getId();
-            ownerReference.isLive                    = !p_room->isBad();
+            int       roomId{};
+            if (p_room->getId(roomId) != RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            ownerReference.key    = makeKey(EntityKind::ROOM, mapId, roomId);
+            ownerReference.reason = UnavailableReason::NONE;
+            int roomId2{};
+            if (p_room->getId(roomId2) != RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            ownerReference.localId = roomId2;
+            bool roomIsBad{};
+            if (p_room->isBad(roomIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            ownerReference.isLive                    = !roomIsBad;
             ownerReference.livenessUnavailableReason = UnavailableReason::NONE;
-            for (geometric::Plane *p_wall : p_room->getWalls())
+            std::vector<geometric::Plane *> roomWalls{};
+            if (p_room->getWalls(roomWalls) != RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
+            for (geometric::Plane *p_wall : roomWalls)
             {
                 if (p_wall == nullptr)
                 {

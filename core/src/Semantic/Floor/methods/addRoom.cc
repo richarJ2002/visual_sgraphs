@@ -28,17 +28,26 @@ namespace core
 namespace semantic
 {
 
-void Floor::addRoom(vs_graphs::core::semantic::Room *p_value_inout)
+FloorStatus Floor::addRoom(vs_graphs::core::semantic::Room *p_value_inout)
 {
     if (p_value_inout == nullptr)
     {
-        return;
+        return FloorStatus::FLOOR_STATUS_SUCCESS;
     }
 
-    Floor *p_previousFloor = p_value_inout->getFloor();
+    Floor *p_previousFloor = nullptr;
+    if (p_value_inout->getFloor(p_previousFloor) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getFloor cannot fail; continue as before.
+    }
     if (p_previousFloor != nullptr && p_previousFloor != this)
     {
-        p_previousFloor->detachRoom(p_value_inout);
+        if (p_previousFloor->detachRoom(p_value_inout) !=
+            FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // detachRoom cannot fail; continue as before.
+        }
     }
 
     {
@@ -52,7 +61,12 @@ void Floor::addRoom(vs_graphs::core::semantic::Room *p_value_inout)
         }
     }
 
-    p_value_inout->setFloor(this);
+    if (p_value_inout->setFloor(this) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setFloor cannot fail; continue as before.
+    }
+
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

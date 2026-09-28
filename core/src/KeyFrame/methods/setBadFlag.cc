@@ -77,7 +77,11 @@ void KeyFrame::setBadFlag()
     {
         if (p_marker != nullptr)
         {
-            p_marker->eraseObservation(this);
+            if (p_marker->eraseObservation(this) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // eraseObservation cannot fail; continue as before.
+            }
         }
     }
 

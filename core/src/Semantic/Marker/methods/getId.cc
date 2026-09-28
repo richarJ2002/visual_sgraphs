@@ -25,9 +25,10 @@ namespace core
 namespace semantic
 {
 
-int Marker::getId() const
+MarkerStatus Marker::getId(int &id_out) const
 {
-    return id;
+    id_out = id;
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

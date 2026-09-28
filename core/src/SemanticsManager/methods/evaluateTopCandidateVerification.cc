@@ -62,17 +62,38 @@ void SemanticsManager::evaluateTopCandidateVerification(
         return;
     }
 
-    const semantic::SemanticVerifyConfig verifyConfiguration =
-        semantic::SemanticVerify::configFromSystemParams();
-    const std::vector<semantic::VerifyWallObservation> wallsA =
-        semantic::SemanticVerify::collectWallObservations(p_roomA,
-                                                          verifyConfiguration);
-    const std::vector<semantic::VerifyWallObservation> wallsB =
-        semantic::SemanticVerify::collectWallObservations(p_roomB,
-                                                          verifyConfiguration);
+    semantic::SemanticVerifyConfig verifyConfiguration{};
+    if (semantic::SemanticVerify::configFromSystemParams(verifyConfiguration) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // configFromSystemParams cannot fail; continue as before.
+    }
+    std::vector<semantic::VerifyWallObservation> wallsA{};
+    if (semantic::SemanticVerify::collectWallObservations(p_roomA,
+                                                          verifyConfiguration,
+                                                          wallsA) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // collectWallObservations cannot fail; continue as before.
+    }
+    std::vector<semantic::VerifyWallObservation> wallsB{};
+    if (semantic::SemanticVerify::collectWallObservations(p_roomB,
+                                                          verifyConfiguration,
+                                                          wallsB) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // collectWallObservations cannot fail; continue as before.
+    }
 
-    semantic::SemanticVerifyResult result =
-        semantic::SemanticVerify::verify(wallsA, wallsB, verifyConfiguration);
+    semantic::SemanticVerifyResult result{};
+    if (semantic::SemanticVerify::verify(wallsA,
+                                         wallsB,
+                                         result,
+                                         verifyConfiguration) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // verify cannot fail; continue as before.
+    }
 
     /* The floor gate can only turn a geometric PASS into a final rejection
      * (toVerificationVerdict() ANDs pass with hasFloorGatePassed), so only run
@@ -81,18 +102,61 @@ void SemanticsManager::evaluateTopCandidateVerification(
      * to skipping it when the two rooms could plausibly share a floor) would
      * be what SemanticVerify.h's runFloorGate() doc warns under-reports a
      * real pass as a false negative. */
-    semantic::Floor *p_floorA = p_roomA->getFloor();
-    semantic::Floor *p_floorB = p_roomB->getFloor();
+    semantic::Floor *p_floorA = nullptr;
+    if (p_roomA->getFloor(p_floorA) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getFloor cannot fail; continue as before.
+    }
+    semantic::Floor *p_floorB = nullptr;
+    if (p_roomB->getFloor(p_floorB) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getFloor cannot fail; continue as before.
+    }
+    bool floorAHasPlaneIdentity{};
+    if ((result.hasPassed && p_floorA != nullptr && p_floorB != nullptr) &&
+        p_floorA->hasPlaneIdentity(floorAHasPlaneIdentity) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // hasPlaneIdentity cannot fail; continue as before.
+    }
+    bool floorBHasPlaneIdentity{};
+    if ((result.hasPassed && p_floorA != nullptr && p_floorB != nullptr &&
+         floorAHasPlaneIdentity) &&
+        p_floorB->hasPlaneIdentity(floorBHasPlaneIdentity) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // hasPlaneIdentity cannot fail; continue as before.
+    }
     if (result.hasPassed && p_floorA != nullptr && p_floorB != nullptr &&
-        p_floorA->hasPlaneIdentity() && p_floorB->hasPlaneIdentity())
+        floorAHasPlaneIdentity && floorBHasPlaneIdentity)
     {
         /* verify()'s transform_AToB maps room-A points into room B's frame,
          * i.e. A is absorbed into B -- matches runFloorGate's
          * absorbed->surviving convention. */
-        semantic::SemanticVerify::runFloorGate(result,
-                                               p_roomB->getMap(),
-                                               p_roomA->getMap(),
-                                               result.transform_AToB);
+        core::Map *p_roomBMap = nullptr;
+        if (p_roomB->getMap(p_roomBMap) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getMap cannot fail; continue as before.
+        }
+        core::Map *p_roomAMap = nullptr;
+        if (p_roomA->getMap(p_roomAMap) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getMap cannot fail; continue as before.
+        }
+        bool hasPassed2{};
+        if (semantic::SemanticVerify::runFloorGate(result,
+                                                   p_roomBMap,
+                                                   p_roomAMap,
+                                                   result.transform_AToB,
+                                                   hasPassed2) !=
+            semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            // runFloorGate cannot fail; continue as before.
+        }
     }
 
     const auto rejectReasonName = [](semantic::VerifyRejectReason reason)

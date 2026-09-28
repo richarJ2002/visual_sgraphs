@@ -625,7 +625,8 @@ TEST(SemanticCanonicalSerialization, VisitedFlagDoesNotChangeDigests)
         serializeSnapshotFullGeometry(captureSemanticGraphSnapshot(&atlas))
             .dump();
 
-    room.setPreviouslyVisited(true);
+    ASSERT_EQ((room.setPreviouslyVisited(true)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     EXPECT_EQ(
         serializeSnapshotTopologyOnly(captureSemanticGraphSnapshot(&atlas))

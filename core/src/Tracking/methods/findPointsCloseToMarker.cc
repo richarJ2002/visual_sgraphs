@@ -37,10 +37,16 @@ std::vector<MapPoint *> Tracking::findPointsCloseToMarker(
     // Get all map points
     std::vector<MapPoint *> allmapPoints = p_atlas->getAllMapPoints();
     // Get all map points close to the marker
-    std::vector<MapPoint *> closePoints = findPointsCloseToLocation(
-        allmapPoints,
-        p_currentMarker_in->getGlobalPose().translation(),
-        0.1);
+    Sophus::SE3f            currentMarker_inGlobalPose{};
+    if (p_currentMarker_in->getGlobalPose(currentMarker_inGlobalPose) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // getGlobalPose cannot fail; continue as before.
+    }
+    std::vector<MapPoint *> closePoints =
+        findPointsCloseToLocation(allmapPoints,
+                                  currentMarker_inGlobalPose.translation(),
+                                  0.1);
     // Return the close points
     return closePoints;
 }

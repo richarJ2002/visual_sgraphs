@@ -28,13 +28,15 @@ namespace core
 namespace semantic
 {
 
-bool Passage::replacePlaneAssociation(geometric::Plane *p_retiredPlane_in,
-                                      geometric::Plane *p_retainedPlane_in)
+PassageStatus
+    Passage::replacePlaneAssociation(geometric::Plane *p_retiredPlane_in,
+                                     geometric::Plane *p_retainedPlane_in,
+                                     bool &wasAssociationReplaced_out)
 {
     if (p_retiredPlane_in == nullptr || p_retainedPlane_in == nullptr ||
         p_retiredPlane_in == p_retainedPlane_in)
     {
-        return false;
+        return PassageStatus::PASSAGE_STATUS_INVALID_ARGUMENT;
     }
 
     std::lock_guard<std::mutex> lock(geometryMutex);
@@ -76,7 +78,8 @@ bool Passage::replacePlaneAssociation(geometric::Plane *p_retiredPlane_in,
         associateWalls.swap(rebuiltWalls);
     }
 
-    return replacedAssociation;
+    wasAssociationReplaced_out = replacedAssociation;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

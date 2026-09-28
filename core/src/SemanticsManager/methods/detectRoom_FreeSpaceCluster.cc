@@ -401,19 +401,52 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 continue;
             }
 
-            vs_graphs::core::semantic::Room *p_prospective =
-                p_passage->getProspectiveRoom();
+            vs_graphs::core::semantic::Room *p_prospective = nullptr;
+            if (p_passage->getProspectiveRoom(p_prospective) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getProspectiveRoom cannot fail; continue as before.
+            }
 
-            if (p_prospective == nullptr || p_prospective->isBad() ||
-                p_prospective->getRoomVariant() !=
+            bool prospectiveIsBad{};
+            if (!(p_prospective == nullptr) &&
+                p_prospective->isBad(prospectiveIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            semantic::Room::RoomVariant prospectiveRoomVariant{};
+            if (!(p_prospective == nullptr || prospectiveIsBad) &&
+                p_prospective->getRoomVariant(prospectiveRoomVariant) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomVariant cannot fail; continue as before.
+            }
+            int prospectiveId{};
+            if (!(p_prospective == nullptr || prospectiveIsBad ||
+                  prospectiveRoomVariant != vs_graphs::core::semantic::Room::
+                                                RoomVariant::UNDEFINED) &&
+                p_prospective->getId(prospectiveId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (p_prospective == nullptr || prospectiveIsBad ||
+                prospectiveRoomVariant !=
                     vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED ||
-                matchedRoomIds.count(p_prospective->getId()) > 0U)
+                matchedRoomIds.count(prospectiveId) > 0U)
             {
                 continue;
             }
 
+            g2o::Plane3D passageGlobalEquation{};
+            if (p_passage->getGlobalEquation(passageGlobalEquation) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
             Eigen::Vector4d passageEquation_World =
-                p_passage->getGlobalEquation().coeffs();
+                passageGlobalEquation.coeffs();
             const double passageNormalNorm =
                 passageEquation_World.head<3>().norm();
 
@@ -424,8 +457,12 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
             passageEquation_World /= passageNormalNorm;
 
-            const Eigen::Vector3d prospectiveCentroid_World_m =
-                p_prospective->getCentroid();
+            Eigen::Vector3d prospectiveCentroid_World_m{};
+            if (p_prospective->getCentroid(prospectiveCentroid_World_m) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
             const double prospectiveSide_m =
                 passageEquation_World.head<3>().dot(
                     prospectiveCentroid_World_m) +
@@ -445,8 +482,12 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 continue;
             }
 
-            const std::vector<vs_graphs::core::geometric::Plane *>
-                       prospectiveWalls   = p_prospective->getWalls();
+            std::vector<vs_graphs::core::geometric::Plane *> prospectiveWalls{};
+            if (p_prospective->getWalls(prospectiveWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
             const bool sharesWallEvidence = std::any_of(
                 prospectiveWalls.begin(),
                 prospectiveWalls.end(),
@@ -483,7 +524,13 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         /* Track matched room to prevent double-matching in this cycle */
         if (p_room != nullptr)
         {
-            matchedRoomIds.insert(p_room->getId());
+            int roomId{};
+            if (p_room->getId(roomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            matchedRoomIds.insert(roomId);
         }
 
         /*!
@@ -518,14 +565,33 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 for (vs_graphs::core::semantic::Room *p_existingRoom :
                      existingRooms_World)
                 {
-                    if (p_existingRoom == nullptr || p_existingRoom->isBad() ||
-                        matchedRoomIds.count(p_existingRoom->getId()) > 0)
+                    bool existingRoomIsBad{};
+                    if (!(p_existingRoom == nullptr) &&
+                        p_existingRoom->isBad(existingRoomIsBad) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
+                    int existingRoomId{};
+                    if (!(p_existingRoom == nullptr || existingRoomIsBad) &&
+                        p_existingRoom->getId(existingRoomId) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    if (p_existingRoom == nullptr || existingRoomIsBad ||
+                        matchedRoomIds.count(existingRoomId) > 0)
                     {
                         continue;
                     }
 
-                    const std::vector<vs_graphs::core::geometric::Plane *>
-                        roomWallsList = p_existingRoom->getWalls();
+                    std::vector<vs_graphs::core::geometric::Plane *>
+                        roomWallsList{};
+                    if (p_existingRoom->getWalls(roomWallsList) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getWalls cannot fail; continue as before.
+                    }
 
                     if (std::find(roomWallsList.begin(),
                                   roomWallsList.end(),
@@ -546,8 +612,14 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
             {
                 p_room = p_wallOwnerRoom;
 
+                int roomId2{};
+                if (p_room->getId(roomId2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout << "[SemMgr] Reusing existing semantic::Room#"
-                          << p_room->getId() << " for cluster " << clusterId
+                          << roomId2 << " for cluster " << clusterId
                           << " (cluster walls already owned)." << std::endl;
             }
         }
@@ -573,17 +645,31 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 p_currentMapForBootstrapCheck != nullptr
                     ? p_currentMapForBootstrapCheck->getAllRooms()
                     : std::vector<semantic::Room *>();
-            const bool anyConfirmedRoomExistsInCurrentMap =
-                std::any_of(currentMapRooms.begin(),
-                            currentMapRooms.end(),
-                            [](vs_graphs::core::semantic::Room *p_existingRoom)
-                            {
-                                return p_existingRoom != nullptr &&
-                                       !p_existingRoom->isBad() &&
-                                       p_existingRoom->getRoomVariant() ==
-                                           vs_graphs::core::semantic::Room::
-                                               RoomVariant::ROOM;
-                            });
+            const bool anyConfirmedRoomExistsInCurrentMap = std::any_of(
+                currentMapRooms.begin(),
+                currentMapRooms.end(),
+                [](vs_graphs::core::semantic::Room *p_existingRoom)
+                {
+                    bool existingRoomIsBad{};
+                    if ((p_existingRoom != nullptr) &&
+                        p_existingRoom->isBad(existingRoomIsBad) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
+                    semantic::Room::RoomVariant existingRoomRoomVariant{};
+                    if ((p_existingRoom != nullptr && !existingRoomIsBad) &&
+                        p_existingRoom->getRoomVariant(
+                            existingRoomRoomVariant) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getRoomVariant cannot fail; continue as before.
+                    }
+                    return p_existingRoom != nullptr && !existingRoomIsBad &&
+                           existingRoomRoomVariant ==
+                               vs_graphs::core::semantic::Room::RoomVariant::
+                                   ROOM;
+                });
 
             if (anyConfirmedRoomExistsInCurrentMap)
             {
@@ -639,17 +725,32 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
         const std::vector<vs_graphs::core::semantic::Passage *> activePassages =
             p_atlas->getAllPassages();
-        const bool roomIsPassageBoundProspective =
-            std::any_of(activePassages.begin(),
-                        activePassages.end(),
-                        [p_room](vs_graphs::core::semantic::Passage *p_passage)
-                        {
-                            return p_passage != nullptr &&
-                                   p_passage->getProspectiveRoom() == p_room &&
-                                   p_room->getRoomVariant() ==
-                                       vs_graphs::core::semantic::Room::
-                                           RoomVariant::UNDEFINED;
-                        });
+        const bool roomIsPassageBoundProspective = std::any_of(
+            activePassages.begin(),
+            activePassages.end(),
+            [p_room](vs_graphs::core::semantic::Passage *p_passage)
+            {
+                vs_graphs::core::semantic::Room *p_passageProspectiveRoom =
+                    nullptr;
+                if ((p_passage != nullptr) &&
+                    p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getProspectiveRoom cannot fail; continue as before.
+                }
+                semantic::Room::RoomVariant roomVariant{};
+                if ((p_passage != nullptr &&
+                     p_passageProspectiveRoom == p_room) &&
+                    p_room->getRoomVariant(roomVariant) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getRoomVariant cannot fail; continue as before.
+                }
+                return p_passage != nullptr &&
+                       p_passageProspectiveRoom == p_room &&
+                       roomVariant == vs_graphs::core::semantic::Room::
+                                          RoomVariant::UNDEFINED;
+            });
 
         /* A prospective must first pass the external cluster validation below;
          * generic consolidation must not classify or replace it early. */
@@ -659,8 +760,12 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         }
 
         /* Find the walls of the room */
-        std::vector<vs_graphs::core::geometric::Plane *> roomWalls =
-            p_room->getWalls();
+        std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
+        if (p_room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
 
         /*! Perspective guard: a wall observed through an opening is on the far
          * side of the passage's supporting wall and therefore cannot bound the
@@ -708,8 +813,14 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     /* The aperture geometry alone decides the far side; the
                      * passage need not yet be passable or have a prospective.
                      */
+                    Eigen::Vector3d roomCentroid{};
+                    if (p_room->getCentroid(roomCentroid) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getCentroid cannot fail; continue as before.
+                    }
                     if (!segmentCrossesPassageOpening(
-                            p_room->getCentroid(),
+                            roomCentroid,
                             wall->getCentroid().cast<double>(),
                             p_passage,
                             groundNormal_World,
@@ -736,16 +847,35 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     for (vs_graphs::core::semantic::Room *p_other :
                          p_atlas->getAllRooms())
                     {
-                        if (p_other == nullptr || p_other->isBad() ||
+                        bool otherIsBad{};
+                        if (!(p_other == nullptr) &&
+                            p_other->isBad(otherIsBad) !=
+                                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // isBad cannot fail; continue as before.
+                        }
+                        semantic::Room::RoomVariant otherRoomVariant{};
+                        if (!(p_other == nullptr || otherIsBad ||
+                              p_other == p_room) &&
+                            p_other->getRoomVariant(otherRoomVariant) !=
+                                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // getRoomVariant cannot fail; continue as before.
+                        }
+                        if (p_other == nullptr || otherIsBad ||
                             p_other == p_room ||
-                            p_other->getRoomVariant() ==
+                            otherRoomVariant ==
                                 vs_graphs::core::semantic::Room::RoomVariant::
                                     UNDEFINED)
                         {
                             continue;
                         }
-                        const std::vector<geometric::Plane *> otherWalls =
-                            p_other->getWalls();
+                        std::vector<geometric::Plane *> otherWalls{};
+                        if (p_other->getWalls(otherWalls) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // getWalls cannot fail; continue as before.
+                        }
                         if (std::find(otherWalls.begin(),
                                       otherWalls.end(),
                                       wall) != otherWalls.end())
@@ -760,24 +890,47 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     }
 
                     vs_graphs::core::semantic::Room *p_prospectiveRoom =
-                        p_passage->getProspectiveRoom();
+                        nullptr;
+                    if (p_passage->getProspectiveRoom(p_prospectiveRoom) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // getProspectiveRoom cannot fail; continue as before.
+                    }
 
-                    if (p_prospectiveRoom == nullptr ||
-                        p_prospectiveRoom->isBad())
+                    bool prospectiveRoomIsBad{};
+                    if (!(p_prospectiveRoom == nullptr) &&
+                        p_prospectiveRoom->isBad(prospectiveRoomIsBad) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
+                    if (p_prospectiveRoom == nullptr || prospectiveRoomIsBad)
                     {
                         /* The far-side room does not exist yet (it may be
                          * created later in this cycle by
                          * associatePassagesToRooms). Keep the wall off the
                          * near room so it can bind onto the prospective. */
-                        p_room->removeWall(wall);
+                        bool roomWasWallRemoved{};
+                        if (p_room->removeWall(wall, roomWasWallRemoved) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            roomWasWallRemoved =
+                                false; // rejected input reads as before
+                        }
                         if (p_atlas->getRoomWallPlaneById(wall->getId()) ==
                             nullptr)
                         {
                             p_atlas->addRoomWallPlane(wall);
                         }
+                        int passageId{};
+                        if (p_passage->getId(passageId) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
                         std::cout
                             << "[SemMgr] Far-side Wall#" << wall->getId()
-                            << " at semantic::Passage#" << p_passage->getId()
+                            << " at semantic::Passage#" << passageId
                             << " has no prospective yet; held unbound for the "
                                "far-side room."
                             << std::endl;
@@ -785,7 +938,13 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         break;
                     }
 
-                    p_room->removeWall(wall);
+                    bool roomWasWallRemoved2{};
+                    if (p_room->removeWall(wall, roomWasWallRemoved2) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        roomWasWallRemoved2 =
+                            false; // rejected input reads as before
+                    }
                     if (p_atlas->getRoomWallPlaneById(wall->getId()) == nullptr)
                     {
                         p_atlas->addRoomWallPlane(wall);
@@ -816,8 +975,14 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 {
                     for (OpenPassageEvidence &evidence : openPassageEvidence)
                     {
+                        Eigen::Vector3d roomCentroid2{};
+                        if (p_room->getCentroid(roomCentroid2) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            // getCentroid cannot fail; continue as before.
+                        }
                         if (!segmentCrossesOpenPassageEvidence(
-                                p_room->getCentroid(),
+                                roomCentroid2,
                                 wall->getCentroid().cast<double>(),
                                 evidence.p_supportingWall,
                                 evidence.centroid_World_m,
@@ -834,7 +999,13 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             continue;
                         }
 
-                        p_room->removeWall(wall);
+                        bool roomWasWallRemoved3{};
+                        if (p_room->removeWall(wall, roomWasWallRemoved3) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            roomWasWallRemoved3 =
+                                false; // rejected input reads as before
+                        }
                         if (p_atlas->getRoomWallPlaneById(wall->getId()) ==
                             nullptr)
                         {
@@ -888,14 +1059,26 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 mappedRooms.end(),
                 [p_room, wall](vs_graphs::core::semantic::Room *p_otherRoom)
                 {
+                    bool otherRoomIsBad{};
+                    if (!(p_otherRoom == nullptr || p_otherRoom == p_room) &&
+                        p_otherRoom->isBad(otherRoomIsBad) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
                     if (p_otherRoom == nullptr || p_otherRoom == p_room ||
-                        p_otherRoom->isBad())
+                        otherRoomIsBad)
                     {
                         return false;
                     }
 
-                    const std::vector<vs_graphs::core::geometric::Plane *>
-                        otherRoomWalls = p_otherRoom->getWalls();
+                    std::vector<vs_graphs::core::geometric::Plane *>
+                        otherRoomWalls{};
+                    if (p_otherRoom->getWalls(otherRoomWalls) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getWalls cannot fail; continue as before.
+                    }
 
                     return std::find(otherRoomWalls.begin(),
                                      otherRoomWalls.end(),
@@ -921,15 +1104,37 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     wallEquation_World /= wallNormalNorm;
 
                     constexpr double maximumProvisionalPlaneDistance_m = 0.20;
-                    const double     ownerPlaneDistance_m =
+                    Eigen::Vector3d  existingWallOwnerCentroid{};
+                    if (p_existingWallOwner->getCentroid(
+                            existingWallOwnerCentroid) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getCentroid cannot fail; continue as before.
+                    }
+                    const double ownerPlaneDistance_m =
                         std::abs(wallEquation_World.head<3>().dot(
-                                     p_existingWallOwner->getCentroid()) +
+                                     existingWallOwnerCentroid) +
                                  wallEquation_World(3));
 
+                    semantic::Room::RoomVariant existingWallOwnerRoomVariant{};
+                    if (p_existingWallOwner->getRoomVariant(
+                            existingWallOwnerRoomVariant) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getRoomVariant cannot fail; continue as before.
+                    }
+                    std::vector<geometric::Plane *> existingWallOwnerWalls{};
+                    if ((existingWallOwnerRoomVariant ==
+                         semantic::Room::RoomVariant::UNDEFINED) &&
+                        p_existingWallOwner->getWalls(existingWallOwnerWalls) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getWalls cannot fail; continue as before.
+                    }
                     existingOwnerIsTransferableProvisional =
-                        p_existingWallOwner->getRoomVariant() ==
+                        existingWallOwnerRoomVariant ==
                             semantic::Room::RoomVariant::UNDEFINED &&
-                        p_existingWallOwner->getWalls().size() == 1U &&
+                        existingWallOwnerWalls.size() == 1U &&
                         ownerPlaneDistance_m <=
                             maximumProvisionalPlaneDistance_m;
                 }
@@ -987,8 +1192,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         for (semantic::Passage *p_passage :
                              p_atlas->getAllPassages())
                         {
+                            Eigen::Vector3d existingWallOwnerCentroid2{};
+                            if (p_existingWallOwner->getCentroid(
+                                    existingWallOwnerCentroid2) !=
+                                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                            {
+                                // getCentroid cannot fail; continue as before.
+                            }
                             if (!segmentCrossesPassageOpening(
-                                    p_existingWallOwner->getCentroid(),
+                                    existingWallOwnerCentroid2,
                                     clusterCentroid,
                                     p_passage,
                                     groundNormal_World,
@@ -1000,8 +1212,16 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                 continue;
                             }
 
+                            g2o::Plane3D passageGlobalEquation2{};
+                            if (p_passage->getGlobalEquation(
+                                    passageGlobalEquation2) !=
+                                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                            {
+                                // getGlobalEquation cannot fail; continue as
+                                // before.
+                            }
                             Eigen::Vector4d passageEquation_World =
-                                p_passage->getGlobalEquation().coeffs();
+                                passageGlobalEquation2.coeffs();
                             const double passageNormalNorm =
                                 passageEquation_World.head<3>().norm();
 
@@ -1054,8 +1274,18 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 continue;
             }
 
+            bool existingWallOwnerWasWallRemoved{};
+            if ((p_existingWallOwner != nullptr) &&
+                p_existingWallOwner->removeWall(
+                    wall,
+                    existingWallOwnerWasWallRemoved) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                existingWallOwnerWasWallRemoved =
+                    false; // rejected input reads as before
+            }
             if (p_existingWallOwner != nullptr &&
-                p_existingWallOwner->removeWall(wall))
+                existingWallOwnerWasWallRemoved)
             {
                 if (existingOwnerIsTransferableProvisional)
                 {
@@ -1068,27 +1298,65 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             p_existingWallOwner);
                     }
 
-                    p_existingWallOwner->setBad();
+                    if (p_existingWallOwner->setBad() !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // setBad cannot fail; continue as before.
+                    }
 
+                    int existingWallOwnerId{};
+                    if (p_existingWallOwner->getId(existingWallOwnerId) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    int roomId3{};
+                    if (p_room->getId(roomId3) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
                     std::cout << "[SemMgr] Transferred orphan Wall#"
                               << wall->getId() << " from provisional SE#"
-                              << p_existingWallOwner->getId()
-                              << " to semantic::Room#" << p_room->getId() << "."
-                              << std::endl;
+                              << existingWallOwnerId << " to semantic::Room#"
+                              << roomId3 << "." << std::endl;
                 }
                 else
                 {
+                    int existingWallOwnerId2{};
+                    if (p_existingWallOwner->getId(existingWallOwnerId2) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    int roomId4{};
+                    if (p_room->getId(roomId4) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    int transferPassageId{};
+                    if (p_transferPassage->getId(transferPassageId) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
                     std::cout
                         << "[SemMgr] Transferred Wall#" << wall->getId()
-                        << " from semantic::Room#"
-                        << p_existingWallOwner->getId() << " to semantic::Room#"
-                        << p_room->getId() << " through semantic::Passage#"
-                        << p_transferPassage->getId()
+                        << " from semantic::Room#" << existingWallOwnerId2
+                        << " to semantic::Room#" << roomId4
+                        << " through semantic::Passage#" << transferPassageId
                         << " using wall-observation evidence." << std::endl;
                 }
             }
 
-            roomWalls = p_room->getWalls();
+            std::vector<geometric::Plane *> roomWalls2{};
+            if (p_room->getWalls(roomWalls2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
+            roomWalls = roomWalls2;
 
             /* Register the uniquely owned room-wall surface. */
             if (p_atlas->getRoomWallPlaneById(wall->getId()) == nullptr)
@@ -1098,7 +1366,13 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         }
 
         /* Find all the walls in a room */
-        roomWalls = p_room->getWalls();
+        std::vector<geometric::Plane *> roomWalls3{};
+        if (p_room->getWalls(roomWalls3) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
+        roomWalls = roomWalls3;
 
         /*!
          * Consolidate provisional single-wall structural elements whose wall
@@ -1110,8 +1384,19 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         utils::utils::Utils::consolidateProvisionalRooms(p_room, p_atlas);
 
         /* Remove invalid relationships from the room's persistent graph. */
-        p_room->removeInvalidWalls();
-        roomWalls = p_room->getWalls();
+        std::size_t roomRemovedWallCount{};
+        if (p_room->removeInvalidWalls(roomRemovedWallCount) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // removeInvalidWalls cannot fail; continue as before.
+        }
+        std::vector<geometric::Plane *> roomWalls4{};
+        if (p_room->getWalls(roomWalls4) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
+        roomWalls = roomWalls4;
 
         /*!
          * The semantic room centre is the mean of each wall's centroid
@@ -1150,8 +1435,14 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     continue;
                 }
 
-                const std::optional<Eigen::Vector3d> inwardNormal_World =
-                    p_room->getWallNormalTowardRoom_World(p_roomWall);
+                std::optional<Eigen::Vector3d> inwardNormal_World{};
+                if (p_room->getWallNormalTowardRoom_World(p_roomWall,
+                                                          inwardNormal_World) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getWallNormalTowardRoom_World cannot fail; continue as
+                    // before.
+                }
 
                 const Eigen::Vector3d nudgedCentroid_World_m =
                     inwardNormal_World
@@ -1187,8 +1478,12 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                  * several cycles, but one cycle's wall churn can no longer
                  * swing it far enough to flip another wall's side test.
                  */
-                const Eigen::Vector3d previousCentroid_World_m =
-                    p_room->getCentroid();
+                Eigen::Vector3d previousCentroid_World_m{};
+                if (p_room->getCentroid(previousCentroid_World_m) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getCentroid cannot fail; continue as before.
+                }
                 constexpr double      centroidDampingWeight = 0.25;
                 const Eigen::Vector3d dampedCentroid_World_m =
                     previousCentroid_World_m.allFinite()
@@ -1197,7 +1492,11 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                previousCentroid_World_m)
                         : correctedCentroid_World_m;
 
-                p_room->setCentroid(dampedCentroid_World_m);
+                if (p_room->setCentroid(dampedCentroid_World_m) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // setCentroid cannot fail; continue as before.
+                }
             }
         }
 
@@ -1236,45 +1535,116 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         });
 
         /* Confirm the cluster-backed structural element as a room. */
+        semantic::Room::RoomVariant roomVariant{};
+        if ((validFreeSpaceCluster && hasBoundaryEvidence) &&
+            p_room->getRoomVariant(roomVariant) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
         if (validFreeSpaceCluster && hasBoundaryEvidence &&
-            p_room->getRoomVariant() ==
+            roomVariant ==
                 vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
         {
             if (prospectiveWallEvidenceStillMatches)
             {
-                Map *p_roomMap = p_room->getMap();
+                Map *p_roomMap = nullptr;
+                if (p_room->getMap(p_roomMap) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getMap cannot fail; continue as before.
+                }
                 if (p_roomMap != nullptr)
                 {
                     p_roomMap->promoteCandidateMapRoom(p_room);
                 }
 
-                p_room->setRoomVariant(
-                    vs_graphs::core::semantic::Room::RoomVariant::ROOM);
-                p_room->setName("semantic::Room#" +
-                                std::to_string(p_room->getId()));
-                prospectiveRoomCycles.erase(p_room->getId());
+                if (p_room->setRoomVariant(
+                        vs_graphs::core::semantic::Room::RoomVariant::ROOM) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // setRoomVariant cannot fail; continue as before.
+                }
+                int roomId5{};
+                if (p_room->getId(roomId5) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                if (p_room->setName("semantic::Room#" +
+                                    std::to_string(roomId5)) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // setName cannot fail; continue as before.
+                }
+                int roomId6{};
+                if (p_room->getId(roomId6) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                prospectiveRoomCycles.erase(roomId6);
 
-                p_room->setDoorways(p_clusterPassage);
-                p_clusterPassage->setProspectiveRoom(p_room);
+                if (p_room->setDoorways(p_clusterPassage) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // setDoorways cannot fail; continue as before.
+                }
+                if (p_clusterPassage->setProspectiveRoom(p_room) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setProspectiveRoom cannot fail; continue as before.
+                }
 
+                int roomId7{};
+                if (p_room->getId(roomId7) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout << "[SemMgr] Promoted prospective semantic::Room#"
-                          << p_room->getId()
+                          << roomId7
                           << " to ROOM from far-side cluster evidence."
                           << std::endl;
             }
             else if (!roomIsPassageBoundProspective)
             {
-                Map *p_roomMap = p_room->getMap();
+                Map *p_roomMap = nullptr;
+                if (p_room->getMap(p_roomMap) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getMap cannot fail; continue as before.
+                }
                 if (p_roomMap != nullptr)
                 {
                     p_roomMap->promoteCandidateMapRoom(p_room);
                 }
-                p_room->setRoomVariant(
-                    vs_graphs::core::semantic::Room::RoomVariant::ROOM);
-                p_room->setName("semantic::Room#" +
-                                std::to_string(p_room->getId()));
+                if (p_room->setRoomVariant(
+                        vs_graphs::core::semantic::Room::RoomVariant::ROOM) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // setRoomVariant cannot fail; continue as before.
+                }
+                int roomId8{};
+                if (p_room->getId(roomId8) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                if (p_room->setName("semantic::Room#" +
+                                    std::to_string(roomId8)) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // setName cannot fail; continue as before.
+                }
 
-                std::cout << "[SemMgr] Structural Element #" << p_room->getId()
+                int roomId9{};
+                if (p_room->getId(roomId9) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                std::cout << "[SemMgr] Structural Element #" << roomId9
                           << " classified as a semantic::Room from free-space "
                              "cluster "
                           << clusterId << "." << std::endl;

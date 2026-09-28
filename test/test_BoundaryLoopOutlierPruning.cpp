@@ -185,24 +185,40 @@ TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
     RectangleWithOutlier walls = makeRectangleWithOutlier(p_map);
 
     semantic::Room room;
-    room.setId(1);
-    room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
-    room.setWalls(walls.north.get());
-    room.setWalls(walls.south.get());
-    room.setWalls(walls.east.get());
-    room.setWalls(walls.west.get());
-    room.setWalls(walls.outlier.get());
+    ASSERT_EQ((room.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(walls.north.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(walls.south.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(walls.east.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(walls.west.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(walls.outlier.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     atlas.addDetectedMapRoom(&room);
 
     manager.validateRoomBoundariesForTest();
 
-    EXPECT_EQ(room.getBoundaryStatus(),
-              semantic::Room::BoundaryStatus::COMPLETE);
-    EXPECT_GE(room.getBoundaryCorners_World_m().size(), 3U);
+    vs_graphs::core::semantic::Room::BoundaryStatus boundaryStatus{};
+    ASSERT_EQ((room.getBoundaryStatus(boundaryStatus)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(boundaryStatus, semantic::Room::BoundaryStatus::COMPLETE);
+    std::vector<Eigen::Vector3d> boundaryCorners_World_m{};
+    ASSERT_EQ((room.getBoundaryCorners_World_m(boundaryCorners_World_m)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_GE(boundaryCorners_World_m.size(), 3U);
 
-    const std::vector<geometric::Plane *> remainingWalls = room.getWalls();
+    std::vector<geometric::Plane *> remainingWalls{};
+    ASSERT_EQ((room.getWalls(remainingWalls)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     EXPECT_EQ(remainingWalls.size(), 4U);
     EXPECT_EQ(std::find(remainingWalls.begin(),
                         remainingWalls.end(),
@@ -232,32 +248,49 @@ TEST(BoundaryLoopOutlierPruning, KeepsAnOutlierExplainedByAPassage)
     RectangleWithOutlier walls = makeRectangleWithOutlier(p_map);
 
     semantic::Room room;
-    room.setId(1);
-    room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5));
-    room.setWalls(walls.north.get());
-    room.setWalls(walls.south.get());
-    room.setWalls(walls.east.get());
-    room.setWalls(walls.west.get());
-    room.setWalls(walls.outlier.get());
+    ASSERT_EQ((room.setId(1)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(walls.north.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(walls.south.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(walls.east.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(walls.west.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setWalls(walls.outlier.get())),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     atlas.addDetectedMapRoom(&room);
 
     /* The outlier is a doorway wall framing a passage out of this room --
      * explained, so it must survive even though it is off the closed loop.
      */
     semantic::Passage passage;
-    passage.setId(1);
-    passage.setMap(p_map);
-    passage.addAssociateWall(walls.outlier.get());
-    room.setDoorways(&passage);
+    ASSERT_EQ((passage.setId(1)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.addAssociateWall(walls.outlier.get())),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((room.setDoorways(&passage)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     manager.validateRoomBoundariesForTest();
 
-    EXPECT_EQ(room.getBoundaryStatus(),
-              semantic::Room::BoundaryStatus::COMPLETE);
+    vs_graphs::core::semantic::Room::BoundaryStatus boundaryStatus{};
+    ASSERT_EQ((room.getBoundaryStatus(boundaryStatus)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(boundaryStatus, semantic::Room::BoundaryStatus::COMPLETE);
 
-    const std::vector<geometric::Plane *> remainingWalls = room.getWalls();
+    std::vector<geometric::Plane *> remainingWalls{};
+    ASSERT_EQ((room.getWalls(remainingWalls)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     EXPECT_EQ(remainingWalls.size(), 5U);
     EXPECT_NE(std::find(remainingWalls.begin(),
                         remainingWalls.end(),

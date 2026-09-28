@@ -78,8 +78,23 @@ void SemanticsManager::updateRoomTrackerState(double now_s_in)
         isNewMapCreatedDeferred = false;
     }
 
-    roomTracker.step(now_s_in, crossing, verification, tracking);
-    const semantic::TransitionEvent &lastEvent = roomTracker.getLastEvent();
+    semantic::RoomTrackingState roomTrackerNextState{};
+    if (roomTracker.step(now_s_in,
+                         crossing,
+                         verification,
+                         tracking,
+                         roomTrackerNextState) !=
+        semantic::RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+    {
+        // step cannot fail; continue as before.
+    }
+    const semantic::TransitionEvent *p_lastEventRef = nullptr;
+    if (roomTracker.getLastEvent(p_lastEventRef) !=
+        semantic::RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+    {
+        // getLastEvent cannot fail; continue as before.
+    }
+    const semantic::TransitionEvent &lastEvent = *p_lastEventRef;
     if (lastEvent.isAccepted &&
         (lastEvent.event ==
              semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH ||

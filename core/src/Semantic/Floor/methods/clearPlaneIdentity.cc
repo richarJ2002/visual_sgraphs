@@ -28,10 +28,12 @@ namespace core
 namespace semantic
 {
 
-void Floor::clearPlaneIdentity(void)
+FloorStatus Floor::clearPlaneIdentity(void)
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
     planeIdentity.reset();
+
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

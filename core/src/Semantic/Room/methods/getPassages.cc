@@ -27,10 +27,12 @@ namespace core
 namespace semantic
 {
 
-std::vector<vs_graphs::core::semantic::Passage *> Room::getPassages() const
+RoomStatus Room::getPassages(
+    std::vector<vs_graphs::core::semantic::Passage *> &passages_out) const
 {
     std::lock_guard<std::mutex> lock(mapMutex);
-    return doorways;
+    passages_out = doorways;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

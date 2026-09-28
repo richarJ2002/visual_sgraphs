@@ -28,11 +28,12 @@ namespace core
 namespace semantic
 {
 
-bool SemanticVerify::runFloorGate(
+SemanticVerifyStatus SemanticVerify::runFloorGate(
     SemanticVerifyResult    &result_inout,
     core::Map               *p_survivingMap_in,
     core::Map               *p_absorbedMap_in,
-    const Eigen::Isometry3d &transform_absorbedToSurviving_in)
+    const Eigen::Isometry3d &transform_absorbedToSurviving_in,
+    bool                    &hasPassed_out)
 {
     const g2o::Sim3 transform(transform_absorbedToSurviving_in.linear(),
                               transform_absorbedToSurviving_in.translation(),
@@ -45,7 +46,8 @@ bool SemanticVerify::runFloorGate(
     result_inout.hasFloorGateRun    = true;
     result_inout.hasFloorGatePassed = passed;
     result_inout.floorGateResult    = resultText;
-    return passed;
+    hasPassed_out                   = passed;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

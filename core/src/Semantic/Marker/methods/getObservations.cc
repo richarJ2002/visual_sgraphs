@@ -25,10 +25,12 @@ namespace core
 namespace semantic
 {
 
-std::map<core::KeyFrame *, Sophus::SE3f> Marker::getObservations() const
+MarkerStatus Marker::getObservations(
+    std::map<core::KeyFrame *, Sophus::SE3f> &observations_out) const
 {
     std::lock_guard<std::mutex> lock(observationsMutex);
-    return observations;
+    observations_out = observations;
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -559,10 +559,18 @@ void appendFloorMarkers(
             continue;
         }
 
-        const int floorMarkerId = static_cast<int>(mappedFloor->getId());
+        int mappedFloorId{};
+        if (mappedFloor->getId(mappedFloorId) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+        // getId cannot fail; continue as before.
+        }
+        const int floorMarkerId = static_cast<int>(mappedFloorId);
 
-        const std::vector<vs_graphs::core::semantic::Room *> associatedRooms =
-            mappedFloor->getRooms();
+        std::vector<vs_graphs::core::semantic::Room *> associatedRooms{};
+        if (mappedFloor->getRooms(associatedRooms) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+        // getRooms cannot fail; continue as before.
+        }
 
         /* Do not display floors without any associated rooms */
         if (associatedRooms.empty())
@@ -572,8 +580,11 @@ void appendFloorMarkers(
             continue;
         }
 
-        const Eigen::Vector3d floorCentroid_world_m =
-            mappedFloor->getCentroid();
+        Eigen::Vector3d floorCentroid_world_m{};
+        if (mappedFloor->getCentroid(floorCentroid_world_m) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+        // getCentroid cannot fail; continue as before.
+        }
 
         if (!floorCentroid_world_m.allFinite())
         {
@@ -651,7 +662,12 @@ void appendFloorMarkers(
 
         floorLabelMarker.action = visualization_msgs::msg::Marker::ADD;
 
-        floorLabelMarker.text = mappedFloor->getName();
+        std::string mappedFloorName{};
+        if (mappedFloor->getName(mappedFloorName) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+        // getName cannot fail; continue as before.
+        }
+        floorLabelMarker.text = mappedFloorName;
 
         floorLabelMarker.pose.position.x = floorDisplayPosition_world_m.x();
         floorLabelMarker.pose.position.y = floorDisplayPosition_world_m.y();
@@ -718,13 +734,21 @@ void appendFloorMarkers(
 
         for (vs_graphs::core::semantic::Room *associatedRoom : associatedRooms)
         {
-            if (associatedRoom == nullptr || associatedRoom->isBad())
+            bool associatedRoomIsBad{};
+            if (!(associatedRoom == nullptr) && associatedRoom->isBad(associatedRoomIsBad) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+            // isBad cannot fail; continue as before.
+            }
+            if (associatedRoom == nullptr || associatedRoomIsBad)
             {
                 continue;
             }
 
-            const vs_graphs::core::semantic::Room::RoomVariant roomType =
-                associatedRoom->getRoomVariant();
+            vs_graphs::core::semantic::Room::RoomVariant roomType{};
+            if (associatedRoom->getRoomVariant(roomType) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+            // getRoomVariant cannot fail; continue as before.
+            }
 
             const bool isConfirmedRoom =
                 roomType == vs_graphs::core::semantic::Room::RoomVariant::ROOM;
@@ -813,14 +837,24 @@ void appendPassageMarkers(
             continue;
         }
 
-        const int passageMarkerId = static_cast<int>(mappedPassage->getId());
+        int mappedPassageId{};
+        if (mappedPassage->getId(mappedPassageId) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // getId cannot fail; continue as before.
+        }
+        const int passageMarkerId = static_cast<int>(mappedPassageId);
 
         /* Remove invalidated passages from RViz. Passage::isBad() is a
          * per-session addition (0-associated-room invalidation); until now
          * every passage the Atlas ever created stayed drawn forever, since
          * this loop had no equivalent to appendRoomMarkers()'s own
          * isBad()-checks-delete pattern above. */
-        if (mappedPassage->isBad())
+        bool mappedPassageIsBad{};
+        if (mappedPassage->isBad(mappedPassageIsBad) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // isBad cannot fail; continue as before.
+        }
+        if (mappedPassageIsBad)
         {
             appendPassageDeleteMarkers(passageMarkerId);
             continue;
@@ -830,9 +864,22 @@ void appendPassageMarkers(
          * geometry until re-observed: drawing them would plant doorways at
          * unlocated coordinates. Fresh passages always carry aperture
          * dimensions from detection, so only proxies trip this gate. */
-        const double proxyWidth_m  = mappedPassage->getWidth();
-        const double proxyHeight_m = mappedPassage->getHeight();
-        if (mappedPassage->isRecoveryProxy() &&
+        double proxyWidth_m{};
+        if (mappedPassage->getWidth(proxyWidth_m) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // getWidth cannot fail; continue as before.
+        }
+        double proxyHeight_m{};
+        if (mappedPassage->getHeight(proxyHeight_m) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // getHeight cannot fail; continue as before.
+        }
+        bool mappedPassageIsRecoveryProxy{};
+        if (mappedPassage->isRecoveryProxy(mappedPassageIsRecoveryProxy) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // isRecoveryProxy cannot fail; continue as before.
+        }
+        if (mappedPassageIsRecoveryProxy &&
             (!std::isfinite(proxyWidth_m) || !std::isfinite(proxyHeight_m) ||
              proxyWidth_m <= 0.0 || proxyHeight_m <= 0.0))
         {
@@ -858,7 +905,11 @@ void appendPassageMarkers(
         const float passageColourGreen = 0.3F;
         const float passageColourBlue  = 1.0F;
 
-        const bool isPassageOpen = mappedPassage->isPassable();
+        bool isPassageOpen{};
+        if (mappedPassage->isPassable(isPassageOpen) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // isPassable cannot fail; continue as before.
+        }
 
         /* ------------------------------------------------------------------ *
          * PASSAGE NODE
@@ -970,7 +1021,11 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic:
         return corners_World_m;
     }
 
-    const std::vector<vs_graphs::core::geometric::Plane *> walls = room_in->getWalls();
+    std::vector<vs_graphs::core::geometric::Plane *> walls{};
+    if (room_in->getWalls(walls) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+    // getWalls cannot fail; continue as before.
+    }
 
     if (walls.size() < 3)
     {
@@ -981,7 +1036,11 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic:
      * to the world vertical axis when no ground surface is available. */
     Eigen::Vector3d groundNormal_World_m = Eigen::Vector3d::UnitZ();
 
-    vs_graphs::core::geometric::Plane *p_groundPlane = room_in->getGroundPlane();
+    vs_graphs::core::geometric::Plane * p_groundPlane = nullptr;
+    if (room_in->getGroundPlane(p_groundPlane) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+    // getGroundPlane cannot fail; continue as before.
+    }
 
     bool   hasFloorPlane = false;
     double floorHeight_m = 0.0;
@@ -1009,7 +1068,11 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic:
     const Eigen::Vector3d axisV_World_m =
         groundNormal_World_m.cross(axisU_World_m).normalized();
 
-    const Eigen::Vector3d roomCentroid_World_m = room_in->getCentroid();
+    Eigen::Vector3d roomCentroid_World_m{};
+    if (room_in->getCentroid(roomCentroid_World_m) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+    // getCentroid cannot fail; continue as before.
+    }
 
     if (!roomCentroid_World_m.allFinite())
     {
@@ -1200,8 +1263,18 @@ void appendRoomMarkers(
     const auto isLiveProspectiveRoom =
         [&mappedRooms_in, &mappedPassages_in](vs_graphs::core::semantic::Room *p_room_in)
     {
-        if (p_room_in == nullptr || p_room_in->isBad() ||
-            p_room_in->getRoomVariant() !=
+        bool room_inIsBad{};
+        if (!(p_room_in == nullptr) && p_room_in->isBad(room_inIsBad) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // isBad cannot fail; continue as before.
+        }
+        vs_graphs::core::semantic::Room::RoomVariant room_inRoomVariant{};
+        if (!(p_room_in == nullptr || room_inIsBad) && p_room_in->getRoomVariant(room_inRoomVariant) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getRoomVariant cannot fail; continue as before.
+        }
+        if (p_room_in == nullptr || room_inIsBad ||
+            room_inRoomVariant !=
                 vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
         {
             return false;
@@ -1209,8 +1282,18 @@ void appendRoomMarkers(
         bool linkedByPassage = false;
         for (vs_graphs::core::semantic::Passage *p_passage : mappedPassages_in)
         {
-            if (p_passage != nullptr && !p_passage->isBad() &&
-                p_passage->getProspectiveRoom() == p_room_in)
+            bool passageIsBad{};
+            if ((p_passage != nullptr) && p_passage->isBad(passageIsBad) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // isBad cannot fail; continue as before.
+            }
+            vs_graphs::core::semantic::Room * p_passageProspectiveRoom = nullptr;
+            if ((p_passage != nullptr && !passageIsBad) && p_passage->getProspectiveRoom(p_passageProspectiveRoom) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // getProspectiveRoom cannot fail; continue as before.
+            }
+            if (p_passage != nullptr && !passageIsBad &&
+                p_passageProspectiveRoom == p_room_in)
             {
                 linkedByPassage = true;
                 break;
@@ -1224,15 +1307,36 @@ void appendRoomMarkers(
          * label on the confirmed label at the same position. */
         for (vs_graphs::core::semantic::Room *p_otherRoom : mappedRooms_in)
         {
+            bool otherRoomIsBad{};
+            if (!(p_otherRoom == nullptr || p_otherRoom == p_room_in) && p_otherRoom->isBad(otherRoomIsBad) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+            // isBad cannot fail; continue as before.
+            }
+            vs_graphs::core::semantic::Room::RoomVariant otherRoomRoomVariant{};
+            if (!(p_otherRoom == nullptr || p_otherRoom == p_room_in ||
+                            otherRoomIsBad) && p_otherRoom->getRoomVariant(otherRoomRoomVariant) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+            // getRoomVariant cannot fail; continue as before.
+            }
             if (p_otherRoom == nullptr || p_otherRoom == p_room_in ||
-                p_otherRoom->isBad() ||
-                p_otherRoom->getRoomVariant() !=
+                otherRoomIsBad ||
+                otherRoomRoomVariant !=
                     vs_graphs::core::semantic::Room::RoomVariant::ROOM)
             {
                 continue;
             }
-            if ((p_otherRoom->getCentroid().cast<double>() -
-                 p_room_in->getCentroid())
+            Eigen::Vector3d otherRoomCentroid{};
+            if (p_otherRoom->getCentroid(otherRoomCentroid) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+            // getCentroid cannot fail; continue as before.
+            }
+            Eigen::Vector3d room_inCentroid{};
+            if (p_room_in->getCentroid(room_inCentroid) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+            // getCentroid cannot fail; continue as before.
+            }
+            if ((otherRoomCentroid.cast<double>() -
+                 room_inCentroid)
                     .norm() < 1.5)
             {
                 return false;
@@ -1370,17 +1474,30 @@ void appendRoomMarkers(
             continue;
         }
 
-        const int roomMarkerId = static_cast<int>(mappedRoom->getId());
+        int mappedRoomId{};
+        if (mappedRoom->getId(mappedRoomId) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getId cannot fail; continue as before.
+        }
+        const int roomMarkerId = static_cast<int>(mappedRoomId);
 
-        const vs_graphs::core::semantic::Room::RoomVariant roomType =
-            mappedRoom->getRoomVariant();
+        vs_graphs::core::semantic::Room::RoomVariant roomType{};
+        if (mappedRoom->getRoomVariant(roomType) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getRoomVariant cannot fail; continue as before.
+        }
 
         const bool isConfirmedRoom =
             roomType == vs_graphs::core::semantic::Room::RoomVariant::ROOM;
 
         /* Remove bad structural elements from RViz. Provisional rooms stay
          * hidden unless a live passage hypothesizes them. */
-        if (mappedRoom->isBad())
+        bool mappedRoomIsBad{};
+        if (mappedRoom->isBad(mappedRoomIsBad) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // isBad cannot fail; continue as before.
+        }
+        if (mappedRoomIsBad)
         {
             appendRoomDeleteMarkers(roomMarkerId);
 
@@ -1471,7 +1588,12 @@ void appendRoomMarkers(
 
         std::string boundaryStatusLabel;
 
-        switch (mappedRoom->getBoundaryStatus())
+        vs_graphs::core::semantic::Room::BoundaryStatus mappedRoomBoundaryStatus{};
+        if (mappedRoom->getBoundaryStatus(mappedRoomBoundaryStatus) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getBoundaryStatus cannot fail; continue as before.
+        }
+        switch (mappedRoomBoundaryStatus)
         {
         case vs_graphs::core::semantic::Room::BoundaryStatus::UNOBSERVED:
             boundaryStatusLabel = " [unobserved]";
@@ -1492,9 +1614,19 @@ void appendRoomMarkers(
          * it in the room label makes incomplete but traversable observations
          * explicit without changing the semantic graph topology.
          */
+        std::string mappedRoomName{};
+        if ((isConfirmedRoom) && mappedRoom->getName(mappedRoomName) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getName cannot fail; continue as before.
+        }
+        std::string mappedRoomName2{};
+        if (!(isConfirmedRoom) && mappedRoom->getName(mappedRoomName2) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getName cannot fail; continue as before.
+        }
         roomLabelMarker.text = isConfirmedRoom
-                                   ? mappedRoom->getName() + boundaryStatusLabel
-                                   : mappedRoom->getName() + " [prospective]";
+                                   ? mappedRoomName + boundaryStatusLabel
+                                   : mappedRoomName2 + " [prospective]";
 
         /* Keep the X, Y, and Z coordinates in their original order */
         roomLabelMarker.pose.position.x = roomDisplayPoint_SE.point.x;
@@ -1527,10 +1659,18 @@ void appendRoomMarkers(
          * Room::getBoundaryCorners_World_m()).
          * ------------------------------------------------------------------ */
 
-        const std::vector<Eigen::Vector3d> boundaryCorners_World_m =
-            mappedRoom->getBoundaryCorners_World_m();
+        std::vector<Eigen::Vector3d> boundaryCorners_World_m{};
+        if (mappedRoom->getBoundaryCorners_World_m(boundaryCorners_World_m) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getBoundaryCorners_World_m cannot fail; continue as before.
+        }
 
-        if (mappedRoom->isBoundaryComplete() &&
+        bool mappedRoomIsBoundaryComplete{};
+        if (mappedRoom->isBoundaryComplete(mappedRoomIsBoundaryComplete) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // isBoundaryComplete cannot fail; continue as before.
+        }
+        if (mappedRoomIsBoundaryComplete &&
             boundaryCorners_World_m.size() >= 3U)
         {
             visualization_msgs::msg::Marker roomBoundaryLoopMarker;
@@ -1633,8 +1773,11 @@ void appendRoomMarkers(
 
         roomWallAssociationMarker.lifetime = rclcpp::Duration::from_seconds(0);
 
-        const std::vector<vs_graphs::core::geometric::Plane *> associatedWalls =
-            mappedRoom->getWalls();
+        std::vector<vs_graphs::core::geometric::Plane *> associatedWalls{};
+        if (mappedRoom->getWalls(associatedWalls) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getWalls cannot fail; continue as before.
+        }
 
         roomWallAssociationMarker.points.reserve(associatedWalls.size() * 2);
 
@@ -1732,8 +1875,11 @@ void appendRoomMarkers(
         roomPassageAssociationMarker.lifetime =
             rclcpp::Duration::from_seconds(0);
 
-        const std::vector<vs_graphs::core::semantic::Passage *> associatedPassages =
-            mappedRoom->getPassages();
+        std::vector<vs_graphs::core::semantic::Passage *> associatedPassages{};
+        if (mappedRoom->getPassages(associatedPassages) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getPassages cannot fail; continue as before.
+        }
 
         roomPassageAssociationMarker.points.reserve(associatedPassages.size() *
                                                     2);
@@ -1743,7 +1889,12 @@ void appendRoomMarkers(
 
         for (vs_graphs::core::semantic::Passage *associatedPassage : associatedPassages)
         {
-            if (associatedPassage == nullptr || associatedPassage->isBad())
+            bool associatedPassageIsBad{};
+            if (!(associatedPassage == nullptr) && associatedPassage->isBad(associatedPassageIsBad) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // isBad cannot fail; continue as before.
+            }
+            if (associatedPassage == nullptr || associatedPassageIsBad)
             {
                 continue;
             }
@@ -1752,9 +1903,22 @@ void appendRoomMarkers(
              * unpositioned proxy reports the origin as its centroid, which
              * would pin a room-to-origin line (and, at reset time, a line
              * onto the camera itself). */
-            const double proxyWidth_m  = associatedPassage->getWidth();
-            const double proxyHeight_m = associatedPassage->getHeight();
-            if (associatedPassage->isRecoveryProxy() &&
+            double proxyWidth_m{};
+            if (associatedPassage->getWidth(proxyWidth_m) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // getWidth cannot fail; continue as before.
+            }
+            double proxyHeight_m{};
+            if (associatedPassage->getHeight(proxyHeight_m) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // getHeight cannot fail; continue as before.
+            }
+            bool associatedPassageIsRecoveryProxy{};
+            if (associatedPassage->isRecoveryProxy(associatedPassageIsRecoveryProxy) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // isRecoveryProxy cannot fail; continue as before.
+            }
+            if (associatedPassageIsRecoveryProxy &&
                 (!std::isfinite(proxyWidth_m) ||
                  !std::isfinite(proxyHeight_m) || proxyWidth_m <= 0.0 ||
                  proxyHeight_m <= 0.0))
@@ -1790,7 +1954,12 @@ void appendRoomMarkers(
 
             passageLineColour.a = 0.9F;
 
-            if (associatedPassage->isPassable())
+            bool associatedPassageIsPassable{};
+            if (associatedPassage->isPassable(associatedPassageIsPassable) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // isPassable cannot fail; continue as before.
+            }
+            if (associatedPassageIsPassable)
             {
                 passageLineColour.r = 0.0F;
                 passageLineColour.g = 1.0F;
@@ -1856,7 +2025,12 @@ std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>>
     for (const auto &markers : markersBuffer)
     {
         /* Find the time difference */
-        double timeDifference = markers[0]->getTime() - frameTimestamp_in;
+        double time2{};
+        if (markers[0]->getTime(time2) != vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+        // getTime cannot fail; continue as before.
+        }
+        double timeDifference = time2 - frameTimestamp_in;
 
         /* If better match found, update */
         if (timeDifference < minTimeDifference)
@@ -1884,7 +2058,11 @@ bool getPassageDisplayPoints(
     }
 
     /* Extract the physical passage centroid */
-    const Eigen::Vector3d passageCentroid = passage_in->getCentroid();
+    Eigen::Vector3d passageCentroid{};
+    if (passage_in->getCentroid(passageCentroid) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+    // getCentroid cannot fail; continue as before.
+    }
 
     if (!passageCentroid.allFinite())
     {
@@ -1968,7 +2146,11 @@ bool getRoomDisplayPoints(vs_graphs::core::semantic::Room                  *room
     }
 
     /* The room centroid is stored in the world frame */
-    const Eigen::Vector3d roomCentroid = room_in->getCentroid();
+    Eigen::Vector3d roomCentroid{};
+    if (room_in->getCentroid(roomCentroid) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+    // getCentroid cannot fail; continue as before.
+    }
 
     if (!roomCentroid.allFinite())
     {
@@ -2335,12 +2517,37 @@ void publishAllMappedRooms(std::vector<vs_graphs::core::semantic::Room *> roomsL
             continue;
 
         vs_graphs::msg::VSGraphsRoomData roomData;
-        roomData.id         = room->getId();
-        roomData.centroid.x = room->getCentroid().x();
-        roomData.centroid.y = room->getCentroid().y();
-        roomData.centroid.z = room->getCentroid().z();
+        int roomId{};
+        if (room->getId(roomId) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getId cannot fail; continue as before.
+        }
+        roomData.id         = roomId;
+        Eigen::Vector3d roomCentroid{};
+        if (room->getCentroid(roomCentroid) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getCentroid cannot fail; continue as before.
+        }
+        roomData.centroid.x = roomCentroid.x();
+        Eigen::Vector3d roomCentroid2{};
+        if (room->getCentroid(roomCentroid2) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getCentroid cannot fail; continue as before.
+        }
+        roomData.centroid.y = roomCentroid2.y();
+        Eigen::Vector3d roomCentroid3{};
+        if (room->getCentroid(roomCentroid3) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getCentroid cannot fail; continue as before.
+        }
+        roomData.centroid.z = roomCentroid3.z();
 
-        for (const auto &wall : room->getWalls())
+        std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
+        if (room->getWalls(roomWalls) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getWalls cannot fail; continue as before.
+        }
+        for (const auto &wall : roomWalls)
         {
             if (wall)
                 roomData.wall_ids.push_back(wall->getId());
@@ -2368,17 +2575,57 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
     /* Fill in the passage data for each passage in vector */
     for (const auto &passage : passagesList_in)
     {
-        if (!passage || passage->isBad())
+        bool passageIsBad{};
+        if (!(!passage) && passage->isBad(passageIsBad) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // isBad cannot fail; continue as before.
+        }
+        if (!passage || passageIsBad)
             continue;
 
         vs_graphs::msg::VSGraphsPassageData passageData;
-        passageData.id         = passage->getId();
-        passageData.passable   = passage->isPassable();
-        passageData.centroid.x = passage->getCentroid().x();
-        passageData.centroid.y = passage->getCentroid().y();
-        passageData.centroid.z = passage->getCentroid().z();
-        passageData.width      = static_cast<float>(passage->getWidth());
-        passageData.height     = static_cast<float>(passage->getHeight());
+        int passageId{};
+        if (passage->getId(passageId) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // getId cannot fail; continue as before.
+        }
+        passageData.id         = passageId;
+        bool passageIsPassable{};
+        if (passage->isPassable(passageIsPassable) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // isPassable cannot fail; continue as before.
+        }
+        passageData.passable   = passageIsPassable;
+        Eigen::Vector3d passageCentroid{};
+        if (passage->getCentroid(passageCentroid) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // getCentroid cannot fail; continue as before.
+        }
+        passageData.centroid.x = passageCentroid.x();
+        Eigen::Vector3d passageCentroid2{};
+        if (passage->getCentroid(passageCentroid2) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // getCentroid cannot fail; continue as before.
+        }
+        passageData.centroid.y = passageCentroid2.y();
+        Eigen::Vector3d passageCentroid3{};
+        if (passage->getCentroid(passageCentroid3) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // getCentroid cannot fail; continue as before.
+        }
+        passageData.centroid.z = passageCentroid3.z();
+        double passageWidth{};
+        if (passage->getWidth(passageWidth) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // getWidth cannot fail; continue as before.
+        }
+        passageData.width      = static_cast<float>(passageWidth);
+        double passageHeight{};
+        if (passage->getHeight(passageHeight) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // getHeight cannot fail; continue as before.
+        }
+        passageData.height     = static_cast<float>(passageHeight);
 
         /*!
          * The "known-side" room is whichever mapped room owns one of this
@@ -2387,14 +2634,23 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
          * rooms claim any of them.
          */
         passageData.known_room_id  = -1;
-        const auto associatedWalls = passage->getAssociateWalls();
+        std::vector<vs_graphs::core::geometric::Plane *> associatedWalls{};
+        if (passage->getAssociateWalls(associatedWalls) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // getAssociateWalls cannot fail; continue as before.
+        }
         for (const auto &room : roomsList_in)
         {
             if (!room)
                 continue;
 
             bool ownsAssociatedWall = false;
-            for (const auto &roomWall : room->getWalls())
+            std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
+            if (room->getWalls(roomWalls) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+            // getWalls cannot fail; continue as before.
+            }
+            for (const auto &roomWall : roomWalls)
             {
                 if (!roomWall)
                     continue;
@@ -2415,13 +2671,21 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
 
             if (ownsAssociatedWall)
             {
-                passageData.known_room_id = room->getId();
+                int roomId{};
+                if (room->getId(roomId) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // getId cannot fail; continue as before.
+                }
+                passageData.known_room_id = roomId;
                 break;
             }
         }
 
-        const std::optional<int> prospectiveRoomId =
-            passage->getProspectiveRoomId();
+        std::optional<int> prospectiveRoomId{};
+        if (passage->getProspectiveRoomId(prospectiveRoomId) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+        // getProspectiveRoomId cannot fail; continue as before.
+        }
         passageData.prospective_room_id =
             prospectiveRoomId.has_value() ? prospectiveRoomId.value() : -1;
 
@@ -2465,10 +2729,18 @@ void publishAllMappedFloors(std::vector<vs_graphs::core::semantic::Floor *> floo
             continue;
 
         vs_graphs::msg::VSGraphsFloorData floorData;
-        floorData.id = floor->getId();
+        int floorId{};
+        if (floor->getId(floorId) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+        // getId cannot fail; continue as before.
+        }
+        floorData.id = floorId;
 
-        const std::optional<vs_graphs::core::semantic::Floor::PlaneIdentity> planeIdentity =
-            floor->getPlaneIdentity();
+        std::optional<vs_graphs::core::semantic::Floor::PlaneIdentity> planeIdentity{};
+        if (floor->getPlaneIdentity(planeIdentity) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+        // getPlaneIdentity cannot fail; continue as before.
+        }
         floorData.has_plane_identity = planeIdentity.has_value();
         if (planeIdentity.has_value())
         {
@@ -2703,12 +2975,27 @@ void maybeArchiveSGraph(
         std::sort(floors.begin(),
                   floors.end(),
                   [](vs_graphs::core::semantic::Floor *first_in, vs_graphs::core::semantic::Floor *second_in)
-                  { return first_in->getId() < second_in->getId(); });
+                  { int first_inId{};
+                  if (first_in->getId(first_inId) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                  {
+                  // getId cannot fail; continue as before.
+                  }
+                  int second_inId{};
+                  if (second_in->getId(second_inId) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                  {
+                  // getId cannot fail; continue as before.
+                  }
+                  return first_inId < second_inId; });
 
         std::vector<vs_graphs::core::semantic::Room *> rooms;
         for (vs_graphs::core::semantic::Room *p_room : mapInput.roomsRaw)
         {
-            if (p_room != nullptr && !p_room->isBad())
+            bool roomIsBad{};
+            if ((p_room != nullptr) && p_room->isBad(roomIsBad) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+            // isBad cannot fail; continue as before.
+            }
+            if (p_room != nullptr && !roomIsBad)
             {
                 rooms.push_back(p_room);
             }
@@ -2716,12 +3003,27 @@ void maybeArchiveSGraph(
         std::sort(rooms.begin(),
                   rooms.end(),
                   [](vs_graphs::core::semantic::Room *first_in, vs_graphs::core::semantic::Room *second_in)
-                  { return first_in->getId() < second_in->getId(); });
+                  { int first_inId{};
+                  if (first_in->getId(first_inId) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                  {
+                  // getId cannot fail; continue as before.
+                  }
+                  int second_inId{};
+                  if (second_in->getId(second_inId) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                  {
+                  // getId cannot fail; continue as before.
+                  }
+                  return first_inId < second_inId; });
 
         std::vector<vs_graphs::core::semantic::Passage *> passages;
         for (vs_graphs::core::semantic::Passage *p_passage : mapInput.passagesRaw)
         {
-            if (p_passage != nullptr && !p_passage->isBad())
+            bool passageIsBad{};
+            if ((p_passage != nullptr) && p_passage->isBad(passageIsBad) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // isBad cannot fail; continue as before.
+            }
+            if (p_passage != nullptr && !passageIsBad)
             {
                 passages.push_back(p_passage);
             }
@@ -2730,7 +3032,17 @@ void maybeArchiveSGraph(
             passages.begin(),
             passages.end(),
             [](vs_graphs::core::semantic::Passage *first_in, vs_graphs::core::semantic::Passage *second_in)
-            { return first_in->getId() < second_in->getId(); });
+            { int first_inId{};
+            if (first_in->getId(first_inId) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // getId cannot fail; continue as before.
+            }
+            int second_inId{};
+            if (second_in->getId(second_inId) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // getId cannot fail; continue as before.
+            }
+            return first_inId < second_inId; });
 
         /* Group rooms by floor. Index zero is synthetic when no floor exists so
          * rooms and passages are still archived early in a run. */
@@ -2742,9 +3054,19 @@ void maybeArchiveSGraph(
         for (std::size_t floorIndex = 0U; floorIndex < floors.size();
              ++floorIndex)
         {
-            for (vs_graphs::core::semantic::Room *p_room : floors[floorIndex]->getRooms())
+            std::vector<vs_graphs::core::semantic::Room *> rooms2{};
+            if (floors[floorIndex]->getRooms(rooms2) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                if (p_room == nullptr || p_room->isBad())
+            // getRooms cannot fail; continue as before.
+            }
+            for (vs_graphs::core::semantic::Room *p_room : rooms2)
+            {
+                bool roomIsBad2{};
+                if (!(p_room == nullptr) && p_room->isBad(roomIsBad2) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // isBad cannot fail; continue as before.
+                }
+                if (p_room == nullptr || roomIsBad2)
                 {
                     continue;
                 }
@@ -2765,7 +3087,11 @@ void maybeArchiveSGraph(
             }
             else
             {
-                vs_graphs::core::semantic::Floor *p_floor = p_room->getFloor();
+                vs_graphs::core::semantic::Floor * p_floor = nullptr;
+                if (p_room->getFloor(p_floor) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // getFloor cannot fail; continue as before.
+                }
                 for (std::size_t candidate = 0U; candidate < floors.size();
                      ++candidate)
                 {
@@ -2802,7 +3128,12 @@ void maybeArchiveSGraph(
         for (vs_graphs::core::semantic::Passage *p_passage : passages)
         {
             std::vector<int> wallIds;
-            for (vs_graphs::core::geometric::Plane *p_wall : p_passage->getAssociateWalls())
+            std::vector<vs_graphs::core::geometric::Plane *> passageAssociateWalls{};
+            if (p_passage->getAssociateWalls(passageAssociateWalls) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // getAssociateWalls cannot fail; continue as before.
+            }
+            for (vs_graphs::core::geometric::Plane *p_wall : passageAssociateWalls)
             {
                 if (p_wall != nullptr)
                 {
@@ -2811,16 +3142,27 @@ void maybeArchiveSGraph(
             }
             passageWallIds[p_passage] = wallIds;
 
-            const std::optional<int> prospectiveRoomId =
-                p_passage->getProspectiveRoomId();
-            vs_graphs::core::semantic::Room *p_prospectiveRoom =
-                p_passage->getProspectiveRoom();
+            std::optional<int> prospectiveRoomId{};
+            if (p_passage->getProspectiveRoomId(prospectiveRoomId) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // getProspectiveRoomId cannot fail; continue as before.
+            }
+            vs_graphs::core::semantic::Room * p_prospectiveRoom = nullptr;
+            if (p_passage->getProspectiveRoom(p_prospectiveRoom) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+            // getProspectiveRoom cannot fail; continue as before.
+            }
 
             std::vector<std::size_t> votes(floorCount, 0U);
             for (vs_graphs::core::semantic::Room *p_room : rooms)
             {
                 bool ownsAssociatedWall = false;
-                for (vs_graphs::core::geometric::Plane *p_wall : p_room->getWalls())
+                std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
+                if (p_room->getWalls(roomWalls) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // getWalls cannot fail; continue as before.
+                }
+                for (vs_graphs::core::geometric::Plane *p_wall : roomWalls)
                 {
                     if (p_wall == nullptr)
                     {
@@ -2839,9 +3181,14 @@ void maybeArchiveSGraph(
                         break;
                     }
                 }
+                int roomId{};
+                if ((!ownsAssociatedWall) && (prospectiveRoomId.has_value()) && p_room->getId(roomId) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // getId cannot fail; continue as before.
+                }
                 if (!ownsAssociatedWall &&
                     ((prospectiveRoomId.has_value() &&
-                      p_room->getId() == prospectiveRoomId.value()) ||
+                      roomId == prospectiveRoomId.value()) ||
                      (p_prospectiveRoom != nullptr &&
                       p_room == p_prospectiveRoom)))
                 {
@@ -2900,11 +3247,29 @@ void maybeArchiveSGraph(
                 hasFloors ? floors[floorIndex] : nullptr;
             if (p_floor != nullptr)
             {
-                floorJson["floor_id"]   = p_floor->getId();
-                floorJson["floor_name"] = p_floor->getName();
-                floorJson["centroid"] = archiveVector3(p_floor->getCentroid());
-                const std::optional<vs_graphs::core::semantic::Floor::PlaneIdentity> identity =
-                    p_floor->getPlaneIdentity();
+                int floorId{};
+                if (p_floor->getId(floorId) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                // getId cannot fail; continue as before.
+                }
+                floorJson["floor_id"]   = floorId;
+                std::string floorName{};
+                if (p_floor->getName(floorName) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                // getName cannot fail; continue as before.
+                }
+                floorJson["floor_name"] = floorName;
+                Eigen::Vector3d floorCentroid{};
+                if (p_floor->getCentroid(floorCentroid) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                // getCentroid cannot fail; continue as before.
+                }
+                floorJson["centroid"] = archiveVector3(floorCentroid);
+                std::optional<vs_graphs::core::semantic::Floor::PlaneIdentity> identity{};
+                if (p_floor->getPlaneIdentity(identity) != vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                // getPlaneIdentity cannot fail; continue as before.
+                }
                 floorJson["has_plane_identity"] = identity.has_value();
                 if (identity.has_value())
                 {
@@ -2933,15 +3298,45 @@ void maybeArchiveSGraph(
                     "room" + std::to_string(roomOrdinal);
 
                 Json roomJson;
-                roomJson["room_id"]   = p_room->getId();
-                roomJson["room_name"] = p_room->getName();
+                int roomId2{};
+                if (p_room->getId(roomId2) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // getId cannot fail; continue as before.
+                }
+                roomJson["room_id"]   = roomId2;
+                std::string roomName{};
+                if (p_room->getName(roomName) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // getName cannot fail; continue as before.
+                }
+                roomJson["room_name"] = roomName;
+                vs_graphs::core::semantic::Room::RoomVariant roomVariant{};
+                if (p_room->getRoomVariant(roomVariant) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // getRoomVariant cannot fail; continue as before.
+                }
                 roomJson["room_variant"] =
-                    static_cast<int>(p_room->getRoomVariant());
-                roomJson["room_visited"] = p_room->hasPreviouslyVisited();
-                roomJson["centroid"] = archiveVector3(p_room->getCentroid());
+                    static_cast<int>(roomVariant);
+                bool roomHasPreviouslyVisited{};
+                if (p_room->hasPreviouslyVisited(roomHasPreviouslyVisited) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // hasPreviouslyVisited cannot fail; continue as before.
+                }
+                roomJson["room_visited"] = roomHasPreviouslyVisited;
+                Eigen::Vector3d roomCentroid{};
+                if (p_room->getCentroid(roomCentroid) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // getCentroid cannot fail; continue as before.
+                }
+                roomJson["centroid"] = archiveVector3(roomCentroid);
 
                 std::vector<vs_graphs::core::geometric::Plane *> walls;
-                for (vs_graphs::core::geometric::Plane *p_wall : p_room->getWalls())
+                std::vector<vs_graphs::core::geometric::Plane *> roomWalls2{};
+                if (p_room->getWalls(roomWalls2) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // getWalls cannot fail; continue as before.
+                }
+                for (vs_graphs::core::geometric::Plane *p_wall : roomWalls2)
                 {
                     if (p_wall == nullptr || p_wall->isBad())
                     {
@@ -3028,20 +3423,51 @@ void maybeArchiveSGraph(
                 const std::string passageKey =
                     "passage" + std::to_string(passageOrdinal);
                 const std::vector<int>  &wallIds = passageWallIds[p_passage];
-                const std::optional<int> prospectiveRoomId =
-                    p_passage->getProspectiveRoomId();
-                vs_graphs::core::semantic::Room *p_prospectiveRoom =
-                    p_passage->getProspectiveRoom();
+                std::optional<int> prospectiveRoomId{};
+                if (p_passage->getProspectiveRoomId(prospectiveRoomId) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                // getProspectiveRoomId cannot fail; continue as before.
+                }
+                vs_graphs::core::semantic::Room * p_prospectiveRoom = nullptr;
+                if (p_passage->getProspectiveRoom(p_prospectiveRoom) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                // getProspectiveRoom cannot fail; continue as before.
+                }
 
                 Json passageJson;
-                passageJson["passage_id"] = p_passage->getId();
+                int passageId{};
+                if (p_passage->getId(passageId) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                // getId cannot fail; continue as before.
+                }
+                passageJson["passage_id"] = passageId;
+                Eigen::Vector3d passageCentroid{};
+                if (p_passage->getCentroid(passageCentroid) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                // getCentroid cannot fail; continue as before.
+                }
                 passageJson["centroid"] =
-                    archiveVector3(p_passage->getCentroid());
+                    archiveVector3(passageCentroid);
+                double passageWidth{};
+                if (p_passage->getWidth(passageWidth) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                // getWidth cannot fail; continue as before.
+                }
                 passageJson["width_m"] =
-                    sanitiseArchiveDouble(p_passage->getWidth());
+                    sanitiseArchiveDouble(passageWidth);
+                double passageHeight{};
+                if (p_passage->getHeight(passageHeight) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                // getHeight cannot fail; continue as before.
+                }
                 passageJson["height_m"] =
-                    sanitiseArchiveDouble(p_passage->getHeight());
-                passageJson["passable"] = p_passage->isPassable();
+                    sanitiseArchiveDouble(passageHeight);
+                bool passageIsPassable{};
+                if (p_passage->isPassable(passageIsPassable) != vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                // isPassable cannot fail; continue as before.
+                }
+                passageJson["passable"] = passageIsPassable;
 
                 Json connects = Json::array();
                 for (std::size_t roomOrdinal = 0U;
@@ -3051,7 +3477,12 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::Room *p_room =
                         floorRooms[floorIndex][roomOrdinal];
                     bool connected = false;
-                    for (vs_graphs::core::geometric::Plane *p_wall : p_room->getWalls())
+                    std::vector<vs_graphs::core::geometric::Plane *> roomWalls3{};
+                    if (p_room->getWalls(roomWalls3) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                    // getWalls cannot fail; continue as before.
+                    }
+                    for (vs_graphs::core::geometric::Plane *p_wall : roomWalls3)
                     {
                         if (p_wall == nullptr)
                         {
@@ -3070,9 +3501,14 @@ void maybeArchiveSGraph(
                             break;
                         }
                     }
+                    int roomId3{};
+                    if ((!connected) && (prospectiveRoomId.has_value()) && p_room->getId(roomId3) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                    // getId cannot fail; continue as before.
+                    }
                     if (!connected &&
                         ((prospectiveRoomId.has_value() &&
-                          p_room->getId() == prospectiveRoomId.value()) ||
+                          roomId3 == prospectiveRoomId.value()) ||
                          (p_prospectiveRoom != nullptr &&
                           p_room == p_prospectiveRoom)))
                     {
@@ -3382,8 +3818,11 @@ void publishFiducialMarkers(
         }
 
         /* Extract the globally expressed fiducial-marker pose */
-        const Sophus::SE3f T_world_fiducial_SE3f =
-            fiducialMarker->getGlobalPose();
+        Sophus::SE3f T_world_fiducial_SE3f{};
+        if (fiducialMarker->getGlobalPose(T_world_fiducial_SE3f) != vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+        // getGlobalPose cannot fail; continue as before.
+        }
 
         /* Skip invalid poses */
         if (!T_world_fiducial_SE3f.translation().allFinite() ||
@@ -3411,7 +3850,12 @@ void publishFiducialMarkers(
          * position. This keeps the RViz marker identity stable when marker
          * ordering changes.
          */
-        fiducialMarkerMessage.id     = fiducialMarker->getId();
+        int fiducialMarkerId{};
+        if (fiducialMarker->getId(fiducialMarkerId) != vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+        // getId cannot fail; continue as before.
+        }
+        fiducialMarkerMessage.id     = fiducialMarkerId;
         fiducialMarkerMessage.action = visualization_msgs::msg::Marker::ADD;
 
         fiducialMarkerMessage.type =
@@ -3982,16 +4426,31 @@ void publishPlanes(
         owningRoomIdsByPlane;
     for (vs_graphs::core::semantic::Room *p_mappedRoom : mappedRooms_in)
     {
-        if (p_mappedRoom == nullptr || p_mappedRoom->isBad())
+        bool mappedRoomIsBad{};
+        if (!(p_mappedRoom == nullptr) && p_mappedRoom->isBad(mappedRoomIsBad) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // isBad cannot fail; continue as before.
+        }
+        if (p_mappedRoom == nullptr || mappedRoomIsBad)
         {
             continue;
         }
-        for (vs_graphs::core::geometric::Plane *p_ownedWall : p_mappedRoom->getWalls())
+        std::vector<vs_graphs::core::geometric::Plane *> mappedRoomWalls{};
+        if (p_mappedRoom->getWalls(mappedRoomWalls) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+        // getWalls cannot fail; continue as before.
+        }
+        for (vs_graphs::core::geometric::Plane *p_ownedWall : mappedRoomWalls)
         {
             if (p_ownedWall != nullptr)
             {
+                int mappedRoomId{};
+                if (p_mappedRoom->getId(mappedRoomId) != vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                // getId cannot fail; continue as before.
+                }
                 owningRoomIdsByPlane[p_ownedWall].push_back(
-                    p_mappedRoom->getId());
+                    mappedRoomId);
             }
         }
     }

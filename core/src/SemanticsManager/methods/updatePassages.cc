@@ -40,19 +40,36 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
 
     for (const auto &passage : allPassages)
     {
-        if (passage == nullptr || passage->isBad())
+        bool passageIsBad{};
+        if (!(passage == nullptr) &&
+            passage->isBad(passageIsBad) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (passage == nullptr || passageIsBad)
         {
             continue;
         }
 
         // Updating the dimensions of the passage based on the associated door
         // plane
-        vs_graphs::core::geometric::Plane *p_doorPlane =
-            passage->getAssociateDoor();
+        vs_graphs::core::geometric::Plane *p_doorPlane = nullptr;
+        if (passage->getAssociateDoor(p_doorPlane) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getAssociateDoor cannot fail; continue as before.
+        }
 
         // Blocked passages (closed doors) should be aligned with the ground
         // plane normal
-        if (!passage->isPassable())
+        bool passageIsPassable{};
+        if (passage->isPassable(passageIsPassable) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // isPassable cannot fail; continue as before.
+        }
+        if (!passageIsPassable)
         {
             if (p_doorPlane == nullptr)
             {
@@ -85,9 +102,15 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
 
             if (!validDimensions)
             {
+                int passageId{};
+                if (passage->getId(passageId) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout << "[SemanticsManager] Rejecting door plane "
                           << p_doorPlane->getId() << " for passage "
-                          << passage->getId() << ": measured dimensions "
+                          << passageId << ": measured dimensions "
                           << measuredWidth << "x" << measuredHeight
                           << " m exceed limits " << maximumWidth << "x"
                           << maximumHeight << " m." << std::endl;
@@ -96,14 +119,30 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             }
 
             /* Set centroid of the door plane */
-            passage->setCentroid(p_doorPlane->getCentroid());
+            if (passage->setCentroid(p_doorPlane->getCentroid()) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setCentroid cannot fail; continue as before.
+            }
 
             /* Get the plane global equation */
-            passage->setGlobalEquation(p_doorPlane->getGlobalEquation());
+            if (passage->setGlobalEquation(p_doorPlane->getGlobalEquation()) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setGlobalEquation cannot fail; continue as before.
+            }
 
             /* Set width & height of the passage */
-            passage->setWidth(measuredWidth);
-            passage->setHeight(measuredHeight);
+            if (passage->setWidth(measuredWidth) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setWidth cannot fail; continue as before.
+            }
+            if (passage->setHeight(measuredHeight) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setHeight cannot fail; continue as before.
+            }
         }
         else
         {
@@ -121,8 +160,12 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
              * - or switching between nearest and farthest face across cycles -
              * makes the passage normal flip and breaks the far-side holds.
              */
-            const std::vector<vs_graphs::core::geometric::Plane *>
-                supportingFaces = passage->getAssociateWalls();
+            std::vector<vs_graphs::core::geometric::Plane *> supportingFaces{};
+            if (passage->getAssociateWalls(supportingFaces) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getAssociateWalls cannot fail; continue as before.
+            }
 
             std::vector<Eigen::Vector4d> validFaceEquations;
             validFaceEquations.reserve(2);
@@ -160,8 +203,12 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 }
             }
 
-            const Eigen::Vector3d passageCentroid_World_m =
-                passage->getCentroid();
+            Eigen::Vector3d passageCentroid_World_m{};
+            if (passage->getCentroid(passageCentroid_World_m) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
 
             if (validFaceEquations.size() == 2)
             {
@@ -211,7 +258,12 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 if (utils::utils::Utils::arePlanesPerpendicular(&passagePlane,
                                                                 p_groundPlane))
                 {
-                    passage->setGlobalEquation(g2o::Plane3D(midPlaneEquation));
+                    if (passage->setGlobalEquation(
+                            g2o::Plane3D(midPlaneEquation)) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // setGlobalEquation cannot fail; continue as before.
+                    }
                 }
                 else
                 {
@@ -228,8 +280,17 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                     anchoredCentroid_World_m -=
                         wallResidual_m * referenceEquation.head<3>();
 
-                    passage->setCentroid(anchoredCentroid_World_m);
-                    passage->setGlobalEquation(g2o::Plane3D(referenceEquation));
+                    if (passage->setCentroid(anchoredCentroid_World_m) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // setCentroid cannot fail; continue as before.
+                    }
+                    if (passage->setGlobalEquation(
+                            g2o::Plane3D(referenceEquation)) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        // setGlobalEquation cannot fail; continue as before.
+                    }
                 }
             }
             else if (validFaceEquations.size() == 1)
@@ -248,12 +309,27 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 anchoredCentroid_World_m -=
                     wallResidual_m * referenceEquation.head<3>();
 
-                passage->setCentroid(anchoredCentroid_World_m);
-                passage->setGlobalEquation(g2o::Plane3D(referenceEquation));
+                if (passage->setCentroid(anchoredCentroid_World_m) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setCentroid cannot fail; continue as before.
+                }
+                if (passage->setGlobalEquation(
+                        g2o::Plane3D(referenceEquation)) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setGlobalEquation cannot fail; continue as before.
+                }
             }
 
             vs_graphs::core::geometric::Plane passagePlane;
-            passagePlane.setGlobalEquation(passage->getGlobalEquation());
+            g2o::Plane3D                      passageGlobalEquation{};
+            if (passage->getGlobalEquation(passageGlobalEquation) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
+            passagePlane.setGlobalEquation(passageGlobalEquation);
             if (!utils::utils::Utils::arePlanesPerpendicular(&passagePlane,
                                                              p_groundPlane))
             {
@@ -264,8 +340,13 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                         .coeffs()
                         .head<3>()
                         .normalized();
-                Eigen::Vector4d globalEq =
-                    passage->getGlobalEquation().coeffs();
+                g2o::Plane3D passageGlobalEquation2{};
+                if (passage->getGlobalEquation(passageGlobalEquation2) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getGlobalEquation cannot fail; continue as before.
+                }
+                Eigen::Vector4d globalEq      = passageGlobalEquation2.coeffs();
                 Eigen::Vector3d passageNormal = globalEq.head<3>().normalized();
 
                 Eigen::Vector3d correctedNormal =
@@ -277,15 +358,24 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 correctedNormal.normalize();
 
                 // Recompute d so the plane still passes through the centroid
-                const Eigen::Vector3d centroid =
-                    passage->getCentroid().cast<double>();
-                const double d = -correctedNormal.dot(centroid);
+                Eigen::Vector3d passageCentroid{};
+                if (passage->getCentroid(passageCentroid) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getCentroid cannot fail; continue as before.
+                }
+                const Eigen::Vector3d centroid = passageCentroid.cast<double>();
+                const double          d        = -correctedNormal.dot(centroid);
 
                 Eigen::Vector4d correctedCoeffs;
                 correctedCoeffs.head<3>() = correctedNormal;
                 correctedCoeffs(3)        = d;
 
-                passage->setGlobalEquation(g2o::Plane3D(correctedCoeffs));
+                if (passage->setGlobalEquation(g2o::Plane3D(correctedCoeffs)) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setGlobalEquation cannot fail; continue as before.
+                }
             }
         }
     }

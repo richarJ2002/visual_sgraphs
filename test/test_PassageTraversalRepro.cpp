@@ -140,40 +140,59 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
 
     // Known-side room
     semantic::Room knownRoom;
-    knownRoom.setId(10);
-    knownRoom.setMap(p_map);
-    knownRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    knownRoom.setCentroid(Eigen::Vector3d(-1.0, -0.5, 5.5));
+    ASSERT_EQ((knownRoom.setId(10)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((knownRoom.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((knownRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((knownRoom.setCentroid(Eigen::Vector3d(-1.0, -0.5, 5.5))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&knownRoom);
 
     // Far-side room (prospective)
     semantic::Room farRoom;
-    farRoom.setId(11);
-    farRoom.setMap(p_map);
-    farRoom.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED);
-    farRoom.setCentroid(Eigen::Vector3d(1.0, -1.0, 6.0));
+    ASSERT_EQ((farRoom.setId(11)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((farRoom.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((farRoom.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((farRoom.setCentroid(Eigen::Vector3d(1.0, -1.0, 6.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&farRoom);
 
     // semantic::Passage#1 with geometry from the gate run
     semantic::Passage passage;
-    passage.setId(20);
-    passage.setMap(p_map);
-    passage.setPassable(true);
-    passage.setWidth(PASSAGE_WIDTH);
-    passage.setHeight(PASSAGE_HEIGHT);
-    passage.setCentroid(Eigen::Vector3d(PASSAGE_CENTROID_X,
-                                        PASSAGE_CENTROID_Y,
-                                        PASSAGE_CENTROID_Z));
-    passage.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(PASSAGE_APERTURE_A,
-                                     PASSAGE_APERTURE_B,
-                                     PASSAGE_APERTURE_C,
-                                     PASSAGE_APERTURE_D)));
-    passage.setKnownSideRoom(&knownRoom);
-    passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0)); // known
-                                                                    // side
-                                                                    // is -X
-    passage.setProspectiveRoom(&farRoom);
+    ASSERT_EQ((passage.setId(20)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setPassable(true)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setWidth(PASSAGE_WIDTH)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setHeight(PASSAGE_HEIGHT)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setCentroid(Eigen::Vector3d(PASSAGE_CENTROID_X,
+                                                   PASSAGE_CENTROID_Y,
+                                                   PASSAGE_CENTROID_Z))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(PASSAGE_APERTURE_A,
+                                               PASSAGE_APERTURE_B,
+                                               PASSAGE_APERTURE_C,
+                                               PASSAGE_APERTURE_D)))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setKnownSideRoom(&knownRoom)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::PassageStatus::
+                  PASSAGE_STATUS_SUCCESS); // known
+                                           // side
+                                           // is -X
+    ASSERT_EQ((passage.setProspectiveRoom(&farRoom)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_map->addMapPassage(&passage);
 
     // --- KeyFrames (exactly 3) -------------------------------------------
@@ -215,7 +234,10 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     // --- Assertions --------------------------------------------------------
     // The test expects that the UAV's known-side → far-side crossing is
     // detected and recorded as KNOWN_TO_FAR evidence.
-    EXPECT_GT(passage.getTraversalKnownToFarCount(), 0U)
+    std::size_t traversalKnownToFarCount2{};
+    ASSERT_EQ((passage.getTraversalKnownToFarCount(traversalKnownToFarCount2)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_GT(traversalKnownToFarCount2, 0U)
         << "FAIL: traversalKnownToFarCount stayed zero — passage traversal "
            "was not detected. Suspect: "
            "passage_kf_window/max_kf_passage_distance "
@@ -223,7 +245,10 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
            "gating.";
 
     // Also verify the passage is marked as having some traversal evidence.
-    EXPECT_TRUE(passage.getTraversalEvidence())
+    bool traversalEvidence{};
+    ASSERT_EQ((passage.getTraversalEvidence(traversalEvidence)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_TRUE(traversalEvidence)
         << "FAIL: passage.getTraversalEvidence() returned false even though "
            "KNOWN_TO_FAR count > 0.";
 }

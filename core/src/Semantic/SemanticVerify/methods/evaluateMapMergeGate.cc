@@ -30,10 +30,11 @@ namespace core
 namespace semantic
 {
 
-SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
+SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
     core::Map                  *p_survivingMap_in,
     core::Map                  *p_absorbedMap_in,
     const g2o::Sim3            &transform_absorbedToSurviving_in,
+    SemanticMergeGateResult    &result_out,
     const SemanticVerifyConfig &configuration_in)
 {
     SemanticMergeGateResult result;
@@ -42,7 +43,8 @@ SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
     {
         result.decision = SemanticMergeDecision::REJECT;
         result.reason   = SemanticMergeReason::INVALID_INPUT;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     if (!verifyLoopMergeFloors(p_survivingMap_in,
@@ -56,14 +58,28 @@ SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
         result.reason   = result.decision == SemanticMergeDecision::REJECT
                               ? SemanticMergeReason::FLOOR_CONTRADICTION
                               : SemanticMergeReason::FLOOR_EVIDENCE_MISSING;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
     std::vector<SemanticMergeRoomEvidence> survivingRooms;
     for (Room *p_room : p_survivingMap_in->getAllRooms())
     {
-        if (p_room != nullptr && !p_room->isBad() &&
-            p_room->getRoomVariant() == Room::RoomVariant::ROOM)
+        bool roomIsBad{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        Room::RoomVariant roomVariant{};
+        if ((p_room != nullptr && !roomIsBad) &&
+            p_room->getRoomVariant(roomVariant) !=
+                RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad &&
+            roomVariant == Room::RoomVariant::ROOM)
         {
             survivingRooms.push_back(
                 copyMergeRoomEvidence(p_room, configuration_in));
@@ -72,19 +88,40 @@ SemanticMergeGateResult SemanticVerify::evaluateMapMergeGate(
     std::vector<SemanticMergeRoomEvidence> absorbedRooms;
     for (Room *p_room : p_absorbedMap_in->getAllRooms())
     {
-        if (p_room != nullptr && !p_room->isBad() &&
-            p_room->getRoomVariant() == Room::RoomVariant::ROOM)
+        bool roomIsBad2{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad2) != RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        Room::RoomVariant roomVariant2{};
+        if ((p_room != nullptr && !roomIsBad2) &&
+            p_room->getRoomVariant(roomVariant2) !=
+                RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad2 &&
+            roomVariant2 == Room::RoomVariant::ROOM)
         {
             absorbedRooms.push_back(
                 copyMergeRoomEvidence(p_room, configuration_in));
         }
     }
-    result               = evaluateMergeAlignment(survivingRooms,
-                                    absorbedRooms,
-                                    transform_absorbedToSurviving_in,
-                                    configuration_in);
+    SemanticMergeGateResult result2{};
+    if (evaluateMergeAlignment(survivingRooms,
+                               absorbedRooms,
+                               transform_absorbedToSurviving_in,
+                               result2,
+                               configuration_in) !=
+        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // evaluateMergeAlignment cannot fail; continue as before.
+    }
+    result               = result2;
     result.floorDecision = "ACCEPTED";
-    return result;
+    result_out           = result;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

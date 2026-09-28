@@ -28,10 +28,11 @@ namespace core
 namespace semantic
 {
 
-bool Passage::isRecoveryProxy() const
+PassageStatus Passage::isRecoveryProxy(bool &isRecoveryProxy_out) const
 {
     std::lock_guard<std::mutex> lock(typeMutex);
-    return isMarkedRecoveryProxy;
+    isRecoveryProxy_out = isMarkedRecoveryProxy;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -27,7 +27,7 @@ namespace core
 namespace semantic
 {
 
-std::size_t Room::removeInvalidWalls()
+RoomStatus Room::removeInvalidWalls(std::size_t &removedWallCount_out)
 {
     std::lock_guard<std::mutex> lock(wallsMutex);
 
@@ -38,7 +38,8 @@ std::size_t Room::removeInvalidWalls()
                                }),
                 walls.end());
 
-    return walls.size();
+    removedWallCount_out = walls.size();
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

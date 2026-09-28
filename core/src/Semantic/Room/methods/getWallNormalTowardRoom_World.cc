@@ -27,13 +27,15 @@ namespace core
 namespace semantic
 {
 
-std::optional<Eigen::Vector3d>
-    Room::getWallNormalTowardRoom_World(const geometric::Plane *p_wall_in) const
+RoomStatus Room::getWallNormalTowardRoom_World(
+    const geometric::Plane         *p_wall_in,
+    std::optional<Eigen::Vector3d> &wallNormalTowardRoom_World_out) const
 {
     /* Reject a missing wall association. */
     if (p_wall_in == nullptr)
     {
-        return std::nullopt;
+        wallNormalTowardRoom_World_out = std::nullopt;
+        return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
     /* Read, but never modify, the globally expressed wall equation. */
@@ -50,7 +52,8 @@ std::optional<Eigen::Vector3d>
     /* Reject non-finite geometry before evaluating its signed distance. */
     if (!wallEquation_World.allFinite() || !roomCentroid_World_m.allFinite())
     {
-        return std::nullopt;
+        wallNormalTowardRoom_World_out = std::nullopt;
+        return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
     const double wallNormalNorm = wallEquation_World.head<3>().norm();
@@ -61,7 +64,8 @@ std::optional<Eigen::Vector3d>
     if (!std::isfinite(wallNormalNorm) ||
         wallNormalNorm < minimumWallNormalNorm)
     {
-        return std::nullopt;
+        wallNormalTowardRoom_World_out = std::nullopt;
+        return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
     /* Normalize all coefficients so the signed value is measured in metres. */
@@ -75,7 +79,8 @@ std::optional<Eigen::Vector3d>
 
     if (!std::isfinite(roomSignedDistanceToWall_m))
     {
-        return std::nullopt;
+        wallNormalTowardRoom_World_out = std::nullopt;
+        return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
     /* Flip only the returned value when the stored normal points away. */
@@ -84,7 +89,8 @@ std::optional<Eigen::Vector3d>
         wallNormalTowardRoom_World *= -1.0;
     }
 
-    return wallNormalTowardRoom_World;
+    wallNormalTowardRoom_World_out = wallNormalTowardRoom_World;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -27,10 +27,11 @@ namespace core
 namespace semantic
 {
 
-std::vector<geometric::Plane *> Room::getWalls() const
+RoomStatus Room::getWalls(std::vector<geometric::Plane *> &walls_out) const
 {
     std::lock_guard<std::mutex> lock(wallsMutex);
-    return walls;
+    walls_out = walls;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -25,7 +25,8 @@ namespace core
 namespace semantic
 {
 
-void Marker::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
+MarkerStatus
+    Marker::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
 
@@ -43,6 +44,8 @@ void Marker::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
             .cast<float>();
 
     globalPose = Sophus::SE3f(rotation_markerToNewWorld, position_newWorld_m);
+
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

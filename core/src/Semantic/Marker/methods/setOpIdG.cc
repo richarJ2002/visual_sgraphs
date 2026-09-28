@@ -25,9 +25,11 @@ namespace core
 namespace semantic
 {
 
-void Marker::setOpIdG(int opIdG_in)
+MarkerStatus Marker::setOpIdG(int opIdG_in)
 {
     opIdG = opIdG_in;
+
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

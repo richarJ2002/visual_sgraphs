@@ -26,10 +26,11 @@ namespace core
 namespace semantic
 {
 
-RoomTrackingState RoomTracker::step(double                      now_s_in,
+RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                     const TraversalGuardValues &crossing_in,
                                     const VerificationVerdict  &verification_in,
-                                    const TrackingStatusInput  &tracking_in)
+                                    const TrackingStatusInput  &tracking_in,
+                                    RoomTrackingState          &nextState_out)
 {
     const double effectiveNow =
         !std::isfinite(now_s_in)
@@ -43,10 +44,16 @@ RoomTrackingState RoomTracker::step(double                      now_s_in,
         /* Transition-table rows 3 and 5 (unconditional); events with no row
          * for the source state (e.g. unrecognised loss from UNKNOWN) are
          * rejected by the oracle. */
-        applyEvent(RoomTrackingEvent::TRACKING_LOST,
-                   effectiveNow,
-                   crossing_in,
-                   verification_in);
+        RoomTrackingState nextState{};
+        if (applyEvent(RoomTrackingEvent::TRACKING_LOST,
+                       effectiveNow,
+                       crossing_in,
+                       verification_in,
+                       nextState) !=
+            RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+        {
+            // applyEvent cannot fail; continue as before.
+        }
     }
     else
     {
@@ -57,19 +64,31 @@ RoomTrackingState RoomTracker::step(double                      now_s_in,
             if (tracking_in.isNewMapCreated && verification_in.isPass())
             {
                 /* Transition-table row 7 (guarded). */
-                applyEvent(RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
-                           effectiveNow,
-                           crossing_in,
-                           verification_in);
+                RoomTrackingState nextState2{};
+                if (applyEvent(RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH,
+                               effectiveNow,
+                               crossing_in,
+                               verification_in,
+                               nextState2) !=
+                    RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+                {
+                    // applyEvent cannot fail; continue as before.
+                }
             }
             else if (effectiveNow - lastEnterStateTime_s >=
                      config.lost_timeout_s)
             {
                 /* Transition-table row 8 (unconditional). */
-                applyEvent(RoomTrackingEvent::LOST_TIMEOUT,
-                           effectiveNow,
-                           crossing_in,
-                           verification_in);
+                RoomTrackingState nextState3{};
+                if (applyEvent(RoomTrackingEvent::LOST_TIMEOUT,
+                               effectiveNow,
+                               crossing_in,
+                               verification_in,
+                               nextState3) !=
+                    RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+                {
+                    // applyEvent cannot fail; continue as before.
+                }
             }
             break;
         }
@@ -78,19 +97,31 @@ RoomTrackingState RoomTracker::step(double                      now_s_in,
             if (verification_in.isPass())
             {
                 /* Transition-table row 9 (guarded). */
-                applyEvent(RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
-                           effectiveNow,
-                           crossing_in,
-                           verification_in);
+                RoomTrackingState nextState4{};
+                if (applyEvent(RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM,
+                               effectiveNow,
+                               crossing_in,
+                               verification_in,
+                               nextState4) !=
+                    RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+                {
+                    // applyEvent cannot fail; continue as before.
+                }
             }
             else if (effectiveNow - lastEnterStateTime_s >=
                      config.reacquire_timeout_s)
             {
                 /* Transition-table row 10 (unconditional). */
-                applyEvent(RoomTrackingEvent::REACQUIRE_TIMEOUT,
-                           effectiveNow,
-                           crossing_in,
-                           verification_in);
+                RoomTrackingState nextState5{};
+                if (applyEvent(RoomTrackingEvent::REACQUIRE_TIMEOUT,
+                               effectiveNow,
+                               crossing_in,
+                               verification_in,
+                               nextState5) !=
+                    RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+                {
+                    // applyEvent cannot fail; continue as before.
+                }
             }
             else if (reacquireLastRetryTime_s < 0.0 ||
                      effectiveNow - reacquireLastRetryTime_s >=
@@ -102,10 +133,16 @@ RoomTrackingState RoomTracker::step(double                      now_s_in,
                 reacquireLastRetryTime_s = effectiveNow;
                 if (reacquireRetryCount > config.reacquire_max_retries)
                 {
-                    applyEvent(RoomTrackingEvent::REACQUIRE_TIMEOUT,
-                               effectiveNow,
-                               crossing_in,
-                               verification_in);
+                    RoomTrackingState nextState6{};
+                    if (applyEvent(RoomTrackingEvent::REACQUIRE_TIMEOUT,
+                                   effectiveNow,
+                                   crossing_in,
+                                   verification_in,
+                                   nextState6) !=
+                        RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+                    {
+                        // applyEvent cannot fail; continue as before.
+                    }
                 }
             }
             break;
@@ -115,10 +152,16 @@ RoomTrackingState RoomTracker::step(double                      now_s_in,
             /* Transition-table row 1 (guarded). */
             if (verification_in.isPass())
             {
-                applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
-                           effectiveNow,
-                           crossing_in,
-                           verification_in);
+                RoomTrackingState nextState7{};
+                if (applyEvent(RoomTrackingEvent::FIRST_ROOM_CONFIRMED,
+                               effectiveNow,
+                               crossing_in,
+                               verification_in,
+                               nextState7) !=
+                    RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+                {
+                    // applyEvent cannot fail; continue as before.
+                }
             }
             break;
         }
@@ -133,14 +176,28 @@ RoomTrackingState RoomTracker::step(double                      now_s_in,
                 crossing_in.confidence <= 1.0 &&
                 crossing_in.confidence >= config.crossing_confidence;
             TraversalGuardValues updatedGuardValues = crossing_in;
-            updatedGuardValues.dwell_s =
-                accumulateDwell(trackingState, effectiveNow, guardSatisfied);
+            double               accumulatedDwell{};
+            if (accumulateDwell(trackingState,
+                                effectiveNow,
+                                guardSatisfied,
+                                accumulatedDwell) !=
+                RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+            {
+                // accumulateDwell cannot fail; continue as before.
+            }
+            updatedGuardValues.dwell_s = accumulatedDwell;
             if (updatedGuardValues.dwell_s >= config.crossing_dwell_s)
             {
-                applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
-                           effectiveNow,
-                           updatedGuardValues,
-                           verification_in);
+                RoomTrackingState nextState8{};
+                if (applyEvent(RoomTrackingEvent::PASSAGE_CROSSING_DETECTED,
+                               effectiveNow,
+                               updatedGuardValues,
+                               verification_in,
+                               nextState8) !=
+                    RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+                {
+                    // applyEvent cannot fail; continue as before.
+                }
             }
             break;
         }
@@ -154,15 +211,29 @@ RoomTrackingState RoomTracker::step(double                      now_s_in,
             const bool guardSatisfied =
                 hasObservedBothSides && verification_in.isPass();
             TraversalGuardValues updatedGuardValues = crossing_in;
-            updatedGuardValues.dwell_s =
-                accumulateDwell(trackingState, effectiveNow, guardSatisfied);
+            double               accumulatedDwell2{};
+            if (accumulateDwell(trackingState,
+                                effectiveNow,
+                                guardSatisfied,
+                                accumulatedDwell2) !=
+                RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+            {
+                // accumulateDwell cannot fail; continue as before.
+            }
+            updatedGuardValues.dwell_s              = accumulatedDwell2;
             updatedGuardValues.areBothSidesObserved = hasObservedBothSides;
             if (updatedGuardValues.dwell_s >= config.crossing_dwell_s)
             {
-                applyEvent(RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
-                           effectiveNow,
-                           updatedGuardValues,
-                           verification_in);
+                RoomTrackingState nextState9{};
+                if (applyEvent(RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE,
+                               effectiveNow,
+                               updatedGuardValues,
+                               verification_in,
+                               nextState9) !=
+                    RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+                {
+                    // applyEvent cannot fail; continue as before.
+                }
             }
             break;
         }
@@ -171,10 +242,16 @@ RoomTrackingState RoomTracker::step(double                      now_s_in,
             /* Transition-table row 6 (guarded). */
             if (verification_in.isPass())
             {
-                applyEvent(RoomTrackingEvent::ROOM_REACQUIRED,
-                           effectiveNow,
-                           crossing_in,
-                           verification_in);
+                RoomTrackingState nextState10{};
+                if (applyEvent(RoomTrackingEvent::ROOM_REACQUIRED,
+                               effectiveNow,
+                               crossing_in,
+                               verification_in,
+                               nextState10) !=
+                    RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+                {
+                    // applyEvent cannot fail; continue as before.
+                }
             }
             break;
         }
@@ -183,7 +260,8 @@ RoomTrackingState RoomTracker::step(double                      now_s_in,
 
     wasTrackingLost    = tracking_in.isLost;
     lastReceivedTime_s = effectiveNow;
-    return trackingState;
+    nextState_out      = trackingState;
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -28,10 +28,11 @@ namespace core
 namespace semantic
 {
 
-Passage::PassageVariant Passage::getPassageType()
+PassageStatus Passage::getPassageType(Passage::PassageVariant &passageType_out)
 {
     unique_lock<mutex> lock(typeMutex);
-    return passageType;
+    passageType_out = passageType;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

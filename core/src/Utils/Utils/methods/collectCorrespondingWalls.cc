@@ -55,28 +55,89 @@ bool Utils::collectCorrespondingWalls(
     std::sort(roomsA.begin(),
               roomsA.end(),
               [](const semantic::Room *p_first, const semantic::Room *p_second)
-              { return p_first->getId() < p_second->getId(); });
+              {
+                  int firstId{};
+                  if (p_first->getId(firstId) !=
+                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                  {
+                      // getId cannot fail; continue as before.
+                  }
+                  int secondId{};
+                  if (p_second->getId(secondId) !=
+                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                  {
+                      // getId cannot fail; continue as before.
+                  }
+                  return firstId < secondId;
+              });
 
     std::sort(roomsB.begin(),
               roomsB.end(),
               [](const semantic::Room *p_first, const semantic::Room *p_second)
-              { return p_first->getId() < p_second->getId(); });
+              {
+                  int firstId{};
+                  if (p_first->getId(firstId) !=
+                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                  {
+                      // getId cannot fail; continue as before.
+                  }
+                  int secondId{};
+                  if (p_second->getId(secondId) !=
+                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                  {
+                      // getId cannot fail; continue as before.
+                  }
+                  return firstId < secondId;
+              });
 
     for (semantic::Room *p_roomB : roomsB)
     {
-        if (p_roomB == nullptr || p_roomB->isBad() || !p_roomB->hasRoomTag())
+        bool roomBIsBad{};
+        if (!(p_roomB == nullptr) &&
+            p_roomB->isBad(roomBIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        bool roomBHasRoomTag{};
+        if (!(p_roomB == nullptr || roomBIsBad) &&
+            p_roomB->hasRoomTag(roomBHasRoomTag) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // hasRoomTag cannot fail; continue as before.
+        }
+        if (p_roomB == nullptr || roomBIsBad || !roomBHasRoomTag)
         {
             continue;
         }
 
         for (semantic::Room *p_roomA : roomsA)
         {
-            if (p_roomA == nullptr || p_roomA->isBad())
+            bool roomAIsBad{};
+            if (!(p_roomA == nullptr) &&
+                p_roomA->isBad(roomAIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_roomA == nullptr || roomAIsBad)
             {
                 continue;
             }
 
-            if (p_roomA->getRoomTag() != p_roomB->getRoomTag())
+            std::string roomARoomTag{};
+            if (p_roomA->getRoomTag(roomARoomTag) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
+            std::string roomBRoomTag{};
+            if (p_roomB->getRoomTag(roomBRoomTag) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
+            if (roomARoomTag != roomBRoomTag)
             {
                 continue;
             }

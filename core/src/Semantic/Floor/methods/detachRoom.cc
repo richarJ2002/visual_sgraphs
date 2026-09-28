@@ -28,11 +28,11 @@ namespace core
 namespace semantic
 {
 
-void Floor::detachRoom(Room *p_room_inout)
+FloorStatus Floor::detachRoom(Room *p_room_inout)
 {
     if (p_room_inout == nullptr)
     {
-        return;
+        return FloorStatus::FLOOR_STATUS_SUCCESS;
     }
 
     {
@@ -41,10 +41,21 @@ void Floor::detachRoom(Room *p_room_inout)
                     rooms.end());
     }
 
-    if (p_room_inout->getFloor() == this)
+    Floor *p_room_inoutFloor = nullptr;
+    if (p_room_inout->getFloor(p_room_inoutFloor) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        p_room_inout->setFloor(nullptr);
+        // getFloor cannot fail; continue as before.
     }
+    if (p_room_inoutFloor == this)
+    {
+        if (p_room_inout->setFloor(nullptr) != RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setFloor cannot fail; continue as before.
+        }
+    }
+
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

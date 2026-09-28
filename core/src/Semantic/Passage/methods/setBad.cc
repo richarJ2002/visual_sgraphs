@@ -28,10 +28,12 @@ namespace core
 namespace semantic
 {
 
-void Passage::setBad()
+PassageStatus Passage::setBad()
 {
     std::lock_guard<std::mutex> lock(mapMutex);
     isFlaggedBad = true;
+
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -28,10 +28,11 @@ namespace core
 namespace semantic
 {
 
-vs_graphs::core::Map *Floor::getMap()
+FloorStatus Floor::getMap(vs_graphs::core::Map *&p_map_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return p_map;
+    p_map_out = p_map;
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

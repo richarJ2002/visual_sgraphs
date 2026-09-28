@@ -27,11 +27,14 @@ namespace core
 namespace semantic
 {
 
-void Room::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
+RoomStatus
+    Room::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 {
     unique_lock<mutex> lock(mapMutex);
 
     centroid = transform_oldWorldToNewWorld_in.map(centroid);
+
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

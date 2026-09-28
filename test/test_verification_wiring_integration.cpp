@@ -99,7 +99,8 @@ struct SyntheticRoomFixture
                                                              wall_in.normal.z(),
                                                              wall_in.d)));
         wall->setCentroid(wall_in.centroid);
-        room.setWalls(wall.get());
+        ASSERT_EQ((room.setWalls(wall.get())),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
         ownedWalls.push_back(std::move(wall));
     }
 };
@@ -113,10 +114,26 @@ std::unique_ptr<SyntheticRoomFixture>
               int                         floorId_in)
 {
     auto fixture = std::make_unique<SyntheticRoomFixture>();
-    fixture->room.setId(roomId_in);
-    fixture->room.setMap(p_map_in);
-    fixture->room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    fixture->room.setCentroid(centroid_in);
+    if (fixture->room.setId(roomId_in) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (fixture->room.setMap(p_map_in) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (fixture->room.setRoomVariant(semantic::Room::RoomVariant::ROOM) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setRoomVariant cannot fail; continue as before.
+    }
+    if (fixture->room.setCentroid(centroid_in) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
     for (const RawWall &wall : walls_in)
     {
         fixture->addWall(wall);
@@ -127,12 +144,28 @@ std::unique_ptr<SyntheticRoomFixture>
     }
     p_map_in->addDetectedMapRoom(&fixture->room);
 
-    fixture->floor.setId(floorId_in);
-    fixture->floor.setMap(p_map_in);
-    fixture->floor.setPlaneIdentity(floorEquation_World_in,
-                                    /*finiteSupportCount_in=*/100U,
-                                    /*observationCount_in=*/5U);
-    fixture->room.setFloor(&fixture->floor);
+    if (fixture->floor.setId(floorId_in) !=
+        vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (fixture->floor.setMap(p_map_in) !=
+        vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (fixture->floor.setPlaneIdentity(floorEquation_World_in,
+                                        /*finiteSupportCount_in=*/100U,
+                                        /*observationCount_in=*/5U) !=
+        vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // Rejected input: ignored, as before.
+    }
+    if (fixture->room.setFloor(&fixture->floor) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setFloor cannot fail; continue as before.
+    }
     p_map_in->addMapFloor(&fixture->floor);
 
     return fixture;
@@ -144,10 +177,22 @@ semantic::SemanticCandidate makeCandidate(Map            *p_mapA_in,
                                           semantic::Room *p_roomB_in)
 {
     semantic::SemanticCandidate candidate;
-    candidate.mapAId                     = p_mapA_in->getId();
-    candidate.roomAId                    = p_roomA_in->getId();
-    candidate.mapBId                     = p_mapB_in->getId();
-    candidate.roomBId                    = p_roomB_in->getId();
+    candidate.mapAId = p_mapA_in->getId();
+    int roomA_inId{};
+    if (p_roomA_in->getId(roomA_inId) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    candidate.roomAId = roomA_inId;
+    candidate.mapBId  = p_mapB_in->getId();
+    int roomB_inId{};
+    if (p_roomB_in->getId(roomB_inId) !=
+        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    candidate.roomBId                    = roomB_inId;
     candidate.isMinimumEvidenceSatisfied = true;
     candidate.isAmbiguous                = true; // see production comment: the
                                                  // winner's own flag is

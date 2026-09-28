@@ -27,11 +27,11 @@ namespace core
 namespace semantic
 {
 
-void Room::setDoorways(vs_graphs::core::semantic::Passage *p_passage_in)
+RoomStatus Room::setDoorways(vs_graphs::core::semantic::Passage *p_passage_in)
 {
     if (p_passage_in == nullptr)
     {
-        return;
+        return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
     std::lock_guard<std::mutex> lock(mapMutex);
@@ -41,14 +41,30 @@ void Room::setDoorways(vs_graphs::core::semantic::Passage *p_passage_in)
         doorways.end(),
         [p_passage_in](vs_graphs::core::semantic::Passage *p_existingPassage)
         {
+            int existingPassageId{};
+            if ((p_existingPassage != nullptr) &&
+                p_existingPassage->getId(existingPassageId) !=
+                    PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int passage_inId{};
+            if ((p_existingPassage != nullptr) &&
+                p_passage_in->getId(passage_inId) !=
+                    PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             return p_existingPassage != nullptr &&
-                   p_existingPassage->getId() == p_passage_in->getId();
+                   existingPassageId == passage_inId;
         });
 
     if (!isAlreadyPresent)
     {
         doorways.push_back(p_passage_in);
     }
+
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

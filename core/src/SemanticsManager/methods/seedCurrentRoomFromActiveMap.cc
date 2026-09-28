@@ -39,10 +39,30 @@ void SemanticsManager::seedCurrentRoomFromActiveMap(Map *p_activeMap_in)
     const std::vector<semantic::Room *> rooms = p_activeMap_in->getAllRooms();
     for (semantic::Room *p_room : rooms)
     {
-        if (p_room != nullptr && !p_room->isBad() &&
-            p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM)
+        bool roomIsBad{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            currentRoomId = p_room->getId();
+            // isBad cannot fail; continue as before.
+        }
+        semantic::Room::RoomVariant roomVariant{};
+        if ((p_room != nullptr && !roomIsBad) &&
+            p_room->getRoomVariant(roomVariant) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad &&
+            roomVariant == semantic::Room::RoomVariant::ROOM)
+        {
+            int roomId{};
+            if (p_room->getId(roomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            currentRoomId = roomId;
             p_atlas->setCurrentSemanticRoomIdentity(currentRoomId);
             return;
         }

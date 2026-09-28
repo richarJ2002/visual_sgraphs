@@ -36,33 +36,68 @@ bool checkConsecutiveFloors(core::Map       *p_survivingMap_in,
                             double           maximumOffset_m_in,
                             std::string     &decision_out)
 {
-    Floor *p_survivingFloor =
-        Floor::selectBestObservedFloor(p_survivingMap_in->getAllFloors());
-    Floor *p_absorbedFloor =
-        Floor::selectBestObservedFloor(p_absorbedMap_in->getAllFloors());
+    Floor *p_survivingFloor = nullptr;
+    if (Floor::selectBestObservedFloor(p_survivingMap_in->getAllFloors(),
+                                       p_survivingFloor) !=
+        FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // selectBestObservedFloor cannot fail; continue as before.
+    }
+    Floor *p_absorbedFloor = nullptr;
+    if (Floor::selectBestObservedFloor(p_absorbedMap_in->getAllFloors(),
+                                       p_absorbedFloor) !=
+        FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // selectBestObservedFloor cannot fail; continue as before.
+    }
+    std::optional<Floor::PlaneIdentity> survivingFloorPlaneIdentity{};
+    if ((p_survivingFloor != nullptr) &&
+        p_survivingFloor->getPlaneIdentity(survivingFloorPlaneIdentity) !=
+            FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getPlaneIdentity cannot fail; continue as before.
+    }
     const std::optional<Floor::PlaneIdentity> survivingIdentity =
-        p_survivingFloor != nullptr ? p_survivingFloor->getPlaneIdentity()
+        p_survivingFloor != nullptr ? survivingFloorPlaneIdentity
                                     : std::nullopt;
+    std::optional<Floor::PlaneIdentity> absorbedFloorPlaneIdentity{};
+    if ((p_absorbedFloor != nullptr) &&
+        p_absorbedFloor->getPlaneIdentity(absorbedFloorPlaneIdentity) !=
+            FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getPlaneIdentity cannot fail; continue as before.
+    }
     const std::optional<Floor::PlaneIdentity> absorbedIdentity =
-        p_absorbedFloor != nullptr ? p_absorbedFloor->getPlaneIdentity()
-                                   : std::nullopt;
+        p_absorbedFloor != nullptr ? absorbedFloorPlaneIdentity : std::nullopt;
     if (!survivingIdentity.has_value() || !absorbedIdentity.has_value())
     {
         decision_out = "DEFERRED";
         return false;
     }
-    const std::optional<Floor::PlaneIdentity> transformedIdentity =
-        Floor::transformPlaneIdentity(*absorbedIdentity, transform_in);
-    double     normalAngle_deg = std::numeric_limits<double>::infinity();
-    double     offset_m        = std::numeric_limits<double>::infinity();
-    const bool floorsMatch =
-        transformedIdentity.has_value() &&
+    std::optional<Floor::PlaneIdentity> transformedIdentity{};
+    if (Floor::transformPlaneIdentity(*absorbedIdentity,
+                                      transform_in,
+                                      transformedIdentity) !=
+        FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // transformPlaneIdentity cannot fail; continue as before.
+    }
+    double normalAngle_deg = std::numeric_limits<double>::infinity();
+    double offset_m        = std::numeric_limits<double>::infinity();
+    bool   isMatch{};
+    if ((transformedIdentity.has_value()) &&
         Floor::planeIdentitiesMatch(*survivingIdentity,
                                     *transformedIdentity,
                                     Floor::kMergeMaxPlaneNormalAngle_deg,
                                     maximumOffset_m_in,
                                     normalAngle_deg,
-                                    offset_m);
+                                    offset_m,
+                                    isMatch) !=
+            FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // planeIdentitiesMatch cannot fail; continue as before.
+    }
+    const bool floorsMatch = transformedIdentity.has_value() && isMatch;
     std::cout << "[ConsecutiveMerge] Floor check: "
               << (floorsMatch ? "ACCEPTED" : "REJECTED")
               << " (angle=" << normalAngle_deg << " deg, offset=" << offset_m

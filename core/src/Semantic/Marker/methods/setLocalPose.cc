@@ -25,10 +25,12 @@ namespace core
 namespace semantic
 {
 
-void Marker::setLocalPose(const Sophus::SE3f &localPose_in)
+MarkerStatus Marker::setLocalPose(const Sophus::SE3f &localPose_in)
 {
     std::lock_guard<std::mutex> lock(stateMutex);
     localPose = localPose_in;
+
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

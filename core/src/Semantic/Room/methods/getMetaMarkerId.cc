@@ -27,9 +27,10 @@ namespace core
 namespace semantic
 {
 
-int Room::getMetaMarkerId() const
+RoomStatus Room::getMetaMarkerId(int &metaMarkerId_out) const
 {
-    return metaMarkerId;
+    metaMarkerId_out = metaMarkerId;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

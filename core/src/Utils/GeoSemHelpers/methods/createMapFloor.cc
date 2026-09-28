@@ -47,18 +47,48 @@ void GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas *p_atlas_inout,
     p_atlas_inout->observeFloorIdentity(floorId);
 
     // Fill the floor entity
-    p_newMapFloor->setOpId(-1);
-    p_newMapFloor->setOpIdG(-1);
-    p_newMapFloor->setId(floorId);
-    p_newMapFloor->setCentroid(centroid);
-    p_newMapFloor->setMap(p_currentMap);
-    p_newMapFloor->setName("semantic::Floor#" + std::to_string(floorId));
+    if (p_newMapFloor->setOpId(-1) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setOpId cannot fail; continue as before.
+    }
+    if (p_newMapFloor->setOpIdG(-1) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setOpIdG cannot fail; continue as before.
+    }
+    if (p_newMapFloor->setId(floorId) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (p_newMapFloor->setCentroid(centroid) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
+    if (p_newMapFloor->setMap(p_currentMap) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (p_newMapFloor->setName("semantic::Floor#" + std::to_string(floorId)) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // setName cannot fail; continue as before.
+    }
 
     // Add the floor to the map
     p_atlas_inout->addMapFloor(p_newMapFloor);
 
-    std::cout << "[GeoSemHelper] Creating semantic::Floor#"
-              << p_newMapFloor->getId() << " ..." << std::endl;
+    int newMapFloorId{};
+    if (p_newMapFloor->getId(newMapFloorId) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    std::cout << "[GeoSemHelper] Creating semantic::Floor#" << newMapFloorId
+              << " ..." << std::endl;
 }
 
 } // namespace core

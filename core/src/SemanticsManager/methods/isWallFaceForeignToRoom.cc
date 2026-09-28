@@ -28,7 +28,14 @@ namespace core
 bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
                                                geometric::Plane *p_wall_in)
 {
-    if (p_room_in == nullptr || p_room_in->isBad() || p_wall_in == nullptr ||
+    bool room_inIsBad{};
+    if (!(p_room_in == nullptr) &&
+        p_room_in->isBad(room_inIsBad) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_room_in == nullptr || room_inIsBad || p_wall_in == nullptr ||
         p_wall_in->isBad())
     {
         return false;
@@ -62,8 +69,14 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
     const double observedSide_m =
         equation_World.head<3>().dot(observationOrigin_World_m.value()) +
         equation_World(3);
+    Eigen::Vector3d room_inCentroid{};
+    if (p_room_in->getCentroid(room_inCentroid) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
     const double roomSide_m =
-        equation_World.head<3>().dot(p_room_in->getCentroid().cast<double>()) +
+        equation_World.head<3>().dot(room_inCentroid.cast<double>()) +
         equation_World(3);
 
     if (!std::isfinite(observedSide_m) || !std::isfinite(roomSide_m))

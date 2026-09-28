@@ -54,24 +54,77 @@ void Atlas::exportRoomContextFromCurrentMap()
 
     for (semantic::Room *p_room : rooms)
     {
-        if (!p_room || p_room->isBad())
+        bool roomIsBad{};
+        if (!(!p_room) && p_room->isBad(roomIsBad) !=
+                              semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (!p_room || roomIsBad)
             continue;
 
         semantic::RoomContextSnapshot snap;
-        snap.roomId                  = p_room->getId();
-        semantic::Floor *p_snapFloor = p_room->getFloor();
-        snap.floorId  = p_snapFloor != nullptr ? p_snapFloor->getId() : -1;
-        snap.centroid = p_room->getCentroid();
+        int                           roomId2{};
+        if (p_room->getId(roomId2) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        snap.roomId                  = roomId2;
+        semantic::Floor *p_snapFloor = nullptr;
+        if (p_room->getFloor(p_snapFloor) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getFloor cannot fail; continue as before.
+        }
+        int snapFloorId{};
+        if ((p_snapFloor != nullptr) &&
+            p_snapFloor->getId(snapFloorId) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        snap.floorId = p_snapFloor != nullptr ? snapFloorId : -1;
+        Eigen::Vector3d roomCentroid{};
+        if (p_room->getCentroid(roomCentroid) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
+        snap.centroid = roomCentroid;
+        semantic::Room::RoomVariant roomVariant{};
+        if (p_room->getRoomVariant(roomVariant) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
         snap.wasConfirmedRoom =
-            p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM;
-        snap.wasPreviouslyVisited = p_room->hasPreviouslyVisited();
-        snap.boundaryStatus = static_cast<int>(p_room->getBoundaryStatus());
+            roomVariant == semantic::Room::RoomVariant::ROOM;
+        bool roomHasPreviouslyVisited{};
+        if (p_room->hasPreviouslyVisited(roomHasPreviouslyVisited) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // hasPreviouslyVisited cannot fail; continue as before.
+        }
+        snap.wasPreviouslyVisited = roomHasPreviouslyVisited;
+        semantic::Room::BoundaryStatus roomBoundaryStatus{};
+        if (p_room->getBoundaryStatus(roomBoundaryStatus) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getBoundaryStatus cannot fail; continue as before.
+        }
+        snap.boundaryStatus = static_cast<int>(roomBoundaryStatus);
         snap.timestamp =
             std::chrono::duration<double>(
                 std::chrono::steady_clock::now().time_since_epoch())
                 .count();
 
-        for (geometric::Plane *p_wall : p_room->getWalls())
+        std::vector<geometric::Plane *> roomWalls{};
+        if (p_room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
+        for (geometric::Plane *p_wall : roomWalls)
         {
             semantic::WallBounds bounds;
             if (!p_wall || p_wall->isBad())
@@ -86,8 +139,13 @@ void Atlas::exportRoomContextFromCurrentMap()
                 continue;
             }
 
-            std::optional<Eigen::Vector3d> orientedNormal =
-                p_room->getWallNormalTowardRoom_World(p_wall);
+            std::optional<Eigen::Vector3d> orientedNormal{};
+            if (p_room->getWallNormalTowardRoom_World(p_wall, orientedNormal) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWallNormalTowardRoom_World cannot fail; continue as
+                // before.
+            }
             if (orientedNormal)
                 snap.wallNormals.push_back(*orientedNormal);
             else
@@ -110,7 +168,13 @@ void Atlas::exportRoomContextFromCurrentMap()
             snap.wallBounds.push_back(bounds);
         }
 
-        for (semantic::Passage *p_passage : p_room->getPassages())
+        std::vector<vs_graphs::core::semantic::Passage *> roomPassages{};
+        if (p_room->getPassages(roomPassages) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getPassages cannot fail; continue as before.
+        }
+        for (semantic::Passage *p_passage : roomPassages)
         {
             if (!p_passage)
             {
@@ -119,24 +183,63 @@ void Atlas::exportRoomContextFromCurrentMap()
                 snap.passageContexts.push_back(semantic::PassageContext());
                 continue;
             }
-            snap.passageCentroids.push_back(p_passage->getCentroid());
+            Eigen::Vector3d passageCentroid{};
+            if (p_passage->getCentroid(passageCentroid) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
+            snap.passageCentroids.push_back(passageCentroid);
             semantic::PassageContext context;
-            context.id         = p_passage->getId();
-            context.isPassable = p_passage->isPassable();
-            const std::optional<int> roomIdOfPassageObservationConnection =
-                p_passage->getProspectiveRoomId();
+            int                      passageId{};
+            if (p_passage->getId(passageId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            context.id = passageId;
+            bool passageIsPassable{};
+            if (p_passage->isPassable(passageIsPassable) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // isPassable cannot fail; continue as before.
+            }
+            context.isPassable = passageIsPassable;
+            std::optional<int> roomIdOfPassageObservationConnection{};
+            if (p_passage->getProspectiveRoomId(
+                    roomIdOfPassageObservationConnection) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getProspectiveRoomId cannot fail; continue as before.
+            }
             context.hasFarSideRoom =
                 roomIdOfPassageObservationConnection.has_value();
             if (context.hasFarSideRoom)
                 context.secondaryRoomId = *roomIdOfPassageObservationConnection;
-            context.width_m         = p_passage->getWidth();
-            context.height_m        = p_passage->getHeight();
+            double passageWidth{};
+            if (p_passage->getWidth(passageWidth) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getWidth cannot fail; continue as before.
+            }
+            context.width_m = passageWidth;
+            double passageHeight{};
+            if (p_passage->getHeight(passageHeight) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getHeight cannot fail; continue as before.
+            }
+            context.height_m        = passageHeight;
             context.isApertureValid = std::isfinite(context.width_m) &&
                                       std::isfinite(context.height_m) &&
                                       context.width_m > 0.0 &&
                                       context.height_m > 0.0;
-            const semantic::Passage::KnownSideProvenance knownSide =
-                p_passage->getKnownSideProvenance();
+            semantic::Passage::KnownSideProvenance knownSide{};
+            if (p_passage->getKnownSideProvenance(knownSide) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getKnownSideProvenance cannot fail; continue as before.
+            }
             context.hasKnownSideDirection = knownSide.hasDirection();
             if (context.hasKnownSideDirection)
             {
@@ -145,28 +248,82 @@ void Atlas::exportRoomContextFromCurrentMap()
             context.hasKnownSideRoom = knownSide.p_room != nullptr;
             if (context.hasKnownSideRoom)
             {
-                context.knownSideRoomId = knownSide.p_room->getId();
+                int id2{};
+                if (knownSide.p_room->getId(id2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                context.knownSideRoomId = id2;
             }
-            context.traversalKnownToFarCount =
-                p_passage->getTraversalKnownToFarCount();
-            context.traversalFarToKnownCount =
-                p_passage->getTraversalFarToKnownCount();
-            context.traversalUnknownCount =
-                p_passage->getTraversalUnknownCount();
-            context.associatedWallCount = p_passage->getAssociateWalls().size();
+            std::size_t passageTraversalKnownToFarCount{};
+            if (p_passage->getTraversalKnownToFarCount(
+                    passageTraversalKnownToFarCount) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getTraversalKnownToFarCount cannot fail; continue as before.
+            }
+            context.traversalKnownToFarCount = passageTraversalKnownToFarCount;
+            std::size_t passageTraversalFarToKnownCount{};
+            if (p_passage->getTraversalFarToKnownCount(
+                    passageTraversalFarToKnownCount) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getTraversalFarToKnownCount cannot fail; continue as before.
+            }
+            context.traversalFarToKnownCount = passageTraversalFarToKnownCount;
+            std::size_t passageTraversalUnknownCount{};
+            if (p_passage->getTraversalUnknownCount(
+                    passageTraversalUnknownCount) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getTraversalUnknownCount cannot fail; continue as before.
+            }
+            context.traversalUnknownCount = passageTraversalUnknownCount;
+            std::vector<vs_graphs::core::geometric::Plane *>
+                passageAssociateWalls{};
+            if (p_passage->getAssociateWalls(passageAssociateWalls) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getAssociateWalls cannot fail; continue as before.
+            }
+            context.associatedWallCount = passageAssociateWalls.size();
+            bool passageHasBidirectionalTraversalEvidence{};
+            if (p_passage->hasBidirectionalTraversalEvidence(
+                    passageHasBidirectionalTraversalEvidence) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // hasBidirectionalTraversalEvidence cannot fail; continue as
+                // before.
+            }
             context.hasBidirectionalTraversalEvidence =
-                p_passage->hasBidirectionalTraversalEvidence();
+                passageHasBidirectionalTraversalEvidence;
             snap.passageContexts.push_back(context);
         }
 
         /* Assign persistent tag to old map rooms for merge trigger.
          * Tag format: "room_<id>" matches what matchRoomsToContext() assigns.
          */
-        const std::string roomTag = "room_" + std::to_string(p_room->getId());
-        snap.roomTag              = roomTag;
-        if (!p_room->hasRoomTag())
+        int roomId3{};
+        if (p_room->getId(roomId3) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_room->setRoomTag(roomTag);
+            // getId cannot fail; continue as before.
+        }
+        const std::string roomTag = "room_" + std::to_string(roomId3);
+        snap.roomTag              = roomTag;
+        bool roomHasRoomTag{};
+        if (p_room->hasRoomTag(roomHasRoomTag) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // hasRoomTag cannot fail; continue as before.
+        }
+        if (!roomHasRoomTag)
+        {
+            if (p_room->setRoomTag(roomTag) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setRoomTag cannot fail; continue as before.
+            }
         }
 
         snapshots.push_back(snap);
@@ -185,8 +342,21 @@ void Atlas::exportRoomContextFromCurrentMap()
     {
         for (semantic::Room *p_room : rooms)
         {
-            if (p_room != nullptr && !p_room->isBad() &&
-                p_room->getId() == departureRoomId)
+            bool roomIsBad2{};
+            if ((p_room != nullptr) &&
+                p_room->isBad(roomIsBad2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            int roomId4{};
+            if ((p_room != nullptr && !roomIsBad2) &&
+                p_room->getId(roomId4) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (p_room != nullptr && !roomIsBad2 && roomId4 == departureRoomId)
             {
                 p_activeMap->setFinalRoom(p_room);
                 break;

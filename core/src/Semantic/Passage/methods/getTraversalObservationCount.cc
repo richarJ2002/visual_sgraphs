@@ -28,11 +28,14 @@ namespace core
 namespace semantic
 {
 
-std::size_t Passage::getTraversalObservationCount() const
+PassageStatus Passage::getTraversalObservationCount(
+    std::size_t &traversalObservationCount_out) const
 {
     std::lock_guard<std::mutex> lock(typeMutex);
-    return traversalKnownToFarCount + traversalFarToKnownCount +
-           traversalUnknownCount;
+    traversalObservationCount_out = traversalKnownToFarCount +
+                                    traversalFarToKnownCount +
+                                    traversalUnknownCount;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -30,10 +30,11 @@ namespace core
 namespace semantic
 {
 
-SemanticMergeGateResult SemanticVerify::evaluateMergeAlignment(
+SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
     const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
     const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
     const g2o::Sim3            &transform_absorbedToSurviving_in,
+    SemanticMergeGateResult    &result_out,
     const SemanticVerifyConfig &configuration_in)
 {
     SemanticMergeGateResult                                  result;
@@ -68,7 +69,8 @@ SemanticMergeGateResult SemanticVerify::evaluateMergeAlignment(
         {
             result.decision = SemanticMergeDecision::REJECT;
             result.reason   = SemanticMergeReason::WALL_ALIGNMENT_CONTRADICTION;
-            return result;
+            result_out      = result;
+            return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
         }
         if (wallCheck == AlignmentCheck::MISSING)
         {
@@ -91,7 +93,8 @@ SemanticMergeGateResult SemanticVerify::evaluateMergeAlignment(
         {
             result.decision = SemanticMergeDecision::REJECT;
             result.reason   = topologyReason;
-            return result;
+            result_out      = result;
+            return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
         }
         if (topologyCheck == AlignmentCheck::MISSING)
         {
@@ -109,16 +112,19 @@ SemanticMergeGateResult SemanticVerify::evaluateMergeAlignment(
     {
         result.decision = SemanticMergeDecision::DEFER;
         result.reason   = SemanticMergeReason::SHARED_ROOM_IDENTITY_MISSING;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
     if (hasMissingEvidence || result.alignedRoomCount != result.sharedRoomCount)
     {
         result.decision = SemanticMergeDecision::DEFER;
-        return result;
+        result_out      = result;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
     result.decision = SemanticMergeDecision::ACCEPT;
     result.reason   = SemanticMergeReason::ALIGNED;
-    return result;
+    result_out      = result;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

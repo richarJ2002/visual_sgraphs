@@ -42,19 +42,80 @@ std::set<std::string> collectAnchorTags(Map *p_oldMap_in, Map *p_currentMap_in)
     std::set<std::string> currentTags;
     for (semantic::Room *p_room : p_currentMap_in->getAllRooms())
     {
-        if (p_room != nullptr && !p_room->isBad() && p_room->hasRoomTag() &&
-            !p_room->getRoomTag().empty())
+        bool roomIsBad{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            currentTags.insert(p_room->getRoomTag());
+            // isBad cannot fail; continue as before.
+        }
+        bool roomHasRoomTag{};
+        if ((p_room != nullptr && !roomIsBad) &&
+            p_room->hasRoomTag(roomHasRoomTag) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // hasRoomTag cannot fail; continue as before.
+        }
+        std::string roomTag{};
+        if ((p_room != nullptr && !roomIsBad && roomHasRoomTag) &&
+            p_room->getRoomTag(roomTag) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomTag cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad && roomHasRoomTag &&
+            !roomTag.empty())
+        {
+            std::string roomTag2{};
+            if (p_room->getRoomTag(roomTag2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
+            currentTags.insert(roomTag2);
         }
     }
     for (semantic::Room *p_room : p_oldMap_in->getAllRooms())
     {
-        if (p_room != nullptr && !p_room->isBad() && p_room->hasRoomTag() &&
-            !p_room->getRoomTag().empty() &&
-            currentTags.count(p_room->getRoomTag()) > 0U)
+        bool roomIsBad2{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            anchorTags.insert(p_room->getRoomTag());
+            // isBad cannot fail; continue as before.
+        }
+        bool roomHasRoomTag2{};
+        if ((p_room != nullptr && !roomIsBad2) &&
+            p_room->hasRoomTag(roomHasRoomTag2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // hasRoomTag cannot fail; continue as before.
+        }
+        std::string roomTag3{};
+        if ((p_room != nullptr && !roomIsBad2 && roomHasRoomTag2) &&
+            p_room->getRoomTag(roomTag3) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomTag cannot fail; continue as before.
+        }
+        std::string roomTag4{};
+        if ((p_room != nullptr && !roomIsBad2 && roomHasRoomTag2 &&
+             !roomTag3.empty()) &&
+            p_room->getRoomTag(roomTag4) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomTag cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad2 && roomHasRoomTag2 &&
+            !roomTag3.empty() && currentTags.count(roomTag4) > 0U)
+        {
+            std::string roomTag5{};
+            if (p_room->getRoomTag(roomTag5) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getRoomTag cannot fail; continue as before.
+            }
+            anchorTags.insert(roomTag5);
         }
     }
     return anchorTags;

@@ -53,11 +53,27 @@ bool Tracking::relocalization()
         const auto &rooms = p_currentMap->getAllDetectedMapRooms();
         for (semantic::Room *p_room : rooms)
         {
-            if (!p_room->isBad() &&
-                p_room->getBoundaryStatus() ==
-                    semantic::Room::BoundaryStatus::COMPLETE)
+            bool roomIsBad{};
+            if (p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                Eigen::Vector3d roomCentroid = p_room->getCentroid();
+                // isBad cannot fail; continue as before.
+            }
+            semantic::Room::BoundaryStatus roomBoundaryStatus{};
+            if ((!roomIsBad) && p_room->getBoundaryStatus(roomBoundaryStatus) !=
+                                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getBoundaryStatus cannot fail; continue as before.
+            }
+            if (!roomIsBad &&
+                roomBoundaryStatus == semantic::Room::BoundaryStatus::COMPLETE)
+            {
+                Eigen::Vector3d roomCentroid{};
+                if (p_room->getCentroid(roomCentroid) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getCentroid cannot fail; continue as before.
+                }
                 roomCentroids.push_back(Eigen::Vector3f(roomCentroid.x(),
                                                         roomCentroid.y(),
                                                         roomCentroid.z()));

@@ -65,7 +65,14 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
 
     for (semantic::Passage *p_passage : p_atlas->getAllPassages())
     {
-        if (p_passage != nullptr && p_passage->isPassable())
+        bool passageIsPassable{};
+        if ((p_passage != nullptr) &&
+            p_passage->isPassable(passageIsPassable) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // isPassable cannot fail; continue as before.
+        }
+        if (p_passage != nullptr && passageIsPassable)
         {
             confirmedOpenPassages.push_back(p_passage);
         }
@@ -75,7 +82,21 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
         confirmedOpenPassages.begin(),
         confirmedOpenPassages.end(),
         [](const semantic::Passage *p_first, const semantic::Passage *p_second)
-        { return p_first->getId() < p_second->getId(); });
+        {
+            int firstId{};
+            if (p_first->getId(firstId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int secondId{};
+            if (p_second->getId(secondId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            return firstId < secondId;
+        });
 
     if (confirmedOpenPassages.empty())
     {
@@ -86,19 +107,37 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
 
     for (semantic::Room *p_room : allRooms)
     {
-        if (p_room == nullptr || p_room->isBad())
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room == nullptr || roomIsBad)
         {
             continue;
         }
 
-        const Eigen::Vector3d roomCentroid_World_m = p_room->getCentroid();
+        Eigen::Vector3d roomCentroid_World_m{};
+        if (p_room->getCentroid(roomCentroid_World_m) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
 
         if (!roomCentroid_World_m.allFinite())
         {
             continue;
         }
 
-        for (geometric::Plane *p_wall : p_room->getWalls())
+        std::vector<geometric::Plane *> roomWalls{};
+        if (p_room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
+        for (geometric::Plane *p_wall : roomWalls)
         {
             if (p_wall == nullptr || p_wall->isBad())
             {
@@ -143,16 +182,35 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
             semantic::Room *p_confirmedOwner = nullptr;
             for (semantic::Room *p_otherRoom : allRooms)
             {
+                bool otherRoomIsBad{};
+                if (!(p_otherRoom == nullptr || p_otherRoom == p_room) &&
+                    p_otherRoom->isBad(otherRoomIsBad) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                semantic::Room::RoomVariant otherRoomRoomVariant{};
+                if (!(p_otherRoom == nullptr || p_otherRoom == p_room ||
+                      otherRoomIsBad) &&
+                    p_otherRoom->getRoomVariant(otherRoomRoomVariant) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getRoomVariant cannot fail; continue as before.
+                }
                 if (p_otherRoom == nullptr || p_otherRoom == p_room ||
-                    p_otherRoom->isBad() ||
-                    p_otherRoom->getRoomVariant() ==
+                    otherRoomIsBad ||
+                    otherRoomRoomVariant ==
                         semantic::Room::RoomVariant::UNDEFINED)
                 {
                     continue;
                 }
 
-                const std::vector<geometric::Plane *> otherWalls =
-                    p_otherRoom->getWalls();
+                std::vector<geometric::Plane *> otherWalls{};
+                if (p_otherRoom->getWalls(otherWalls) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getWalls cannot fail; continue as before.
+                }
                 if (std::find(otherWalls.begin(), otherWalls.end(), p_wall) !=
                     otherWalls.end())
                 {
@@ -161,15 +219,32 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
                 }
             }
 
-            semantic::Room *p_farSideRoom =
-                p_separatingPassage->getProspectiveRoom();
+            semantic::Room *p_farSideRoom = nullptr;
+            if (p_separatingPassage->getProspectiveRoom(p_farSideRoom) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getProspectiveRoom cannot fail; continue as before.
+            }
+            bool farSideRoomIsBad{};
+            if ((p_farSideRoom != nullptr) &&
+                p_farSideRoom->isBad(farSideRoomIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
             if (p_farSideRoom != nullptr &&
-                (p_farSideRoom->isBad() || p_farSideRoom == p_room))
+                (farSideRoomIsBad || p_farSideRoom == p_room))
             {
                 p_farSideRoom = nullptr;
             }
 
-            if (!p_room->removeWall(p_wall))
+            bool roomWasWallRemoved{};
+            if (p_room->removeWall(p_wall, roomWasWallRemoved) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                roomWasWallRemoved = false; // rejected input reads as before
+            }
+            if (!roomWasWallRemoved)
             {
                 continue;
             }
@@ -177,33 +252,78 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
             if (p_confirmedOwner != nullptr &&
                 p_confirmedOwner != p_farSideRoom)
             {
+                int roomId{};
+                if (p_room->getId(roomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int confirmedOwnerId{};
+                if (p_confirmedOwner->getId(confirmedOwnerId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout
                     << "[SemMgr] Detached far-side Wall#" << p_wall->getId()
-                    << " from semantic::Room#" << p_room->getId()
+                    << " from semantic::Room#" << roomId
                     << "; retained distinct confirmed owner semantic::Room#"
-                    << p_confirmedOwner->getId() << "." << std::endl;
+                    << confirmedOwnerId << "." << std::endl;
                 continue;
             }
 
             if (p_farSideRoom != nullptr)
             {
-                p_farSideRoom->setWalls(p_wall);
+                if (p_farSideRoom->setWalls(p_wall) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // setWalls cannot fail; continue as before.
+                }
                 if (p_atlas->getRoomWallPlaneById(p_wall->getId()) == nullptr)
                 {
                     p_atlas->addRoomWallPlane(p_wall);
                 }
+                int roomId2{};
+                if (p_room->getId(roomId2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int separatingPassageId{};
+                if (p_separatingPassage->getId(separatingPassageId) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int farSideRoomId{};
+                if (p_farSideRoom->getId(farSideRoomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout << "[SemMgr] Redirected far-side Wall#"
                           << p_wall->getId() << " from semantic::Room#"
-                          << p_room->getId() << " through semantic::Passage#"
-                          << p_separatingPassage->getId()
-                          << " to stable semantic::Room#"
-                          << p_farSideRoom->getId() << "." << std::endl;
+                          << roomId2 << " through semantic::Passage#"
+                          << separatingPassageId << " to stable semantic::Room#"
+                          << farSideRoomId << "." << std::endl;
                 continue;
             }
 
+            int roomId3{};
+            if (p_room->getId(roomId3) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int separatingPassageId2{};
+            if (p_separatingPassage->getId(separatingPassageId2) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             std::cout << "[SemMgr] Detached far-side Wall#" << p_wall->getId()
-                      << " from semantic::Room#" << p_room->getId()
-                      << "; semantic::Passage#" << p_separatingPassage->getId()
+                      << " from semantic::Room#" << roomId3
+                      << "; semantic::Passage#" << separatingPassageId2
                       << " has no stable far-side room, so the wall remains "
                          "orphaned."
                       << std::endl;

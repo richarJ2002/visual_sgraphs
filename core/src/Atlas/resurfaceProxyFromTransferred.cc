@@ -46,81 +46,257 @@ namespace core
 bool resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
                                    semantic::Passage *p_transferred_in)
 {
+    bool proxy_inoutIsRecoveryProxy{};
+    if (!(p_proxy_inout == nullptr || p_transferred_in == nullptr ||
+          p_proxy_inout == p_transferred_in) &&
+        p_proxy_inout->isRecoveryProxy(proxy_inoutIsRecoveryProxy) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // isRecoveryProxy cannot fail; continue as before.
+    }
+    bool proxy_inoutIsBad{};
+    if (!(p_proxy_inout == nullptr || p_transferred_in == nullptr ||
+          p_proxy_inout == p_transferred_in || !proxy_inoutIsRecoveryProxy) &&
+        p_proxy_inout->isBad(proxy_inoutIsBad) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    bool transferred_inIsBad{};
+    if (!(p_proxy_inout == nullptr || p_transferred_in == nullptr ||
+          p_proxy_inout == p_transferred_in || !proxy_inoutIsRecoveryProxy ||
+          proxy_inoutIsBad) &&
+        p_transferred_in->isBad(transferred_inIsBad) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
     if (p_proxy_inout == nullptr || p_transferred_in == nullptr ||
-        p_proxy_inout == p_transferred_in ||
-        !p_proxy_inout->isRecoveryProxy() || p_proxy_inout->isBad() ||
-        p_transferred_in->isBad())
+        p_proxy_inout == p_transferred_in || !proxy_inoutIsRecoveryProxy ||
+        proxy_inoutIsBad || transferred_inIsBad)
     {
         return false;
     }
 
-    const Eigen::Vector3d transferredCentroid = p_transferred_in->getCentroid();
+    Eigen::Vector3d transferredCentroid{};
+    if (p_transferred_in->getCentroid(transferredCentroid) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
+    g2o::Plane3D transferred_inGlobalEquation{};
+    if (p_transferred_in->getGlobalEquation(transferred_inGlobalEquation) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
     const Eigen::Vector4d transferredCoefficients =
-        p_transferred_in->getGlobalEquation().coeffs();
+        transferred_inGlobalEquation.coeffs();
     const double transferredNormalNorm =
         transferredCoefficients.head<3>().norm();
-    const double transferredWidth_m  = p_transferred_in->getWidth();
-    const double transferredHeight_m = p_transferred_in->getHeight();
+    double transferredWidth_m{};
+    if (p_transferred_in->getWidth(transferredWidth_m) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getWidth cannot fail; continue as before.
+    }
+    double transferredHeight_m{};
+    if (p_transferred_in->getHeight(transferredHeight_m) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getHeight cannot fail; continue as before.
+    }
     if (transferredCentroid.allFinite() &&
         transferredCoefficients.allFinite() && transferredNormalNorm > 1e-8 &&
         std::isfinite(transferredWidth_m) && transferredWidth_m > 0.0 &&
         std::isfinite(transferredHeight_m) && transferredHeight_m > 0.0)
     {
-        p_proxy_inout->setCentroid(transferredCentroid);
-        p_proxy_inout->setGlobalEquation(p_transferred_in->getGlobalEquation());
-        p_proxy_inout->setWidth(transferredWidth_m);
-        p_proxy_inout->setHeight(transferredHeight_m);
-        p_proxy_inout->setRecoveryProxy(false);
+        if (p_proxy_inout->setCentroid(transferredCentroid) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setCentroid cannot fail; continue as before.
+        }
+        g2o::Plane3D transferred_inGlobalEquation2{};
+        if (p_transferred_in->getGlobalEquation(
+                transferred_inGlobalEquation2) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        if (p_proxy_inout->setGlobalEquation(transferred_inGlobalEquation2) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setGlobalEquation cannot fail; continue as before.
+        }
+        if (p_proxy_inout->setWidth(transferredWidth_m) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setWidth cannot fail; continue as before.
+        }
+        if (p_proxy_inout->setHeight(transferredHeight_m) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setHeight cannot fail; continue as before.
+        }
+        if (p_proxy_inout->setRecoveryProxy(false) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setRecoveryProxy cannot fail; continue as before.
+        }
     }
-    for (geometric::Plane *p_wall : p_transferred_in->getAssociateWalls())
+    std::vector<vs_graphs::core::geometric::Plane *>
+        transferred_inAssociateWalls{};
+    if (p_transferred_in->getAssociateWalls(transferred_inAssociateWalls) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getAssociateWalls cannot fail; continue as before.
+    }
+    for (geometric::Plane *p_wall : transferred_inAssociateWalls)
     {
         if (p_wall != nullptr)
         {
-            p_proxy_inout->addAssociateWall(p_wall);
+            if (p_proxy_inout->addAssociateWall(p_wall) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // addAssociateWall cannot fail; continue as before.
+            }
         }
     }
-    if (p_proxy_inout->getAssociateDoor() == nullptr &&
-        p_transferred_in->getAssociateDoor() != nullptr)
+    vs_graphs::core::geometric::Plane *p_proxy_inoutAssociateDoor = nullptr;
+    if (p_proxy_inout->getAssociateDoor(p_proxy_inoutAssociateDoor) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        p_proxy_inout->setAssociateDoor(p_transferred_in->getAssociateDoor());
+        // getAssociateDoor cannot fail; continue as before.
     }
-    const semantic::Passage::KnownSideProvenance transferredSide =
-        p_transferred_in->getKnownSideProvenance();
-    if (!p_proxy_inout->getKnownSideProvenance().hasDirection() &&
+    vs_graphs::core::geometric::Plane *p_transferred_inAssociateDoor = nullptr;
+    if ((p_proxy_inoutAssociateDoor == nullptr) &&
+        p_transferred_in->getAssociateDoor(p_transferred_inAssociateDoor) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getAssociateDoor cannot fail; continue as before.
+    }
+    if (p_proxy_inoutAssociateDoor == nullptr &&
+        p_transferred_inAssociateDoor != nullptr)
+    {
+        vs_graphs::core::geometric::Plane *p_transferred_inAssociateDoor2 =
+            nullptr;
+        if (p_transferred_in->getAssociateDoor(
+                p_transferred_inAssociateDoor2) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getAssociateDoor cannot fail; continue as before.
+        }
+        if (p_proxy_inout->setAssociateDoor(p_transferred_inAssociateDoor2) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setAssociateDoor cannot fail; continue as before.
+        }
+    }
+    semantic::Passage::KnownSideProvenance transferredSide{};
+    if (p_transferred_in->getKnownSideProvenance(transferredSide) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getKnownSideProvenance cannot fail; continue as before.
+    }
+    semantic::Passage::KnownSideProvenance proxy_inoutKnownSideProvenance{};
+    if (p_proxy_inout->getKnownSideProvenance(proxy_inoutKnownSideProvenance) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getKnownSideProvenance cannot fail; continue as before.
+    }
+    if (!proxy_inoutKnownSideProvenance.hasDirection() &&
         transferredSide.hasDirection())
     {
-        p_proxy_inout->setKnownSideDirection(transferredSide.direction_World);
+        if (p_proxy_inout->setKnownSideDirection(
+                transferredSide.direction_World) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // Rejected input: ignored, as before.
+        }
+    }
+    std::size_t transferredKnownToFarCount{};
+    if (p_transferred_in->getTraversalKnownToFarCount(
+            transferredKnownToFarCount) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getTraversalKnownToFarCount cannot fail; continue as before.
     }
     for (std::size_t observationIndex = 0U;
-         observationIndex < p_transferred_in->getTraversalKnownToFarCount();
+         observationIndex < transferredKnownToFarCount;
          ++observationIndex)
     {
-        p_proxy_inout->addTraversalObservation(
-            semantic::Passage::TraversalDirection::KNOWN_TO_FAR);
+        if (p_proxy_inout->addTraversalObservation(
+                semantic::Passage::TraversalDirection::KNOWN_TO_FAR) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // addTraversalObservation cannot fail; continue as before.
+        }
+    }
+    std::size_t transferredFarToKnownCount{};
+    if (p_transferred_in->getTraversalFarToKnownCount(
+            transferredFarToKnownCount) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getTraversalFarToKnownCount cannot fail; continue as before.
     }
     for (std::size_t observationIndex = 0U;
-         observationIndex < p_transferred_in->getTraversalFarToKnownCount();
+         observationIndex < transferredFarToKnownCount;
          ++observationIndex)
     {
-        p_proxy_inout->addTraversalObservation(
-            semantic::Passage::TraversalDirection::FAR_TO_KNOWN);
+        if (p_proxy_inout->addTraversalObservation(
+                semantic::Passage::TraversalDirection::FAR_TO_KNOWN) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // addTraversalObservation cannot fail; continue as before.
+        }
+    }
+    std::size_t transferredUnknownCount{};
+    if (p_transferred_in->getTraversalUnknownCount(transferredUnknownCount) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getTraversalUnknownCount cannot fail; continue as before.
     }
     for (std::size_t observationIndex = 0U;
-         observationIndex < p_transferred_in->getTraversalUnknownCount();
+         observationIndex < transferredUnknownCount;
          ++observationIndex)
     {
-        p_proxy_inout->addTraversalObservation(
-            semantic::Passage::TraversalDirection::UNKNOWN);
+        if (p_proxy_inout->addTraversalObservation(
+                semantic::Passage::TraversalDirection::UNKNOWN) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // addTraversalObservation cannot fail; continue as before.
+        }
     }
-    if (p_transferred_in->isPassable())
+    bool transferred_inIsPassable{};
+    if (p_transferred_in->isPassable(transferred_inIsPassable) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        p_proxy_inout->setPassable(true);
+        // isPassable cannot fail; continue as before.
+    }
+    if (transferred_inIsPassable)
+    {
+        if (p_proxy_inout->setPassable(true) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // setPassable cannot fail; continue as before.
+        }
+    }
+    vs_graphs::core::Map *p_proxy_inoutMap = nullptr;
+    if (p_proxy_inout->getMap(p_proxy_inoutMap) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
+    int proxy_inoutId{};
+    if (p_proxy_inout->getId(proxy_inoutId) !=
+        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
     }
     std::cout << "SG_PIPELINE {\"event\":\"passage_resurfaced\","
                  "\"map_id\":"
-              << p_proxy_inout->getMap()->getId()
-              << ",\"passage_id\":" << p_proxy_inout->getId() << "}"
-              << std::endl;
+              << p_proxy_inoutMap->getId()
+              << ",\"passage_id\":" << proxy_inoutId << "}" << std::endl;
     return true;
 }
 

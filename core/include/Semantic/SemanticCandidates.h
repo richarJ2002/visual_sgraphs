@@ -3,6 +3,7 @@
 #define SEMANTIC_CANDIDATES_H
 
 #include "Semantic/RoomContextSnapshot.h"
+#include "Semantic/SemanticCandidatesStatus.h"
 
 #include <cstddef>
 #include <map>
@@ -99,12 +100,14 @@ class SemanticCandidates
 {
   public:
     /*! Validates every candidate-generation field without touching map data. */
-    static SemanticCandidateConfigRejectionReason
-        validateConfig(const SemanticCandidateConfig &configuration_in);
+    [[nodiscard]] static SemanticCandidatesStatus validateConfig(
+        const SemanticCandidateConfig          &configuration_in,
+        SemanticCandidateConfigRejectionReason &rejectionReason_out);
 
     /*! Returns a stable diagnostic name for a typed rejection reason. */
-    static const char *
-        rejectionReasonName(SemanticCandidateConfigRejectionReason reason_in);
+    [[nodiscard]] static SemanticCandidatesStatus
+        rejectionReasonName(SemanticCandidateConfigRejectionReason reason_in,
+                            const char                           *&p_name_out);
 
     /*! Generates bounded candidates and reports configuration rejection.
      *
@@ -116,18 +119,20 @@ class SemanticCandidates
      *  global fallback (additionally capped by \c globalFallbackCap)
      *  enumerate the remaining pairs. When absent, behaviour is the
      *  unrestricted global enumeration only. */
-    static SemanticCandidateGeneration generateWithStatus(
+    [[nodiscard]] static SemanticCandidatesStatus generateWithStatus(
         const std::map<long unsigned int, std::vector<RoomContextSnapshot>>
                                       &history_in,
+        SemanticCandidateGeneration   &generation_out,
         const SemanticCandidateConfig &configuration_in =
             SemanticCandidateConfig(),
         std::optional<int> anchorRoomId_in = std::nullopt);
 
     /*! Scores copied room snapshots only; no map or transform is touched. */
-    static std::vector<SemanticCandidate> generate(
+    [[nodiscard]] static SemanticCandidatesStatus generate(
         const std::map<long unsigned int, std::vector<RoomContextSnapshot>>
-                                      &history_in,
-        const SemanticCandidateConfig &configuration_in =
+                                       &history_in,
+        std::vector<SemanticCandidate> &candidates_out,
+        const SemanticCandidateConfig  &configuration_in =
             SemanticCandidateConfig(),
         std::optional<int> anchorRoomId_in = std::nullopt);
 };

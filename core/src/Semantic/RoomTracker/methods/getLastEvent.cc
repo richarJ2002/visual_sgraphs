@@ -26,9 +26,11 @@ namespace core
 namespace semantic
 {
 
-const TransitionEvent &RoomTracker::getLastEvent() const
+RoomTrackerStatus
+    RoomTracker::getLastEvent(const TransitionEvent *&p_lastEvent_out) const
 {
-    return lastEvent;
+    p_lastEvent_out = &(lastEvent);
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

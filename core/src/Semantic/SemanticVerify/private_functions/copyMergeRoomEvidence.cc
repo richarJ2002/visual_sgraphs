@@ -35,43 +35,139 @@ SemanticMergeRoomEvidence
                           const SemanticVerifyConfig &configuration_in)
 {
     SemanticMergeRoomEvidence evidence;
-    evidence.context.roomId   = p_room_in->getId();
-    evidence.context.roomTag  = p_room_in->getRoomTag();
-    evidence.context.centroid = p_room_in->getCentroid();
-    Floor *p_floor            = p_room_in->getFloor();
-    evidence.context.floorId  = p_floor != nullptr ? p_floor->getId() : -1;
-    evidence.walls =
-        SemanticVerify::collectWallObservations(p_room_in, configuration_in);
-    for (Passage *p_passage : p_room_in->getPassages())
+    int                       room_inId{};
+    if (p_room_in->getId(room_inId) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        if (p_passage == nullptr || p_passage->isBad())
+        // getId cannot fail; continue as before.
+    }
+    evidence.context.roomId = room_inId;
+    std::string room_inRoomTag{};
+    if (p_room_in->getRoomTag(room_inRoomTag) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getRoomTag cannot fail; continue as before.
+    }
+    evidence.context.roomTag = room_inRoomTag;
+    Eigen::Vector3d room_inCentroid{};
+    if (p_room_in->getCentroid(room_inCentroid) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
+    evidence.context.centroid = room_inCentroid;
+    Floor *p_floor            = nullptr;
+    if (p_room_in->getFloor(p_floor) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getFloor cannot fail; continue as before.
+    }
+    int floorId2{};
+    if ((p_floor != nullptr) &&
+        p_floor->getId(floorId2) != FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    evidence.context.floorId = p_floor != nullptr ? floorId2 : -1;
+    std::vector<VerifyWallObservation> observations{};
+    if (SemanticVerify::collectWallObservations(p_room_in,
+                                                configuration_in,
+                                                observations) !=
+        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        // collectWallObservations cannot fail; continue as before.
+    }
+    evidence.walls = observations;
+    std::vector<vs_graphs::core::semantic::Passage *> room_inPassages{};
+    if (p_room_in->getPassages(room_inPassages) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getPassages cannot fail; continue as before.
+    }
+    for (Passage *p_passage : room_inPassages)
+    {
+        bool passageIsBad{};
+        if (!(p_passage == nullptr) &&
+            p_passage->isBad(passageIsBad) !=
+                PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_passage == nullptr || passageIsBad)
         {
             continue;
         }
         PassageContext context;
-        context.id              = p_passage->getId();
-        context.isPassable      = p_passage->isPassable();
-        context.centroid_World  = p_passage->getCentroid();
-        context.width_m         = p_passage->getWidth();
-        context.height_m        = p_passage->getHeight();
-        context.isRecoveryProxy = p_passage->isRecoveryProxy();
+        int            passageId{};
+        if (p_passage->getId(passageId) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        context.id = passageId;
+        bool passageIsPassable{};
+        if (p_passage->isPassable(passageIsPassable) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // isPassable cannot fail; continue as before.
+        }
+        context.isPassable = passageIsPassable;
+        Eigen::Vector3d passageCentroid{};
+        if (p_passage->getCentroid(passageCentroid) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
+        context.centroid_World = passageCentroid;
+        double passageWidth{};
+        if (p_passage->getWidth(passageWidth) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getWidth cannot fail; continue as before.
+        }
+        context.width_m = passageWidth;
+        double passageHeight{};
+        if (p_passage->getHeight(passageHeight) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getHeight cannot fail; continue as before.
+        }
+        context.height_m = passageHeight;
+        bool passageIsRecoveryProxy{};
+        if (p_passage->isRecoveryProxy(passageIsRecoveryProxy) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // isRecoveryProxy cannot fail; continue as before.
+        }
+        context.isRecoveryProxy = passageIsRecoveryProxy;
         context.isApertureValid =
             std::isfinite(context.width_m) && std::isfinite(context.height_m) &&
             context.width_m > 0.0 && context.height_m > 0.0;
-        const Passage::KnownSideProvenance knownSide =
-            p_passage->getKnownSideProvenance();
+        Passage::KnownSideProvenance knownSide{};
+        if (p_passage->getKnownSideProvenance(knownSide) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getKnownSideProvenance cannot fail; continue as before.
+        }
         context.hasKnownSideRoom = knownSide.p_room != nullptr;
         if (context.hasKnownSideRoom)
         {
-            context.knownSideRoomId = knownSide.p_room->getId();
+            int id2{};
+            if (knownSide.p_room->getId(id2) != RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            context.knownSideRoomId = id2;
         }
         context.hasKnownSideDirection = knownSide.hasDirection();
         if (context.hasKnownSideDirection)
         {
             context.knownSideDirection_World = knownSide.direction_World;
         }
-        const std::optional<int> farSideRoomId =
-            p_passage->getProspectiveRoomId();
+        std::optional<int> farSideRoomId{};
+        if (p_passage->getProspectiveRoomId(farSideRoomId) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getProspectiveRoomId cannot fail; continue as before.
+        }
         context.hasFarSideRoom = farSideRoomId.has_value();
         if (farSideRoomId.has_value())
         {

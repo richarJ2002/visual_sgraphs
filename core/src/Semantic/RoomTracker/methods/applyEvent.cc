@@ -26,14 +26,25 @@ namespace core
 namespace semantic
 {
 
-RoomTrackingState
+RoomTrackerStatus
     RoomTracker::applyEvent(RoomTrackingEvent           event_in,
                             double                      now_s_in,
                             const TraversalGuardValues &crossing_in,
-                            const VerificationVerdict  &verification_in)
+                            const VerificationVerdict  &verification_in,
+                            RoomTrackingState          &nextState_out)
 {
-    applyRow(trackingState, event_in, now_s_in, crossing_in, verification_in);
-    return trackingState;
+    bool isAccepted{};
+    if (applyRow(trackingState,
+                 event_in,
+                 now_s_in,
+                 crossing_in,
+                 verification_in,
+                 isAccepted) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
+    {
+        // applyRow cannot fail; continue as before.
+    }
+    nextState_out = trackingState;
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

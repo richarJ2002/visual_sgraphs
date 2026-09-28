@@ -28,12 +28,13 @@ namespace core
 namespace semantic
 {
 
-bool Floor::planeIdentitiesMatch(const PlaneIdentity &firstIdentity_in,
-                                 const PlaneIdentity &secondIdentity_in,
-                                 const double         maximumNormalAngle_deg_in,
-                                 const double         maximumOffset_m_in,
-                                 double              &normalAngle_deg_out,
-                                 double              &offset_m_out)
+FloorStatus Floor::planeIdentitiesMatch(const PlaneIdentity &firstIdentity_in,
+                                        const PlaneIdentity &secondIdentity_in,
+                                        const double maximumNormalAngle_deg_in,
+                                        const double maximumOffset_m_in,
+                                        double      &normalAngle_deg_out,
+                                        double      &offset_m_out,
+                                        bool        &isMatch_out)
 {
     Eigen::Vector4d firstEquation    = firstIdentity_in.equation_World;
     Eigen::Vector4d secondEquation   = secondIdentity_in.equation_World;
@@ -45,7 +46,8 @@ bool Floor::planeIdentitiesMatch(const PlaneIdentity &firstIdentity_in,
     {
         normalAngle_deg_out = std::numeric_limits<double>::infinity();
         offset_m_out        = std::numeric_limits<double>::infinity();
-        return false;
+        isMatch_out         = false;
+        return FloorStatus::FLOOR_STATUS_SUCCESS;
     }
 
     firstEquation /= firstNormalNorm;
@@ -62,8 +64,9 @@ bool Floor::planeIdentitiesMatch(const PlaneIdentity &firstIdentity_in,
     normalAngle_deg_out = std::acos(normalDot) * 180.0 / std::acos(-1.0);
     offset_m_out        = std::abs(firstEquation(3) - secondEquation(3));
 
-    return normalAngle_deg_out <= maximumNormalAngle_deg_in &&
-           offset_m_out <= maximumOffset_m_in;
+    isMatch_out = normalAngle_deg_out <= maximumNormalAngle_deg_in &&
+                  offset_m_out <= maximumOffset_m_in;
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

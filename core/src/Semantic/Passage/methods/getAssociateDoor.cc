@@ -28,10 +28,12 @@ namespace core
 namespace semantic
 {
 
-vs_graphs::core::geometric::Plane *Passage::getAssociateDoor() const
+PassageStatus Passage::getAssociateDoor(
+    vs_graphs::core::geometric::Plane *&p_associateDoor_out) const
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
-    return p_associatedDoor;
+    p_associateDoor_out = p_associatedDoor;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -19,6 +19,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -28,6 +29,11 @@ namespace core
 {
 
 class Map;
+
+namespace geometric
+{
+class Plane;
+} // namespace geometric
 
 namespace semantic
 {
@@ -40,6 +46,23 @@ bool planImportedIds(const std::vector<Entity *>           &existingEntities_in,
                      const char                            *entityName_in,
                      std::vector<std::pair<Entity *, int>> &assignments_out)
 {
+    // Identity of an imported or existing entity. Every semantic status
+    // enumeration uses 0 for SUCCESS; getId cannot fail.
+    const auto idOf = [](const Entity *p_entity_in)
+    {
+        int entityId = -1;
+        if constexpr (std::is_same<Entity, geometric::Plane>::value)
+        {
+            // Plane keeps its value-returning getId until its own conversion.
+            entityId = p_entity_in->getId();
+        }
+        else if (p_entity_in->getId(entityId) !=
+                 decltype(p_entity_in->getId(entityId)){})
+        {
+            // getId cannot fail; continue as before.
+        }
+        return entityId;
+    };
     const std::set<Entity *> importedEntities(importedEntities_in.begin(),
                                               importedEntities_in.end());
     std::set<int>            destinationIds;
@@ -60,9 +83,9 @@ bool planImportedIds(const std::vector<Entity *>           &existingEntities_in,
             return false;
         }
 
-        if (p_entity->getId() >= 0)
+        if (idOf(p_entity) >= 0)
         {
-            destinationIds.insert(p_entity->getId());
+            destinationIds.insert(idOf(p_entity));
         }
     }
 
@@ -77,10 +100,10 @@ bool planImportedIds(const std::vector<Entity *>           &existingEntities_in,
             continue;
         }
 
-        if (!importedOriginalIds.insert(p_entity->getId()).second)
+        if (!importedOriginalIds.insert(idOf(p_entity)).second)
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: duplicate "
-                      << entityName_in << " ID " << p_entity->getId()
+                      << entityName_in << " ID " << idOf(p_entity)
                       << " in source map." << std::endl;
             return false;
         }
@@ -90,16 +113,15 @@ bool planImportedIds(const std::vector<Entity *>           &existingEntities_in,
 
     std::sort(orderedImportedEntities.begin(),
               orderedImportedEntities.end(),
-              [](const Entity *p_first, const Entity *p_second)
-              { return p_first->getId() < p_second->getId(); });
+              [&idOf](const Entity *p_first, const Entity *p_second)
+              { return idOf(p_first) < idOf(p_second); });
 
     std::set<int> reservedIds = destinationIds;
     for (Entity *p_entity : orderedImportedEntities)
     {
-        if (p_entity->getId() >= 0 &&
-            destinationIds.count(p_entity->getId()) == 0U)
+        if (idOf(p_entity) >= 0 && destinationIds.count(idOf(p_entity)) == 0U)
         {
-            reservedIds.insert(p_entity->getId());
+            reservedIds.insert(idOf(p_entity));
         }
     }
 
@@ -109,7 +131,7 @@ bool planImportedIds(const std::vector<Entity *>           &existingEntities_in,
 
     for (Entity *p_entity : orderedImportedEntities)
     {
-        int assignedId = p_entity->getId();
+        int assignedId = idOf(p_entity);
         if (assignedId < 0 || destinationIds.count(assignedId) > 0U)
         {
             while (reservedIds.count(nextAvailableId) > 0U)

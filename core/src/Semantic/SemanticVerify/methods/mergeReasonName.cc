@@ -28,34 +28,70 @@ namespace core
 namespace semantic
 {
 
-const char *SemanticVerify::mergeReasonName(const SemanticMergeReason reason_in)
+SemanticVerifyStatus
+    SemanticVerify::mergeReasonName(const SemanticMergeReason reason_in,
+                                    const char              *&p_name_out)
 {
     switch (reason_in)
     {
     case SemanticMergeReason::ALIGNED:
-        return "ALIGNED";
-    case SemanticMergeReason::INVALID_INPUT:
-        return "INVALID_INPUT";
-    case SemanticMergeReason::FLOOR_EVIDENCE_MISSING:
-        return "FLOOR_EVIDENCE_MISSING";
-    case SemanticMergeReason::FLOOR_CONTRADICTION:
-        return "FLOOR_CONTRADICTION";
-    case SemanticMergeReason::SHARED_ROOM_IDENTITY_MISSING:
-        return "SHARED_ROOM_IDENTITY_MISSING";
-    case SemanticMergeReason::WALL_EVIDENCE_MISSING:
-        return "WALL_EVIDENCE_MISSING";
-    case SemanticMergeReason::WALL_ALIGNMENT_CONTRADICTION:
-        return "WALL_ALIGNMENT_CONTRADICTION";
-    case SemanticMergeReason::PASSAGE_EVIDENCE_MISSING:
-        return "PASSAGE_EVIDENCE_MISSING";
-    case SemanticMergeReason::PASSAGE_IDENTITY_CONTRADICTION:
-        return "PASSAGE_IDENTITY_CONTRADICTION";
-    case SemanticMergeReason::PASSAGE_ENDPOINT_CONTRADICTION:
-        return "PASSAGE_ENDPOINT_CONTRADICTION";
-    case SemanticMergeReason::PASSAGE_DIRECTION_CONTRADICTION:
-        return "PASSAGE_DIRECTION_CONTRADICTION";
+    {
+        p_name_out = "ALIGNED";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
-    return "UNKNOWN";
+    case SemanticMergeReason::INVALID_INPUT:
+    {
+        p_name_out = "INVALID_INPUT";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    case SemanticMergeReason::FLOOR_EVIDENCE_MISSING:
+    {
+        p_name_out = "FLOOR_EVIDENCE_MISSING";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    case SemanticMergeReason::FLOOR_CONTRADICTION:
+    {
+        p_name_out = "FLOOR_CONTRADICTION";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    case SemanticMergeReason::SHARED_ROOM_IDENTITY_MISSING:
+    {
+        p_name_out = "SHARED_ROOM_IDENTITY_MISSING";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    case SemanticMergeReason::WALL_EVIDENCE_MISSING:
+    {
+        p_name_out = "WALL_EVIDENCE_MISSING";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    case SemanticMergeReason::WALL_ALIGNMENT_CONTRADICTION:
+    {
+        p_name_out = "WALL_ALIGNMENT_CONTRADICTION";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    case SemanticMergeReason::PASSAGE_EVIDENCE_MISSING:
+    {
+        p_name_out = "PASSAGE_EVIDENCE_MISSING";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    case SemanticMergeReason::PASSAGE_IDENTITY_CONTRADICTION:
+    {
+        p_name_out = "PASSAGE_IDENTITY_CONTRADICTION";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    case SemanticMergeReason::PASSAGE_ENDPOINT_CONTRADICTION:
+    {
+        p_name_out = "PASSAGE_ENDPOINT_CONTRADICTION";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    case SemanticMergeReason::PASSAGE_DIRECTION_CONTRADICTION:
+    {
+        p_name_out = "PASSAGE_DIRECTION_CONTRADICTION";
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    }
+    p_name_out = "UNKNOWN";
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

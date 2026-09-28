@@ -28,10 +28,11 @@ namespace core
 namespace semantic
 {
 
-double Passage::getWidth() const
+PassageStatus Passage::getWidth(double &width_out) const
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
-    return width;
+    width_out = width;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

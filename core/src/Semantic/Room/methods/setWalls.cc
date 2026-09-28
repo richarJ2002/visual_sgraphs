@@ -27,15 +27,18 @@ namespace core
 namespace semantic
 {
 
-void Room::setWalls(geometric::Plane *p_wall_in)
+RoomStatus Room::setWalls(geometric::Plane *p_wall_in)
 {
     /* Confirm that input wall is valid */
     if (p_wall_in == nullptr)
     {
-        return;
+        return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
-    setRecoveryProxy(false);
+    if (setRecoveryProxy(false) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // setRecoveryProxy cannot fail; continue as before.
+    }
 
     std::lock_guard<std::mutex> lock(wallsMutex);
 
@@ -51,6 +54,8 @@ void Room::setWalls(geometric::Plane *p_wall_in)
     {
         walls.push_back(p_wall_in);
     }
+
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

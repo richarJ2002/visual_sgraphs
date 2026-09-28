@@ -31,16 +31,100 @@ semantic::Marker *
     vs_graphs::core::semantic::Marker *p_newMapMarker =
         new vs_graphs::core::semantic::Marker();
 
-    p_newMapMarker->setId(p_visitedMarker_in->getId());
-    p_newMapMarker->setMap(p_atlas_inout->getCurrentMap());
-    p_newMapMarker->setOpId(p_visitedMarker_in->getOpId());
-    p_newMapMarker->setTime(p_visitedMarker_in->getTime());
-    p_newMapMarker->setLocalPose(p_visitedMarker_in->getLocalPose());
-    p_newMapMarker->setGlobalPose(p_visitedMarker_in->getGlobalPose());
-    p_newMapMarker->setMarkerType(p_visitedMarker_in->getMarkerType());
-    p_newMapMarker->setMarkerInGMap(p_visitedMarker_in->isMarkerInGMap());
-    p_newMapMarker->addObservation(p_keyFrame_inout,
-                                   p_visitedMarker_in->getLocalPose());
+    int visitedMarker_inId{};
+    if (p_visitedMarker_in->getId(visitedMarker_inId) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    if (p_newMapMarker->setId(visitedMarker_inId) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (p_newMapMarker->setMap(p_atlas_inout->getCurrentMap()) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    int visitedMarker_inOpId{};
+    if (p_visitedMarker_in->getOpId(visitedMarker_inOpId) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // getOpId cannot fail; continue as before.
+    }
+    if (p_newMapMarker->setOpId(visitedMarker_inOpId) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // setOpId cannot fail; continue as before.
+    }
+    double visitedMarker_inTime{};
+    if (p_visitedMarker_in->getTime(visitedMarker_inTime) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // getTime cannot fail; continue as before.
+    }
+    if (p_newMapMarker->setTime(visitedMarker_inTime) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // setTime cannot fail; continue as before.
+    }
+    Sophus::SE3f visitedMarker_inLocalPose{};
+    if (p_visitedMarker_in->getLocalPose(visitedMarker_inLocalPose) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // getLocalPose cannot fail; continue as before.
+    }
+    if (p_newMapMarker->setLocalPose(visitedMarker_inLocalPose) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // setLocalPose cannot fail; continue as before.
+    }
+    Sophus::SE3f visitedMarker_inGlobalPose{};
+    if (p_visitedMarker_in->getGlobalPose(visitedMarker_inGlobalPose) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // getGlobalPose cannot fail; continue as before.
+    }
+    if (p_newMapMarker->setGlobalPose(visitedMarker_inGlobalPose) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // setGlobalPose cannot fail; continue as before.
+    }
+    semantic::Marker::MarkerVariant visitedMarker_inMarkerType{};
+    if (p_visitedMarker_in->getMarkerType(visitedMarker_inMarkerType) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // getMarkerType cannot fail; continue as before.
+    }
+    if (p_newMapMarker->setMarkerType(visitedMarker_inMarkerType) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // setMarkerType cannot fail; continue as before.
+    }
+    bool visitedMarker_inIsMarkerInGMap{};
+    if (p_visitedMarker_in->isMarkerInGMap(visitedMarker_inIsMarkerInGMap) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // isMarkerInGMap cannot fail; continue as before.
+    }
+    if (p_newMapMarker->setMarkerInGMap(visitedMarker_inIsMarkerInGMap) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // setMarkerInGMap cannot fail; continue as before.
+    }
+    Sophus::SE3f visitedMarker_inLocalPose2{};
+    if (p_visitedMarker_in->getLocalPose(visitedMarker_inLocalPose2) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // getLocalPose cannot fail; continue as before.
+    }
+    if (p_newMapMarker->addObservation(p_keyFrame_inout,
+                                       visitedMarker_inLocalPose2) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // addObservation cannot fail; continue as before.
+    }
 
     p_keyFrame_inout->addMapMarker(p_newMapMarker);
     p_atlas_inout->addMapMarker(p_newMapMarker);

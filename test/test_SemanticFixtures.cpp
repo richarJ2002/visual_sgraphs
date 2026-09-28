@@ -101,10 +101,21 @@ TEST(SemanticFixtures, MakeRoomAttachesWallAndCentroid)
     semantic::Room room;
     makeRoom(room, 5, p_map, &wall, Eigen::Vector3d(3.0, 4.0, 0.0));
 
-    EXPECT_EQ(room.getId(), 5);
-    EXPECT_EQ(room.getRoomVariant(), semantic::Room::RoomVariant::ROOM);
-    EXPECT_TRUE(room.getCentroid().isApprox(Eigen::Vector3d(3.0, 4.0, 0.0)));
-    const auto walls = room.getWalls();
+    int id{};
+    ASSERT_EQ((room.getId(id)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(id, 5);
+    vs_graphs::core::semantic::Room::RoomVariant roomVariant{};
+    ASSERT_EQ((room.getRoomVariant(roomVariant)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(roomVariant, semantic::Room::RoomVariant::ROOM);
+    Eigen::Vector3d centroid{};
+    ASSERT_EQ((room.getCentroid(centroid)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(centroid.isApprox(Eigen::Vector3d(3.0, 4.0, 0.0)));
+    std::vector<vs_graphs::core::geometric::Plane *> walls{};
+    ASSERT_EQ((room.getWalls(walls)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(walls.size(), 1U);
     EXPECT_EQ(walls.front(), &wall);
 }
@@ -129,13 +140,30 @@ TEST(SemanticFixtures, MakePassageWiresKnownAndFarSide)
                 Eigen::Vector3d(-1.0, 0.0, 0.0),
                 &farRoom);
 
-    EXPECT_EQ(passage.getId(), 9);
+    int id{};
+    ASSERT_EQ((passage.getId(id)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(id, 9);
     /* makePassage never claims traversal evidence on the caller's behalf. */
-    EXPECT_FALSE(passage.getTraversalEvidence());
-    EXPECT_EQ(passage.getKnownSideProvenance().p_room, &knownRoom);
-    EXPECT_TRUE(passage.getKnownSideProvenance().direction_World.isApprox(
+    bool traversalEvidence{};
+    ASSERT_EQ((passage.getTraversalEvidence(traversalEvidence)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_FALSE(traversalEvidence);
+    vs_graphs::core::semantic::Passage::KnownSideProvenance
+        knownSideProvenance{};
+    ASSERT_EQ((passage.getKnownSideProvenance(knownSideProvenance)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(knownSideProvenance.p_room, &knownRoom);
+    vs_graphs::core::semantic::Passage::KnownSideProvenance
+        knownSideProvenance2{};
+    ASSERT_EQ((passage.getKnownSideProvenance(knownSideProvenance2)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_TRUE(knownSideProvenance2.direction_World.isApprox(
         Eigen::Vector3d(-1.0, 0.0, 0.0)));
-    EXPECT_EQ(passage.getProspectiveRoom(), &farRoom);
+    vs_graphs::core::semantic::Room *p_prospectiveRoom = nullptr;
+    ASSERT_EQ((passage.getProspectiveRoom(p_prospectiveRoom)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(p_prospectiveRoom, &farRoom);
 }
 
 TEST(SemanticFixtures, MakeFloorOwnsGivenRooms)
@@ -151,7 +179,9 @@ TEST(SemanticFixtures, MakeFloorOwnsGivenRooms)
     semantic::Floor floor;
     makeFloor(floor, 3, p_map, {&roomA, &roomB}, 0.0);
 
-    const auto rooms = floor.getRooms();
+    std::vector<vs_graphs::core::semantic::Room *> rooms{};
+    ASSERT_EQ((floor.getRooms(rooms)),
+              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     ASSERT_EQ(rooms.size(), 2U);
     EXPECT_NE(std::find(rooms.begin(), rooms.end(), &roomA), rooms.end());
     EXPECT_NE(std::find(rooms.begin(), rooms.end(), &roomB), rooms.end());

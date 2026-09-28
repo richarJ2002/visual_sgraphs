@@ -110,17 +110,39 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
     /* Compare floor identities in the surviving map frame without mutating
      * either map. A mismatch rejects the merge before any entity is moved. */
-    semantic::Floor *p_currentFloor = semantic::Floor::selectBestObservedFloor(
-        p_currentMap_inout->getAllFloors());
-    semantic::Floor *p_otherFloor = semantic::Floor::selectBestObservedFloor(
-        p_otherMap_inout->getAllFloors());
+    semantic::Floor *p_currentFloor = nullptr;
+    if (semantic::Floor::selectBestObservedFloor(
+            p_currentMap_inout->getAllFloors(),
+            p_currentFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // selectBestObservedFloor cannot fail; continue as before.
+    }
+    semantic::Floor *p_otherFloor = nullptr;
+    if (semantic::Floor::selectBestObservedFloor(
+            p_otherMap_inout->getAllFloors(),
+            p_otherFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // selectBestObservedFloor cannot fail; continue as before.
+    }
 
+    std::optional<semantic::Floor::PlaneIdentity> currentFloorPlaneIdentity{};
+    if ((p_currentFloor != nullptr) &&
+        p_currentFloor->getPlaneIdentity(currentFloorPlaneIdentity) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getPlaneIdentity cannot fail; continue as before.
+    }
     const std::optional<semantic::Floor::PlaneIdentity> currentFloorIdentity =
-        p_currentFloor != nullptr ? p_currentFloor->getPlaneIdentity()
-                                  : std::nullopt;
+        p_currentFloor != nullptr ? currentFloorPlaneIdentity : std::nullopt;
+    std::optional<semantic::Floor::PlaneIdentity> otherFloorPlaneIdentity{};
+    if ((p_otherFloor != nullptr) &&
+        p_otherFloor->getPlaneIdentity(otherFloorPlaneIdentity) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getPlaneIdentity cannot fail; continue as before.
+    }
     const std::optional<semantic::Floor::PlaneIdentity> otherFloorIdentity =
-        p_otherFloor != nullptr ? p_otherFloor->getPlaneIdentity()
-                                : std::nullopt;
+        p_otherFloor != nullptr ? otherFloorPlaneIdentity : std::nullopt;
 
     const g2o::Sim3 floorTransform_otherWorldToCurrentWorld(
         T_otherToCurrent.linear(),
@@ -129,23 +151,34 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
     if (currentFloorIdentity.has_value() && otherFloorIdentity.has_value())
     {
-        const std::optional<semantic::Floor::PlaneIdentity>
-            transformedOtherFloorIdentity =
-                semantic::Floor::transformPlaneIdentity(
-                    *otherFloorIdentity,
-                    floorTransform_otherWorldToCurrentWorld);
+        std::optional<semantic::Floor::PlaneIdentity>
+            transformedOtherFloorIdentity{};
+        if (semantic::Floor::transformPlaneIdentity(
+                *otherFloorIdentity,
+                floorTransform_otherWorldToCurrentWorld,
+                transformedOtherFloorIdentity) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // transformPlaneIdentity cannot fail; continue as before.
+        }
 
         double floorNormalAngle_deg = std::numeric_limits<double>::infinity();
         double floorOffset_m        = std::numeric_limits<double>::infinity();
 
-        if (!transformedOtherFloorIdentity.has_value() ||
-            !semantic::Floor::planeIdentitiesMatch(
+        bool isMatch{};
+        if (!(!transformedOtherFloorIdentity.has_value()) &&
+            semantic::Floor::planeIdentitiesMatch(
                 *currentFloorIdentity,
                 transformedOtherFloorIdentity.value_or(*otherFloorIdentity),
                 semantic::Floor::kMergeMaxPlaneNormalAngle_deg,
                 semantic::Floor::kMergeMaxPlaneOffset_m,
                 floorNormalAngle_deg,
-                floorOffset_m))
+                floorOffset_m,
+                isMatch) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // planeIdentitiesMatch cannot fail; continue as before.
+        }
+        if (!transformedOtherFloorIdentity.has_value() || !isMatch)
         {
             std::cerr << "[FloorVerify] Rejecting merge: Map#"
                       << p_currentMap_inout->getId() << " and Map#"
@@ -274,7 +307,14 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
     for (semantic::Marker *p_marker : importedMarkers)
     {
-        if (p_marker == nullptr || !ownerIsTransferable(p_marker->getMap()))
+        core::Map *p_markerMap = nullptr;
+        if (!(p_marker == nullptr) &&
+            p_marker->getMap(p_markerMap) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+        {
+            // getMap cannot fail; continue as before.
+        }
+        if (p_marker == nullptr || !ownerIsTransferable(p_markerMap))
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source marker "
                          "has inconsistent ownership."
@@ -285,7 +325,14 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
     for (semantic::Passage *p_passage : importedPassages)
     {
-        if (p_passage == nullptr || !ownerIsTransferable(p_passage->getMap()))
+        vs_graphs::core::Map *p_passageMap = nullptr;
+        if (!(p_passage == nullptr) &&
+            p_passage->getMap(p_passageMap) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            // getMap cannot fail; continue as before.
+        }
+        if (p_passage == nullptr || !ownerIsTransferable(p_passageMap))
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source passage "
                          "has inconsistent ownership."
@@ -296,7 +343,14 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
     for (semantic::Room *p_room : importedRooms)
     {
-        if (p_room == nullptr || !ownerIsTransferable(p_room->getMap()))
+        core::Map *p_roomMap = nullptr;
+        if (!(p_room == nullptr) &&
+            p_room->getMap(p_roomMap) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getMap cannot fail; continue as before.
+        }
+        if (p_room == nullptr || !ownerIsTransferable(p_roomMap))
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source room "
                          "has inconsistent ownership."
@@ -307,7 +361,14 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
     for (semantic::Floor *p_floor : importedFloors)
     {
-        if (p_floor == nullptr || !ownerIsTransferable(p_floor->getMap()))
+        vs_graphs::core::Map *p_floorMap = nullptr;
+        if (!(p_floor == nullptr) &&
+            p_floor->getMap(p_floorMap) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getMap cannot fail; continue as before.
+        }
+        if (p_floor == nullptr || !ownerIsTransferable(p_floorMap))
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source floor "
                          "has inconsistent ownership."
@@ -391,10 +452,23 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
         std::unordered_map<int, int> importedMarkerIdRemap;
         for (const auto &[p_marker, assignedId] : markerIdAssignments)
         {
-            importedMarkerIdRemap.insert_or_assign(p_marker->getId(),
-                                                   assignedId);
-            p_marker->setId(assignedId);
-            p_marker->setMap(p_currentMap_inout);
+            int markerId{};
+            if (p_marker->getId(markerId) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            importedMarkerIdRemap.insert_or_assign(markerId, assignedId);
+            if (p_marker->setId(assignedId) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
+            if (p_marker->setMap(p_currentMap_inout) !=
+                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_currentMap_inout->addMapMarker(p_marker);
             p_otherMap_inout->eraseMapMarker(p_marker);
         }
@@ -405,42 +479,93 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
              * transferred (now in-frame) state into the proxy instead of
              * duplicating the doorway. The transferred object retires with
              * the absorbed map; it never enters the current map. */
+            int passageId{};
+            if (p_passage->getId(passageId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             semantic::Passage *p_proxy =
-                p_currentMap_inout->getPassageById(p_passage->getId());
+                p_currentMap_inout->getPassageById(passageId);
             if (p_proxy != nullptr &&
                 resurfaceProxyFromTransferred(p_proxy, p_passage))
             {
-                p_passage->setBad();
+                if (p_passage->setBad() !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // setBad cannot fail; continue as before.
+                }
                 continue;
             }
-            p_passage->setId(assignedId);
-            p_passage->setMap(p_currentMap_inout);
+            if (p_passage->setId(assignedId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
+            if (p_passage->setMap(p_currentMap_inout) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_currentMap_inout->addMapPassage(p_passage);
             p_otherMap_inout->eraseMapPassage(p_passage);
         }
 
         for (semantic::Room *p_room : importedRooms)
         {
-            semantic::Marker *p_metaMarker = p_room->getMetaMarker();
+            semantic::Marker *p_metaMarker = nullptr;
+            if (p_room->getMetaMarker(p_metaMarker) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getMetaMarker cannot fail; continue as before.
+            }
             if (p_metaMarker != nullptr)
             {
-                p_room->setMetaMarkerId(p_metaMarker->getId());
+                int metaMarkerId{};
+                if (p_metaMarker->getId(metaMarkerId) !=
+                    semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                if (p_room->setMetaMarkerId(metaMarkerId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // setMetaMarkerId cannot fail; continue as before.
+                }
             }
             else
             {
+                int roomMetaMarkerId{};
+                if (p_room->getMetaMarkerId(roomMetaMarkerId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getMetaMarkerId cannot fail; continue as before.
+                }
                 const auto markerIdIterator =
-                    importedMarkerIdRemap.find(p_room->getMetaMarkerId());
+                    importedMarkerIdRemap.find(roomMetaMarkerId);
                 if (markerIdIterator != importedMarkerIdRemap.end())
                 {
-                    p_room->setMetaMarkerId(markerIdIterator->second);
+                    if (p_room->setMetaMarkerId(markerIdIterator->second) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // setMetaMarkerId cannot fail; continue as before.
+                    }
                 }
             }
         }
 
         for (const auto &[p_room, assignedId] : roomIdAssignments)
         {
-            p_room->setId(assignedId);
-            p_room->setMap(p_currentMap_inout);
+            if (p_room->setId(assignedId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
+            if (p_room->setMap(p_currentMap_inout) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             if (importedDetectedRoomSet.count(p_room) > 0U)
             {
                 p_currentMap_inout->addDetectedMapRoom(p_room);
@@ -455,8 +580,16 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
         for (const auto &[p_floor, assignedId] : floorIdAssignments)
         {
-            p_floor->setId(assignedId);
-            p_floor->setMap(p_currentMap_inout);
+            if (p_floor->setId(assignedId) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
+            if (p_floor->setMap(p_currentMap_inout) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_currentMap_inout->addMapFloor(p_floor);
             p_otherMap_inout->eraseMapFloor(p_floor);
         }
@@ -513,8 +646,13 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             p_currentMap_inout->getAllFloors();
         if (allFloors.size() > 1)
         {
-            semantic::Floor *p_keeperFloor =
-                semantic::Floor::selectBestObservedFloor(allFloors);
+            semantic::Floor *p_keeperFloor = nullptr;
+            if (semantic::Floor::selectBestObservedFloor(allFloors,
+                                                         p_keeperFloor) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            {
+                // selectBestObservedFloor cannot fail; continue as before.
+            }
             for (semantic::Floor *p_duplicateFloor : allFloors)
             {
                 if (p_duplicateFloor == nullptr ||
@@ -523,19 +661,49 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                     continue;
                 }
 
-                for (semantic::Room *p_room : p_duplicateFloor->getRooms())
+                std::vector<vs_graphs::core::semantic::Room *>
+                    duplicateFloorRooms{};
+                if (p_duplicateFloor->getRooms(duplicateFloorRooms) !=
+                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                 {
-                    if (p_room != nullptr && !p_room->isBad())
+                    // getRooms cannot fail; continue as before.
+                }
+                for (semantic::Room *p_room : duplicateFloorRooms)
+                {
+                    bool roomIsBad{};
+                    if ((p_room != nullptr) &&
+                        p_room->isBad(roomIsBad) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        p_keeperFloor->addRoom(p_room);
+                        // isBad cannot fail; continue as before.
+                    }
+                    if (p_room != nullptr && !roomIsBad)
+                    {
+                        if (p_keeperFloor->addRoom(p_room) !=
+                            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                        {
+                            // addRoom cannot fail; continue as before.
+                        }
                     }
                 }
 
                 p_currentMap_inout->eraseMapFloor(p_duplicateFloor);
+                int duplicateFloorId{};
+                if (p_duplicateFloor->getId(duplicateFloorId) !=
+                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int keeperFloorId{};
+                if (p_keeperFloor->getId(keeperFloorId) !=
+                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout
                     << "[Atlas::MergeMapPair] Fused duplicate semantic::Floor#"
-                    << p_duplicateFloor->getId() << " into semantic::Floor#"
-                    << p_keeperFloor->getId()
+                    << duplicateFloorId << " into semantic::Floor#"
+                    << keeperFloorId
                     << " and retained the better-observed plane identity."
                     << std::endl;
             }
@@ -544,29 +712,57 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
         utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap_inout,
                                                           importedRooms);
 
-        semantic::Floor *p_mergedFloor =
-            semantic::Floor::selectBestObservedFloor(
-                p_currentMap_inout->getAllFloors());
+        semantic::Floor *p_mergedFloor = nullptr;
+        if (semantic::Floor::selectBestObservedFloor(
+                p_currentMap_inout->getAllFloors(),
+                p_mergedFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // selectBestObservedFloor cannot fail; continue as before.
+        }
         if (p_mergedFloor != nullptr)
         {
             for (semantic::Room *p_room :
                  p_currentMap_inout->getAllDetectedMapRooms())
             {
-                if (p_room != nullptr && !p_room->isBad())
+                bool roomIsBad2{};
+                if ((p_room != nullptr) &&
+                    p_room->isBad(roomIsBad2) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    p_mergedFloor->addRoom(p_room);
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_room != nullptr && !roomIsBad2)
+                {
+                    if (p_mergedFloor->addRoom(p_room) !=
+                        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                    {
+                        // addRoom cannot fail; continue as before.
+                    }
                 }
             }
         }
 
         for (semantic::Room *p_room : p_currentMap_inout->getAllRooms())
         {
-            if (p_room == nullptr || p_room->isBad())
+            bool roomIsBad3{};
+            if (!(p_room == nullptr) &&
+                p_room->isBad(roomIsBad3) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_room == nullptr || roomIsBad3)
             {
                 continue;
             }
 
-            for (geometric::Plane *p_wall : p_room->getWalls())
+            std::vector<geometric::Plane *> roomWalls{};
+            if (p_room->getWalls(roomWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWalls cannot fail; continue as before.
+            }
+            for (geometric::Plane *p_wall : roomWalls)
             {
                 if (p_wall != nullptr && !p_wall->isBad())
                 {

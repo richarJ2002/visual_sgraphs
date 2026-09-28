@@ -25,10 +25,12 @@ namespace core
 namespace semantic
 {
 
-void Marker::setMap(core::Map *p_map_in)
+MarkerStatus Marker::setMap(core::Map *p_map_in)
 {
     unique_lock<mutex> lock(mapMutex);
     p_map = p_map_in;
+
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

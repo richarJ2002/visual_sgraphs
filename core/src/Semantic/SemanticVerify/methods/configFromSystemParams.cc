@@ -28,7 +28,8 @@ namespace core
 namespace semantic
 {
 
-SemanticVerifyConfig SemanticVerify::configFromSystemParams()
+SemanticVerifyStatus SemanticVerify::configFromSystemParams(
+    SemanticVerifyConfig &configuration_out)
 {
     const auto &loadedVerification =
         types::SystemParams::getParams()->verification;
@@ -59,7 +60,8 @@ SemanticVerifyConfig SemanticVerify::configFromSystemParams()
         static_cast<double>(loadedFactor.sigmaOffset_m);
     configuration.huberDelta = static_cast<double>(loadedFactor.huberDelta);
     configuration.optimizerIterations = loadedFactor.optimizerIterations;
-    return configuration;
+    configuration_out                 = configuration;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -28,7 +28,9 @@ namespace core
 namespace semantic
 {
 
-Floor *Floor::selectBestObservedFloor(const std::vector<Floor *> &floors_in)
+FloorStatus
+    Floor::selectBestObservedFloor(const std::vector<Floor *> &floors_in,
+                                   Floor                     *&p_bestFloor_out)
 {
     Floor                       *p_bestFloor = nullptr;
     std::optional<PlaneIdentity> bestIdentity;
@@ -40,8 +42,12 @@ Floor *Floor::selectBestObservedFloor(const std::vector<Floor *> &floors_in)
             continue;
         }
 
-        const std::optional<PlaneIdentity> candidateIdentity =
-            p_candidateFloor->getPlaneIdentity();
+        std::optional<PlaneIdentity> candidateIdentity{};
+        if (p_candidateFloor->getPlaneIdentity(candidateIdentity) !=
+            FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getPlaneIdentity cannot fail; continue as before.
+        }
 
         const bool candidateIsBetter =
             candidateIdentity.has_value() &&
@@ -61,16 +67,32 @@ Floor *Floor::selectBestObservedFloor(const std::vector<Floor *> &floors_in)
               candidateIdentity->observationCount ==
                   bestIdentity->observationCount));
 
+        int candidateFloorId{};
+        if (!(p_bestFloor == nullptr || candidateIsBetter) &&
+            (evidenceIsEqual) &&
+            p_candidateFloor->getId(candidateFloorId) !=
+                FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        int bestFloorId{};
+        if (!(p_bestFloor == nullptr || candidateIsBetter) &&
+            (evidenceIsEqual) &&
+            p_bestFloor->getId(bestFloorId) !=
+                FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         if (p_bestFloor == nullptr || candidateIsBetter ||
-            (evidenceIsEqual &&
-             p_candidateFloor->getId() < p_bestFloor->getId()))
+            (evidenceIsEqual && candidateFloorId < bestFloorId))
         {
             p_bestFloor  = p_candidateFloor;
             bestIdentity = candidateIdentity;
         }
     }
 
-    return p_bestFloor;
+    p_bestFloor_out = p_bestFloor;
+    return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -39,7 +39,13 @@ void Map::addMapMarker(semantic::Marker *p_marker_in)
     unique_lock<mutex> lock(mapMutex);
     markers.insert(p_marker_in);
     // Add the marker to the hashmap
-    markerIndex[p_marker_in->getId()] = p_marker_in;
+    int marker_inId{};
+    if (p_marker_in->getId(marker_inId) !=
+        semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    markerIndex[marker_inId] = p_marker_in;
 }
 
 } // namespace core

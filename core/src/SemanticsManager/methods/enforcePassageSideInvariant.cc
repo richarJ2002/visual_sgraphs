@@ -62,7 +62,14 @@ void SemanticsManager::enforcePassageSideInvariant(void)
 
     for (semantic::Room *p_room : p_atlas->getAllRooms())
     {
-        if (p_room == nullptr || p_room->isBad())
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room == nullptr || roomIsBad)
         {
             continue;
         }
@@ -70,7 +77,12 @@ void SemanticsManager::enforcePassageSideInvariant(void)
         /* Copy: both backstops below may call Room::removeWall(), which
          * would invalidate an in-progress iteration over the room's own
          * live wall vector. */
-        const std::vector<geometric::Plane *> roomWalls = p_room->getWalls();
+        std::vector<geometric::Plane *> roomWalls{};
+        if (p_room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
         for (geometric::Plane *p_wall : roomWalls)
         {
             if (p_wall == nullptr || p_wall->isBad())
@@ -89,13 +101,33 @@ void SemanticsManager::enforcePassageSideInvariant(void)
             bool wallRoutedToProspective = false;
             for (semantic::Passage *p_exemptPassage : allPassages)
             {
-                if (p_exemptPassage == nullptr || p_exemptPassage->isBad() ||
-                    p_exemptPassage->getProspectiveRoom() != p_room)
+                bool exemptPassageIsBad{};
+                if (!(p_exemptPassage == nullptr) &&
+                    p_exemptPassage->isBad(exemptPassageIsBad) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                vs_graphs::core::semantic::Room
+                    *p_exemptPassageProspectiveRoom = nullptr;
+                if (!(p_exemptPassage == nullptr || exemptPassageIsBad) &&
+                    p_exemptPassage->getProspectiveRoom(
+                        p_exemptPassageProspectiveRoom) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getProspectiveRoom cannot fail; continue as before.
+                }
+                if (p_exemptPassage == nullptr || exemptPassageIsBad ||
+                    p_exemptPassageProspectiveRoom != p_room)
                 {
                     continue;
                 }
-                const semantic::Passage::KnownSideProvenance knownSide =
-                    p_exemptPassage->getKnownSideProvenance();
+                semantic::Passage::KnownSideProvenance knownSide{};
+                if (p_exemptPassage->getKnownSideProvenance(knownSide) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getKnownSideProvenance cannot fail; continue as before.
+                }
                 if (!knownSide.hasDirection())
                 {
                     continue;
@@ -103,8 +135,14 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                 const double minimumSideDistance_m =
                     static_cast<double>(p_sysParams->roomSeg.passagePartition
                                             .minimumSideDistance_m);
+                Eigen::Vector3d exemptPassageCentroid{};
+                if (p_exemptPassage->getCentroid(exemptPassageCentroid) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getCentroid cannot fail; continue as before.
+                }
                 const Eigen::Vector3d knownSidePoint_World_m =
-                    p_exemptPassage->getCentroid() +
+                    exemptPassageCentroid +
                     (minimumSideDistance_m * 2.0) * knownSide.direction_World;
                 if (segmentCrossesPassageOpening(
                         knownSidePoint_World_m,
@@ -127,9 +165,21 @@ void SemanticsManager::enforcePassageSideInvariant(void)
 
             if (isWallFaceForeignToRoom(p_room, p_wall))
             {
-                p_room->removeWall(p_wall);
+                bool roomWasWallRemoved{};
+                if (p_room->removeWall(p_wall, roomWasWallRemoved) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    roomWasWallRemoved =
+                        false; // rejected input reads as before
+                }
+                int roomId{};
+                if (p_room->getId(roomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout << "[SemMgr] Wall#" << p_wall->getId()
-                          << " removed from semantic::Room#" << p_room->getId()
+                          << " removed from semantic::Room#" << roomId
                           << ": this face was observed from the opposite side, "
                              "so it bounds the neighbouring room."
                           << std::endl;

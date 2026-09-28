@@ -26,16 +26,19 @@ namespace core
 namespace semantic
 {
 
-double RoomTracker::computeConfidence(double inlierRatio_in,
-                                      double normalizedConditionNumber_in,
-                                      double angularResidual_rad_in,
-                                      double sigmaTheta_rad_in)
+RoomTrackerStatus
+    RoomTracker::computeConfidence(double  inlierRatio_in,
+                                   double  normalizedConditionNumber_in,
+                                   double  angularResidual_rad_in,
+                                   double  sigmaTheta_rad_in,
+                                   double &confidence_out)
 {
     if (!std::isfinite(inlierRatio_in) ||
         !std::isfinite(normalizedConditionNumber_in) ||
         !std::isfinite(angularResidual_rad_in))
     {
-        return 0.0;
+        confidence_out = 0.0;
+        return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
     }
     if (inlierRatio_in < 0.0)
     {
@@ -64,8 +67,9 @@ double RoomTracker::computeConfidence(double inlierRatio_in,
         residualDecay = std::abs(angularResidual_rad_in) < 1e-12 ? 1.0 : 0.0;
     }
 
-    return inlierRatio_in * (1.0 - normalizedConditionNumber_in) *
-           residualDecay;
+    confidence_out =
+        inlierRatio_in * (1.0 - normalizedConditionNumber_in) * residualDecay;
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic

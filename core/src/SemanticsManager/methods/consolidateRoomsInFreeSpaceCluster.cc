@@ -36,7 +36,14 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
 {
     Map *p_currentMap = p_atlas->getCurrentMap();
 
-    if (p_retainedRoom_inout == nullptr || p_retainedRoom_inout->isBad() ||
+    bool retainedRoom_inoutIsBad{};
+    if (!(p_retainedRoom_inout == nullptr) &&
+        p_retainedRoom_inout->isBad(retainedRoom_inoutIsBad) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_retainedRoom_inout == nullptr || retainedRoom_inoutIsBad ||
         p_currentMap == nullptr || freeSpaceCluster_World_m_in.empty())
     {
         return;
@@ -46,8 +53,12 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         static_cast<double>(p_sysParams->roomSeg.centerDistanceThresh);
     const double finiteWallBoundsMargin_m =
         static_cast<double>(p_sysParams->roomSeg.finiteWallBoundsMargin_m);
-    const Eigen::Vector3d retainedCentroid_World_m =
-        p_retainedRoom_inout->getCentroid();
+    Eigen::Vector3d retainedCentroid_World_m{};
+    if (p_retainedRoom_inout->getCentroid(retainedCentroid_World_m) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
 
     const auto distanceToCluster_m =
         [&freeSpaceCluster_World_m_in](const Eigen::Vector3d &point_World_m_in)
@@ -71,8 +82,16 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
     for (vs_graphs::core::semantic::Room *p_duplicateRoom :
          p_currentMap->getAllRooms())
     {
+        bool duplicateRoomIsBad{};
+        if (!(p_duplicateRoom == nullptr ||
+              p_duplicateRoom == p_retainedRoom_inout) &&
+            p_duplicateRoom->isBad(duplicateRoomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
         if (p_duplicateRoom == nullptr ||
-            p_duplicateRoom == p_retainedRoom_inout || p_duplicateRoom->isBad())
+            p_duplicateRoom == p_retainedRoom_inout || duplicateRoomIsBad)
         {
             continue;
         }
@@ -84,8 +103,16 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             activePassages.end(),
             [p_duplicateRoom](semantic::Passage *p_passage)
             {
+                vs_graphs::core::semantic::Room *p_passageProspectiveRoom =
+                    nullptr;
+                if ((p_passage != nullptr) &&
+                    p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getProspectiveRoom cannot fail; continue as before.
+                }
                 return p_passage != nullptr &&
-                       p_passage->getProspectiveRoom() == p_duplicateRoom;
+                       p_passageProspectiveRoom == p_duplicateRoom;
             });
 
         if (duplicateIsLiveProspective)
@@ -93,10 +120,18 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             continue;
         }
 
-        const semantic::Room::RoomVariant retainedType =
-            p_retainedRoom_inout->getRoomVariant();
-        const semantic::Room::RoomVariant duplicateType =
-            p_duplicateRoom->getRoomVariant();
+        semantic::Room::RoomVariant retainedType{};
+        if (p_retainedRoom_inout->getRoomVariant(retainedType) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
+        semantic::Room::RoomVariant duplicateType{};
+        if (p_duplicateRoom->getRoomVariant(duplicateType) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
 
         if (retainedType != semantic::Room::RoomVariant::UNDEFINED &&
             duplicateType != semantic::Room::RoomVariant::UNDEFINED &&
@@ -105,16 +140,47 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             continue;
         }
 
-        if (p_retainedRoom_inout->getHasKnownLabel() &&
-            p_duplicateRoom->getHasKnownLabel() &&
-            p_retainedRoom_inout->getMetaMarkerId() !=
-                p_duplicateRoom->getMetaMarkerId())
+        bool retainedRoom_inoutHasKnownLabel{};
+        if (p_retainedRoom_inout->getHasKnownLabel(
+                retainedRoom_inoutHasKnownLabel) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getHasKnownLabel cannot fail; continue as before.
+        }
+        bool duplicateRoomHasKnownLabel{};
+        if ((retainedRoom_inoutHasKnownLabel) &&
+            p_duplicateRoom->getHasKnownLabel(duplicateRoomHasKnownLabel) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getHasKnownLabel cannot fail; continue as before.
+        }
+        int retainedRoom_inoutMetaMarkerId{};
+        if ((retainedRoom_inoutHasKnownLabel && duplicateRoomHasKnownLabel) &&
+            p_retainedRoom_inout->getMetaMarkerId(
+                retainedRoom_inoutMetaMarkerId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getMetaMarkerId cannot fail; continue as before.
+        }
+        int duplicateRoomMetaMarkerId{};
+        if ((retainedRoom_inoutHasKnownLabel && duplicateRoomHasKnownLabel) &&
+            p_duplicateRoom->getMetaMarkerId(duplicateRoomMetaMarkerId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getMetaMarkerId cannot fail; continue as before.
+        }
+        if (retainedRoom_inoutHasKnownLabel && duplicateRoomHasKnownLabel &&
+            retainedRoom_inoutMetaMarkerId != duplicateRoomMetaMarkerId)
         {
             continue;
         }
 
-        const Eigen::Vector3d duplicateCentroid_World_m =
-            p_duplicateRoom->getCentroid();
+        Eigen::Vector3d duplicateCentroid_World_m{};
+        if (p_duplicateRoom->getCentroid(duplicateCentroid_World_m) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
         const double centroidDistance_m =
             (duplicateCentroid_World_m - retainedCentroid_World_m).norm();
 
@@ -136,10 +202,18 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             continue;
         }
 
-        const std::vector<semantic::Passage *> retainedPassages =
-            p_retainedRoom_inout->getPassages();
-        const std::vector<semantic::Passage *> duplicatePassages =
-            p_duplicateRoom->getPassages();
+        std::vector<semantic::Passage *> retainedPassages{};
+        if (p_retainedRoom_inout->getPassages(retainedPassages) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getPassages cannot fail; continue as before.
+        }
+        std::vector<semantic::Passage *> duplicatePassages{};
+        if (p_duplicateRoom->getPassages(duplicatePassages) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getPassages cannot fail; continue as before.
+        }
 
         bool              roomsSeparatedByConfirmedPassage = false;
         geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
@@ -208,8 +282,15 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                     return false;
                 }
 
+                g2o::Plane3D sharedPassage_inGlobalEquation{};
+                if (p_sharedPassage_in->getGlobalEquation(
+                        sharedPassage_inGlobalEquation) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    // getGlobalEquation cannot fail; continue as before.
+                }
                 Eigen::Vector4d passageEquation_World =
-                    p_sharedPassage_in->getGlobalEquation().coeffs();
+                    sharedPassage_inGlobalEquation.coeffs();
 
                 const double passageNormalNorm =
                     passageEquation_World.head<3>().norm();
@@ -249,16 +330,34 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             wallSnapshots;
         for (semantic::Room *p_snapshotRoom : p_currentMap->getAllRooms())
         {
-            if (p_snapshotRoom != nullptr && !p_snapshotRoom->isBad())
+            bool snapshotRoomIsBad{};
+            if ((p_snapshotRoom != nullptr) &&
+                p_snapshotRoom->isBad(snapshotRoomIsBad) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                wallSnapshots.emplace_back(p_snapshotRoom,
-                                           p_snapshotRoom->getWalls());
+                // isBad cannot fail; continue as before.
+            }
+            if (p_snapshotRoom != nullptr && !snapshotRoomIsBad)
+            {
+                std::vector<geometric::Plane *> snapshotRoomWalls{};
+                if (p_snapshotRoom->getWalls(snapshotRoomWalls) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getWalls cannot fail; continue as before.
+                }
+                wallSnapshots.emplace_back(p_snapshotRoom, snapshotRoomWalls);
             }
         }
 
         bool allDuplicateWallsWereAdmitted = true;
 
-        for (geometric::Plane *p_wall : p_duplicateRoom->getWalls())
+        std::vector<geometric::Plane *> duplicateRoomWalls{};
+        if (p_duplicateRoom->getWalls(duplicateRoomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
+        for (geometric::Plane *p_wall : duplicateRoomWalls)
         {
             if (!admitWallToRoom(p_retainedRoom_inout, p_wall))
             {
@@ -276,10 +375,18 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         {
             for (auto &[p_snapshotRoom, snapshotWalls] : wallSnapshots)
             {
-                p_snapshotRoom->clearWalls();
+                if (p_snapshotRoom->clearWalls() !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // clearWalls cannot fail; continue as before.
+                }
                 for (geometric::Plane *p_snapshotWall : snapshotWalls)
                 {
-                    p_snapshotRoom->setWalls(p_snapshotWall);
+                    if (p_snapshotRoom->setWalls(p_snapshotWall) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        // setWalls cannot fail; continue as before.
+                    }
                 }
             }
             continue;
@@ -287,49 +394,152 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
 
         for (semantic::Passage *p_passage : duplicatePassages)
         {
-            p_retainedRoom_inout->setDoorways(p_passage);
+            if (p_retainedRoom_inout->setDoorways(p_passage) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setDoorways cannot fail; continue as before.
+            }
         }
 
-        if (p_retainedRoom_inout->getGroundPlane() == nullptr)
+        geometric::Plane *p_retainedRoom_inoutGroundPlane = nullptr;
+        if (p_retainedRoom_inout->getGroundPlane(
+                p_retainedRoom_inoutGroundPlane) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_retainedRoom_inout->setGroundPlane(
-                p_duplicateRoom->getGroundPlane());
+            // getGroundPlane cannot fail; continue as before.
+        }
+        if (p_retainedRoom_inoutGroundPlane == nullptr)
+        {
+            geometric::Plane *p_duplicateRoomGroundPlane = nullptr;
+            if (p_duplicateRoom->getGroundPlane(p_duplicateRoomGroundPlane) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getGroundPlane cannot fail; continue as before.
+            }
+            if (p_retainedRoom_inout->setGroundPlane(
+                    p_duplicateRoomGroundPlane) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setGroundPlane cannot fail; continue as before.
+            }
         }
 
-        if (!p_retainedRoom_inout->getHasKnownLabel() &&
-            p_duplicateRoom->getHasKnownLabel())
+        bool retainedRoom_inoutHasKnownLabel2{};
+        if (p_retainedRoom_inout->getHasKnownLabel(
+                retainedRoom_inoutHasKnownLabel2) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            p_retainedRoom_inout->setHasKnownLabel(true);
-            p_retainedRoom_inout->setMetaMarker(
-                p_duplicateRoom->getMetaMarker());
-            p_retainedRoom_inout->setMetaMarkerId(
-                p_duplicateRoom->getMetaMarkerId());
-            p_retainedRoom_inout->setName(p_duplicateRoom->getName());
+            // getHasKnownLabel cannot fail; continue as before.
+        }
+        bool duplicateRoomHasKnownLabel2{};
+        if ((!retainedRoom_inoutHasKnownLabel2) &&
+            p_duplicateRoom->getHasKnownLabel(duplicateRoomHasKnownLabel2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getHasKnownLabel cannot fail; continue as before.
+        }
+        if (!retainedRoom_inoutHasKnownLabel2 && duplicateRoomHasKnownLabel2)
+        {
+            if (p_retainedRoom_inout->setHasKnownLabel(true) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setHasKnownLabel cannot fail; continue as before.
+            }
+            semantic::Marker *p_duplicateRoomMetaMarker = nullptr;
+            if (p_duplicateRoom->getMetaMarker(p_duplicateRoomMetaMarker) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getMetaMarker cannot fail; continue as before.
+            }
+            if (p_retainedRoom_inout->setMetaMarker(
+                    p_duplicateRoomMetaMarker) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setMetaMarker cannot fail; continue as before.
+            }
+            int duplicateRoomMetaMarkerId2{};
+            if (p_duplicateRoom->getMetaMarkerId(duplicateRoomMetaMarkerId2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getMetaMarkerId cannot fail; continue as before.
+            }
+            if (p_retainedRoom_inout->setMetaMarkerId(
+                    duplicateRoomMetaMarkerId2) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setMetaMarkerId cannot fail; continue as before.
+            }
+            std::string duplicateRoomName{};
+            if (p_duplicateRoom->getName(duplicateRoomName) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getName cannot fail; continue as before.
+            }
+            if (p_retainedRoom_inout->setName(duplicateRoomName) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setName cannot fail; continue as before.
+            }
         }
 
         if (retainedType == semantic::Room::RoomVariant::UNDEFINED &&
             duplicateType != semantic::Room::RoomVariant::UNDEFINED)
         {
-            p_retainedRoom_inout->setRoomVariant(duplicateType);
+            if (p_retainedRoom_inout->setRoomVariant(duplicateType) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // setRoomVariant cannot fail; continue as before.
+            }
         }
 
         for (semantic::Floor *p_floor : p_currentMap->getAllFloors())
         {
             if (p_floor != nullptr)
             {
-                p_floor->replaceRoom(p_duplicateRoom, p_retainedRoom_inout);
+                bool floorWasRoomReplaced{};
+                if (p_floor->replaceRoom(p_duplicateRoom,
+                                         p_retainedRoom_inout,
+                                         floorWasRoomReplaced) !=
+                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                    floorWasRoomReplaced =
+                        false; // rejected input reads as before
+                }
             }
         }
 
         p_currentMap->eraseDetectedMapRoom(p_duplicateRoom);
         p_currentMap->eraseMarkerBasedMapRoom(p_duplicateRoom);
-        p_duplicateRoom->clearWalls();
-        p_duplicateRoom->clearPassages();
-        p_duplicateRoom->setBad();
+        if (p_duplicateRoom->clearWalls() !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // clearWalls cannot fail; continue as before.
+        }
+        if (p_duplicateRoom->clearPassages() !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // clearPassages cannot fail; continue as before.
+        }
+        if (p_duplicateRoom->setBad() !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // setBad cannot fail; continue as before.
+        }
 
-        std::cout << "[SemMgr] Fused semantic::Room#"
-                  << p_duplicateRoom->getId() << " into semantic::Room#"
-                  << p_retainedRoom_inout->getId()
+        int duplicateRoomId{};
+        if (p_duplicateRoom->getId(duplicateRoomId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        int retainedRoom_inoutId{};
+        if (p_retainedRoom_inout->getId(retainedRoom_inoutId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        std::cout << "[SemMgr] Fused semantic::Room#" << duplicateRoomId
+                  << " into semantic::Room#" << retainedRoom_inoutId
                   << " using connected free-space evidence (centroid distance "
                   << centroidDistance_m << " m)." << std::endl;
     }

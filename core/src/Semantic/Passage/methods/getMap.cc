@@ -28,10 +28,11 @@ namespace core
 namespace semantic
 {
 
-vs_graphs::core::Map *Passage::getMap()
+PassageStatus Passage::getMap(vs_graphs::core::Map *&p_map_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return p_map;
+    p_map_out = p_map;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

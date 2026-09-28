@@ -28,10 +28,11 @@ namespace core
 namespace semantic
 {
 
-bool Passage::hasProspectiveRoom() const
+PassageStatus Passage::hasProspectiveRoom(bool &hasProspectiveRoom_out) const
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
-    return p_prospectiveRoom != nullptr;
+    hasProspectiveRoom_out = p_prospectiveRoom != nullptr;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -89,7 +89,14 @@ bool segmentCrossesForeignWall(
 
     for (vs_graphs::core::semantic::Room *p_room : allRooms_in)
     {
-        if (p_room == nullptr || p_room->isBad() ||
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room == nullptr || roomIsBad ||
             std::find(excludedRooms_in.begin(),
                       excludedRooms_in.end(),
                       p_room) != excludedRooms_in.end())
@@ -97,7 +104,13 @@ bool segmentCrossesForeignWall(
             continue;
         }
 
-        for (geometric::Plane *p_wall : p_room->getWalls())
+        std::vector<geometric::Plane *> roomWalls{};
+        if (p_room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
+        for (geometric::Plane *p_wall : roomWalls)
         {
             FiniteWallSegment2d wallSegment;
 

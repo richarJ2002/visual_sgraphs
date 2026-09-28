@@ -41,7 +41,14 @@ std::size_t countLiveRooms(Map *p_map_in)
     std::size_t liveCount = 0U;
     for (semantic::Room *p_room : p_map_in->getAllRooms())
     {
-        if (p_room != nullptr && !p_room->isBad())
+        bool roomIsBad{};
+        if ((p_room != nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room != nullptr && !roomIsBad)
         {
             ++liveCount;
         }

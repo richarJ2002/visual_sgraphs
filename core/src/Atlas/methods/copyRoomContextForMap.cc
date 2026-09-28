@@ -42,23 +42,82 @@ std::vector<semantic::RoomContextSnapshot>
     rooms.insert(rooms.end(), candidateRooms.begin(), candidateRooms.end());
     for (semantic::Room *p_room : rooms)
     {
-        if (p_room == nullptr || p_room->isBad())
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_room == nullptr || roomIsBad)
             continue;
         semantic::RoomContextSnapshot snapshot;
-        snapshot.roomId                  = p_room->getId();
-        semantic::Floor *p_snapshotFloor = p_room->getFloor();
-        snapshot.floorId =
-            p_snapshotFloor != nullptr ? p_snapshotFloor->getId() : -1;
-        snapshot.centroid = p_room->getCentroid();
+        int                           roomId2{};
+        if (p_room->getId(roomId2) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        snapshot.roomId                  = roomId2;
+        semantic::Floor *p_snapshotFloor = nullptr;
+        if (p_room->getFloor(p_snapshotFloor) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getFloor cannot fail; continue as before.
+        }
+        int snapshotFloorId{};
+        if ((p_snapshotFloor != nullptr) &&
+            p_snapshotFloor->getId(snapshotFloorId) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        snapshot.floorId = p_snapshotFloor != nullptr ? snapshotFloorId : -1;
+        Eigen::Vector3d roomCentroid{};
+        if (p_room->getCentroid(roomCentroid) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
+        snapshot.centroid = roomCentroid;
+        semantic::Room::RoomVariant roomVariant{};
+        if (p_room->getRoomVariant(roomVariant) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomVariant cannot fail; continue as before.
+        }
         snapshot.wasConfirmedRoom =
-            p_room->getRoomVariant() == semantic::Room::RoomVariant::ROOM;
-        snapshot.boundaryStatus = static_cast<int>(p_room->getBoundaryStatus());
+            roomVariant == semantic::Room::RoomVariant::ROOM;
+        semantic::Room::BoundaryStatus roomBoundaryStatus{};
+        if (p_room->getBoundaryStatus(roomBoundaryStatus) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getBoundaryStatus cannot fail; continue as before.
+        }
+        snapshot.boundaryStatus = static_cast<int>(roomBoundaryStatus);
         snapshot.timestamp =
             std::chrono::duration<double>(
                 std::chrono::steady_clock::now().time_since_epoch())
                 .count();
-        snapshot.roomTag = p_room->hasRoomTag() ? p_room->getRoomTag() : "";
-        for (geometric::Plane *p_wall : p_room->getWalls())
+        bool roomHasRoomTag{};
+        if (p_room->hasRoomTag(roomHasRoomTag) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // hasRoomTag cannot fail; continue as before.
+        }
+        std::string roomTag2{};
+        if ((roomHasRoomTag) && p_room->getRoomTag(roomTag2) !=
+                                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getRoomTag cannot fail; continue as before.
+        }
+        snapshot.roomTag = roomHasRoomTag ? roomTag2 : "";
+        std::vector<geometric::Plane *> roomWalls{};
+        if (p_room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getWalls cannot fail; continue as before.
+        }
+        for (geometric::Plane *p_wall : roomWalls)
         {
             if (p_wall == nullptr || p_wall->isBad())
             {
@@ -71,8 +130,13 @@ std::vector<semantic::RoomContextSnapshot>
                 snapshot.wallBounds.push_back(semantic::WallBounds());
                 continue;
             }
-            const std::optional<Eigen::Vector3d> normal =
-                p_room->getWallNormalTowardRoom_World(p_wall);
+            std::optional<Eigen::Vector3d> normal{};
+            if (p_room->getWallNormalTowardRoom_World(p_wall, normal) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getWallNormalTowardRoom_World cannot fail; continue as
+                // before.
+            }
             if (normal)
                 snapshot.wallNormals.push_back(*normal);
             else
@@ -95,7 +159,13 @@ std::vector<semantic::RoomContextSnapshot>
                  geometry.minPlaneV_m,
                  geometry.maxPlaneV_m});
         }
-        for (semantic::Passage *p_passage : p_room->getPassages())
+        std::vector<vs_graphs::core::semantic::Passage *> roomPassages{};
+        if (p_room->getPassages(roomPassages) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            // getPassages cannot fail; continue as before.
+        }
+        for (semantic::Passage *p_passage : roomPassages)
         {
             if (p_passage == nullptr)
             {
@@ -104,24 +174,63 @@ std::vector<semantic::RoomContextSnapshot>
                 snapshot.passageContexts.push_back(semantic::PassageContext());
                 continue;
             }
-            snapshot.passageCentroids.push_back(p_passage->getCentroid());
+            Eigen::Vector3d passageCentroid{};
+            if (p_passage->getCentroid(passageCentroid) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
+            snapshot.passageCentroids.push_back(passageCentroid);
             semantic::PassageContext context;
-            context.id         = p_passage->getId();
-            context.isPassable = p_passage->isPassable();
-            const std::optional<int> roomIdOfPassageObservationConnection =
-                p_passage->getProspectiveRoomId();
+            int                      passageId{};
+            if (p_passage->getId(passageId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            context.id = passageId;
+            bool passageIsPassable{};
+            if (p_passage->isPassable(passageIsPassable) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // isPassable cannot fail; continue as before.
+            }
+            context.isPassable = passageIsPassable;
+            std::optional<int> roomIdOfPassageObservationConnection{};
+            if (p_passage->getProspectiveRoomId(
+                    roomIdOfPassageObservationConnection) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getProspectiveRoomId cannot fail; continue as before.
+            }
             context.hasFarSideRoom =
                 roomIdOfPassageObservationConnection.has_value();
             if (context.hasFarSideRoom)
                 context.secondaryRoomId = *roomIdOfPassageObservationConnection;
-            context.width_m         = p_passage->getWidth();
-            context.height_m        = p_passage->getHeight();
+            double passageWidth{};
+            if (p_passage->getWidth(passageWidth) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getWidth cannot fail; continue as before.
+            }
+            context.width_m = passageWidth;
+            double passageHeight{};
+            if (p_passage->getHeight(passageHeight) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getHeight cannot fail; continue as before.
+            }
+            context.height_m        = passageHeight;
             context.isApertureValid = std::isfinite(context.width_m) &&
                                       std::isfinite(context.height_m) &&
                                       context.width_m > 0.0 &&
                                       context.height_m > 0.0;
-            const semantic::Passage::KnownSideProvenance knownSide =
-                p_passage->getKnownSideProvenance();
+            semantic::Passage::KnownSideProvenance knownSide{};
+            if (p_passage->getKnownSideProvenance(knownSide) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getKnownSideProvenance cannot fail; continue as before.
+            }
             context.hasKnownSideDirection = knownSide.hasDirection();
             if (context.hasKnownSideDirection)
             {
@@ -130,17 +239,56 @@ std::vector<semantic::RoomContextSnapshot>
             context.hasKnownSideRoom = knownSide.p_room != nullptr;
             if (context.hasKnownSideRoom)
             {
-                context.knownSideRoomId = knownSide.p_room->getId();
+                int id2{};
+                if (knownSide.p_room->getId(id2) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                context.knownSideRoomId = id2;
             }
-            context.traversalKnownToFarCount =
-                p_passage->getTraversalKnownToFarCount();
-            context.traversalFarToKnownCount =
-                p_passage->getTraversalFarToKnownCount();
-            context.traversalUnknownCount =
-                p_passage->getTraversalUnknownCount();
-            context.associatedWallCount = p_passage->getAssociateWalls().size();
+            std::size_t passageTraversalKnownToFarCount{};
+            if (p_passage->getTraversalKnownToFarCount(
+                    passageTraversalKnownToFarCount) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getTraversalKnownToFarCount cannot fail; continue as before.
+            }
+            context.traversalKnownToFarCount = passageTraversalKnownToFarCount;
+            std::size_t passageTraversalFarToKnownCount{};
+            if (p_passage->getTraversalFarToKnownCount(
+                    passageTraversalFarToKnownCount) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getTraversalFarToKnownCount cannot fail; continue as before.
+            }
+            context.traversalFarToKnownCount = passageTraversalFarToKnownCount;
+            std::size_t passageTraversalUnknownCount{};
+            if (p_passage->getTraversalUnknownCount(
+                    passageTraversalUnknownCount) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getTraversalUnknownCount cannot fail; continue as before.
+            }
+            context.traversalUnknownCount = passageTraversalUnknownCount;
+            std::vector<vs_graphs::core::geometric::Plane *>
+                passageAssociateWalls{};
+            if (p_passage->getAssociateWalls(passageAssociateWalls) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // getAssociateWalls cannot fail; continue as before.
+            }
+            context.associatedWallCount = passageAssociateWalls.size();
+            bool passageHasBidirectionalTraversalEvidence{};
+            if (p_passage->hasBidirectionalTraversalEvidence(
+                    passageHasBidirectionalTraversalEvidence) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                // hasBidirectionalTraversalEvidence cannot fail; continue as
+                // before.
+            }
             context.hasBidirectionalTraversalEvidence =
-                p_passage->hasBidirectionalTraversalEvidence();
+                passageHasBidirectionalTraversalEvidence;
             snapshot.passageContexts.push_back(context);
         }
         snapshots.push_back(std::move(snapshot));

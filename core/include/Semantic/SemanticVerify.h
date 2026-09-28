@@ -15,6 +15,7 @@
 
 #include "Semantic/RoomContextSnapshot.h"
 #include "Semantic/RoomTracker.h"
+#include "Semantic/SemanticVerifyStatus.h"
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 
 #include <Eigen/Geometry>
@@ -204,20 +205,23 @@ class SemanticVerify
      * construct one directly (as every current test does), not a live link
      * to the YAML file, so calling this explicitly is required to make an
      * operator's config-file edits take effect. */
-    static SemanticVerifyConfig configFromSystemParams();
+    [[nodiscard]] static SemanticVerifyStatus
+        configFromSystemParams(SemanticVerifyConfig &configuration_out);
 
     /*! Collects wall observations for one room via verified getters only;
      * bounded by config.maxWallsPerRoom / maxSupportSamplePerWall. */
-    static std::vector<VerifyWallObservation>
-        collectWallObservations(const Room                 *p_room_in,
-                                const SemanticVerifyConfig &configuration_in);
+    [[nodiscard]] static SemanticVerifyStatus collectWallObservations(
+        const Room                         *p_room_in,
+        const SemanticVerifyConfig         &configuration_in,
+        std::vector<VerifyWallObservation> &observations_out);
 
     /*! Core verifier. Rooms are already resolved to wall observations by the
      * caller; no Atlas/Map lookups happen here. Deterministic: no locks
      * held, no randomness, stable hypothesis enumeration order. */
-    static SemanticVerifyResult verify(
+    [[nodiscard]] static SemanticVerifyStatus verify(
         const std::vector<VerifyWallObservation> &wallsA_in,
         const std::vector<VerifyWallObservation> &wallsB_in,
+        SemanticVerifyResult                     &result_out,
         const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
 
     /*! Floor gate wrapper: caller supplies the live Maps (SemanticVerify
@@ -231,28 +235,31 @@ class SemanticVerify
      * it, hasFloorGatePassed stays at its default false and
      * toVerificationVerdict() reports a false negative even when both gates
      * genuinely passed. */
-    static bool
+    [[nodiscard]] static SemanticVerifyStatus
         runFloorGate(SemanticVerifyResult    &result_inout,
                      Map                     *p_survivingMap_in,
                      Map                     *p_absorbedMap_in,
-                     const Eigen::Isometry3d &transform_absorbedToSurviving_in);
+                     const Eigen::Isometry3d &transform_absorbedToSurviving_in,
+                     bool                    &hasPassed_out);
 
     /*! Evaluates copied room evidence under a proposed absorbed-to-surviving
      * map transform. Contradictory stable topology rejects, incomplete
      * evidence defers, and only mutually consistent walls and passage
      * topology accept. */
-    static SemanticMergeGateResult evaluateMergeAlignment(
+    [[nodiscard]] static SemanticVerifyStatus evaluateMergeAlignment(
         const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
         const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
         const g2o::Sim3            &transform_absorbedToSurviving_in,
+        SemanticMergeGateResult    &result_out,
         const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
 
     /*! Runs the complete floor and semantic gate against two live maps.
      * Caller must prevent concurrent semantic mutation for both maps. */
-    static SemanticMergeGateResult evaluateMapMergeGate(
+    [[nodiscard]] static SemanticVerifyStatus evaluateMapMergeGate(
         Map                        *p_survivingMap_in,
         Map                        *p_absorbedMap_in,
         const g2o::Sim3            &transform_absorbedToSurviving_in,
+        SemanticMergeGateResult    &result_out,
         const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
 
     /*! Tolerances for consecutive-map (post-reset) merge validation. Sourced
@@ -276,7 +283,8 @@ class SemanticVerify
 
     /*! Builds a MapMergeConfig from the live SystemParams mapMerge section.
      * Falls back to the struct defaults when SystemParams is unavailable. */
-    static MapMergeConfig mapMergeConfigFromSystemParams();
+    [[nodiscard]] static SemanticVerifyStatus mapMergeConfigFromSystemParams(
+        SemanticVerify::MapMergeConfig &configuration_out);
 
     /*! Consecutive-map variant of evaluateMapMergeGate: same decision
      * vocabulary, but wall/passage/floor tolerances come from MapMergeConfig
@@ -284,18 +292,21 @@ class SemanticVerify
      * non-empty room tag only (never by map-local ID), and wall pairs must
      * additionally overlap along the wall direction. Verification only:
      * mutates nothing. */
-    static SemanticMergeGateResult evaluateConsecutiveMergeGate(
-        Map                  *p_survivingMap_in,
-        Map                  *p_absorbedMap_in,
-        const g2o::Sim3      &transform_absorbedToSurviving_in,
-        const MapMergeConfig &configuration_in =
-            mapMergeConfigFromSystemParams());
+    [[nodiscard]] static SemanticVerifyStatus evaluateConsecutiveMergeGate(
+        Map                     *p_survivingMap_in,
+        Map                     *p_absorbedMap_in,
+        const g2o::Sim3         &transform_absorbedToSurviving_in,
+        SemanticMergeGateResult &result_out,
+        const MapMergeConfig    &configuration_in);
 
     /*! Returns a stable parseable name for a merge decision. */
-    static const char *mergeDecisionName(SemanticMergeDecision decision_in);
+    [[nodiscard]] static SemanticVerifyStatus
+        mergeDecisionName(SemanticMergeDecision decision_in,
+                          const char          *&p_name_out);
 
     /*! Returns a stable parseable name for a merge reason. */
-    static const char *mergeReasonName(SemanticMergeReason reason_in);
+    [[nodiscard]] static SemanticVerifyStatus
+        mergeReasonName(SemanticMergeReason reason_in, const char *&p_name_out);
 };
 
 } // namespace semantic

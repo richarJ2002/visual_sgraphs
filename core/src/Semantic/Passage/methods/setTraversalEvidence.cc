@@ -28,7 +28,7 @@ namespace core
 namespace semantic
 {
 
-void Passage::setTraversalEvidence(bool value_in)
+PassageStatus Passage::setTraversalEvidence(bool value_in)
 {
     std::lock_guard<std::mutex> lock(typeMutex);
     if (value_in)
@@ -46,6 +46,8 @@ void Passage::setTraversalEvidence(bool value_in)
         traversalUnknownCount    = 0U;
         traversalSegmentHistory.clear();
     }
+
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

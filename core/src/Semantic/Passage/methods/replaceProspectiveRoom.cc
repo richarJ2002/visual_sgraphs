@@ -28,14 +28,15 @@ namespace core
 namespace semantic
 {
 
-bool Passage::replaceProspectiveRoom(
+PassageStatus Passage::replaceProspectiveRoom(
     vs_graphs::core::semantic::Room *p_retiredRoom_in,
-    vs_graphs::core::semantic::Room *p_retainedRoom_in)
+    vs_graphs::core::semantic::Room *p_retainedRoom_in,
+    bool                            &wasRoomReplaced_out)
 {
     if (p_retiredRoom_in == nullptr || p_retainedRoom_in == nullptr ||
         p_retiredRoom_in == p_retainedRoom_in)
     {
-        return false;
+        return PassageStatus::PASSAGE_STATUS_INVALID_ARGUMENT;
     }
 
     std::lock_guard<std::mutex> lock(geometryMutex);
@@ -53,7 +54,8 @@ bool Passage::replaceProspectiveRoom(
         replaced                   = true;
     }
 
-    return replaced;
+    wasRoomReplaced_out = replaced;
+    return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 
 } // namespace semantic

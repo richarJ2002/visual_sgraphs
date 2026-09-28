@@ -39,22 +39,49 @@ namespace semantic
 FloorRecord captureFloor(Floor *p_floor_in, long unsigned int mapId_in)
 {
     FloorRecord record;
-    record.key = makeKey(EntityKind::FLOOR, mapId_in, p_floor_in->getId());
+    int         floor_inId{};
+    if (p_floor_in->getId(floor_inId) != FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    record.key = makeKey(EntityKind::FLOOR, mapId_in, floor_inId);
 
-    core::Map *p_declaredMap = p_floor_in->getMap();
+    core::Map *p_declaredMap = nullptr;
+    if (p_floor_in->getMap(p_declaredMap) != FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     if (p_declaredMap != nullptr)
     {
         record.declaredMapId = p_declaredMap->getId();
     }
 
-    record.centroid_World_m = p_floor_in->getCentroid();
+    Eigen::Vector3d floor_inCentroid{};
+    if (p_floor_in->getCentroid(floor_inCentroid) !=
+        FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
+    record.centroid_World_m = floor_inCentroid;
     /* A single getPlaneIdentity() read: calling hasPlaneIdentity() first
      * would lock and release Floor::geometryMutex a second time, so the
      * two calls together are not atomic with each other. The optional
      * already carries "absent" correctly on its own. */
-    record.planeIdentity = p_floor_in->getPlaneIdentity();
+    std::optional<Floor::PlaneIdentity> floor_inPlaneIdentity{};
+    if (p_floor_in->getPlaneIdentity(floor_inPlaneIdentity) !=
+        FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getPlaneIdentity cannot fail; continue as before.
+    }
+    record.planeIdentity = floor_inPlaneIdentity;
 
-    for (Room *p_room : p_floor_in->getRooms())
+    std::vector<vs_graphs::core::semantic::Room *> floor_inRooms{};
+    if (p_floor_in->getRooms(floor_inRooms) !=
+        FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        // getRooms cannot fail; continue as before.
+    }
+    for (Room *p_room : floor_inRooms)
     {
         appendRoomRef(p_room, record.roomRefs);
     }

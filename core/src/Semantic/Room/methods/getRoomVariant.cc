@@ -27,10 +27,11 @@ namespace core
 namespace semantic
 {
 
-Room::RoomVariant Room::getRoomVariant()
+RoomStatus Room::getRoomVariant(Room::RoomVariant &roomVariant_out)
 {
     std::lock_guard<std::mutex> lock(stateMutex);
-    return variant;
+    roomVariant_out = variant;
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

@@ -41,7 +41,14 @@ std::size_t countLiveFloors(Map *p_map_in)
     std::size_t liveCount = 0U;
     for (semantic::Floor *p_floor : p_map_in->getAllFloors())
     {
-        if (p_floor != nullptr && p_floor->hasPlaneIdentity())
+        bool floorHasPlaneIdentity{};
+        if ((p_floor != nullptr) &&
+            p_floor->hasPlaneIdentity(floorHasPlaneIdentity) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            // hasPlaneIdentity cannot fail; continue as before.
+        }
+        if (p_floor != nullptr && floorHasPlaneIdentity)
         {
             ++liveCount;
         }

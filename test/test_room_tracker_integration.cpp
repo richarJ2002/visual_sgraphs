@@ -105,28 +105,56 @@ class ProductionCrossingScene
         p_map->addMapPlane(&knownWall);
         p_map->addMapPlane(&farWall);
 
-        knownRoom.setId(10);
-        knownRoom.setMap(p_map);
-        knownRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-        knownRoom.setWalls(&knownWall);
-        farRoom.setId(11);
-        farRoom.setMap(p_map);
-        farRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-        farRoom.setWalls(&farWall);
+        EXPECT_EQ((knownRoom.setId(10)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        EXPECT_EQ((knownRoom.setMap(p_map)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        EXPECT_EQ((knownRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        EXPECT_EQ((knownRoom.setWalls(&knownWall)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        EXPECT_EQ((farRoom.setId(11)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        EXPECT_EQ((farRoom.setMap(p_map)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        EXPECT_EQ((farRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        EXPECT_EQ((farRoom.setWalls(&farWall)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
         p_map->addDetectedMapRoom(&knownRoom);
         p_map->addDetectedMapRoom(&farRoom);
 
-        passage.setId(20);
-        passage.setMap(p_map);
-        passage.setPassable(true);
-        passage.setWidth(2.0);
-        passage.setHeight(2.0);
-        passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 1.0));
-        passage.setGlobalEquation(
-            g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
-        passage.setKnownSideRoom(&knownRoom);
-        passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0));
-        passage.setProspectiveRoom(&farRoom);
+        EXPECT_EQ(
+            (passage.setId(20)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        EXPECT_EQ(
+            (passage.setMap(p_map)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        EXPECT_EQ(
+            (passage.setPassable(true)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        EXPECT_EQ(
+            (passage.setWidth(2.0)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        EXPECT_EQ(
+            (passage.setHeight(2.0)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        EXPECT_EQ(
+            (passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 1.0))),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        EXPECT_EQ(
+            (passage.setGlobalEquation(
+                g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)))),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        EXPECT_EQ(
+            (passage.setKnownSideRoom(&knownRoom)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        EXPECT_EQ(
+            (passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        EXPECT_EQ(
+            (passage.setProspectiveRoom(&farRoom)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
         p_map->addMapPassage(&passage);
 
         addKeyFrame(knownSideKeyFrame,
@@ -380,11 +408,13 @@ TEST(RoomTrackerProductionIntegration,
 {
     ProductionCrossingScene scene(100U);
     ASSERT_TRUE(scene.hasValidGroundPlane());
-    const std::vector<Map *>              mapsBefore = scene.atlas.getAllMaps();
-    const std::vector<geometric::Plane *> knownWallsBefore =
-        scene.knownRoom.getWalls();
-    const std::vector<geometric::Plane *> farWallsBefore =
-        scene.farRoom.getWalls();
+    const std::vector<Map *>        mapsBefore = scene.atlas.getAllMaps();
+    std::vector<geometric::Plane *> knownWallsBefore{};
+    ASSERT_EQ((scene.knownRoom.getWalls(knownWallsBefore)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    std::vector<geometric::Plane *> farWallsBefore{};
+    ASSERT_EQ((scene.farRoom.getWalls(farWallsBefore)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
     scene.confirmFirstRoom(0.0);
     scene.produceTraversalEvidence();
@@ -400,11 +430,27 @@ TEST(RoomTrackerProductionIntegration,
 
     ASSERT_EQ(scene.manager.getRoomTrackerStateForTest(),
               semantic::RoomTrackingState::CROSSING_PASSAGE);
-    EXPECT_EQ(scene.passage.getTraversalKnownToFarCount(), 1U);
-    EXPECT_EQ(scene.passage.getTraversalFarToKnownCount(), 1U);
-    EXPECT_EQ(scene.passage.getTraversalObservationCount(), 2U);
+    std::size_t traversalKnownToFarCount{};
+    ASSERT_EQ(
+        (scene.passage.getTraversalKnownToFarCount(traversalKnownToFarCount)),
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(traversalKnownToFarCount, 1U);
+    std::size_t traversalFarToKnownCount{};
+    ASSERT_EQ(
+        (scene.passage.getTraversalFarToKnownCount(traversalFarToKnownCount)),
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(traversalFarToKnownCount, 1U);
+    std::size_t traversalObservationCount{};
+    ASSERT_EQ(
+        (scene.passage.getTraversalObservationCount(traversalObservationCount)),
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(traversalObservationCount, 2U);
 
-    EXPECT_TRUE(scene.passage.hasBidirectionalTraversalEvidence());
+    bool hasBidirectionalTraversalEvidence2{};
+    ASSERT_EQ((scene.passage.hasBidirectionalTraversalEvidence(
+                  hasBidirectionalTraversalEvidence2)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_TRUE(hasBidirectionalTraversalEvidence2);
     scene.addThirdCrossing();
     scene.produceTraversalEvidence();
     EXPECT_EQ(scene.manager.getRoomTrackerPendingForTest(),
@@ -427,8 +473,10 @@ TEST(RoomTrackerProductionIntegration,
                   semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
               1U);
     const std::size_t historySizeAfterTraversal = history.size();
-    const std::size_t observationsAfterTraversal =
-        scene.passage.getTraversalObservationCount();
+    std::size_t       observationsAfterTraversal{};
+    ASSERT_EQ((scene.passage.getTraversalObservationCount(
+                  observationsAfterTraversal)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     for (double now_s = 7.0; now_s <= 10.0; now_s += 1.0)
     {
         scene.produceTraversalEvidence();
@@ -436,8 +484,11 @@ TEST(RoomTrackerProductionIntegration,
     }
     EXPECT_EQ(scene.manager.getRoomTrackerEventHistoryForTest().size(),
               historySizeAfterTraversal);
-    EXPECT_EQ(scene.passage.getTraversalObservationCount(),
-              observationsAfterTraversal);
+    std::size_t traversalObservationCount2{};
+    ASSERT_EQ((scene.passage.getTraversalObservationCount(
+                  traversalObservationCount2)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(traversalObservationCount2, observationsAfterTraversal);
     EXPECT_EQ(countAcceptedEvents(
                   scene.manager.getRoomTrackerEventHistoryForTest(),
                   semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
@@ -447,12 +498,31 @@ TEST(RoomTrackerProductionIntegration,
                   semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
               1U);
 
-    EXPECT_FALSE(scene.knownRoom.hasRoomTag());
-    EXPECT_FALSE(scene.farRoom.hasRoomTag());
-    EXPECT_EQ(scene.knownRoom.getWalls(), knownWallsBefore);
-    EXPECT_EQ(scene.farRoom.getWalls(), farWallsBefore);
-    EXPECT_EQ(scene.passage.getKnownSideProvenance().p_room, &scene.knownRoom);
-    EXPECT_EQ(scene.passage.getProspectiveRoom(), &scene.farRoom);
+    bool hasRoomTag2{};
+    ASSERT_EQ((scene.knownRoom.hasRoomTag(hasRoomTag2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_FALSE(hasRoomTag2);
+    bool hasRoomTag3{};
+    ASSERT_EQ((scene.farRoom.hasRoomTag(hasRoomTag3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_FALSE(hasRoomTag3);
+    std::vector<vs_graphs::core::geometric::Plane *> walls{};
+    ASSERT_EQ((scene.knownRoom.getWalls(walls)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(walls, knownWallsBefore);
+    std::vector<vs_graphs::core::geometric::Plane *> walls2{};
+    ASSERT_EQ((scene.farRoom.getWalls(walls2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_EQ(walls2, farWallsBefore);
+    vs_graphs::core::semantic::Passage::KnownSideProvenance
+        knownSideProvenance{};
+    ASSERT_EQ((scene.passage.getKnownSideProvenance(knownSideProvenance)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(knownSideProvenance.p_room, &scene.knownRoom);
+    vs_graphs::core::semantic::Room *p_prospectiveRoom = nullptr;
+    ASSERT_EQ((scene.passage.getProspectiveRoom(p_prospectiveRoom)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(p_prospectiveRoom, &scene.farRoom);
     EXPECT_EQ(scene.atlas.getAllMaps(), mapsBefore);
     ASSERT_EQ(mapsBefore.size(), 2U);
     for (Map *p_map : mapsBefore)
@@ -475,7 +545,11 @@ TEST(RoomTrackerProductionIntegration,
     }
     EXPECT_EQ(scene.manager.getRoomTrackerPendingForTest(),
               std::make_pair(true, false));
-    EXPECT_EQ(scene.passage.getTraversalObservationCount(), 1U);
+    std::size_t traversalObservationCount{};
+    ASSERT_EQ(
+        (scene.passage.getTraversalObservationCount(traversalObservationCount)),
+        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(traversalObservationCount, 1U);
     scene.manager.processRoomTrackerPendingForTest(101.0);
     EXPECT_EQ(scene.manager.getRoomTrackerPendingForTest(),
               std::make_pair(false, false));
@@ -495,7 +569,11 @@ TEST(RoomTrackerProductionIntegration,
     scene.manager.processRoomTrackerPendingForTest(106.0);
     EXPECT_EQ(scene.manager.getRoomTrackerStateForTest(),
               semantic::RoomTrackingState::CONFIRMED_ROOM);
-    EXPECT_EQ(scene.passage.getTraversalObservationCount(), 2U);
+    std::size_t traversalObservationCount2{};
+    ASSERT_EQ((scene.passage.getTraversalObservationCount(
+                  traversalObservationCount2)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(traversalObservationCount2, 2U);
 
     scene.addAlternatingCrossing(203U, true);
     scene.produceTraversalEvidence();
@@ -532,7 +610,11 @@ TEST(RoomTrackerProductionIntegration,
                   history,
                   semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
               1U);
-    EXPECT_EQ(scene.passage.getTraversalObservationCount(), 5U);
+    std::size_t traversalObservationCount3{};
+    ASSERT_EQ((scene.passage.getTraversalObservationCount(
+                  traversalObservationCount3)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    EXPECT_EQ(traversalObservationCount3, 5U);
 }
 
 TEST(RoomTrackerProductionIntegration,
@@ -569,7 +651,12 @@ TEST(RoomTrackerProductionIntegration,
         {
             ++observedMutexContentions;
         }
-        ASSERT_TRUE(scene.passage.hasBidirectionalTraversalEvidence());
+        bool hasBidirectionalTraversalEvidence2{};
+        ASSERT_EQ(
+            (scene.passage.hasBidirectionalTraversalEvidence(
+                hasBidirectionalTraversalEvidence2)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        ASSERT_TRUE(hasBidirectionalTraversalEvidence2);
         scene.manager.submitVerificationVerdict(passVerdict());
         scene.manager.processRoomTrackerPendingForTest(8.0);
         scene.manager.submitVerificationVerdict(passVerdict());
@@ -590,7 +677,12 @@ TEST(RoomTrackerProductionIntegration,
                       history,
                       semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
                   1U);
-        EXPECT_EQ(scene.passage.getTraversalObservationCount(), 3U);
+        std::size_t traversalObservationCount{};
+        ASSERT_EQ(
+            (scene.passage.getTraversalObservationCount(
+                traversalObservationCount)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        EXPECT_EQ(traversalObservationCount, 3U);
     }
 
     EXPECT_EQ(acceptedCrossingHandoffs, repetitionCount);
@@ -635,33 +727,52 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
 
     /* Known room: entered earlier, so already visited. */
     semantic::Room knownRoom;
-    knownRoom.setId(10);
-    knownRoom.setMap(p_map);
-    knownRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    knownRoom.setCentroid(Eigen::Vector3d(-1.0, 0.0, 1.0));
-    knownRoom.setPreviouslyVisited(true);
+    ASSERT_EQ((knownRoom.setId(10)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((knownRoom.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((knownRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((knownRoom.setCentroid(Eigen::Vector3d(-1.0, 0.0, 1.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((knownRoom.setPreviouslyVisited(true)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&knownRoom);
 
     /* Prospective far-side room: observed but never entered. */
     semantic::Room farRoom;
-    farRoom.setId(11);
-    farRoom.setMap(p_map);
-    farRoom.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED);
-    farRoom.setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0));
+    ASSERT_EQ((farRoom.setId(11)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((farRoom.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((farRoom.setRoomVariant(semantic::Room::RoomVariant::UNDEFINED)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((farRoom.setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&farRoom);
 
     semantic::Passage passage;
-    passage.setId(20);
-    passage.setMap(p_map);
-    passage.setPassable(true);
-    passage.setWidth(2.0);
-    passage.setHeight(2.0);
-    passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 1.0));
-    passage.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
-    passage.setKnownSideRoom(&knownRoom);
-    passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0));
-    passage.setProspectiveRoom(&farRoom);
+    ASSERT_EQ((passage.setId(20)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setMap(p_map)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setPassable(true)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setWidth(2.0)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setHeight(2.0)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setCentroid(Eigen::Vector3d(0.0, 0.0, 1.0))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setKnownSideRoom(&knownRoom)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    ASSERT_EQ((passage.setProspectiveRoom(&farRoom)),
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     p_map->addMapPassage(&passage);
 
     /* Camera trajectory crossing the aperture from the known side. SetPose
@@ -678,13 +789,22 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
                                      Eigen::Vector3f(-1.0F, 0.0F, -1.0F)));
     p_map->addKeyFrame(&farKeyFrame);
 
-    ASSERT_FALSE(farRoom.hasPreviouslyVisited());
+    bool hasPreviouslyVisited2{};
+    ASSERT_EQ((farRoom.hasPreviouslyVisited(hasPreviouslyVisited2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_FALSE(hasPreviouslyVisited2);
 
     manager.updateTraversalEvidence(&atlas);
 
     EXPECT_EQ(manager.getCurrentRoomId(), 11);
-    EXPECT_TRUE(farRoom.hasPreviouslyVisited());
-    EXPECT_TRUE(knownRoom.hasPreviouslyVisited());
+    bool hasPreviouslyVisited3{};
+    ASSERT_EQ((farRoom.hasPreviouslyVisited(hasPreviouslyVisited3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(hasPreviouslyVisited3);
+    bool hasPreviouslyVisited4{};
+    ASSERT_EQ((knownRoom.hasPreviouslyVisited(hasPreviouslyVisited4)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_TRUE(hasPreviouslyVisited4);
 }
 
 TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
@@ -694,10 +814,14 @@ TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
     SemanticsManager manager(&atlas);
 
     semantic::Room room;
-    room.setId(3);
-    room.setMap(p_map);
-    room.setRoomVariant(semantic::Room::RoomVariant::ROOM);
-    room.setCentroid(Eigen::Vector3d(0.0, 0.0, 1.0));
+    ASSERT_EQ((room.setId(3)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setMap(p_map)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    ASSERT_EQ((room.setCentroid(Eigen::Vector3d(0.0, 0.0, 1.0))),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
 
     manager.setCurrentRoomIdForTest(-1);
@@ -706,7 +830,10 @@ TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
     /* Fallback belief assigns the current room without entry evidence, so
      * the room must not be marked visited. */
     EXPECT_EQ(manager.getCurrentRoomId(), 3);
-    EXPECT_FALSE(room.hasPreviouslyVisited());
+    bool hasPreviouslyVisited2{};
+    ASSERT_EQ((room.hasPreviouslyVisited(hasPreviouslyVisited2)),
+              vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+    EXPECT_FALSE(hasPreviouslyVisited2);
 }
 
 } // namespace core

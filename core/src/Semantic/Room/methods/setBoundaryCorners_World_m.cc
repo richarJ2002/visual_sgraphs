@@ -27,11 +27,13 @@ namespace core
 namespace semantic
 {
 
-void Room::setBoundaryCorners_World_m(
+RoomStatus Room::setBoundaryCorners_World_m(
     std::vector<Eigen::Vector3d> corners_World_m_in)
 {
     std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
     boundaryCorners_World_m = std::move(corners_World_m_in);
+
+    return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
 } // namespace semantic

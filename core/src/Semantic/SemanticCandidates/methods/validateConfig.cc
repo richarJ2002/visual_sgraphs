@@ -17,27 +17,58 @@ namespace core
 namespace semantic
 {
 
-SemanticCandidateConfigRejectionReason SemanticCandidates::validateConfig(
-    const SemanticCandidateConfig &configuration_in)
+SemanticCandidatesStatus SemanticCandidates::validateConfig(
+    const SemanticCandidateConfig          &configuration_in,
+    SemanticCandidateConfigRejectionReason &rejectionReason_out)
 {
     if (configuration_in.topK == 0U)
-        return SemanticCandidateConfigRejectionReason::TOP_K_ZERO;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::TOP_K_ZERO;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (configuration_in.candidatePairCap == 0U)
-        return SemanticCandidateConfigRejectionReason::PAIR_CAP_ZERO;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::PAIR_CAP_ZERO;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (configuration_in.topologyNodesCap == 0U)
-        return SemanticCandidateConfigRejectionReason::TOPOLOGY_CAP_ZERO;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::TOPOLOGY_CAP_ZERO;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (configuration_in.globalFallbackCap == 0U)
-        return SemanticCandidateConfigRejectionReason::GLOBAL_FALLBACK_CAP_ZERO;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::GLOBAL_FALLBACK_CAP_ZERO;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (configuration_in.descriptorElementsCap == 0U)
-        return SemanticCandidateConfigRejectionReason::DESCRIPTOR_CAP_ZERO;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::DESCRIPTOR_CAP_ZERO;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (configuration_in.topoRefinementIters == 0U)
-        return SemanticCandidateConfigRejectionReason::
-            TOPO_REFINEMENT_ITERS_ZERO;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::TOPO_REFINEMENT_ITERS_ZERO;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (configuration_in.topK > configuration_in.candidatePairCap)
-        return SemanticCandidateConfigRejectionReason::TOP_K_EXCEEDS_PAIR_CAP;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::TOP_K_EXCEEDS_PAIR_CAP;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (configuration_in.globalFallbackCap > configuration_in.candidatePairCap)
-        return SemanticCandidateConfigRejectionReason::
+    {
+        rejectionReason_out = SemanticCandidateConfigRejectionReason::
             GLOBAL_FALLBACK_EXCEEDS_PAIR_CAP;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     const double weights[] = {configuration_in.weightAngle,
                               configuration_in.weightExtent,
                               configuration_in.weightAperture,
@@ -46,41 +77,87 @@ SemanticCandidateConfigRejectionReason SemanticCandidates::validateConfig(
     for (const double weight : weights)
     {
         if (!std::isfinite(weight))
-            return SemanticCandidateConfigRejectionReason::NONFINITE_WEIGHT;
+        {
+            rejectionReason_out =
+                SemanticCandidateConfigRejectionReason::NONFINITE_WEIGHT;
+            return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+        }
         if (weight < 0.0)
-            return SemanticCandidateConfigRejectionReason::NEGATIVE_WEIGHT;
+        {
+            rejectionReason_out =
+                SemanticCandidateConfigRejectionReason::NEGATIVE_WEIGHT;
+            return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+        }
         weightSum += weight;
     }
     if (!std::isfinite(weightSum))
-        return SemanticCandidateConfigRejectionReason::WEIGHT_SUM_OVERFLOW;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::WEIGHT_SUM_OVERFLOW;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (weightSum == 0.0)
-        return SemanticCandidateConfigRejectionReason::ALL_WEIGHTS_ZERO;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::ALL_WEIGHTS_ZERO;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     const double penalties[] = {configuration_in.angleMissingPenalty,
                                 configuration_in.extentMissingPenalty,
                                 configuration_in.apertureMissingPenalty};
     for (const double penalty : penalties)
     {
         if (!std::isfinite(penalty))
-            return SemanticCandidateConfigRejectionReason::NONFINITE_PENALTY;
+        {
+            rejectionReason_out =
+                SemanticCandidateConfigRejectionReason::NONFINITE_PENALTY;
+            return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+        }
         if (penalty < 0.0)
-            return SemanticCandidateConfigRejectionReason::NEGATIVE_PENALTY;
+        {
+            rejectionReason_out =
+                SemanticCandidateConfigRejectionReason::NEGATIVE_PENALTY;
+            return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+        }
     }
     if (!std::isfinite(configuration_in.ambiguityMargin))
-        return SemanticCandidateConfigRejectionReason::
-            NONFINITE_AMBIGUITY_MARGIN;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::NONFINITE_AMBIGUITY_MARGIN;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (configuration_in.ambiguityMargin < 0.0)
-        return SemanticCandidateConfigRejectionReason::
-            NEGATIVE_AMBIGUITY_MARGIN;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::NEGATIVE_AMBIGUITY_MARGIN;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (!std::isfinite(configuration_in.angleTolerance_rad))
-        return SemanticCandidateConfigRejectionReason::
-            NONFINITE_ANGLE_TOLERANCE;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::NONFINITE_ANGLE_TOLERANCE;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (configuration_in.angleTolerance_rad < 0.0)
-        return SemanticCandidateConfigRejectionReason::NEGATIVE_ANGLE_TOLERANCE;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::NEGATIVE_ANGLE_TOLERANCE;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (!std::isfinite(configuration_in.runtimeBudget_ms))
-        return SemanticCandidateConfigRejectionReason::NONFINITE_RUNTIME_BUDGET;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::NONFINITE_RUNTIME_BUDGET;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
     if (configuration_in.runtimeBudget_ms < 0.0)
-        return SemanticCandidateConfigRejectionReason::NEGATIVE_RUNTIME_BUDGET;
-    return SemanticCandidateConfigRejectionReason::NONE;
+    {
+        rejectionReason_out =
+            SemanticCandidateConfigRejectionReason::NEGATIVE_RUNTIME_BUDGET;
+        return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
+    }
+    rejectionReason_out = SemanticCandidateConfigRejectionReason::NONE;
+    return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
 } // namespace semantic

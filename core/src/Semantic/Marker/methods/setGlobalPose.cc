@@ -25,10 +25,12 @@ namespace core
 namespace semantic
 {
 
-void Marker::setGlobalPose(const Sophus::SE3f &globalPose_in)
+MarkerStatus Marker::setGlobalPose(const Sophus::SE3f &globalPose_in)
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
     globalPose = globalPose_in;
+
+    return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
 } // namespace semantic
