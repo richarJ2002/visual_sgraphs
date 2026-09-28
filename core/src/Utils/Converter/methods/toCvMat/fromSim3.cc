@@ -42,13 +42,21 @@ namespace utils
 namespace converter
 {
 
-cv::Mat Converter::toCvMat(const g2o::Sim3 &similarity_in)
+ConverterStatus Converter::toCvMat(const g2o::Sim3 &similarity_in,
+                                   cv::Mat         &cvMat_out)
 {
     Eigen::Matrix3d eigenRotation = similarity_in.rotation().toRotationMatrix();
     Eigen::Vector3d eigenTranslation = similarity_in.translation();
     double          scale            = similarity_in.scale();
     /* Fold the similarity scale into the rotation part. */
-    return toCvSE3(scale * eigenRotation, eigenTranslation);
+    cv::Mat         cvSE3{};
+    if (toCvSE3(scale * eigenRotation, eigenTranslation, cvSE3) !=
+        ConverterStatus::CONVERTER_STATUS_SUCCESS)
+    {
+        // toCvSE3 cannot fail; continue as before.
+    }
+    cvMat_out = cvSE3;
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

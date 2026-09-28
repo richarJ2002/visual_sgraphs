@@ -103,13 +103,18 @@ void Tracking::createInitialMapMonocular()
     std::cout << "- New map created with #"
               << to_string(p_atlas->getMapPointCount()) << " points!"
               << std::endl;
-    Optimizer::globalBundleAdjustment(
-        p_atlas->getCurrentMap(),
-        20,
-        nullptr,
-        0,
-        true,
-        types::SystemParams::getParams()->markers.impact);
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    Optimizer::globalBundleAdjustment(p_atlas->getCurrentMap(),
+                                      20,
+                                      nullptr,
+                                      0,
+                                      true,
+                                      p_params->markers.impact);
 
     float medianDepth = p_keyFrameInitial->computeSceneMedianDepth(2);
     float invMedianDepth;

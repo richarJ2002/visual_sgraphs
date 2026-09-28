@@ -25,6 +25,7 @@
 #ifndef GEOMETRIC_TOOLS_H
 #define GEOMETRIC_TOOLS_H
 
+#include "GeometricToolsStatus.h"
 #include <Eigen/Core>
 #include <opencv2/core/core.hpp>
 #include <sophus/se3.hpp>
@@ -54,11 +55,14 @@ class GeometricTools
      *               Non-owning second keyframe; shall be
      *               non-null.
      *
-     * @return       Fundamental matrix mapping the second view
-     *               into the first.
+     * @param[out] f12_out Fundamental matrix mapping the second view into the
+     * first.
+     * @return GEOMETRIC_TOOLS_STATUS_SUCCESS.
      */
-    static Eigen::Matrix3f computeF12(KeyFrame *&keyFrame1_in,
-                                      KeyFrame *&keyFrame2_in);
+    [[nodiscard]] static GeometricToolsStatus
+        computeF12(KeyFrame       *&keyFrame1_in,
+                   KeyFrame       *&keyFrame2_in,
+                   Eigen::Matrix3f &f12_out);
 
     /*!
      * @brief        Triangulates two normalized observations
@@ -77,14 +81,15 @@ class GeometricTools
      * @param[in,out] x3D_inout
      *               Triangulated point.
      *
-     * @return       True and x3D set when the homogeneous scale
-     *               is non-zero.
+     * @return GEOMETRIC_TOOLS_STATUS_SUCCESS, or
+     * GEOMETRIC_TOOLS_STATUS_NUMERICAL_FAILURE when an input is rejected.
      */
-    static bool triangulate(Eigen::Vector3f            &x_c1,
-                            Eigen::Vector3f            &x_c2,
-                            Eigen::Matrix<float, 3, 4> &Tc1w_in,
-                            Eigen::Matrix<float, 3, 4> &Tc2w_in,
-                            Eigen::Vector3f            &x3D_inout);
+    [[nodiscard]] static GeometricToolsStatus
+        triangulate(Eigen::Vector3f            &x_c1,
+                    Eigen::Vector3f            &x_c2,
+                    Eigen::Matrix<float, 3, 4> &Tc1w_in,
+                    Eigen::Matrix<float, 3, 4> &Tc2w_in,
+                    Eigen::Vector3f            &x3D_inout);
 
     /*!
      * @brief        Checks element-wise agreement between a cv
@@ -96,20 +101,25 @@ class GeometricTools
      *               OpenCV matrix to compare.
      * @param[in]    eigMat
      *               Eigen matrix to compare.
-     *
-     * @return       True when sizes match and every coefficient
+     * @param[out]   areMatricesEqual_out
+     *               True when sizes match and every coefficient
      *               agrees within 1e-3.
+     *
+     * @return       GEOMETRIC_TOOLS_STATUS_SUCCESS.
      */
     template <int rows, int cols>
-    static bool checkMatrices(const cv::Mat                          &cvMat,
-                              const Eigen::Matrix<float, rows, cols> &eigMat)
+    [[nodiscard]] static GeometricToolsStatus
+        checkMatrices(const cv::Mat                          &cvMat,
+                      const Eigen::Matrix<float, rows, cols> &eigMat,
+                      bool &areMatricesEqual_out)
     {
         const float epsilon = 1e-3;
         // std::cout << cvMat.cols - cols << cvMat.rows - rows << std::endl;
         if (rows != cvMat.rows || cols != cvMat.cols)
         {
             std::cout << "wrong cvmat size\n";
-            return false;
+            areMatricesEqual_out = false;
+            return GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS;
         }
         for (int rowIndex = 0; rowIndex < rows; rowIndex++)
             for (int columnIndex = 0; columnIndex < cols; columnIndex++)
@@ -120,9 +130,11 @@ class GeometricTools
                 {
                     std::cout << "cv mat:\n" << cvMat << std::endl;
                     std::cout << "eig mat:\n" << eigMat << std::endl;
-                    return false;
+                    areMatricesEqual_out = false;
+                    return GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS;
                 }
-        return true;
+        areMatricesEqual_out = true;
+        return GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS;
     }
 
     /*!
@@ -135,13 +147,17 @@ class GeometricTools
      *               First matrix to compare.
      * @param[in]    eigMat2
      *               Second matrix to compare.
-     *
-     * @return       True when every coefficient agrees within
+     * @param[out]   areMatricesEqual_out
+     *               True when every coefficient agrees within
      *               1e-3.
+     *
+     * @return       GEOMETRIC_TOOLS_STATUS_SUCCESS.
      */
     template <typename T, int rows, int cols>
-    static bool checkMatrices(const Eigen::Matrix<T, rows, cols> &eigMat1,
-                              const Eigen::Matrix<T, rows, cols> &eigMat2)
+    [[nodiscard]] static GeometricToolsStatus
+        checkMatrices(const Eigen::Matrix<T, rows, cols> &eigMat1,
+                      const Eigen::Matrix<T, rows, cols> &eigMat2,
+                      bool                               &areMatricesEqual_out)
     {
         const float epsilon = 1e-3;
         for (int rowIndex = 0; rowIndex < rows; rowIndex++)
@@ -153,9 +169,11 @@ class GeometricTools
                 {
                     std::cout << "eig mat 1:\n" << eigMat1 << std::endl;
                     std::cout << "eig mat 2:\n" << eigMat2 << std::endl;
-                    return false;
+                    areMatricesEqual_out = false;
+                    return GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS;
                 }
-        return true;
+        areMatricesEqual_out = true;
+        return GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS;
     }
 };
 

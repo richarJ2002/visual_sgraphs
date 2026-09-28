@@ -31,11 +31,12 @@ namespace core
 {
 namespace types
 {
-SystemParams *SystemParams::getParams()
+SystemParamsStatus SystemParams::getParams(SystemParams *&p_params_out)
 {
     if (p_systemParams == nullptr)
         p_systemParams = new SystemParams();
-    return p_systemParams;
+    p_params_out = p_systemParams;
+    return SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS;
 }
 } // namespace types
 } // namespace core

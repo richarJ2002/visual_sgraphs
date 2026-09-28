@@ -34,21 +34,42 @@ namespace utils
 namespace utils
 {
 
-vs_graphs::core::geometric::Plane::PlaneVariant
-    Utils::getPlaneTypeFromClassId(int classId_in)
+UtilsStatus Utils::getPlaneTypeFromClassId(
+    int                                              classId_in,
+    vs_graphs::core::geometric::Plane::PlaneVariant &planeTypeFromClassId_out)
 {
     switch (classId_in)
     {
     case 0:
-        return vs_graphs::core::geometric::Plane::PlaneVariant::GROUND;
+    {
+        planeTypeFromClassId_out =
+            vs_graphs::core::geometric::Plane::PlaneVariant::GROUND;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
     case 1:
-        return vs_graphs::core::geometric::Plane::PlaneVariant::WALL;
+    {
+        planeTypeFromClassId_out =
+            vs_graphs::core::geometric::Plane::PlaneVariant::WALL;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
     case 2:
-        return vs_graphs::core::geometric::Plane::PlaneVariant::DOOR;
+    {
+        planeTypeFromClassId_out =
+            vs_graphs::core::geometric::Plane::PlaneVariant::DOOR;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
     case 3:
-        return vs_graphs::core::geometric::Plane::PlaneVariant::WINDOW;
+    {
+        planeTypeFromClassId_out =
+            vs_graphs::core::geometric::Plane::PlaneVariant::WINDOW;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
     default:
-        return vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED;
+    {
+        planeTypeFromClassId_out =
+            vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
     }
 }
 

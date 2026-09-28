@@ -42,11 +42,19 @@ namespace utils
 namespace converter
 {
 
-cv::Mat Converter::toCvMat(const g2o::SE3Quat &rigidTransform_in)
+ConverterStatus Converter::toCvMat(const g2o::SE3Quat &rigidTransform_in,
+                                   cv::Mat            &cvMat_out)
 {
     Eigen::Matrix<double, 4, 4> eigenMatrix =
         rigidTransform_in.to_homogeneous_matrix();
-    return toCvMat(eigenMatrix);
+    cv::Mat cvMat{};
+    if (toCvMat(eigenMatrix, cvMat) !=
+        ConverterStatus::CONVERTER_STATUS_SUCCESS)
+    {
+        // toCvMat cannot fail; continue as before.
+    }
+    cvMat_out = cvMat;
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

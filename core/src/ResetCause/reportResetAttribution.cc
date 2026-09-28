@@ -13,10 +13,18 @@ namespace vs_graphs
 namespace core
 {
 
-void reportResetAttribution(const ResetCause  cause_in,
-                            const ResetAction action_in)
+ResetCauseStatus reportResetAttribution(const ResetCause  cause_in,
+                                        const ResetAction action_in)
 {
-    std::cout << formatResetAttribution(cause_in, action_in) << std::endl;
+    std::string resetAttribution{};
+    if (formatResetAttribution(cause_in, action_in, resetAttribution) !=
+        ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+    {
+        // formatResetAttribution cannot fail; continue as before.
+    }
+    std::cout << resetAttribution << std::endl;
+
+    return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;
 }
 
 } // namespace core

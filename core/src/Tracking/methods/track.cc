@@ -72,8 +72,13 @@ void Tracking::track()
                  << endl;
             unique_lock<mutex> lock(imuQueueMutex);
             queueImuData.clear();
-            reportResetAttribution(ResetCause::NON_MONOTONIC_SENSOR_TIMESTAMP,
-                                   ResetAction::CREATE_MAP_EXECUTION);
+            if (reportResetAttribution(
+                    ResetCause::NON_MONOTONIC_SENSOR_TIMESTAMP,
+                    ResetAction::CREATE_MAP_EXECUTION) !=
+                ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+            {
+                // reportResetAttribution cannot fail; continue as before.
+            }
             createMapInAtlas();
             return;
         }
@@ -97,9 +102,14 @@ void Tracking::track()
                     }
                     else
                     {
-                        reportResetAttribution(
-                            ResetCause::TIMESTAMP_JUMP_AFTER_SECOND_IMU_BA,
-                            ResetAction::CREATE_MAP_EXECUTION);
+                        if (reportResetAttribution(
+                                ResetCause::TIMESTAMP_JUMP_AFTER_SECOND_IMU_BA,
+                                ResetAction::CREATE_MAP_EXECUTION) !=
+                            ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+                        {
+                            // reportResetAttribution cannot fail; continue as
+                            // before.
+                        }
                         createMapInAtlas();
                     }
                 }
@@ -305,9 +315,14 @@ void Tracking::track()
                     }
                     else
                     {
-                        reportResetAttribution(
-                            ResetCause::VISUAL_TRACKING_LOST_NEW_MAP,
-                            ResetAction::CREATE_MAP_EXECUTION);
+                        if (reportResetAttribution(
+                                ResetCause::VISUAL_TRACKING_LOST_NEW_MAP,
+                                ResetAction::CREATE_MAP_EXECUTION) !=
+                            ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+                        {
+                            // reportResetAttribution cannot fail; continue as
+                            // before.
+                        }
                         createMapInAtlas();
                     }
 
@@ -606,8 +621,12 @@ void Tracking::track()
                     return;
                 }
 
-            reportResetAttribution(ResetCause::VISUAL_TRACKING_LOST_NEW_MAP,
-                                   ResetAction::CREATE_MAP_EXECUTION);
+            if (reportResetAttribution(ResetCause::VISUAL_TRACKING_LOST_NEW_MAP,
+                                       ResetAction::CREATE_MAP_EXECUTION) !=
+                ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+            {
+                // reportResetAttribution cannot fail; continue as before.
+            }
             createMapInAtlas();
 
             return;

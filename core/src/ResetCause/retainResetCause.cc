@@ -21,10 +21,17 @@ namespace core
 std::mutex                                            resetCauseMutex;
 std::unordered_map<const void *, ResetCauseRetention> resetCausesByOwner;
 
-void retainResetCause(const void *const p_owner_in, const ResetCause cause_in)
+ResetCauseStatus retainResetCause(const void *const p_owner_in,
+                                  const ResetCause  cause_in)
 {
     const std::lock_guard<std::mutex> lock(resetCauseMutex);
-    resetCausesByOwner[p_owner_in].retain(cause_in);
+    if (resetCausesByOwner[p_owner_in].retain(cause_in) !=
+        ResetCauseRetentionStatus::RESET_CAUSE_RETENTION_STATUS_SUCCESS)
+    {
+        // retain cannot fail; continue as before.
+    }
+
+    return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;
 }
 
 } // namespace core

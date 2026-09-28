@@ -14,17 +14,24 @@ namespace vs_graphs
 namespace core
 {
 
-nlohmann::json finiteAwareDoubleToJson(double value_in)
+MissionHealthTopologyJsonStatus
+    finiteAwareDoubleToJson(double value_in, nlohmann::json &json_out)
 {
     if (std::isnan(value_in))
     {
-        return "NaN";
+        json_out = "NaN";
+        return MissionHealthTopologyJsonStatus::
+            MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS;
     }
     if (std::isinf(value_in))
     {
-        return value_in > 0.0 ? "Infinity" : "-Infinity";
+        json_out = value_in > 0.0 ? "Infinity" : "-Infinity";
+        return MissionHealthTopologyJsonStatus::
+            MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS;
     }
-    return value_in;
+    json_out = value_in;
+    return MissionHealthTopologyJsonStatus::
+        MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS;
 }
 
 } // namespace core

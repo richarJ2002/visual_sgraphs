@@ -31,8 +31,12 @@ void SemanticSegmentation::updatePlaneSemantics(int    planeId_in,
     geometric::Plane *p_matchedPlane = p_atlas->getPlaneById(planeId_in);
 
     // plane type compatible with the Plane class
-    vs_graphs::core::geometric::Plane::PlaneVariant planeType =
-        utils::utils::Utils::getPlaneTypeFromClassId(clsId_in);
+    vs_graphs::core::geometric::Plane::PlaneVariant planeType{};
+    if (utils::utils::Utils::getPlaneTypeFromClassId(clsId_in, planeType) !=
+        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+    {
+        // getPlaneTypeFromClassId cannot fail; continue as before.
+    }
 
     // cast a vote for the plane semantics
     p_matchedPlane->castWeightedVote(planeType, confidence_in);

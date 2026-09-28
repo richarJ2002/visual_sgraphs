@@ -40,13 +40,20 @@ namespace utils
 {
 
 template <typename PointT>
-typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDistanceFilter(
-    const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in)
+UtilsStatus Utils::pointcloudDistanceFilter(
+    const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
+    typename pcl::PointCloud<PointT>::Ptr       &p_filteredCloud_out)
 {
     // Variables
-    double                        distance;
+    double               distance;
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
     const std::pair<float, float> thresholds =
-        types::SystemParams::getParams()->pointcloud.distanceThresh;
+        p_params->pointcloud.distanceThresh;
     const float thresholdNear = thresholds.first;
     const float thresholdFar  = thresholds.second;
 
@@ -77,11 +84,12 @@ typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDistanceFilter(
     p_filteredCloud->header   = p_cloud_in->header;
     p_filteredCloud->width    = p_filteredCloud->size();
 
-    return p_filteredCloud;
+    p_filteredCloud_out = p_filteredCloud;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
-template pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
-    Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(
-        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
+template UtilsStatus Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(
+    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &,
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
 
 } // namespace utils
 } // namespace utils

@@ -33,9 +33,18 @@ namespace core
 void System::requestResetActiveMapWithCause(const ResetCause cause_in)
 {
     unique_lock<mutex> lock(resetMutex);
-    retainResetCause(this, cause_in);
+    if (retainResetCause(this, cause_in) !=
+        ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+    {
+        // retainResetCause cannot fail; continue as before.
+    }
     isResetActiveMapRequested = true;
-    reportResetAttribution(cause_in, ResetAction::RESET_ACTIVE_MAP_REQUEST);
+    if (reportResetAttribution(cause_in,
+                               ResetAction::RESET_ACTIVE_MAP_REQUEST) !=
+        ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+    {
+        // reportResetAttribution cannot fail; continue as before.
+    }
 }
 
 } // namespace core

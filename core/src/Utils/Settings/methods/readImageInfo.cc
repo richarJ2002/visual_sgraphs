@@ -47,19 +47,41 @@ namespace utils
 namespace settings
 {
 
-void Settings::readImageInfo(cv::FileStorage &storage_inout)
+SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
 {
     bool found;
     // Read original and desired image dimensions
-    int  originalRows =
-        readParameter<int>(storage_inout, "Camera.height", found);
-    int originalCols = readParameter<int>(storage_inout, "Camera.width", found);
+    int  originalRows{};
+    if (readParameter<int>(storage_inout,
+                           "Camera.height",
+                           found,
+                           originalRows) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    int originalCols{};
+    if (readParameter<int>(storage_inout,
+                           "Camera.width",
+                           found,
+                           originalCols) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
     originalImageSize.width  = originalCols;
     originalImageSize.height = originalRows;
 
     newImageSize = originalImageSize;
-    int newHeigh =
-        readParameter<int>(storage_inout, "Camera.newHeight", found, false);
+    int newHeigh{};
+    if (readParameter<int>(storage_inout,
+                           "Camera.newHeight",
+                           found,
+                           newHeigh,
+                           false) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
     if (found)
     {
         isFirstResizeNeeded = true;
@@ -70,28 +92,83 @@ void Settings::readImageInfo(cv::FileStorage &storage_inout)
             // Update calibration
             float scaleRowFactor =
                 (float)newImageSize.height / (float)originalImageSize.height;
-            p_calibration1->setParameter(p_calibration1->getParameter(1) *
-                                             scaleRowFactor,
-                                         1);
-            p_calibration1->setParameter(p_calibration1->getParameter(3) *
-                                             scaleRowFactor,
-                                         3);
+            float calibration1Parameter{};
+            if (p_calibration1->getParameter(1, calibration1Parameter) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // getParameter cannot fail; continue as before.
+            }
+            if (p_calibration1->setParameter(calibration1Parameter *
+                                                 scaleRowFactor,
+                                             1) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // setParameter cannot fail; continue as before.
+            }
+            float calibration1Parameter2{};
+            if (p_calibration1->getParameter(3, calibration1Parameter2) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // getParameter cannot fail; continue as before.
+            }
+            if (p_calibration1->setParameter(calibration1Parameter2 *
+                                                 scaleRowFactor,
+                                             3) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // setParameter cannot fail; continue as before.
+            }
 
             if ((sensor == System::STEREO || sensor == System::IMU_STEREO) &&
                 cameraModel != CameraType::RECTIFIED)
             {
-                p_calibration2->setParameter(p_calibration2->getParameter(1) *
-                                                 scaleRowFactor,
-                                             1);
-                p_calibration2->setParameter(p_calibration2->getParameter(3) *
-                                                 scaleRowFactor,
-                                             3);
+                float calibration2Parameter{};
+                if (p_calibration2->getParameter(1, calibration2Parameter) !=
+                    camera_models::geometriccamera::GeometricCameraStatus::
+                        GEOMETRIC_CAMERA_STATUS_SUCCESS)
+                {
+                    // getParameter cannot fail; continue as before.
+                }
+                if (p_calibration2->setParameter(calibration2Parameter *
+                                                     scaleRowFactor,
+                                                 1) !=
+                    camera_models::geometriccamera::GeometricCameraStatus::
+                        GEOMETRIC_CAMERA_STATUS_SUCCESS)
+                {
+                    // setParameter cannot fail; continue as before.
+                }
+                float calibration2Parameter2{};
+                if (p_calibration2->getParameter(3, calibration2Parameter2) !=
+                    camera_models::geometriccamera::GeometricCameraStatus::
+                        GEOMETRIC_CAMERA_STATUS_SUCCESS)
+                {
+                    // getParameter cannot fail; continue as before.
+                }
+                if (p_calibration2->setParameter(calibration2Parameter2 *
+                                                     scaleRowFactor,
+                                                 3) !=
+                    camera_models::geometriccamera::GeometricCameraStatus::
+                        GEOMETRIC_CAMERA_STATUS_SUCCESS)
+                {
+                    // setParameter cannot fail; continue as before.
+                }
             }
         }
     }
 
-    int newWidth =
-        readParameter<int>(storage_inout, "Camera.newWidth", found, false);
+    int newWidth{};
+    if (readParameter<int>(storage_inout,
+                           "Camera.newWidth",
+                           found,
+                           newWidth,
+                           false) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
     if (found)
     {
         isFirstResizeNeeded = true;
@@ -102,22 +179,70 @@ void Settings::readImageInfo(cv::FileStorage &storage_inout)
             // Update calibration
             float scaleColFactor =
                 (float)newImageSize.width / (float)originalImageSize.width;
-            p_calibration1->setParameter(p_calibration1->getParameter(0) *
-                                             scaleColFactor,
-                                         0);
-            p_calibration1->setParameter(p_calibration1->getParameter(2) *
-                                             scaleColFactor,
-                                         2);
+            float calibration1Parameter3{};
+            if (p_calibration1->getParameter(0, calibration1Parameter3) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // getParameter cannot fail; continue as before.
+            }
+            if (p_calibration1->setParameter(calibration1Parameter3 *
+                                                 scaleColFactor,
+                                             0) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // setParameter cannot fail; continue as before.
+            }
+            float calibration1Parameter4{};
+            if (p_calibration1->getParameter(2, calibration1Parameter4) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // getParameter cannot fail; continue as before.
+            }
+            if (p_calibration1->setParameter(calibration1Parameter4 *
+                                                 scaleColFactor,
+                                             2) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // setParameter cannot fail; continue as before.
+            }
 
             if ((sensor == System::STEREO || sensor == System::IMU_STEREO) &&
                 cameraModel != CameraType::RECTIFIED)
             {
-                p_calibration2->setParameter(p_calibration2->getParameter(0) *
-                                                 scaleColFactor,
-                                             0);
-                p_calibration2->setParameter(p_calibration2->getParameter(2) *
-                                                 scaleColFactor,
-                                             2);
+                float calibration2Parameter3{};
+                if (p_calibration2->getParameter(0, calibration2Parameter3) !=
+                    camera_models::geometriccamera::GeometricCameraStatus::
+                        GEOMETRIC_CAMERA_STATUS_SUCCESS)
+                {
+                    // getParameter cannot fail; continue as before.
+                }
+                if (p_calibration2->setParameter(calibration2Parameter3 *
+                                                     scaleColFactor,
+                                                 0) !=
+                    camera_models::geometriccamera::GeometricCameraStatus::
+                        GEOMETRIC_CAMERA_STATUS_SUCCESS)
+                {
+                    // setParameter cannot fail; continue as before.
+                }
+                float calibration2Parameter4{};
+                if (p_calibration2->getParameter(2, calibration2Parameter4) !=
+                    camera_models::geometriccamera::GeometricCameraStatus::
+                        GEOMETRIC_CAMERA_STATUS_SUCCESS)
+                {
+                    // getParameter cannot fail; continue as before.
+                }
+                if (p_calibration2->setParameter(calibration2Parameter4 *
+                                                     scaleColFactor,
+                                                 2) !=
+                    camera_models::geometriccamera::GeometricCameraStatus::
+                        GEOMETRIC_CAMERA_STATUS_SUCCESS)
+                {
+                    // setParameter cannot fail; continue as before.
+                }
 
                 if (cameraModel == CameraType::KANNALA_BRANDT)
                 {
@@ -143,9 +268,22 @@ void Settings::readImageInfo(cv::FileStorage &storage_inout)
         }
     }
 
-    framesPerSecond = readParameter<int>(storage_inout, "Camera.fps", found);
-    isRgbInputEnabled =
-        (bool)readParameter<int>(storage_inout, "Camera.RGB", found);
+    int parameter{};
+    if (readParameter<int>(storage_inout, "Camera.fps", found, parameter) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    framesPerSecond = parameter;
+    int parameter2{};
+    if (readParameter<int>(storage_inout, "Camera.RGB", found, parameter2) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    isRgbInputEnabled = (bool)parameter2;
+
+    return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
 } // namespace settings

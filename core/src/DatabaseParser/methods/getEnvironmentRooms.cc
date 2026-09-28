@@ -25,8 +25,9 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<semantic::Room *>
-    DBParser::getEnvironmentRooms(Json environmentData_in)
+DBParserStatus DBParser::getEnvironmentRooms(
+    Json                           environmentData_in,
+    std::vector<semantic::Room *> &environmentRooms_out)
 {
     environmentRooms.clear();
 
@@ -93,7 +94,8 @@ std::vector<semantic::Room *>
     else
         VSLAM_LOG_INFO("- No rooms found in the JSON file!\n");
 
-    return environmentRooms;
+    environmentRooms_out = environmentRooms;
+    return DBParserStatus::DBPARSER_STATUS_SUCCESS;
 }
 } // namespace core
 } // namespace vs_graphs

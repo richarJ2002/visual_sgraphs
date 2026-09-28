@@ -49,20 +49,66 @@ Sophus::SE3f
     }
 
     cv::Mat imLeftToFeed, imRightToFeed;
-    if (p_settings && p_settings->needToRectify())
+    bool    settingsNeedToRectify{};
+    if ((p_settings) &&
+        p_settings->needToRectify(settingsNeedToRectify) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        cv::Mat M1l = p_settings->M1l();
-        cv::Mat M2l = p_settings->M2l();
-        cv::Mat M1r = p_settings->M1r();
-        cv::Mat M2r = p_settings->M2r();
+        // needToRectify cannot fail; continue as before.
+    }
+    bool settingsNeedToResize{};
+    if ((p_settings) &&
+        p_settings->needToResize(settingsNeedToResize) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // needToResize cannot fail; continue as before.
+    }
+    if (p_settings && settingsNeedToRectify)
+    {
+        cv::Mat M1l{};
+        if (p_settings->M1l(M1l) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // M1l cannot fail; continue as before.
+        }
+        cv::Mat M2l{};
+        if (p_settings->M2l(M2l) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // M2l cannot fail; continue as before.
+        }
+        cv::Mat M1r{};
+        if (p_settings->M1r(M1r) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // M1r cannot fail; continue as before.
+        }
+        cv::Mat M2r{};
+        if (p_settings->M2r(M2r) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // M2r cannot fail; continue as before.
+        }
 
         cv::remap(imageLeft_in, imLeftToFeed, M1l, M2l, cv::INTER_LINEAR);
         cv::remap(imageRight_in, imRightToFeed, M1r, M2r, cv::INTER_LINEAR);
     }
-    else if (p_settings && p_settings->needToResize())
+    else if (p_settings && settingsNeedToResize)
     {
-        cv::resize(imageLeft_in, imLeftToFeed, p_settings->newImSize());
-        cv::resize(imageRight_in, imRightToFeed, p_settings->newImSize());
+        cv::Size settingsNewImSize{};
+        if (p_settings->newImSize(settingsNewImSize) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // newImSize cannot fail; continue as before.
+        }
+        cv::resize(imageLeft_in, imLeftToFeed, settingsNewImSize);
+        cv::Size settingsNewImSize2{};
+        if (p_settings->newImSize(settingsNewImSize2) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // newImSize cannot fail; continue as before.
+        }
+        cv::resize(imageRight_in, imRightToFeed, settingsNewImSize2);
     }
     else
     {
@@ -98,7 +144,12 @@ Sophus::SE3f
         unique_lock<mutex> lock(resetMutex);
         if (isResetRequested)
         {
-            (void)consumeResetCause(this);
+            ResetCause resetCause{};
+            if (consumeResetCause(this, resetCause) !=
+                ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+            {
+                // consumeResetCause cannot fail; continue as before.
+            }
             p_tracker->reset();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
             isResetRequested          = false;
@@ -106,8 +157,19 @@ Sophus::SE3f
         }
         else if (isResetActiveMapRequested)
         {
-            reportResetAttribution(consumeResetCause(this),
-                                   ResetAction::RESET_ACTIVE_MAP_EXECUTION);
+            ResetCause resetCause2{};
+            if (consumeResetCause(this, resetCause2) !=
+                ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+            {
+                // consumeResetCause cannot fail; continue as before.
+            }
+            if (reportResetAttribution(
+                    resetCause2,
+                    ResetAction::RESET_ACTIVE_MAP_EXECUTION) !=
+                ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+            {
+                // reportResetAttribution cannot fail; continue as before.
+            }
             p_tracker->resetActiveMap();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
             isResetActiveMapRequested = false;

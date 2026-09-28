@@ -119,8 +119,20 @@ System::System(const string                 &vocabularyFile_in,
     if (!node.empty() && node.isString() && node.string() == "1.0")
     {
         p_settings = new utils::settings::Settings(settingsFile_in, sensor_in);
-        loadAtlasFile = p_settings->atlasLoadFile();
-        saveAtlasFile = p_settings->atlasSaveFile();
+        std::string settingsAtlasLoadFile{};
+        if (p_settings->atlasLoadFile(settingsAtlasLoadFile) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // atlasLoadFile cannot fail; continue as before.
+        }
+        loadAtlasFile = settingsAtlasLoadFile;
+        std::string settingsAtlasSaveFile{};
+        if (p_settings->atlasSaveFile(settingsAtlasSaveFile) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // atlasSaveFile cannot fail; continue as before.
+        }
+        saveAtlasFile = settingsAtlasSaveFile;
         std::cout << (*p_settings) << std::endl;
     }
     else
@@ -137,9 +149,19 @@ System::System(const string                 &vocabularyFile_in,
 
     if ((sensor_in == RGBD || sensor_in == IMU_RGBD) && p_settings != nullptr)
     {
-        const double stereoDepthThreshold = p_settings->thDepth();
-        const double metricCloseDepth_m =
-            p_settings->b() * stereoDepthThreshold;
+        double stereoDepthThreshold{};
+        if (p_settings->thDepth(stereoDepthThreshold) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // thDepth cannot fail; continue as before.
+        }
+        double settingsB{};
+        if (p_settings->b(settingsB) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // b cannot fail; continue as before.
+        }
+        const double metricCloseDepth_m = settingsB * stereoDepthThreshold;
         std::cout << "Stereo.ThDepth=" << stereoDepthThreshold
                   << " closeDepthMeters=" << metricCloseDepth_m << std::endl;
     }
@@ -196,8 +218,17 @@ System::System(const string                 &vocabularyFile_in,
     }
 
     /* Load the system parameters */
-    types::SystemParams *p_sysParams = types::SystemParams::getParams();
-    p_sysParams->setParams(sysParamsFile_in);
+    types::SystemParams *p_sysParams = nullptr;
+    if (types::SystemParams::getParams(p_sysParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    if (p_sysParams->setParams(sysParamsFile_in) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // setParams cannot fail; continue as before.
+    }
 
     /* Parse the environment database, if provided */
     parseJsonDatabase(p_sysParams->general.envDatabase);
@@ -252,7 +283,13 @@ System::System(const string                 &vocabularyFile_in,
     p_localMapper->initFrame = initialFr_in;
     if (p_settings)
     {
-        p_localMapper->farPointsThreshold = p_settings->thFarPoints();
+        double settingsThFarPoints{};
+        if (p_settings->thFarPoints(settingsThFarPoints) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // thFarPoints cannot fail; continue as before.
+        }
+        p_localMapper->farPointsThreshold = settingsThFarPoints;
     }
     else
     {

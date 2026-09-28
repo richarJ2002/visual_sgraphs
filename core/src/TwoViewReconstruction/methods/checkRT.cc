@@ -87,11 +87,15 @@ int TwoViewReconstruction::checkRT(const Eigen::Matrix3f      &R_in,
         Eigen::Vector3f homogeneousPoint1(keyPoint1.pt.x, keyPoint1.pt.y, 1);
         Eigen::Vector3f homogeneousPoint2(keyPoint2.pt.x, keyPoint2.pt.y, 1);
 
-        GeometricTools::triangulate(homogeneousPoint1,
-                                    homogeneousPoint2,
-                                    P1,
-                                    P2,
-                                    p3dC1);
+        if (GeometricTools::triangulate(homogeneousPoint1,
+                                        homogeneousPoint2,
+                                        P1,
+                                        P2,
+                                        p3dC1) !=
+            GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS)
+        {
+            // Rejected input: ignored, as before.
+        }
 
         if (!isfinite(p3dC1(0)) || !isfinite(p3dC1(1)) || !isfinite(p3dC1(2)))
         {

@@ -37,7 +37,12 @@ namespace core
 
 int Optimizer::poseOptimization(Frame *p_frame_inout)
 {
-    types::SystemParams *p_sysParams = types::SystemParams::getParams();
+    types::SystemParams *p_sysParams = nullptr;
+    if (types::SystemParams::getParams(p_sysParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
 
     g2o::SparseOptimizer                    optimizer;
     g2o::BlockSolver_6_3::LinearSolverType *p_linearSolver;
@@ -420,11 +425,17 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                     {
                         // get the intersection point of the line joining the
                         // camera center and the map point with the plane
-                        Eigen::Vector3d intersect =
-                            utils::utils::Utils::lineIntersectsPlane(
+                        Eigen::Vector3d intersect{};
+                        if (utils::utils::Utils::lineIntersectsPlane(
                                 planeEq,
                                 cameraCenter,
-                                pMPw);
+                                pMPw,
+                                intersect) !=
+                            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                        {
+                            // lineIntersectsPlane cannot fail; continue as
+                            // before.
+                        }
 
                         // check if the map point is in the plane cloud
                         if (candidatePlane->isPointinPlaneCloud(intersect))

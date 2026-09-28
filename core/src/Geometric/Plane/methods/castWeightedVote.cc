@@ -60,7 +60,13 @@ void Plane::castWeightedVote(Plane::PlaneVariant semanticType_in,
     }
 
     // set the plane type if votes above a certain threshold
-    if (maximumVotes >= types::SystemParams::getParams()->semSeg.minVotes)
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    if (maximumVotes >= p_params->semSeg.minVotes)
         planeType = maximumType;
     else
         planeType = PlaneVariant::UNDEFINED;

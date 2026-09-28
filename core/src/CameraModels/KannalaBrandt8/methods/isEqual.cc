@@ -29,29 +29,78 @@
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
-bool KannalaBrandt8::isEqual(geometriccamera::GeometricCamera *p_camera_in)
+KannalaBrandt8Status
+    KannalaBrandt8::isEqual(geometriccamera::GeometricCamera *p_camera_in,
+                            bool                             &isEqual_out)
 {
-    if (p_camera_in->getType() != geometriccamera::GeometricCamera::CAM_FISHEYE)
-        return false;
+    unsigned int cameraType{};
+    if (p_camera_in->getType(cameraType) !=
+        geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // getType cannot fail; continue as before.
+    }
+    if (cameraType != geometriccamera::GeometricCamera::CAM_FISHEYE)
+    {
+        isEqual_out = false;
+        return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
+    }
 
     KannalaBrandt8 *p_kannalaCamera = (KannalaBrandt8 *)p_camera_in;
 
-    if (abs(precision - p_kannalaCamera->getPrecision()) > 1e-6)
-        return false;
-
-    if (size() != p_kannalaCamera->size())
-        return false;
-
-    bool isSameCamera = true;
-    for (size_t parameterIndex = 0; parameterIndex < size(); ++parameterIndex)
+    float kannalaCameraPrecision{};
+    if (p_kannalaCamera->getPrecision(kannalaCameraPrecision) !=
+        KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS)
     {
-        if (abs(parameters[parameterIndex] -
-                p_kannalaCamera->getParameter(parameterIndex)) > 1e-6)
+        // getPrecision cannot fail; continue as before.
+    }
+    if (abs(precision - kannalaCameraPrecision) > 1e-6)
+    {
+        isEqual_out = false;
+        return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
+    }
+
+    size_t size2{};
+    if (size(size2) !=
+        geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // size cannot fail; continue as before.
+    }
+    size_t kannalaCameraSize{};
+    if (p_kannalaCamera->size(kannalaCameraSize) !=
+        geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // size cannot fail; continue as before.
+    }
+    if (size2 != kannalaCameraSize)
+    {
+        isEqual_out = false;
+        return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
+    }
+
+    bool   isSameCamera = true;
+    size_t size3{};
+    if (size(size3) !=
+        geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // size cannot fail; continue as before.
+    }
+    for (size_t parameterIndex = 0; parameterIndex < size3; ++parameterIndex)
+    {
+        float kannalaCameraParameter{};
+        if (p_kannalaCamera->getParameter(parameterIndex,
+                                          kannalaCameraParameter) !=
+            geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getParameter cannot fail; continue as before.
+        }
+        if (abs(parameters[parameterIndex] - kannalaCameraParameter) > 1e-6)
         {
             isSameCamera = false;
             break;
         }
     }
-    return isSameCamera;
+    isEqual_out = isSameCamera;
+    return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

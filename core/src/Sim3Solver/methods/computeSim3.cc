@@ -104,9 +104,20 @@ void Sim3Solver::computeSim3(Eigen::Matrix3f &P1_inout,
 
     if (!isScaleFixed)
     {
-        double cvnom = utils::converter::Converter::toCvMat(Pr1).dot(
-            utils::converter::Converter::toCvMat(P3));
-        double nom = (Pr1.array() * P3.array()).sum();
+        cv::Mat cvMat{};
+        if (utils::converter::Converter::toCvMat(Pr1, cvMat) !=
+            utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+        {
+            // toCvMat cannot fail; continue as before.
+        }
+        cv::Mat cvMat2{};
+        if (utils::converter::Converter::toCvMat(P3, cvMat2) !=
+            utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+        {
+            // toCvMat cannot fail; continue as before.
+        }
+        double cvnom = cvMat.dot(cvMat2);
+        double nom   = (Pr1.array() * P3.array()).sum();
         if (abs(nom - cvnom) > 1e-3)
             std::cout << "sim3 solver: " << abs(nom - cvnom) << std::endl
                       << nom << std::endl;

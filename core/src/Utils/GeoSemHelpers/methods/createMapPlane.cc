@@ -27,11 +27,12 @@ namespace vs_graphs
 namespace core
 {
 
-vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
+GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     Atlas                                          *p_atlas_inout,
     vs_graphs::core::KeyFrame                      *p_keyFrame_inout,
     const g2o::Plane3D                              estimatedPlane_in,
     const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr   p_planeCloud_in,
+    vs_graphs::core::geometric::Plane             *&p_mapPlane_out,
     vs_graphs::core::geometric::Plane::PlaneVariant semanticType_in,
     double                                          confidence_in)
 {
@@ -39,7 +40,8 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
 
     if (p_currentMap == nullptr)
     {
-        return nullptr;
+        p_mapPlane_out = nullptr;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     vs_graphs::core::geometric::Plane *p_newMapPlane =
@@ -78,7 +80,13 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     pointPlaneConstraintMatrix.setZero();
 
     /* If plane optimization enabled */
-    if (types::SystemParams::getParams()->optimization.planePoint.enabled)
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    if (p_params->optimization.planePoint.enabled)
     {
         /* Iterate through points in point cloud */
         for (auto &point : p_planeCloud_in->points)
@@ -124,9 +132,15 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     p_newMapPlane->setPlaneType(semanticType_in);
 
     /* Get the global equation of the plane */
-    g2o::Plane3D globalEquation_World = utils::utils::Utils::applyPoseToPlane(
-        p_keyFrame_inout->getPoseInverse().matrix().cast<double>(),
-        estimatedPlane_in);
+    g2o::Plane3D globalEquation_World{};
+    if (utils::utils::Utils::applyPoseToPlane(
+            p_keyFrame_inout->getPoseInverse().matrix().cast<double>(),
+            estimatedPlane_in,
+            globalEquation_World) !=
+        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+    {
+        // applyPoseToPlane cannot fail; continue as before.
+    }
 
     /* Set the global equation of the plane in the map world plane */
     p_newMapPlane->setGlobalEquation(globalEquation_World);
@@ -142,7 +156,12 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     {
         /* Add the point clouds to the new map plane */
         p_newMapPlane->replaceMapClouds(p_planeCloud_in);
-        refitMappedPlaneFromCloud(p_newMapPlane);
+        bool wasPlaneRefit{};
+        if (refitMappedPlaneFromCloud(p_newMapPlane, wasPlaneRefit) !=
+            GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+        {
+            // refitMappedPlaneFromCloud cannot fail; continue as before.
+        }
     }
 
     /* ---------------------------------------------------------------------- *
@@ -154,7 +173,13 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
      * the observed finite plane cloud. These associations may later be used to
      * construct map-point-to-plane constraints during graph optimisation.
      */
-    if (types::SystemParams::getParams()->optimization.planeMapPoint.enabled)
+    types::SystemParams *p_params2 = nullptr;
+    if (types::SystemParams::getParams(p_params2) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    if (p_params2->optimization.planeMapPoint.enabled)
     {
         /* Iterate through the orb points (expressed in global frame) */
         for (const auto &mapPoint : p_keyFrame_inout->getMapPoints())
@@ -174,7 +199,8 @@ vs_graphs::core::geometric::Plane *GeoSemHelpers::createMapPlane(
     /* Add the palne to the current map */
     p_atlas_inout->addMapPlane(p_newMapPlane);
 
-    return p_newMapPlane;
+    p_mapPlane_out = p_newMapPlane;
+    return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
 } // namespace core

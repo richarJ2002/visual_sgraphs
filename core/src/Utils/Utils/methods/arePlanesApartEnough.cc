@@ -36,14 +36,16 @@ namespace utils
 namespace utils
 {
 
-bool Utils::arePlanesApartEnough(
+UtilsStatus Utils::arePlanesApartEnough(
     const vs_graphs::core::geometric::Plane *p_plane1_in,
     const vs_graphs::core::geometric::Plane *p_plane2_in,
-    const double                            &threshold_in)
+    const double                            &threshold_in,
+    bool                                    &arePlanesApartEnough_out)
 {
     if (p_plane1_in == nullptr || p_plane2_in == nullptr)
     {
-        return false;
+        arePlanesApartEnough_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     Eigen::Vector4d equation1 = p_plane1_in->getGlobalEquation().coeffs();
@@ -55,7 +57,8 @@ bool Utils::arePlanesApartEnough(
     if (!std::isfinite(normalNorm1) || !std::isfinite(normalNorm2) ||
         normalNorm1 < 1e-8 || normalNorm2 < 1e-8)
     {
-        return false;
+        arePlanesApartEnough_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     equation1 /= normalNorm1;
@@ -65,7 +68,8 @@ bool Utils::arePlanesApartEnough(
 
     if (std::abs(normalAlignment) <= 0.99)
     {
-        return false;
+        arePlanesApartEnough_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     if (normalAlignment < 0.0)
@@ -76,7 +80,8 @@ bool Utils::arePlanesApartEnough(
     const double perpendicularSeparation_m =
         std::abs(equation1(3) - equation2(3));
 
-    return perpendicularSeparation_m > threshold_in;
+    arePlanesApartEnough_out = perpendicularSeparation_m > threshold_in;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

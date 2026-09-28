@@ -43,30 +43,38 @@ namespace utils
 namespace utils
 {
 
-int Utils::associatePlanes(
+UtilsStatus Utils::associatePlanes(
     const vector<geometric::Plane *>            &mappedPlanes_in,
     g2o::Plane3D                                 observedPlane_in,
     pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
     const Eigen::Matrix4d                       &keyframePose_in,
     const geometric::Plane::PlaneVariant         observedPlaneType_in,
     const float                                  threshold_in,
+    int                                         &matchedPlaneId_out,
     const float                           maximumFiniteCloudDistance_m_in,
     const std::optional<Eigen::Vector3d> &observationOrigin_World_m_in)
 {
     /* Return no association when no mapped planes are available */
     if (mappedPlanes_in.empty())
     {
-        return -1;
+        matchedPlaneId_out = -1;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     /* Confirm the observed plane point cloud is valid */
     if (p_observedCloud_in == nullptr || p_observedCloud_in->empty())
     {
-        return -1;
+        matchedPlaneId_out = -1;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     /* Extract the system parameters */
-    types::SystemParams *p_sysParams = types::SystemParams::getParams();
+    types::SystemParams *p_sysParams = nullptr;
+    if (types::SystemParams::getParams(p_sysParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
 
     /* Extract and normalize the observed plane equation */
     Eigen::Vector4d givenEquation   = observedPlane_in.coeffs();
@@ -75,7 +83,8 @@ int Utils::associatePlanes(
     /* Confirm norm is valid */
     if (!std::isfinite(givenNormalNorm) || givenNormalNorm < 1e-8)
     {
-        return -1;
+        matchedPlaneId_out = -1;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     /* Find the unit vector */
@@ -103,7 +112,8 @@ int Utils::associatePlanes(
     /* Return when the point cloud has no valid points */
     if (validGivenPointCount == 0)
     {
-        return -1;
+        matchedPlaneId_out = -1;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     givenCentroid /= static_cast<double>(validGivenPointCount);
@@ -205,9 +215,14 @@ int Utils::associatePlanes(
          *              global frame, therefore keyframePose_in is normally
          * identity.
          */
-        const g2o::Plane3D mappedPlaneInGivenFrame = Utils::applyPoseToPlane(
-            keyframePose_in,
-            g2o::Plane3D(mappedGeometry.equation_World));
+        g2o::Plane3D mappedPlaneInGivenFrame{};
+        if (Utils::applyPoseToPlane(keyframePose_in,
+                                    g2o::Plane3D(mappedGeometry.equation_World),
+                                    mappedPlaneInGivenFrame) !=
+            UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // applyPoseToPlane cannot fail; continue as before.
+        }
 
         Eigen::Vector4d mappedEquation = mappedPlaneInGivenFrame.coeffs();
 
@@ -234,8 +249,15 @@ int Utils::associatePlanes(
             observationOrigin_World_m_in.has_value() &&
             observationOrigin_World_m_in->allFinite())
         {
-            const ObservationSideEvidence mappedObservationSide =
-                getMedianObservationSide_World_m(p_mappedPlane, mappedEquation);
+            ObservationSideEvidence mappedObservationSide{};
+            if (getMedianObservationSide_World_m(p_mappedPlane,
+                                                 mappedEquation,
+                                                 mappedObservationSide) !=
+                UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // getMedianObservationSide_World_m cannot fail; continue as
+                // before.
+            }
 
             const double givenObservationSide_m =
                 mappedEquation.head<3>().dot(
@@ -284,8 +306,8 @@ int Utils::associatePlanes(
             continue;
         }
 
-        const bool finiteWallExtentsCompatible =
-            useWallExtension &&
+        bool areCompatible{};
+        if ((useWallExtension) &&
             finiteWallExtentsAreCompatible(
                 p_mappedCloud,
                 p_observedCloud_in,
@@ -293,7 +315,13 @@ int Utils::associatePlanes(
                 p_sysParams->semSeg.reassociate.wallExtension
                     .maximumInPlaneGap_m,
                 p_sysParams->semSeg.reassociate.wallExtension
-                    .minimumOrthogonalOverlap_m);
+                    .minimumOrthogonalOverlap_m,
+                areCompatible) != UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // finiteWallExtentsAreCompatible cannot fail; continue as before.
+        }
+        const bool finiteWallExtentsCompatible =
+            useWallExtension && areCompatible;
 
         /* Extract the global mapped-plane centroid */
         const Eigen::Vector3d mappedCentroid = mappedGeometry.centroid_World_m;
@@ -442,7 +470,8 @@ int Utils::associatePlanes(
         }
     }
 
-    return bestPlaneId;
+    matchedPlaneId_out = bestPlaneId;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

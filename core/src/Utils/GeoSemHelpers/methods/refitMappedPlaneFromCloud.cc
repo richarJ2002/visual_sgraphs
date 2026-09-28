@@ -31,13 +31,15 @@ namespace vs_graphs
 namespace core
 {
 
-bool GeoSemHelpers::refitMappedPlaneFromCloud(
-    vs_graphs::core::geometric::Plane *p_plane_inout)
+GeoSemHelpersStatus GeoSemHelpers::refitMappedPlaneFromCloud(
+    vs_graphs::core::geometric::Plane *p_plane_inout,
+    bool                              &wasPlaneRefit_out)
 {
     /* Confirm the mapped plane is valid */
     if (p_plane_inout == nullptr || p_plane_inout->isBad())
     {
-        return false;
+        wasPlaneRefit_out = false;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     /* Claim one immutable generation; fitting never observes concurrent growth.
@@ -50,7 +52,8 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(
         geometrySnapshot->supportCloud == nullptr ||
         geometrySnapshot->supportCloud->size() < 20)
     {
-        return false;
+        wasPlaneRefit_out = false;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud =
@@ -79,7 +82,8 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(
     /* Return when too few valid points remain */
     if (validPointCount < 20)
     {
-        return false;
+        wasPlaneRefit_out = false;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     centroid /= static_cast<double>(validPointCount);
@@ -114,14 +118,16 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(
 
     if (eigenSolver.info() != Eigen::Success)
     {
-        return false;
+        wasPlaneRefit_out = false;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     Eigen::Vector3d fittedNormal = eigenSolver.eigenvectors().col(0);
 
     if (!fittedNormal.allFinite() || fittedNormal.norm() < 1e-8)
     {
-        return false;
+        wasPlaneRefit_out = false;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     fittedNormal.normalize();
@@ -153,11 +159,12 @@ bool GeoSemHelpers::refitMappedPlaneFromCloud(
     fittedEquation(3) = -fittedNormal.dot(centroid);
 
     /* Publish the complete fitted geometry and recompute finite bounds once. */
-    return p_plane_inout->completeMapCloudRefit(
-        geometrySnapshot->cloudGeneration,
-        centroid,
-        g2o::Plane3D(fittedEquation),
-        validPointCount);
+    wasPlaneRefit_out =
+        p_plane_inout->completeMapCloudRefit(geometrySnapshot->cloudGeneration,
+                                             centroid,
+                                             g2o::Plane3D(fittedEquation),
+                                             validPointCount);
+    return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
 } // namespace core

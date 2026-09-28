@@ -55,9 +55,14 @@ bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &queryPoint_in)
     queryPointPcl.y = queryPoint_in(1);
     queryPointPcl.z = queryPoint_in(2);
 
-    types::SystemParams *p_systemParams = types::SystemParams::getParams();
-    std::vector<int>     radiusSearchPointIndices;
-    std::vector<float>   radiusSearchSquaredDistances;
+    types::SystemParams *p_systemParams = nullptr;
+    if (types::SystemParams::getParams(p_systemParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    std::vector<int>   radiusSearchPointIndices;
+    std::vector<float> radiusSearchSquaredDistances;
 
     if (p_octree->radiusSearch(
             queryPointPcl,

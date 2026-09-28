@@ -67,7 +67,10 @@ System::~System()
     {
         p_viewerThread->join();
     }
-    clearResetCause(this);
+    if (clearResetCause(this) != ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+    {
+        // clearResetCause cannot fail; continue as before.
+    }
 
     delete p_localMappingThread;
     delete p_loopClosingThread;

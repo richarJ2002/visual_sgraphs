@@ -39,11 +39,15 @@ namespace utils
 namespace utils
 {
 
-std::pair<double, double> Utils::computePlaneWidthHeight(
-    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud_in)
+UtilsStatus Utils::computePlaneWidthHeight(
+    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud_in,
+    std::pair<double, double>                   &planeWidthHeight_out)
 {
     if (p_cloud_in->points.empty())
-        return std::make_pair(0.0, 0.0);
+    {
+        planeWidthHeight_out = std::make_pair(0.0, 0.0);
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
 
     // Apply PCA to find the principal axes of the point p_cloud_in
     pcl::PCA<pcl::PointXYZRGBA> pca;
@@ -61,7 +65,8 @@ std::pair<double, double> Utils::computePlaneWidthHeight(
     double width  = static_cast<double>(maximumPoint.y - minimumPoint.y);
     double height = static_cast<double>(maximumPoint.x - minimumPoint.x);
 
-    return std::make_pair(width, height);
+    planeWidthHeight_out = std::make_pair(width, height);
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

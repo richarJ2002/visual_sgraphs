@@ -48,10 +48,11 @@ namespace settings
 {
 
 template <>
-float Settings::readParameter<float>(cv::FileStorage   &storage_in,
-                                     const std::string &name_in,
-                                     bool              &found_out,
-                                     const bool         required_in)
+SettingsStatus Settings::readParameter<float>(cv::FileStorage   &storage_in,
+                                              const std::string &name_in,
+                                              bool              &found_out,
+                                              float             &parameter_out,
+                                              const bool         required_in)
 {
     cv::FileNode node = storage_in[name_in];
     if (node.empty())
@@ -67,8 +68,9 @@ float Settings::readParameter<float>(cv::FileStorage   &storage_in,
         {
             VSLAM_LOG_WARN("\t- Skipping optional parameter '%s' ...\n",
                            name_in.c_str());
-            found_out = false;
-            return 0.0f;
+            found_out     = false;
+            parameter_out = 0.0f;
+            return SettingsStatus::SETTINGS_STATUS_SUCCESS;
         }
     }
     else if (!node.isReal())
@@ -80,8 +82,9 @@ float Settings::readParameter<float>(cv::FileStorage   &storage_in,
     }
     else
     {
-        found_out = true;
-        return node.real();
+        found_out     = true;
+        parameter_out = node.real();
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 }
 

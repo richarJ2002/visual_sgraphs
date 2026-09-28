@@ -42,7 +42,8 @@ namespace utils
 namespace converter
 {
 
-cv::Mat Converter::toCvMat(const Eigen::MatrixXd &matrix_in)
+ConverterStatus Converter::toCvMat(const Eigen::MatrixXd &matrix_in,
+                                   cv::Mat               &cvMat_out)
 {
     cv::Mat cvMatrix(matrix_in.rows(), matrix_in.cols(), CV_32F);
     for (int rowIndex = 0; rowIndex < matrix_in.rows(); rowIndex++)
@@ -50,7 +51,8 @@ cv::Mat Converter::toCvMat(const Eigen::MatrixXd &matrix_in)
             cvMatrix.at<float>(rowIndex, columnIndex) =
                 matrix_in(rowIndex, columnIndex);
 
-    return cvMatrix.clone();
+    cvMat_out = cvMatrix.clone();
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

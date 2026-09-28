@@ -9,6 +9,7 @@
 #define VS_GRAPHS_CORE_MISSIONHEALTHTOPOLOGYJSON_PRIVATE_FUNCTIONS_H
 
 #include "MissionHealthTopologyJson.h"
+#include "MissionHealthTopologyJsonStatus.h"
 
 #include <vector>
 
@@ -22,27 +23,38 @@ namespace core
  *
  * @param[in]       keys_in
  *                  Keys to project.
+ * @param[out]      json_out
+ *                  JSON array of {kind, mapId, entityId} objects.
  *
- * @return          JSON array of {kind, mapId, entityId} objects.
+ * @return          MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS.
  */
-nlohmann::json entityKeysToJson(std::vector<semantic::EntityKey> keys_in);
+[[nodiscard]] MissionHealthTopologyJsonStatus
+    entityKeysToJson(std::vector<semantic::EntityKey> keys_in,
+                     nlohmann::json                  &json_out);
 
 /*!
  * @brief           Maps a double to JSON, preserving non-finite values.
  *
  * @param[in]       value_in
  *                  Value to map.
+ * @param[out]      json_out
+ *                  The value, or "NaN"/"Infinity"/"-Infinity".
  *
- * @return          The value, or "NaN"/"Infinity"/"-Infinity".
+ * @return          MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS.
  */
-nlohmann::json finiteAwareDoubleToJson(double value_in);
+[[nodiscard]] MissionHealthTopologyJsonStatus
+    finiteAwareDoubleToJson(double value_in, nlohmann::json &json_out);
 
 /*!
  * @brief           Projects the fixed axiom-capability table to JSON.
  *
- * @return          JSON array of capability rows.
+ * @param[out]      json_out
+ *                  JSON array of capability rows.
+ *
+ * @return          MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS.
  */
-nlohmann::json axiomCapabilitiesToJson();
+[[nodiscard]] MissionHealthTopologyJsonStatus
+    axiomCapabilitiesToJson(nlohmann::json &json_out);
 
 } // namespace core
 } // namespace vs_graphs

@@ -57,10 +57,23 @@ Sophus::SE3f
 
     // Obtain the images
     cv::Mat imToFeed = image_in.clone();
-    if (p_settings && p_settings->needToResize())
+    bool    settingsNeedToResize{};
+    if ((p_settings) &&
+        p_settings->needToResize(settingsNeedToResize) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        cv::Mat resizedImage;
-        cv::resize(image_in, resizedImage, p_settings->newImSize());
+        // needToResize cannot fail; continue as before.
+    }
+    if (p_settings && settingsNeedToResize)
+    {
+        cv::Mat  resizedImage;
+        cv::Size settingsNewImSize{};
+        if (p_settings->newImSize(settingsNewImSize) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // newImSize cannot fail; continue as before.
+        }
+        cv::resize(image_in, resizedImage, settingsNewImSize);
         imToFeed = resizedImage;
     }
 
@@ -93,7 +106,12 @@ Sophus::SE3f
         unique_lock<mutex> lock(resetMutex);
         if (isResetRequested)
         {
-            (void)consumeResetCause(this);
+            ResetCause resetCause{};
+            if (consumeResetCause(this, resetCause) !=
+                ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+            {
+                // consumeResetCause cannot fail; continue as before.
+            }
             p_tracker->reset();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
             isResetRequested          = false;
@@ -101,8 +119,19 @@ Sophus::SE3f
         }
         else if (isResetActiveMapRequested)
         {
-            reportResetAttribution(consumeResetCause(this),
-                                   ResetAction::RESET_ACTIVE_MAP_EXECUTION);
+            ResetCause resetCause2{};
+            if (consumeResetCause(this, resetCause2) !=
+                ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+            {
+                // consumeResetCause cannot fail; continue as before.
+            }
+            if (reportResetAttribution(
+                    resetCause2,
+                    ResetAction::RESET_ACTIVE_MAP_EXECUTION) !=
+                ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+            {
+                // reportResetAttribution cannot fail; continue as before.
+            }
             p_tracker->resetActiveMap();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
             isResetActiveMapRequested = false;

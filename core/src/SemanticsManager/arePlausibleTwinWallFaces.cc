@@ -48,7 +48,15 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
         return false;
     }
 
-    if (!utils::utils::Utils::arePlanesParallel(p_first_in, p_second_in))
+    bool arePlanesParallel2{};
+    if (utils::utils::Utils::arePlanesParallel(p_first_in,
+                                               p_second_in,
+                                               arePlanesParallel2) !=
+        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+    {
+        // arePlanesParallel cannot fail; continue as before.
+    }
+    if (!arePlanesParallel2)
     {
         return false;
     }

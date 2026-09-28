@@ -540,11 +540,15 @@ void Optimizer::optimizeEssentialGraph(
 
     if (p_sourceMap_in != nullptr)
     {
-        utils::utils::Utils::propagateSemanticPoseCorrections(
-            p_sourceMap_in,
-            keyFramePosesBefore_WorldToCamera,
-            keyFramePosesAfter_WorldToCamera,
-            transform_mergeWorldToCurrentWorld_in);
+        if (utils::utils::Utils::propagateSemanticPoseCorrections(
+                p_sourceMap_in,
+                keyFramePosesBefore_WorldToCamera,
+                keyFramePosesAfter_WorldToCamera,
+                transform_mergeWorldToCurrentWorld_in) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // propagateSemanticPoseCorrections cannot fail; continue as before.
+        }
     }
 
     std::cout << "- Corrections finished!" << std::endl;

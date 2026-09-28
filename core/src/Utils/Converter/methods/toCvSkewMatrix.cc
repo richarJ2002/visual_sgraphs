@@ -41,17 +41,19 @@ namespace utils
 namespace converter
 {
 
-cv::Mat Converter::toCvSkewMatrix(const cv::Mat &vector_in)
+ConverterStatus Converter::toCvSkewMatrix(const cv::Mat &vector_in,
+                                          cv::Mat       &cvSkewMatrix_out)
 {
-    return (cv::Mat_<float>(3, 3) << 0,
-            -vector_in.at<float>(2),
-            vector_in.at<float>(1),
-            vector_in.at<float>(2),
-            0,
-            -vector_in.at<float>(0),
-            -vector_in.at<float>(1),
-            vector_in.at<float>(0),
-            0);
+    cvSkewMatrix_out = (cv::Mat_<float>(3, 3) << 0,
+                        -vector_in.at<float>(2),
+                        vector_in.at<float>(1),
+                        vector_in.at<float>(2),
+                        0,
+                        -vector_in.at<float>(0),
+                        -vector_in.at<float>(1),
+                        vector_in.at<float>(0),
+                        0);
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

@@ -32,17 +32,19 @@ namespace utils
 namespace utils
 {
 
-bool finiteWallExtentsAreCompatible(
+UtilsStatus finiteWallExtentsAreCompatible(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_firstCloud_in,
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_secondCloud_in,
     const Eigen::Vector3d                              &commonNormal_World_in,
     const double                                        maximumInPlaneGap_m_in,
-    const double minimumOrthogonalOverlap_m_in)
+    const double minimumOrthogonalOverlap_m_in,
+    bool        &areCompatible_out)
 {
     if (!commonNormal_World_in.allFinite() ||
         commonNormal_World_in.norm() < 1e-8)
     {
-        return false;
+        areCompatible_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     const Eigen::Vector3d normal_World = commonNormal_World_in.normalized();
@@ -59,14 +61,27 @@ bool finiteWallExtentsAreCompatible(
     const Eigen::Vector3d tangentV_World =
         normal_World.cross(tangentU_World).normalized();
 
-    const ProjectedPlaneBounds firstBounds =
-        projectPlaneBounds(p_firstCloud_in, tangentU_World, tangentV_World);
-    const ProjectedPlaneBounds secondBounds =
-        projectPlaneBounds(p_secondCloud_in, tangentU_World, tangentV_World);
+    ProjectedPlaneBounds firstBounds{};
+    if (projectPlaneBounds(p_firstCloud_in,
+                           tangentU_World,
+                           tangentV_World,
+                           firstBounds) != UtilsStatus::UTILS_STATUS_SUCCESS)
+    {
+        // projectPlaneBounds cannot fail; continue as before.
+    }
+    ProjectedPlaneBounds secondBounds{};
+    if (projectPlaneBounds(p_secondCloud_in,
+                           tangentU_World,
+                           tangentV_World,
+                           secondBounds) != UtilsStatus::UTILS_STATUS_SUCCESS)
+    {
+        // projectPlaneBounds cannot fail; continue as before.
+    }
 
     if (!firstBounds.isValid || !secondBounds.isValid)
     {
-        return false;
+        areCompatible_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     const double overlapU_m =
@@ -79,16 +94,18 @@ bool finiteWallExtentsAreCompatible(
     if ((overlapU_m >= minimumOrthogonalOverlap_m_in && overlapV_m >= 0.0) ||
         (overlapV_m >= minimumOrthogonalOverlap_m_in && overlapU_m >= 0.0))
     {
-        return true;
+        areCompatible_out = true;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     const double gapU_m = std::max(0.0, -overlapU_m);
     const double gapV_m = std::max(0.0, -overlapV_m);
 
-    return (gapU_m <= maximumInPlaneGap_m_in &&
-            overlapV_m >= minimumOrthogonalOverlap_m_in) ||
-           (gapV_m <= maximumInPlaneGap_m_in &&
-            overlapU_m >= minimumOrthogonalOverlap_m_in);
+    areCompatible_out = (gapU_m <= maximumInPlaneGap_m_in &&
+                         overlapV_m >= minimumOrthogonalOverlap_m_in) ||
+                        (gapV_m <= maximumInPlaneGap_m_in &&
+                         overlapU_m >= minimumOrthogonalOverlap_m_in);
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

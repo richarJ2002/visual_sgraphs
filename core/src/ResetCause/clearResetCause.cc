@@ -18,10 +18,12 @@ namespace core
 extern std::mutex                                            resetCauseMutex;
 extern std::unordered_map<const void *, ResetCauseRetention> resetCausesByOwner;
 
-void clearResetCause(const void *const p_owner_in) noexcept
+ResetCauseStatus clearResetCause(const void *const p_owner_in) noexcept
 {
     const std::lock_guard<std::mutex> lock(resetCauseMutex);
     resetCausesByOwner.erase(p_owner_in);
+
+    return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;
 }
 
 } // namespace core

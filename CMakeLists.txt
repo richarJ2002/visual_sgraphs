@@ -661,6 +661,13 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
+  ament_add_gtest(test_GeometricToolsStatus
+    test/test_GeometricToolsStatus.cpp
+  )
+  target_link_libraries(test_GeometricToolsStatus
+    ${PROJECT_NAME}_lib
+  )
+
   ament_add_gtest(test_room_tracker_integration
     test/test_room_tracker_integration.cpp
   )

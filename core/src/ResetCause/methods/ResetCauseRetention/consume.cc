@@ -12,13 +12,15 @@ namespace vs_graphs
 namespace core
 {
 
-ResetCause ResetCauseRetention::consume() noexcept
+ResetCauseRetentionStatus
+    ResetCauseRetention::consume(ResetCause &resetCause_out) noexcept
 {
     const ResetCause retainedCause =
         hasCause ? cause : ResetCause::UNATTRIBUTED_PUBLIC_REQUEST;
-    hasCause = false;
-    cause    = ResetCause::UNATTRIBUTED_PUBLIC_REQUEST;
-    return retainedCause;
+    hasCause       = false;
+    cause          = ResetCause::UNATTRIBUTED_PUBLIC_REQUEST;
+    resetCause_out = retainedCause;
+    return ResetCauseRetentionStatus::RESET_CAUSE_RETENTION_STATUS_SUCCESS;
 }
 
 } // namespace core

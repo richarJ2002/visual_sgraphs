@@ -80,12 +80,20 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
     std::vector<Eigen::Vector3d> normalsCurrent, centroidsCurrent;
     std::vector<Eigen::Vector3d> normalsOther, centroidsOther;
 
-    if (!utils::utils::Utils::collectCorrespondingWalls(p_currentMap_inout,
-                                                        p_otherMap_inout,
-                                                        normalsCurrent,
-                                                        centroidsCurrent,
-                                                        normalsOther,
-                                                        centroidsOther))
+    bool hasEnoughCorrespondences{};
+    if (utils::utils::Utils::collectCorrespondingWalls(
+            p_currentMap_inout,
+            p_otherMap_inout,
+            normalsCurrent,
+            centroidsCurrent,
+            normalsOther,
+            centroidsOther,
+            hasEnoughCorrespondences) !=
+        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+    {
+        // collectCorrespondingWalls cannot fail; continue as before.
+    }
+    if (!hasEnoughCorrespondences)
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: fewer than three "
                      "wall correspondences."
@@ -95,11 +103,16 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
     /* Horn's closed-form transform maps other-frame points into current frame.
      */
-    const Eigen::Isometry3d T_otherToCurrent =
-        utils::utils::Utils::computeMapTransform_Horn(normalsOther,
+    Eigen::Isometry3d T_otherToCurrent{};
+    if (utils::utils::Utils::computeMapTransform_Horn(normalsOther,
                                                       centroidsOther,
                                                       normalsCurrent,
-                                                      centroidsCurrent);
+                                                      centroidsCurrent,
+                                                      T_otherToCurrent) !=
+        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+    {
+        // computeMapTransform_Horn cannot fail; continue as before.
+    }
 
     if (!T_otherToCurrent.matrix().allFinite())
     {
@@ -709,8 +722,13 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             }
         }
 
-        utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap_inout,
-                                                          importedRooms);
+        if (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(
+                p_currentMap_inout,
+                importedRooms) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // fuseDuplicateRoomsAfterMerge cannot fail; continue as before.
+        }
 
         semantic::Floor *p_mergedFloor = nullptr;
         if (semantic::Floor::selectBestObservedFloor(
@@ -771,7 +789,11 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             }
         }
 
-        utils::utils::Utils::reAssociatePassages(this);
+        if (utils::utils::Utils::reAssociatePassages(this) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // reAssociatePassages cannot fail; continue as before.
+        }
     }
 
     /* Retire the absorbed map while keeping the current map active. */

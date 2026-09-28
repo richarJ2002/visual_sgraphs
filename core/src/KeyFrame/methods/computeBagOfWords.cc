@@ -39,8 +39,14 @@ void KeyFrame::computeBagOfWords()
 {
     if (bowVector.empty() || featureVector.empty())
     {
-        vector<cv::Mat> currentDescriptors =
-            utils::converter::Converter::toDescriptorVector(descriptors);
+        vector<cv::Mat> currentDescriptors{};
+        if (utils::converter::Converter::toDescriptorVector(
+                descriptors,
+                currentDescriptors) !=
+            utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+        {
+            // toDescriptorVector cannot fail; continue as before.
+        }
         // Feature vector associate features with nodes in the 4th level (from
         // leaves up) We assume the vocabulary tree has 6 levels, change the 4
         // otherwise

@@ -117,22 +117,44 @@ void SemanticsManager::detectDoorsAndDoorways(
             }
 
             /* Door and wall must be parallel */
-            if (!utils::utils::Utils::arePlanesParallel(p_door, p_wall))
+            bool arePlanesParallel2{};
+            if (utils::utils::Utils::arePlanesParallel(p_door,
+                                                       p_wall,
+                                                       arePlanesParallel2) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // arePlanesParallel cannot fail; continue as before.
+            }
+            if (!arePlanesParallel2)
             {
                 continue;
             }
 
             /* Door must lie close to the supporting wall */
+            bool arePlanesApartEnough2{};
             if (utils::utils::Utils::arePlanesApartEnough(
                     p_door,
                     p_wall,
-                    p_sysParams->semSeg.maxWallDoorDistance))
+                    p_sysParams->semSeg.maxWallDoorDistance,
+                    arePlanesApartEnough2) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // arePlanesApartEnough cannot fail; continue as before.
+            }
+            if (arePlanesApartEnough2)
             {
                 continue;
             }
 
             /* Create a blocked passage associated with the supporting wall */
-            GeoSemHelpers::createMapPassage(p_atlas, p_door, p_wall, false);
+            if (GeoSemHelpers::createMapPassage(p_atlas,
+                                                p_door,
+                                                p_wall,
+                                                false) !=
+                GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+            {
+                // createMapPassage cannot fail; continue as before.
+            }
         }
     }
 

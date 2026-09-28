@@ -48,10 +48,22 @@ void KeyFrame::updateConnections(bool upParent_in)
 
     // for all plane observations in the keyframe check in which other keyframes
     // are they seen increase counter for those keyframes
-    if (types::SystemParams::getParams()->planeBasedCovisibility.enabled)
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        unsigned int scorePerPlane = types::SystemParams::getParams()
-                                         ->planeBasedCovisibility.scorePerPlane;
+        // getParams cannot fail; continue as before.
+    }
+    if (p_params->planeBasedCovisibility.enabled)
+    {
+        types::SystemParams *p_params2 = nullptr;
+        if (types::SystemParams::getParams(p_params2) !=
+            types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+        {
+            // getParams cannot fail; continue as before.
+        }
+        unsigned int scorePerPlane =
+            p_params2->planeBasedCovisibility.scorePerPlane;
         for (vector<geometric::Plane *>::iterator vit  = mapPlanes.begin(),
                                                   vend = mapPlanes.end();
              vit != vend;

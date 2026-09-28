@@ -29,7 +29,13 @@ SemanticSegmentation::SemanticSegmentation(Atlas *p_atlas_in)
     p_atlas = p_atlas_in;
 
     /* Get the system parameters */
-    p_sysParams = types::SystemParams::getParams();
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    p_sysParams = p_params;
 
     /* Set the booleans according to the mode of operation */
     isGeometricSegmentationRunning =

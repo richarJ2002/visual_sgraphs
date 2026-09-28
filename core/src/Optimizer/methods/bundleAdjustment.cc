@@ -52,8 +52,12 @@ void Optimizer::bundleAdjustment(
     const std::atomic_bool                                  *p_stopRequested_in)
 {
     // System parameters
-    vs_graphs::core::types::SystemParams *p_systemParams =
-        vs_graphs::core::types::SystemParams::getParams();
+    vs_graphs::core::types::SystemParams *p_systemParams = nullptr;
+    if (vs_graphs::core::types::SystemParams::getParams(p_systemParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
 
     // Variables
     std::vector<bool> mapPointExcludedFlags;
@@ -458,9 +462,15 @@ void Optimizer::bundleAdjustment(
                 if (p_systemParams->optimization.planePoint.enabled)
                 {
                     // get the class index of the plane
-                    int planeClassIndex =
-                        utils::utils::Utils::getClassIdFromPlaneType(
-                            plane->getPlaneType());
+                    int planeClassIndex{};
+                    if (utils::utils::Utils::getClassIdFromPlaneType(
+                            plane->getPlaneType(),
+                            planeClassIndex) !=
+                        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                    {
+                        // getClassIdFromPlaneType cannot fail; continue as
+                        // before.
+                    }
                     if (planeClassIndex != -1)
                     {
                         // add the plane-point constraint
@@ -585,14 +595,30 @@ void Optimizer::bundleAdjustment(
                         continue;
 
                     // Check if the walls are parallel
-                    if (utils::utils::Utils::arePlanesParallel(p_firstWall,
-                                                               p_secondWall))
+                    bool arePlanesParallel2{};
+                    if (utils::utils::Utils::arePlanesParallel(
+                            p_firstWall,
+                            p_secondWall,
+                            arePlanesParallel2) !=
+                        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                    {
+                        // arePlanesParallel cannot fail; continue as before.
+                    }
+                    if (arePlanesParallel2)
                     {
                         // If they are parallel, check if they are facing each
                         // other
+                        bool arePlanesFacingEachOther2{};
                         if (utils::utils::Utils::arePlanesFacingEachOther(
                                 p_firstWall,
-                                p_secondWall))
+                                p_secondWall,
+                                arePlanesFacingEachOther2) !=
+                            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                        {
+                            // arePlanesFacingEachOther cannot fail; continue as
+                            // before.
+                        }
+                        if (arePlanesFacingEachOther2)
                         {
                             // Variables
                             int firstWallOptimizationId =
@@ -643,9 +669,17 @@ void Optimizer::bundleAdjustment(
                     }
 
                     // Check if the walls are perpendicular
+                    bool arePlanesPerpendicular2{};
                     if (utils::utils::Utils::arePlanesPerpendicular(
                             p_firstWall,
-                            p_secondWall))
+                            p_secondWall,
+                            arePlanesPerpendicular2) !=
+                        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                    {
+                        // arePlanesPerpendicular cannot fail; continue as
+                        // before.
+                    }
+                    if (arePlanesPerpendicular2)
                     {
                         // Variables
                         int firstWallOptimizationId  = p_firstWall->getOpIdG();
@@ -841,8 +875,15 @@ void Optimizer::bundleAdjustment(
                     vs_graphs::core::EdgeSE3ProjectXYZ *p_edge =
                         monoEdges[edgeIndex];
                     MapPoint *p_mapPoint = monoEdgeMapPoints[edgeIndex];
-                    KeyFrame *p_edgeSourceKeyFrame =
-                        edgeSourceKeyFrame(monoEdgeKeyFrames, edgeIndex);
+                    KeyFrame *p_edgeSourceKeyFrame = nullptr;
+                    if (edgeSourceKeyFrame(monoEdgeKeyFrames,
+                                           edgeIndex,
+                                           p_edgeSourceKeyFrame) !=
+                        OptimizerEdgeLookupStatus::
+                            OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS)
+                    {
+                        // edgeSourceKeyFrame cannot fail; continue as before.
+                    }
 
                     if (p_edgeSourceKeyFrame == nullptr ||
                         p_keyFrame != p_edgeSourceKeyFrame)
@@ -871,8 +912,15 @@ void Optimizer::bundleAdjustment(
                     g2o::EdgeStereoSE3ProjectXYZ *p_edge =
                         stereoEdges[edgeIndex];
                     MapPoint *p_mapPoint = stereoEdgeMapPoints[edgeIndex];
-                    KeyFrame *p_edgeSourceKeyFrame =
-                        edgeSourceKeyFrame(stereoEdgeKeyFrames, edgeIndex);
+                    KeyFrame *p_edgeSourceKeyFrame = nullptr;
+                    if (edgeSourceKeyFrame(stereoEdgeKeyFrames,
+                                           edgeIndex,
+                                           p_edgeSourceKeyFrame) !=
+                        OptimizerEdgeLookupStatus::
+                            OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS)
+                    {
+                        // edgeSourceKeyFrame cannot fail; continue as before.
+                    }
 
                     if (p_edgeSourceKeyFrame == nullptr ||
                         p_keyFrame != p_edgeSourceKeyFrame)

@@ -43,20 +43,62 @@ namespace utils
 namespace settings
 {
 
-void Settings::readORB(cv::FileStorage &storage_inout)
+SettingsStatus Settings::readORB(cv::FileStorage &storage_inout)
 {
     bool found;
 
-    featureCount =
-        readParameter<int>(storage_inout, "ORBextractor.nFeatures", found);
-    orbScaleFactor =
-        readParameter<float>(storage_inout, "ORBextractor.scaleFactor", found);
-    pyramidLevels =
-        readParameter<int>(storage_inout, "ORBextractor.nLevels", found);
-    initialFastThreshold =
-        readParameter<int>(storage_inout, "ORBextractor.iniThFAST", found);
-    minimumFastThreshold =
-        readParameter<int>(storage_inout, "ORBextractor.minThFAST", found);
+    int parameter{};
+    if (readParameter<int>(storage_inout,
+                           "ORBextractor.nFeatures",
+                           found,
+                           parameter) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    featureCount = parameter;
+    float parameter2{};
+    if (readParameter<float>(storage_inout,
+                             "ORBextractor.scaleFactor",
+                             found,
+                             parameter2) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    orbScaleFactor = parameter2;
+    int parameter3{};
+    if (readParameter<int>(storage_inout,
+                           "ORBextractor.nLevels",
+                           found,
+                           parameter3) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    pyramidLevels = parameter3;
+    int parameter4{};
+    if (readParameter<int>(storage_inout,
+                           "ORBextractor.iniThFAST",
+                           found,
+                           parameter4) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    initialFastThreshold = parameter4;
+    int parameter5{};
+    if (readParameter<int>(storage_inout,
+                           "ORBextractor.minThFAST",
+                           found,
+                           parameter5) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    minimumFastThreshold = parameter5;
+
+    return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
 } // namespace settings

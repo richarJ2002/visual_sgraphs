@@ -39,18 +39,18 @@ namespace utils
 namespace utils
 {
 
-void Utils::reAssociatePassages(Atlas *p_atlas_in)
+UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
 {
     if (p_atlas_in == nullptr)
     {
-        return;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     Map *p_activeMap = p_atlas_in->getCurrentMap();
 
     if (p_activeMap == nullptr)
     {
-        return;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     std::vector<semantic::Passage *> passages = p_activeMap->getAllPassages();
@@ -106,8 +106,14 @@ void Utils::reAssociatePassages(Atlas *p_atlas_in)
                   return firstPassageId < secondPassageId;
               });
 
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
     const types::SystemParams::SemSeg::PassageDetection &passageParameters =
-        types::SystemParams::getParams()->semSeg.passageDetection;
+        p_params->semSeg.passageDetection;
 
     /*
      * Use the same geometrically constrained identity gate as online passage
@@ -509,6 +515,8 @@ void Utils::reAssociatePassages(Atlas *p_atlas_in)
             retiredPassages.insert(p_candidatePassage);
         }
     }
+
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

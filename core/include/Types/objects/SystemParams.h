@@ -29,6 +29,7 @@
  *                  unchanged.
  */
 
+#include "Types/objects/SystemParamsStatus.h"
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -47,8 +48,10 @@ namespace types
 class SystemParams
 {
   public:
-    static SystemParams *getParams();
-    void                 setParams(const std::string &configurationFilePath_in);
+    [[nodiscard]] static SystemParamsStatus
+        getParams(SystemParams *&p_params_out);
+    [[nodiscard]] SystemParamsStatus
+        setParams(const std::string &configurationFilePath_in);
 
     // Common struct definitions
     struct Constraint

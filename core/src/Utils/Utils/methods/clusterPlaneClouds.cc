@@ -37,7 +37,7 @@ namespace utils
 namespace utils
 {
 
-void Utils::clusterPlaneClouds(
+UtilsStatus Utils::clusterPlaneClouds(
     const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &p_cloud_in,
     std::vector<pcl::PointIndices>                &clusterIndices_inout)
 {
@@ -45,14 +45,21 @@ void Utils::clusterPlaneClouds(
         new pcl::search::KdTree<pcl::PointXYZRGBA>);
     p_tree->setInputCloud(p_cloud_in);
     pcl::EuclideanClusterExtraction<pcl::PointXYZRGBA> ec;
+    types::SystemParams                               *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
     ec.setClusterTolerance(
-        types::SystemParams::getParams()
-            ->seg.planeAssociation.clusterSeparation.tolerance);
+        p_params->seg.planeAssociation.clusterSeparation.tolerance);
     ec.setMinClusterSize(10);
     ec.setMaxClusterSize(2500000);
     ec.setSearchMethod(p_tree);
     ec.setInputCloud(p_cloud_in);
     ec.extract(clusterIndices_inout);
+
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

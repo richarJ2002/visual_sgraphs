@@ -29,7 +29,7 @@ namespace vs_graphs
 namespace core
 {
 
-void GeoSemHelpers::createMapPassage(
+GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     vs_graphs::core::Atlas            *p_atlas_inout,
     vs_graphs::core::geometric::Plane *p_doorPlane_in,
     vs_graphs::core::geometric::Plane *p_wallPlane_in,
@@ -44,7 +44,7 @@ void GeoSemHelpers::createMapPassage(
     {
         std::cerr << "[GeoSemHelper] Cannot create passage: Atlas is null."
                   << std::endl;
-        return;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     /*!
@@ -62,14 +62,14 @@ void GeoSemHelpers::createMapPassage(
     {
         std::cerr << "[GeoSemHelper] Cannot create passage: wall plane is null"
                   << std::endl;
-        return;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     if (p_wallPlane_in->isBad())
     {
         std::cerr << "[GeoSemHelper] Cannot create passage: wall plane"
                   << p_wallPlane_in->getId() << " is bad." << std::endl;
-        return;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     /*!
@@ -77,9 +77,15 @@ void GeoSemHelpers::createMapPassage(
      * observations. This prevents spurious passages on isolated wall segments
      * that have no evidence.
      */
-    bool         wallHasConfirmedRoom = false;
+    bool                 wallHasConfirmedRoom = false;
+    types::SystemParams *p_params             = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
     const size_t minimumObservation =
-        types::SystemParams::getParams()->roomSeg.minimumWallObservationCount;
+        p_params->roomSeg.minimumWallObservationCount;
     if (p_wallPlane_in->getObservationCount() >= minimumObservation)
     {
         wallHasConfirmedRoom = true;
@@ -92,7 +98,7 @@ void GeoSemHelpers::createMapPassage(
                   << " has insufficient observations ("
                   << p_wallPlane_in->getObservationCount() << " < "
                   << minimumObservation << ")." << std::endl;
-        return;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     /* Extract all passages */
@@ -104,8 +110,20 @@ void GeoSemHelpers::createMapPassage(
      * ---------------------------------------------------------------------- */
 
     /* Extract the max door height and width */
-    double width  = types::SystemParams::getParams()->semSeg.maxDoorWidth;
-    double height = types::SystemParams::getParams()->semSeg.maxDoorHeight;
+    types::SystemParams *p_params2 = nullptr;
+    if (types::SystemParams::getParams(p_params2) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    double               width     = p_params2->semSeg.maxDoorWidth;
+    types::SystemParams *p_params3 = nullptr;
+    if (types::SystemParams::getParams(p_params3) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    double height = p_params3->semSeg.maxDoorHeight;
 
     /* Initialize variables to define the passage */
     Eigen::Vector3d centroid;
@@ -118,7 +136,7 @@ void GeoSemHelpers::createMapPassage(
         {
             std::cerr << "[GeoSemHelper] Cannot create passage: door plane "
                       << p_doorPlane_in->getId() << " is bad." << std::endl;
-            return;
+            return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
         }
 
         /* Extract centroid and plane equation */
@@ -133,8 +151,14 @@ void GeoSemHelpers::createMapPassage(
         if (p_doorCloud != nullptr && !p_doorCloud->empty())
         {
             /* Compute the dimensions of the door */
-            const std::pair<double, double> measuredDimensions =
-                utils::utils::Utils::computePlaneWidthHeight(p_doorCloud);
+            std::pair<double, double> measuredDimensions{};
+            if (utils::utils::Utils::computePlaneWidthHeight(
+                    p_doorCloud,
+                    measuredDimensions) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // computePlaneWidthHeight cannot fail; continue as before.
+            }
 
             /* Extract the dimensions of the door from the tuple */
             const double measuredWidth  = measuredDimensions.first;
@@ -143,19 +167,29 @@ void GeoSemHelpers::createMapPassage(
             /* Clip the width dimension of the door */
             if (std::isfinite(measuredWidth) && measuredWidth > 0.0)
             {
+                types::SystemParams *p_params4 = nullptr;
+                if (types::SystemParams::getParams(p_params4) !=
+                    types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+                {
+                    // getParams cannot fail; continue as before.
+                }
                 width = std::min(
                     measuredWidth,
-                    static_cast<double>(
-                        types::SystemParams::getParams()->semSeg.maxDoorWidth));
+                    static_cast<double>(p_params4->semSeg.maxDoorWidth));
             }
 
             /* Clip the height dimension of the door */
             if (std::isfinite(measuredHeight) && measuredHeight > 0.0)
             {
+                types::SystemParams *p_params5 = nullptr;
+                if (types::SystemParams::getParams(p_params5) !=
+                    types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+                {
+                    // getParams cannot fail; continue as before.
+                }
                 height = std::min(
                     measuredHeight,
-                    static_cast<double>(types::SystemParams::getParams()
-                                            ->semSeg.maxDoorHeight));
+                    static_cast<double>(p_params5->semSeg.maxDoorHeight));
             }
         }
     }
@@ -179,7 +213,7 @@ void GeoSemHelpers::createMapPassage(
             std::cerr << "[GeoSemHelper] Cannot create open passage: wall "
                       << p_wallPlane_in->getId()
                       << " has an invalid plane equation." << std::endl;
-            return;
+            return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
         }
 
         /* Normalize the norm vector */
@@ -200,7 +234,7 @@ void GeoSemHelpers::createMapPassage(
     {
         std::cerr << "[GeoSemHelper] Cannot create passage: invalid centroid."
                   << std::endl;
-        return;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     /* ---------------------------------------------------------------------- *
@@ -208,8 +242,14 @@ void GeoSemHelpers::createMapPassage(
      * ---------------------------------------------------------------------- */
 
     /* Extract the duplicate distacne threshold */
+    types::SystemParams *p_params6 = nullptr;
+    if (types::SystemParams::getParams(p_params6) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
     const double duplicateDistanceThreshold =
-        types::SystemParams::getParams()->semSeg.passageCentroidDistanceThresh;
+        p_params6->semSeg.passageCentroidDistanceThresh;
 
     /* Extract parameters from passage equation */
     Eigen::Vector4d candidateEquation = passageEquation.coeffs();
@@ -223,7 +263,7 @@ void GeoSemHelpers::createMapPassage(
         std::cerr << "[GeoSemHelper] Cannot create pasasge: invalid candidate "
                      "plane equation"
                   << std::endl;
-        return;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     /* Extract the unit norm of the plane */
@@ -431,7 +471,7 @@ void GeoSemHelpers::createMapPassage(
                   << (existingPassageIsPassable ? "open" : "blocked") << "."
                   << std::endl;
 
-        return;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     /* ---------------------------------------------------------------------- *
@@ -536,6 +576,8 @@ void GeoSemHelpers::createMapPassage(
     std::cout << "[GeoSemHelper] Atlas now contains "
               << p_atlas_inout->getAllPassages().size() << " passages."
               << std::endl;
+
+    return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
 } // namespace core

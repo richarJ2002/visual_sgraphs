@@ -34,15 +34,17 @@ namespace utils
 namespace utils
 {
 
-g2o::Plane3D Utils::applyPoseToPlane(const Eigen::Matrix4d &keyframePose_in,
-                                     const g2o::Plane3D    &plane_in)
+UtilsStatus Utils::applyPoseToPlane(const Eigen::Matrix4d &keyframePose_in,
+                                    const g2o::Plane3D    &plane_in,
+                                    g2o::Plane3D          &transformedPlane_out)
 {
     Eigen::Vector4d v = plane_in.coeffs();
     Eigen::Vector4d v2;
     Eigen::Matrix3d R = keyframePose_in.block<3, 3>(0, 0);
     v2.head<3>()      = R * v.head<3>();
     v2(3) = v(3) - keyframePose_in.block<3, 1>(0, 3).dot(v2.head<3>());
-    return g2o::Plane3D(v2);
+    transformedPlane_out = g2o::Plane3D(v2);
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

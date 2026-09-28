@@ -75,7 +75,13 @@ System::MissionHealthSnapshot
     snapshot.lastReturnedKeyFrameId =
         lastReturnedKeyFrameId.load(std::memory_order_relaxed);
 
-    if (types::SystemParams::getParams()->general.modeOfOperation ==
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    if (p_params->general.modeOfOperation ==
         types::SystemParams::General::ModeOfOperation::GEO)
     {
         snapshot.segmentationTerminalCount = snapshot.segmentationReturnedCount;

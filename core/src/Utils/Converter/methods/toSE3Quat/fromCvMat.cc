@@ -42,7 +42,8 @@ namespace utils
 namespace converter
 {
 
-g2o::SE3Quat Converter::toSE3Quat(const cv::Mat &transform_in)
+ConverterStatus Converter::toSE3Quat(const cv::Mat &transform_in,
+                                     g2o::SE3Quat  &se3Quat_out)
 {
     Eigen::Matrix<double, 3, 3> rotationMatrix;
     rotationMatrix << transform_in.at<float>(0, 0),
@@ -55,7 +56,8 @@ g2o::SE3Quat Converter::toSE3Quat(const cv::Mat &transform_in)
                                                   transform_in.at<float>(1, 3),
                                                   transform_in.at<float>(2, 3));
 
-    return g2o::SE3Quat(rotationMatrix, translationVector);
+    se3Quat_out = g2o::SE3Quat(rotationMatrix, translationVector);
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

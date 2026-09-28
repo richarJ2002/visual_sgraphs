@@ -36,6 +36,7 @@
 // place recognition). #define REGISTER_TIMES
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
+#include "Utils/Settings/objects/SettingsStatus.h"
 
 #include <cstdint>
 #include <stdio.h>
@@ -117,456 +118,563 @@ class Settings
     /*!
      * @brief        Returns the configured camera type.
      *
-     * @return       Active camera model tag.
+     * @param[out] cameraType_out Active camera model tag.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    CameraType cameraType()
+    [[nodiscard]] SettingsStatus cameraType(CameraType &cameraType_out)
     {
-        return cameraModel;
+        cameraType_out = cameraModel;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the first calibrated camera.
      *
-     * @return       Non-owning pointer to the first calibration.
+     * @param[out] p_camera1_out Non-owning pointer to the first calibration.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    camera_models::geometriccamera::GeometricCamera *camera1()
+    [[nodiscard]] SettingsStatus
+        camera1(camera_models::geometriccamera::GeometricCamera *&p_camera1_out)
     {
-        return p_calibration1;
+        p_camera1_out = p_calibration1;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the second calibrated camera.
      *
-     * @return       Non-owning pointer to the second calibration.
+     * @param[out] p_camera2_out Non-owning pointer to the second calibration.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    camera_models::geometriccamera::GeometricCamera *camera2()
+    [[nodiscard]] SettingsStatus
+        camera2(camera_models::geometriccamera::GeometricCamera *&p_camera2_out)
     {
-        return p_calibration2;
+        p_camera2_out = p_calibration2;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the first-camera distortion header.
      *
-     * @return       Matrix header over the stored coefficients;
-     *               valid while the settings live.
+     * @param[out] camera1DistortionCoef_out Matrix header over the stored
+     * coefficients; valid while the settings live.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    cv::Mat camera1DistortionCoef()
+    [[nodiscard]] SettingsStatus
+        camera1DistortionCoef(cv::Mat &camera1DistortionCoef_out)
     {
-        return cv::Mat(pinholeDistortion1.size(),
-                       1,
-                       CV_32F,
-                       pinholeDistortion1.data());
+        camera1DistortionCoef_out = cv::Mat(pinholeDistortion1.size(),
+                                            1,
+                                            CV_32F,
+                                            pinholeDistortion1.data());
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the second-camera distortion header.
      *
-     * @return       Matrix header over the stored coefficients;
-     *               valid while the settings live.
+     * @param[out] camera2DistortionCoef_out Matrix header over the stored
+     * coefficients; valid while the settings live.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    cv::Mat camera2DistortionCoef()
+    [[nodiscard]] SettingsStatus
+        camera2DistortionCoef(cv::Mat &camera2DistortionCoef_out)
     {
-        return cv::Mat(pinholeDistortion2.size(),
-                       1,
-                       CV_32F,
-                       pinholeDistortion2.data());
+        camera2DistortionCoef_out = cv::Mat(pinholeDistortion2.size(),
+                                            1,
+                                            CV_32F,
+                                            pinholeDistortion2.data());
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the left-to-right stereo transform.
      *
-     * @return       Stereo extrinsic in single precision.
+     * @param[out] leftToRightTransform_out Stereo extrinsic in single
+     * precision.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    Sophus::SE3f getLeftToRightTransform()
+    [[nodiscard]] SettingsStatus
+        getLeftToRightTransform(Sophus::SE3f &leftToRightTransform_out)
     {
-        return stereoTransform;
+        leftToRightTransform_out = stereoTransform;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the baseline-focal product.
      *
-     * @return       Product in pixel-metres.
+     * @param[out] baselineFocal_out Product in pixel-metres.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double getBaselineFocal()
+    [[nodiscard]] SettingsStatus getBaselineFocal(double &baselineFocal_out)
     {
-        return baselineFocal;
+        baselineFocal_out = baselineFocal;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the stereo baseline.
      *
-     * @return       Baseline in metres.
+     * @param[out] b_out Baseline in metres.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double b()
+    [[nodiscard]] SettingsStatus b(double &b_out)
     {
-        return stereoBaseline;
+        b_out = stereoBaseline;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the close-depth threshold.
      *
-     * @return       Threshold in metres.
+     * @param[out] thDepth_out Threshold in metres.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double thDepth()
+    [[nodiscard]] SettingsStatus thDepth(double &thDepth_out)
     {
-        return depthThreshold;
+        thDepth_out = depthThreshold;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Reports whether frames need undistortion.
      *
-     * @return       True when undistortion maps were precomputed.
+     * @param[out] needToUndistort_out True when undistortion maps were
+     * precomputed.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    bool needToUndistort()
+    [[nodiscard]] SettingsStatus needToUndistort(bool &needToUndistort_out)
     {
-        return isUndistortionNeeded;
+        needToUndistort_out = isUndistortionNeeded;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the undistorted image size.
      *
-     * @return       Target size in pixels.
+     * @param[out] newImSize_out Target size in pixels.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    cv::Size newImSize()
+    [[nodiscard]] SettingsStatus newImSize(cv::Size &newImSize_out)
     {
-        return newImageSize;
+        newImSize_out = newImageSize;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the camera frame rate.
      *
-     * @return       Frames per second in hertz.
+     * @param[out] framesPerSecond_out Frames per second in hertz.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double getFramesPerSecond()
+    [[nodiscard]] SettingsStatus getFramesPerSecond(double &framesPerSecond_out)
     {
-        return framesPerSecond;
+        framesPerSecond_out = framesPerSecond;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Reports whether the image stream carries colour.
      *
-     * @return       True for RGB input.
+     * @param[out] isRgbEnabled_out True for RGB input.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    bool isRgbEnabled()
+    [[nodiscard]] SettingsStatus isRgbEnabled(bool &isRgbEnabled_out)
     {
-        return isRgbInputEnabled;
+        isRgbEnabled_out = isRgbInputEnabled;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Reports whether frames need resizing.
      *
-     * @return       True when a resize step is configured.
+     * @param[out] needToResize_out True when a resize step is configured.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    bool needToResize()
+    [[nodiscard]] SettingsStatus needToResize(bool &needToResize_out)
     {
-        return isFirstResizeNeeded;
+        needToResize_out = isFirstResizeNeeded;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Reports whether frames need rectification.
      *
-     * @return       True when rectification maps were precomputed.
+     * @param[out] needToRectify_out True when rectification maps were
+     * precomputed.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    bool needToRectify()
+    [[nodiscard]] SettingsStatus needToRectify(bool &needToRectify_out)
     {
-        return isRectificationNeeded;
+        needToRectify_out = isRectificationNeeded;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
     // IMU parameters
     /*!
      * @brief        Returns the accelerometer random-walk density.
      *
-     * @return       Configured walk noise.
+     * @param[out] accWalk_out Configured walk noise.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double accWalk()
+    [[nodiscard]] SettingsStatus accWalk(double &accWalk_out)
     {
-        return accelWalkNoise;
+        accWalk_out = accelWalkNoise;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the gyroscope random-walk density.
      *
-     * @return       Configured walk noise.
+     * @param[out] gyroWalk_out Configured walk noise.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double gyroWalk()
+    [[nodiscard]] SettingsStatus gyroWalk(double &gyroWalk_out)
     {
-        return gyroWalkNoise;
+        gyroWalk_out = gyroWalkNoise;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the accelerometer noise density.
      *
-     * @return       Configured measurement noise.
+     * @param[out] noiseAcc_out Configured measurement noise.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double noiseAcc()
+    [[nodiscard]] SettingsStatus noiseAcc(double &noiseAcc_out)
     {
-        return accelNoise;
+        noiseAcc_out = accelNoise;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the IMU sample rate.
      *
-     * @return       Samples per second in hertz.
+     * @param[out] imuFrequency_out Samples per second in hertz.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double imuFrequency()
+    [[nodiscard]] SettingsStatus imuFrequency(double &imuFrequency_out)
     {
-        return imuSampleRate;
+        imuFrequency_out = imuSampleRate;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the IMU error acceptance threshold.
      *
-     * @return       Configured threshold.
+     * @param[out] imuThreshold_out Configured threshold.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double imuThreshold()
+    [[nodiscard]] SettingsStatus imuThreshold(double &imuThreshold_out)
     {
-        return imuErrorThreshold;
+        imuThreshold_out = imuErrorThreshold;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the gyroscope noise density.
      *
-     * @return       Configured measurement noise.
+     * @param[out] noiseGyro_out Configured measurement noise.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double noiseGyro()
+    [[nodiscard]] SettingsStatus noiseGyro(double &noiseGyro_out)
     {
-        return gyroNoise;
+        noiseGyro_out = gyroNoise;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the body-to-camera transform.
      *
-     * @return       Extrinsic in single precision.
+     * @param[out] Tbc_out Extrinsic in single precision.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    Sophus::SE3f Tbc()
+    [[nodiscard]] SettingsStatus Tbc(Sophus::SE3f &Tbc_out)
     {
-        return bodyToCamera;
+        Tbc_out = bodyToCamera;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Reports whether keyframes are inserted while
      *               lost.
      *
-     * @return       True when insertion while lost is enabled.
+     * @param[out] insertKFsWhenLost_out True when insertion while lost is
+     * enabled.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    bool insertKFsWhenLost()
+    [[nodiscard]] SettingsStatus insertKFsWhenLost(bool &insertKFsWhenLost_out)
     {
-        return shouldInsertKeyFramesWhenLost;
+        insertKFsWhenLost_out = shouldInsertKeyFramesWhenLost;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Reports whether fast IMU initialization is
      *               enabled.
      *
-     * @return       True when fast initialization is enabled.
+     * @param[out] fastInit_out True when fast initialization is enabled.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    bool fastInit() const
+    [[nodiscard]] SettingsStatus fastInit(bool &fastInit_out) const
     {
-        return isFastInitEnabled;
+        fastInit_out = isFastInitEnabled;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the depth-map scale factor.
      *
-     * @return       Raw values are divided by this factor to reach
-     *               metres.
+     * @param[out] depthMapFactor_out Raw values are divided by this factor to
+     * reach metres.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double depthMapFactor()
+    [[nodiscard]] SettingsStatus depthMapFactor(double &depthMapFactor_out)
     {
-        return depthMapScale;
+        depthMapFactor_out = depthMapScale;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the ORB feature budget.
      *
-     * @return       Target number of features.
+     * @param[out] nFeatures_out Target number of features.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    int nFeatures()
+    [[nodiscard]] SettingsStatus nFeatures(int &nFeatures_out)
     {
-        return featureCount;
+        nFeatures_out = featureCount;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the ORB pyramid depth.
      *
-     * @return       Configured level count.
+     * @param[out] nLevels_out Configured level count.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    int nLevels()
+    [[nodiscard]] SettingsStatus nLevels(int &nLevels_out)
     {
-        return pyramidLevels;
+        nLevels_out = pyramidLevels;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the initial FAST threshold.
      *
-     * @return       Configured extraction threshold.
+     * @param[out] initThFAST_out Configured extraction threshold.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double initThFAST()
+    [[nodiscard]] SettingsStatus initThFAST(double &initThFAST_out)
     {
-        return initialFastThreshold;
+        initThFAST_out = initialFastThreshold;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the minimum FAST threshold.
      *
-     * @return       Configured retry threshold.
+     * @param[out] minimumFastThreshold_out Configured retry threshold.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double getMinimumFastThreshold()
+    [[nodiscard]] SettingsStatus
+        getMinimumFastThreshold(double &minimumFastThreshold_out)
     {
-        return minimumFastThreshold;
+        minimumFastThreshold_out = minimumFastThreshold;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the ORB scale step.
      *
-     * @return       Configured pyramid scale factor.
+     * @param[out] scaleFactor_out Configured pyramid scale factor.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double scaleFactor()
+    [[nodiscard]] SettingsStatus scaleFactor(double &scaleFactor_out)
     {
-        return orbScaleFactor;
+        scaleFactor_out = orbScaleFactor;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the viewer keyframe size.
      *
-     * @return       Configured marker size.
+     * @param[out] keyFrameSize_out Configured marker size.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double keyFrameSize()
+    [[nodiscard]] SettingsStatus keyFrameSize(double &keyFrameSize_out)
     {
-        return viewerKeyFrameSize;
+        keyFrameSize_out = viewerKeyFrameSize;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the viewer keyframe line width.
      *
-     * @return       Configured line width.
+     * @param[out] keyFrameLineWidth_out Configured line width.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double keyFrameLineWidth()
+    [[nodiscard]] SettingsStatus
+        keyFrameLineWidth(double &keyFrameLineWidth_out)
     {
-        return viewerKeyFrameLineWidth;
+        keyFrameLineWidth_out = viewerKeyFrameLineWidth;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the viewer graph line width.
      *
-     * @return       Configured line width.
+     * @param[out] graphLineWidth_out Configured line width.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double graphLineWidth()
+    [[nodiscard]] SettingsStatus graphLineWidth(double &graphLineWidth_out)
     {
-        return viewerGraphLineWidth;
+        graphLineWidth_out = viewerGraphLineWidth;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the viewer point size.
      *
-     * @return       Configured marker size.
+     * @param[out] pointSize_out Configured marker size.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double pointSize()
+    [[nodiscard]] SettingsStatus pointSize(double &pointSize_out)
     {
-        return viewerPointSize;
+        pointSize_out = viewerPointSize;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the viewer camera size.
      *
-     * @return       Configured marker size.
+     * @param[out] cameraSize_out Configured marker size.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double cameraSize()
+    [[nodiscard]] SettingsStatus cameraSize(double &cameraSize_out)
     {
-        return viewerCameraSize;
+        cameraSize_out = viewerCameraSize;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the viewer camera line width.
      *
-     * @return       Configured line width.
+     * @param[out] cameraLineWidth_out Configured line width.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double cameraLineWidth()
+    [[nodiscard]] SettingsStatus cameraLineWidth(double &cameraLineWidth_out)
     {
-        return viewerCameraLineWidth;
+        cameraLineWidth_out = viewerCameraLineWidth;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the viewer viewpoint x coordinate.
      *
-     * @return       Configured coordinate.
+     * @param[out] viewPointX_out Configured coordinate.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double viewPointX()
+    [[nodiscard]] SettingsStatus viewPointX(double &viewPointX_out)
     {
-        return viewerViewPointX;
+        viewPointX_out = viewerViewPointX;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the viewer viewpoint y coordinate.
      *
-     * @return       Configured coordinate.
+     * @param[out] viewPointY_out Configured coordinate.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double viewPointY()
+    [[nodiscard]] SettingsStatus viewPointY(double &viewPointY_out)
     {
-        return viewerViewPointY;
+        viewPointY_out = viewerViewPointY;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the viewer viewpoint z coordinate.
      *
-     * @return       Configured coordinate.
+     * @param[out] viewPointZ_out Configured coordinate.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double viewPointZ()
+    [[nodiscard]] SettingsStatus viewPointZ(double &viewPointZ_out)
     {
-        return viewerViewPointZ;
+        viewPointZ_out = viewerViewPointZ;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the viewer viewpoint focal length.
      *
-     * @return       Configured focal value.
+     * @param[out] viewPointF_out Configured focal value.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double viewPointF()
+    [[nodiscard]] SettingsStatus viewPointF(double &viewPointF_out)
     {
-        return viewerViewPointF;
+        viewPointF_out = viewerViewPointF;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the image viewer scale.
      *
-     * @return       Configured display scale.
+     * @param[out] imageViewerScale_out Configured display scale.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double imageViewerScale()
+    [[nodiscard]] SettingsStatus imageViewerScale(double &imageViewerScale_out)
     {
-        return viewerImageScale;
+        imageViewerScale_out = viewerImageScale;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the atlas load path.
      *
-     * @return       Configured file path, possibly empty.
+     * @param[out] atlasLoadFile_out Configured file path, possibly empty.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    std::string atlasLoadFile()
+    [[nodiscard]] SettingsStatus atlasLoadFile(std::string &atlasLoadFile_out)
     {
-        return atlasLoadPath;
+        atlasLoadFile_out = atlasLoadPath;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the atlas save path.
      *
-     * @return       Configured file path, possibly empty.
+     * @param[out] atlasSaveFile_out Configured file path, possibly empty.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    std::string atlasSaveFile()
+    [[nodiscard]] SettingsStatus atlasSaveFile(std::string &atlasSaveFile_out)
     {
-        return atlasSavePath;
+        atlasSaveFile_out = atlasSavePath;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the far-point threshold.
      *
-     * @return       Threshold in metres.
+     * @param[out] thFarPoints_out Threshold in metres.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    double thFarPoints()
+    [[nodiscard]] SettingsStatus thFarPoints(double &thFarPoints_out)
     {
-        return farPointsThreshold;
+        thFarPoints_out = farPointsThreshold;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the left x-rectification map.
      *
-     * @return       Stored map sharing its pixel data.
+     * @param[out] M1l_out Stored map sharing its pixel data.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    cv::Mat M1l()
+    [[nodiscard]] SettingsStatus M1l(cv::Mat &M1l_out)
     {
-        return rectifyMap1Left;
+        M1l_out = rectifyMap1Left;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the left y-rectification map.
      *
-     * @return       Stored map sharing its pixel data.
+     * @param[out] M2l_out Stored map sharing its pixel data.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    cv::Mat M2l()
+    [[nodiscard]] SettingsStatus M2l(cv::Mat &M2l_out)
     {
-        return rectifyMap2Left;
+        M2l_out = rectifyMap2Left;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the right x-rectification map.
      *
-     * @return       Stored map sharing its pixel data.
+     * @param[out] M1r_out Stored map sharing its pixel data.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    cv::Mat M1r()
+    [[nodiscard]] SettingsStatus M1r(cv::Mat &M1r_out)
     {
-        return rectifyMap1Right;
+        M1r_out = rectifyMap1Right;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the right y-rectification map.
      *
-     * @return       Stored map sharing its pixel data.
+     * @param[out] M2r_out Stored map sharing its pixel data.
+     * @return SETTINGS_STATUS_SUCCESS.
      */
-    cv::Mat M2r()
+    [[nodiscard]] SettingsStatus M2r(cv::Mat &M2r_out)
     {
-        return rectifyMap2Right;
+        M2r_out = rectifyMap2Right;
+        return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
   private:
@@ -582,17 +690,20 @@ class Settings
      *               Parameter name to read.
      * @param[out]   found_out
      *               True when the parameter exists.
+     * @param[out]   parameter_out
+     *               Parameter value, or a default value when an
+     *               optional parameter is missing.
      * @param[in]    required_in
      *               True to require the parameter.
      *
-     * @return       Parameter value, or a default value when an
-     *               optional parameter is missing.
+     * @return       SETTINGS_STATUS_SUCCESS.
      */
     template <typename T>
-    T readParameter(cv::FileStorage   &storage_in,
-                    const std::string &name_in,
-                    bool              &found_out,
-                    const bool         required_in = true)
+    [[nodiscard]] SettingsStatus readParameter(cv::FileStorage   &storage_in,
+                                               const std::string &name_in,
+                                               bool              &found_out,
+                                               T                 &parameter_out,
+                                               const bool required_in = true)
     {
         cv::FileNode node = storage_in[name_in];
         if (node.empty())
@@ -608,14 +719,16 @@ class Settings
             {
                 std::cerr << name_in << " optional parameter does not exist..."
                           << std::endl;
-                found_out = false;
-                return T();
+                found_out     = false;
+                parameter_out = T();
+                return SettingsStatus::SETTINGS_STATUS_SUCCESS;
             }
         }
         else
         {
-            found_out = true;
-            return (T)node;
+            found_out     = true;
+            parameter_out = (T)node;
+            return SettingsStatus::SETTINGS_STATUS_SUCCESS;
         }
     }
 
@@ -625,69 +738,71 @@ class Settings
      * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readCamera1(cv::FileStorage &storage_inout);
+    [[nodiscard]] SettingsStatus readCamera1(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the second-camera section.
      *
      * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readCamera2(cv::FileStorage &storage_inout);
+    [[nodiscard]] SettingsStatus readCamera2(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the image-size and frame-rate section.
      *
      * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readImageInfo(cv::FileStorage &storage_inout);
+    [[nodiscard]] SettingsStatus readImageInfo(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the inertial section.
      *
      * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readIMU(cv::FileStorage &storage_inout);
+    [[nodiscard]] SettingsStatus readIMU(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the RGB-D section.
      *
      * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readRGBD(cv::FileStorage &storage_inout);
+    [[nodiscard]] SettingsStatus readRGBD(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the ORB extractor section.
      *
      * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readORB(cv::FileStorage &storage_inout);
+    [[nodiscard]] SettingsStatus readORB(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the viewer section.
      *
      * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readViewer(cv::FileStorage &storage_inout);
+    [[nodiscard]] SettingsStatus readViewer(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the map load and save section.
      *
      * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readLoadAndSave(cv::FileStorage &storage_inout);
+    [[nodiscard]] SettingsStatus
+        readLoadAndSave(cv::FileStorage &storage_inout);
     /*!
      * @brief        Reads the remaining miscellaneous parameters.
      *
      * @param[in,out] storage_inout
      *               Open storage holding the parameters.
      */
-    void readOtherParameters(cv::FileStorage &storage_inout);
+    [[nodiscard]] SettingsStatus
+        readOtherParameters(cv::FileStorage &storage_inout);
 
     /*!
      * @brief        Precomputes the undistortion and rectification
      *               maps.
      */
-    void precomputeRectificationMaps();
+    [[nodiscard]] SettingsStatus precomputeRectificationMaps();
 
     /*!
      * @brief        Sensor type selecting stereo-only sections.
@@ -898,28 +1013,36 @@ class Settings
  * instantiate it instead.
  */
 template <>
-float Settings::readParameter<float>(cv::FileStorage   &storage_in,
-                                     const std::string &name_in,
-                                     bool              &found_out,
-                                     const bool         required_in);
+[[nodiscard]] SettingsStatus
+    Settings::readParameter<float>(cv::FileStorage   &storage_in,
+                                   const std::string &name_in,
+                                   bool              &found_out,
+                                   float             &parameter_out,
+                                   const bool         required_in);
 
 template <>
-int Settings::readParameter<int>(cv::FileStorage   &storage_in,
+[[nodiscard]] SettingsStatus
+    Settings::readParameter<int>(cv::FileStorage   &storage_in,
                                  const std::string &name_in,
                                  bool              &found_out,
+                                 int               &parameter_out,
                                  const bool         required_in);
 
 template <>
-std::string Settings::readParameter<std::string>(cv::FileStorage   &storage_in,
-                                                 const std::string &name_in,
-                                                 bool              &found_out,
-                                                 const bool required_in);
-
-template <>
-cv::Mat Settings::readParameter<cv::Mat>(cv::FileStorage   &storage_in,
+[[nodiscard]] SettingsStatus
+    Settings::readParameter<std::string>(cv::FileStorage   &storage_in,
                                          const std::string &name_in,
                                          bool              &found_out,
+                                         std::string       &parameter_out,
                                          const bool         required_in);
+
+template <>
+[[nodiscard]] SettingsStatus
+    Settings::readParameter<cv::Mat>(cv::FileStorage   &storage_in,
+                                     const std::string &name_in,
+                                     bool              &found_out,
+                                     cv::Mat           &parameter_out,
+                                     const bool         required_in);
 } // namespace settings
 } // namespace utils
 } // namespace core

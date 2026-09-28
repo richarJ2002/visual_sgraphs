@@ -66,13 +66,25 @@ bool VertexPose::write(std::ostream &outputStream_out) const
             outputStream_out << tbc[cameraIndex](componentIndex) << " ";
         }
 
-        for (size_t componentIndex = 0;
-             componentIndex < _estimate.pCamera[cameraIndex]->size();
+        size_t size2{};
+        if (_estimate.pCamera[cameraIndex]->size(size2) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // size cannot fail; continue as before.
+        }
+        for (size_t componentIndex = 0; componentIndex < size2;
              componentIndex++)
         {
-            outputStream_out
-                << _estimate.pCamera[cameraIndex]->getParameter(componentIndex)
-                << " ";
+            float parameter{};
+            if (_estimate.pCamera[cameraIndex]->getParameter(componentIndex,
+                                                             parameter) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // getParameter cannot fail; continue as before.
+            }
+            outputStream_out << parameter << " ";
         }
     }
 

@@ -218,12 +218,19 @@ SemanticsManager::ActiveMapBootstrapResult
     bool recoveredRoom   = false;
     if (p_bootstrapRoom == nullptr)
     {
-        p_bootstrapRoom = GeoSemHelpers::createBlankRoomCandidate(
-            p_atlas,
-            cameraPosition_World_m,
-            recoveryContext.has_value()
-                ? std::optional<int>(recoveryContext->roomId)
-                : std::nullopt);
+        vs_graphs::core::semantic::Room *p_blankRoomCandidate = nullptr;
+        if (GeoSemHelpers::createBlankRoomCandidate(
+                p_atlas,
+                p_blankRoomCandidate,
+                cameraPosition_World_m,
+                recoveryContext.has_value()
+                    ? std::optional<int>(recoveryContext->roomId)
+                    : std::nullopt) !=
+            GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+        {
+            // createBlankRoomCandidate cannot fail; continue as before.
+        }
+        p_bootstrapRoom = p_blankRoomCandidate;
         if (p_bootstrapRoom == nullptr)
         {
             std::cout << "SG_PIPELINE {\"event\":\"initialization\","
@@ -307,7 +314,11 @@ SemanticsManager::ActiveMapBootstrapResult
             recoveryContext.has_value() && recoveryContext->floorId >= 0
                 ? std::optional<int>(recoveryContext->floorId)
                 : std::nullopt;
-        GeoSemHelpers::createMapFloor(p_atlas, recoveryFloorId);
+        if (GeoSemHelpers::createMapFloor(p_atlas, recoveryFloorId) !=
+            GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+        {
+            // createMapFloor cannot fail; continue as before.
+        }
         floors                       = p_activeMap->getAllFloors();
         semantic::Floor *p_bestFloor = nullptr;
         if (semantic::Floor::selectBestObservedFloor(floors, p_bestFloor) !=

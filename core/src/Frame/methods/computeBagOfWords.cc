@@ -47,8 +47,14 @@ void Frame::computeBagOfWords()
 {
     if (bowVector.empty())
     {
-        vector<cv::Mat> currentDescriptors =
-            utils::converter::Converter::toDescriptorVector(descriptors);
+        vector<cv::Mat> currentDescriptors{};
+        if (utils::converter::Converter::toDescriptorVector(
+                descriptors,
+                currentDescriptors) !=
+            utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+        {
+            // toDescriptorVector cannot fail; continue as before.
+        }
         p_orbVocabulary->transform(currentDescriptors,
                                    bowVector,
                                    featureVector,

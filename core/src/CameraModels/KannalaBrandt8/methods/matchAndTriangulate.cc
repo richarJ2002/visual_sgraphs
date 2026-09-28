@@ -86,11 +86,15 @@ bool KannalaBrandt8::matchAndTriangulate(
 
     Eigen::Vector3f triangulatedPoint3D;
 
-    triangulate(imagePoint1,
-                imagePoint2,
-                eigTcw1,
-                eigTcw2,
-                triangulatedPoint3D);
+    if (triangulate(imagePoint1,
+                    imagePoint2,
+                    eigTcw1,
+                    eigTcw2,
+                    triangulatedPoint3D) !=
+        KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS)
+    {
+        // triangulate cannot fail; continue as before.
+    }
 
     /* Check triangulation in front of cameras */
     float cameraDepth1 =

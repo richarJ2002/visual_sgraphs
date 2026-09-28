@@ -36,17 +36,19 @@ namespace utils
 namespace utils
 {
 
-bool Utils::collectCorrespondingWalls(
+UtilsStatus Utils::collectCorrespondingWalls(
     Map                          *p_mapA_in,
     Map                          *p_mapB_in,
     std::vector<Eigen::Vector3d> &normalsA_inout,
     std::vector<Eigen::Vector3d> &centroidsA_inout,
     std::vector<Eigen::Vector3d> &normalsB_inout,
-    std::vector<Eigen::Vector3d> &centroidsB_inout)
+    std::vector<Eigen::Vector3d> &centroidsB_inout,
+    bool                         &hasEnoughCorrespondences_out)
 {
     if (p_mapA_in == nullptr || p_mapB_in == nullptr)
     {
-        return false;
+        hasEnoughCorrespondences_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     std::vector<semantic::Room *> roomsA = p_mapA_in->getAllRooms();
@@ -142,18 +144,26 @@ bool Utils::collectCorrespondingWalls(
                 continue;
             }
 
-            matchWallsBetweenRooms(p_roomA,
-                                   p_roomB,
-                                   normalsA_inout,
-                                   centroidsA_inout,
-                                   normalsB_inout,
-                                   centroidsB_inout);
+            std::size_t matchedWallCount{};
+            if (matchWallsBetweenRooms(p_roomA,
+                                       p_roomB,
+                                       normalsA_inout,
+                                       centroidsA_inout,
+                                       normalsB_inout,
+                                       centroidsB_inout,
+                                       matchedWallCount) !=
+                UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // matchWallsBetweenRooms cannot fail; continue as before.
+            }
             break;
         }
     }
 
-    return normalsA_inout.size() >= 3 &&
-           normalsA_inout.size() == normalsB_inout.size();
+    hasEnoughCorrespondences_out =
+        normalsA_inout.size() >= 3 &&
+        normalsA_inout.size() == normalsB_inout.size();
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

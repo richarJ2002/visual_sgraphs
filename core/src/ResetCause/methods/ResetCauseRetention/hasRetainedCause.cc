@@ -12,9 +12,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool ResetCauseRetention::hasRetainedCause() const noexcept
+ResetCauseRetentionStatus ResetCauseRetention::hasRetainedCause(
+    bool &hasRetainedCause_out) const noexcept
 {
-    return hasCause;
+    hasRetainedCause_out = hasCause;
+    return ResetCauseRetentionStatus::RESET_CAUSE_RETENTION_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -109,8 +109,13 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         }
 
         /* Extract the cluster centroid */
-        const Eigen::Vector3d clusterCentroid =
-            utils::utils::Utils::computeCentroidFromPoints(cluster);
+        Eigen::Vector3d clusterCentroid{};
+        if (utils::utils::Utils::computeCentroidFromPoints(cluster,
+                                                           clusterCentroid) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // computeCentroidFromPoints cannot fail; continue as before.
+        }
 
         /* Initialize a list of planes to track the closest walls */
         std::vector<vs_graphs::core::geometric::Plane *> closestWalls;
@@ -1381,7 +1386,11 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
          * @note        This is deliberately more restrictive than the old
          *              centroid-only reAssociateRooms() implementation.
          */
-        utils::utils::Utils::consolidateProvisionalRooms(p_room, p_atlas);
+        if (utils::utils::Utils::consolidateProvisionalRooms(p_room, p_atlas) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // consolidateProvisionalRooms cannot fail; continue as before.
+        }
 
         /* Remove invalid relationships from the room's persistent graph. */
         std::size_t roomRemovedWallCount{};

@@ -38,9 +38,14 @@ std::vector<MapPoint *> Tracking::findPointsCloseToLocation(
     std::vector<MapPoint *> closePoints;
     for (MapPoint *p_point : points_in)
     {
-        double distance = utils::utils::Utils::calculateEuclideanDistance(
-            p_point->getWorldPos(),
-            location_in);
+        double distance{};
+        if (utils::utils::Utils::calculateEuclideanDistance(
+                p_point->getWorldPos(),
+                location_in,
+                distance) != utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // calculateEuclideanDistance cannot fail; continue as before.
+        }
         if (distance <= distanceThreshold_in)
         {
             closePoints.push_back(p_point);

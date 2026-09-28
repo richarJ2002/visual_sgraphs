@@ -41,10 +41,16 @@ namespace utils
 namespace converter
 {
 
-std::vector<float> Converter::toQuaternion(const cv::Mat &rotationMatrix_in)
+ConverterStatus Converter::toQuaternion(const cv::Mat      &rotationMatrix_in,
+                                        std::vector<float> &quaternion_out)
 {
-    Eigen::Matrix<double, 3, 3> eigenMatrix = toMatrix3d(rotationMatrix_in);
-    Eigen::Quaterniond          quaternion(eigenMatrix);
+    Eigen::Matrix<double, 3, 3> eigenMatrix{};
+    if (toMatrix3d(rotationMatrix_in, eigenMatrix) !=
+        ConverterStatus::CONVERTER_STATUS_SUCCESS)
+    {
+        // toMatrix3d cannot fail; continue as before.
+    }
+    Eigen::Quaterniond quaternion(eigenMatrix);
 
     std::vector<float> quaternionVector(4);
     quaternionVector[0] = quaternion.x();
@@ -52,7 +58,8 @@ std::vector<float> Converter::toQuaternion(const cv::Mat &rotationMatrix_in)
     quaternionVector[2] = quaternion.z();
     quaternionVector[3] = quaternion.w();
 
-    return quaternionVector;
+    quaternion_out = quaternionVector;
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

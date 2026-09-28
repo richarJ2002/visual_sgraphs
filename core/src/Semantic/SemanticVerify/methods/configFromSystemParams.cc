@@ -31,9 +31,20 @@ namespace semantic
 SemanticVerifyStatus SemanticVerify::configFromSystemParams(
     SemanticVerifyConfig &configuration_out)
 {
-    const auto &loadedVerification =
-        types::SystemParams::getParams()->verification;
-    const auto &loadedFactor = types::SystemParams::getParams()->factor;
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    const auto          &loadedVerification = p_params->verification;
+    types::SystemParams *p_params2          = nullptr;
+    if (types::SystemParams::getParams(p_params2) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    const auto &loadedFactor = p_params2->factor;
 
     SemanticVerifyConfig configuration;
     configuration.maxNormalAngle_deg =

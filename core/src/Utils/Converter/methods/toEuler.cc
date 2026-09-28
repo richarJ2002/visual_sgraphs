@@ -44,9 +44,16 @@ namespace utils
 namespace converter
 {
 
-std::vector<float> Converter::toEuler(const cv::Mat &rotationMatrix_in)
+ConverterStatus Converter::toEuler(const cv::Mat      &rotationMatrix_in,
+                                   std::vector<float> &euler_out)
 {
-    assert(isRotationMatrix(rotationMatrix_in));
+    bool isRotation = false;
+    if (isRotationMatrix(rotationMatrix_in, isRotation) !=
+        ConverterStatus::CONVERTER_STATUS_SUCCESS)
+    {
+        // isRotationMatrix cannot fail; continue as before.
+    }
+    assert(isRotation);
     float symmetricSum = sqrt(
         rotationMatrix_in.at<float>(0, 0) * rotationMatrix_in.at<float>(0, 0) +
         rotationMatrix_in.at<float>(1, 0) * rotationMatrix_in.at<float>(1, 0));
@@ -76,7 +83,8 @@ std::vector<float> Converter::toEuler(const cv::Mat &rotationMatrix_in)
     eulerAngles[1] = yAngle;
     eulerAngles[2] = zAngle;
 
-    return eulerAngles;
+    euler_out = eulerAngles;
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

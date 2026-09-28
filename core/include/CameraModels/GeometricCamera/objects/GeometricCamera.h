@@ -41,6 +41,7 @@
 
 #include <Eigen/Geometry>
 
+#include "CameraModels/GeometricCamera/objects/GeometricCameraStatus.h"
 #include "GeometricTools.h"
 #include "Utils/Converter/objects/Converter.h"
 
@@ -269,11 +270,14 @@ class GeometricCamera
      * @param[in]    index_in
      *               Entry to read.
      *
-     * @return       Stored calibration value.
+     * @param[out] parameter_out Stored calibration value.
+     * @return GEOMETRIC_CAMERA_STATUS_SUCCESS.
      */
-    float getParameter(const int index_in)
+    [[nodiscard]] GeometricCameraStatus getParameter(const int index_in,
+                                                     float    &parameter_out)
     {
-        return parameters[index_in];
+        parameter_out = parameters[index_in];
+        return GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS;
     }
     /*!
      * @brief        Stores a calibration entry.
@@ -283,19 +287,24 @@ class GeometricCamera
      * @param[in]    index_in
      *               Entry to update.
      */
-    void setParameter(const float value_in, const size_t index_in)
+    [[nodiscard]] GeometricCameraStatus setParameter(const float  value_in,
+                                                     const size_t index_in)
     {
         parameters[index_in] = value_in;
+
+        return GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the number of calibration entries.
      *
-     * @return       Size of the parameter vector.
+     * @param[out] size_out Size of the parameter vector.
+     * @return GEOMETRIC_CAMERA_STATUS_SUCCESS.
      */
-    size_t size()
+    [[nodiscard]] GeometricCameraStatus size(size_t &size_out)
     {
-        return parameters.size();
+        size_out = parameters.size();
+        return GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS;
     }
 
     /*!
@@ -336,21 +345,25 @@ class GeometricCamera
     /*!
      * @brief        Returns the unique camera identifier.
      *
-     * @return       Identifier assigned at construction.
+     * @param[out] id_out Identifier assigned at construction.
+     * @return GEOMETRIC_CAMERA_STATUS_SUCCESS.
      */
-    unsigned int getId()
+    [[nodiscard]] GeometricCameraStatus getId(unsigned int &id_out)
     {
-        return id;
+        id_out = id;
+        return GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the camera model type.
      *
-     * @return       CAM_PINHOLE or CAM_FISHEYE.
+     * @param[out] type_out CAM_PINHOLE or CAM_FISHEYE.
+     * @return GEOMETRIC_CAMERA_STATUS_SUCCESS.
      */
-    unsigned int getType()
+    [[nodiscard]] GeometricCameraStatus getType(unsigned int &type_out)
     {
-        return type;
+        type_out = type;
+        return GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS;
     }
 
     /*!

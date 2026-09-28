@@ -186,11 +186,25 @@ Tracking::Tracking(System                    *p_sys_in,
               << std::endl;
     for (camera_models::geometriccamera::GeometricCamera *p_camera : cams)
     {
-        std::cout << "- Camera " << p_camera->getId();
-        if (p_camera->getType() ==
+        unsigned int cameraId{};
+        if (p_camera->getId(cameraId) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        std::cout << "- Camera " << cameraId;
+        unsigned int cameraType{};
+        if (p_camera->getType(cameraType) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getType cannot fail; continue as before.
+        }
+        if (cameraType ==
             camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE)
             std::cout << " is a pinhole!" << std::endl;
-        else if (p_camera->getType() ==
+        else if (cameraType ==
                  camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE)
             std::cout << " is a fisheye!" << std::endl;
         else

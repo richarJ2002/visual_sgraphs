@@ -35,16 +35,49 @@ bool VertexSim3Expmap::write(std::ostream &outputStream_inout) const
     g2o::Sim3     cam2world(estimate().inverse());
     g2o::Vector7d logVector = cam2world.log();
     for (int parameterIndex = 0; parameterIndex < 7; parameterIndex++)
+    {
         outputStream_inout << logVector[parameterIndex] << " ";
-    for (size_t parameterIndex = 0; parameterIndex < p_firstCamera->size();
+    }
+    size_t firstCameraSize{};
+    if (p_firstCamera->size(firstCameraSize) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // size cannot fail; continue as before.
+    }
+    for (size_t parameterIndex = 0; parameterIndex < firstCameraSize;
          parameterIndex++)
-        outputStream_inout << p_firstCamera->getParameter(parameterIndex)
-                           << " ";
+    {
+        float firstCameraParameter{};
+        if (p_firstCamera->getParameter(parameterIndex, firstCameraParameter) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getParameter cannot fail; continue as before.
+        }
+        outputStream_inout << firstCameraParameter << " ";
+    }
 
-    for (size_t parameterIndex = 0; parameterIndex < p_secondCamera->size();
+    size_t secondCameraSize{};
+    if (p_secondCamera->size(secondCameraSize) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // size cannot fail; continue as before.
+    }
+    for (size_t parameterIndex = 0; parameterIndex < secondCameraSize;
          parameterIndex++)
-        outputStream_inout << p_secondCamera->getParameter(parameterIndex)
-                           << " ";
+    {
+        float secondCameraParameter{};
+        if (p_secondCamera->getParameter(parameterIndex,
+                                         secondCameraParameter) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getParameter cannot fail; continue as before.
+        }
+        outputStream_inout << secondCameraParameter << " ";
+    }
     return outputStream_inout.good();
 }
 

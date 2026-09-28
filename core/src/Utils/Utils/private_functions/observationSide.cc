@@ -34,19 +34,23 @@ namespace utils
 namespace utils
 {
 
-ObservationSideEvidence getMedianObservationSide_World_m(
-    geometric::Plane      *p_plane_in,
-    const Eigen::Vector4d &planeEquation_World_in)
+UtilsStatus getMedianObservationSide_World_m(
+    geometric::Plane        *p_plane_in,
+    const Eigen::Vector4d   &planeEquation_World_in,
+    ObservationSideEvidence &medianObservationSide_World_m_out)
 {
     if (p_plane_in == nullptr)
     {
-        return {};
+        medianObservationSide_World_m_out = {};
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
     const geometric::Plane::ObservationSideSnapshot snapshot =
         p_plane_in->getObservationSideSnapshot(planeEquation_World_in);
-    return {snapshot.medianSignedDistance_m,
-            snapshot.face ==
-                geometric::Plane::ObservationSideSnapshot::Face::AMBIGUOUS};
+    medianObservationSide_World_m_out = {
+        snapshot.medianSignedDistance_m,
+        snapshot.face ==
+            geometric::Plane::ObservationSideSnapshot::Face::AMBIGUOUS};
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

@@ -25,8 +25,9 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3f GeometricTools::computeF12(KeyFrame *&keyFrame1_in,
-                                           KeyFrame *&keyFrame2_in)
+GeometricToolsStatus GeometricTools::computeF12(KeyFrame       *&keyFrame1_in,
+                                                KeyFrame       *&keyFrame2_in,
+                                                Eigen::Matrix3f &f12_out)
 {
     Sophus::SE3<float>                    Tc1w = keyFrame1_in->getPose();
     Sophus::Matrix3<float>                Rc1w = Tc1w.rotationMatrix();
@@ -44,7 +45,8 @@ Eigen::Matrix3f GeometricTools::computeF12(KeyFrame *&keyFrame1_in,
     const Eigen::Matrix3f K1 = keyFrame1_in->p_camera->toK_();
     const Eigen::Matrix3f K2 = keyFrame2_in->p_camera->toK_();
 
-    return K1.transpose().inverse() * tc1c2x * Rc1c2 * K2.inverse();
+    f12_out = K1.transpose().inverse() * tc1c2x * Rc1c2 * K2.inverse();
+    return GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS;
 }
 
 } // namespace core

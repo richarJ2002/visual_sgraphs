@@ -36,13 +36,14 @@ namespace utils
 namespace utils
 {
 
-bool crossesPassablePassageOpening(
+UtilsStatus crossesPassablePassageOpening(
     const Eigen::Vector3d              &segmentStart_World_m_in,
     const Eigen::Vector3d              &segmentEnd_World_m_in,
     vs_graphs::core::semantic::Passage *p_passage_in,
     const Eigen::Vector3d              &groundNormal_World_in,
     const double                        openingMargin_m_in,
-    const double                        minimumSideDistance_m_in)
+    const double                        minimumSideDistance_m_in,
+    bool                               &crossesOpening_out)
 {
     bool passage_inIsPassable{};
     if (!(p_passage_in == nullptr) &&
@@ -55,7 +56,8 @@ bool crossesPassablePassageOpening(
         !segmentStart_World_m_in.allFinite() ||
         !segmentEnd_World_m_in.allFinite())
     {
-        return false;
+        crossesOpening_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     g2o::Plane3D passage_inGlobalEquation{};
@@ -69,7 +71,8 @@ bool crossesPassablePassageOpening(
 
     if (!passageEquation_World.allFinite() || passageNormalNorm < 1e-8)
     {
-        return false;
+        crossesOpening_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     passageEquation_World /= passageNormalNorm;
@@ -84,7 +87,8 @@ bool crossesPassablePassageOpening(
         std::abs(startSide_m) < minimumSideDistance_m_in ||
         std::abs(endSide_m) < minimumSideDistance_m_in)
     {
-        return false;
+        crossesOpening_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     const double interpolation = startSide_m / (startSide_m - endSide_m);
@@ -92,7 +96,8 @@ bool crossesPassablePassageOpening(
     if (!std::isfinite(interpolation) || interpolation < 0.0 ||
         interpolation > 1.0)
     {
-        return false;
+        crossesOpening_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     const Eigen::Vector3d intersection_World_m =
@@ -107,7 +112,8 @@ bool crossesPassablePassageOpening(
 
     if (!passageCentroid_World_m.allFinite())
     {
-        return false;
+        crossesOpening_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     Eigen::Vector3d apertureOffset_World_m =
@@ -136,8 +142,10 @@ bool crossesPassablePassageOpening(
     {
         // getHeight cannot fail; continue as before.
     }
-    return horizontalOffset_m <= 0.5 * passage_inWidth + openingMargin_m_in &&
-           verticalOffset_m <= 0.5 * passage_inHeight + openingMargin_m_in;
+    crossesOpening_out =
+        horizontalOffset_m <= 0.5 * passage_inWidth + openingMargin_m_in &&
+        verticalOffset_m <= 0.5 * passage_inHeight + openingMargin_m_in;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

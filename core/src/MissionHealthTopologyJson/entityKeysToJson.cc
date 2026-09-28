@@ -18,7 +18,9 @@ namespace vs_graphs
 namespace core
 {
 
-nlohmann::json entityKeysToJson(std::vector<semantic::EntityKey> keys_in)
+MissionHealthTopologyJsonStatus
+    entityKeysToJson(std::vector<semantic::EntityKey> keys_in,
+                     nlohmann::json                  &json_out)
 {
     std::sort(keys_in.begin(), keys_in.end());
     nlohmann::json entityKeysJson = nlohmann::json::array();
@@ -28,7 +30,9 @@ nlohmann::json entityKeysToJson(std::vector<semantic::EntityKey> keys_in)
                                   {"mapId", key.mapId},
                                   {"entityId", key.entityId}});
     }
-    return entityKeysJson;
+    json_out = entityKeysJson;
+    return MissionHealthTopologyJsonStatus::
+        MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS;
 }
 
 } // namespace core

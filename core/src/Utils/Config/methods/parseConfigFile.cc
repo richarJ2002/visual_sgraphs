@@ -44,10 +44,11 @@ namespace config
 {
 
 /* Stub: the path is accepted without loading any configuration. */
-bool ConfigParser::parseConfigFile(const std::string &configurationFilePath_in)
+ConfigParserStatus
+    ConfigParser::parseConfigFile(const std::string &configurationFilePath_in)
 {
     (void)configurationFilePath_in;
-    return true;
+    return ConfigParserStatus::CONFIG_PARSER_STATUS_SUCCESS;
 }
 
 } // namespace config

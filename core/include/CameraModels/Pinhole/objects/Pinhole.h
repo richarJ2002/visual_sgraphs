@@ -25,6 +25,7 @@
 #define CAMERAMODELS_PINHOLE_H
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
+#include "CameraModels/Pinhole/objects/PinholeStatus.h"
 #include "TwoViewReconstruction.h"
 #include <assert.h>
 
@@ -352,10 +353,13 @@ class Pinhole : public geometriccamera::GeometricCamera
      *               Non-owning candidate camera; shall be
      *               non-null.
      *
-     * @return       True when both cameras share the type and
-     *               calibration.
+     * @param[out] isEqual_out True when both cameras share the type and
+     * calibration.
+     * @return PINHOLE_STATUS_SUCCESS.
      */
-    bool isEqual(geometriccamera::GeometricCamera *p_camera_in);
+    [[nodiscard]] PinholeStatus
+        isEqual(geometriccamera::GeometricCamera *p_camera_in,
+                bool                             &isEqual_out);
 
   private:
     /*!

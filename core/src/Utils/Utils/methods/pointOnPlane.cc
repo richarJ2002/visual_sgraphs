@@ -34,23 +34,41 @@ namespace utils
 namespace utils
 {
 
-bool Utils::pointOnPlane(Eigen::Vector4d planeEquation_in,
-                         MapPoint       *p_mapPoint_in)
+UtilsStatus Utils::pointOnPlane(Eigen::Vector4d planeEquation_in,
+                                MapPoint       *p_mapPoint_in,
+                                bool           &isOnPlane_out)
 {
     if (p_mapPoint_in->isBad())
-        return false;
+    {
+        isOnPlane_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
 
     // Find the distance of the point from a given plane
-    double pointPlaneDistance = calculateDistancePointToPlane(
-        planeEquation_in,
-        p_mapPoint_in->getWorldPos().cast<double>());
+    double pointPlaneDistance{};
+    if (calculateDistancePointToPlane(
+            planeEquation_in,
+            p_mapPoint_in->getWorldPos().cast<double>(),
+            pointPlaneDistance) != UtilsStatus::UTILS_STATUS_SUCCESS)
+    {
+        // calculateDistancePointToPlane cannot fail; continue as before.
+    }
 
     // Apply a threshold
-    if (pointPlaneDistance <
-        types::SystemParams::getParams()->seg.planePointDistThresh)
-        return true;
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    if (pointPlaneDistance < p_params->seg.planePointDistThresh)
+    {
+        isOnPlane_out = true;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
 
-    return false;
+    isOnPlane_out = false;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

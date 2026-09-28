@@ -32,6 +32,7 @@
  * @brief        Declares the configuration containers and file parser.
  */
 
+#include "Utils/Config/objects/ConfigParserStatus.h"
 #include <string>
 
 namespace vs_graphs
@@ -79,10 +80,10 @@ class ConfigParser
      * @param[in]    configurationFilePath_in
      *               Path of the configuration file to parse.
      *
-     * @return       True when parsing succeeded. The stub
-     *               implementation always reports success.
+     * @return CONFIG_PARSER_STATUS_SUCCESS.
      */
-    bool parseConfigFile(const std::string &configurationFilePath_in);
+    [[nodiscard]] ConfigParserStatus
+        parseConfigFile(const std::string &configurationFilePath_in);
 
   private:
     /*!

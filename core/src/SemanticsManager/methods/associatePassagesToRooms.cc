@@ -1857,10 +1857,17 @@ void SemanticsManager::associatePassagesToRooms(void)
                             {
                                 /* Create the prospective room */
                                 vs_graphs::core::semantic::Room
-                                    *p_prospectiveRoom =
-                                        GeoSemHelpers::createBlankRoomCandidate(
-                                            p_atlas,
-                                            prospectiveCentroid);
+                                    *p_prospectiveRoom = nullptr;
+                                if (GeoSemHelpers::createBlankRoomCandidate(
+                                        p_atlas,
+                                        p_prospectiveRoom,
+                                        prospectiveCentroid) !=
+                                    GeoSemHelpersStatus::
+                                        GEO_SEM_HELPERS_STATUS_SUCCESS)
+                                {
+                                    // createBlankRoomCandidate cannot fail;
+                                    // continue as before.
+                                }
 
                                 if (p_prospectiveRoom != nullptr)
                                 {

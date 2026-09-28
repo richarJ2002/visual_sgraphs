@@ -98,7 +98,14 @@ bool makeGroundPlane(geometric::Plane &ground_inout,
                                             halfExtent_m_in,
                                             halfExtent_m_in,
                                             stepsPerSide_in));
-    return GeoSemHelpers::refitMappedPlaneFromCloud(&ground_inout);
+    bool wasPlaneRefit{};
+    if (GeoSemHelpers::refitMappedPlaneFromCloud(&ground_inout,
+                                                 wasPlaneRefit) !=
+        GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+    {
+        // refitMappedPlaneFromCloud cannot fail; continue as before.
+    }
+    return wasPlaneRefit;
 }
 
 void makeRoom(semantic::Room             &room_inout,

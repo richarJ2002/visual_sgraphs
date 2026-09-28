@@ -56,7 +56,13 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     constexpr int COUNT_TEMPORAL_KEY_FRAMES = 25;
 
     /* Extract the system parameters */
-    p_sysParams = types::SystemParams::getParams();
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    p_sysParams = p_params;
 
     /* Reject stale place-recognition candidates before stopping other workers.
      */
@@ -1141,11 +1147,15 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                           poseAfterScale));
         }
 
-        utils::utils::Utils::propagateSemanticPoseCorrections(
-            p_mergeMap,
-            vNonCorrectedSim3,
-            finalKeyFramePoses_WorldToCamera,
-            g2oSwCurrentWMerge);
+        if (utils::utils::Utils::propagateSemanticPoseCorrections(
+                p_mergeMap,
+                vNonCorrectedSim3,
+                finalKeyFramePoses_WorldToCamera,
+                g2oSwCurrentWMerge) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // propagateSemanticPoseCorrections cannot fail; continue as before.
+        }
 
         semanticGeometryWasPropagated = true;
     }
@@ -1610,7 +1620,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         /* Fuse only after every semantic relationship is visible. */
         if (p_sysParams->semSeg.reassociate.enabled)
         {
-            utils::utils::Utils::reAssociateSemanticPlanes(p_atlas);
+            if (utils::utils::Utils::reAssociateSemanticPlanes(p_atlas) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // reAssociateSemanticPlanes cannot fail; continue as before.
+            }
         }
 
         std::vector<semantic::Room *> importedRooms = currentDetectedMapRooms;
@@ -1620,13 +1634,25 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
 
         /* Stable semantic identity reconciliation is a merge invariant, not
          * an optional geometry-reassociation feature. */
-        utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap,
-                                                          importedRooms);
+        if (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap,
+                                                              importedRooms) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // fuseDuplicateRoomsAfterMerge cannot fail; continue as before.
+        }
 
         if (p_sysParams->semSeg.reassociate.enabled)
         {
-            utils::utils::Utils::reAssociateRooms(p_atlas);
-            utils::utils::Utils::reAssociatePassages(p_atlas);
+            if (utils::utils::Utils::reAssociateRooms(p_atlas) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // reAssociateRooms cannot fail; continue as before.
+            }
+            if (utils::utils::Utils::reAssociatePassages(p_atlas) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // reAssociatePassages cannot fail; continue as before.
+            }
         }
     }
 

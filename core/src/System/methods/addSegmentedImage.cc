@@ -34,7 +34,13 @@ void System::addSegmentedImage(
     std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in)
 {
     // Adding the segmented image to the buffer of the SemanticSegmentation
-    if (types::SystemParams::getParams()->general.modeOfOperation ==
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    if (p_params->general.modeOfOperation ==
         types::SystemParams::General::ModeOfOperation::GEO)
     {
         // just clear the pointcloud of the keyframe and return, as semantic

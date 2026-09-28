@@ -268,8 +268,13 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                     1.0);
                 g2o::Sim3 gScw = gScm * gSmw; // Similarity matrix of current
                                               // from the world position
-                Sophus::Sim3f correctedPose =
-                    utils::converter::Converter::toSophus(gScw);
+                Sophus::Sim3f correctedPose{};
+                if (utils::converter::Converter::toSophus(gScw,
+                                                          correctedPose) !=
+                    utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+                {
+                    // toSophus cannot fail; continue as before.
+                }
 
                 vector<MapPoint *> bowMatchedMapPoints;
                 bowMatchedMapPoints.resize(
@@ -322,8 +327,15 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                         g2o::Sim3 gScw =
                             gScm * gSmw; // Similarity matrix of current from
                                          // the world position
-                        Sophus::Sim3f correctedPose =
-                            utils::converter::Converter::toSophus(gScw);
+                        Sophus::Sim3f correctedPose{};
+                        if (utils::converter::Converter::toSophus(
+                                gScw,
+                                correctedPose) !=
+                            utils::converter::ConverterStatus::
+                                CONVERTER_STATUS_SUCCESS)
+                        {
+                            // toSophus cannot fail; continue as before.
+                        }
 
                         vector<MapPoint *> bowMatchedMapPoints;
                         bowMatchedMapPoints.resize(

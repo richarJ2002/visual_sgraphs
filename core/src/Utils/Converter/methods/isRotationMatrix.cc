@@ -41,7 +41,8 @@ namespace utils
 namespace converter
 {
 
-bool Converter::isRotationMatrix(const cv::Mat &rotationMatrix_in)
+ConverterStatus Converter::isRotationMatrix(const cv::Mat &rotationMatrix_in,
+                                            bool          &isRotationMatrix_out)
 {
     cv::Mat rotationTranspose;
     cv::transpose(rotationMatrix_in, rotationTranspose);
@@ -49,7 +50,8 @@ bool Converter::isRotationMatrix(const cv::Mat &rotationMatrix_in)
     cv::Mat identity         = cv::Mat::eye(3, 3, shouldBeIdentity.type());
 
     /* Accept small numerical drift around exact orthonormality. */
-    return cv::norm(identity, shouldBeIdentity) < 1e-6;
+    isRotationMatrix_out = cv::norm(identity, shouldBeIdentity) < 1e-6;
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

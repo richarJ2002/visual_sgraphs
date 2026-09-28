@@ -36,14 +36,19 @@ namespace utils
 namespace utils
 {
 
-std::vector<std::pair<vs_graphs::core::geometric::Plane *,
-                      vs_graphs::core::geometric::Plane *>>
-    Utils::getFacingPlanes(
-        const std::vector<vs_graphs::core::geometric::Plane *> &planes_in)
+UtilsStatus Utils::getFacingPlanes(
+    const std::vector<vs_graphs::core::geometric::Plane *> &planes_in,
+    std::vector<std::pair<vs_graphs::core::geometric::Plane *,
+                          vs_graphs::core::geometric::Plane *>>
+        &facingPlanes_out)
 {
     // Variables
-    vs_graphs::core::types::SystemParams *p_sysParams =
-        vs_graphs::core::types::SystemParams::getParams();
+    vs_graphs::core::types::SystemParams *p_sysParams = nullptr;
+    if (vs_graphs::core::types::SystemParams::getParams(p_sysParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
     std::vector<std::pair<vs_graphs::core::geometric::Plane *,
                           vs_graphs::core::geometric::Plane *>>
            facingPlanes;
@@ -58,17 +63,30 @@ std::vector<std::pair<vs_graphs::core::geometric::Plane *,
             // Variables
             vs_graphs::core::geometric::Plane *p_plane2 = planes_in[index2];
             // Check if the planes_in are facing each other
-            bool isFacing = Utils::arePlanesFacingEachOther(p_plane1, p_plane2);
+            bool                               isFacing{};
+            if (Utils::arePlanesFacingEachOther(p_plane1, p_plane2, isFacing) !=
+                UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // arePlanesFacingEachOther cannot fail; continue as before.
+            }
             if (isFacing)
             {
+                bool arePlanesApartEnough2{};
                 if (Utils::arePlanesApartEnough(p_plane1,
                                                 p_plane2,
-                                                minimumValidSpace))
+                                                minimumValidSpace,
+                                                arePlanesApartEnough2) !=
+                    UtilsStatus::UTILS_STATUS_SUCCESS)
+                {
+                    // arePlanesApartEnough cannot fail; continue as before.
+                }
+                if (arePlanesApartEnough2)
                     facingPlanes.push_back(std::make_pair(p_plane1, p_plane2));
             }
         }
     }
-    return facingPlanes;
+    facingPlanes_out = facingPlanes;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

@@ -24,16 +24,19 @@ namespace vs_graphs
 namespace core
 {
 
-nlohmann::json augmentMissionHealthTopologyJsonWithSemantics(
+MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
     nlohmann::json                            topologyJson_in,
     const semantic::SemanticReportCacheEntry &entry_in,
-    bool                                      cacheAvailable_in)
+    bool                                      cacheAvailable_in,
+    nlohmann::json                           &augmentedJson_out)
 {
     topologyJson_in["schema"]                 = 2;
     topologyJson_in["semanticCacheAvailable"] = cacheAvailable_in;
     if (!cacheAvailable_in)
     {
-        return topologyJson_in;
+        augmentedJson_out = topologyJson_in;
+        return MissionHealthTopologyJsonStatus::
+            MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS;
     }
 
     const std::int64_t ageMilliseconds =
@@ -92,15 +95,29 @@ nlohmann::json augmentMissionHealthTopologyJsonWithSemantics(
         }
         if (finding.evidence.numericValue.has_value())
         {
-            evidenceJson["numericValue"] =
-                finiteAwareDoubleToJson(*finding.evidence.numericValue);
+            nlohmann::json json2{};
+            if (finiteAwareDoubleToJson(*finding.evidence.numericValue,
+                                        json2) !=
+                MissionHealthTopologyJsonStatus::
+                    MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS)
+            {
+                // finiteAwareDoubleToJson cannot fail; continue as before.
+            }
+            evidenceJson["numericValue"] = json2;
+        }
+        nlohmann::json json3{};
+        if (entityKeysToJson(finding.involvedKeys, json3) !=
+            MissionHealthTopologyJsonStatus::
+                MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS)
+        {
+            // entityKeysToJson cannot fail; continue as before.
         }
         violationsJson.push_back(
             {{"findingId", finding.id},
              {"axiomCode", semantic::axiomCodeName(finding.axiomCode)},
              {"reasonCode", semantic::reasonCodeName(finding.reasonCode)},
              {"severity", semantic::axiomClassName(finding.classification)},
-             {"involvedKeys", entityKeysToJson(finding.involvedKeys)},
+             {"involvedKeys", json3},
              {"evidence", evidenceJson}});
     }
     topologyJson_in["semanticViolations"] = std::move(violationsJson);
@@ -117,19 +134,34 @@ nlohmann::json augmentMissionHealthTopologyJsonWithSemantics(
             reasonsJson.push_back(semantic::reasonCodeName(reason));
         }
 
+        nlohmann::json json4{};
+        if (entityKeysToJson(completeness.relevantEntityKeys, json4) !=
+            MissionHealthTopologyJsonStatus::
+                MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS)
+        {
+            // entityKeysToJson cannot fail; continue as before.
+        }
         completenessJson.push_back(
             {{"mapId", completeness.mapId},
              {"isComplete", completeness.isComplete},
              {"conservativeResult",
               semantic::axiomResultName(completeness.conservativeResult)},
              {"reasons", std::move(reasonsJson)},
-             {"relevantEntityKeys",
-              entityKeysToJson(completeness.relevantEntityKeys)}});
+             {"relevantEntityKeys", json4}});
     }
-    topologyJson_in["semanticMapCompleteness"]   = std::move(completenessJson);
-    topologyJson_in["semanticAxiomCapabilities"] = axiomCapabilitiesToJson();
+    topologyJson_in["semanticMapCompleteness"] = std::move(completenessJson);
+    nlohmann::json json5{};
+    if (axiomCapabilitiesToJson(json5) !=
+        MissionHealthTopologyJsonStatus::
+            MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS)
+    {
+        // axiomCapabilitiesToJson cannot fail; continue as before.
+    }
+    topologyJson_in["semanticAxiomCapabilities"] = json5;
 
-    return topologyJson_in;
+    augmentedJson_out = topologyJson_in;
+    return MissionHealthTopologyJsonStatus::
+        MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS;
 }
 
 } // namespace core

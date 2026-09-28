@@ -36,13 +36,15 @@ namespace utils
 namespace utils
 {
 
-double Utils::calculateEuclideanDistance(const Eigen::Vector3f &point1_in,
-                                         const Eigen::Vector3f &point2_in)
+UtilsStatus Utils::calculateEuclideanDistance(const Eigen::Vector3f &point1_in,
+                                              const Eigen::Vector3f &point2_in,
+                                              double &euclideanDistance_out)
 {
-    double dx = point1_in.x() - point2_in.x();
-    double dy = point1_in.y() - point2_in.y();
-    double dz = point1_in.z() - point2_in.z();
-    return std::sqrt(dx * dx + dy * dy + dz * dz);
+    double dx             = point1_in.x() - point2_in.x();
+    double dy             = point1_in.y() - point2_in.y();
+    double dz             = point1_in.z() - point2_in.z();
+    euclideanDistance_out = std::sqrt(dx * dx + dy * dy + dz * dz);
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

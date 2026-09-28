@@ -41,13 +41,20 @@ bool KannalaBrandt8::epipolarConstrain(
     const float                       uncertainty_in)
 {
     Eigen::Vector3f point3d;
-    return this->triangulateMatches(p_otherCamera_in,
-                                    keypoint1_in,
-                                    keypoint2_in,
-                                    rotation12_in,
-                                    translation12_in,
-                                    sigmaLevel_in,
-                                    uncertainty_in,
-                                    point3d) > 0.0001f;
+    float           parallax{};
+    if (this->triangulateMatches(p_otherCamera_in,
+                                 keypoint1_in,
+                                 keypoint2_in,
+                                 rotation12_in,
+                                 translation12_in,
+                                 sigmaLevel_in,
+                                 uncertainty_in,
+                                 point3d,
+                                 parallax) !=
+        KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS)
+    {
+        // triangulateMatches cannot fail; continue as before.
+    }
+    return parallax > 0.0001f;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

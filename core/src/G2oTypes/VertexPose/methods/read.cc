@@ -64,14 +64,25 @@ bool VertexPose::read(std::istream &inputStream_inout)
             inputStream_inout >> tbc[cameraIndex](componentIndex);
         }
 
-        float nextParam;
-        for (size_t componentIndex = 0;
-             componentIndex < _estimate.pCamera[cameraIndex]->size();
+        float  nextParam;
+        size_t size2{};
+        if (_estimate.pCamera[cameraIndex]->size(size2) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // size cannot fail; continue as before.
+        }
+        for (size_t componentIndex = 0; componentIndex < size2;
              componentIndex++)
         {
             inputStream_inout >> nextParam;
-            _estimate.pCamera[cameraIndex]->setParameter(nextParam,
-                                                         componentIndex);
+            if (_estimate.pCamera[cameraIndex]->setParameter(nextParam,
+                                                             componentIndex) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // setParameter cannot fail; continue as before.
+            }
         }
     }
 

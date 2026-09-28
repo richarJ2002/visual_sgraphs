@@ -135,7 +135,11 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
         }
     }
     groundPlane.setMapClouds(groundCloud);
-    EXPECT_TRUE(GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane));
+    bool wasPlaneRefit{};
+    ASSERT_EQ(
+        (GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane, wasPlaneRefit)),
+        GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    EXPECT_TRUE(wasPlaneRefit);
     p_map->addMapPlane(&groundPlane);
 
     // Known-side room

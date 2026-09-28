@@ -67,10 +67,15 @@ void Plane::rebuildSemanticVotesWithoutLock(void)
             maximumType  = semanticType;
         }
     }
-    planeType =
-        maximumVotes >= types::SystemParams::getParams()->semSeg.minVotes
-            ? maximumType
-            : PlaneVariant::UNDEFINED;
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    planeType = maximumVotes >= p_params->semSeg.minVotes
+                    ? maximumType
+                    : PlaneVariant::UNDEFINED;
 }
 
 } // namespace geometric

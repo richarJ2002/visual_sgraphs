@@ -25,6 +25,7 @@
  * @brief        Declares the ground-truth environment JSON parser.
  */
 
+#include "DBParserStatus.h"
 #include "Thirdparty/nlohmann/json.hpp"
 #include <fstream>
 #include <iostream>
@@ -71,9 +72,11 @@ class DBParser
      * @param[in]    jsonFilePath_in
      *               Path of the JSON file to read.
      *
-     * @return       Parsed JSON document.
+     * @param[out] json_out Parsed JSON document.
+     * @return DBPARSER_STATUS_SUCCESS.
      */
-    Json parseJsonFile(std::string jsonFilePath_in);
+    [[nodiscard]] DBParserStatus parseJsonFile(std::string jsonFilePath_in,
+                                               Json       &json_out);
 
     /*!
      * @brief        Builds the environment rooms described by parsed
@@ -85,9 +88,13 @@ class DBParser
      * @param[in]    environmentData_in
      *               Parsed JSON document holding the rooms data.
      *
-     * @return       Non-owning views of the parser-retained rooms.
+     * @param[out] environmentRooms_out Non-owning views of the parser-retained
+     * rooms.
+     * @return DBPARSER_STATUS_SUCCESS.
      */
-    std::vector<semantic::Room *> getEnvironmentRooms(Json environmentData_in);
+    [[nodiscard]] DBParserStatus getEnvironmentRooms(
+        Json                           environmentData_in,
+        std::vector<semantic::Room *> &environmentRooms_out);
 };
 } // namespace core
 } // namespace vs_graphs

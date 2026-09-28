@@ -37,14 +37,20 @@ namespace utils
 namespace utils
 {
 
-bool Utils::arePlanesParallel(
+UtilsStatus Utils::arePlanesParallel(
     const vs_graphs::core::geometric::Plane *p_plane1_in,
-    const vs_graphs::core::geometric::Plane *p_plane2_in)
+    const vs_graphs::core::geometric::Plane *p_plane2_in,
+    bool                                    &arePlanesParallel_out)
 {
     // Get the threshold value
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
     double threshold =
-        types::SystemParams::getParams()->roomSeg.wallsParallelismThresh *
-        Utils::DEG_TO_RAD;
+        p_params->roomSeg.wallsParallelismThresh * Utils::DEG_TO_RAD;
 
     // Extract and normalize plane normals
     Eigen::Vector3d normal1 =
@@ -59,7 +65,9 @@ bool Utils::arePlanesParallel(
     double angle = std::acos(dotProduct);
 
     // Planes are parallel if their normals are within threshold (0° or 180°)
-    return (angle < threshold) || (std::abs(angle - M_PI) < threshold);
+    arePlanesParallel_out =
+        (angle < threshold) || (std::abs(angle - M_PI) < threshold);
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

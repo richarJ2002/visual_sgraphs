@@ -23,9 +23,10 @@ namespace vs_graphs
 namespace core
 {
 
-size_t GeoSemHelpers::countGroundPlanePointsWithinWalls(
+GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
     std::vector<vs_graphs::core::geometric::Plane *> &roomWalls_in,
-    vs_graphs::core::geometric::Plane                *p_groundPlane_in)
+    vs_graphs::core::geometric::Plane                *p_groundPlane_in,
+    size_t                                           &groundPlanePoints_out)
 {
     // [TODO] - verify the correctness of this function
     // the point cloud of the ground plane
@@ -69,7 +70,8 @@ size_t GeoSemHelpers::countGroundPlanePointsWithinWalls(
         if (isWithinWalls)
             count++;
     }
-    return count;
+    groundPlanePoints_out = count;
+    return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
 } // namespace core

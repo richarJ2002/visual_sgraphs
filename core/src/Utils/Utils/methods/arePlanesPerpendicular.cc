@@ -37,14 +37,20 @@ namespace utils
 namespace utils
 {
 
-bool Utils::arePlanesPerpendicular(
+UtilsStatus Utils::arePlanesPerpendicular(
     const vs_graphs::core::geometric::Plane *p_plane1_in,
-    const vs_graphs::core::geometric::Plane *p_plane2_in)
+    const vs_graphs::core::geometric::Plane *p_plane2_in,
+    bool                                    &arePlanesPerpendicular_out)
 {
     // Get the threshold value
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
     double threshold =
-        types::SystemParams::getParams()->roomSeg.wallsPerpendicularityThresh *
-        Utils::DEG_TO_RAD;
+        p_params->roomSeg.wallsPerpendicularityThresh * Utils::DEG_TO_RAD;
 
     // Extract and normalize plane normals
     Eigen::Vector3d normal1 =
@@ -59,7 +65,8 @@ bool Utils::arePlanesPerpendicular(
     double angle = std::acos(dotProduct);
 
     // Check if the angle is within the threshold
-    return std::abs(angle - M_PI_2) < threshold;
+    arePlanesPerpendicular_out = std::abs(angle - M_PI_2) < threshold;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

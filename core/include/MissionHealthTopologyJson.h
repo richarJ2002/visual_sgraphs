@@ -30,6 +30,7 @@
 #ifndef MISSION_HEALTH_TOPOLOGY_JSON_H
 #define MISSION_HEALTH_TOPOLOGY_JSON_H
 
+#include "MissionHealthTopologyJsonStatus.h"
 #include "Thirdparty/nlohmann/json.hpp"
 
 #include "Semantic/SemanticReportCache/objects/SemanticReportCacheEntry.h"
@@ -57,15 +58,17 @@ namespace core
  * @param[in]   cacheAvailable_in   Whether \p entry_in reflects a real
  *                                  completed semantic cycle.
  *
- * @return      \p topologyJson_in extended to schema 2. When \p
- *              cacheAvailable_in is false, only "schema" and
- *              "semanticCacheAvailable" are added -- no evaluator field is
- *              fabricated from a meaningless entry.
+ * @param[out] augmentedJson_out \p topologyJson_in extended to schema 2. When
+ * \p cacheAvailable_in is false, only "schema" and "semanticCacheAvailable" are
+ * added -- no evaluator field is fabricated from a meaningless entry.
+ * @return MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS.
  */
-nlohmann::json augmentMissionHealthTopologyJsonWithSemantics(
-    nlohmann::json                            topologyJson_in,
-    const semantic::SemanticReportCacheEntry &entry_in,
-    bool                                      cacheAvailable_in);
+[[nodiscard]] MissionHealthTopologyJsonStatus
+    augmentMissionHealthTopologyJsonWithSemantics(
+        nlohmann::json                            topologyJson_in,
+        const semantic::SemanticReportCacheEntry &entry_in,
+        bool                                      cacheAvailable_in,
+        nlohmann::json                           &augmentedJson_out);
 
 } // namespace core
 } // namespace vs_graphs

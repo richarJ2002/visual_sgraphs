@@ -37,11 +37,14 @@ namespace utils
 namespace utils
 {
 
-double Utils::calculateDistancePointToPlane(const Eigen::Vector4d &plane_in,
-                                            const Eigen::Vector3d &point_in)
+UtilsStatus
+    Utils::calculateDistancePointToPlane(const Eigen::Vector4d &plane_in,
+                                         const Eigen::Vector3d &point_in,
+                                         double                &distance_out)
 {
     // Find the distance of the point_in from a given plane_in
-    return fabs(plane_in.head<3>().dot(point_in) + plane_in(3));
+    distance_out = fabs(plane_in.head<3>().dot(point_in) + plane_in(3));
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

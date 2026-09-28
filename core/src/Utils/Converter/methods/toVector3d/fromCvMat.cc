@@ -42,13 +42,15 @@ namespace utils
 namespace converter
 {
 
-Eigen::Matrix<double, 3, 1> Converter::toVector3d(const cv::Mat &vector_in)
+ConverterStatus Converter::toVector3d(const cv::Mat               &vector_in,
+                                      Eigen::Matrix<double, 3, 1> &vector3d_out)
 {
     Eigen::Matrix<double, 3, 1> eigenVector;
     eigenVector << vector_in.at<float>(0), vector_in.at<float>(1),
         vector_in.at<float>(2);
 
-    return eigenVector;
+    vector3d_out = eigenVector;
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

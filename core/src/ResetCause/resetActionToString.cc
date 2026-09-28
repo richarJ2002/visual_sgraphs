@@ -11,18 +11,29 @@ namespace vs_graphs
 namespace core
 {
 
-const char *resetActionToString(const ResetAction action_in) noexcept
+ResetCauseStatus resetActionToString(const ResetAction action_in,
+                                     const char      *&p_text_out) noexcept
 {
     switch (action_in)
     {
     case ResetAction::RESET_ACTIVE_MAP_REQUEST:
-        return "reset_active_map_request";
-    case ResetAction::RESET_ACTIVE_MAP_EXECUTION:
-        return "reset_active_map_execution";
-    case ResetAction::CREATE_MAP_EXECUTION:
-        return "create_map_execution";
+    {
+        p_text_out = "reset_active_map_request";
+        return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;
     }
-    return "unknown";
+    case ResetAction::RESET_ACTIVE_MAP_EXECUTION:
+    {
+        p_text_out = "reset_active_map_execution";
+        return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;
+    }
+    case ResetAction::CREATE_MAP_EXECUTION:
+    {
+        p_text_out = "create_map_execution";
+        return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;
+    }
+    }
+    p_text_out = "unknown";
+    return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;
 }
 
 } // namespace core

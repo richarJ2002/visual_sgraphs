@@ -30,11 +30,12 @@
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
-void KannalaBrandt8::triangulate(const cv::Point2f                &point1_in,
-                                 const cv::Point2f                &point2_in,
-                                 const Eigen::Matrix<float, 3, 4> &pose1_in,
-                                 const Eigen::Matrix<float, 3, 4> &pose2_in,
-                                 Eigen::Vector3f                  &point3d_out)
+KannalaBrandt8Status
+    KannalaBrandt8::triangulate(const cv::Point2f                &point1_in,
+                                const cv::Point2f                &point2_in,
+                                const Eigen::Matrix<float, 3, 4> &pose1_in,
+                                const Eigen::Matrix<float, 3, 4> &pose2_in,
+                                Eigen::Vector3f                  &point3d_out)
 {
     Eigen::Matrix<float, 4, 4> designMatrix;
     designMatrix.row(0) = point1_in.x * pose1_in.row(2) - pose1_in.row(0);
@@ -45,5 +46,7 @@ void KannalaBrandt8::triangulate(const cv::Point2f                &point1_in,
     Eigen::JacobiSVD<Eigen::Matrix4f> svd(designMatrix, Eigen::ComputeFullV);
     Eigen::Vector4f                   homogeneousPoint3D = svd.matrixV().col(3);
     point3d_out = homogeneousPoint3D.head(3) / homogeneousPoint3D(3);
+
+    return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

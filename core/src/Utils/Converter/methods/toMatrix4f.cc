@@ -41,7 +41,8 @@ namespace utils
 namespace converter
 {
 
-Eigen::Matrix<float, 4, 4> Converter::toMatrix4f(const cv::Mat &matrix_in)
+ConverterStatus Converter::toMatrix4f(const cv::Mat              &matrix_in,
+                                      Eigen::Matrix<float, 4, 4> &matrix4f_out)
 {
     Eigen::Matrix<float, 4, 4> eigenMatrix;
 
@@ -53,7 +54,8 @@ Eigen::Matrix<float, 4, 4> Converter::toMatrix4f(const cv::Mat &matrix_in)
         matrix_in.at<float>(2, 2), matrix_in.at<float>(2, 3),
         matrix_in.at<float>(3, 0), matrix_in.at<float>(3, 1),
         matrix_in.at<float>(3, 2), matrix_in.at<float>(3, 3);
-    return eigenMatrix;
+    matrix4f_out = eigenMatrix;
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

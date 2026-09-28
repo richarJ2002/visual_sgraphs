@@ -287,11 +287,12 @@ void LocalMapping::createNewMapPoints()
                  (cosParallaxRays < 0.9998 && !isInertial)))
             {
                 wasTriangulationSuccessful =
-                    GeometricTools::triangulate(unprojectedRay1,
-                                                unprojectedRay2,
-                                                eigTcw1,
-                                                eigTcw2,
-                                                triangulatedPoint);
+                    (GeometricTools::triangulate(unprojectedRay1,
+                                                 unprojectedRay2,
+                                                 eigTcw1,
+                                                 eigTcw2,
+                                                 triangulatedPoint) ==
+                     GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS);
                 if (!wasTriangulationSuccessful)
                     continue;
             }

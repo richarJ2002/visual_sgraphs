@@ -38,7 +38,7 @@ namespace utils
 namespace utils
 {
 
-void Utils::consolidateProvisionalRooms(
+UtilsStatus Utils::consolidateProvisionalRooms(
     vs_graphs::core::semantic::Room *p_selectedRoom_inout,
     Atlas                           *p_atlas_in)
 {
@@ -52,7 +52,7 @@ void Utils::consolidateProvisionalRooms(
     }
     if (p_selectedRoom_inout == nullptr || selectedRoom_inoutIsBad)
     {
-        return;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     /* Extract all walls assigned to the cluster-backed room */
@@ -79,7 +79,7 @@ void Utils::consolidateProvisionalRooms(
     /* A room without walls cannot absorb another structural element */
     if (selectedWallIds.empty())
     {
-        return;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     /* Extract all rooms and provisional structural elements */
@@ -306,6 +306,8 @@ void Utils::consolidateProvisionalRooms(
             // setBad cannot fail; continue as before.
         }
     }
+
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

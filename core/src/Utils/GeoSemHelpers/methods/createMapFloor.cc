@@ -25,14 +25,15 @@ namespace vs_graphs
 namespace core
 {
 
-void GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas *p_atlas_inout,
-                                   std::optional<int>      stableFloorId_in)
+GeoSemHelpersStatus
+    GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas *p_atlas_inout,
+                                  std::optional<int>      stableFloorId_in)
 {
     vs_graphs::core::Map *p_currentMap = p_atlas_inout->getCurrentMap();
 
     if (p_currentMap == nullptr)
     {
-        return;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     // Create a new floor object
@@ -89,6 +90,8 @@ void GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas *p_atlas_inout,
     }
     std::cout << "[GeoSemHelper] Creating semantic::Floor#" << newMapFloorId
               << " ..." << std::endl;
+
+    return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
 } // namespace core

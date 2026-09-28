@@ -49,7 +49,7 @@ namespace utils
 namespace settings
 {
 
-void Settings::precomputeRectificationMaps()
+SettingsStatus  Settings::precomputeRectificationMaps()
 {
     // Precompute rectification maps, new calibrations, ...
     cv::Mat K1 =
@@ -69,10 +69,20 @@ void Settings::precomputeRectificationMaps()
     cv::Mat R_r1_u1, R_r2_u2;
     cv::Mat P1, P2, Q;
 
+    cv::Mat camera1DistortionCoef2{};
+    if (camera1DistortionCoef(camera1DistortionCoef2) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+    // camera1DistortionCoef cannot fail; continue as before.
+    }
+    cv::Mat camera2DistortionCoef2{};
+    if (camera2DistortionCoef(camera2DistortionCoef2) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+    // camera2DistortionCoef cannot fail; continue as before.
+    }
     cv::stereoRectify(K1,
-                      camera1DistortionCoef(),
+                      camera1DistortionCoef2,
                       K2,
-                      camera2DistortionCoef(),
+                      camera2DistortionCoef2,
                       newImageSize,
                       R12,
                       t12,
@@ -84,16 +94,26 @@ void Settings::precomputeRectificationMaps()
                       cv::CALIB_ZERO_DISPARITY,
                       -1,
                       newImageSize);
+    cv::Mat camera1DistortionCoef3{};
+    if (camera1DistortionCoef(camera1DistortionCoef3) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+    // camera1DistortionCoef cannot fail; continue as before.
+    }
     cv::initUndistortRectifyMap(K1,
-                                camera1DistortionCoef(),
+                                camera1DistortionCoef3,
                                 R_r1_u1,
                                 P1.rowRange(0, 3).colRange(0, 3),
                                 newImageSize,
                                 CV_32F,
                                 rectifyMap1Left,
                                 rectifyMap2Left);
+    cv::Mat camera2DistortionCoef3{};
+    if (camera2DistortionCoef(camera2DistortionCoef3) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+    // camera2DistortionCoef cannot fail; continue as before.
+    }
     cv::initUndistortRectifyMap(K2,
-                                camera2DistortionCoef(),
+                                camera2DistortionCoef3,
                                 R_r2_u2,
                                 P2.rowRange(0, 3).colRange(0, 3),
                                 newImageSize,
@@ -102,15 +122,39 @@ void Settings::precomputeRectificationMaps()
                                 rectifyMap2Right);
 
     // Update calibration
-    p_calibration1->setParameter(P1.at<double>(0, 0), 0);
-    p_calibration1->setParameter(P1.at<double>(1, 1), 1);
-    p_calibration1->setParameter(P1.at<double>(0, 2), 2);
-    p_calibration1->setParameter(P1.at<double>(1, 2), 3);
+    if (p_calibration1->setParameter(P1.at<double>(0, 0), 0) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+    // setParameter cannot fail; continue as before.
+    }
+    if (p_calibration1->setParameter(P1.at<double>(1, 1), 1) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+    // setParameter cannot fail; continue as before.
+    }
+    if (p_calibration1->setParameter(P1.at<double>(0, 2), 2) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+    // setParameter cannot fail; continue as before.
+    }
+    if (p_calibration1->setParameter(P1.at<double>(1, 2), 3) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+    // setParameter cannot fail; continue as before.
+    }
 
-    p_calibration2->setParameter(P2.at<double>(0, 0), 0);
-    p_calibration2->setParameter(P2.at<double>(1, 1), 1);
-    p_calibration2->setParameter(P2.at<double>(0, 2), 2);
-    p_calibration2->setParameter(P2.at<double>(1, 2), 3);
+    if (p_calibration2->setParameter(P2.at<double>(0, 0), 0) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+    // setParameter cannot fail; continue as before.
+    }
+    if (p_calibration2->setParameter(P2.at<double>(1, 1), 1) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+    // setParameter cannot fail; continue as before.
+    }
+    if (p_calibration2->setParameter(P2.at<double>(0, 2), 2) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+    // setParameter cannot fail; continue as before.
+    }
+    if (p_calibration2->setParameter(P2.at<double>(1, 2), 3) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+    // setParameter cannot fail; continue as before.
+    }
 
     // Update bf
     baselineFocal = stereoBaseline * P1.at<double>(0, 0);
@@ -123,6 +167,8 @@ void Settings::precomputeRectificationMaps()
         Sophus::SE3f T_r1_u1(eigenR_r1_u1, Eigen::Vector3f::Zero());
         bodyToCamera = bodyToCamera * T_r1_u1.inverse();
     }
+
+    return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
 } // namespace settings

@@ -42,13 +42,15 @@ namespace utils
 namespace converter
 {
 
-cv::Mat Converter::toCvMat(const Eigen::Matrix<float, 3, 1> &matrix_in)
+ConverterStatus Converter::toCvMat(const Eigen::Matrix<float, 3, 1> &matrix_in,
+                                   cv::Mat                          &cvMat_out)
 {
     cv::Mat cvMatrix(3, 1, CV_32F);
     for (int rowIndex = 0; rowIndex < 3; rowIndex++)
         cvMatrix.at<float>(rowIndex) = matrix_in(rowIndex);
 
-    return cvMatrix.clone();
+    cvMat_out = cvMatrix.clone();
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

@@ -35,27 +35,66 @@ namespace camera_models
 {
 namespace pinhole
 {
-bool Pinhole::isEqual(geometriccamera::GeometricCamera *p_camera_in)
+PinholeStatus Pinhole::isEqual(geometriccamera::GeometricCamera *p_camera_in,
+                               bool                             &isEqual_out)
 {
-    if (p_camera_in->getType() != geometriccamera::GeometricCamera::CAM_PINHOLE)
-        return false;
+    unsigned int cameraType{};
+    if (p_camera_in->getType(cameraType) !=
+        geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // getType cannot fail; continue as before.
+    }
+    if (cameraType != geometriccamera::GeometricCamera::CAM_PINHOLE)
+    {
+        isEqual_out = false;
+        return PinholeStatus::PINHOLE_STATUS_SUCCESS;
+    }
 
     Pinhole *p_otherPinhole = (Pinhole *)p_camera_in;
 
-    if (size() != p_otherPinhole->size())
-        return false;
-
-    bool isSameCamera = true;
-    for (size_t parameterIndex = 0; parameterIndex < size(); ++parameterIndex)
+    size_t size2{};
+    if (size(size2) !=
+        geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        if (abs(parameters[parameterIndex] -
-                p_otherPinhole->getParameter(parameterIndex)) > 1e-6)
+        // size cannot fail; continue as before.
+    }
+    size_t otherPinholeSize{};
+    if (p_otherPinhole->size(otherPinholeSize) !=
+        geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // size cannot fail; continue as before.
+    }
+    if (size2 != otherPinholeSize)
+    {
+        isEqual_out = false;
+        return PinholeStatus::PINHOLE_STATUS_SUCCESS;
+    }
+
+    bool   isSameCamera = true;
+    size_t size3{};
+    if (size(size3) !=
+        geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // size cannot fail; continue as before.
+    }
+    for (size_t parameterIndex = 0; parameterIndex < size3; ++parameterIndex)
+    {
+        float otherPinholeParameter{};
+        if (p_otherPinhole->getParameter(parameterIndex,
+                                         otherPinholeParameter) !=
+            geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getParameter cannot fail; continue as before.
+        }
+        if (abs(parameters[parameterIndex] - otherPinholeParameter) > 1e-6)
         {
             isSameCamera = false;
             break;
         }
     }
-    return isSameCamera;
+    isEqual_out = isSameCamera;
+    return PinholeStatus::PINHOLE_STATUS_SUCCESS;
 }
 } // namespace pinhole
 } // namespace camera_models

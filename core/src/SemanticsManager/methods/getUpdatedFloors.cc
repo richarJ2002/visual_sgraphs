@@ -54,7 +54,11 @@ void SemanticsManager::getUpdatedFloors(void)
                 recoveredFloorId = recoveryContext->floorId;
             }
         }
-        GeoSemHelpers::createMapFloor(p_atlas, recoveredFloorId);
+        if (GeoSemHelpers::createMapFloor(p_atlas, recoveredFloorId) !=
+            GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+        {
+            // createMapFloor cannot fail; continue as before.
+        }
     }
 
     /* Collapse legacy/merge duplicates before writing any hierarchy edge. */
@@ -167,8 +171,13 @@ void SemanticsManager::getUpdatedFloors(void)
     }
 
     /* Find the floor centroid from the confirmed room centroids */
-    const Eigen::Vector3d floorCentroid =
-        utils::utils::Utils::computeCentroidFromPoints(roomCentroids);
+    Eigen::Vector3d floorCentroid{};
+    if (utils::utils::Utils::computeCentroidFromPoints(roomCentroids,
+                                                       floorCentroid) !=
+        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+    {
+        // computeCentroidFromPoints cannot fail; continue as before.
+    }
 
     if (p_keeperFloor->setRooms(confirmedRooms) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)

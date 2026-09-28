@@ -38,20 +38,61 @@ void Viewer::newParameterLoader(utils::settings::Settings *p_settings_inout)
 {
     imageViewerScale = 1.f;
 
-    float fps = p_settings_inout->getFramesPerSecond();
+    double framesPerSecondValue{};
+    if (p_settings_inout->getFramesPerSecond(framesPerSecondValue) !=
+        utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // getFramesPerSecond cannot fail; continue as before.
+    }
+    float fps = static_cast<float>(framesPerSecondValue);
     if (fps < 1)
         fps = 30;
     framePeriod = 1e3 / fps;
 
-    cv::Size imageSize = p_settings_inout->newImSize();
-    imageHeight        = imageSize.height;
-    imageWidth         = imageSize.width;
+    cv::Size imageSize{};
+    if (p_settings_inout->newImSize(imageSize) !=
+        utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // newImSize cannot fail; continue as before.
+    }
+    imageHeight = imageSize.height;
+    imageWidth  = imageSize.width;
 
-    imageViewerScale = p_settings_inout->imageViewerScale();
-    viewpointX       = p_settings_inout->viewPointX();
-    viewpointY       = p_settings_inout->viewPointY();
-    viewpointZ       = p_settings_inout->viewPointZ();
-    viewpointF       = p_settings_inout->viewPointF();
+    double settingsImageViewerScale{};
+    if (p_settings_inout->imageViewerScale(settingsImageViewerScale) !=
+        utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // imageViewerScale cannot fail; continue as before.
+    }
+    imageViewerScale = settingsImageViewerScale;
+    double settingsViewPointX{};
+    if (p_settings_inout->viewPointX(settingsViewPointX) !=
+        utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // viewPointX cannot fail; continue as before.
+    }
+    viewpointX = settingsViewPointX;
+    double settingsViewPointY{};
+    if (p_settings_inout->viewPointY(settingsViewPointY) !=
+        utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // viewPointY cannot fail; continue as before.
+    }
+    viewpointY = settingsViewPointY;
+    double settingsViewPointZ{};
+    if (p_settings_inout->viewPointZ(settingsViewPointZ) !=
+        utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // viewPointZ cannot fail; continue as before.
+    }
+    viewpointZ = settingsViewPointZ;
+    double settingsViewPointF{};
+    if (p_settings_inout->viewPointF(settingsViewPointF) !=
+        utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // viewPointF cannot fail; continue as before.
+    }
+    viewpointF = settingsViewPointF;
 }
 
 } // namespace core

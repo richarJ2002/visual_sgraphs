@@ -41,8 +41,10 @@ namespace utils
 namespace converter
 {
 
-cv::Mat Converter::toCvSE3(const Eigen::Matrix<double, 3, 3> &rotation_in,
-                           const Eigen::Matrix<double, 3, 1> &translation_in)
+ConverterStatus
+    Converter::toCvSE3(const Eigen::Matrix<double, 3, 3> &rotation_in,
+                       const Eigen::Matrix<double, 3, 1> &translation_in,
+                       cv::Mat                           &cvSE3_out)
 {
     cv::Mat cvMatrix = cv::Mat::eye(4, 4, CV_32F);
     for (int rowIndex = 0; rowIndex < 3; rowIndex++)
@@ -58,7 +60,8 @@ cv::Mat Converter::toCvSE3(const Eigen::Matrix<double, 3, 3> &rotation_in,
         cvMatrix.at<float>(rowIndex, 3) = translation_in(rowIndex);
     }
 
-    return cvMatrix.clone();
+    cvSE3_out = cvMatrix.clone();
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

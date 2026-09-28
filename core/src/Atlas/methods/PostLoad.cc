@@ -36,7 +36,14 @@ void Atlas::postLoad()
         camerasById;
     for (camera_models::geometriccamera::GeometricCamera *p_camera : cameras)
     {
-        camerasById[p_camera->getId()] = p_camera;
+        unsigned int cameraId{};
+        if (p_camera->getId(cameraId) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        camerasById[cameraId] = p_camera;
     }
 
     maps.clear();

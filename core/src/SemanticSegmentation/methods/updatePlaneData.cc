@@ -47,9 +47,15 @@ void SemanticSegmentation::updatePlaneData(
             g2o::Plane3D detectedPlane(estimatedPlane);
 
             /* Convert the given plane to global coordinates */
-            g2o::Plane3D globalEquation = utils::utils::Utils::applyPoseToPlane(
-                p_keyFrame_in->getPoseInverse().matrix().cast<double>(),
-                detectedPlane);
+            g2o::Plane3D globalEquation{};
+            if (utils::utils::Utils::applyPoseToPlane(
+                    p_keyFrame_in->getPoseInverse().matrix().cast<double>(),
+                    detectedPlane,
+                    globalEquation) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // applyPoseToPlane cannot fail; continue as before.
+            }
 
             /* Extract the point cloud assoicated with the plane */
             pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud =
@@ -106,8 +112,13 @@ void SemanticSegmentation::updatePlaneData(
                 p_keyFrame_in->getPoseInverse().matrix().cast<float>());
 
             /* Get the semantic type of the observation */
-            vs_graphs::core::geometric::Plane::PlaneVariant semanticType =
-                utils::utils::Utils::getPlaneTypeFromClassId(clsId);
+            vs_graphs::core::geometric::Plane::PlaneVariant semanticType{};
+            if (utils::utils::Utils::getPlaneTypeFromClassId(clsId,
+                                                             semanticType) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // getPlaneTypeFromClassId cannot fail; continue as before.
+            }
 
             /*!
              * Associate the observation using the global plane equation and
@@ -117,15 +128,21 @@ void SemanticSegmentation::updatePlaneData(
              *              frame avoids inconsistencies between plane
              *              equations, centroids and point clouds.
              */
-            int matchedPlaneId = utils::utils::Utils::associatePlanes(
-                p_atlas->getAllPlanes(),
-                globalEquation,
-                p_globalPlaneCloud,
-                Eigen::Matrix4d::Identity(),
-                semanticType,
-                p_sysParams->seg.planeAssociation.ominusThresh,
-                -1.0F,
-                p_keyFrame_in->getCameraCenter().cast<double>());
+            int matchedPlaneId{};
+            if (utils::utils::Utils::associatePlanes(
+                    p_atlas->getAllPlanes(),
+                    globalEquation,
+                    p_globalPlaneCloud,
+                    Eigen::Matrix4d::Identity(),
+                    semanticType,
+                    p_sysParams->seg.planeAssociation.ominusThresh,
+                    matchedPlaneId,
+                    -1.0F,
+                    p_keyFrame_in->getCameraCenter().cast<double>()) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // associatePlanes cannot fail; continue as before.
+            }
 
             /*!
              * If no mapped plane is associated with current plane
@@ -225,9 +242,15 @@ void SemanticSegmentation::updatePlaneData(
                         }
 
                         /* Compute finite dimensions from connected support. */
-                        const std::pair<double, double> wallDimensions =
-                            utils::utils::Utils::computePlaneWidthHeight(
-                                p_connectedGlobalWallCloud);
+                        std::pair<double, double> wallDimensions{};
+                        if (utils::utils::Utils::computePlaneWidthHeight(
+                                p_connectedGlobalWallCloud,
+                                wallDimensions) !=
+                            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                        {
+                            // computePlaneWidthHeight cannot fail; continue as
+                            // before.
+                        }
 
                         /* Extract the larger planar dimension */
                         const double majorExtent =
@@ -296,13 +319,18 @@ void SemanticSegmentation::updatePlaneData(
                     }
 
                     /* Create a new mapped plane */
-                    vs_graphs::core::geometric::Plane *p_newMapPlane =
-                        GeoSemHelpers::createMapPlane(p_atlas,
+                    vs_graphs::core::geometric::Plane *p_newMapPlane = nullptr;
+                    if (GeoSemHelpers::createMapPlane(p_atlas,
                                                       p_keyFrame_in,
                                                       detectedPlane,
                                                       p_planeCloud,
+                                                      p_newMapPlane,
                                                       semanticType,
-                                                      confidence);
+                                                      confidence) !=
+                        GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+                    {
+                        // createMapPlane cannot fail; continue as before.
+                    }
 
                     /* Confirm that plane creation succeeded */
                     if (p_newMapPlane == nullptr)
@@ -322,13 +350,17 @@ void SemanticSegmentation::updatePlaneData(
                  */
                 if (!isGeometricSegmentationRunning)
                 {
-                    GeoSemHelpers::updateMapPlane(p_atlas,
-                                                  p_keyFrame_in,
-                                                  detectedPlane,
-                                                  p_planeCloud,
-                                                  matchedPlaneId,
-                                                  semanticType,
-                                                  confidence);
+                    if (GeoSemHelpers::updateMapPlane(p_atlas,
+                                                      p_keyFrame_in,
+                                                      detectedPlane,
+                                                      p_planeCloud,
+                                                      matchedPlaneId,
+                                                      semanticType,
+                                                      confidence) !=
+                        GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+                    {
+                        // updateMapPlane cannot fail; continue as before.
+                    }
                 }
                 else
                 {
@@ -351,8 +383,15 @@ void SemanticSegmentation::updatePlaneData(
                     {
                         p_matchedPlane->setMapClouds(p_planeCloud);
 
-                        GeoSemHelpers::refitMappedPlaneFromCloud(
-                            p_matchedPlane);
+                        bool wasPlaneRefit{};
+                        if (GeoSemHelpers::refitMappedPlaneFromCloud(
+                                p_matchedPlane,
+                                wasPlaneRefit) !=
+                            GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+                        {
+                            // refitMappedPlaneFromCloud cannot fail; continue
+                            // as before.
+                        }
                     }
                 }
 

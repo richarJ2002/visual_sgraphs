@@ -51,8 +51,13 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         return;
     }
 
-    types::SystemParams *p_params = types::SystemParams::getParams();
-    const unsigned int   cooldown_s =
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    const unsigned int cooldown_s =
         p_params != nullptr ? p_params->mapMerge.mergeCooldown_s : 30U;
     const unsigned int minimumAnchors =
         p_params != nullptr ? p_params->mapMerge.minAnchorRooms : 2U;
@@ -163,12 +168,20 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
 
         std::vector<Eigen::Vector3d> normalsCurrent, centroidsCurrent;
         std::vector<Eigen::Vector3d> normalsOld, centroidsOld;
-        if (!utils::utils::Utils::collectCorrespondingWalls(p_currentMap,
-                                                            p_oldMap,
-                                                            normalsCurrent,
-                                                            centroidsCurrent,
-                                                            normalsOld,
-                                                            centroidsOld))
+        bool                         hasEnoughCorrespondences{};
+        if (utils::utils::Utils::collectCorrespondingWalls(
+                p_currentMap,
+                p_oldMap,
+                normalsCurrent,
+                centroidsCurrent,
+                normalsOld,
+                centroidsOld,
+                hasEnoughCorrespondences) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // collectCorrespondingWalls cannot fail; continue as before.
+        }
+        if (!hasEnoughCorrespondences)
         {
             recordAttempt();
             std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_"
@@ -180,11 +193,17 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
                       << std::endl;
             continue;
         }
-        const Eigen::Isometry3d transformOldToCurrent =
-            utils::utils::Utils::computeMapTransform_Horn(normalsOld,
-                                                          centroidsOld,
-                                                          normalsCurrent,
-                                                          centroidsCurrent);
+        Eigen::Isometry3d transformOldToCurrent{};
+        if (utils::utils::Utils::computeMapTransform_Horn(
+                normalsOld,
+                centroidsOld,
+                normalsCurrent,
+                centroidsCurrent,
+                transformOldToCurrent) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // computeMapTransform_Horn cannot fail; continue as before.
+        }
         if (!transformOldToCurrent.matrix().allFinite())
         {
             recordAttempt();

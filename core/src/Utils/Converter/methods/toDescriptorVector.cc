@@ -42,15 +42,17 @@ namespace converter
 {
 
 /* Each row header shares its storage with the source matrix. */
-std::vector<cv::Mat>
-    Converter::toDescriptorVector(const cv::Mat &descriptors_in)
+ConverterStatus
+    Converter::toDescriptorVector(const cv::Mat        &descriptors_in,
+                                  std::vector<cv::Mat> &descriptorVector_out)
 {
     std::vector<cv::Mat> descriptorVector;
     descriptorVector.reserve(descriptors_in.rows);
     for (int rowIndex = 0; rowIndex < descriptors_in.rows; rowIndex++)
         descriptorVector.push_back(descriptors_in.row(rowIndex));
 
-    return descriptorVector;
+    descriptorVector_out = descriptorVector;
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

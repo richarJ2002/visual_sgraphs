@@ -38,6 +38,7 @@
 
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 #include "Thirdparty/g2o/g2o/types/types_six_dof_expmap.h"
+#include "Utils/Converter/objects/ConverterStatus.h"
 #include <Eigen/Dense>
 
 #include "Thirdparty/Sophus/sophus/geometry.hpp"
@@ -68,12 +69,14 @@ class Converter
      * @param[in]    descriptors_in
      *               Matrix whose rows hold one descriptor each.
      *
-     * @return       One single-row matrix per input row. Each entry
-     *               views the input data and stays valid only while
-     *               the input matrix lives.
+     * @param[out] descriptorVector_out One single-row matrix per input row.
+     * Each entry views the input data and stays valid only while the input
+     * matrix lives.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static std::vector<cv::Mat>
-        toDescriptorVector(const cv::Mat &descriptors_in);
+    [[nodiscard]] static ConverterStatus
+        toDescriptorVector(const cv::Mat        &descriptors_in,
+                           std::vector<cv::Mat> &descriptorVector_out);
 
     /*!
      * @brief        Converts a 4x4 pose matrix to a rigid transform.
@@ -81,20 +84,24 @@ class Converter
      * @param[in]    transform_in
      *               Pose matrix. Shall be a 4x4 CV_32F matrix.
      *
-     * @return       Rigid transform built from the rotation and
-     *               translation parts of the input.
+     * @param[out] se3Quat_out Rigid transform built from the rotation and
+     * translation parts of the input.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static g2o::SE3Quat toSE3Quat(const cv::Mat &transform_in);
+    [[nodiscard]] static ConverterStatus toSE3Quat(const cv::Mat &transform_in,
+                                                   g2o::SE3Quat  &se3Quat_out);
     /*!
      * @brief        Converts a Sophus SE3 pose to a rigid transform.
      *
      * @param[in]    transform_in
      *               Sophus SE3 pose to convert.
      *
-     * @return       Rigid transform with the same rotation and
-     *               translation, widened to double precision.
+     * @param[out] se3Quat_out Rigid transform with the same rotation and
+     * translation, widened to double precision.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static g2o::SE3Quat toSE3Quat(const Sophus::SE3f &transform_in);
+    [[nodiscard]] static ConverterStatus
+        toSE3Quat(const Sophus::SE3f &transform_in, g2o::SE3Quat &se3Quat_out);
     /*!
      * @brief        Converts a similarity transform to a rigid
      *               transform.
@@ -113,9 +120,11 @@ class Converter
      * @param[in]    rigidTransform_in
      *               Rigid transform to convert.
      *
-     * @return       4x4 CV_32F homogeneous matrix.
+     * @param[out] cvMat_out 4x4 CV_32F homogeneous matrix.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvMat(const g2o::SE3Quat &rigidTransform_in);
+    [[nodiscard]] static ConverterStatus
+        toCvMat(const g2o::SE3Quat &rigidTransform_in, cv::Mat &cvMat_out);
     /*!
      * @brief        Converts a similarity transform to a 4x4 cv
      *               matrix.
@@ -123,79 +132,101 @@ class Converter
      * @param[in]    similarity_in
      *               Similarity transform to convert.
      *
-     * @return       4x4 CV_32F homogeneous matrix.
+     * @param[out] cvMat_out 4x4 CV_32F homogeneous matrix.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvMat(const g2o::Sim3 &similarity_in);
+    [[nodiscard]] static ConverterStatus toCvMat(const g2o::Sim3 &similarity_in,
+                                                 cv::Mat         &cvMat_out);
     /*!
      * @brief        Converts a double 4x4 matrix to a cv matrix.
      *
      * @param[in]    matrix_in
      *               Eigen matrix to convert.
      *
-     * @return       CV_32F matrix with the same dimensions and
-     *               coefficients.
+     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
+     * coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvMat(const Eigen::Matrix<double, 4, 4> &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toCvMat(const Eigen::Matrix<double, 4, 4> &matrix_in,
+                cv::Mat                           &cvMat_out);
     /*!
      * @brief        Converts a float 4x4 matrix to a cv matrix.
      *
      * @param[in]    matrix_in
      *               Eigen matrix to convert.
      *
-     * @return       CV_32F matrix with the same dimensions and
-     *               coefficients.
+     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
+     * coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvMat(const Eigen::Matrix<float, 4, 4> &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toCvMat(const Eigen::Matrix<float, 4, 4> &matrix_in,
+                cv::Mat                          &cvMat_out);
     /*!
      * @brief        Converts a float 3x4 matrix to a cv matrix.
      *
      * @param[in]    matrix_in
      *               Eigen matrix to convert.
      *
-     * @return       CV_32F matrix with the same dimensions and
-     *               coefficients.
+     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
+     * coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvMat(const Eigen::Matrix<float, 3, 4> &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toCvMat(const Eigen::Matrix<float, 3, 4> &matrix_in,
+                cv::Mat                          &cvMat_out);
     /*!
      * @brief        Converts a double 3x3 matrix to a cv matrix.
      *
      * @param[in]    matrix_in
      *               Eigen matrix to convert.
      *
-     * @return       CV_32F matrix with the same dimensions and
-     *               coefficients.
+     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
+     * coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvMat(const Eigen::Matrix3d &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toCvMat(const Eigen::Matrix3d &matrix_in, cv::Mat &cvMat_out);
     /*!
      * @brief        Converts a double 3-vector to a cv matrix.
      *
      * @param[in]    matrix_in
      *               Eigen vector to convert.
      *
-     * @return       CV_32F matrix with the same dimensions and
-     *               coefficients.
+     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
+     * coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvMat(const Eigen::Matrix<double, 3, 1> &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toCvMat(const Eigen::Matrix<double, 3, 1> &matrix_in,
+                cv::Mat                           &cvMat_out);
     /*!
      * @brief        Converts a float 3-vector to a cv matrix.
      *
      * @param[in]    matrix_in
      *               Eigen vector to convert.
      *
-     * @return       CV_32F matrix with the same dimensions and
-     *               coefficients.
+     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
+     * coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvMat(const Eigen::Matrix<float, 3, 1> &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toCvMat(const Eigen::Matrix<float, 3, 1> &matrix_in,
+                cv::Mat                          &cvMat_out);
     /*!
      * @brief        Converts a float 3x3 matrix to a cv matrix.
      *
      * @param[in]    matrix_in
      *               Eigen matrix to convert.
      *
-     * @return       CV_32F matrix with the same dimensions and
-     *               coefficients.
+     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
+     * coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvMat(const Eigen::Matrix<float, 3, 3> &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toCvMat(const Eigen::Matrix<float, 3, 3> &matrix_in,
+                cv::Mat                          &cvMat_out);
 
     /*!
      * @brief        Converts a dynamic float matrix to a cv matrix.
@@ -203,20 +234,24 @@ class Converter
      * @param[in]    matrix_in
      *               Eigen matrix to convert.
      *
-     * @return       CV_32F matrix with the same dimensions and
-     *               coefficients.
+     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
+     * coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvMat(const Eigen::MatrixXf &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toCvMat(const Eigen::MatrixXf &matrix_in, cv::Mat &cvMat_out);
     /*!
      * @brief        Converts a dynamic double matrix to a cv matrix.
      *
      * @param[in]    matrix_in
      *               Eigen matrix to convert.
      *
-     * @return       CV_32F matrix with the same dimensions and
-     *               coefficients.
+     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
+     * coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvMat(const Eigen::MatrixXd &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toCvMat(const Eigen::MatrixXd &matrix_in, cv::Mat &cvMat_out);
 
     /*!
      * @brief        Assembles a 4x4 cv matrix from rotation and
@@ -227,10 +262,13 @@ class Converter
      * @param[in]    translation_in
      *               3x1 translation part.
      *
-     * @return       4x4 CV_32F homogeneous matrix.
+     * @param[out] cvSE3_out 4x4 CV_32F homogeneous matrix.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvSE3(const Eigen::Matrix<double, 3, 3> &rotation_in,
-                           const Eigen::Matrix<double, 3, 1> &translation_in);
+    [[nodiscard]] static ConverterStatus
+        toCvSE3(const Eigen::Matrix<double, 3, 3> &rotation_in,
+                const Eigen::Matrix<double, 3, 1> &translation_in,
+                cv::Mat                           &cvSE3_out);
     /*!
      * @brief        Builds the skew-symmetric matrix of a 3-vector.
      *
@@ -238,9 +276,11 @@ class Converter
      *               Vector to convert. Shall hold three
      *               single-precision elements.
      *
-     * @return       3x3 CV_32F skew-symmetric matrix.
+     * @param[out] cvSkewMatrix_out 3x3 CV_32F skew-symmetric matrix.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static cv::Mat toCvSkewMatrix(const cv::Mat &vector_in);
+    [[nodiscard]] static ConverterStatus
+        toCvSkewMatrix(const cv::Mat &vector_in, cv::Mat &cvSkewMatrix_out);
 
     /*!
      * @brief        Copies a cv vector into a double 3-vector.
@@ -249,9 +289,12 @@ class Converter
      *               Source vector. Shall hold at least three
      *               single-precision elements.
      *
-     * @return       Eigen vector with the first three elements.
+     * @param[out] vector3d_out Eigen vector with the first three elements.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static Eigen::Matrix<double, 3, 1> toVector3d(const cv::Mat &vector_in);
+    [[nodiscard]] static ConverterStatus
+        toVector3d(const cv::Mat               &vector_in,
+                   Eigen::Matrix<double, 3, 1> &vector3d_out);
     /*!
      * @brief        Copies a cv vector into a float 3-vector.
      *
@@ -259,54 +302,72 @@ class Converter
      *               Source vector. Shall hold at least three
      *               single-precision elements.
      *
-     * @return       Eigen vector with the first three elements.
+     * @param[out] vector3f_out Eigen vector with the first three elements.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static Eigen::Matrix<float, 3, 1>  toVector3f(const cv::Mat &vector_in);
+    [[nodiscard]] static ConverterStatus
+        toVector3f(const cv::Mat              &vector_in,
+                   Eigen::Matrix<float, 3, 1> &vector3f_out);
     /*!
      * @brief        Copies a 3D point into a double 3-vector.
      *
      * @param[in]    point_in
      *               Source point.
      *
-     * @return       Eigen vector with the point coordinates.
+     * @param[out] vector3d_out Eigen vector with the point coordinates.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static Eigen::Matrix<double, 3, 1> toVector3d(const cv::Point3f &point_in);
+    [[nodiscard]] static ConverterStatus
+        toVector3d(const cv::Point3f           &point_in,
+                   Eigen::Matrix<double, 3, 1> &vector3d_out);
     /*!
      * @brief        Copies a cv matrix into a double 3x3 matrix.
      *
      * @param[in]    matrix_in
      *               Source matrix. Shall be a 3x3 CV_32F matrix.
      *
-     * @return       Eigen matrix with the copied coefficients.
+     * @param[out] matrix3d_out Eigen matrix with the copied coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static Eigen::Matrix<double, 3, 3> toMatrix3d(const cv::Mat &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toMatrix3d(const cv::Mat               &matrix_in,
+                   Eigen::Matrix<double, 3, 3> &matrix3d_out);
     /*!
      * @brief        Copies a cv matrix into a double 4x4 matrix.
      *
      * @param[in]    matrix_in
      *               Source matrix. Shall be a 4x4 CV_32F matrix.
      *
-     * @return       Eigen matrix with the copied coefficients.
+     * @param[out] matrix4d_out Eigen matrix with the copied coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static Eigen::Matrix<double, 4, 4> toMatrix4d(const cv::Mat &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toMatrix4d(const cv::Mat               &matrix_in,
+                   Eigen::Matrix<double, 4, 4> &matrix4d_out);
     /*!
      * @brief        Copies a cv matrix into a float 3x3 matrix.
      *
      * @param[in]    matrix_in
      *               Source matrix. Shall be a 3x3 CV_32F matrix.
      *
-     * @return       Eigen matrix with the copied coefficients.
+     * @param[out] matrix3f_out Eigen matrix with the copied coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static Eigen::Matrix<float, 3, 3>  toMatrix3f(const cv::Mat &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toMatrix3f(const cv::Mat              &matrix_in,
+                   Eigen::Matrix<float, 3, 3> &matrix3f_out);
     /*!
      * @brief        Copies a cv matrix into a float 4x4 matrix.
      *
      * @param[in]    matrix_in
      *               Source matrix. Shall be a 4x4 CV_32F matrix.
      *
-     * @return       Eigen matrix with the copied coefficients.
+     * @param[out] matrix4f_out Eigen matrix with the copied coefficients.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static Eigen::Matrix<float, 4, 4>  toMatrix4f(const cv::Mat &matrix_in);
+    [[nodiscard]] static ConverterStatus
+        toMatrix4f(const cv::Mat              &matrix_in,
+                   Eigen::Matrix<float, 4, 4> &matrix4f_out);
     /*!
      * @brief        Converts a rotation matrix to a quaternion vector.
      *
@@ -314,10 +375,13 @@ class Converter
      *               Source matrix. Shall be a 3x3 CV_32F rotation
      *               matrix.
      *
-     * @return       Four-element vector holding x, y, z and w in
-     *               that order.
+     * @param[out] quaternion_out Four-element vector holding x, y, z and w in
+     * that order.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static std::vector<float> toQuaternion(const cv::Mat &rotationMatrix_in);
+    [[nodiscard]] static ConverterStatus
+        toQuaternion(const cv::Mat      &rotationMatrix_in,
+                     std::vector<float> &quaternion_out);
 
     /*!
      * @brief        Checks whether a matrix is a valid rotation
@@ -326,10 +390,13 @@ class Converter
      * @param[in]    rotationMatrix_in
      *               Matrix to check.
      *
-     * @return       True when the transpose times the matrix is the
-     *               identity within 1e-6.
+     * @param[out] isRotationMatrix_out True when the transpose times the matrix
+     * is the identity within 1e-6.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static bool isRotationMatrix(const cv::Mat &rotationMatrix_in);
+    [[nodiscard]] static ConverterStatus
+        isRotationMatrix(const cv::Mat &rotationMatrix_in,
+                         bool          &isRotationMatrix_out);
     /*!
      * @brief        Converts a rotation matrix to Euler angles.
      *
@@ -337,10 +404,13 @@ class Converter
      *               Source matrix. Shall be a 3x3 CV_32F rotation
      *               matrix.
      *
-     * @return       Three-element vector holding the x, y and z
-     *               angles in radians in that order.
+     * @param[out] euler_out Three-element vector holding the x, y and z angles
+     * in radians in that order.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static std::vector<float> toEuler(const cv::Mat &rotationMatrix_in);
+    [[nodiscard]] static ConverterStatus
+        toEuler(const cv::Mat      &rotationMatrix_in,
+                std::vector<float> &euler_out);
 
     // TODO: Sophus migration, to be deleted in the future
     /*!
@@ -349,20 +419,24 @@ class Converter
      * @param[in]    transform_in
      *               Pose matrix. Shall be a 4x4 CV_32F matrix.
      *
-     * @return       Sophus SE3 pose with the same rotation and
-     *               translation in single precision.
+     * @param[out] sophus_out Sophus SE3 pose with the same rotation and
+     * translation in single precision.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static Sophus::SE3<float> toSophus(const cv::Mat &transform_in);
+    [[nodiscard]] static ConverterStatus
+        toSophus(const cv::Mat &transform_in, Sophus::SE3<float> &sophus_out);
     /*!
      * @brief        Converts a g2o similarity to a Sophus Sim3 pose.
      *
      * @param[in]    similarity_in
      *               Similarity transform to convert.
      *
-     * @return       Sophus Sim3 pose with the same rotation, scale
-     *               and translation in single precision.
+     * @param[out] sophus_out Sophus Sim3 pose with the same rotation, scale and
+     * translation in single precision.
+     * @return CONVERTER_STATUS_SUCCESS.
      */
-    static Sophus::Sim3f      toSophus(const g2o::Sim3 &similarity_in);
+    [[nodiscard]] static ConverterStatus
+        toSophus(const g2o::Sim3 &similarity_in, Sophus::Sim3f &sophus_out);
 };
 
 } // namespace converter

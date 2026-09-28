@@ -44,25 +44,59 @@ camera_models::geometriccamera::GeometricCamera *Atlas::addCamera(
             std::cout << "Not pCam" << std::endl;
         if (!p_existingCamera)
             std::cout << "Not pCam_i" << std::endl;
-        if (p_camera_in->getType() != p_existingCamera->getType())
+        unsigned int cameraType{};
+        if (p_camera_in->getType(cameraType) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getType cannot fail; continue as before.
+        }
+        unsigned int existingCameraType{};
+        if (p_existingCamera->getType(existingCameraType) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getType cannot fail; continue as before.
+        }
+        if (cameraType != existingCameraType)
             continue;
 
-        if (p_camera_in->getType() ==
+        unsigned int cameraType2{};
+        if (p_camera_in->getType(cameraType2) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getType cannot fail; continue as before.
+        }
+        if (cameraType2 ==
             camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE)
         {
+            bool isEqual2{};
             if (((camera_models::pinhole::Pinhole *)p_existingCamera)
-                    ->isEqual(p_camera_in))
+                    ->isEqual(p_camera_in, isEqual2) !=
+                camera_models::pinhole::PinholeStatus::PINHOLE_STATUS_SUCCESS)
+            {
+                // isEqual cannot fail; continue as before.
+            }
+            if (isEqual2)
             {
                 isAlreadyInMap     = true;
                 matchedCameraIndex = cameraIndex;
             }
         }
-        else if (p_camera_in->getType() ==
+        else if (cameraType2 ==
                  camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE)
         {
+            bool isEqual3{};
             if (((camera_models::kannalabrandt8::KannalaBrandt8 *)
                      p_existingCamera)
-                    ->isEqual(p_camera_in))
+                    ->isEqual(p_camera_in, isEqual3) !=
+                camera_models::kannalabrandt8::KannalaBrandt8Status::
+                    KANNALA_BRANDT8_STATUS_SUCCESS)
+            {
+                // isEqual cannot fail; continue as before.
+            }
+            if (isEqual3)
             {
                 isAlreadyInMap     = true;
                 matchedCameraIndex = cameraIndex;

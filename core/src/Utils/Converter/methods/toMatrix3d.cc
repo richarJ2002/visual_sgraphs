@@ -41,7 +41,8 @@ namespace utils
 namespace converter
 {
 
-Eigen::Matrix<double, 3, 3> Converter::toMatrix3d(const cv::Mat &matrix_in)
+ConverterStatus Converter::toMatrix3d(const cv::Mat               &matrix_in,
+                                      Eigen::Matrix<double, 3, 3> &matrix3d_out)
 {
     Eigen::Matrix<double, 3, 3> eigenMatrix;
 
@@ -51,7 +52,8 @@ Eigen::Matrix<double, 3, 3> Converter::toMatrix3d(const cv::Mat &matrix_in)
         matrix_in.at<float>(2, 0), matrix_in.at<float>(2, 1),
         matrix_in.at<float>(2, 2);
 
-    return eigenMatrix;
+    matrix3d_out = eigenMatrix;
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

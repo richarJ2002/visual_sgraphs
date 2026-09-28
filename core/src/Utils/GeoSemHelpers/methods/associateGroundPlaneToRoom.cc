@@ -23,7 +23,7 @@ namespace vs_graphs
 namespace core
 {
 
-void GeoSemHelpers::associateGroundPlaneToRoom(
+GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
     Atlas                           *p_atlas_in,
     vs_graphs::core::semantic::Room *p_givenRoom_inout)
 {
@@ -50,7 +50,7 @@ void GeoSemHelpers::associateGroundPlaneToRoom(
     if (groundPlanes.empty())
     {
         // no ground planes in the Atlas
-        return;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
     else
     {
@@ -58,7 +58,13 @@ void GeoSemHelpers::associateGroundPlaneToRoom(
         for (const auto &plane : groundPlanes)
         {
             // count inliers of the plane
-            size_t inliers = countGroundPlanePointsWithinWalls(allWalls, plane);
+            size_t inliers{};
+            if (countGroundPlanePointsWithinWalls(allWalls, plane, inliers) !=
+                GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+            {
+                // countGroundPlanePointsWithinWalls cannot fail; continue as
+                // before.
+            }
 
             // update the associated ground plane if the current plane has more
             // inliers
@@ -90,6 +96,8 @@ void GeoSemHelpers::associateGroundPlaneToRoom(
             }
         }
     }
+
+    return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
 } // namespace core

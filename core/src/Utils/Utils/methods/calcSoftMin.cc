@@ -36,7 +36,7 @@ namespace utils
 namespace utils
 {
 
-double Utils::calcSoftMin(vector<double> &values_in)
+UtilsStatus Utils::calcSoftMin(vector<double> &values_in, double &softMin_out)
 {
     // parameter controlling the softness/sharpness of the soft-min
     // the smaller the value, the more conservative the soft-min
@@ -45,7 +45,8 @@ double Utils::calcSoftMin(vector<double> &values_in)
     // soft-min = sum(exp(-value/tau) * value) / sum(exp(-value/tau))
     Eigen::Map<Eigen::VectorXd> confs(values_in.data(), values_in.size());
     Eigen::VectorXd             term = ((1.0 - confs.array()) / tau).exp();
-    return ((term / term.sum()).array() * confs.array()).sum();
+    softMin_out = ((term / term.sum()).array() * confs.array()).sum();
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

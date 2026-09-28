@@ -13,14 +13,15 @@ namespace vs_graphs
 namespace core
 {
 
-void rejectOutlierStereoMatches(
+StereoMatchOutlierRejectionStatus rejectOutlierStereoMatches(
     std::vector<std::pair<int, int>> &distanceIndices_inout,
     std::vector<float>               &mvuRight_inout,
     std::vector<float>               &depths_inout)
 {
     if (distanceIndices_inout.empty())
     {
-        return;
+        return StereoMatchOutlierRejectionStatus::
+            STEREO_MATCH_OUTLIER_REJECTION_STATUS_SUCCESS;
     }
 
     std::sort(distanceIndices_inout.begin(), distanceIndices_inout.end());
@@ -40,6 +41,9 @@ void rejectOutlierStereoMatches(
         mvuRight_inout[distanceIndices_inout[distanceIndex].second] = -1;
         depths_inout[distanceIndices_inout[distanceIndex].second]   = -1;
     }
+
+    return StereoMatchOutlierRejectionStatus::
+        STEREO_MATCH_OUTLIER_REJECTION_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -21,10 +21,14 @@ namespace core
 TEST(MissionHealthTopologyJson, CacheUnavailableOnlyAddsSchemaAndAvailability)
 {
     nlohmann::json schema1 = {{"schema", 1}, {"map_id", 3U}, {"rooms", {}}};
-    const nlohmann::json result = augmentMissionHealthTopologyJsonWithSemantics(
-        schema1,
-        semantic::SemanticReportCacheEntry(),
-        /*cacheAvailable_in=*/false);
+    nlohmann::json result{};
+    ASSERT_EQ((augmentMissionHealthTopologyJsonWithSemantics(
+                  schema1,
+                  semantic::SemanticReportCacheEntry(),
+                  /*cacheAvailable_in=*/false,
+                  result)),
+              MissionHealthTopologyJsonStatus::
+                  MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS);
 
     EXPECT_EQ(result["schema"], 2);
     EXPECT_EQ(result["semanticCacheAvailable"], false);
@@ -48,10 +52,14 @@ TEST(MissionHealthTopologyJson, PreservesEverySchema1FieldAndType)
                                      {"passages", nlohmann::json::array()}};
     const nlohmann::json original = schema1;
 
-    const nlohmann::json result = augmentMissionHealthTopologyJsonWithSemantics(
-        schema1,
-        semantic::SemanticReportCacheEntry(),
-        true);
+    nlohmann::json result{};
+    ASSERT_EQ((augmentMissionHealthTopologyJsonWithSemantics(
+                  schema1,
+                  semantic::SemanticReportCacheEntry(),
+                  true,
+                  result)),
+              MissionHealthTopologyJsonStatus::
+                  MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS);
 
     for (auto it = original.begin(); it != original.end(); ++it)
     {
@@ -116,10 +124,13 @@ TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
     entry.updateInstant =
         std::chrono::steady_clock::now() - std::chrono::milliseconds(50);
 
-    const nlohmann::json result =
-        augmentMissionHealthTopologyJsonWithSemantics({{"schema", 1}},
-                                                      entry,
-                                                      true);
+    nlohmann::json result{};
+    ASSERT_EQ((augmentMissionHealthTopologyJsonWithSemantics({{"schema", 1}},
+                                                             entry,
+                                                             true,
+                                                             result)),
+              MissionHealthTopologyJsonStatus::
+                  MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS);
 
     EXPECT_EQ(result["schema"], 2);
     EXPECT_EQ(result["semanticCacheAvailable"], true);
@@ -222,10 +233,13 @@ TEST(MissionHealthTopologyJson,
         semantic::EntityKey{semantic::EntityKind::WALL, 1U, 3}};
     entry.completenessResults.push_back(completeness);
 
-    const nlohmann::json result =
-        augmentMissionHealthTopologyJsonWithSemantics({{"schema", 1}},
-                                                      entry,
-                                                      true);
+    nlohmann::json result{};
+    ASSERT_EQ((augmentMissionHealthTopologyJsonWithSemantics({{"schema", 1}},
+                                                             entry,
+                                                             true,
+                                                             result)),
+              MissionHealthTopologyJsonStatus::
+                  MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS);
 
     const nlohmann::json &reasonsJson =
         result["semanticMapCompleteness"][0]["reasons"];

@@ -47,23 +47,77 @@ namespace utils
 namespace settings
 {
 
-void Settings::readRGBD(cv::FileStorage &storage_inout)
+SettingsStatus Settings::readRGBD(cv::FileStorage &storage_inout)
 {
     bool found;
 
-    depthMapScale =
-        readParameter<float>(storage_inout, "RGBD.DepthMapFactor", found);
-    depthThreshold =
-        readParameter<float>(storage_inout, "Stereo.ThDepth", found);
-    stereoBaseline = readParameter<float>(storage_inout, "Stereo.b", found);
-    baselineFocal  = stereoBaseline * p_calibration1->getParameter(0);
-    nearThreshold =
-        readParameter<float>(storage_inout, "RGBD.NearThresh", found);
-    farThreshold = readParameter<float>(storage_inout, "RGBD.FarThresh", found);
+    float parameter{};
+    if (readParameter<float>(storage_inout,
+                             "RGBD.DepthMapFactor",
+                             found,
+                             parameter) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    depthMapScale = parameter;
+    float parameter2{};
+    if (readParameter<float>(storage_inout,
+                             "Stereo.ThDepth",
+                             found,
+                             parameter2) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    depthThreshold = parameter2;
+    float parameter3{};
+    if (readParameter<float>(storage_inout, "Stereo.b", found, parameter3) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    stereoBaseline = parameter3;
+    float calibration1Parameter{};
+    if (p_calibration1->getParameter(0, calibration1Parameter) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // getParameter cannot fail; continue as before.
+    }
+    baselineFocal = stereoBaseline * calibration1Parameter;
+    float parameter4{};
+    if (readParameter<float>(storage_inout,
+                             "RGBD.NearThresh",
+                             found,
+                             parameter4) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    nearThreshold = parameter4;
+    float parameter5{};
+    if (readParameter<float>(storage_inout,
+                             "RGBD.FarThresh",
+                             found,
+                             parameter5) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    farThreshold = parameter5;
 
     // set distance threshold in the system params
-    types::SystemParams::getParams()->pointcloud.distanceThresh =
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    p_params->pointcloud.distanceThresh =
         std::make_pair(nearThreshold, farThreshold);
+
+    return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
 } // namespace settings

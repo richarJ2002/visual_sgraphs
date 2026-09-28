@@ -51,23 +51,39 @@ std::vector<std::vector<
          *              default values in:
          *              `visual_sgraphs/core/include/Types/SystemParams.h`
          */
-        p_filteredCloud =
-            utils::utils::Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(
-                p_clsCloudPtrs_in[clsCloudPtrIndex]);
+        if (utils::utils::Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(
+                p_clsCloudPtrs_in[clsCloudPtrIndex],
+                p_filteredCloud) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // pointcloudDistanceFilter cannot fail; continue as before.
+        }
 
         /* Downsample points into grid based on points within voxel grid */
-        p_filteredCloud =
-            utils::utils::Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
+        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_downsampledCloud;
+        if (utils::utils::Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
                 p_filteredCloud,
                 p_sysParams->semSeg.pointcloud.downsample.leafSize,
-                p_sysParams->semSeg.pointcloud.downsample.minPointsPerVoxel);
+                p_sysParams->semSeg.pointcloud.downsample.minPointsPerVoxel,
+                p_downsampledCloud) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // pointcloudDownsample cannot fail; continue as before.
+        }
+        p_filteredCloud = std::move(p_downsampledCloud);
 
         /* Remove points that are statically isolated from neighbors */
-        p_filteredCloud =
-            utils::utils::Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(
+        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_inlierCloud;
+        if (utils::utils::Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(
                 p_filteredCloud,
                 p_sysParams->semSeg.pointcloud.outlierRemoval.stdThreshold,
-                p_sysParams->semSeg.pointcloud.outlierRemoval.meanThreshold);
+                p_sysParams->semSeg.pointcloud.outlierRemoval.meanThreshold,
+                p_inlierCloud) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // pointcloudOutlierRemoval cannot fail; continue as before.
+        }
+        p_filteredCloud = std::move(p_inlierCloud);
 
         /*!
          * Filtering removes arbitrary points, so the result is no longer an
@@ -101,9 +117,14 @@ std::vector<std::vector<
          */
         if (p_filteredCloud->points.size() > p_sysParams->seg.pointcloudsThresh)
         {
-            p_extractedPlanes = utils::utils::Utils::ransacPlaneFitting<
-                pcl::PointXYZRGBA,
-                pcl::WeightedSACSegmentation>(p_filteredCloud);
+            if (utils::utils::Utils::ransacPlaneFitting<
+                    pcl::PointXYZRGBA,
+                    pcl::WeightedSACSegmentation>(p_filteredCloud,
+                                                  p_extractedPlanes) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // ransacPlaneFitting cannot fail; continue as before.
+            }
         }
         p_clsPlanes.push_back(p_extractedPlanes);
     }

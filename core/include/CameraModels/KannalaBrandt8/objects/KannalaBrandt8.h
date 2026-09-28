@@ -27,6 +27,7 @@
 #include <assert.h>
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
+#include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8Status.h"
 
 #include "TwoViewReconstruction.h"
 
@@ -323,10 +324,11 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
      * @param[out]   point3d_out
      *               Triangulated point in the world frame.
      *
-     * @return       Front depth of the triangulated point, or a
-     *               negative code when the pair is rejected.
+     * @param[out] parallax_out Front depth of the triangulated point, or a
+     * negative code when the pair is rejected.
+     * @return KANNALA_BRANDT8_STATUS_SUCCESS.
      */
-    float triangulateMatches(
+    [[nodiscard]] KannalaBrandt8Status triangulateMatches(
         geometriccamera::GeometricCamera *p_otherCamera_inout,
         const cv::KeyPoint               &keypoint1_in,
         const cv::KeyPoint               &keypoint2_in,
@@ -334,7 +336,8 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
         const Eigen::Vector3f            &translation12_in,
         const float                       sigmaLevel_in,
         const float                       uncertainty_in,
-        Eigen::Vector3f                  &point3d_out);
+        Eigen::Vector3f                  &point3d_out,
+        float                            &parallax_out);
 
     /*!
      * @brief        Image column bounds of the stereo overlap
@@ -409,11 +412,13 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
      * @brief        Returns the Newton-solve tolerance used for
      *               unprojection.
      *
-     * @return       Solver precision.
+     * @param[out] precision_out Solver precision.
+     * @return KANNALA_BRANDT8_STATUS_SUCCESS.
      */
-    float getPrecision()
+    [[nodiscard]] KannalaBrandt8Status getPrecision(float &precision_out)
     {
-        return precision;
+        precision_out = precision;
+        return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
 
     /*!
@@ -427,10 +432,13 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
      *               Non-owning candidate camera; shall be
      *               non-null.
      *
-     * @return       True when both cameras share the type and
-     *               calibration.
+     * @param[out] isEqual_out True when both cameras share the type and
+     * calibration.
+     * @return KANNALA_BRANDT8_STATUS_SUCCESS.
      */
-    bool isEqual(geometriccamera::GeometricCamera *p_camera_in);
+    [[nodiscard]] KannalaBrandt8Status
+        isEqual(geometriccamera::GeometricCamera *p_camera_in,
+                bool                             &isEqual_out);
 
   private:
     /*!
@@ -462,11 +470,12 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
      * @param[out]   point3d_out
      *               Triangulated point.
      */
-    void triangulate(const cv::Point2f                &point1_in,
-                     const cv::Point2f                &point2_in,
-                     const Eigen::Matrix<float, 3, 4> &pose1_in,
-                     const Eigen::Matrix<float, 3, 4> &pose2_in,
-                     Eigen::Vector3f                  &point3d_out);
+    [[nodiscard]] KannalaBrandt8Status
+        triangulate(const cv::Point2f                &point1_in,
+                    const cv::Point2f                &point2_in,
+                    const Eigen::Matrix<float, 3, 4> &pose1_in,
+                    const Eigen::Matrix<float, 3, 4> &pose2_in,
+                    Eigen::Vector3f                  &point3d_out);
 };
 } // namespace vs_graphs::core::camera_models::kannalabrandt8
 

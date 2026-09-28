@@ -45,32 +45,123 @@ namespace utils
 namespace settings
 {
 
-void Settings::readIMU(cv::FileStorage &storage_inout)
+SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
 {
-    bool found;
-    accelWalkNoise = readParameter<float>(storage_inout, "IMU.AccWalk", found);
-    accelNoise     = readParameter<float>(storage_inout, "IMU.NoiseAcc", found);
-    gyroWalkNoise  = readParameter<float>(storage_inout, "IMU.GyroWalk", found);
-    gyroNoise = readParameter<float>(storage_inout, "IMU.NoiseGyro", found);
-    imuErrorThreshold =
-        readParameter<float>(storage_inout, "IMU.Threshold", found);
-    imuSampleRate = readParameter<float>(storage_inout, "IMU.Frequency", found);
+    bool  found;
+    float parameter{};
+    if (readParameter<float>(storage_inout, "IMU.AccWalk", found, parameter) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    accelWalkNoise = parameter;
+    float parameter2{};
+    if (readParameter<float>(storage_inout,
+                             "IMU.NoiseAcc",
+                             found,
+                             parameter2) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    accelNoise = parameter2;
+    float parameter3{};
+    if (readParameter<float>(storage_inout,
+                             "IMU.GyroWalk",
+                             found,
+                             parameter3) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    gyroWalkNoise = parameter3;
+    float parameter4{};
+    if (readParameter<float>(storage_inout,
+                             "IMU.NoiseGyro",
+                             found,
+                             parameter4) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    gyroNoise = parameter4;
+    float parameter5{};
+    if (readParameter<float>(storage_inout,
+                             "IMU.Threshold",
+                             found,
+                             parameter5) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    imuErrorThreshold = parameter5;
+    float parameter6{};
+    if (readParameter<float>(storage_inout,
+                             "IMU.Frequency",
+                             found,
+                             parameter6) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    imuSampleRate = parameter6;
 
-    cv::Mat cvTbc = readParameter<cv::Mat>(storage_inout, "IMU.T_b_c1", found);
-    bodyToCamera  = converter::Converter::toSophus(cvTbc);
+    cv::Mat cvTbc{};
+    if (readParameter<cv::Mat>(storage_inout, "IMU.T_b_c1", found, cvTbc) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    Sophus::SE3<float> sophus{};
+    if (converter::Converter::toSophus(cvTbc, sophus) !=
+        converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+    {
+        // toSophus cannot fail; continue as before.
+    }
+    bodyToCamera = sophus;
 
-    readParameter<int>(storage_inout, "IMU.InsertKFsWhenLost", found, false);
+    int parameter7{};
+    if (readParameter<int>(storage_inout,
+                           "IMU.InsertKFsWhenLost",
+                           found,
+                           parameter7,
+                           false) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
     if (found)
-        shouldInsertKeyFramesWhenLost =
-            (bool)readParameter<int>(storage_inout,
-                                     "IMU.InsertKFsWhenLost",
-                                     found,
-                                     false);
+    {
+        int parameter8{};
+        if (readParameter<int>(storage_inout,
+                               "IMU.InsertKFsWhenLost",
+                               found,
+                               parameter8,
+                               false) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        shouldInsertKeyFramesWhenLost = (bool)parameter8;
+    }
     else
+    {
         shouldInsertKeyFramesWhenLost = true;
+    }
 
-    isFastInitEnabled =
-        readParameter<int>(storage_inout, "IMU.FastInit", found, false) != 0;
+    int parameter9{};
+    if (readParameter<int>(storage_inout,
+                           "IMU.FastInit",
+                           found,
+                           parameter9,
+                           false) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    isFastInitEnabled = parameter9 != 0;
+
+    return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
 } // namespace settings

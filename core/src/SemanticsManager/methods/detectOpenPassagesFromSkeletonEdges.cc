@@ -1095,11 +1095,15 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
          * Creating a prospective room eagerly at detection time (when the
          * passage has 0 associated rooms) leaves a spurious prospective room on
          * passages that later acquire two associated rooms. */
-        GeoSemHelpers::createMapPassage(p_atlas,
-                                        nullptr,
-                                        candidate.p_wall,
-                                        true,
-                                        candidate.crossingPoint);
+        if (GeoSemHelpers::createMapPassage(p_atlas,
+                                            nullptr,
+                                            candidate.p_wall,
+                                            true,
+                                            candidate.crossingPoint) !=
+            GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+        {
+            // createMapPassage cannot fail; continue as before.
+        }
 
         /* createMapPassage() returns void; find the passage it just
          * registered (freshly created, so its centroid matches this

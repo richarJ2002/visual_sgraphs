@@ -46,8 +46,12 @@ void Optimizer::localBundleAdjustment(
     double                     markerImpact_in)
 {
     // System parameters
-    vs_graphs::core::types::SystemParams *p_sysParams =
-        vs_graphs::core::types::SystemParams::getParams();
+    vs_graphs::core::types::SystemParams *p_sysParams = nullptr;
+    if (vs_graphs::core::types::SystemParams::getParams(p_sysParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
 
     // Variables
     fixedKeyFrameCount_inout = 0;
@@ -885,9 +889,15 @@ void Optimizer::localBundleAdjustment(
                 if (p_sysParams->optimization.planePoint.enabled)
                 {
                     // Get the class index of the plane
-                    int clsCloudIndex =
-                        utils::utils::Utils::getClassIdFromPlaneType(
-                            p_mapPlane->getPlaneType());
+                    int clsCloudIndex{};
+                    if (utils::utils::Utils::getClassIdFromPlaneType(
+                            p_mapPlane->getPlaneType(),
+                            clsCloudIndex) !=
+                        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                    {
+                        // getClassIdFromPlaneType cannot fail; continue as
+                        // before.
+                    }
                     if (clsCloudIndex != -1)
                     {
                         // Add the plane-point constraint
@@ -996,14 +1006,30 @@ void Optimizer::localBundleAdjustment(
                         continue;
 
                     // Check if the walls are parallel
-                    if (utils::utils::Utils::arePlanesParallel(p_wall1,
-                                                               p_wall2))
+                    bool arePlanesParallel2{};
+                    if (utils::utils::Utils::arePlanesParallel(
+                            p_wall1,
+                            p_wall2,
+                            arePlanesParallel2) !=
+                        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                    {
+                        // arePlanesParallel cannot fail; continue as before.
+                    }
+                    if (arePlanesParallel2)
                     {
                         // If they are parallel, check if they are facing each
                         // other
+                        bool arePlanesFacingEachOther2{};
                         if (utils::utils::Utils::arePlanesFacingEachOther(
                                 p_wall1,
-                                p_wall2))
+                                p_wall2,
+                                arePlanesFacingEachOther2) !=
+                            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                        {
+                            // arePlanesFacingEachOther cannot fail; continue as
+                            // before.
+                        }
+                        if (arePlanesFacingEachOther2)
                         {
                             // Variables
                             int opId1 = p_wall1->getOpId();
@@ -1046,8 +1072,17 @@ void Optimizer::localBundleAdjustment(
                     }
 
                     // Check if the walls are perpendicular
-                    if (utils::utils::Utils::arePlanesPerpendicular(p_wall1,
-                                                                    p_wall2))
+                    bool arePlanesPerpendicular2{};
+                    if (utils::utils::Utils::arePlanesPerpendicular(
+                            p_wall1,
+                            p_wall2,
+                            arePlanesPerpendicular2) !=
+                        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                    {
+                        // arePlanesPerpendicular cannot fail; continue as
+                        // before.
+                    }
+                    if (arePlanesPerpendicular2)
                     {
                         // Variables
                         int opId1 = p_wall1->getOpId();

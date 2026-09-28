@@ -43,18 +43,22 @@ namespace utils
 namespace utils
 {
 
-void Utils::fuseDuplicateRoomsAfterMerge(
+UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
     Map                                 *p_map_inout,
     const std::vector<semantic::Room *> &importedRooms_in)
 {
     /* Reject an invalid lifecycle request. */
     if (p_map_inout == nullptr || importedRooms_in.empty())
     {
-        return;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    const types::SystemParams *p_systemParameters =
-        types::SystemParams::getParams();
+    types::SystemParams *p_systemParameters = nullptr;
+    if (types::SystemParams::getParams(p_systemParameters) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
 
     const double maximumRoomCentroidDistance_m =
         p_systemParameters != nullptr
@@ -546,13 +550,20 @@ void Utils::fuseDuplicateRoomsAfterMerge(
              mergeOpeningMargin_m,
              mergeMinimumSideDistance_m](semantic::Passage *p_passage)
             {
-                return crossesPassablePassageOpening(
-                    retainedCentroid_World_m,
-                    importedCentroid_World_m,
-                    p_passage,
-                    mergeGroundNormal_World,
-                    mergeOpeningMargin_m,
-                    mergeMinimumSideDistance_m);
+                bool crossesOpening{};
+                if (crossesPassablePassageOpening(retainedCentroid_World_m,
+                                                  importedCentroid_World_m,
+                                                  p_passage,
+                                                  mergeGroundNormal_World,
+                                                  mergeOpeningMargin_m,
+                                                  mergeMinimumSideDistance_m,
+                                                  crossesOpening) !=
+                    UtilsStatus::UTILS_STATUS_SUCCESS)
+                {
+                    // crossesPassablePassageOpening cannot fail; continue as
+                    // before.
+                }
+                return crossesOpening;
             });
 
         if (roomsAreSeparatedByPassage)
@@ -629,13 +640,21 @@ void Utils::fuseDuplicateRoomsAfterMerge(
 
             for (vs_graphs::core::semantic::Passage *p_passage : mergePassages)
             {
-                if (p_passage != nullptr &&
+                bool crossesOpening{};
+                if ((p_passage != nullptr) &&
                     crossesPassablePassageOpening(retainedCentroid_World_m,
                                                   importedWallCentroid_World_m,
                                                   p_passage,
                                                   mergeGroundNormal_World,
                                                   mergeOpeningMargin_m,
-                                                  mergeMinimumSideDistance_m))
+                                                  mergeMinimumSideDistance_m,
+                                                  crossesOpening) !=
+                        UtilsStatus::UTILS_STATUS_SUCCESS)
+                {
+                    // crossesPassablePassageOpening cannot fail; continue as
+                    // before.
+                }
+                if (p_passage != nullptr && crossesOpening)
                 {
                     p_separatingPassage = p_passage;
                     break;
@@ -973,6 +992,8 @@ void Utils::fuseDuplicateRoomsAfterMerge(
                   << bestRetainedRoomId2 << " (centroid distance "
                   << bestCentroidDistance_m << " m)." << std::endl;
     }
+
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

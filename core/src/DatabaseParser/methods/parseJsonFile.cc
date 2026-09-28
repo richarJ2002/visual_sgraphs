@@ -25,7 +25,8 @@ namespace vs_graphs
 namespace core
 {
 
-Json DBParser::parseJsonFile(std::string jsonFilePath_in)
+DBParserStatus DBParser::parseJsonFile(std::string jsonFilePath_in,
+                                       Json       &json_out)
 {
     try
     {
@@ -36,7 +37,8 @@ Json DBParser::parseJsonFile(std::string jsonFilePath_in)
         // Parsing the JSON file to get the envrionment data
         Json     environmentData = Json::parse(jsonFile);
         // Return parsed data
-        return environmentData;
+        json_out = environmentData;
+        return DBParserStatus::DBPARSER_STATUS_SUCCESS;
     }
     catch (Json::parse_error &ex)
     {

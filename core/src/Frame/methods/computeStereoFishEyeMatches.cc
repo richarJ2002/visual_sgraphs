@@ -88,8 +88,8 @@ void Frame::computeStereoFishEyeMatches()
                     [keyPoints[(*matchIt)[0].queryIdx + monoLeft].octave],
                 sigma2 = levelSigmaSquared
                     [keyPointsRight[(*matchIt)[0].trainIdx + monoRight].octave];
-            float depth =
-                static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
+            float depth{};
+            if (static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
                     p_camera)
                     ->triangulateMatches(
                         p_camera2,
@@ -99,7 +99,13 @@ void Frame::computeStereoFishEyeMatches()
                         translationTlr,
                         sigma1,
                         sigma2,
-                        p3D);
+                        p3D,
+                        depth) !=
+                camera_models::kannalabrandt8::KannalaBrandt8Status::
+                    KANNALA_BRANDT8_STATUS_SUCCESS)
+            {
+                // triangulateMatches cannot fail; continue as before.
+            }
             if (depth > 0.0001f)
             {
                 leftToRightMatches[(*matchIt)[0].queryIdx + monoLeft] =

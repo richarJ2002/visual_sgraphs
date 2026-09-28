@@ -374,10 +374,15 @@ class Plane
 
         planeCloud = std::make_shared<pcl::PointCloud<pcl::PointXYZRGBA>>();
 
+        types::SystemParams *p_params = nullptr;
+        if (types::SystemParams::getParams(p_params) !=
+            types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+        {
+            // getParams cannot fail; continue as before.
+        }
         p_octree = boost::make_shared<
             pcl::octree::OctreePointCloudSearch<pcl::PointXYZRGBA>>(
-            types::SystemParams::getParams()
-                ->refineMapPoints.octree.resolution);
+            p_params->refineMapPoints.octree.resolution);
 
         minPlaneU = std::numeric_limits<double>::max();
         maxPlaneU = std::numeric_limits<double>::lowest();

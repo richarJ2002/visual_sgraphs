@@ -94,8 +94,12 @@ int LoopClosing::findMatchesByProjection(
         }
     }
 
-    Sophus::Sim3f correctedPose =
-        utils::converter::Converter::toSophus(g2oScw_in);
+    Sophus::Sim3f correctedPose{};
+    if (utils::converter::Converter::toSophus(g2oScw_in, correctedPose) !=
+        utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+    {
+        // toSophus cannot fail; continue as before.
+    }
     ORBmatcher matcher(0.9, true);
 
     matchedMapPoints_out.resize(

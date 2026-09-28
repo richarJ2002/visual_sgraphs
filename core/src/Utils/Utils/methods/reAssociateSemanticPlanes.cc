@@ -42,14 +42,19 @@ namespace utils
 namespace utils
 {
 
-void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
+UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 {
     if (p_atlas_in == nullptr)
     {
-        return;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    types::SystemParams *p_systemParams = types::SystemParams::getParams();
+    types::SystemParams *p_systemParams = nullptr;
+    if (types::SystemParams::getParams(p_systemParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
 
     bool mergedPlaneInPass = true;
 
@@ -118,14 +123,26 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                             otherEquation_World *= -1.0;
                         }
 
-                        const ObservationSideEvidence candidateObservationSide =
-                            getMedianObservationSide_World_m(
+                        ObservationSideEvidence candidateObservationSide{};
+                        if (getMedianObservationSide_World_m(
                                 p_candidatePlane,
-                                candidateEquation_World);
-                        const ObservationSideEvidence otherObservationSide =
-                            getMedianObservationSide_World_m(
+                                candidateEquation_World,
+                                candidateObservationSide) !=
+                            UtilsStatus::UTILS_STATUS_SUCCESS)
+                        {
+                            // getMedianObservationSide_World_m cannot fail;
+                            // continue as before.
+                        }
+                        ObservationSideEvidence otherObservationSide{};
+                        if (getMedianObservationSide_World_m(
                                 p_otherPlane,
-                                otherEquation_World);
+                                otherEquation_World,
+                                otherObservationSide) !=
+                            UtilsStatus::UTILS_STATUS_SUCCESS)
+                        {
+                            // getMedianObservationSide_World_m cannot fail;
+                            // continue as before.
+                        }
 
                         if (candidateObservationSide.isAmbiguous ||
                             otherObservationSide.isAmbiguous)
@@ -173,14 +190,20 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             const geometric::Plane::GeometrySnapshot
                 candidateAssociationGeometry =
                     p_candidatePlane->getGeometrySnapshot();
-            const int matchedPlaneId = associatePlanes(
-                compatiblePlanes,
-                g2o::Plane3D(candidateAssociationGeometry.equation_World),
-                candidateAssociationGeometry.supportCloud,
-                Eigen::Matrix4d::Identity(),
-                p_candidatePlane->getPlaneType(),
-                p_systemParams->semSeg.reassociate.associationThresh,
-                maximumFiniteCloudDistance_m);
+            int matchedPlaneId{};
+            if (associatePlanes(
+                    compatiblePlanes,
+                    g2o::Plane3D(candidateAssociationGeometry.equation_World),
+                    candidateAssociationGeometry.supportCloud,
+                    Eigen::Matrix4d::Identity(),
+                    p_candidatePlane->getPlaneType(),
+                    p_systemParams->semSeg.reassociate.associationThresh,
+                    matchedPlaneId,
+                    maximumFiniteCloudDistance_m) !=
+                UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // associatePlanes cannot fail; continue as before.
+            }
 
             if (matchedPlaneId < 0)
             {
@@ -259,7 +282,13 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 p_retainedPlane->mergeObservation(p_keyFrame, observation);
             }
 
-            GeoSemHelpers::refitMappedPlaneFromCloud(p_retainedPlane);
+            bool wasPlaneRefit{};
+            if (GeoSemHelpers::refitMappedPlaneFromCloud(p_retainedPlane,
+                                                         wasPlaneRefit) !=
+                GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+            {
+                // refitMappedPlaneFromCloud cannot fail; continue as before.
+            }
             const geometric::Plane::PlaneVariant retainedPlaneType =
                 p_retainedPlane->getPlaneType();
 
@@ -358,6 +387,8 @@ void Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             break;
         }
     }
+
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

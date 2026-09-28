@@ -6623,10 +6623,16 @@ static void getMissionHealthService(
             p_slamSystem->isSemanticReportCacheAvailable();
         const vs_graphs::core::semantic::SemanticReportCacheEntry entry =
             p_slamSystem->getSemanticReportCacheEntry();
-        topology = vs_graphs::core::augmentMissionHealthTopologyJsonWithSemantics(
-            std::move(topology),
-            entry,
-            cacheAvailable);
+        nlohmann::json augmentedJson{};
+        if (vs_graphs::core::augmentMissionHealthTopologyJsonWithSemantics(
+                std::move(topology), entry, cacheAvailable, augmentedJson) !=
+            vs_graphs::core::MissionHealthTopologyJsonStatus::
+                MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS)
+        {
+            // augmentMissionHealthTopologyJsonWithSemantics cannot fail;
+            // continue as before.
+        }
+        topology = std::move(augmentedJson);
 
         response_out->topology_json = topology.dump();
     }
@@ -6741,7 +6747,12 @@ void setVoxbloxSkeletonCluster(
     }
 
     /* Obtain the configured room-segmentation parameters */
-    const auto *systemParameters = vs_graphs::core::types::SystemParams::getParams();
+    vs_graphs::core::types::SystemParams *systemParameters = nullptr;
+    if (vs_graphs::core::types::SystemParams::getParams(systemParameters) !=
+        vs_graphs::core::types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
 
     if (systemParameters == nullptr)
     {

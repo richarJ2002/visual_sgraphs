@@ -36,13 +36,15 @@ namespace utils
 namespace utils
 {
 
-bool Utils::arePlanesFacingEachOther(
+UtilsStatus Utils::arePlanesFacingEachOther(
     const vs_graphs::core::geometric::Plane *p_plane1_in,
-    const vs_graphs::core::geometric::Plane *p_plane2_in)
+    const vs_graphs::core::geometric::Plane *p_plane2_in,
+    bool                                    &arePlanesFacingEachOther_out)
 {
     if (p_plane1_in == nullptr || p_plane2_in == nullptr)
     {
-        return false;
+        arePlanesFacingEachOther_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     Eigen::Vector4d equation1 = p_plane1_in->getGlobalEquation().coeffs();
@@ -54,7 +56,8 @@ bool Utils::arePlanesFacingEachOther(
     if (!std::isfinite(normalNorm1) || !std::isfinite(normalNorm2) ||
         normalNorm1 < 1e-8 || normalNorm2 < 1e-8)
     {
-        return false;
+        arePlanesFacingEachOther_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     equation1 /= normalNorm1;
@@ -63,12 +66,19 @@ bool Utils::arePlanesFacingEachOther(
     const double normalAlignment =
         std::abs(equation1.head<3>().dot(equation2.head<3>()));
 
-    const double minimumParallelAlignment = std::abs(
-        types::SystemParams::getParams()->roomSeg.planeFacingDotThresh);
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    const double minimumParallelAlignment =
+        std::abs(p_params->roomSeg.planeFacingDotThresh);
 
     if (normalAlignment < minimumParallelAlignment)
     {
-        return false;
+        arePlanesFacingEachOther_out = false;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     if (equation1.head<3>().dot(equation2.head<3>()) < 0.0)
@@ -84,7 +94,8 @@ bool Utils::arePlanesFacingEachOther(
      * can always be oriented toward the space between them, so facing is a
      * relationship between their geometry rather than their stored signs.
      */
-    return perpendicularSeparation_m > 1e-3;
+    arePlanesFacingEachOther_out = perpendicularSeparation_m > 1e-3;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

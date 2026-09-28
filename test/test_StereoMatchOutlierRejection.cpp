@@ -25,7 +25,9 @@ TEST(StereoMatchOutlierRejection, NoOpsOnAnEmptyMatchList)
     std::vector<float>               mvuRight(3, -1.0f);
     std::vector<float>               mvDepth(3, -1.0f);
 
-    rejectOutlierStereoMatches(vDistIdx, mvuRight, mvDepth);
+    ASSERT_EQ((rejectOutlierStereoMatches(vDistIdx, mvuRight, mvDepth)),
+              StereoMatchOutlierRejectionStatus::
+                  STEREO_MATCH_OUTLIER_REJECTION_STATUS_SUCCESS);
 
     EXPECT_EQ(mvuRight, std::vector<float>(3, -1.0f));
     EXPECT_EQ(mvDepth, std::vector<float>(3, -1.0f));
@@ -42,7 +44,9 @@ TEST(StereoMatchOutlierRejection, RejectsMatchesFarAboveTheMedianDistance)
     std::vector<float>               mvuRight(4, 5.0f);
     std::vector<float>               mvDepth(4, 2.0f);
 
-    rejectOutlierStereoMatches(vDistIdx, mvuRight, mvDepth);
+    ASSERT_EQ((rejectOutlierStereoMatches(vDistIdx, mvuRight, mvDepth)),
+              StereoMatchOutlierRejectionStatus::
+                  STEREO_MATCH_OUTLIER_REJECTION_STATUS_SUCCESS);
 
     EXPECT_EQ(mvuRight[2], -1.0f);
     EXPECT_EQ(mvDepth[2], -1.0f);

@@ -42,16 +42,27 @@ namespace utils
 namespace converter
 {
 
-Sophus::SE3<float> Converter::toSophus(const cv::Mat &transform_in)
+ConverterStatus Converter::toSophus(const cv::Mat      &transform_in,
+                                    Sophus::SE3<float> &sophus_out)
 {
-    Eigen::Matrix<double, 3, 3> eigenMatrix =
-        toMatrix3d(transform_in.rowRange(0, 3).colRange(0, 3));
+    Eigen::Matrix<double, 3, 3> eigenMatrix{};
+    if (toMatrix3d(transform_in.rowRange(0, 3).colRange(0, 3), eigenMatrix) !=
+        ConverterStatus::CONVERTER_STATUS_SUCCESS)
+    {
+        // toMatrix3d cannot fail; continue as before.
+    }
     Eigen::Quaternionf quaternion(eigenMatrix.cast<float>());
 
-    Eigen::Matrix<float, 3, 1> translation =
-        toVector3d(transform_in.rowRange(0, 3).col(3)).cast<float>();
+    Eigen::Matrix<double, 3, 1> vector3d{};
+    if (toVector3d(transform_in.rowRange(0, 3).col(3), vector3d) !=
+        ConverterStatus::CONVERTER_STATUS_SUCCESS)
+    {
+        // toVector3d cannot fail; continue as before.
+    }
+    Eigen::Matrix<float, 3, 1> translation = vector3d.cast<float>();
 
-    return Sophus::SE3<float>(quaternion, translation);
+    sophus_out = Sophus::SE3<float>(quaternion, translation);
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

@@ -23,9 +23,10 @@ namespace vs_graphs
 namespace core
 {
 
-std::pair<bool, std::string> GeoSemHelpers::checkIfMarkerIsDoorway(
+GeoSemHelpersStatus GeoSemHelpers::checkIfMarkerIsDoorway(
     const int                                     &markerId_in,
-    std::vector<vs_graphs::core::semantic::Room *> envRooms_in)
+    std::vector<vs_graphs::core::semantic::Room *> envRooms_in,
+    std::pair<bool, std::string>                  &doorwayMatch_out)
 {
     bool        isDoorway = true;
     std::string name      = "";
@@ -52,7 +53,8 @@ std::pair<bool, std::string> GeoSemHelpers::checkIfMarkerIsDoorway(
         }
     }
     // Returning
-    return std::make_pair(isDoorway, name);
+    doorwayMatch_out = std::make_pair(isDoorway, name);
+    return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
 } // namespace core

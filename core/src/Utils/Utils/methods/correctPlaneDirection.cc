@@ -34,13 +34,20 @@ namespace utils
 namespace utils
 {
 
-Eigen::Vector4d Utils::correctPlaneDirection(const Eigen::Vector4d &plane_in)
+UtilsStatus Utils::correctPlaneDirection(const Eigen::Vector4d &plane_in,
+                                         Eigen::Vector4d &planeDirection_out)
 {
     // Check if the transformation is needed
     if (plane_in(3) > 0)
-        return -plane_in;
+    {
+        planeDirection_out = -plane_in;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
     else
-        return plane_in;
+    {
+        planeDirection_out = plane_in;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
 }
 
 } // namespace utils

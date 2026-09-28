@@ -43,9 +43,20 @@ void System::parseJsonDatabase(string jsonFilePath_in)
     // Creating an object of the database loader
     vs_graphs::core::DBParser parser;
     // Load JSON file
-    Json                      envData = parser.parseJsonFile(jsonFilePath_in);
+    Json                      envData{};
+    if (parser.parseJsonFile(jsonFilePath_in, envData) !=
+        DBParserStatus::DBPARSER_STATUS_SUCCESS)
+    {
+        // parseJsonFile cannot fail; continue as before.
+    }
     // Getting semantic entities
-    envRooms = parser.getEnvironmentRooms(envData);
+    std::vector<semantic::Room *> parserEnvironmentRooms{};
+    if (parser.getEnvironmentRooms(envData, parserEnvironmentRooms) !=
+        DBParserStatus::DBPARSER_STATUS_SUCCESS)
+    {
+        // getEnvironmentRooms cannot fail; continue as before.
+    }
+    envRooms = parserEnvironmentRooms;
     // Printing the success message
     std::cout << "- JSON loaded and candidates created!\n";
 }

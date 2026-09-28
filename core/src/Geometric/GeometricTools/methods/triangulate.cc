@@ -25,11 +25,12 @@ namespace vs_graphs
 namespace core
 {
 
-bool GeometricTools::triangulate(Eigen::Vector3f            &x_c1,
-                                 Eigen::Vector3f            &x_c2,
-                                 Eigen::Matrix<float, 3, 4> &Tc1w_in,
-                                 Eigen::Matrix<float, 3, 4> &Tc2w_in,
-                                 Eigen::Vector3f            &x3D_inout)
+GeometricToolsStatus
+    GeometricTools::triangulate(Eigen::Vector3f            &x_c1,
+                                Eigen::Vector3f            &x_c2,
+                                Eigen::Matrix<float, 3, 4> &Tc1w_in,
+                                Eigen::Matrix<float, 3, 4> &Tc2w_in,
+                                Eigen::Vector3f            &x3D_inout)
 {
     Eigen::Matrix4f A;
     A.block<1, 4>(0, 0) =
@@ -46,12 +47,12 @@ bool GeometricTools::triangulate(Eigen::Vector3f            &x_c1,
     Eigen::Vector4f x3Dh = svd.matrixV().col(3);
 
     if (x3Dh(3) == 0)
-        return false;
+        return GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_NUMERICAL_FAILURE;
 
     // Euclidean coordinates
     x3D_inout = x3Dh.head(3) / x3Dh(3);
 
-    return true;
+    return GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS;
 }
 
 } // namespace core

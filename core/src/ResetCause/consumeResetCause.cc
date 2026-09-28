@@ -18,19 +18,27 @@ namespace core
 extern std::mutex                                            resetCauseMutex;
 extern std::unordered_map<const void *, ResetCauseRetention> resetCausesByOwner;
 
-ResetCause consumeResetCause(const void *const p_owner_in)
+ResetCauseStatus consumeResetCause(const void *const p_owner_in,
+                                   ResetCause       &resetCause_out)
 {
     const std::lock_guard<std::mutex> lock(resetCauseMutex);
     const std::unordered_map<const void *, ResetCauseRetention>::iterator
         entry = resetCausesByOwner.find(p_owner_in);
     if (entry == resetCausesByOwner.end())
     {
-        return ResetCause::UNATTRIBUTED_PUBLIC_REQUEST;
+        resetCause_out = ResetCause::UNATTRIBUTED_PUBLIC_REQUEST;
+        return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;
     }
 
-    const ResetCause cause = entry->second.consume();
+    ResetCause cause{};
+    if (entry->second.consume(cause) !=
+        ResetCauseRetentionStatus::RESET_CAUSE_RETENTION_STATUS_SUCCESS)
+    {
+        // consume cannot fail; continue as before.
+    }
     resetCausesByOwner.erase(entry);
-    return cause;
+    resetCause_out = cause;
+    return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;
 }
 
 } // namespace core

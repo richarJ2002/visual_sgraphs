@@ -42,10 +42,12 @@ namespace utils
 namespace converter
 {
 
-g2o::SE3Quat Converter::toSE3Quat(const Sophus::SE3f &transform_in)
+ConverterStatus Converter::toSE3Quat(const Sophus::SE3f &transform_in,
+                                     g2o::SE3Quat       &se3Quat_out)
 {
-    return g2o::SE3Quat(transform_in.unit_quaternion().cast<double>(),
-                        transform_in.translation().cast<double>());
+    se3Quat_out = g2o::SE3Quat(transform_in.unit_quaternion().cast<double>(),
+                               transform_in.translation().cast<double>());
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

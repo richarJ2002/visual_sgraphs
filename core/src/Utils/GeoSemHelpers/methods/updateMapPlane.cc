@@ -26,7 +26,7 @@ namespace vs_graphs
 namespace core
 {
 
-void GeoSemHelpers::updateMapPlane(
+GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
     Atlas                                          *p_atlas_in,
     vs_graphs::core::KeyFrame                      *p_keyFrame_inout,
     const g2o::Plane3D                              estimatedPlane_in,
@@ -48,7 +48,13 @@ void GeoSemHelpers::updateMapPlane(
     // the observation of the plane point cloud (measurement)
     Eigen::Matrix4d pointPlaneConstraintMatrix;
     pointPlaneConstraintMatrix.setZero();
-    if (types::SystemParams::getParams()->optimization.planePoint.enabled)
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    if (p_params->optimization.planePoint.enabled)
     {
         for (auto &point : p_planeCloud_in->points)
         {
@@ -89,16 +95,29 @@ void GeoSemHelpers::updateMapPlane(
          * @note        Without refitting, the point cloud and centroid change
          *              but the original plane equation becomes stale.
          */
-        refitMappedPlaneFromCloud(p_currentPlane);
+        bool wasPlaneRefit{};
+        if (refitMappedPlaneFromCloud(p_currentPlane, wasPlaneRefit) !=
+            GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+        {
+            // refitMappedPlaneFromCloud cannot fail; continue as before.
+        }
     }
 
-    if (types::SystemParams::getParams()->optimization.planeMapPoint.enabled)
+    types::SystemParams *p_params2 = nullptr;
+    if (types::SystemParams::getParams(p_params2) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    if (p_params2->optimization.planeMapPoint.enabled)
     {
         for (const auto &mapPoint : p_keyFrame_inout->getMapPoints())
             if (p_currentPlane->isPointinPlaneCloud(
                     mapPoint->getWorldPos().cast<double>()))
                 p_currentPlane->setMapPoints(mapPoint);
     }
+
+    return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
 } // namespace core

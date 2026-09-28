@@ -50,7 +50,7 @@ namespace settings
 
 using namespace std;
 
-void Settings::readCamera2(cv::FileStorage &storage_inout)
+SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
 {
     bool          found;
     vector<float> calibrations;
@@ -59,10 +59,30 @@ void Settings::readCamera2(cv::FileStorage &storage_inout)
         isRectificationNeeded = true;
 
         // Read intrinsic parameters
-        float fx = readParameter<float>(storage_inout, "Camera2.fx", found);
-        float fy = readParameter<float>(storage_inout, "Camera2.fy", found);
-        float cx = readParameter<float>(storage_inout, "Camera2.cx", found);
-        float cy = readParameter<float>(storage_inout, "Camera2.cy", found);
+        float fx{};
+        if (readParameter<float>(storage_inout, "Camera2.fx", found, fx) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        float fy{};
+        if (readParameter<float>(storage_inout, "Camera2.fy", found, fy) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        float cx{};
+        if (readParameter<float>(storage_inout, "Camera2.cx", found, cx) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        float cy{};
+        if (readParameter<float>(storage_inout, "Camera2.cy", found, cy) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
 
         calibrations = {fx, fy, cx, cy};
 
@@ -71,42 +91,140 @@ void Settings::readCamera2(cv::FileStorage &storage_inout)
             new camera_models::pinhole::Pinhole(calibrations);
 
         // Check if it is a distorted Pinhole
-        readParameter<float>(storage_inout, "Camera2.k1", found, false);
+        float parameter{};
+        if (readParameter<float>(storage_inout,
+                                 "Camera2.k1",
+                                 found,
+                                 parameter,
+                                 false) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
         if (found)
         {
-            readParameter<float>(storage_inout, "Camera2.k3", found, false);
+            float parameter2{};
+            if (readParameter<float>(storage_inout,
+                                     "Camera2.k3",
+                                     found,
+                                     parameter2,
+                                     false) !=
+                SettingsStatus::SETTINGS_STATUS_SUCCESS)
+            {
+                // readParameter cannot fail; continue as before.
+            }
             if (found)
             {
                 pinholeDistortion2.resize(5);
-                pinholeDistortion2[4] =
-                    readParameter<float>(storage_inout, "Camera2.k3", found);
+                float parameter3{};
+                if (readParameter<float>(storage_inout,
+                                         "Camera2.k3",
+                                         found,
+                                         parameter3) !=
+                    SettingsStatus::SETTINGS_STATUS_SUCCESS)
+                {
+                    // readParameter cannot fail; continue as before.
+                }
+                pinholeDistortion2[4] = parameter3;
             }
             else
             {
                 pinholeDistortion2.resize(4);
             }
-            pinholeDistortion2[0] =
-                readParameter<float>(storage_inout, "Camera2.k1", found);
-            pinholeDistortion2[1] =
-                readParameter<float>(storage_inout, "Camera2.k2", found);
-            pinholeDistortion2[2] =
-                readParameter<float>(storage_inout, "Camera2.p1", found);
-            pinholeDistortion2[3] =
-                readParameter<float>(storage_inout, "Camera2.p2", found);
+            float parameter4{};
+            if (readParameter<float>(storage_inout,
+                                     "Camera2.k1",
+                                     found,
+                                     parameter4) !=
+                SettingsStatus::SETTINGS_STATUS_SUCCESS)
+            {
+                // readParameter cannot fail; continue as before.
+            }
+            pinholeDistortion2[0] = parameter4;
+            float parameter5{};
+            if (readParameter<float>(storage_inout,
+                                     "Camera2.k2",
+                                     found,
+                                     parameter5) !=
+                SettingsStatus::SETTINGS_STATUS_SUCCESS)
+            {
+                // readParameter cannot fail; continue as before.
+            }
+            pinholeDistortion2[1] = parameter5;
+            float parameter6{};
+            if (readParameter<float>(storage_inout,
+                                     "Camera2.p1",
+                                     found,
+                                     parameter6) !=
+                SettingsStatus::SETTINGS_STATUS_SUCCESS)
+            {
+                // readParameter cannot fail; continue as before.
+            }
+            pinholeDistortion2[2] = parameter6;
+            float parameter7{};
+            if (readParameter<float>(storage_inout,
+                                     "Camera2.p2",
+                                     found,
+                                     parameter7) !=
+                SettingsStatus::SETTINGS_STATUS_SUCCESS)
+            {
+                // readParameter cannot fail; continue as before.
+            }
+            pinholeDistortion2[3] = parameter7;
         }
     }
     else if (cameraModel == CameraType::KANNALA_BRANDT)
     {
         // Read intrinsic parameters
-        float fx = readParameter<float>(storage_inout, "Camera2.fx", found);
-        float fy = readParameter<float>(storage_inout, "Camera2.fy", found);
-        float cx = readParameter<float>(storage_inout, "Camera2.cx", found);
-        float cy = readParameter<float>(storage_inout, "Camera2.cy", found);
+        float fx{};
+        if (readParameter<float>(storage_inout, "Camera2.fx", found, fx) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        float fy{};
+        if (readParameter<float>(storage_inout, "Camera2.fy", found, fy) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        float cx{};
+        if (readParameter<float>(storage_inout, "Camera2.cx", found, cx) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        float cy{};
+        if (readParameter<float>(storage_inout, "Camera2.cy", found, cy) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
 
-        float k0 = readParameter<float>(storage_inout, "Camera2.k1", found);
-        float k1 = readParameter<float>(storage_inout, "Camera2.k2", found);
-        float k2 = readParameter<float>(storage_inout, "Camera2.k3", found);
-        float k3 = readParameter<float>(storage_inout, "Camera2.k4", found);
+        float k0{};
+        if (readParameter<float>(storage_inout, "Camera2.k1", found, k0) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        float k1{};
+        if (readParameter<float>(storage_inout, "Camera2.k2", found, k1) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        float k2{};
+        if (readParameter<float>(storage_inout, "Camera2.k3", found, k2) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        float k3{};
+        if (readParameter<float>(storage_inout, "Camera2.k4", found, k3) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
 
         calibrations = {fx, fy, cx, cy, k0, k1, k2, k3};
 
@@ -115,11 +233,24 @@ void Settings::readCamera2(cv::FileStorage &storage_inout)
         p_originalCalibration2 =
             new camera_models::kannalabrandt8::KannalaBrandt8(calibrations);
 
-        int colBegin = readParameter<int>(storage_inout,
-                                          "Camera2.overlappingBegin",
-                                          found);
-        int colEnd =
-            readParameter<int>(storage_inout, "Camera2.overlappingEnd", found);
+        int colBegin{};
+        if (readParameter<int>(storage_inout,
+                               "Camera2.overlappingBegin",
+                               found,
+                               colBegin) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        int colEnd{};
+        if (readParameter<int>(storage_inout,
+                               "Camera2.overlappingEnd",
+                               found,
+                               colEnd) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
         vector<int> overlappings = {colBegin, colEnd};
 
         static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
@@ -130,23 +261,69 @@ void Settings::readCamera2(cv::FileStorage &storage_inout)
     // Load stereo extrinsic calibration
     if (cameraModel == CameraType::RECTIFIED)
     {
-        stereoBaseline = readParameter<float>(storage_inout, "Stereo.b", found);
-        baselineFocal  = stereoBaseline * p_calibration1->getParameter(0);
+        float parameter8{};
+        if (readParameter<float>(storage_inout,
+                                 "Stereo.b",
+                                 found,
+                                 parameter8) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        stereoBaseline = parameter8;
+        float calibration1Parameter{};
+        if (p_calibration1->getParameter(0, calibration1Parameter) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getParameter cannot fail; continue as before.
+        }
+        baselineFocal = stereoBaseline * calibration1Parameter;
     }
     else
     {
-        cv::Mat cvTlr =
-            readParameter<cv::Mat>(storage_inout, "Stereo.T_c1_c2", found);
-        stereoTransform = converter::Converter::toSophus(cvTlr);
+        cv::Mat cvTlr{};
+        if (readParameter<cv::Mat>(storage_inout,
+                                   "Stereo.T_c1_c2",
+                                   found,
+                                   cvTlr) !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readParameter cannot fail; continue as before.
+        }
+        Sophus::SE3<float> sophus{};
+        if (converter::Converter::toSophus(cvTlr, sophus) !=
+            converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+        {
+            // toSophus cannot fail; continue as before.
+        }
+        stereoTransform = sophus;
 
         // TODO: also search for Trl and invert if necessary
 
         stereoBaseline = stereoTransform.translation().norm();
-        baselineFocal  = stereoBaseline * p_calibration1->getParameter(0);
+        float calibration1Parameter2{};
+        if (p_calibration1->getParameter(0, calibration1Parameter2) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getParameter cannot fail; continue as before.
+        }
+        baselineFocal = stereoBaseline * calibration1Parameter2;
     }
 
-    depthThreshold =
-        readParameter<float>(storage_inout, "Stereo.ThDepth", found);
+    float parameter9{};
+    if (readParameter<float>(storage_inout,
+                             "Stereo.ThDepth",
+                             found,
+                             parameter9) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    depthThreshold = parameter9;
+
+    return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
 } // namespace settings

@@ -211,7 +211,12 @@ void Frame::computeStereoMatches()
         }
     }
 
-    rejectOutlierStereoMatches(distanceIndices, uRight, depths);
+    if (rejectOutlierStereoMatches(distanceIndices, uRight, depths) !=
+        StereoMatchOutlierRejectionStatus::
+            STEREO_MATCH_OUTLIER_REJECTION_STATUS_SUCCESS)
+    {
+        // rejectOutlierStereoMatches cannot fail; continue as before.
+    }
 }
 
 } // namespace core

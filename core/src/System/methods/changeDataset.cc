@@ -34,15 +34,23 @@ void System::changeDataset()
 {
     if (p_atlas->getCurrentMap()->getKeyFrameCount() < 12)
     {
-        reportResetAttribution(ResetCause::DATASET_CHANGE_SMALL_MAP,
-                               ResetAction::RESET_ACTIVE_MAP_EXECUTION);
+        if (reportResetAttribution(ResetCause::DATASET_CHANGE_SMALL_MAP,
+                                   ResetAction::RESET_ACTIVE_MAP_EXECUTION) !=
+            ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+        {
+            // reportResetAttribution cannot fail; continue as before.
+        }
         p_tracker->resetActiveMap();
         resetCount.fetch_add(1U, std::memory_order_relaxed);
     }
     else
     {
-        reportResetAttribution(ResetCause::DATASET_CHANGE_NEW_MAP,
-                               ResetAction::CREATE_MAP_EXECUTION);
+        if (reportResetAttribution(ResetCause::DATASET_CHANGE_NEW_MAP,
+                                   ResetAction::CREATE_MAP_EXECUTION) !=
+            ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
+        {
+            // reportResetAttribution cannot fail; continue as before.
+        }
         p_tracker->createMapInAtlas();
     }
 

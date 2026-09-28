@@ -40,7 +40,8 @@ namespace core
 {
 namespace types
 {
-void SystemParams::setParams(const std::string &configurationFilePath_in)
+SystemParamsStatus
+    SystemParams::setParams(const std::string &configurationFilePath_in)
 {
     VSLAM_LOG_INFO("[SysParams] Loading system parameters from %s",
                    configurationFilePath_in.c_str());
@@ -619,6 +620,8 @@ void SystemParams::setParams(const std::string &configurationFilePath_in)
                         exception.what());
         exit(1);
     }
+
+    return SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS;
 }
 } // namespace types
 } // namespace core

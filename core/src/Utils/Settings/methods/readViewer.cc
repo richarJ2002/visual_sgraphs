@@ -43,37 +43,126 @@ namespace utils
 namespace settings
 {
 
-void Settings::readViewer(cv::FileStorage &storage_inout)
+SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
 {
     bool found;
 
-    viewerKeyFrameSize =
-        readParameter<float>(storage_inout, "Viewer.KeyFrameSize", found);
-    viewerKeyFrameLineWidth =
-        readParameter<float>(storage_inout, "Viewer.KeyFrameLineWidth", found);
-    viewerGraphLineWidth =
-        readParameter<float>(storage_inout, "Viewer.GraphLineWidth", found);
-    viewerPointSize =
-        readParameter<float>(storage_inout, "Viewer.PointSize", found);
-    viewerCameraSize =
-        readParameter<float>(storage_inout, "Viewer.CameraSize", found);
-    viewerCameraLineWidth =
-        readParameter<float>(storage_inout, "Viewer.CameraLineWidth", found);
-    viewerViewPointX =
-        readParameter<float>(storage_inout, "Viewer.ViewpointX", found);
-    viewerViewPointY =
-        readParameter<float>(storage_inout, "Viewer.ViewpointY", found);
-    viewerViewPointZ =
-        readParameter<float>(storage_inout, "Viewer.ViewpointZ", found);
-    viewerViewPointF =
-        readParameter<float>(storage_inout, "Viewer.ViewpointF", found);
-    viewerImageScale = readParameter<float>(storage_inout,
-                                            "Viewer.imageViewScale",
-                                            found,
-                                            false);
+    float parameter{};
+    if (readParameter<float>(storage_inout,
+                             "Viewer.KeyFrameSize",
+                             found,
+                             parameter) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    viewerKeyFrameSize = parameter;
+    float parameter2{};
+    if (readParameter<float>(storage_inout,
+                             "Viewer.KeyFrameLineWidth",
+                             found,
+                             parameter2) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    viewerKeyFrameLineWidth = parameter2;
+    float parameter3{};
+    if (readParameter<float>(storage_inout,
+                             "Viewer.GraphLineWidth",
+                             found,
+                             parameter3) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    viewerGraphLineWidth = parameter3;
+    float parameter4{};
+    if (readParameter<float>(storage_inout,
+                             "Viewer.PointSize",
+                             found,
+                             parameter4) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    viewerPointSize = parameter4;
+    float parameter5{};
+    if (readParameter<float>(storage_inout,
+                             "Viewer.CameraSize",
+                             found,
+                             parameter5) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    viewerCameraSize = parameter5;
+    float parameter6{};
+    if (readParameter<float>(storage_inout,
+                             "Viewer.CameraLineWidth",
+                             found,
+                             parameter6) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    viewerCameraLineWidth = parameter6;
+    float parameter7{};
+    if (readParameter<float>(storage_inout,
+                             "Viewer.ViewpointX",
+                             found,
+                             parameter7) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    viewerViewPointX = parameter7;
+    float parameter8{};
+    if (readParameter<float>(storage_inout,
+                             "Viewer.ViewpointY",
+                             found,
+                             parameter8) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    viewerViewPointY = parameter8;
+    float parameter9{};
+    if (readParameter<float>(storage_inout,
+                             "Viewer.ViewpointZ",
+                             found,
+                             parameter9) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    viewerViewPointZ = parameter9;
+    float parameter10{};
+    if (readParameter<float>(storage_inout,
+                             "Viewer.ViewpointF",
+                             found,
+                             parameter10) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    viewerViewPointF = parameter10;
+    float parameter11{};
+    if (readParameter<float>(storage_inout,
+                             "Viewer.imageViewScale",
+                             found,
+                             parameter11,
+                             false) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readParameter cannot fail; continue as before.
+    }
+    viewerImageScale = parameter11;
 
     if (!found)
         viewerImageScale = 1.0f;
+
+    return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
 } // namespace settings

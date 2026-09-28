@@ -590,7 +590,13 @@ bool Tracking::parseCamParamFile(cv::FileStorage &settings_in)
                     cameraCalibration2);
                 p_camera2 = p_atlas->addCamera(p_camera2);
 
-                poseTlr = utils::converter::Converter::toSophus(cvTlr);
+                Sophus::SE3<float> sophus{};
+                if (utils::converter::Converter::toSophus(cvTlr, sophus) !=
+                    utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+                {
+                    // toSophus cannot fail; continue as before.
+                }
+                poseTlr = sophus;
 
                 static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
                     p_camera2)
@@ -676,7 +682,13 @@ bool Tracking::parseCamParamFile(cv::FileStorage &settings_in)
     if (sensor == System::STEREO || sensor == System::RGBD ||
         sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
     {
-        float        fx   = p_camera->getParameter(0);
+        float fx{};
+        if (p_camera->getParameter(0, fx) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getParameter cannot fail; continue as before.
+        }
         cv::FileNode node = settings_in["ThDepth"];
         if (!node.empty() && node.isReal())
         {

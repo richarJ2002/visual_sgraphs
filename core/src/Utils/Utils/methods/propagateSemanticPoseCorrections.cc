@@ -41,7 +41,7 @@ namespace utils
 namespace utils
 {
 
-void Utils::propagateSemanticPoseCorrections(
+UtilsStatus Utils::propagateSemanticPoseCorrections(
     Map                   *p_map_inout,
     const KeyFramePoseMap &keyFramePosesBefore_WorldToCamera_in,
     const KeyFramePoseMap &keyFramePosesAfter_WorldToCamera_in,
@@ -49,7 +49,7 @@ void Utils::propagateSemanticPoseCorrections(
 {
     if (p_map_inout == nullptr)
     {
-        return;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     struct PoseCorrectionNode
@@ -628,6 +628,8 @@ void Utils::propagateSemanticPoseCorrections(
     }
 
     p_map_inout->setSkeletonEdges(skeletonEdges_OldWorld_m);
+
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

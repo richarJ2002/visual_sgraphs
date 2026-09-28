@@ -18,7 +18,8 @@ namespace vs_graphs
 namespace core
 {
 
-nlohmann::json axiomCapabilitiesToJson()
+MissionHealthTopologyJsonStatus
+    axiomCapabilitiesToJson(nlohmann::json &json_out)
 {
     std::vector<semantic::AxiomCapabilityEntry> table =
         semantic::computeAxiomCapabilityTable();
@@ -38,7 +39,9 @@ nlohmann::json axiomCapabilitiesToJson()
              {"missingProofOwner",
               semantic::missingProofOwnerName(row.owner)}});
     }
-    return capabilitiesJson;
+    json_out = capabilitiesJson;
+    return MissionHealthTopologyJsonStatus::
+        MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS;
 }
 
 } // namespace core

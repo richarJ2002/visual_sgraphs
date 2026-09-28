@@ -36,11 +36,12 @@ namespace utils
 namespace utils
 {
 
-Eigen::Isometry3d Utils::computeMapTransform_Horn(
+UtilsStatus Utils::computeMapTransform_Horn(
     const std::vector<Eigen::Vector3d> &normalsA_in,
     const std::vector<Eigen::Vector3d> &centroidsA_in,
     const std::vector<Eigen::Vector3d> &normalsB_in,
-    const std::vector<Eigen::Vector3d> &centroidsB_in)
+    const std::vector<Eigen::Vector3d> &centroidsB_in,
+    Eigen::Isometry3d                  &mapTransform_Horn_out)
 {
     if (normalsA_in.size() != normalsB_in.size() || normalsA_in.size() < 3 ||
         centroidsA_in.size() != normalsA_in.size() ||
@@ -49,7 +50,8 @@ Eigen::Isometry3d Utils::computeMapTransform_Horn(
         std::cout << "[MapMerge] computeMapTransform_Horn: insufficient or "
                      "mismatched correspondences."
                   << std::endl;
-        return Eigen::Isometry3d::Identity();
+        mapTransform_Horn_out = Eigen::Isometry3d::Identity();
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     Eigen::Vector3d centroidA = Eigen::Vector3d::Zero();
@@ -67,7 +69,8 @@ Eigen::Isometry3d Utils::computeMapTransform_Horn(
             std::cout << "[MapMerge] computeMapTransform_Horn: invalid "
                          "correspondence data."
                       << std::endl;
-            return Eigen::Isometry3d::Identity();
+            mapTransform_Horn_out = Eigen::Isometry3d::Identity();
+            return UtilsStatus::UTILS_STATUS_SUCCESS;
         }
 
         centroidA += centroidsA_in[index];
@@ -102,7 +105,8 @@ Eigen::Isometry3d Utils::computeMapTransform_Horn(
     transformBFromA.translation() =
         centroidB - transformBFromA.linear() * centroidA;
 
-    return transformBFromA;
+    mapTransform_Horn_out = transformBFromA;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

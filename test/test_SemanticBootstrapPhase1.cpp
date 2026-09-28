@@ -442,10 +442,13 @@ TEST(SemanticBootstrapPhase1,
     manager.ensureActiveMapBootstrapHierarchyForTest(
         Eigen::Vector3d(1.0, 0.0, 1.0));
 
-    std::unique_ptr<semantic::Room> p_roomOne(
-        GeoSemHelpers::createBlankRoomCandidate(
-            &atlas,
-            Eigen::Vector3d(2.0, 0.0, 1.0)));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate = nullptr;
+    ASSERT_EQ((GeoSemHelpers::createBlankRoomCandidate(
+                  &atlas,
+                  p_blankRoomCandidate,
+                  Eigen::Vector3d(2.0, 0.0, 1.0))),
+              GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> p_roomOne(p_blankRoomCandidate);
     ASSERT_NE(p_roomOne, nullptr);
     int id{};
     ASSERT_EQ((p_roomOne->getId(id)),

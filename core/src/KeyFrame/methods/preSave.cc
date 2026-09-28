@@ -50,10 +50,14 @@ void KeyFrame::preSave(
         if (mapPoints[keyPointIndex] &&
             mapPoints_in.find(mapPoints[keyPointIndex]) !=
                 mapPoints_in.end()) // Checks if the element is not null
+        {
             backupMapPointsId.push_back(mapPoints[keyPointIndex]->id);
+        }
         else // If the element is null his value is -1 because all the id are
              // positives
+        {
             backupMapPointsId.push_back(-1);
+        }
     }
     // Save the id of each connected KF with it weight
     backupConnectedKeyFrameIdWeights.clear();
@@ -64,14 +68,18 @@ void KeyFrame::preSave(
          ++connectionWeightIt)
     {
         if (keyFrames_in.find(connectionWeightIt->first) != keyFrames_in.end())
+        {
             backupConnectedKeyFrameIdWeights[connectionWeightIt->first->id] =
                 connectionWeightIt->second;
+        }
     }
 
     // Save the parent id
     backupParentId = -1;
     if (p_parent && keyFrames_in.find(p_parent) != keyFrames_in.end())
+    {
         backupParentId = p_parent->id;
+    }
 
     // Save the id of the childrens KF
     backupChildrensId.clear();
@@ -79,7 +87,9 @@ void KeyFrame::preSave(
     for (KeyFrame *p_keyFrame : childrens)
     {
         if (keyFrames_in.find(p_keyFrame) != keyFrames_in.end())
+        {
             backupChildrensId.push_back(p_keyFrame->id);
+        }
     }
 
     // Save the id of the loop edge KF
@@ -88,7 +98,9 @@ void KeyFrame::preSave(
     for (KeyFrame *p_keyFrame : loopEdges)
     {
         if (keyFrames_in.find(p_keyFrame) != keyFrames_in.end())
+        {
             backupLoopEdgesId.push_back(p_keyFrame->id);
+        }
     }
 
     // Save the id of the merge edge KF
@@ -97,29 +109,55 @@ void KeyFrame::preSave(
     for (KeyFrame *p_keyFrame : mergeEdges)
     {
         if (keyFrames_in.find(p_keyFrame) != keyFrames_in.end())
+        {
             backupMergeEdgesId.push_back(p_keyFrame->id);
+        }
     }
 
     // Camera data
     backupCameraId = -1;
     if (p_camera && cameras_in.find(p_camera) != cameras_in.end())
-        backupCameraId = p_camera->getId();
+    {
+        unsigned int cameraId{};
+        if (p_camera->getId(cameraId) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        backupCameraId = cameraId;
+    }
 
     backupCamera2Id = -1;
     if (p_camera2 && cameras_in.find(p_camera2) != cameras_in.end())
-        backupCamera2Id = p_camera2->getId();
+    {
+        unsigned int camera2Id{};
+        if (p_camera2->getId(camera2Id) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        backupCamera2Id = camera2Id;
+    }
 
     // Inertial data
     backupPrevKFId = -1;
     if (p_prevKF && keyFrames_in.find(p_prevKF) != keyFrames_in.end())
+    {
         backupPrevKFId = p_prevKF->id;
+    }
 
     backupNextKFId = -1;
     if (p_nextKF && keyFrames_in.find(p_nextKF) != keyFrames_in.end())
+    {
         backupNextKFId = p_nextKF->id;
+    }
 
     if (p_imuPreintegrated)
+    {
         backupImuPreintegrated.copyFrom(p_imuPreintegrated);
+    }
 }
 
 } // namespace core

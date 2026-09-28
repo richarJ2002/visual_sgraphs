@@ -157,6 +157,13 @@ void LocalMapping::run()
                     }
                     else
                     {
+                        types::SystemParams *p_params = nullptr;
+                        if (types::SystemParams::getParams(p_params) !=
+                            types::SystemParamsStatus::
+                                SYSTEM_PARAMS_STATUS_SUCCESS)
+                        {
+                            // getParams cannot fail; continue as before.
+                        }
                         Optimizer::localBundleAdjustment(
                             p_currentKeyFrame,
                             &shouldAbortBa,
@@ -165,7 +172,7 @@ void LocalMapping::run()
                             baOptimizedKeyFrameCount,
                             baMapPointCount,
                             baEdgeCount,
-                            types::SystemParams::getParams()->markers.impact);
+                            p_params->markers.impact);
                         wasLocalBaExecuted = true;
                     }
                 }

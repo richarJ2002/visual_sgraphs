@@ -38,10 +38,11 @@ namespace utils
 {
 
 template <typename PointT>
-typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDownsample(
+UtilsStatus Utils::pointcloudDownsample(
     const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
     const float                                  leafSize_in,
-    const unsigned int                           minPointsPerVoxel_in)
+    const unsigned int                           minPointsPerVoxel_in,
+    typename pcl::PointCloud<PointT>::Ptr       &p_downsampledCloud_out)
 {
     // The filtered point p_cloud_in object
     typename pcl::PointCloud<PointT>::Ptr p_filteredCloud(
@@ -62,13 +63,14 @@ typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudDownsample(
     p_filteredCloud->width  = p_filteredCloud->size();
     p_filteredCloud->height = 1;
 
-    return p_filteredCloud;
+    p_downsampledCloud_out = p_filteredCloud;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
-template pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
-    Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
-        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &,
-        const float,
-        const unsigned int);
+template UtilsStatus Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
+    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &,
+    const float,
+    const unsigned int,
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
 
 } // namespace utils
 } // namespace utils

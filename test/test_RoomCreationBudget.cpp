@@ -33,9 +33,13 @@ TEST(RoomCreationBudget, AllowsTheFirstRoomWithZeroPassages)
 {
     Atlas atlas(0);
 
-    std::unique_ptr<semantic::Room> room(
-        GeoSemHelpers::createBlankRoomCandidate(&atlas,
-                                                Eigen::Vector3d::Zero()));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate = nullptr;
+    ASSERT_EQ(
+        (GeoSemHelpers::createBlankRoomCandidate(&atlas,
+                                                 p_blankRoomCandidate,
+                                                 Eigen::Vector3d::Zero())),
+        GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> room(p_blankRoomCandidate);
     ASSERT_NE(room, nullptr);
     int id{};
     ASSERT_EQ((room->getId(id)),
@@ -47,16 +51,23 @@ TEST(RoomCreationBudget, RefusesASecondRoomWithoutAPassablePassage)
 {
     Atlas atlas(0);
 
-    std::unique_ptr<semantic::Room> firstRoom(
-        GeoSemHelpers::createBlankRoomCandidate(&atlas,
-                                                Eigen::Vector3d::Zero()));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate = nullptr;
+    ASSERT_EQ(
+        (GeoSemHelpers::createBlankRoomCandidate(&atlas,
+                                                 p_blankRoomCandidate,
+                                                 Eigen::Vector3d::Zero())),
+        GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> firstRoom(p_blankRoomCandidate);
     ASSERT_NE(firstRoom, nullptr);
     atlas.addCandidateMapRoom(firstRoom.get());
 
-    std::unique_ptr<semantic::Room> secondRoom(
-        GeoSemHelpers::createBlankRoomCandidate(
-            &atlas,
-            Eigen::Vector3d(1.0, 0.0, 0.0)));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate2 = nullptr;
+    ASSERT_EQ((GeoSemHelpers::createBlankRoomCandidate(
+                  &atlas,
+                  p_blankRoomCandidate2,
+                  Eigen::Vector3d(1.0, 0.0, 0.0))),
+              GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> secondRoom(p_blankRoomCandidate2);
     EXPECT_EQ(secondRoom, nullptr);
 }
 
@@ -65,9 +76,13 @@ TEST(RoomCreationBudget, AllowsASecondRoomOnceAPassablePassageExists)
     Atlas atlas(0);
     Map  *p_map = atlas.getCurrentMap();
 
-    std::unique_ptr<semantic::Room> firstRoom(
-        GeoSemHelpers::createBlankRoomCandidate(&atlas,
-                                                Eigen::Vector3d::Zero()));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate = nullptr;
+    ASSERT_EQ(
+        (GeoSemHelpers::createBlankRoomCandidate(&atlas,
+                                                 p_blankRoomCandidate,
+                                                 Eigen::Vector3d::Zero())),
+        GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> firstRoom(p_blankRoomCandidate);
     ASSERT_NE(firstRoom, nullptr);
     atlas.addCandidateMapRoom(firstRoom.get());
 
@@ -80,10 +95,13 @@ TEST(RoomCreationBudget, AllowsASecondRoomOnceAPassablePassageExists)
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     atlas.addMapPassage(&passage);
 
-    std::unique_ptr<semantic::Room> secondRoom(
-        GeoSemHelpers::createBlankRoomCandidate(
-            &atlas,
-            Eigen::Vector3d(1.0, 0.0, 0.0)));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate2 = nullptr;
+    ASSERT_EQ((GeoSemHelpers::createBlankRoomCandidate(
+                  &atlas,
+                  p_blankRoomCandidate2,
+                  Eigen::Vector3d(1.0, 0.0, 0.0))),
+              GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> secondRoom(p_blankRoomCandidate2);
     EXPECT_NE(secondRoom, nullptr);
 }
 
@@ -92,9 +110,13 @@ TEST(RoomCreationBudget, ABlockedPassageDoesNotUnlockASecondRoom)
     Atlas atlas(0);
     Map  *p_map = atlas.getCurrentMap();
 
-    std::unique_ptr<semantic::Room> firstRoom(
-        GeoSemHelpers::createBlankRoomCandidate(&atlas,
-                                                Eigen::Vector3d::Zero()));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate = nullptr;
+    ASSERT_EQ(
+        (GeoSemHelpers::createBlankRoomCandidate(&atlas,
+                                                 p_blankRoomCandidate,
+                                                 Eigen::Vector3d::Zero())),
+        GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> firstRoom(p_blankRoomCandidate);
     ASSERT_NE(firstRoom, nullptr);
     atlas.addCandidateMapRoom(firstRoom.get());
 
@@ -110,10 +132,13 @@ TEST(RoomCreationBudget, ABlockedPassageDoesNotUnlockASecondRoom)
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     atlas.addMapPassage(&blockedPassage);
 
-    std::unique_ptr<semantic::Room> secondRoom(
-        GeoSemHelpers::createBlankRoomCandidate(
-            &atlas,
-            Eigen::Vector3d(1.0, 0.0, 0.0)));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate2 = nullptr;
+    ASSERT_EQ((GeoSemHelpers::createBlankRoomCandidate(
+                  &atlas,
+                  p_blankRoomCandidate2,
+                  Eigen::Vector3d(1.0, 0.0, 0.0))),
+              GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> secondRoom(p_blankRoomCandidate2);
     EXPECT_EQ(secondRoom, nullptr);
 }
 
@@ -122,9 +147,13 @@ TEST(RoomCreationBudget, ThirdRoomRequiresATwoPassablePassages)
     Atlas atlas(0);
     Map  *p_map = atlas.getCurrentMap();
 
-    std::unique_ptr<semantic::Room> firstRoom(
-        GeoSemHelpers::createBlankRoomCandidate(&atlas,
-                                                Eigen::Vector3d::Zero()));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate = nullptr;
+    ASSERT_EQ(
+        (GeoSemHelpers::createBlankRoomCandidate(&atlas,
+                                                 p_blankRoomCandidate,
+                                                 Eigen::Vector3d::Zero())),
+        GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> firstRoom(p_blankRoomCandidate);
     ASSERT_NE(firstRoom, nullptr);
     atlas.addCandidateMapRoom(firstRoom.get());
 
@@ -137,18 +166,24 @@ TEST(RoomCreationBudget, ThirdRoomRequiresATwoPassablePassages)
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     atlas.addMapPassage(&passage);
 
-    std::unique_ptr<semantic::Room> secondRoom(
-        GeoSemHelpers::createBlankRoomCandidate(
-            &atlas,
-            Eigen::Vector3d(1.0, 0.0, 0.0)));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate2 = nullptr;
+    ASSERT_EQ((GeoSemHelpers::createBlankRoomCandidate(
+                  &atlas,
+                  p_blankRoomCandidate2,
+                  Eigen::Vector3d(1.0, 0.0, 0.0))),
+              GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> secondRoom(p_blankRoomCandidate2);
     ASSERT_NE(secondRoom, nullptr);
     atlas.addCandidateMapRoom(secondRoom.get());
 
     /* Still only one passable passage -- a third room must be refused. */
-    std::unique_ptr<semantic::Room> thirdRoom(
-        GeoSemHelpers::createBlankRoomCandidate(
-            &atlas,
-            Eigen::Vector3d(2.0, 0.0, 0.0)));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate3 = nullptr;
+    ASSERT_EQ((GeoSemHelpers::createBlankRoomCandidate(
+                  &atlas,
+                  p_blankRoomCandidate3,
+                  Eigen::Vector3d(2.0, 0.0, 0.0))),
+              GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> thirdRoom(p_blankRoomCandidate3);
     EXPECT_EQ(thirdRoom, nullptr);
 
     semantic::Passage secondPassage;
@@ -160,10 +195,13 @@ TEST(RoomCreationBudget, ThirdRoomRequiresATwoPassablePassages)
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     atlas.addMapPassage(&secondPassage);
 
-    std::unique_ptr<semantic::Room> thirdRoomRetry(
-        GeoSemHelpers::createBlankRoomCandidate(
-            &atlas,
-            Eigen::Vector3d(2.0, 0.0, 0.0)));
+    vs_graphs::core::semantic::Room *p_blankRoomCandidate4 = nullptr;
+    ASSERT_EQ((GeoSemHelpers::createBlankRoomCandidate(
+                  &atlas,
+                  p_blankRoomCandidate4,
+                  Eigen::Vector3d(2.0, 0.0, 0.0))),
+              GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    std::unique_ptr<semantic::Room> thirdRoomRetry(p_blankRoomCandidate4);
     EXPECT_NE(thirdRoomRetry, nullptr);
 }
 

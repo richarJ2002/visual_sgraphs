@@ -173,8 +173,15 @@ void SemanticsManager::suppressUndefendedWalls(void)
                 {
                     continue;
                 }
-                const Eigen::Vector3d clusterCentroid_World_m =
-                    utils::utils::Utils::computeCentroidFromPoints(cluster);
+                Eigen::Vector3d clusterCentroid_World_m{};
+                if (utils::utils::Utils::computeCentroidFromPoints(
+                        cluster,
+                        clusterCentroid_World_m) !=
+                    utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                {
+                    // computeCentroidFromPoints cannot fail; continue as
+                    // before.
+                }
                 if (!clusterCentroid_World_m.allFinite() ||
                     (clusterCentroid_World_m - wallGeometry.centroid_World_m)
                             .norm() > maximumCentroidDistance_m)

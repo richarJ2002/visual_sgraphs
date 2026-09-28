@@ -38,14 +38,18 @@ namespace utils
 {
 
 template <typename PointT>
-typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudOutlierRemoval(
+UtilsStatus Utils::pointcloudOutlierRemoval(
     const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
     const int                                    meanThreshold_in,
-    const float                                  stdDevThreshold_in)
+    const float                                  stdDevThreshold_in,
+    typename pcl::PointCloud<PointT>::Ptr       &p_filteredCloud_out)
 {
     // Check if the input p_cloud_in is empty
     if (p_cloud_in->points.size() == 0)
-        return p_cloud_in;
+    {
+        p_filteredCloud_out = p_cloud_in;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
 
     // Create a container for the filtered p_cloud_in
     typename pcl::PointCloud<PointT>::Ptr p_filteredCloud(
@@ -63,13 +67,14 @@ typename pcl::PointCloud<PointT>::Ptr Utils::pointcloudOutlierRemoval(
     p_filteredCloud->height = 1;
 
     // Return the filtered p_cloud_in
-    return p_filteredCloud;
+    p_filteredCloud_out = p_filteredCloud;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
-template pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
-    Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(
-        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &,
-        const int,
-        const float);
+template UtilsStatus Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(
+    const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &,
+    const int,
+    const float,
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
 
 } // namespace utils
 } // namespace utils

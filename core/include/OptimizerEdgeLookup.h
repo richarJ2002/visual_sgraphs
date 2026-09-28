@@ -7,6 +7,7 @@
 #ifndef VS_GRAPHS_CORE_OPTIMIZER_EDGE_LOOKUP_H
 #define VS_GRAPHS_CORE_OPTIMIZER_EDGE_LOOKUP_H
 
+#include "OptimizerEdgeLookupStatus.h"
 #include <cstddef>
 #include <vector>
 
@@ -16,8 +17,8 @@ namespace core
 {
 
 /*!
- * Returns the pointer at index_in in edgeKeyFrames_in, or nullptr when
- * index_in is out of bounds.
+ * Sets p_keyFrame_out to the pointer at index_in in edgeKeyFrames_in, or to
+ * nullptr when index_in is out of bounds; always succeeds.
  *
  * Bundle-adjustment edge bookkeeping keeps one KeyFrame* per edge in a
  * vector parallel to the edge's own vector (e.g. vpEdgesMono/vpEdgeKFMono,
@@ -30,12 +31,15 @@ namespace core
  * each call site and removes the out-of-bounds risk.
  */
 template <typename PointerT>
-inline PointerT
+inline OptimizerEdgeLookupStatus
     edgeSourceKeyFrame(const std::vector<PointerT> &edgeKeyFrames_in,
-                       std::size_t                  index_in)
+                       std::size_t                  index_in,
+                       PointerT                    &p_keyFrame_out)
 {
-    return index_in < edgeKeyFrames_in.size() ? edgeKeyFrames_in[index_in]
-                                              : nullptr;
+    p_keyFrame_out = index_in < edgeKeyFrames_in.size()
+                         ? edgeKeyFrames_in[index_in]
+                         : nullptr;
+    return OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS;
 }
 
 } // namespace core

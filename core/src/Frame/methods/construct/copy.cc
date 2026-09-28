@@ -59,8 +59,6 @@ Frame::Frame(const Frame &frame_in) :
     p_orbExtractorRight(frame_in.p_orbExtractorRight),
     timeStamp(frame_in.timeStamp),
     calibrationMatrix(frame_in.calibrationMatrix.clone()),
-    calibrationMatrixEigen(
-        utils::converter::Converter::toMatrix3f(frame_in.calibrationMatrix)),
     distortionCoefficients(frame_in.distortionCoefficients.clone()),
     mbf(frame_in.mbf),
     mb(frame_in.mb),
@@ -108,6 +106,13 @@ Frame::Frame(const Frame &frame_in) :
     rightToLeftMatches(frame_in.rightToLeftMatches),
     stereoPoints3D(frame_in.stereoPoints3D)
 {
+    if (utils::converter::Converter::toMatrix3f(frame_in.calibrationMatrix,
+                                                calibrationMatrixEigen) !=
+        utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+    {
+        // toMatrix3f cannot fail; continue as before.
+    }
+
     for (int columnIndex = 0; columnIndex < FRAME_GRID_COLS; columnIndex++)
         for (int rowIndex = 0; rowIndex < FRAME_GRID_ROWS; rowIndex++)
         {

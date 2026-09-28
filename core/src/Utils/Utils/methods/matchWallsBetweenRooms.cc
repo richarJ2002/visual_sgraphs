@@ -38,17 +38,19 @@ namespace utils
 namespace utils
 {
 
-std::size_t Utils::matchWallsBetweenRooms(
+UtilsStatus Utils::matchWallsBetweenRooms(
     const semantic::Room         *p_roomA_in,
     const semantic::Room         *p_roomB_in,
     std::vector<Eigen::Vector3d> &normalsA_inout,
     std::vector<Eigen::Vector3d> &centroidsA_inout,
     std::vector<Eigen::Vector3d> &normalsB_inout,
-    std::vector<Eigen::Vector3d> &centroidsB_inout)
+    std::vector<Eigen::Vector3d> &centroidsB_inout,
+    std::size_t                  &matchedWallCount_out)
 {
     if (p_roomA_in == nullptr || p_roomB_in == nullptr)
     {
-        return 0;
+        matchedWallCount_out = 0;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     constexpr double WALL_CORRESPONDENCE_COS_THETA = 0.85;
@@ -158,7 +160,8 @@ std::size_t Utils::matchWallsBetweenRooms(
         acceptedPairCount++;
     }
 
-    return acceptedPairCount;
+    matchedWallCount_out = acceptedPairCount;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

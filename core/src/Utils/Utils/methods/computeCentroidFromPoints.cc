@@ -34,12 +34,16 @@ namespace utils
 namespace utils
 {
 
-Eigen::Vector3d Utils::computeCentroidFromPoints(
-    const std::vector<Eigen::Vector3d> &points_in)
+UtilsStatus Utils::computeCentroidFromPoints(
+    const std::vector<Eigen::Vector3d> &points_in,
+    Eigen::Vector3d                    &centroid_out)
 {
     // Check if there are points_in in the vector
     if (points_in.empty())
-        return Eigen::Vector3d(0.0, 0.0, 0.0);
+    {
+        centroid_out = Eigen::Vector3d(0.0, 0.0, 0.0);
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
 
     // Variables
     Eigen::Vector3d sum(0.0, 0.0, 0.0);
@@ -49,7 +53,8 @@ Eigen::Vector3d Utils::computeCentroidFromPoints(
         sum += point;
 
     // Return the centroid of the cluster
-    return sum / points_in.size();
+    centroid_out = sum / points_in.size();
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

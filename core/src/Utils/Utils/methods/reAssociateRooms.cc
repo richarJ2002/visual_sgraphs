@@ -34,7 +34,7 @@ namespace utils
 namespace utils
 {
 
-void Utils::reAssociateRooms(Atlas *p_atlas_in)
+UtilsStatus Utils::reAssociateRooms(Atlas *p_atlas_in)
 {
     /*!
      * Re-run the targeted provisional-room consolidation pass.
@@ -106,8 +106,14 @@ void Utils::reAssociateRooms(Atlas *p_atlas_in)
          * Consolidate only redundant single-wall provisional structural
          * elements whose wall already belongs to this confirmed room.
          */
-        Utils::consolidateProvisionalRooms(p_room, p_atlas_in);
+        if (Utils::consolidateProvisionalRooms(p_room, p_atlas_in) !=
+            UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // consolidateProvisionalRooms cannot fail; continue as before.
+        }
     }
+
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

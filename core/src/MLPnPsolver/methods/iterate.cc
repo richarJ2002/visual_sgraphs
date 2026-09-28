@@ -145,10 +145,20 @@ bool MLPnPsolver::iterate(int              iterationCount_in,
                 Rcw.convertTo(Rcw, CV_32F);
                 tcw.convertTo(tcw, CV_32F);
                 mBestTcw.setIdentity();
-                mBestTcw.block<3, 3>(0, 0) =
-                    utils::converter::Converter::toMatrix3f(Rcw);
-                mBestTcw.block<3, 1>(0, 3) =
-                    utils::converter::Converter::toVector3f(tcw);
+                Eigen::Matrix<float, 3, 3> matrix3f{};
+                if (utils::converter::Converter::toMatrix3f(Rcw, matrix3f) !=
+                    utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+                {
+                    // toMatrix3f cannot fail; continue as before.
+                }
+                mBestTcw.block<3, 3>(0, 0) = matrix3f;
+                Eigen::Matrix<float, 3, 1> vector3f{};
+                if (utils::converter::Converter::toVector3f(tcw, vector3f) !=
+                    utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+                {
+                    // toVector3f cannot fail; continue as before.
+                }
+                mBestTcw.block<3, 1>(0, 3) = vector3f;
 
                 Eigen::Matrix<double, 3, 3, Eigen::RowMajor> eigRcw(mRi[0]);
                 Eigen::Vector3d                              eigtcw(mti);

@@ -70,53 +70,85 @@ Settings::Settings(const std::string &configurationFilePath_in,
                        configurationFilePath_in.c_str());
 
     // Read Camera#1 (monocular, stereo or RGB-D)
-    readCamera1(storage_in);
+    if (readCamera1(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readCamera1 cannot fail; continue as before.
+    }
     VSLAM_LOG_INFO("[Settings] Camera#1 settings loaded!\n");
 
     // Read Camera#2 (stereo)
     if (sensor == System::STEREO || sensor == System::IMU_STEREO)
     {
-        readCamera2(storage_in);
+        if (readCamera2(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readCamera2 cannot fail; continue as before.
+        }
         VSLAM_LOG_INFO("[Settings] Camera#2 settings loaded!\n");
     }
 
     // Read image info
-    readImageInfo(storage_in);
+    if (readImageInfo(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readImageInfo cannot fail; continue as before.
+    }
     VSLAM_LOG_INFO("[Settings] Camera info loaded!\n");
 
     // Read IMU params
     if (sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
         sensor == System::IMU_RGBD)
     {
-        readIMU(storage_in);
+        if (readIMU(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readIMU cannot fail; continue as before.
+        }
         VSLAM_LOG_INFO("[Settings] IMU calibration settings loaded!\n");
     }
 
     if (sensor == System::RGBD || sensor == System::IMU_RGBD)
     {
-        readRGBD(storage_in);
+        if (readRGBD(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // readRGBD cannot fail; continue as before.
+        }
         VSLAM_LOG_INFO("[Settings] RGB-D settings loaded!\n");
     }
 
     // Read ORB parameters
-    readORB(storage_in);
+    if (readORB(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readORB cannot fail; continue as before.
+    }
     VSLAM_LOG_INFO("[Settings] ORB settings loaded!\n");
 
     // Read Viewer parameters
-    readViewer(storage_in);
+    if (readViewer(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readViewer cannot fail; continue as before.
+    }
     VSLAM_LOG_INFO("[Settings] Viewer settings loaded!\n");
 
     // Read Atlas parameters
-    readLoadAndSave(storage_in);
+    if (readLoadAndSave(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readLoadAndSave cannot fail; continue as before.
+    }
     VSLAM_LOG_INFO("[Settings] ATLAS settings loaded!\n");
 
     // Read other parameters
-    readOtherParameters(storage_in);
+    if (readOtherParameters(storage_in) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    {
+        // readOtherParameters cannot fail; continue as before.
+    }
     VSLAM_LOG_INFO("[Settings] Misc. parameters loaded!\n");
 
     if (isRectificationNeeded)
     {
-        precomputeRectificationMaps();
+        if (precomputeRectificationMaps() !=
+            SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            // precomputeRectificationMaps cannot fail; continue as before.
+        }
         VSLAM_LOG_INFO("[Settings] Computed rectification maps!\n");
     }
 }

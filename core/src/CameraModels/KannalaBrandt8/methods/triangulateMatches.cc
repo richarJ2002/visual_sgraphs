@@ -31,7 +31,7 @@
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
-float KannalaBrandt8::triangulateMatches(
+KannalaBrandt8Status KannalaBrandt8::triangulateMatches(
     geometriccamera::GeometricCamera *p_otherCamera_inout,
     const cv::KeyPoint               &keypoint1_in,
     const cv::KeyPoint               &keypoint2_in,
@@ -39,7 +39,8 @@ float KannalaBrandt8::triangulateMatches(
     const Eigen::Vector3f            &translation12_in,
     const float                       sigmaLevel_in,
     const float                       uncertainty_in,
-    Eigen::Vector3f                  &point3d_out)
+    Eigen::Vector3f                  &point3d_out,
+    float                            &parallax_out)
 {
 
     Eigen::Vector3f cameraRay1 = this->unprojectEig(keypoint1_in.pt);
@@ -54,7 +55,8 @@ float KannalaBrandt8::triangulateMatches(
 
     if (parallaxCosine > 0.9998)
     {
-        return -1;
+        parallax_out = -1;
+        return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
 
     // Parallax is good, so we try to triangulate
@@ -75,24 +77,30 @@ float KannalaBrandt8::triangulateMatches(
     Eigen::Matrix3f R21 = rotation12_in.transpose();
     projectionMatrix2 << R21, -R21 * translation12_in;
 
-    triangulate(imagePoint1,
-                imagePoint2,
-                projectionMatrix1,
-                projectionMatrix2,
-                triangulatedPoint3D);
+    if (triangulate(imagePoint1,
+                    imagePoint2,
+                    projectionMatrix1,
+                    projectionMatrix2,
+                    triangulatedPoint3D) !=
+        KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS)
+    {
+        // triangulate cannot fail; continue as before.
+    }
     // cv::Mat x3Dt = x3D.t();
 
     float cameraDepth1 = triangulatedPoint3D(2);
     if (cameraDepth1 <= 0)
     {
-        return -2;
+        parallax_out = -2;
+        return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
 
     float cameraDepth2 =
         R21.row(2).dot(triangulatedPoint3D) + projectionMatrix2(2, 3);
     if (cameraDepth2 <= 0)
     {
-        return -3;
+        parallax_out = -3;
+        return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
 
     // Check reprojection error
@@ -104,7 +112,8 @@ float KannalaBrandt8::triangulateMatches(
     if ((reprojectionErrorX1 * reprojectionErrorX1 +
          reprojectionErrorY1 * reprojectionErrorY1) > 5.991 * sigmaLevel_in)
     { // Reprojection error is high
-        return -4;
+        parallax_out = -4;
+        return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
 
     Eigen::Vector3f pointInCamera2 =
@@ -118,11 +127,13 @@ float KannalaBrandt8::triangulateMatches(
     if ((reprojectionErrorX2 * reprojectionErrorX2 +
          reprojectionErrorY2 * reprojectionErrorY2) > 5.991 * uncertainty_in)
     { // Reprojection error is high
-        return -5;
+        parallax_out = -5;
+        return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
 
     point3d_out = triangulatedPoint3D;
 
-    return cameraDepth1;
+    parallax_out = cameraDepth1;
+    return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

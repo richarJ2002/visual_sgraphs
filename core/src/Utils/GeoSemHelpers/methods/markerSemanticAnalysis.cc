@@ -23,7 +23,7 @@ namespace vs_graphs
 namespace core
 {
 
-void GeoSemHelpers::markerSemanticAnalysis(
+GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
     Atlas                                         *p_atlas_in,
     vs_graphs::core::KeyFrame                     *p_keyFrame_in,
     std::vector<vs_graphs::core::semantic::Room *> envRooms_in)
@@ -44,8 +44,12 @@ void GeoSemHelpers::markerSemanticAnalysis(
         {
             // getId cannot fail; continue as before.
         }
-        std::pair<bool, std::string> result =
-            checkIfMarkerIsDoorway(currentMarkerId, envRooms_in);
+        std::pair<bool, std::string> result{};
+        if (checkIfMarkerIsDoorway(currentMarkerId, envRooms_in, result) !=
+            GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+        {
+            // checkIfMarkerIsDoorway cannot fail; continue as before.
+        }
         bool        markerIsDoorway = result.first;
         std::string doorwayName     = result.second;
 
@@ -93,8 +97,16 @@ void GeoSemHelpers::markerSemanticAnalysis(
             }
 
             // Creating a new marker in the map
-            p_currentMapMarker =
-                createMapMarker(p_atlas_in, p_keyFrame_in, p_currentMarker);
+            semantic::Marker *p_mapMarker = nullptr;
+            if (createMapMarker(p_atlas_in,
+                                p_keyFrame_in,
+                                p_currentMarker,
+                                p_mapMarker) !=
+                GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+            {
+                // createMapMarker cannot fail; continue as before.
+            }
+            p_currentMapMarker = p_mapMarker;
         }
         // Else, add the observation to the existing marker
         else
@@ -134,6 +146,8 @@ void GeoSemHelpers::markerSemanticAnalysis(
             }
         }
     }
+
+    return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
 } // namespace core

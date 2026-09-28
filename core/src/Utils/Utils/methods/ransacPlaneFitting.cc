@@ -42,15 +42,21 @@ namespace utils
 {
 
 template <typename PointT, template <typename> class SegmentationType>
-std::vector<std::pair<typename pcl::PointCloud<PointT>::Ptr, Eigen::Vector4d>>
-    Utils::ransacPlaneFitting(
-        typename pcl::PointCloud<PointT>::Ptr &cloud_inout)
+UtilsStatus Utils::ransacPlaneFitting(
+    typename pcl::PointCloud<PointT>::Ptr   &cloud_inout,
+    std::vector<std::pair<typename pcl::PointCloud<PointT>::Ptr,
+                          Eigen::Vector4d>> &planes_out)
 {
     /* Initialize Variables */
     std::vector<
         std::pair<typename pcl::PointCloud<PointT>::Ptr, Eigen::Vector4d>>
                          p_extractedPlanes;
-    types::SystemParams *p_sysParams = types::SystemParams::getParams();
+    types::SystemParams *p_sysParams = nullptr;
+    if (types::SystemParams::getParams(p_sysParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
 
     /* Extract planes from point clouds */
     for (unsigned int i = 0;
@@ -158,16 +164,19 @@ std::vector<std::pair<typename pcl::PointCloud<PointT>::Ptr, Eigen::Vector4d>>
             std::cout << "RANSAC model error!" << std::endl;
         }
     }
-    return p_extractedPlanes;
+    planes_out = p_extractedPlanes;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
-template std::vector<
-    std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>
+template UtilsStatus
     Utils::ransacPlaneFitting<pcl::PointXYZRGBA, pcl::SACSegmentation>(
-        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
-template std::vector<
-    std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>
+        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &,
+        std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
+                              Eigen::Vector4d>> &);
+template UtilsStatus
     Utils::ransacPlaneFitting<pcl::PointXYZRGBA, pcl::WeightedSACSegmentation>(
-        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
+        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &,
+        std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
+                              Eigen::Vector4d>> &);
 
 } // namespace utils
 } // namespace utils

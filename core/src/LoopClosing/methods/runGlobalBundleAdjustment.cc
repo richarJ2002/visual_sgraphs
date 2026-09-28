@@ -312,11 +312,16 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
                 1.0);
 
             /* Keep every semantic entity aligned with the corrected cameras. */
-            utils::utils::Utils::propagateSemanticPoseCorrections(
-                p_activeMap_inout,
-                keyFramePosesBefore_WorldToCamera,
-                keyFramePosesAfter_WorldToCamera,
-                identityTransform_WorldToWorld);
+            if (utils::utils::Utils::propagateSemanticPoseCorrections(
+                    p_activeMap_inout,
+                    keyFramePosesBefore_WorldToCamera,
+                    keyFramePosesAfter_WorldToCamera,
+                    identityTransform_WorldToWorld) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // propagateSemanticPoseCorrections cannot fail; continue as
+                // before.
+            }
 
             /* Preserve plane variables which were optimized directly by GBA. */
             for (geometric::Plane *p_plane : p_activeMap_inout->getAllPlanes())

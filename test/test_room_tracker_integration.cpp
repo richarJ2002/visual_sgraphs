@@ -92,8 +92,11 @@ class ProductionCrossingScene
             }
         }
         groundPlane.setMapClouds(groundCloud);
-        groundPlaneValid =
-            GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane);
+        bool wasPlaneRefit{};
+        EXPECT_EQ((GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane,
+                                                            wasPlaneRefit)),
+                  GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+        groundPlaneValid = wasPlaneRefit;
         p_map->addMapPlane(&groundPlane);
 
         knownWall.setId(1);
@@ -722,7 +725,11 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
         }
     }
     groundPlane.setMapClouds(groundCloud);
-    ASSERT_TRUE(GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane));
+    bool wasPlaneRefit{};
+    ASSERT_EQ(
+        (GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane, wasPlaneRefit)),
+        GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
+    ASSERT_TRUE(wasPlaneRefit);
     p_map->addMapPlane(&groundPlane);
 
     /* Known room: entered earlier, so already visited. */

@@ -550,15 +550,25 @@ TEST(ResetCauseTest, FormatsStableCauseAndAction)
     using vs_graphs::core::ResetAction;
     using vs_graphs::core::ResetCause;
 
-    EXPECT_STREQ(vs_graphs::core::resetCauseToString(
-                     ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP),
-                 "visual_tracking_lost_small_map");
-    EXPECT_STREQ(vs_graphs::core::resetActionToString(
-                     ResetAction::RESET_ACTIVE_MAP_REQUEST),
-                 "reset_active_map_request");
-    EXPECT_EQ(vs_graphs::core::formatResetAttribution(
+    const char *p_text = nullptr;
+    ASSERT_EQ((vs_graphs::core::resetCauseToString(
+                  ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP,
+                  p_text)),
+              vs_graphs::core::ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS);
+    EXPECT_STREQ(p_text, "visual_tracking_lost_small_map");
+    const char *p_text2 = nullptr;
+    ASSERT_EQ((vs_graphs::core::resetActionToString(
+                  ResetAction::RESET_ACTIVE_MAP_REQUEST,
+                  p_text2)),
+              vs_graphs::core::ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS);
+    EXPECT_STREQ(p_text2, "reset_active_map_request");
+    std::string resetAttribution{};
+    ASSERT_EQ((vs_graphs::core::formatResetAttribution(
                   ResetCause::VISUAL_TRACKING_LOST_NEW_MAP,
-                  ResetAction::CREATE_MAP_EXECUTION),
+                  ResetAction::CREATE_MAP_EXECUTION,
+                  resetAttribution)),
+              vs_graphs::core::ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS);
+    EXPECT_EQ(resetAttribution,
               "VSG_RESET_ATTRIBUTION cause=visual_tracking_lost_new_map "
               "action=create_map_execution");
 }
@@ -569,18 +579,50 @@ TEST(ResetCauseTest, RetainsSingleCauseAndMarksUnlikeCoalescedRequests)
     using vs_graphs::core::ResetCauseRetention;
 
     ResetCauseRetention retention;
-    EXPECT_FALSE(retention.hasRetainedCause());
+    bool                hasRetainedCause2{};
+    ASSERT_EQ((retention.hasRetainedCause(hasRetainedCause2)),
+              vs_graphs::core::ResetCauseRetentionStatus::
+                  RESET_CAUSE_RETENTION_STATUS_SUCCESS);
+    EXPECT_FALSE(hasRetainedCause2);
 
-    retention.retain(ResetCause::IMU_DELIVERY_GAP);
-    retention.retain(ResetCause::IMU_DELIVERY_GAP);
-    EXPECT_TRUE(retention.hasRetainedCause());
-    EXPECT_EQ(retention.consume(), ResetCause::IMU_DELIVERY_GAP);
-    EXPECT_FALSE(retention.hasRetainedCause());
+    ASSERT_EQ((retention.retain(ResetCause::IMU_DELIVERY_GAP)),
+              vs_graphs::core::ResetCauseRetentionStatus::
+                  RESET_CAUSE_RETENTION_STATUS_SUCCESS);
+    ASSERT_EQ((retention.retain(ResetCause::IMU_DELIVERY_GAP)),
+              vs_graphs::core::ResetCauseRetentionStatus::
+                  RESET_CAUSE_RETENTION_STATUS_SUCCESS);
+    bool hasRetainedCause3{};
+    ASSERT_EQ((retention.hasRetainedCause(hasRetainedCause3)),
+              vs_graphs::core::ResetCauseRetentionStatus::
+                  RESET_CAUSE_RETENTION_STATUS_SUCCESS);
+    EXPECT_TRUE(hasRetainedCause3);
+    vs_graphs::core::ResetCause resetCause{};
+    ASSERT_EQ((retention.consume(resetCause)),
+              vs_graphs::core::ResetCauseRetentionStatus::
+                  RESET_CAUSE_RETENTION_STATUS_SUCCESS);
+    EXPECT_EQ(resetCause, ResetCause::IMU_DELIVERY_GAP);
+    bool hasRetainedCause4{};
+    ASSERT_EQ((retention.hasRetainedCause(hasRetainedCause4)),
+              vs_graphs::core::ResetCauseRetentionStatus::
+                  RESET_CAUSE_RETENTION_STATUS_SUCCESS);
+    EXPECT_FALSE(hasRetainedCause4);
 
-    retention.retain(ResetCause::VIEWER_REQUEST);
-    retention.retain(ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP);
-    EXPECT_EQ(retention.consume(), ResetCause::MULTIPLE_COALESCED_REQUESTS);
-    EXPECT_EQ(retention.consume(), ResetCause::UNATTRIBUTED_PUBLIC_REQUEST);
+    ASSERT_EQ((retention.retain(ResetCause::VIEWER_REQUEST)),
+              vs_graphs::core::ResetCauseRetentionStatus::
+                  RESET_CAUSE_RETENTION_STATUS_SUCCESS);
+    ASSERT_EQ((retention.retain(ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP)),
+              vs_graphs::core::ResetCauseRetentionStatus::
+                  RESET_CAUSE_RETENTION_STATUS_SUCCESS);
+    vs_graphs::core::ResetCause resetCause2{};
+    ASSERT_EQ((retention.consume(resetCause2)),
+              vs_graphs::core::ResetCauseRetentionStatus::
+                  RESET_CAUSE_RETENTION_STATUS_SUCCESS);
+    EXPECT_EQ(resetCause2, ResetCause::MULTIPLE_COALESCED_REQUESTS);
+    vs_graphs::core::ResetCause resetCause3{};
+    ASSERT_EQ((retention.consume(resetCause3)),
+              vs_graphs::core::ResetCauseRetentionStatus::
+                  RESET_CAUSE_RETENTION_STATUS_SUCCESS);
+    EXPECT_EQ(resetCause3, ResetCause::UNATTRIBUTED_PUBLIC_REQUEST);
 }
 
 TEST(ResetCauseTest, RetainsCausesPerOwnerWithoutOwnerLayoutChanges)
@@ -589,20 +631,34 @@ TEST(ResetCauseTest, RetainsCausesPerOwnerWithoutOwnerLayoutChanges)
 
     const int firstOwner  = 1;
     const int secondOwner = 2;
-    vs_graphs::core::retainResetCause(&firstOwner, ResetCause::VIEWER_REQUEST);
-    vs_graphs::core::retainResetCause(&secondOwner,
-                                      ResetCause::IMU_DELIVERY_GAP);
+    ASSERT_EQ((vs_graphs::core::retainResetCause(&firstOwner,
+                                                 ResetCause::VIEWER_REQUEST)),
+              vs_graphs::core::ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS);
+    ASSERT_EQ((vs_graphs::core::retainResetCause(&secondOwner,
+                                                 ResetCause::IMU_DELIVERY_GAP)),
+              vs_graphs::core::ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS);
 
-    EXPECT_EQ(vs_graphs::core::consumeResetCause(&firstOwner),
-              ResetCause::VIEWER_REQUEST);
-    EXPECT_EQ(vs_graphs::core::consumeResetCause(&secondOwner),
-              ResetCause::IMU_DELIVERY_GAP);
-    EXPECT_EQ(vs_graphs::core::consumeResetCause(&firstOwner),
-              ResetCause::UNATTRIBUTED_PUBLIC_REQUEST);
+    vs_graphs::core::ResetCause resetCause{};
+    ASSERT_EQ((vs_graphs::core::consumeResetCause(&firstOwner, resetCause)),
+              vs_graphs::core::ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS);
+    EXPECT_EQ(resetCause, ResetCause::VIEWER_REQUEST);
+    vs_graphs::core::ResetCause resetCause2{};
+    ASSERT_EQ((vs_graphs::core::consumeResetCause(&secondOwner, resetCause2)),
+              vs_graphs::core::ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS);
+    EXPECT_EQ(resetCause2, ResetCause::IMU_DELIVERY_GAP);
+    vs_graphs::core::ResetCause resetCause3{};
+    ASSERT_EQ((vs_graphs::core::consumeResetCause(&firstOwner, resetCause3)),
+              vs_graphs::core::ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS);
+    EXPECT_EQ(resetCause3, ResetCause::UNATTRIBUTED_PUBLIC_REQUEST);
 
-    vs_graphs::core::retainResetCause(&firstOwner, ResetCause::VIEWER_REQUEST);
-    vs_graphs::core::clearResetCause(&firstOwner);
-    EXPECT_EQ(vs_graphs::core::consumeResetCause(&firstOwner),
-              ResetCause::UNATTRIBUTED_PUBLIC_REQUEST);
+    ASSERT_EQ((vs_graphs::core::retainResetCause(&firstOwner,
+                                                 ResetCause::VIEWER_REQUEST)),
+              vs_graphs::core::ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS);
+    ASSERT_EQ((vs_graphs::core::clearResetCause(&firstOwner)),
+              vs_graphs::core::ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS);
+    vs_graphs::core::ResetCause resetCause4{};
+    ASSERT_EQ((vs_graphs::core::consumeResetCause(&firstOwner, resetCause4)),
+              vs_graphs::core::ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS);
+    EXPECT_EQ(resetCause4, ResetCause::UNATTRIBUTED_PUBLIC_REQUEST);
 }
 } /* namespace */

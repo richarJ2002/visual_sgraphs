@@ -28,6 +28,7 @@
 #include "Atlas.h"
 #include "Thirdparty/pcl_custom/WeightedSACSegmentation.hpp"
 #include "Tracking.h"
+#include "Utils/Utils/objects/UtilsStatus.h"
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -82,10 +83,14 @@ class Utils
      * @param[in]    point2_in
      *               Second point.
      *
-     * @return       Euclidean distance in the units of the input points.
+     * @param[out] euclideanDistance_out Euclidean distance in the units of the
+     * input points.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static double calculateEuclideanDistance(const Eigen::Vector3f &point1_in,
-                                             const Eigen::Vector3f &point2_in);
+    [[nodiscard]] static UtilsStatus
+        calculateEuclideanDistance(const Eigen::Vector3f &point1_in,
+                                   const Eigen::Vector3f &point2_in,
+                                   double &euclideanDistance_out);
 
     /*!
      * @brief        Calculate the distance between a point and a plane.
@@ -95,11 +100,13 @@ class Utils
      * @param[in]    point_in
      *               Given point.
      *
-     * @return       Absolute distance in the input length units.
+     * @param[out] distance_out Absolute distance in the input length units.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static double
+    [[nodiscard]] static UtilsStatus
         calculateDistancePointToPlane(const Eigen::Vector4d &plane_in,
-                                      const Eigen::Vector3d &point_in);
+                                      const Eigen::Vector3d &point_in,
+                                      double                &distance_out);
 
     /*!
      * @brief        Calculates the intersection point of a line and a
@@ -112,12 +119,14 @@ class Utils
      * @param[in]    lineEnd_in
      *               End point of the line.
      *
-     * @return       Point where the line meets the plane.
+     * @param[out] intersection_out Point where the line meets the plane.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static Eigen::Vector3d
+    [[nodiscard]] static UtilsStatus
         lineIntersectsPlane(const Eigen::Vector4d &plane_in,
                             const Eigen::Vector3d &lineStart_in,
-                            const Eigen::Vector3d &lineEnd_in);
+                            const Eigen::Vector3d &lineEnd_in,
+                            Eigen::Vector3d       &intersection_out);
 
     /*!
      * @brief        Checks to see if two planes are apart enough from
@@ -130,12 +139,15 @@ class Utils
      * @param[in]    threshold_in
      *               Threshold value for perpendicularity, in metres.
      *
-     * @return       True when both planes are valid and their
-     *               perpendicular separation exceeds the threshold.
+     * @param[out] arePlanesApartEnough_out True when both planes are valid and
+     * their perpendicular separation exceeds the threshold.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static bool arePlanesApartEnough(const geometric::Plane *p_plane1_in,
-                                     const geometric::Plane *p_plane2_in,
-                                     const double           &threshold_in);
+    [[nodiscard]] static UtilsStatus
+        arePlanesApartEnough(const geometric::Plane *p_plane1_in,
+                             const geometric::Plane *p_plane2_in,
+                             const double           &threshold_in,
+                             bool                   &arePlanesApartEnough_out);
 
     /*!
      * @brief        Checks to see if two planes are perpendicular to each
@@ -146,12 +158,14 @@ class Utils
      * @param[in]    p_plane2_in
      *               Second plane; shall be non-null.
      *
-     * @return       True when the inter-plane angle is within the
-     *               configured threshold of 90 degrees.
+     * @param[out] arePlanesPerpendicular_out True when the inter-plane angle is
+     * within the configured threshold of 90 degrees.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static bool arePlanesPerpendicular(
+    [[nodiscard]] static UtilsStatus arePlanesPerpendicular(
         const vs_graphs::core::geometric::Plane *p_plane1_in,
-        const vs_graphs::core::geometric::Plane *p_plane2_in);
+        const vs_graphs::core::geometric::Plane *p_plane2_in,
+        bool                                    &arePlanesPerpendicular_out);
 
     /*!
      * @brief        Checks to see if two planes are parallel to each other
@@ -162,12 +176,14 @@ class Utils
      * @param[in]    p_plane2_in
      *               Second plane; shall be non-null.
      *
-     * @return       True when the plane normals align within the
-     *               configured threshold.
+     * @param[out] arePlanesParallel_out True when the plane normals align
+     * within the configured threshold.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static bool
+    [[nodiscard]] static UtilsStatus
         arePlanesParallel(const vs_graphs::core::geometric::Plane *p_plane1_in,
-                          const vs_graphs::core::geometric::Plane *p_plane2_in);
+                          const vs_graphs::core::geometric::Plane *p_plane2_in,
+                          bool &arePlanesParallel_out);
 
     /*!
      * @brief        Checks to see if two planes are facing each other or
@@ -178,12 +194,14 @@ class Utils
      * @param[in]    p_plane2_in
      *               Second plane (big plane, e.g., wall); may be null.
      *
-     * @return       True when the two valid planes face each other
-     *               across a gap.
+     * @param[out] arePlanesFacingEachOther_out True when the two valid planes
+     * face each other across a gap.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static bool arePlanesFacingEachOther(
+    [[nodiscard]] static UtilsStatus arePlanesFacingEachOther(
         const vs_graphs::core::geometric::Plane *p_plane1_in,
-        const vs_graphs::core::geometric::Plane *p_plane2_in);
+        const vs_graphs::core::geometric::Plane *p_plane2_in,
+        bool                                    &arePlanesFacingEachOther_out);
 
     /*!
      * @brief        Returns the planes that are facing each other from
@@ -192,12 +210,15 @@ class Utils
      * @param[in]    planes_in
      *               List of planes to be checked.
      *
-     * @return       Facing plane pairs whose separation passes the
-     *               configured minimum. Pointers are borrowed from the
-     *               input list.
+     * @param[out] facingPlanes_out Facing plane pairs whose separation passes
+     * the configured minimum. Pointers are borrowed from the input list.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static std::vector<std::pair<geometric::Plane *, geometric::Plane *>>
-        getFacingPlanes(const std::vector<geometric::Plane *> &planes_in);
+    [[nodiscard]] static UtilsStatus getFacingPlanes(
+        const std::vector<geometric::Plane *> &planes_in,
+        std::vector<std::pair<vs_graphs::core::geometric::Plane *,
+                              vs_graphs::core::geometric::Plane *>>
+            &facingPlanes_out);
 
     /*!
      * @brief        Corrects the given plane equations to apply
@@ -206,11 +227,13 @@ class Utils
      * @param[in]    plane_in
      *               Input plane.
      *
-     * @return       Plane with negated coefficients when the offset is
-     *               positive; unchanged otherwise.
+     * @param[out] planeDirection_out Plane with negated coefficients when the
+     * offset is positive; unchanged otherwise.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static Eigen::Vector4d
-        correctPlaneDirection(const Eigen::Vector4d &plane_in);
+    [[nodiscard]] static UtilsStatus
+        correctPlaneDirection(const Eigen::Vector4d &plane_in,
+                              Eigen::Vector4d       &planeDirection_out);
 
     /*!
      * @brief        Converts the plane equation from local to global.
@@ -220,10 +243,13 @@ class Utils
      * @param[in]    plane_in
      *               Plane equation in the local map.
      *
-     * @return       Transformed plane coefficients.
+     * @param[out] transformedPlane_out Transformed plane coefficients.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static g2o::Plane3D applyPoseToPlane(const Eigen::Matrix4d &keyframePose_in,
-                                         const g2o::Plane3D    &plane_in);
+    [[nodiscard]] static UtilsStatus
+        applyPoseToPlane(const Eigen::Matrix4d &keyframePose_in,
+                         const g2o::Plane3D    &plane_in,
+                         g2o::Plane3D          &transformedPlane_out);
 
     /*!
      * @brief        Gets the centeroid of a set or cluster of points.
@@ -231,10 +257,13 @@ class Utils
      * @param[in]    points_in
      *               Given cluster of points.
      *
-     * @return       Mean of the points; zero when the input is empty.
+     * @param[out] centroid_out Mean of the points; zero when the input is
+     * empty.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static Eigen::Vector3d computeCentroidFromPoints(
-        const std::vector<Eigen::Vector3d> &points_in);
+    [[nodiscard]] static UtilsStatus
+        computeCentroidFromPoints(const std::vector<Eigen::Vector3d> &points_in,
+                                  Eigen::Vector3d &centroid_out);
 
     /*!
      * @brief        Downsamples the pointclouds based on the given leaf
@@ -247,14 +276,17 @@ class Utils
      *               units.
      * @param[in]    minPointsPerVoxel_in
      *               Minimum points required to keep a voxel.
+     * @param[out]   p_downsampledCloud_out
+     *               Owning pointer to the new downsampled cloud.
      *
-     * @return       Owning pointer to the new downsampled cloud.
+     * @return       UTILS_STATUS_SUCCESS.
      */
     template <typename PointT>
-    static typename pcl::PointCloud<PointT>::Ptr pointcloudDownsample(
+    [[nodiscard]] static UtilsStatus pointcloudDownsample(
         const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
         const float                                  leafSize_in,
-        const unsigned int                           minPointsPerVoxel_in);
+        const unsigned int                           minPointsPerVoxel_in,
+        typename pcl::PointCloud<PointT>::Ptr       &p_downsampledCloud_out);
 
     /*!
      * @brief        Filters the pointclouds based on the given min/max
@@ -265,12 +297,15 @@ class Utils
      *
      * @param[in]    p_cloud_in
      *               Pointcloud to be filtered.
+     * @param[out]   p_filteredCloud_out
+     *               Owning pointer to the new filtered cloud.
      *
-     * @return       Owning pointer to the new filtered cloud.
+     * @return       UTILS_STATUS_SUCCESS.
      */
     template <typename PointT>
-    static typename pcl::PointCloud<PointT>::Ptr pointcloudDistanceFilter(
-        const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in);
+    [[nodiscard]] static UtilsStatus pointcloudDistanceFilter(
+        const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
+        typename pcl::PointCloud<PointT>::Ptr       &p_filteredCloud_out);
 
     /*!
      * @brief        Removes the points that are farther away from their
@@ -282,14 +317,17 @@ class Utils
      *               Mean threshold for neighbor points.
      * @param[in]    stdDevThreshold_in
      *               Standard deviation threshold for neighbor points.
+     * @param[out]   p_filteredCloud_out
+     *               Owning pointer to the new filtered cloud.
      *
-     * @return       Owning pointer to the new filtered cloud.
+     * @return       UTILS_STATUS_SUCCESS.
      */
     template <typename PointT>
-    static typename pcl::PointCloud<PointT>::Ptr pointcloudOutlierRemoval(
+    [[nodiscard]] static UtilsStatus pointcloudOutlierRemoval(
         const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
         const int                                    meanThreshold_in,
-        const float                                  stdDevThreshold_in);
+        const float                                  stdDevThreshold_in,
+        typename pcl::PointCloud<PointT>::Ptr       &p_filteredCloud_out);
 
     /*!
      * @brief        Computes the width and height of a plane given its
@@ -298,10 +336,13 @@ class Utils
      * @param[in]    p_cloud_in
      *               Borrowed point cloud of the plane.
      *
-     * @return       Plane width and height in the cloud's length units.
+     * @param[out] planeWidthHeight_out Plane width and height in the cloud's
+     * length units.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static std::pair<double, double> computePlaneWidthHeight(
-        pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud_in);
+    [[nodiscard]] static UtilsStatus computePlaneWidthHeight(
+        pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud_in,
+        std::pair<double, double>                   &planeWidthHeight_out);
 
     /*!
      * @brief        Performs PCL ransac to get the plane equations from
@@ -310,14 +351,17 @@ class Utils
      *
      * @param[in,out] cloud_inout
      *               Input cloud; planes are extracted from it.
-     *
-     * @return       Extracted plane clouds paired with their plane
+     * @param[out]   planes_out
+     *               Extracted plane clouds paired with their plane
      *               equations.
+     *
+     * @return       UTILS_STATUS_SUCCESS.
      */
     template <typename PointT, template <typename> class SegmentationType>
-    static std::vector<
-        std::pair<typename pcl::PointCloud<PointT>::Ptr, Eigen::Vector4d>>
-        ransacPlaneFitting(typename pcl::PointCloud<PointT>::Ptr &cloud_inout);
+    [[nodiscard]] static UtilsStatus ransacPlaneFitting(
+        typename pcl::PointCloud<PointT>::Ptr   &cloud_inout,
+        std::vector<std::pair<typename pcl::PointCloud<PointT>::Ptr,
+                              Eigen::Vector4d>> &planes_out);
 
     /*!
      * @brief        Checks to see if the given point is on the plane or
@@ -328,11 +372,14 @@ class Utils
      * @param[in]    p_mapPoint_in
      *               Borrowed point to be checked; shall be non-null.
      *
-     * @return       True when the point lies within the configured
-     *               distance of the plane.
+     * @param[out] isOnPlane_out True when the point lies within the configured
+     * distance of the plane.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static bool pointOnPlane(Eigen::Vector4d planeEquation_in,
-                             MapPoint       *p_mapPoint_in);
+    [[nodiscard]] static UtilsStatus
+        pointOnPlane(Eigen::Vector4d planeEquation_in,
+                     MapPoint       *p_mapPoint_in,
+                     bool           &isOnPlane_out);
 
     /*!
      * @brief        Associates given planes with the mapped planes.
@@ -357,15 +404,17 @@ class Utils
      *               Optional observing camera origin in the world frame,
      *               in metres, used to keep opposite wall faces separate.
      *
-     * @return       Plane id of the mapped plane.
+     * @param[out] matchedPlaneId_out Plane id of the mapped plane.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static int associatePlanes(
+    [[nodiscard]] static UtilsStatus associatePlanes(
         const vector<geometric::Plane *>            &mappedPlanes_in,
         g2o::Plane3D                                 observedPlane_in,
         pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
         const Eigen::Matrix4d                       &keyframePose_in,
         const geometric::Plane::PlaneVariant         observedPlaneType_in,
         const float                                  threshold_in,
+        int                                         &matchedPlaneId_out,
         const float maximumFiniteCloudDistance_m_in = -1.0F,
         const std::optional<Eigen::Vector3d> &observationOrigin_World_m_in =
             std::nullopt);
@@ -379,7 +428,7 @@ class Utils
      * @param[in,out] clusterIndices_inout
      *               Vector of point indices for each cluster.
      */
-    static void clusterPlaneClouds(
+    [[nodiscard]] static UtilsStatus clusterPlaneClouds(
         const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &p_cloud_in,
         std::vector<pcl::PointIndices>                &clusterIndices_inout);
 
@@ -390,7 +439,8 @@ class Utils
      * @param[in]    p_atlas_in
      *               A pointer to the Atlas
      */
-    static void reAssociateSemanticPlanes(Atlas *p_atlas_in);
+    [[nodiscard]] static UtilsStatus
+        reAssociateSemanticPlanes(Atlas *p_atlas_in);
 
     /*!
      * @brief        Re-associates semantically classified planes if they get
@@ -399,7 +449,7 @@ class Utils
      * @param[in]    p_atlas_in
      *               a pointer to the Atlas
      */
-    static void reAssociateRooms(Atlas *p_atlas_in);
+    [[nodiscard]] static UtilsStatus reAssociateRooms(Atlas *p_atlas_in);
 
     /*!
      * @brief        Fuses duplicate confirmed rooms introduced by a
@@ -417,7 +467,7 @@ class Utils
      * @param[in]    importedRooms_in
      *               Rooms transferred from the obsolete submap.
      */
-    static void fuseDuplicateRoomsAfterMerge(
+    [[nodiscard]] static UtilsStatus fuseDuplicateRoomsAfterMerge(
         Map                                 *p_map_inout,
         const std::vector<semantic::Room *> &importedRooms_in);
 
@@ -428,7 +478,7 @@ class Utils
      * @param[in]     p_atlas_in
      *                 Atlas whose active semantic graph is reconciled.
      */
-    static void reAssociatePassages(Atlas *p_atlas_in);
+    [[nodiscard]] static UtilsStatus reAssociatePassages(Atlas *p_atlas_in);
 
     /*!
      * @brief        Propagates keyframe pose corrections to the
@@ -455,7 +505,7 @@ class Utils
      *               deformation node can anchor an entity. Pass
      *               identity for an in-place BA.
      */
-    static void propagateSemanticPoseCorrections(
+    [[nodiscard]] static UtilsStatus propagateSemanticPoseCorrections(
         Map                   *p_map_inout,
         const KeyFramePoseMap &keyFramePosesBefore_WorldToCamera_in,
         const KeyFramePoseMap &keyFramePosesAfter_WorldToCamera_in,
@@ -471,7 +521,7 @@ class Utils
      * @param[in]    p_atlas_in
      *               a pointer to the Atlas
      */
-    static void consolidateProvisionalRooms(
+    [[nodiscard]] static UtilsStatus consolidateProvisionalRooms(
         vs_graphs::core::semantic::Room *p_selectedRoom_inout,
         Atlas                           *p_atlas_in);
 
@@ -481,11 +531,14 @@ class Utils
      * @param[in]    classId_in
      *               Class id.
      *
-     * @return       Ground, wall, door or window type for ids 0 to 3;
-     *               UNDEFINED otherwise.
+     * @param[out] planeTypeFromClassId_out Ground, wall, door or window type
+     * for ids 0 to 3; UNDEFINED otherwise.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static vs_graphs::core::geometric::Plane::PlaneVariant
-        getPlaneTypeFromClassId(int classId_in);
+    [[nodiscard]] static UtilsStatus
+        getPlaneTypeFromClassId(int classId_in,
+                                vs_graphs::core::geometric::Plane::PlaneVariant
+                                    &planeTypeFromClassId_out);
 
     /*!
      * @brief        Gets the class id from the PlaneVariant type.
@@ -493,10 +546,13 @@ class Utils
      * @param[in]    planeType_in
      *               PlaneVariant type.
      *
-     * @return       Class id 0 to 3 for known types; -1 otherwise.
+     * @param[out] classIdFromPlaneType_out Class id 0 to 3 for known types; -1
+     * otherwise.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static int getClassIdFromPlaneType(
-        vs_graphs::core::geometric::Plane::PlaneVariant planeType_in);
+    [[nodiscard]] static UtilsStatus getClassIdFromPlaneType(
+        vs_graphs::core::geometric::Plane::PlaneVariant planeType_in,
+        int &classIdFromPlaneType_out);
 
     /*!
      * @brief        Computes the rigid transform mapping map A into map B
@@ -515,14 +571,16 @@ class Utils
      * @param[in]    centroidsB_in
      *               Wall centroids of map B.
      *
-     * @return       Rigid transform from map A to map B, or identity
-     *               when the input data is invalid.
+     * @param[out] mapTransform_Horn_out Rigid transform from map A to map B, or
+     * identity when the input data is invalid.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static Eigen::Isometry3d computeMapTransform_Horn(
+    [[nodiscard]] static UtilsStatus computeMapTransform_Horn(
         const std::vector<Eigen::Vector3d> &normalsA_in,
         const std::vector<Eigen::Vector3d> &centroidsA_in,
         const std::vector<Eigen::Vector3d> &normalsB_in,
-        const std::vector<Eigen::Vector3d> &centroidsB_in);
+        const std::vector<Eigen::Vector3d> &centroidsB_in,
+        Eigen::Isometry3d                  &mapTransform_Horn_out);
 
     /*!
      * @brief        Pairs the walls of two matched rooms by greedy
@@ -542,16 +600,18 @@ class Utils
      * @param[in,out] centroidsB_inout
      *               Matched wall centroids of room B.
      *
-     * @return       Number of accepted wall pairs; zero when either
-     *               room is null.
+     * @param[out] matchedWallCount_out Number of accepted wall pairs; zero when
+     * either room is null.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static std::size_t
+    [[nodiscard]] static UtilsStatus
         matchWallsBetweenRooms(const semantic::Room         *p_roomA_in,
                                const semantic::Room         *p_roomB_in,
                                std::vector<Eigen::Vector3d> &normalsA_inout,
                                std::vector<Eigen::Vector3d> &centroidsA_inout,
                                std::vector<Eigen::Vector3d> &normalsB_inout,
-                               std::vector<Eigen::Vector3d> &centroidsB_inout);
+                               std::vector<Eigen::Vector3d> &centroidsB_inout,
+                               std::size_t &matchedWallCount_out);
 
     /*!
      * @brief        Gathers wall correspondences across two maps using
@@ -570,16 +630,18 @@ class Utils
      * @param[in,out] centroidsB_inout
      *               Matched wall centroids of map B.
      *
-     * @return       True when at least three valid correspondences were
-     *               collected.
+     * @param[out] hasEnoughCorrespondences_out True when at least three valid
+     * correspondences were collected.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static bool collectCorrespondingWalls(
+    [[nodiscard]] static UtilsStatus collectCorrespondingWalls(
         Map                          *p_mapA_in,
         Map                          *p_mapB_in,
         std::vector<Eigen::Vector3d> &normalsA_inout,
         std::vector<Eigen::Vector3d> &centroidsA_inout,
         std::vector<Eigen::Vector3d> &normalsB_inout,
-        std::vector<Eigen::Vector3d> &centroidsB_inout);
+        std::vector<Eigen::Vector3d> &centroidsB_inout,
+        bool                         &hasEnoughCorrespondences_out);
 
     /*!
      * @brief        Calculates the soft-min approximation of the given
@@ -589,9 +651,11 @@ class Utils
      * @param[in]    values_in
      *               Input values; shall hold at least one value.
      *
-     * @return       Soft-min value.
+     * @param[out] softMin_out Soft-min value.
+     * @return UTILS_STATUS_SUCCESS.
      */
-    static double calcSoftMin(vector<double> &values_in);
+    [[nodiscard]] static UtilsStatus calcSoftMin(vector<double> &values_in,
+                                                 double         &softMin_out);
 };
 } // namespace utils
 } // namespace utils

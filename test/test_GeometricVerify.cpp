@@ -620,7 +620,9 @@ TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
     map.addDetectedMapRoom(&roomZero);
     map.addDetectedMapRoom(&roomTwo);
 
-    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map, {&roomTwo});
+    ASSERT_EQ(
+        (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map, {&roomTwo})),
+        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS);
 
     bool isBad2{};
     ASSERT_EQ((roomZero.isBad(isBad2)),
@@ -657,7 +659,10 @@ TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
     map.addDetectedMapRoom(&retainedRoom);
     map.addDetectedMapRoom(&importedRoom);
 
-    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map, {&importedRoom});
+    ASSERT_EQ(
+        (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map,
+                                                           {&importedRoom})),
+        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS);
 
     bool isBad2{};
     ASSERT_EQ((retainedRoom.isBad(isBad2)),
@@ -700,7 +705,10 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
     map.addDetectedMapRoom(&retainedRoom);
     map.addDetectedMapRoom(&importedRoom);
 
-    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map, {&importedRoom});
+    ASSERT_EQ(
+        (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map,
+                                                           {&importedRoom})),
+        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS);
 
     bool isBad2{};
     ASSERT_EQ((importedRoom.isBad(isBad2)),
@@ -734,8 +742,10 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
     map.addDetectedMapRoom(&retainedUnvisited);
     map.addDetectedMapRoom(&importedUnvisited);
 
-    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map,
-                                                      {&importedUnvisited});
+    ASSERT_EQ((utils::utils::Utils::fuseDuplicateRoomsAfterMerge(
+                  &map,
+                  {&importedUnvisited})),
+              utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS);
 
     bool isBad3{};
     ASSERT_EQ((importedUnvisited.isBad(isBad3)),
@@ -885,9 +895,11 @@ TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
      * had zero effect on the verifier. This exercises configFromSystemParams()
      * threading distinctive, non-default loaded values through, proving the
      * wiring actually exists now. */
-    types::SystemParams *params            = types::SystemParams::getParams();
-    const auto           savedVerification = params->verification;
-    const auto           savedFactor       = params->factor;
+    types::SystemParams *params = nullptr;
+    ASSERT_EQ((types::SystemParams::getParams(params)),
+              types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS);
+    const auto savedVerification = params->verification;
+    const auto savedFactor       = params->factor;
 
     params->verification.maxNormalAngle_deg      = 17.5F;
     params->verification.maxOffset_m             = 0.42F;

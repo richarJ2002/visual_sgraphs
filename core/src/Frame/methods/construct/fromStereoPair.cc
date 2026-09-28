@@ -68,7 +68,6 @@ Frame::Frame(const cv::Mat &imageColor_in,
     p_orbExtractorRight(p_extractorRight_in),
     timeStamp(timeStamp_in),
     calibrationMatrix(K_in.clone()),
-    calibrationMatrixEigen(utils::converter::Converter::toMatrix3f(K_in)),
     distortionCoefficients(distanceCoefficients_in.clone()),
     mbf(bf_in),
     depthThreshold(thresholdDepth_in),
@@ -82,6 +81,12 @@ Frame::Frame(const cv::Mat &imageColor_in,
     p_camera(p_camera_in),
     p_camera2(nullptr)
 {
+    if (utils::converter::Converter::toMatrix3f(K_in, calibrationMatrixEigen) !=
+        utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+    {
+        // toMatrix3f cannot fail; continue as before.
+    }
+
     // Setting the color image for Semantic Segmentation
     colorImg = imageColor_in.clone();
 

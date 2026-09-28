@@ -38,19 +38,44 @@ bool VertexSim3Expmap::read(std::istream &inputStream_inout)
 
     inputStream_inout >> cam2world[6];
 
-    float cameraParameterValue;
-    for (size_t parameterIndex = 0; parameterIndex < p_firstCamera->size();
+    float  cameraParameterValue;
+    size_t firstCameraSize{};
+    if (p_firstCamera->size(firstCameraSize) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // size cannot fail; continue as before.
+    }
+    for (size_t parameterIndex = 0; parameterIndex < firstCameraSize;
          parameterIndex++)
     {
         inputStream_inout >> cameraParameterValue;
-        p_firstCamera->setParameter(cameraParameterValue, parameterIndex);
+        if (p_firstCamera->setParameter(cameraParameterValue, parameterIndex) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // setParameter cannot fail; continue as before.
+        }
     }
 
-    for (size_t parameterIndex = 0; parameterIndex < p_secondCamera->size();
+    size_t secondCameraSize{};
+    if (p_secondCamera->size(secondCameraSize) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // size cannot fail; continue as before.
+    }
+    for (size_t parameterIndex = 0; parameterIndex < secondCameraSize;
          parameterIndex++)
     {
         inputStream_inout >> cameraParameterValue;
-        p_secondCamera->setParameter(cameraParameterValue, parameterIndex);
+        if (p_secondCamera->setParameter(cameraParameterValue,
+                                         parameterIndex) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // setParameter cannot fail; continue as before.
+        }
     }
 
     setEstimate(g2o::Sim3(cam2world).inverse());

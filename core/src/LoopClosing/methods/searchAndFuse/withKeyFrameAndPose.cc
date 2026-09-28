@@ -55,7 +55,12 @@ void LoopClosing::searchAndFuse(const KeyFrameAndPose &correctedPosesMap_in,
         Map      *p_map        = p_keyFrame->getMap();
 
         g2o::Sim3     g2oScw = mit->second;
-        Sophus::Sim3f Scw    = utils::converter::Converter::toSophus(g2oScw);
+        Sophus::Sim3f Scw{};
+        if (utils::converter::Converter::toSophus(g2oScw, Scw) !=
+            utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
+        {
+            // toSophus cannot fail; continue as before.
+        }
 
         vector<MapPoint *> replacePoints(mapPoints_in.size(),
                                          static_cast<MapPoint *>(nullptr));

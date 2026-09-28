@@ -32,16 +32,18 @@ namespace utils
 namespace utils
 {
 
-ProjectedPlaneBounds projectPlaneBounds(
+UtilsStatus projectPlaneBounds(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_planeCloud_in,
     const Eigen::Vector3d                              &tangentU_World_in,
-    const Eigen::Vector3d                              &tangentV_World_in)
+    const Eigen::Vector3d                              &tangentV_World_in,
+    ProjectedPlaneBounds                               &planeBounds_out)
 {
     ProjectedPlaneBounds bounds;
 
     if (p_planeCloud_in == nullptr)
     {
-        return bounds;
+        planeBounds_out = bounds;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     for (const pcl::PointXYZRGBA &point_World_m : p_planeCloud_in->points)
@@ -65,7 +67,8 @@ ProjectedPlaneBounds projectPlaneBounds(
         bounds.isValid    = true;
     }
 
-    return bounds;
+    planeBounds_out = bounds;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

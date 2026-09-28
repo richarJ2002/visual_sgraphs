@@ -26,10 +26,11 @@ namespace vs_graphs
 namespace core
 {
 
-vs_graphs::core::semantic::Room *GeoSemHelpers::createBlankRoomCandidate(
-    vs_graphs::core::Atlas *p_atlas_inout,
-    Eigen::Vector3d         centroid_in,
-    std::optional<int>      stableRoomId_in)
+GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
+    vs_graphs::core::Atlas           *p_atlas_inout,
+    vs_graphs::core::semantic::Room *&p_blankRoomCandidate_out,
+    Eigen::Vector3d                   centroid_in,
+    std::optional<int>                stableRoomId_in)
 {
     /* Confirm that the p_atlas_inout is valid */
     if (p_atlas_inout == nullptr)
@@ -37,7 +38,8 @@ vs_graphs::core::semantic::Room *GeoSemHelpers::createBlankRoomCandidate(
         std::cerr << "[GeoSemHelper] Cannot create room: Atlas is null."
                   << std::endl;
 
-        return nullptr;
+        p_blankRoomCandidate_out = nullptr;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     /* Extract the existing rooms from the map */
@@ -107,7 +109,8 @@ vs_graphs::core::semantic::Room *GeoSemHelpers::createBlankRoomCandidate(
                      "never exceed passable-passage count + 1."
                   << std::endl;
 
-        return nullptr;
+        p_blankRoomCandidate_out = nullptr;
+        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
     const int roomId = stableRoomId_in.has_value()
@@ -168,7 +171,8 @@ vs_graphs::core::semantic::Room *GeoSemHelpers::createBlankRoomCandidate(
     std::cout << "[GeoSemHelper] Created provisional SE#" << newRoomId << " at "
               << newRoomCentroid.transpose() << "." << std::endl;
 
-    return p_newRoom;
+    p_blankRoomCandidate_out = p_newRoom;
+    return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
 } // namespace core

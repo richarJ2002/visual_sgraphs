@@ -93,7 +93,11 @@ void SemanticsManager::run(void)
          */
         if (p_sysParams->semSeg.reassociate.enabled)
         {
-            utils::utils::Utils::reAssociateSemanticPlanes(p_atlas);
+            if (utils::utils::Utils::reAssociateSemanticPlanes(p_atlas) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // reAssociateSemanticPlanes cannot fail; continue as before.
+            }
         }
 
         /*  Detect/update passage GEOMETRY before any wall-to-room admission
@@ -136,14 +140,22 @@ void SemanticsManager::run(void)
         associateAllWallsToRooms();
 
         /* Consolidate only redundant single-wall provisional structures. */
-        utils::utils::Utils::reAssociateRooms(p_atlas);
+        if (utils::utils::Utils::reAssociateRooms(p_atlas) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // reAssociateRooms cannot fail; continue as before.
+        }
 
         /*  Room-dependent passage steps: geometry was already refreshed
          * above, ahead of this cycle's wall admission. */
         if (p_sysParams->semSeg.enablePassageDetection)
         {
             updateTraversalEvidence(p_atlas);
-            utils::utils::Utils::reAssociatePassages(p_atlas);
+            if (utils::utils::Utils::reAssociatePassages(p_atlas) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // reAssociatePassages cannot fail; continue as before.
+            }
             associatePassagesToRooms();
             detachWallsBeyondConfirmedPassages();
 

@@ -34,9 +34,10 @@ namespace utils
 namespace utils
 {
 
-Eigen::Vector3d Utils::lineIntersectsPlane(const Eigen::Vector4d &plane_in,
-                                           const Eigen::Vector3d &lineStart_in,
-                                           const Eigen::Vector3d &lineEnd_in)
+UtilsStatus Utils::lineIntersectsPlane(const Eigen::Vector4d &plane_in,
+                                       const Eigen::Vector3d &lineStart_in,
+                                       const Eigen::Vector3d &lineEnd_in,
+                                       Eigen::Vector3d       &intersection_out)
 {
     // Calculate the direction vector of the line
     Eigen::Vector3d lineDirection = lineEnd_in - lineStart_in;
@@ -46,7 +47,8 @@ Eigen::Vector3d Utils::lineIntersectsPlane(const Eigen::Vector4d &plane_in,
     // Calculate the intersection point
     double t = -(plane_in.head<3>().dot(lineStart_in) + plane_in(3)) /
                plane_in.head<3>().dot(lineDirection);
-    return lineStart_in + t * lineDirection;
+    intersection_out = lineStart_in + t * lineDirection;
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
 } // namespace utils

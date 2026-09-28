@@ -12,7 +12,8 @@ namespace vs_graphs
 namespace core
 {
 
-void ResetCauseRetention::retain(const ResetCause cause_in) noexcept
+ResetCauseRetentionStatus
+    ResetCauseRetention::retain(const ResetCause cause_in) noexcept
 {
     if (!hasCause)
     {
@@ -23,6 +24,8 @@ void ResetCauseRetention::retain(const ResetCause cause_in) noexcept
     {
         cause = ResetCause::MULTIPLE_COALESCED_REQUESTS;
     }
+
+    return ResetCauseRetentionStatus::RESET_CAUSE_RETENTION_STATUS_SUCCESS;
 }
 
 } // namespace core

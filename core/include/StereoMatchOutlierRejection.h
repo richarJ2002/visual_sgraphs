@@ -7,6 +7,7 @@
 #ifndef VS_GRAPHS_CORE_STEREO_MATCH_OUTLIER_REJECTION_H
 #define VS_GRAPHS_CORE_STEREO_MATCH_OUTLIER_REJECTION_H
 
+#include "StereoMatchOutlierRejectionStatus.h"
 #include <utility>
 #include <vector>
 
@@ -31,7 +32,7 @@ namespace core
  *       matches has nothing to compute a median from, and must not read
  *       vDistIdx[vDistIdx.size() / 2] (out of bounds on an empty vector).
  */
-void rejectOutlierStereoMatches(
+[[nodiscard]] StereoMatchOutlierRejectionStatus rejectOutlierStereoMatches(
     std::vector<std::pair<int, int>> &distanceIndices_inout,
     std::vector<float>               &mvuRight_inout,
     std::vector<float>               &depths_inout);

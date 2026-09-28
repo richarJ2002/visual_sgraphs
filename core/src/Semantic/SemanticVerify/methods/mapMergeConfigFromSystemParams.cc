@@ -31,17 +31,47 @@ namespace semantic
 SemanticVerifyStatus SemanticVerify::mapMergeConfigFromSystemParams(
     SemanticVerify::MapMergeConfig &configuration_out)
 {
-    MapMergeConfig configuration;
-    configuration.passage_match_tolerance_m = static_cast<double>(
-        types::SystemParams::getParams()->mapMerge.passageMatchTolerance_m);
-    configuration.wall_coplanar_angle_deg = static_cast<double>(
-        types::SystemParams::getParams()->mapMerge.wallCoplanarAngle_deg);
-    configuration.wall_edge_overlap_m = static_cast<double>(
-        types::SystemParams::getParams()->mapMerge.wallEdgeOverlap_m);
-    configuration.floor_match_tolerance_m = static_cast<double>(
-        types::SystemParams::getParams()->mapMerge.floorMatchTolerance_m);
-    configuration.room_centroid_tolerance_m = static_cast<double>(
-        types::SystemParams::getParams()->mapMerge.roomCentroidTolerance_m);
+    MapMergeConfig       configuration;
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    configuration.passage_match_tolerance_m =
+        static_cast<double>(p_params->mapMerge.passageMatchTolerance_m);
+    types::SystemParams *p_params2 = nullptr;
+    if (types::SystemParams::getParams(p_params2) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    configuration.wall_coplanar_angle_deg =
+        static_cast<double>(p_params2->mapMerge.wallCoplanarAngle_deg);
+    types::SystemParams *p_params3 = nullptr;
+    if (types::SystemParams::getParams(p_params3) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    configuration.wall_edge_overlap_m =
+        static_cast<double>(p_params3->mapMerge.wallEdgeOverlap_m);
+    types::SystemParams *p_params4 = nullptr;
+    if (types::SystemParams::getParams(p_params4) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    configuration.floor_match_tolerance_m =
+        static_cast<double>(p_params4->mapMerge.floorMatchTolerance_m);
+    types::SystemParams *p_params5 = nullptr;
+    if (types::SystemParams::getParams(p_params5) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    configuration.room_centroid_tolerance_m =
+        static_cast<double>(p_params5->mapMerge.roomCentroidTolerance_m);
     configuration_out = configuration;
     return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }

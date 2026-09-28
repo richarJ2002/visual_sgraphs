@@ -38,6 +38,7 @@
 
 #include "Geometric/Plane.h"
 #include "Semantic/Passage.h"
+#include "Utils/Utils/objects/UtilsStatus.h"
 
 namespace vs_graphs
 {
@@ -73,12 +74,15 @@ struct ObservationSideEvidence
  *               Normalized plane equation expressed in the active map
  *               frame.
  *
- * @return       Median signed camera distance in metres, or no value
- *               when the available observations do not establish a side.
+ * @param[out] medianObservationSide_World_m_out Median signed camera distance
+ * in metres, or no value when the available observations do not establish a
+ * side.
+ * @return UTILS_STATUS_SUCCESS.
  */
-ObservationSideEvidence getMedianObservationSide_World_m(
-    geometric::Plane      *p_plane_in,
-    const Eigen::Vector4d &planeEquation_World_in);
+[[nodiscard]] UtilsStatus getMedianObservationSide_World_m(
+    geometric::Plane        *p_plane_in,
+    const Eigen::Vector4d   &planeEquation_World_in,
+    ObservationSideEvidence &medianObservationSide_World_m_out);
 
 /*!
  * @brief Finite ranges of a cloud projected onto two plane-tangent axes.
@@ -103,13 +107,15 @@ struct ProjectedPlaneBounds
  * @param[in]    tangentV_World_in
  *               Second unit tangent of the common plane.
  *
- * @return       Finite projected bounds, or invalid bounds for an empty
- *               cloud.
+ * @param[out] planeBounds_out Finite projected bounds, or invalid bounds for an
+ * empty cloud.
+ * @return UTILS_STATUS_SUCCESS.
  */
-ProjectedPlaneBounds projectPlaneBounds(
+[[nodiscard]] UtilsStatus projectPlaneBounds(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_planeCloud_in,
     const Eigen::Vector3d                              &tangentU_World_in,
-    const Eigen::Vector3d                              &tangentV_World_in);
+    const Eigen::Vector3d                              &tangentV_World_in,
+    ProjectedPlaneBounds                               &planeBounds_out);
 
 /*!
  * @brief        Tests whether two finite clouds overlap or extend one
@@ -127,15 +133,17 @@ ProjectedPlaneBounds projectPlaneBounds(
  * @param[in]    minimumOrthogonalOverlap_m_in
  *               Required overlap along the other tangent.
  *
- * @return       True when the clouds overlap or form adjacent finite
- *               extensions.
+ * @param[out] areCompatible_out True when the clouds overlap or form adjacent
+ * finite extensions.
+ * @return UTILS_STATUS_SUCCESS.
  */
-bool finiteWallExtentsAreCompatible(
+[[nodiscard]] UtilsStatus finiteWallExtentsAreCompatible(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_firstCloud_in,
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_secondCloud_in,
     const Eigen::Vector3d                              &commonNormal_World_in,
     const double                                        maximumInPlaneGap_m_in,
-    const double minimumOrthogonalOverlap_m_in);
+    const double minimumOrthogonalOverlap_m_in,
+    bool        &areCompatible_out);
 
 /*!
  * @brief        Tests whether a segment traverses a passable passage
@@ -159,16 +167,18 @@ bool finiteWallExtentsAreCompatible(
  * @param[in]    minimumSideDistance_m_in
  *               Required endpoint distance from plane.
  *
- * @return       True only when the segment crosses inside the finite
- *               opening.
+ * @param[out] crossesOpening_out True only when the segment crosses inside the
+ * finite opening.
+ * @return UTILS_STATUS_SUCCESS.
  */
-bool crossesPassablePassageOpening(
+[[nodiscard]] UtilsStatus crossesPassablePassageOpening(
     const Eigen::Vector3d              &segmentStart_World_m_in,
     const Eigen::Vector3d              &segmentEnd_World_m_in,
     vs_graphs::core::semantic::Passage *p_passage_in,
     const Eigen::Vector3d              &groundNormal_World_in,
     const double                        openingMargin_m_in,
-    const double                        minimumSideDistance_m_in);
+    const double                        minimumSideDistance_m_in,
+    bool                               &crossesOpening_out);
 
 } // namespace utils
 } // namespace utils

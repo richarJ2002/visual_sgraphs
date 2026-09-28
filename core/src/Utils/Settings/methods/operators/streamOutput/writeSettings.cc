@@ -55,23 +55,44 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
     output_inout << "\t- Camera#1 parameters (";
     if (s_in.cameraModel == Settings::CameraType::PINHOLE ||
         s_in.cameraModel == Settings::CameraType::RECTIFIED)
+    {
         output_inout << "camera_models::Pinhole";
+    }
     else
+    {
         output_inout << "Kannala-Brandt";
+    }
     output_inout << "): [";
+    size_t size2{};
+    if (s_in.p_originalCalibration1->size(size2) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    {
+        // size cannot fail; continue as before.
+    }
     for (size_t originalCalibration1Index = 0;
-         originalCalibration1Index < s_in.p_originalCalibration1->size();
+         originalCalibration1Index < size2;
          originalCalibration1Index++)
-        output_inout << " "
-                     << s_in.p_originalCalibration1->getParameter(
-                            originalCalibration1Index);
+    {
+        float parameter{};
+        if (s_in.p_originalCalibration1->getParameter(originalCalibration1Index,
+                                                      parameter) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // getParameter cannot fail; continue as before.
+        }
+        output_inout << " " << parameter;
+    }
     output_inout << " ]" << endl;
 
     if (!s_in.pinholeDistortion1.empty())
     {
         output_inout << "\t- Camera#1 distortion parameters: [ ";
         for (float d : s_in.pinholeDistortion1)
+        {
             output_inout << " " << d;
+        }
         output_inout << " ]" << endl;
     }
 
@@ -80,23 +101,45 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
     {
         output_inout << "\t- Camera#2 parameters (";
         if (s_in.cameraModel == Settings::CameraType::PINHOLE)
+        {
             output_inout << "camera_models::Pinhole";
+        }
         else
+        {
             output_inout << "Kannala-Brandt";
+        }
         output_inout << "): [";
+        size_t size3{};
+        if (s_in.p_originalCalibration2->size(size3) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // size cannot fail; continue as before.
+        }
         for (size_t originalCalibration1Index = 0;
-             originalCalibration1Index < s_in.p_originalCalibration2->size();
+             originalCalibration1Index < size3;
              originalCalibration1Index++)
-            output_inout << " "
-                         << s_in.p_originalCalibration2->getParameter(
-                                originalCalibration1Index);
+        {
+            float parameter2{};
+            if (s_in.p_originalCalibration2->getParameter(
+                    originalCalibration1Index,
+                    parameter2) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // getParameter cannot fail; continue as before.
+            }
+            output_inout << " " << parameter2;
+        }
         output_inout << " ]" << endl;
 
         if (!s_in.pinholeDistortion2.empty())
         {
             output_inout << "\t- Camera#2 distortion parameters: [ ";
             for (float d : s_in.pinholeDistortion2)
+            {
                 output_inout << " " << d;
+            }
             output_inout << " ]" << endl;
         }
     }
@@ -110,35 +153,80 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
     if (s_in.isRectificationNeeded)
     {
         output_inout << "\t- Camera#1 parameters after rectification: [";
+        size_t size4{};
+        if (s_in.p_calibration1->size(size4) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // size cannot fail; continue as before.
+        }
         for (size_t originalCalibration1Index = 0;
-             originalCalibration1Index < s_in.p_calibration1->size();
+             originalCalibration1Index < size4;
              originalCalibration1Index++)
-            output_inout << " "
-                         << s_in.p_calibration1->getParameter(
-                                originalCalibration1Index);
+        {
+            float parameter3{};
+            if (s_in.p_calibration1->getParameter(originalCalibration1Index,
+                                                  parameter3) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // getParameter cannot fail; continue as before.
+            }
+            output_inout << " " << parameter3;
+        }
         output_inout << " ]" << endl;
 
         if (s_in.sensor == System::STEREO || s_in.sensor == System::IMU_STEREO)
         {
             output_inout << "\t- Camera#2 parameters after rectification: [";
+            size_t size5{};
+            if (s_in.p_calibration2->size(size5) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // size cannot fail; continue as before.
+            }
             for (size_t originalCalibration1Index = 0;
-                 originalCalibration1Index < s_in.p_calibration2->size();
+                 originalCalibration1Index < size5;
                  originalCalibration1Index++)
-                output_inout << " "
-                             << s_in.p_calibration2->getParameter(
-                                    originalCalibration1Index);
+            {
+                float parameter4{};
+                if (s_in.p_calibration2->getParameter(originalCalibration1Index,
+                                                      parameter4) !=
+                    camera_models::geometriccamera::GeometricCameraStatus::
+                        GEOMETRIC_CAMERA_STATUS_SUCCESS)
+                {
+                    // getParameter cannot fail; continue as before.
+                }
+                output_inout << " " << parameter4;
+            }
             output_inout << " ]" << endl;
         }
     }
     else if (s_in.isFirstResizeNeeded)
     {
         output_inout << "\t- Camera#1 parameters after resize: [";
+        size_t size6{};
+        if (s_in.p_calibration1->size(size6) !=
+            camera_models::geometriccamera::GeometricCameraStatus::
+                GEOMETRIC_CAMERA_STATUS_SUCCESS)
+        {
+            // size cannot fail; continue as before.
+        }
         for (size_t originalCalibration1Index = 0;
-             originalCalibration1Index < s_in.p_calibration1->size();
+             originalCalibration1Index < size6;
              originalCalibration1Index++)
-            output_inout << " "
-                         << s_in.p_calibration1->getParameter(
-                                originalCalibration1Index);
+        {
+            float parameter5{};
+            if (s_in.p_calibration1->getParameter(originalCalibration1Index,
+                                                  parameter5) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // getParameter cannot fail; continue as before.
+            }
+            output_inout << " " << parameter5;
+        }
         output_inout << " ]" << endl;
 
         if ((s_in.sensor == System::STEREO ||
@@ -146,12 +234,27 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
             s_in.cameraModel == Settings::CameraType::KANNALA_BRANDT)
         {
             output_inout << "\t- Camera#2 parameters after resize: [";
+            size_t size7{};
+            if (s_in.p_calibration2->size(size7) !=
+                camera_models::geometriccamera::GeometricCameraStatus::
+                    GEOMETRIC_CAMERA_STATUS_SUCCESS)
+            {
+                // size cannot fail; continue as before.
+            }
             for (size_t originalCalibration1Index = 0;
-                 originalCalibration1Index < s_in.p_calibration2->size();
+                 originalCalibration1Index < size7;
                  originalCalibration1Index++)
-                output_inout << " "
-                             << s_in.p_calibration2->getParameter(
-                                    originalCalibration1Index);
+            {
+                float parameter6{};
+                if (s_in.p_calibration2->getParameter(originalCalibration1Index,
+                                                      parameter6) !=
+                    camera_models::geometriccamera::GeometricCameraStatus::
+                        GEOMETRIC_CAMERA_STATUS_SUCCESS)
+                {
+                    // getParameter cannot fail; continue as before.
+                }
+                output_inout << " " << parameter6;
+            }
             output_inout << " ]" << endl;
         }
     }

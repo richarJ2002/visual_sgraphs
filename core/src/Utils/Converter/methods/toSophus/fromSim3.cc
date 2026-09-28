@@ -42,12 +42,14 @@ namespace utils
 namespace converter
 {
 
-Sophus::Sim3f Converter::toSophus(const g2o::Sim3 &similarity_in)
+ConverterStatus Converter::toSophus(const g2o::Sim3 &similarity_in,
+                                    Sophus::Sim3f   &sophus_out)
 {
-    return Sophus::Sim3f(Sophus::RxSO3d((float)similarity_in.scale(),
-                                        similarity_in.rotation().matrix())
-                             .cast<float>(),
-                         similarity_in.translation().cast<float>());
+    sophus_out = Sophus::Sim3f(Sophus::RxSO3d((float)similarity_in.scale(),
+                                              similarity_in.rotation().matrix())
+                                   .cast<float>(),
+                               similarity_in.translation().cast<float>());
+    return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
 } // namespace converter

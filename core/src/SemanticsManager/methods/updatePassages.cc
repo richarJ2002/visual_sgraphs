@@ -77,9 +77,14 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             }
 
             /* Extract width height supple of door */
-            std::pair<double, double> widthHeight =
-                utils::utils::Utils::computePlaneWidthHeight(
-                    p_doorPlane->getGeometrySnapshot().supportCloud);
+            std::pair<double, double> widthHeight{};
+            if (utils::utils::Utils::computePlaneWidthHeight(
+                    p_doorPlane->getGeometrySnapshot().supportCloud,
+                    widthHeight) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // computePlaneWidthHeight cannot fail; continue as before.
+            }
 
             /* Extract the measured height and width */
             const double measuredWidth  = widthHeight.first;
@@ -255,8 +260,16 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 vs_graphs::core::geometric::Plane passagePlane;
                 passagePlane.setGlobalEquation(g2o::Plane3D(midPlaneEquation));
 
-                if (utils::utils::Utils::arePlanesPerpendicular(&passagePlane,
-                                                                p_groundPlane))
+                bool arePlanesPerpendicular2{};
+                if (utils::utils::Utils::arePlanesPerpendicular(
+                        &passagePlane,
+                        p_groundPlane,
+                        arePlanesPerpendicular2) !=
+                    utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                {
+                    // arePlanesPerpendicular cannot fail; continue as before.
+                }
+                if (arePlanesPerpendicular2)
                 {
                     if (passage->setGlobalEquation(
                             g2o::Plane3D(midPlaneEquation)) !=
@@ -330,8 +343,16 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 // getGlobalEquation cannot fail; continue as before.
             }
             passagePlane.setGlobalEquation(passageGlobalEquation);
-            if (!utils::utils::Utils::arePlanesPerpendicular(&passagePlane,
-                                                             p_groundPlane))
+            bool arePlanesPerpendicular3{};
+            if (utils::utils::Utils::arePlanesPerpendicular(
+                    &passagePlane,
+                    p_groundPlane,
+                    arePlanesPerpendicular3) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                // arePlanesPerpendicular cannot fail; continue as before.
+            }
+            if (!arePlanesPerpendicular3)
             {
                 // Project the passage normal onto the horizontal plane to
                 // remove tilt

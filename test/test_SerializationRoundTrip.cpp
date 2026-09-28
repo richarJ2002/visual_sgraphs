@@ -415,7 +415,10 @@ TEST(SerializationCamera, PinholeRoundTrip)
 {
     camera_models::pinhole::Pinhole original(
         std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
-    const unsigned int               original_id = original.getId();
+    unsigned int original_id{};
+    ASSERT_EQ((original.getId(original_id)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
     // Heap leak intentional: camera_models::pinhole::Pinhole
     // default ctor leaves tvr uninitialised and serialize() never touches it,
     // so a stack-loaded object could destroy garbage. Leaking mirrors Atlas
@@ -425,17 +428,45 @@ TEST(SerializationCamera, PinholeRoundTrip)
             std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F});
     RoundTripBinaryInto(original, *loaded_ptr);
     camera_models::pinhole::Pinhole &loaded = *loaded_ptr;
-    EXPECT_EQ(original_id, loaded.getId());
+    unsigned int                     id{};
+    ASSERT_EQ((loaded.getId(id)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_EQ(original_id, id);
     // NB: compare by value (== 0U) not EXPECT_EQ(CAM_*): CAM_* has no
     // out-of-line definition, EXPECT_EQ would ODR-use and fail to link.
-    EXPECT_TRUE(loaded.getType() ==
+    unsigned int type{};
+    ASSERT_EQ((loaded.getType(type)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_TRUE(type ==
                 camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE);
-    EXPECT_EQ(0U, loaded.getType());
-    EXPECT_EQ(4U, loaded.size());
-    EXPECT_FLOAT_EQ(500.0F, loaded.getParameter(0));
-    EXPECT_FLOAT_EQ(240.0F, loaded.getParameter(3));
-    EXPECT_TRUE(loaded.isEqual(
-        const_cast<camera_models::pinhole::Pinhole *>(&original)));
+    unsigned int type2{};
+    ASSERT_EQ((loaded.getType(type2)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_EQ(0U, type2);
+    size_t size2{};
+    ASSERT_EQ((loaded.size(size2)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_EQ(4U, size2);
+    float parameter{};
+    ASSERT_EQ((loaded.getParameter(0, parameter)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_FLOAT_EQ(500.0F, parameter);
+    float parameter2{};
+    ASSERT_EQ((loaded.getParameter(3, parameter2)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_FLOAT_EQ(240.0F, parameter2);
+    bool isEqual2{};
+    ASSERT_EQ((loaded.isEqual(
+                  const_cast<camera_models::pinhole::Pinhole *>(&original),
+                  isEqual2)),
+              camera_models::pinhole::PinholeStatus::PINHOLE_STATUS_SUCCESS);
+    EXPECT_TRUE(isEqual2);
     // SKIP tvr raw pointer: not serialized by design; no assertion.
 }
 
@@ -444,7 +475,10 @@ TEST(SerializationCamera, KannalaBrandt8RoundTrip)
     const std::vector<float>
         params{500.0F, 500.0F, 320.0F, 240.0F, 0.1F, 0.01F, 0.001F, 0.0001F};
     camera_models::kannalabrandt8::KannalaBrandt8 original(params, 1.0e-5F);
-    const unsigned int original_id = original.getId();
+    unsigned int                                  original_id{};
+    ASSERT_EQ((original.getId(original_id)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
     // Heap leak intentional (see PinholeRoundTrip): default-constructed
     // tvr is untouched by serialize().
     camera_models::kannalabrandt8::KannalaBrandt8 *loaded_ptr =
@@ -452,20 +486,53 @@ TEST(SerializationCamera, KannalaBrandt8RoundTrip)
             std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F});
     RoundTripBinaryInto(original, *loaded_ptr);
     camera_models::kannalabrandt8::KannalaBrandt8 &loaded = *loaded_ptr;
-    EXPECT_EQ(original_id, loaded.getId());
+    unsigned int                                   id{};
+    ASSERT_EQ((loaded.getId(id)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_EQ(original_id, id);
     // NB: see PinholeRoundTrip: avoid ODR-use of CAM_* (no definition).
-    EXPECT_TRUE(loaded.getType() ==
+    unsigned int type{};
+    ASSERT_EQ((loaded.getType(type)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_TRUE(type ==
                 camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE);
-    EXPECT_EQ(1U, loaded.getType());
-    EXPECT_EQ(8U, loaded.size());
+    unsigned int type2{};
+    ASSERT_EQ((loaded.getType(type2)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_EQ(1U, type2);
+    size_t size2{};
+    ASSERT_EQ((loaded.size(size2)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_EQ(8U, size2);
     for (std::size_t index = 0; index < params.size(); ++index)
     {
-        EXPECT_FLOAT_EQ(params[index], loaded.getParameter(index));
+        float parameter{};
+        ASSERT_EQ((loaded.getParameter(index, parameter)),
+                  camera_models::geometriccamera::GeometricCameraStatus::
+                      GEOMETRIC_CAMERA_STATUS_SUCCESS);
+        EXPECT_FLOAT_EQ(params[index], parameter);
     }
-    EXPECT_FLOAT_EQ(original.getPrecision(), loaded.getPrecision());
-    EXPECT_TRUE(loaded.isEqual(
-        const_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
-            &original)));
+    float precision{};
+    ASSERT_EQ((original.getPrecision(precision)),
+              camera_models::kannalabrandt8::KannalaBrandt8Status::
+                  KANNALA_BRANDT8_STATUS_SUCCESS);
+    float precision2{};
+    ASSERT_EQ((loaded.getPrecision(precision2)),
+              camera_models::kannalabrandt8::KannalaBrandt8Status::
+                  KANNALA_BRANDT8_STATUS_SUCCESS);
+    EXPECT_FLOAT_EQ(precision, precision2);
+    bool isEqual2{};
+    ASSERT_EQ((loaded.isEqual(
+                  const_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
+                      &original),
+                  isEqual2)),
+              camera_models::kannalabrandt8::KannalaBrandt8Status::
+                  KANNALA_BRANDT8_STATUS_SUCCESS);
+    EXPECT_TRUE(isEqual2);
 }
 
 TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
@@ -501,8 +568,20 @@ TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
     // Boost tracking IDs: the same saved pointer must load as one object.
     EXPECT_EQ(loaded_ptrs[0], loaded_ptrs[1]);
     EXPECT_NE(original_camera, loaded_ptrs[0]);
-    EXPECT_EQ(original_camera->getId(), loaded_ptrs[0]->getId());
-    EXPECT_TRUE(loaded_ptrs[0]->getType() ==
+    unsigned int id{};
+    ASSERT_EQ((original_camera->getId(id)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    unsigned int id2{};
+    ASSERT_EQ((loaded_ptrs[0]->getId(id2)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_EQ(id, id2);
+    unsigned int type{};
+    ASSERT_EQ((loaded_ptrs[0]->getType(type)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_TRUE(type ==
                 camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE);
 
     delete original_camera;
@@ -678,8 +757,20 @@ TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
 
     EXPECT_EQ(original.getLastInitKeyFrameId(), loaded.getLastInitKeyFrameId());
     ASSERT_EQ(1U, loaded.getAllCameras().size());
-    EXPECT_EQ(camera->getId(), loaded.getAllCameras()[0]->getId());
-    EXPECT_TRUE(loaded.getAllCameras()[0]->getType() ==
+    unsigned int id{};
+    ASSERT_EQ((camera->getId(id)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    unsigned int id2{};
+    ASSERT_EQ((loaded.getAllCameras()[0]->getId(id2)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_EQ(id, id2);
+    unsigned int type{};
+    ASSERT_EQ((loaded.getAllCameras()[0]->getType(type)),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    EXPECT_TRUE(type ==
                 camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE);
     // SKIP mutex/atomic/thread handles: loaded atlas must stay queryable.
     EXPECT_NO_THROW(loaded.getAllMaps());

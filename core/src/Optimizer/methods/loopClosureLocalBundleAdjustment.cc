@@ -483,8 +483,13 @@ void Optimizer::loopClosureLocalBundleAdjustment(
         {
             vs_graphs::core::EdgeSE3ProjectXYZ *e = edgesMonos[mapPointIndex];
             MapPoint *p_mapPoint = mapPointEdgeMonos[mapPointIndex];
-            KeyFrame *p_keyFrameEdge =
-                edgeSourceKeyFrame(edgeKeyFrameMonos, mapPointIndex);
+            KeyFrame *p_keyFrameEdge = nullptr;
+            if (edgeSourceKeyFrame(
+                    edgeKeyFrameMonos, mapPointIndex, p_keyFrameEdge) !=
+                OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS)
+            {
+                // edgeSourceKeyFrame cannot fail; continue as before.
+            }
 
             if (p_keyFrameEdge == nullptr || p_adjustKeyFrame != p_keyFrameEdge)
             {
@@ -512,8 +517,13 @@ void Optimizer::loopClosureLocalBundleAdjustment(
         {
             g2o::EdgeStereoSE3ProjectXYZ *e = edgesStereos[mapPointIndex];
             MapPoint *p_mapPoint = mapPointEdgeStereos[mapPointIndex];
-            KeyFrame *p_keyFrameEdge =
-                edgeSourceKeyFrame(edgeKeyFrameStereos, mapPointIndex);
+            KeyFrame *p_keyFrameEdge = nullptr;
+            if (edgeSourceKeyFrame(
+                    edgeKeyFrameStereos, mapPointIndex, p_keyFrameEdge) !=
+                OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS)
+            {
+                // edgeSourceKeyFrame cannot fail; continue as before.
+            }
 
             if (p_keyFrameEdge == nullptr || p_adjustKeyFrame != p_keyFrameEdge)
             {

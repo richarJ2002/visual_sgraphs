@@ -685,29 +685,61 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             Eigen::Vector3d::Zero(),
             1.0);
 
-        utils::utils::Utils::propagateSemanticPoseCorrections(
-            p_currentMap,
-            NonCorrectedSim3,
-            CorrectedSim3,
-            identityTransform_WorldToWorld);
+        if (utils::utils::Utils::propagateSemanticPoseCorrections(
+                p_currentMap,
+                NonCorrectedSim3,
+                CorrectedSim3,
+                identityTransform_WorldToWorld) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // propagateSemanticPoseCorrections cannot fail; continue as before.
+        }
     }
 
     /* Fuse semantic hypotheses only after the final inertial pose correction.
      */
-    if (types::SystemParams::getParams()->semSeg.reassociate.enabled)
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        utils::utils::Utils::reAssociateSemanticPlanes(p_atlas);
+        // getParams cannot fail; continue as before.
+    }
+    if (p_params->semSeg.reassociate.enabled)
+    {
+        if (utils::utils::Utils::reAssociateSemanticPlanes(p_atlas) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // reAssociateSemanticPlanes cannot fail; continue as before.
+        }
     }
 
     /* Matching stable room identities must collapse even when optional
      * geometry reassociation is disabled. */
-    utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap,
-                                                      importedRooms);
-
-    if (types::SystemParams::getParams()->semSeg.reassociate.enabled)
+    if (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap,
+                                                          importedRooms) !=
+        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
     {
-        utils::utils::Utils::reAssociateRooms(p_atlas);
-        utils::utils::Utils::reAssociatePassages(p_atlas);
+        // fuseDuplicateRoomsAfterMerge cannot fail; continue as before.
+    }
+
+    types::SystemParams *p_params2 = nullptr;
+    if (types::SystemParams::getParams(p_params2) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        // getParams cannot fail; continue as before.
+    }
+    if (p_params2->semSeg.reassociate.enabled)
+    {
+        if (utils::utils::Utils::reAssociateRooms(p_atlas) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // reAssociateRooms cannot fail; continue as before.
+        }
+        if (utils::utils::Utils::reAssociatePassages(p_atlas) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            // reAssociatePassages cannot fail; continue as before.
+        }
     }
 
     finalizeInertialMerge();

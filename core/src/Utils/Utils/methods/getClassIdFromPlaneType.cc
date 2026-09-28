@@ -34,21 +34,37 @@ namespace utils
 namespace utils
 {
 
-int Utils::getClassIdFromPlaneType(
-    vs_graphs::core::geometric::Plane::PlaneVariant planeType_in)
+UtilsStatus Utils::getClassIdFromPlaneType(
+    vs_graphs::core::geometric::Plane::PlaneVariant planeType_in,
+    int                                            &classIdFromPlaneType_out)
 {
     switch (planeType_in)
     {
     case vs_graphs::core::geometric::Plane::PlaneVariant::GROUND:
-        return 0;
+    {
+        classIdFromPlaneType_out = 0;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
     case vs_graphs::core::geometric::Plane::PlaneVariant::WALL:
-        return 1;
+    {
+        classIdFromPlaneType_out = 1;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
     case vs_graphs::core::geometric::Plane::PlaneVariant::DOOR:
-        return 2;
+    {
+        classIdFromPlaneType_out = 2;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
     case vs_graphs::core::geometric::Plane::PlaneVariant::WINDOW:
-        return 3;
+    {
+        classIdFromPlaneType_out = 3;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
     default:
-        return -1;
+    {
+        classIdFromPlaneType_out = -1;
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
     }
 }
 
