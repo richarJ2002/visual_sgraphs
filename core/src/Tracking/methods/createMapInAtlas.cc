@@ -37,7 +37,9 @@ void Tracking::createMapInAtlas()
     p_atlas->createNewMap();
     if (sensor == System::IMU_STEREO || sensor == System::IMU_MONOCULAR ||
         sensor == System::IMU_RGBD)
+    {
         p_atlas->setInertialSensor();
+    }
     isInitSet = false;
 
     initialFrameId = currentFrame.id + 1;

@@ -47,7 +47,9 @@ FrameStatus Frame::setNewBias(const IMU::Bias &b_in)
 {
     imuBias = b_in;
     if (p_imuPreintegrated)
+    {
         p_imuPreintegrated->setNewBias(b_in);
+    }
 
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }

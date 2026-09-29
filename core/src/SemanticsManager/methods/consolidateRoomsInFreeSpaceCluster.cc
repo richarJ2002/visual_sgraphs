@@ -233,10 +233,12 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
          * centroid moves as exploration expands. Membership in that component
          * plus the finite-wall veto is the relevant topological evidence.
          */
-        if (!duplicateCentroid_World_m.allFinite() ||
+        const bool isDuplicateOutsideCluster =
+            !duplicateCentroid_World_m.allFinite() ||
             !std::isfinite(centroidDistance_m) ||
             distanceToCluster_m(duplicateCentroid_World_m) >
-                maximumClusterSupportDistance_m ||
+                maximumClusterSupportDistance_m;
+        if (isDuplicateOutsideCluster ||
             hasSeparatingFiniteWall(wallList_World_in,
                                     retainedCentroid_World_m,
                                     duplicateCentroid_World_m,

@@ -50,8 +50,14 @@ void LoopClosing::correctLoop()
     stopGlobalBundleAdjustment();
 
     // Wait until Local Mapping has effectively stopped
-    while (!p_localMapper->isStopped())
+    for (;;)
+    {
+        if (p_localMapper->isStopped())
+        {
+            break;
+        }
         usleep(1000);
+    }
 
     // Ensure current keyframe is updated
     if (p_currentKF->updateConnections() !=

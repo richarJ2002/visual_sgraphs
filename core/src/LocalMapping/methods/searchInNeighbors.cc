@@ -168,7 +168,9 @@ void LocalMapping::searchInNeighbors()
 
         matcher.fuse(p_targetKeyFrame, currentMapPointMatches);
         if (p_targetKeyFrame->leftKeyPointCount != -1)
+        {
             matcher.fuse(p_targetKeyFrame, currentMapPointMatches, true);
+        }
     }
 
     if (shouldAbortBa)
@@ -225,7 +227,9 @@ void LocalMapping::searchInNeighbors()
 
     matcher.fuse(p_currentKeyFrame, fuseCandidateMapPoints);
     if (p_currentKeyFrame->leftKeyPointCount != -1)
+    {
         matcher.fuse(p_currentKeyFrame, fuseCandidateMapPoints, true);
+    }
 
     // Update points
     std::vector<MapPoint *> currentKeyFrameMapPointMatches{};

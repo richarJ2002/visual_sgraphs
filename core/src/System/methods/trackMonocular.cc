@@ -89,10 +89,14 @@ Sophus::SE3f
     applyPendingModeAndResetRequests();
 
     if (sensor == System::IMU_MONOCULAR)
+    {
         for (size_t imuMeasurementIndex = 0;
              imuMeasurementIndex < imuMeas_in.size();
              imuMeasurementIndex++)
+        {
             p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]);
+        }
+    }
 
     Sophus::SE3f Tcw = p_tracker->grabImageMonocular(imToFeed,
                                                      timestamp_in,

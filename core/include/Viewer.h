@@ -106,8 +106,6 @@ class Viewer
 
     bool isStopped();
 
-    bool isStepByStep();
-
     void release();
 
     // void SetTrackingPause();

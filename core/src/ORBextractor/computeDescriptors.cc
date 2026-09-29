@@ -78,10 +78,12 @@ void computeDescriptors(const Mat           &image_in,
 
     for (size_t keypointIndex = 0; keypointIndex < keypoints_in.size();
          keypointIndex++)
+    {
         computeOrbDescriptor(keypoints_in[keypointIndex],
                              image_in,
                              &briefPattern_in[0],
                              descriptors_out.ptr((int)keypointIndex));
+    }
 }
 
 } // namespace core

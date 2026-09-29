@@ -36,10 +36,14 @@ double System::getTimeFromIMUInit()
     double aux =
         p_localMapper->getCurrentKeyFrameTime() - p_localMapper->firstTimestamp;
     if ((aux > 0.) && p_atlas->isImuInitialized())
+    {
         return p_localMapper->getCurrentKeyFrameTime() -
                p_localMapper->firstTimestamp;
+    }
     else
+    {
         return 0.f;
+    }
 }
 
 } // namespace core

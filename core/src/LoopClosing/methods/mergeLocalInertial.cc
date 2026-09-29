@@ -144,8 +144,12 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
     p_localMapper->requestStop();
 
     // Wait until Local Mapping has effectively stopped
-    while (!p_localMapper->isStopped())
+    for (;;)
     {
+        if (p_localMapper->isStopped())
+        {
+            break;
+        }
         usleep(1000);
     }
 

@@ -110,8 +110,12 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
 
     isInitializationInProgress = true;
 
-    while (checkNewKeyFrames())
+    for (;;)
     {
+        if (!checkNewKeyFrames())
+        {
+            break;
+        }
         processNewKeyFrame();
         orderedKeyFrames.push_back(p_currentKeyFrame);
         temporalKeyFrames.push_back(p_currentKeyFrame);
@@ -340,6 +344,7 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
     if (shouldRunFullInertialBa_in)
     {
         if (accelPriorWeight_in != 0.f)
+        {
             Optimizer::fullInertialBA(p_atlas->getCurrentMap(),
                                       100,
                                       false,
@@ -348,13 +353,16 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
                                       true,
                                       gyroPriorWeight_in,
                                       accelPriorWeight_in);
+        }
         else
+        {
             Optimizer::fullInertialBA(p_atlas->getCurrentMap(),
                                       100,
                                       false,
                                       p_currentKeyFrame->id,
                                       nullptr,
                                       false);
+        }
     }
 
     Verbose::printMess("Global Bundle Adjustment finished\nUpdating map ...",
@@ -370,8 +378,12 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
     unsigned long globalBaId = p_currentKeyFrame->id;
 
     // Process keyframes in the queue
-    while (checkNewKeyFrames())
+    for (;;)
     {
+        if (!checkNewKeyFrames())
+        {
+            break;
+        }
         processNewKeyFrame();
         orderedKeyFrames.push_back(p_currentKeyFrame);
         temporalKeyFrames.push_back(p_currentKeyFrame);

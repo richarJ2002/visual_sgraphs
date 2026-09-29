@@ -32,8 +32,14 @@ namespace core
 
 void LocalMapping::emptyQueue()
 {
-    while (checkNewKeyFrames())
+    for (;;)
+    {
+        if (!checkNewKeyFrames())
+        {
+            break;
+        }
         processNewKeyFrame();
+    }
 }
 
 } // namespace core

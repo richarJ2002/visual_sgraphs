@@ -97,10 +97,14 @@ Sophus::SE3f System::trackRGBD(
 
     // Apply IMU measurements
     if (sensor == System::IMU_RGBD)
+    {
         for (size_t imuMeasurementIndex = 0;
              imuMeasurementIndex < imuMeas_in.size();
              imuMeasurementIndex++)
+        {
             p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]);
+        }
+    }
 
     // Track RGB-D images
     Sophus::SE3f Tcw = p_tracker->grabImageRGBD(imToFeed,

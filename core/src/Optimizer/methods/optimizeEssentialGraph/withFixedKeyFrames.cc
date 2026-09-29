@@ -498,10 +498,12 @@ void Optimizer::optimizeEssentialGraph(
         }
 
         if (connectionCount == 0)
+        {
             Verbose::printMess("Opt_Essential: KF " +
                                    to_string(p_fixedKeyFrame->id) +
                                    " has 0 connections",
                                Verbose::VERBOSITY_DEBUG);
+        }
     }
 
     // Optimize!

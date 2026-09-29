@@ -170,8 +170,12 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     p_localMapper->requestStop();
 
     /* Wait until local mapper stops */
-    while (!p_localMapper->isStopped())
+    for (;;)
     {
+        if (p_localMapper->isStopped())
+        {
+            break;
+        }
         usleep(1000);
     }
 
@@ -1656,8 +1660,12 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     /* Stop local mapping before any remaining ownership is transferred. */
     p_localMapper->requestStop();
 
-    while (!p_localMapper->isStopped())
+    for (;;)
     {
+        if (p_localMapper->isStopped())
+        {
+            break;
+        }
         usleep(1000);
     }
 

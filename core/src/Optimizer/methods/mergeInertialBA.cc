@@ -473,8 +473,10 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
             optimizer.addEdge(vear[i]);
         }
         else
+        {
             Verbose::printMess("ERROR building inertial edge",
                                Verbose::VERBOSITY_NORMAL);
+        }
     }
 
     Verbose::printMess("end inserting inertial edges",

@@ -274,12 +274,16 @@ void Viewer::run()
         p_mapDrawer->drawCurrentCamera(Twc);
         if (menuShowKeyFrames || menuShowGraph || menuShowInertialGraph ||
             menuShowOptLba)
+        {
             p_mapDrawer->drawKeyFrames(menuShowKeyFrames,
                                        menuShowGraph,
                                        menuShowInertialGraph,
                                        menuShowOptLba);
+        }
         if (menuShowPoints)
+        {
             p_mapDrawer->drawMapPoints();
+        }
 
         // Draw world frame
         pangolin::glDrawAxis(10.0);
@@ -318,7 +322,9 @@ void Viewer::run()
             menuShowPoints        = true;
             menuLocalizationMode  = false;
             if (isLocalizationMode)
+            {
                 p_system->deactivateLocalizationMode();
+            }
             isLocalizationMode = false;
             isFollowing        = true;
             menuFollowCamera   = true;
@@ -330,7 +336,9 @@ void Viewer::run()
         if (menuStop)
         {
             if (isLocalizationMode)
+            {
                 p_system->deactivateLocalizationMode();
+            }
 
             // Stop all threads
             p_system->shutdown();
@@ -343,8 +351,12 @@ void Viewer::run()
 
         if (stop())
         {
-            while (isStopped())
+            for (;;)
             {
+                if (!isStopped())
+                {
+                    break;
+                }
                 usleep(3000);
             }
         }

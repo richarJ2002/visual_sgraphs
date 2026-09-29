@@ -58,7 +58,9 @@ bool Tracking::trackLocalMap()
         }
 
     if (!p_atlas->isImuInitialized())
+    {
         Optimizer::poseOptimization(&currentFrame);
+    }
     else
     {
         if (currentFrame.id <= lastRelocFrameId + framesToResetIMU)

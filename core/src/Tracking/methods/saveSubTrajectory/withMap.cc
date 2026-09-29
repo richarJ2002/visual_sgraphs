@@ -37,8 +37,10 @@ void Tracking::saveSubTrajectory(string textNameFileFrames_in,
 {
     p_system->saveTrajectoryEuRoC(textNameFileFrames_in, p_map_in);
     if (!textNameFileKeyFrame_in.empty())
+    {
         p_system->saveKeyFrameTrajectoryEuRoC(textNameFileKeyFrame_in,
                                               p_map_in);
+    }
 }
 
 } // namespace core

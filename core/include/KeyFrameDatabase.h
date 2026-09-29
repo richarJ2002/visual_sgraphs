@@ -91,8 +91,6 @@ class KeyFrameDatabase
     std::vector<KeyFrame *> detectRelocalizationCandidates(Frame *p_frame_in,
                                                            Map   *p_map_in);
 
-    void preSave();
-    void postLoad(map<long unsigned int, KeyFrame *> keyFrameId_in);
     void setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
 
   protected:

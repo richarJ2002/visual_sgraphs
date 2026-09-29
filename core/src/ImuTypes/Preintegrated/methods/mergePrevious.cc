@@ -50,15 +50,19 @@ void Preintegrated::mergePrevious(Preintegrated *p_previousPreintegrated_in)
     for (size_t measurementIndex = 0;
          measurementIndex < previousMeasurements.size();
          measurementIndex++)
+    {
         integrateNewMeasurement(previousMeasurements[measurementIndex].a,
                                 previousMeasurements[measurementIndex].w,
                                 previousMeasurements[measurementIndex].t);
+    }
     for (size_t measurementIndex = 0;
          measurementIndex < currentMeasurements.size();
          measurementIndex++)
+    {
         integrateNewMeasurement(currentMeasurements[measurementIndex].a,
                                 currentMeasurements[measurementIndex].w,
                                 currentMeasurements[measurementIndex].t);
+    }
 }
 
 } // namespace IMU

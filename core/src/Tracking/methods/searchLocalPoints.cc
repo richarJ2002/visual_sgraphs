@@ -149,15 +149,22 @@ void Tracking::searchLocalPoints()
                              __func__);
             }
             if (inertialBA2)
+            {
                 threshold = 2;
+            }
             else
+            {
                 threshold = 6;
+            }
         }
-        else if (!p_atlas->isImuInitialized() &&
-                 (sensor == System::IMU_MONOCULAR ||
-                  sensor == System::IMU_STEREO || sensor == System::IMU_RGBD))
+        else
         {
-            threshold = 10;
+            if (!p_atlas->isImuInitialized() &&
+                (sensor == System::IMU_MONOCULAR ||
+                 sensor == System::IMU_STEREO || sensor == System::IMU_RGBD))
+            {
+                threshold = 10;
+            }
         }
 
         // If the camera has been relocalised recently, perform a coarser search

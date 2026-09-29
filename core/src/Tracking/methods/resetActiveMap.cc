@@ -42,8 +42,12 @@ void Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
 {
     if (p_loopClosing)
     {
-        while (p_loopClosing->isMergeInProgress())
+        for (;;)
         {
+            if (!p_loopClosing->isMergeInProgress())
+            {
+                break;
+            }
             usleep(1000);
         }
     }
@@ -52,8 +56,12 @@ void Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
     if (p_viewer)
     {
         p_viewer->requestStop();
-        while (!p_viewer->isStopped())
+        for (;;)
         {
+            if (p_viewer->isStopped())
+            {
+                break;
+            }
             usleep(3000);
         }
     }
@@ -163,7 +171,9 @@ void Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
     isVelocityAvailable = false;
 
     if (p_viewer)
+    {
         p_viewer->release();
+    }
 }
 
 } // namespace core

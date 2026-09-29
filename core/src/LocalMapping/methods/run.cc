@@ -193,9 +193,11 @@ void LocalMapping::run()
                             (cameraCenter2 - cameraCenter3).norm();
 
                         if (cameraCenterDistance > 0.05)
+                        {
                             initializationStartTime +=
                                 p_currentKeyFrame->timeStamp -
                                 p_currentKeyFrame->p_prevKF->timeStamp;
+                        }
                         /* A stationary interval is valid after initialization
                          * and must not invalidate the active map.
                          * Initialization itself is gated by cumulative
@@ -333,9 +335,13 @@ void LocalMapping::run()
                 if (!isImuInitialized3 && isInertial)
                 {
                     if (isMonocular)
+                    {
                         initializeIMU(1e2, 1e10, true);
+                    }
                     else
+                    {
                         initializeIMU(1e2, 1e5, true);
+                    }
                 }
 
                 // Check redundant local Keyframes
@@ -538,7 +544,9 @@ void LocalMapping::run()
                               initializationStartTime < 75.5f)))
                         {
                             if (isMonocular)
+                            {
                                 scaleRefinement();
+                            }
                         }
                     }
                 }
@@ -563,15 +571,24 @@ void LocalMapping::run()
             localMappingTotalTimes_ms.push_back(timeLocalMap);
 #endif
         }
-        else if (stop() && !isImuBad)
+        else
         {
-            // Safe area to stop
-            while (isStopped() && !checkFinish())
+            if (stop() && !isImuBad)
             {
-                usleep(3000);
+                // Safe area to stop
+                for (;;)
+                {
+                    if (!(isStopped() && !checkFinish()))
+                    {
+                        break;
+                    }
+                    usleep(3000);
+                }
+                if (checkFinish())
+                {
+                    break;
+                }
             }
-            if (checkFinish())
-                break;
         }
 
         resetIfRequested();

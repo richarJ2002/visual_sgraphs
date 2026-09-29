@@ -653,13 +653,6 @@ class SemanticsManager
     void detectDoorsAndDoorways(vs_graphs::core::Atlas *p_atlas_in);
 
     /*!
-     * @brief       Gets the latest detected room candidates from GNN-based room
-     *              detection.
-     */
-    std::vector<vs_graphs::core::semantic::Room *>
-        getLatestGNNRoomCandidates(void);
-
-    /*!
      * @brief       Filters the wall planes to remove heavily tilted walls. Does
      *              this by comparing the transpose to the ground plane. If the
      *              plane normal is horizontal to the ground then it is left
@@ -847,21 +840,10 @@ class SemanticsManager
     void associatePassagesToRooms(void);
 
     /*!
-     * @brief       Re-associates rooms based on fixed time intervals to
-     *              avoid duplicates.
-     */
-    void reAssociateRooms(void);
-
-    /*!
      * @brief       Processes the latest skeleton cluster to detect rooms based
      *              on free space clustering.
      */
     void detectRoom_FreeSpaceCluster(void);
-
-    /*!
-     * @brief       Gets the rooms detected by the GNN module.
-     */
-    void detectRoom_GNN(void);
 
     /*!
      * @brief       Gets the updated floors containing rooms and corridors.

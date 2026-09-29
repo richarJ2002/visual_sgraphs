@@ -234,9 +234,13 @@ void Tracking::track()
     {
         if (sensor == System::STEREO || sensor == System::RGBD ||
             sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
+        {
             stereoInitialization();
+        }
         else
+        {
             monocularInitialization();
+        }
 
         // If initialization succesful, save frame pose
         if (state != OK)
@@ -298,7 +302,9 @@ void Tracking::track()
                                        Verbose::VERBOSITY_DEBUG);
                     isOk = trackWithMotionModel();
                     if (!isOk)
+                    {
                         isOk = trackReferenceKeyFrame();
+                    }
                 }
 
                 if (!isOk)
@@ -363,9 +369,13 @@ void Tracking::track()
                                          __func__);
                         }
                         if (currentMapIsImuInitialized2)
+                        {
                             predictStateIMU();
+                        }
                         else
+                        {
                             isOk = false;
+                        }
 
                         if (currentFrame.timeStamp - timeStampLost >
                             time_recently_lost)
@@ -448,8 +458,10 @@ void Tracking::track()
             {
                 if (sensor == System::IMU_MONOCULAR ||
                     sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
+                {
                     Verbose::printMess("IMU. State LOST",
                                        Verbose::VERBOSITY_NORMAL);
+                }
                 isOk = relocalization();
             }
             else
@@ -571,10 +583,14 @@ void Tracking::track()
         if (!isTrackingOnlyMode)
         {
             if (isOk)
+            {
                 isOk = trackLocalMap();
+            }
             else
+            {
                 std::cout << "[Tracking] Failed to track the features ..."
                           << std::endl;
+            }
         }
         else
         {
@@ -583,7 +599,9 @@ void Tracking::track()
             // perform TrackLocalMap(). Once the system relocalizes the camera
             // we will use the local map again.
             if (isOk && !isVisualOdometry)
+            {
                 isOk = trackLocalMap();
+            }
         }
 
         if (isOk)
@@ -949,8 +967,12 @@ void Tracking::track()
     {
 
         // Safe area to stop
-        while (isStopped())
+        for (;;)
         {
+            if (!isStopped())
+            {
+                break;
+            }
             usleep(3000);
         }
     }

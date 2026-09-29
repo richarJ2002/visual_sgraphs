@@ -57,8 +57,12 @@ void LocalMapping::scaleRefinement()
     vector<KeyFrame *> orderedKeyFrames(temporalKeyFrames.begin(),
                                         temporalKeyFrames.end());
 
-    while (checkNewKeyFrames())
+    for (;;)
     {
+        if (!checkNewKeyFrames())
+        {
+            break;
+        }
         processNewKeyFrame();
         orderedKeyFrames.push_back(p_currentKeyFrame);
         temporalKeyFrames.push_back(p_currentKeyFrame);

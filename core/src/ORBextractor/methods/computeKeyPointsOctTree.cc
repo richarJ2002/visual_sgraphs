@@ -199,9 +199,11 @@ void ORBextractor::computeKeyPointsOctTree(
 
     // compute orientations
     for (int level = 0; level < levelCount; ++level)
+    {
         computeOrientation(imagePyramid[level],
                            keypointsPerLevel_inout[level],
                            orientationMaxOffset);
+    }
 }
 
 } // namespace core

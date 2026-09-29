@@ -62,7 +62,7 @@ class ProductionCrossingScene
   public:
     explicit ProductionCrossingScene(unsigned long keyFrameIdBase_in) :
         atlas(0),
-        p_map(atlas.getCurrentMap()),
+        p_map(nullptr),
         manager(&atlas),
         returnKeyFrameAdded(false),
         thirdCrossingKeyFrameAdded(false),

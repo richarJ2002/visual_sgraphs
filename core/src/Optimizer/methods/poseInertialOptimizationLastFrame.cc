@@ -341,7 +341,9 @@ int Optimizer::poseInertialOptimizationLastFrame(Frame *p_frame_inout,
     H.block<3, 3>(27, 27) += Har.block<3, 3>(3, 3);
 
     if (ep)
+    {
         H.block<15, 15>(0, 0) += ep->getHessian();
+    }
 
     int tot_in = 0, tot_out = 0;
     for (size_t keyPointIndex = 0, iend = edgesMonos.size();

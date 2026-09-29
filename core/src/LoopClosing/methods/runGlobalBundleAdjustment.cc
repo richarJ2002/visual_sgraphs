@@ -97,6 +97,7 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
     }
 
     if (!isImuInitialized)
+    {
         Optimizer::globalBundleAdjustment(
             p_activeMap_inout,
             10,
@@ -105,7 +106,9 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
             false,
             p_tracker->getMarkerImpact(),
             &isGlobalBundleAdjustmentStopRequested);
+    }
     else
+    {
         Optimizer::fullInertialBA(p_activeMap_inout,
                                   7,
                                   false,
@@ -117,6 +120,7 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
                                   nullptr,
                                   nullptr,
                                   &isGlobalBundleAdjustmentStopRequested);
+    }
 
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point timeEndGba =
@@ -174,8 +178,13 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
             p_localMapper->requestStop();
             // Wait until Local Mapping has effectively stopped
 
-            while (!p_localMapper->isStopped() && !p_localMapper->isFinished())
+            for (;;)
             {
+                if (!(!p_localMapper->isStopped() &&
+                      !p_localMapper->isFinished()))
+                {
+                    break;
+                }
                 usleep(1000);
             }
 
@@ -289,8 +298,10 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
                             p_child->vwbGBA = Rcor * childVelocity;
                         }
                         else
+                        {
                             Verbose::printMess("Child velocity empty!! ",
                                                Verbose::VERBOSITY_NORMAL);
+                        }
 
                         IMU::Bias childImuBias{};
                         if (p_child->getImuBias(childImuBias) !=

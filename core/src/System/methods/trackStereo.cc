@@ -146,10 +146,14 @@ Sophus::SE3f
     applyPendingModeAndResetRequests();
 
     if (sensor == System::IMU_STEREO)
+    {
         for (size_t imuMeasurementIndex = 0;
              imuMeasurementIndex < imuMeas_in.size();
              imuMeasurementIndex++)
+        {
             p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]);
+        }
+    }
 
     Sophus::SE3f Tcw = p_tracker->grabImageStereo(imLeftToFeed,
                                                   imRightToFeed,

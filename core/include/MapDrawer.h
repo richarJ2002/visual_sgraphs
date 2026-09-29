@@ -86,7 +86,6 @@ class MapDrawer
                        const bool shouldDrawOptimizedLba_in);
     void drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in);
     void setCurrentCameraPose(const Sophus::SE3f &Tcw_in);
-    void setReferenceKeyFrame(KeyFrame *p_keyFrame_in);
     void getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M_in,
                                       pangolin::OpenGlMatrix &MOw_inout);
 

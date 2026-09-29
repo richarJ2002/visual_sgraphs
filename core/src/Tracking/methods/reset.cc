@@ -42,8 +42,14 @@ void Tracking::reset(bool isRequestedByLocalMapping_in)
     if (p_viewer)
     {
         p_viewer->requestStop();
-        while (!p_viewer->isStopped())
+        for (;;)
+        {
+            if (p_viewer->isStopped())
+            {
+                break;
+            }
             usleep(3000);
+        }
     }
 
     // Reset Local Mapping
@@ -70,7 +76,9 @@ void Tracking::reset(bool isRequestedByLocalMapping_in)
     p_atlas->createNewMap();
     if (sensor == System::IMU_STEREO || sensor == System::IMU_MONOCULAR ||
         sensor == System::IMU_RGBD)
+    {
         p_atlas->setInertialSensor();
+    }
     initialFrameId = 0;
 
     KeyFrame::nextId = 0;
@@ -92,7 +100,9 @@ void Tracking::reset(bool isRequestedByLocalMapping_in)
     iniMatches.clear();
 
     if (p_viewer)
+    {
         p_viewer->release();
+    }
 
     Verbose::printMess("   End reseting! ", Verbose::VERBOSITY_NORMAL);
 }

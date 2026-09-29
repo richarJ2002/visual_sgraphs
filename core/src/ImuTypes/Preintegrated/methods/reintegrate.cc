@@ -34,9 +34,11 @@ void Preintegrated::reintegrate()
     for (size_t measurementIndex = 0;
          measurementIndex < storedMeasurements.size();
          measurementIndex++)
+    {
         integrateNewMeasurement(storedMeasurements[measurementIndex].a,
                                 storedMeasurements[measurementIndex].w,
                                 storedMeasurements[measurementIndex].t);
+    }
 }
 
 } // namespace IMU

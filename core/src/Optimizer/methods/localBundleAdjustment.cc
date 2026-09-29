@@ -1788,7 +1788,8 @@ void Optimizer::localBundleAdjustment(
             edgesPlanes[edgeIndex];
         geometric::Plane *p_edgePlane = planeEdgePlanes[edgeIndex];
 
-        if (e->chi2() > 7.815 || !e->isDistanceCorrect())
+        const bool isChi2Exceeded = e->chi2() > 7.815;
+        if (isChi2Exceeded || !e->isDistanceCorrect())
         {
 
             // if not already in ToErase, add it
@@ -1809,7 +1810,8 @@ void Optimizer::localBundleAdjustment(
         vs_graphs::core::EdgeSE3KFPointToPlane *e = edgesPlanePoints[edgeIndex];
         geometric::Plane *p_edgePlane = planeEdgePlanePoints[edgeIndex];
 
-        if (e->chi2() > 3.841 || !e->isDistanceCorrect())
+        const bool isChi2Exceeded = e->chi2() > 3.841;
+        if (isChi2Exceeded || !e->isDistanceCorrect())
         {
             // if not already in ToErase, add it
             std::pair<KeyFrame *, geometric::Plane *> keyFramePlane =
